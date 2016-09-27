@@ -1,0 +1,39 @@
+From d57a17073be5fb3a42e914b5baae20087992a3f4 Mon Sep 17 00:00:00 2001
+From: John Stultz <john.stultz@linaro.org>
+Date: Wed, 8 May 2013 16:06:16 -0700
+Subject: [PATCH] dcc_tty: Build fixups
+
+Fix spinlock declaration and tty_insert/flip arguments.
+
+Signed-off-by: John Stultz <john.stultz@linaro.org>
+---
+ drivers/char/dcc_tty.c | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/drivers/char/dcc_tty.c b/drivers/char/dcc_tty.c
+index a787acc..0a62d41 100644
+--- a/drivers/char/dcc_tty.c
++++ b/drivers/char/dcc_tty.c
+@@ -26,7 +26,7 @@ MODULE_DESCRIPTION("DCC TTY Driver");
+ MODULE_LICENSE("GPL");
+ MODULE_VERSION("1.0");
+ 
+-static spinlock_t g_dcc_tty_lock = SPIN_LOCK_UNLOCKED;
++DEFINE_SPINLOCK(g_dcc_tty_lock);
+ static struct hrtimer g_dcc_timer;
+ static char g_dcc_buffer[16];
+ static int g_dcc_buffer_head;
+@@ -80,8 +80,8 @@ static void dcc_poll_locked(void)
+ 		);
+ 		if (rch >= 0) {
+ 			ch = rch;
+-			tty_insert_flip_string(g_dcc_tty, &ch, 1);
+-			tty_flip_buffer_push(g_dcc_tty);
++			tty_insert_flip_string(g_dcc_tty->port, &ch, 1);
++			tty_flip_buffer_push(g_dcc_tty->port);
+ 		}
+ 	}
+ 
+-- 
+1.8.0
+

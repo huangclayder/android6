@@ -1,0 +1,86 @@
+From 0b11fb2529ab270fc0df108c323fa567c81267d7 Mon Sep 17 00:00:00 2001
+From: "Ye.Li" <B37916@freescale.com>
+Date: Fri, 6 Jun 2014 16:29:18 +0800
+Subject: [PATCH] ENGR00315894-33 gpmi: use the same ECC strength as used in
+ the kernel
+
+Current code use the hardcoded ECC strength which is not aligned with
+the kernel.
+
+This patch use the same ECC strength as used in the kernel.
+
+We do not support the NAND whose OOB size is larger then 512bytes.
+
+Signed-off-by: Huang Shijie <b32955@freescale.com>
+Signed-off-by: Ye.Li <B37916@freescale.com>
+(cherry picked from commit 8b3db31d607be02409b1f4937d91241f48229e96)
+Signed-off-by: Peng Fan <Peng.Fan@freescale.com>
+
+Conflicts:
+	drivers/mtd/nand/mxs_nand.c
+---
+ drivers/mtd/nand/mxs_nand.c | 32 +++++++++++++-------------------
+ 1 file changed, 13 insertions(+), 19 deletions(-)
+
+diff --git a/drivers/mtd/nand/mxs_nand.c b/drivers/mtd/nand/mxs_nand.c
+index 2d2b938..4790013 100644
+--- a/drivers/mtd/nand/mxs_nand.c
++++ b/drivers/mtd/nand/mxs_nand.c
+@@ -7,7 +7,7 @@
+  * Based on code from LTIB:
+  * Freescale GPMI NFC NAND Flash Driver
+  *
+- * Copyright (C) 2010 Freescale Semiconductor, Inc.
++ * Copyright (C) 2010-2014 Freescale Semiconductor, Inc.
+  * Copyright (C) 2008 Embedded Alley Solutions, Inc.
+  *
+  * SPDX-License-Identifier:	GPL-2.0+
+@@ -146,26 +146,14 @@ static uint32_t mxs_nand_aux_status_offset(void)
+ static inline uint32_t mxs_nand_get_ecc_strength(uint32_t page_data_size,
+ 						uint32_t page_oob_size)
+ {
+-	if (page_data_size == 2048) {
+-		if (page_oob_size == 64)
+-			return 8;
++	int ecc_strength;
+ 
+-		if (page_oob_size == 112)
+-			return 14;
+-	}
+-
+-	if (page_data_size == 4096) {
+-		if (page_oob_size == 128)
+-			return 8;
+-
+-		if (page_oob_size == 218)
+-			return 16;
+-
+-		if (page_oob_size == 224)
+-			return 16;
+-	}
++	ecc_strength = ((page_oob_size - MXS_NAND_METADATA_SIZE) * 8)
++		/(galois_field * mxs_nand_ecc_chunk_cnt(page_data_size));
+ 
+-	return 0;
++	/* We need the minor even number. */
++	ecc_strength -= ecc_strength & 1;
++	return ecc_strength;
+ }
+ 
+ static inline uint32_t mxs_nand_get_mark_offset(uint32_t page_data_size,
+@@ -977,6 +965,12 @@ static int mxs_nand_scan_bbt(struct mtd_info *mtd)
+ 	struct mxs_bch_regs *bch_regs = (struct mxs_bch_regs *)MXS_BCH_BASE;
+ 	uint32_t tmp;
+ 
++	if (mtd->oobsize > MXS_NAND_CHUNK_DATA_CHUNK_SIZE) {
++		printf("we do not support the NAND whose OOB size is"
++			"larger then 512 bytes!\n");
++		return -EINVAL;
++	}
++
+ 	/* Configure BCH and set NFC geometry */
+ 	mxs_reset_block(&bch_regs->hw_bch_ctrl_reg);
+ 
+-- 
+1.8.0
+

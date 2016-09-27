@@ -1,0 +1,82 @@
+From d1cff5b2cfba7502377ae193fbd8eb56a1c8cdb5 Mon Sep 17 00:00:00 2001
+From: Zhang Sanshan <b51434@freescale.com>
+Date: Tue, 10 Nov 2015 12:59:02 +0800
+Subject: [PATCH 557/602] MA-7239 add some selinux policy for android6.0
+
+Add some policy for mm6.0.
+Fix selinux deny error when boot up mm6.0.
+
+Signed-off-by: Zhang Sanshan <b51434@freescale.com>
+---
+ imx6/sepolicy/init.te   | 5 +++++
+ imx6/sepolicy/kernel.te | 1 +
+ imx6/sepolicy/netd.te   | 1 +
+ imx7/sepolicy/init.te   | 5 +++++
+ imx7/sepolicy/kernel.te | 3 +--
+ imx7/sepolicy/netd.te   | 1 +
+ 6 files changed, 14 insertions(+), 2 deletions(-)
+
+diff --git a/imx6/sepolicy/init.te b/imx6/sepolicy/init.te
+index 4c64c78..fdf33bf 100644
+--- a/imx6/sepolicy/init.te
++++ b/imx6/sepolicy/init.te
+@@ -4,3 +4,8 @@ allow init asec_apk_file:dir  { mounton };
+ allow init perfprofd_exec:file  { read open getattr execute };
+ allow init shell_data_file:dir  { write };
+ allow init socket_device:sock_file  { setattr create };
++allow init tmpfs:lnk_file  { create };
++allow init storage_file:dir  { mounton };
++allow init block_device:blk_file  { write };
++allow init sysfs_devices_system_cpu:dir  { write };
++allow init shell_exec:file  { execute_no_trans };
+diff --git a/imx6/sepolicy/kernel.te b/imx6/sepolicy/kernel.te
+index 21c16db..751bbf1 100644
+--- a/imx6/sepolicy/kernel.te
++++ b/imx6/sepolicy/kernel.te
+@@ -23,3 +23,4 @@ allow zygote kernel:system  { module_request };
+ allow tzdatacheck kernel:system  { module_request };
+ allow shell kernel:system  { module_request };
+ allow dex2oat kernel:system  { module_request };
++allow gatekeeperd kernel:system  { module_request };
+diff --git a/imx6/sepolicy/netd.te b/imx6/sepolicy/netd.te
+index f1bf0e7..e4fa6f2 100644
+--- a/imx6/sepolicy/netd.te
++++ b/imx6/sepolicy/netd.te
+@@ -1 +1,2 @@
+ allow netd kernel:system { module_request };
++allow netd netd:capability { sys_module };
+diff --git a/imx7/sepolicy/init.te b/imx7/sepolicy/init.te
+index 386712c..5d5d34c 100644
+--- a/imx7/sepolicy/init.te
++++ b/imx7/sepolicy/init.te
+@@ -4,4 +4,9 @@ allow init asec_apk_file:dir  { mounton };
+ allow init perfprofd_exec:file  { read open getattr execute };
+ allow init shell_data_file:dir  { write };
+ allow init socket_device:sock_file  { setattr create };
++allow init tmpfs:lnk_file  { create };
++allow init storage_file:dir  { mounton };
++allow init block_device:blk_file  { write };
++allow init sysfs_devices_system_cpu:dir  { write };
++allow init shell_exec:file  { execute_no_trans };
+ 
+diff --git a/imx7/sepolicy/kernel.te b/imx7/sepolicy/kernel.te
+index c7d0e30..751bbf1 100644
+--- a/imx7/sepolicy/kernel.te
++++ b/imx7/sepolicy/kernel.te
+@@ -23,5 +23,4 @@ allow zygote kernel:system  { module_request };
+ allow tzdatacheck kernel:system  { module_request };
+ allow shell kernel:system  { module_request };
+ allow dex2oat kernel:system  { module_request };
+-
+-
++allow gatekeeperd kernel:system  { module_request };
+diff --git a/imx7/sepolicy/netd.te b/imx7/sepolicy/netd.te
+index f1bf0e7..e4fa6f2 100644
+--- a/imx7/sepolicy/netd.te
++++ b/imx7/sepolicy/netd.te
+@@ -1 +1,2 @@
+ allow netd kernel:system { module_request };
++allow netd netd:capability { sys_module };
+-- 
+1.8.0
+

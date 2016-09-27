@@ -1,0 +1,45 @@
+From 2d3dc82ac771a549592128c708df97a82ed10588 Mon Sep 17 00:00:00 2001
+From: Fang Hui <b31070@freescale.com>
+Date: Fri, 12 Sep 2014 15:19:33 +0800
+Subject: [PATCH 526/635] ENGR00324259 - [Android_MX6Q/SX/DL/_SD/ARD]
+ CTS-Verifier: Video playback of
+
+just recorded Low and 480p profile was in a mess. 100%
+
+Omit 176x144. Since cts verifier, "Camera Video" test will use 176x144
+for camera, but 320x240 for SoftAVCEncoder, will not pass.
+
+Signed-off-by: Fang Hui <b31070@freescale.com>
+---
+ mx6/libcamera/Ov5640.cpp | 9 ++++++++-
+ 1 file changed, 8 insertions(+), 1 deletion(-)
+
+diff --git a/mx6/libcamera/Ov5640.cpp b/mx6/libcamera/Ov5640.cpp
+index 5a02a09..3bf3c7c 100644
+--- a/mx6/libcamera/Ov5640.cpp
++++ b/mx6/libcamera/Ov5640.cpp
+@@ -1,6 +1,6 @@
+ /*
+  * Copyright (C) 2008 The Android Open Source Project
+- * Copyright (C) 2012-2013 Freescale Semiconductor, Inc.
++ * Copyright (C) 2012-2014 Freescale Semiconductor, Inc.
+  *
+  * Licensed under the Apache License, Version 2.0 (the "License");
+  * you may not use this file except in compliance with the License.
+@@ -117,6 +117,13 @@ status_t Ov5640::initParameters(CameraParameters& params,
+ 			{
+ 				continue;
+ 			}
++
++            //Omit 176x144, since cts verifier, "Camera Video" test will use 176x144 for camera.
++            //But 320x240 for SoftAVCEncoder, will not pass
++            if((vid_frmsize.discrete.width == 176) && (vid_frmsize.discrete.height == 144))
++			{
++				continue;
++			}
+ #endif
+             memset(&vid_frmval, 0, sizeof(struct v4l2_frmivalenum));
+             vid_frmval.index        = 0;
+-- 
+1.8.0
+

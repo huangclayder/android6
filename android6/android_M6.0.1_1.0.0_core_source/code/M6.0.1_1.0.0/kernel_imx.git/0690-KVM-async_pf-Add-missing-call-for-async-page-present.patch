@@ -1,0 +1,33 @@
+From f366cc9fadfc675185b24fcd0819e933a3021697 Mon Sep 17 00:00:00 2001
+From: Dominik Dingel <dingel@linux.vnet.ibm.com>
+Date: Fri, 31 Jan 2014 14:32:46 +0100
+Subject: [PATCH] KVM: async_pf: Add missing call for async page present
+
+Commit KVM: async_pf: Provide additional direct page notification
+missed the call from kvm_check_async_pf_completion to the new introduced function.
+
+Reported-by: Paolo Bonzini <pbonzini@redhat.com>
+Signed-off-by: Dominik Dingel <dingel@linux.vnet.ibm.com>
+Signed-off-by: Paolo Bonzini <pbonzini@redhat.com>
+(cherry picked from commit 1179ba539541347d5427cde8bcfdaa5ead14f3aa)
+Signed-off-by: Christoffer Dall <christoffer.dall@linaro.org>
+---
+ virt/kvm/async_pf.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/virt/kvm/async_pf.c b/virt/kvm/async_pf.c
+index 889aad0..10df100 100644
+--- a/virt/kvm/async_pf.c
++++ b/virt/kvm/async_pf.c
+@@ -151,7 +151,7 @@ void kvm_check_async_pf_completion(struct kvm_vcpu *vcpu)
+ 		spin_unlock(&vcpu->async_pf.lock);
+ 
+ 		kvm_arch_async_page_ready(vcpu, work);
+-		kvm_arch_async_page_present(vcpu, work);
++		kvm_async_page_present_async(vcpu, work);
+ 
+ 		list_del(&work->queue);
+ 		vcpu->async_pf.queued--;
+-- 
+1.8.0
+

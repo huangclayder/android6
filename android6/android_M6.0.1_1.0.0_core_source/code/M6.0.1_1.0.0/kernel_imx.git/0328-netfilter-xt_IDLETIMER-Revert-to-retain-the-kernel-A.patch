@@ -1,0 +1,52 @@
+From 18e70837448613dcab07aa601ea567cc48425a65 Mon Sep 17 00:00:00 2001
+From: Ashish Sharma <ashishsharma@google.com>
+Date: Wed, 5 Feb 2014 01:50:50 +0000
+Subject: [PATCH] netfilter: xt_IDLETIMER: Revert to retain the kernel API
+ format.
+
+Reverted Change-Id: Iaeca5dd2d7878c0733923ae03309a2a7b86979ca
+
+Change-Id: I0e0a4f60ec14330d8d8d1c5a508fa058d9919e07
+Signed-off-by: Ashish Sharma <ashishsharma@google.com>
+(cherry picked from commit e0a4e5b0e808d718dd9af500c5754118fc3935db)
+---
+ net/netfilter/xt_IDLETIMER.c | 12 ++++++------
+ 1 file changed, 6 insertions(+), 6 deletions(-)
+
+diff --git a/net/netfilter/xt_IDLETIMER.c b/net/netfilter/xt_IDLETIMER.c
+index f4ba863..df91e26 100644
+--- a/net/netfilter/xt_IDLETIMER.c
++++ b/net/netfilter/xt_IDLETIMER.c
+@@ -68,15 +68,15 @@ static DEFINE_MUTEX(list_mutex);
+ 
+ static struct kobject *idletimer_tg_kobj;
+ 
+-static void notify_netlink_uevent(const char *label, struct idletimer_tg *timer)
++static void notify_netlink_uevent(const char *iface, struct idletimer_tg *timer)
+ {
+-	char label_msg[NLMSG_MAX_SIZE];
++	char iface_msg[NLMSG_MAX_SIZE];
+ 	char state_msg[NLMSG_MAX_SIZE];
+-	char *envp[] = { label_msg, state_msg, NULL };
++	char *envp[] = { iface_msg, state_msg, NULL };
+ 	int res;
+ 
+-	res = snprintf(label_msg, NLMSG_MAX_SIZE, "LABEL=%s",
+-		       label);
++	res = snprintf(iface_msg, NLMSG_MAX_SIZE, "INTERFACE=%s",
++		       iface);
+ 	if (NLMSG_MAX_SIZE <= res) {
+ 		pr_err("message too long (%d)", res);
+ 		return;
+@@ -87,7 +87,7 @@ static void notify_netlink_uevent(const char *label, struct idletimer_tg *timer)
+ 		pr_err("message too long (%d)", res);
+ 		return;
+ 	}
+-	pr_debug("putting nlmsg: <%s> <%s>\n", label_msg, state_msg);
++	pr_debug("putting nlmsg: <%s> <%s>\n", iface_msg, state_msg);
+ 	kobject_uevent_env(idletimer_tg_kobj, KOBJ_CHANGE, envp);
+ 	return;
+ 
+-- 
+1.8.0
+

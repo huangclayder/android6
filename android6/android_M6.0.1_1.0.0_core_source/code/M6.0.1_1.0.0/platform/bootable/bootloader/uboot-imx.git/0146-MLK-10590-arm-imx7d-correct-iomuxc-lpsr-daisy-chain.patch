@@ -1,0 +1,37 @@
+From 14e6dbd23aae92c7000cc47c7cb52fbdf3173d43 Mon Sep 17 00:00:00 2001
+From: Adrian Alonso <aalonso@freescale.com>
+Date: Mon, 6 Apr 2015 10:00:57 -0500
+Subject: [PATCH] MLK-10590: arm :imx7d: correct iomuxc-lpsr daisy chain
+
+* Correct daisy chain settings for LPSR iomux controller
+* Add IOMUX_LPSR_SEL_INPUT_OFS only when pad is identified
+  to be part of lpsr-iomuxc domain
+
+Signed-off-by: Adrian Alonso <aalonso@freescale.com>
+Signed-off-by: Nitin Garg <nitin.garg@freescale.com>
+(cherry picked from commit e4fd6550b3e5458aaf5049a7e6a12d6e4443c53a)
+---
+ arch/arm/imx-common/iomux-v3.c | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/arch/arm/imx-common/iomux-v3.c b/arch/arm/imx-common/iomux-v3.c
+index caea52e..3188546 100644
+--- a/arch/arm/imx-common/iomux-v3.c
++++ b/arch/arm/imx-common/iomux-v3.c
+@@ -47,10 +47,10 @@ void imx_iomux_v3_setup_pad(iomux_v3_cfg_t pad)
+ 	if (lpsr == IOMUX_CONFIG_LPSR) {
+ 		base = (void *)IOMUXC_LPSR_BASE_ADDR;
+ 		mux_mode &= ~IOMUX_CONFIG_LPSR;
++		/* set daisy chain sel_input */
++		if (sel_input_ofs)
++			sel_input_ofs += IOMUX_LPSR_SEL_INPUT_OFS;
+ 	}
+-
+-	if (sel_input_ofs)
+-		sel_input_ofs += IOMUX_LPSR_SEL_INPUT_OFS;
+ #endif
+ 
+ 	__raw_writel(mux_mode, base + mux_ctrl_ofs);
+-- 
+1.8.0
+

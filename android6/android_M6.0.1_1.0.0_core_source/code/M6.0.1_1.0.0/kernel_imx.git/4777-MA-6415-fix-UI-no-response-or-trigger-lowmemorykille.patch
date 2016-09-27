@@ -1,0 +1,45 @@
+From d05132b00605bb3b465a983690d7fd2854f6227c Mon Sep 17 00:00:00 2001
+From: b37945 <b37945@freescale.com>
+Date: Fri, 25 Jul 2014 16:59:31 +0800
+Subject: [PATCH] MA-6415 fix UI no response or trigger lowmemorykiller
+ easily.
+
+The root cause is CMA memory configured to be too large.
+So system memory is exhausted easily, but it can't trigger lowmemorykiller.
+The first step to resolve this is change CMA memory to 384M.
+Then reduce CMA pages from free pages when allocate non-movable memory.
+Low down minfree to half because it is only for non-movable memory.
+
+Signed-off-by: b37945 <b37945@freescale.com>
+---
+ drivers/staging/android/lowmemorykiller.c | 8 ++++++++
+ 1 file changed, 8 insertions(+)
+
+diff --git a/drivers/staging/android/lowmemorykiller.c b/drivers/staging/android/lowmemorykiller.c
+index 89fed36..8f5f33c 100644
+--- a/drivers/staging/android/lowmemorykiller.c
++++ b/drivers/staging/android/lowmemorykiller.c
+@@ -90,12 +90,20 @@ static unsigned long lowmem_scan(struct shrinker *s, struct shrink_control *sc)
+ 	int other_file = global_page_state(NR_FILE_PAGES) -
+ 						global_page_state(NR_SHMEM);
+ 
++	/*reduce CMA pages from free pages when allocate non-movable memory.*/
++	if (allocflags_to_migratetype(sc->gfp_mask) != MIGRATE_MOVABLE)
++		other_free = other_free - global_page_state(NR_FREE_CMA_PAGES);
++
+ 	if (lowmem_adj_size < array_size)
+ 		array_size = lowmem_adj_size;
+ 	if (lowmem_minfree_size < array_size)
+ 		array_size = lowmem_minfree_size;
+ 	for (i = 0; i < array_size; i++) {
+ 		minfree = lowmem_minfree[i];
++		/*low down minfree to half when allocate non-movable memory.*/
++		if (allocflags_to_migratetype(sc->gfp_mask) != MIGRATE_MOVABLE)
++			minfree = minfree / 2;
++
+ 		if (other_free < minfree && other_file < minfree) {
+ 			min_score_adj = lowmem_adj[i];
+ 			break;
+-- 
+1.8.0
+

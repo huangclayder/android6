@@ -1,0 +1,38 @@
+From a8a9f184df293d3a218ba9508990745b27f67f04 Mon Sep 17 00:00:00 2001
+From: Liu Xiaowen <xiaowen.liu@freescale.com>
+Date: Wed, 8 Apr 2015 15:02:18 +0800
+Subject: [PATCH 33/45] MA-6392 fix Presentation cause windowmanager crash
+ when disconnect WFD.
+
+The root cause is when remove wifi display, the presention window removing
+will create new DisplayAnimationContent.
+And WindowAnimation depends on DisplayAnimationContent to count display number.
+This logic is added by fixing ENGR00303803.
+Add new code to fix ENGR00303803.
+
+Signed-off-by: Liu Xiaowen <xiaowen.liu@freescale.com>
+
+Conflicts:
+	services/core/java/com/android/server/wm/WindowManagerService.java
+
+Change-Id: I97a6208f4585a2adb8ad4f57dc70af16d524fe01
+---
+ services/core/java/com/android/server/wm/TaskStack.java | 2 --
+ 1 file changed, 2 deletions(-)
+
+diff --git a/services/core/java/com/android/server/wm/TaskStack.java b/services/core/java/com/android/server/wm/TaskStack.java
+index ac8f452..985bbfb 100644
+--- a/services/core/java/com/android/server/wm/TaskStack.java
++++ b/services/core/java/com/android/server/wm/TaskStack.java
+@@ -461,8 +461,6 @@ public class TaskStack {
+     }
+ 
+     boolean isDimming(WindowStateAnimator winAnimator) {
+-        mService.mAnimator.getScreenRotationAnimationLocked(
+-                             winAnimator.mWin.getDisplayId());
+         return mDimWinAnimator == winAnimator && mDimLayer.isDimming();
+     }
+ 
+-- 
+1.8.0
+

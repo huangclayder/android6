@@ -1,0 +1,33 @@
+From ba6cfa16706c8716a9c2a876633434196c0bcaaa Mon Sep 17 00:00:00 2001
+From: Shenwei Wang <shenwei.wang@freescale.com>
+Date: Mon, 16 Feb 2015 10:27:37 -0600
+Subject: [PATCH] MLK-10210 WIFI: ath6kl: Fixed the issue that warning
+ messages were printed when uninstalling ath6kl_sdio after
+ iperf test.
+
+When handing the command "ifconfig wlan0 down", the driver handler did
+not notify the disconnected event to the upper layer stack cfg80211,
+which would cause the relating resources unable to be released. A
+notification of disconnet event to cfg80211 was added when the driver
+was changed to the disconnect state.
+
+Signed-off-by: Shenwei Wang <shenwei.wang@freescale.com>
+---
+ drivers/net/wireless/ath/ath6kl/cfg80211.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/drivers/net/wireless/ath/ath6kl/cfg80211.c b/drivers/net/wireless/ath/ath6kl/cfg80211.c
+index fd4c89d..56d9bed 100644
+--- a/drivers/net/wireless/ath/ath6kl/cfg80211.c
++++ b/drivers/net/wireless/ath/ath6kl/cfg80211.c
+@@ -845,6 +845,7 @@ static int ath6kl_cfg80211_disconnect(struct wiphy *wiphy,
+ 	up(&ar->sem);
+ 
+ 	vif->sme_state = SME_DISCONNECTED;
++	cfg80211_disconnected(vif->ndev, 0, NULL, 0, GFP_KERNEL);
+ 
+ 	return 0;
+ }
+-- 
+1.8.0
+

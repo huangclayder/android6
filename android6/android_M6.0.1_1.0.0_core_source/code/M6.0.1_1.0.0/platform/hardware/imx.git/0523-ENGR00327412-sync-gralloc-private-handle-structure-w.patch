@@ -1,0 +1,41 @@
+From a7504875b499778153ae69b47721b2eeb87decec Mon Sep 17 00:00:00 2001
+From: b37945 <b37945@freescale.com>
+Date: Wed, 20 Aug 2014 14:54:28 +0800
+Subject: [PATCH 523/635] ENGR00327412 sync gralloc private handle structure
+ with Vivante.
+
+Add usage, stride and more reserved space to private_handle_t.
+In order to align with Vivante.
+Correct sNumInts and sMagic.
+
+Signed-off-by: b37945 <b37945@freescale.com>
+---
+ mx6/libgralloc_wrapper/gralloc_priv.h | 9 +++++----
+ 1 file changed, 5 insertions(+), 4 deletions(-)
+
+diff --git a/mx6/libgralloc_wrapper/gralloc_priv.h b/mx6/libgralloc_wrapper/gralloc_priv.h
+index 8f9e461..522c0a2 100755
+--- a/mx6/libgralloc_wrapper/gralloc_priv.h
++++ b/mx6/libgralloc_wrapper/gralloc_priv.h
+@@ -93,13 +93,14 @@ struct private_handle_t {
+     int  height;
+     int  pid;
+ 
+-    //usage;
+-    //stride;
++    int  usage;
++    int  stride;
++    int  reserved[4];
+ 
+ #ifdef __cplusplus
+-    static const int sNumInts = 34;
++    static const int sNumInts = 16;
+     static const int sNumFds = 1;
+-    static const int sMagic = 0x3141592;//'pgpu';
++    static const int sMagic = 'pgpu';
+ 
+     private_handle_t(int fd, int size, int flags) :
+         fd(fd), magic(sMagic), flags(flags), size(size), offset(0),
+-- 
+1.8.0
+

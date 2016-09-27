@@ -1,0 +1,44 @@
+From b4e16baeec22a7741f8a337c1d1aea9ea4d916f6 Mon Sep 17 00:00:00 2001
+From: zhang sanshan <b51434@freescale.com>
+Date: Wed, 28 Oct 2015 12:20:31 +0800
+Subject: [PATCH 552/602] MA-7098 Upgrade android to Mashmallow
+
+build error when compile sabreauto full nand image.
+system.img is larger then 360M.
+enlarge nand system image to 360+64M.
+
+Signed-off-by: zhang sanshan <b51434@freescale.com>
+---
+ sabreauto_6q/ubi/ubinize.ini  | 2 +-
+ sabreauto_6sx/ubi/ubinize.ini | 2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/sabreauto_6q/ubi/ubinize.ini b/sabreauto_6q/ubi/ubinize.ini
+index bbb69a9..abc5514 100644
+--- a/sabreauto_6q/ubi/ubinize.ini
++++ b/sabreauto_6q/ubi/ubinize.ini
+@@ -2,7 +2,7 @@
+ mode=ubi
+ image=./out/target/product/sabreauto_6q/system.img
+ vol_id=0
+-vol_size=360MiB
++vol_size=424MiB
+ vol_type=dynamic
+ vol_name=system
+ vol_alignment=1
+diff --git a/sabreauto_6sx/ubi/ubinize.ini b/sabreauto_6sx/ubi/ubinize.ini
+index 4619e28..4acf6a8 100644
+--- a/sabreauto_6sx/ubi/ubinize.ini
++++ b/sabreauto_6sx/ubi/ubinize.ini
+@@ -2,7 +2,7 @@
+ mode=ubi
+ image=./out/target/product/sabreauto_6sx/system.img
+ vol_id=0
+-vol_size=360MiB
++vol_size=424MiB
+ vol_type=dynamic
+ vol_name=system
+ vol_alignment=1
+-- 
+1.8.0
+

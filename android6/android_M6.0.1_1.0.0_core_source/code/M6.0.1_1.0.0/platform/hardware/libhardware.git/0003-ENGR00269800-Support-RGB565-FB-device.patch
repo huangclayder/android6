@@ -1,0 +1,29 @@
+From 05dd17d3ed0454d1765e5f2b01843eb05430fefd Mon Sep 17 00:00:00 2001
+From: "guoyin.chen" <guoyin.chen@freescale.com>
+Date: Mon, 9 Nov 2015 14:43:51 +0800
+Subject: [PATCH 3/6] ENGR00269800 Support RGB565 FB device
+
+Add HWC_DISPLAY_FORMAT for HWC::queryDisplayProperties() to
+get the FB Device's format
+
+Signed-off-by: guoyin.chen <guoyin.chen@freescale.com>
+---
+ include/hardware/hwcomposer_defs.h | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/include/hardware/hwcomposer_defs.h b/include/hardware/hwcomposer_defs.h
+index a19a26c..48f2087 100644
+--- a/include/hardware/hwcomposer_defs.h
++++ b/include/hardware/hwcomposer_defs.h
+@@ -196,6 +196,8 @@ enum {
+     /* Indicates which of the vendor-defined color transforms is provided by
+      * this configuration. */
+     HWC_DISPLAY_COLOR_TRANSFORM             = 6,
++
++    HWC_DISPLAY_FORMAT                      = 7,
+ };
+ 
+ /* Allowed events for hwc_methods::eventControl() */
+-- 
+1.8.0
+

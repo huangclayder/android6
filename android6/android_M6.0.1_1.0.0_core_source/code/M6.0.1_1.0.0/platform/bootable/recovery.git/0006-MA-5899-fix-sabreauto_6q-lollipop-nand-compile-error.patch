@@ -1,0 +1,39 @@
+From 58323ee8e8b8e8adae8789e69577a0a8e1a1c2c0 Mon Sep 17 00:00:00 2001
+From: zhang sanshan <b51434@freescale.com>
+Date: Tue, 25 Nov 2014 17:01:15 +0800
+Subject: [PATCH 06/21] MA-5899 fix sabreauto_6q lollipop nand compile error
+
+be lack of cryptfs.h when compile lollipop nand on sabreauto_6q
+fatal error: cryptfs.h: No such file or directory
+
+Signed-off-by: zhang sanshan <b51434@freescale.com>
+
+Conflicts:
+	Android.mk
+---
+ Android.mk | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/Android.mk b/Android.mk
+index dfa0d59..9b299b2 100644
+--- a/Android.mk
++++ b/Android.mk
+@@ -82,13 +82,13 @@ LOCAL_STATIC_LIBRARIES := \
+ 
+ ifeq ($(TARGET_USERIMAGES_USE_EXT4), true)
+     LOCAL_CFLAGS += -DUSE_EXT4
+-    LOCAL_C_INCLUDES += system/extras/ext4_utils
++    LOCAL_C_INCLUDES += system/extras/ext4_utils 
+     LOCAL_STATIC_LIBRARIES += libext4_utils_static libz
+ endif
+ 
+ LOCAL_MODULE_PATH := $(TARGET_RECOVERY_ROOT_OUT)/sbin
+ LOCAL_CFLAGS += -DUSE_UBIFS
+-LOCAL_C_INCLUDES += external/mtd-utils/new-utils/include/
++LOCAL_C_INCLUDES += external/mtd-utils/new-utils/include/ system/vold
+ LOCAL_STATIC_LIBRARIES += libubi
+ LOCAL_SRC_FILES += ubi.cpp
+ 
+-- 
+1.8.0
+

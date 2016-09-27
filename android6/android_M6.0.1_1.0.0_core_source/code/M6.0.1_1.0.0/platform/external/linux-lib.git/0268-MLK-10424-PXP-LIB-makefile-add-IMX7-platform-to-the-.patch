@@ -1,0 +1,30 @@
+From df05355cf5b653aa9812f9111994e88254680d16 Mon Sep 17 00:00:00 2001
+From: Fancy Fang <chen.fang@freescale.com>
+Date: Fri, 13 Mar 2015 17:42:24 +0800
+Subject: [PATCH 268/280] MLK-10424 PXP-LIB: makefile: add IMX7 platform to
+ the build list
+
+Add IMX7 to the 'INCLUDE_LIST' in Makefile to make
+this library can be built on IMX7D platform.
+
+Signed-off-by: Fancy Fang <chen.fang@freescale.com>
+---
+ pxp/Makefile | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/pxp/Makefile b/pxp/Makefile
+index a1e7200..2d4938d 100644
+--- a/pxp/Makefile
++++ b/pxp/Makefile
+@@ -3,7 +3,7 @@ AR ?=$(CROSS_COMPILE)ar
+ CFLAGS ?=-O2
+ 
+ # list of platforms which want this test case
+-INCLUDE_LIST:=IMX50 IMX51 IMX5 IMX6Q IMX6S
++INCLUDE_LIST:=IMX50 IMX51 IMX5 IMX6Q IMX6S IMX7
+ 
+ OBJ = pxp_lib.o
+ 
+-- 
+1.8.0
+

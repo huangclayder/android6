@@ -1,0 +1,48 @@
+From 68824c13c3606e9400c1a302ba38c009e915a64d Mon Sep 17 00:00:00 2001
+From: "Ye.Li" <B37916@freescale.com>
+Date: Mon, 1 Jun 2015 12:01:40 +0800
+Subject: [PATCH] MLK-11008 imx: HAB: Fix secure boot configuration and build
+ issue
+
+1. There is conflict when building secure boot, because some common
+codes for MPC are included by using same configuration. So modify the
+makefile to get rid of them.
+
+2. The 6UL arch config is missed in hab.h. Fix this issue by using
+the CONFIG_ROM_UNIFIED_SECTIONS.
+
+Signed-off-by: Ye.Li <B37916@freescale.com>
+---
+ arch/arm/include/asm/arch-mx6/hab.h | 2 +-
+ board/freescale/common/Makefile     | 2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/arch/arm/include/asm/arch-mx6/hab.h b/arch/arm/include/asm/arch-mx6/hab.h
+index 57f6cba..38d817a 100644
+--- a/arch/arm/include/asm/arch-mx6/hab.h
++++ b/arch/arm/include/asm/arch-mx6/hab.h
+@@ -53,7 +53,7 @@ typedef void *hab_rvt_authenticate_image_t(uint8_t, ptrdiff_t,
+ 		void **, size_t *, hab_loader_callback_f_t);
+ typedef void hapi_clock_init_t(void);
+ 
+-#if defined(CONFIG_MX6SX)
++#ifdef CONFIG_ROM_UNIFIED_SECTIONS
+ #define HAB_RVT_BASE			0x00000100
+ #else
+ #define HAB_RVT_BASE			0x00000094
+diff --git a/board/freescale/common/Makefile b/board/freescale/common/Makefile
+index c9d4250..3e8fa26 100644
+--- a/board/freescale/common/Makefile
++++ b/board/freescale/common/Makefile
+@@ -77,7 +77,7 @@ obj-$(CONFIG_P5040DS)	+= p_corenet/
+ obj-$(CONFIG_LS102XA_NS_ACCESS)	+= ns_access.o
+ 
+ ifdef CONFIG_SECURE_BOOT
+-obj-y += fsl_validate.o
++obj-$(CONFIG_CMD_ESBC_VALIDATE) += fsl_validate.o
+ obj-$(CONFIG_CMD_ESBC_VALIDATE) += cmd_esbc_validate.o
+ endif
+ 
+-- 
+1.8.0
+

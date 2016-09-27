@@ -1,0 +1,173 @@
+From 74428d2f0d5ba91383ae1d4420b819c08e64e710 Mon Sep 17 00:00:00 2001
+From: Ye Li <ye.li@nxp.com>
+Date: Wed, 2 Mar 2016 11:18:01 +0800
+Subject: [PATCH] MLK-12483-5 mx6ul: Enable module fuse check EVK board and
+ DDR3 ARM2 board
+
+Enable the configurations CONFIG_MODULE_FUSE and CONFIG_OF_SYSTEM_SETUP for
+module fuse check. And modify board level codes for SD, FEC and EIM.
+
+Signed-off-by: Ye Li <ye.li@nxp.com>
+---
+ .../mx6ul_14x14_ddr3_arm2/mx6ul_14x14_ddr3_arm2.c  | 31 +++++++++++++++++++++-
+ board/freescale/mx6ul_14x14_evk/mx6ul_14x14_evk.c  | 15 ++++++++++-
+ include/configs/mx6ul_14x14_ddr3_arm2.h            |  2 ++
+ include/configs/mx6ul_14x14_evk.h                  |  3 +++
+ 4 files changed, 49 insertions(+), 2 deletions(-)
+
+diff --git a/board/freescale/mx6ul_14x14_ddr3_arm2/mx6ul_14x14_ddr3_arm2.c b/board/freescale/mx6ul_14x14_ddr3_arm2/mx6ul_14x14_ddr3_arm2.c
+index 0751829..765d5cc 100644
+--- a/board/freescale/mx6ul_14x14_ddr3_arm2/mx6ul_14x14_ddr3_arm2.c
++++ b/board/freescale/mx6ul_14x14_ddr3_arm2/mx6ul_14x14_ddr3_arm2.c
+@@ -339,10 +339,25 @@ static void eimnor_cs_setup(void)
+ 
+ static void setup_eimnor(void)
+ {
++	if (check_module_fused(MX6_MODULE_EIM)) {
++		printf("WEIM@0x%x is fused, disable it\n", WEIM_BASE_ADDR);
++		return;
++	}
++
+ 	imx_iomux_v3_setup_multiple_pads(eimnor_pads, ARRAY_SIZE(eimnor_pads));
+ 
+ 	eimnor_cs_setup();
+ }
++
++int board_flash_wp_on(void)
++{
++	if (check_module_fused(MX6_MODULE_EIM)) {
++		return 1; /* Skip flash init */
++	}
++
++	return 0;
++}
++
+ #endif
+ 
+ #ifdef CONFIG_FEC_MXC
+@@ -489,11 +504,17 @@ int mmc_get_env_devno(void)
+ 	/* BOOT_CFG2[3] and BOOT_CFG2[4] */
+ 	dev_no = (soc_sbmr & 0x00001800) >> 11;
+ 
++	if (dev_no == 1 && mx6_esdhc_fused(USDHC1_BASE_ADDR))
++		dev_no = 0;
++
+ 	return dev_no;
+ }
+ 
+ int mmc_map_to_kernel_blk(int dev_no)
+ {
++	if (dev_no == 0 && mx6_esdhc_fused(USDHC1_BASE_ADDR))
++		dev_no = 1;
++	
+ 	return dev_no;
+ }
+ 
+@@ -532,7 +553,7 @@ int board_mmc_init(bd_t *bis)
+ 	 */
+ 	for (i = 0; i < CONFIG_SYS_FSL_USDHC_NUM; i++) {
+ 		switch (i) {
+-		case 0:
++		case 0:			
+ #ifdef CONFIG_MX6UL_DDR3_ARM2_EMMC_REWORK
+ 			imx_iomux_v3_setup_multiple_pads(
+ 				usdhc1_emmc_pads, ARRAY_SIZE(usdhc1_emmc_pads));
+@@ -735,6 +756,10 @@ static int setup_fec(int fec_id)
+ 	int ret;
+ 
+ 	if (0 == fec_id) {
++		if (check_module_fused(MX6_MODULE_ENET1)) {
++			return -1;
++		}
++		
+ 		/*
+ 		 * Use 50M anatop loopback REF_CLK1 for ENET1,
+ 		 * clear gpr1[13], set gpr1[17]
+@@ -746,6 +771,10 @@ static int setup_fec(int fec_id)
+ 			return ret;
+ 
+ 	} else {
++		if (check_module_fused(MX6_MODULE_ENET2)) {
++			return -1;
++		}
++	
+ 		/* clk from phy, set gpr1[14], clear gpr1[18]*/
+ 		clrsetbits_le32(&iomuxc_gpr_regs->gpr[1], IOMUX_GPR1_FEC2_MASK,
+ 				IOMUX_GPR1_FEC2_CLOCK_MUX2_SEL_MASK);
+diff --git a/board/freescale/mx6ul_14x14_evk/mx6ul_14x14_evk.c b/board/freescale/mx6ul_14x14_evk/mx6ul_14x14_evk.c
+index b5c3374..01f5699 100644
+--- a/board/freescale/mx6ul_14x14_evk/mx6ul_14x14_evk.c
++++ b/board/freescale/mx6ul_14x14_evk/mx6ul_14x14_evk.c
+@@ -488,11 +488,17 @@ int mmc_get_env_devno(void)
+ 	/* BOOT_CFG2[3] and BOOT_CFG2[4] */
+ 	dev_no = (soc_sbmr & 0x00001800) >> 11;
+ 
++	if (dev_no == 1 && mx6_esdhc_fused(USDHC1_BASE_ADDR))
++		dev_no = 0;
++
+ 	return dev_no;
+ }
+ 
+ int mmc_map_to_kernel_blk(int dev_no)
+ {
++	if (dev_no == 0 && mx6_esdhc_fused(USDHC1_BASE_ADDR))
++		dev_no = 1;
++	
+ 	return dev_no;
+ }
+ 
+@@ -570,7 +576,6 @@ int board_mmc_init(bd_t *bis)
+ 			ret = fsl_esdhc_initialize(bis, &usdhc_cfg[i]);
+ 			if (ret) {
+ 				printf("Warning: failed to initialize mmc dev %d\n", i);
+-				return ret;
+ 			}
+ 	}
+ 
+@@ -750,10 +755,18 @@ static int setup_fec(int fec_id)
+ 	int ret;
+ 
+ 	if (0 == fec_id) {
++		if (check_module_fused(MX6_MODULE_ENET1)) {
++			return -1;
++		}
++		
+ 		/* Use 50M anatop loopback REF_CLK1 for ENET1, clear gpr1[13], set gpr1[17]*/
+ 		clrsetbits_le32(&iomuxc_gpr_regs->gpr[1], IOMUX_GPR1_FEC1_MASK,
+ 				IOMUX_GPR1_FEC1_CLOCK_MUX1_SEL_MASK);
+ 	} else {
++		if (check_module_fused(MX6_MODULE_ENET2)) {
++			return -1;
++		}
++		
+ 		/* Use 50M anatop loopback REF_CLK2 for ENET2, clear gpr1[14], set gpr1[18]*/
+ 		clrsetbits_le32(&iomuxc_gpr_regs->gpr[1], IOMUX_GPR1_FEC2_MASK,
+ 				IOMUX_GPR1_FEC2_CLOCK_MUX1_SEL_MASK);
+diff --git a/include/configs/mx6ul_14x14_ddr3_arm2.h b/include/configs/mx6ul_14x14_ddr3_arm2.h
+index 8b0b4ba..badad3d 100644
+--- a/include/configs/mx6ul_14x14_ddr3_arm2.h
++++ b/include/configs/mx6ul_14x14_ddr3_arm2.h
+@@ -71,4 +71,6 @@
+ #define CONFIG_FEC_DMA_MINALIGN		64
+ #endif
+ 
++#define CONFIG_MODULE_FUSE
++#define CONFIG_OF_SYSTEM_SETUP
+ #endif
+diff --git a/include/configs/mx6ul_14x14_evk.h b/include/configs/mx6ul_14x14_evk.h
+index d87a4d8..edeac03 100644
+--- a/include/configs/mx6ul_14x14_evk.h
++++ b/include/configs/mx6ul_14x14_evk.h
+@@ -423,6 +423,9 @@
+ #define CONFIG_USB_MAX_CONTROLLER_COUNT 2
+ #endif
+ 
++#define CONFIG_MODULE_FUSE
++#define CONFIG_OF_SYSTEM_SETUP
++
+ #if defined(CONFIG_ANDROID_SUPPORT)
+ #include "mx6ul_14x14_evk_android.h"
+ #endif
+-- 
+1.8.0
+

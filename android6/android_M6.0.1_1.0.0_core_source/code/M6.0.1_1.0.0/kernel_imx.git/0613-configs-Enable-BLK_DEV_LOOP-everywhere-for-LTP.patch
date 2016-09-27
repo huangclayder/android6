@@ -1,0 +1,22 @@
+From e35f5cb81d80f588b1ee9834ed860b4002a3a2e5 Mon Sep 17 00:00:00 2001
+From: Mark Brown <broonie@linaro.org>
+Date: Tue, 5 Aug 2014 14:16:56 +0100
+Subject: [PATCH] configs: Enable BLK_DEV_LOOP everywhere for LTP
+
+Signed-off-by: Mark Brown <broonie@linaro.org>
+---
+ linaro/configs/linaro-base.conf | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/linaro/configs/linaro-base.conf b/linaro/configs/linaro-base.conf
+index 1cdf0ba..eb9fe26 100644
+--- a/linaro/configs/linaro-base.conf
++++ b/linaro/configs/linaro-base.conf
+@@ -113,3 +113,4 @@ CONFIG_SECURITY_NETWORK=y
+ CONFIG_LSM_MMAP_MIN_ADDR=4096
+ CONFIG_SECURITY_SELINUX=y
+ CONFIG_EXT4_FS_SECURITY=y
++CONFIG_BLK_DEV_LOOP=y
+-- 
+1.8.0
+

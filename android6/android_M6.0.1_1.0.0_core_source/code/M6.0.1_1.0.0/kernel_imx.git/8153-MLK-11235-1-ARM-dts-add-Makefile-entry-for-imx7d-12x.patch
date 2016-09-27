@@ -1,0 +1,28 @@
+From 6b824d9a021c8f4239f07c59cd7590c08ff7389e Mon Sep 17 00:00:00 2001
+From: Peter Chen <peter.chen@freescale.com>
+Date: Fri, 10 Jul 2015 15:28:57 +0800
+Subject: [PATCH] MLK-11235-1 ARM: dts: add Makefile entry for
+ imx7d-12x12-ddr3-arm2
+
+Add Makefile entry for imx7d-12x12-ddr3-arm2.
+
+Signed-off-by: Peter Chen <peter.chen@freescale.com>
+---
+ arch/arm/boot/dts/Makefile | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/arch/arm/boot/dts/Makefile b/arch/arm/boot/dts/Makefile
+index eb7f712..aa80c44 100644
+--- a/arch/arm/boot/dts/Makefile
++++ b/arch/arm/boot/dts/Makefile
+@@ -232,6 +232,7 @@ dtb-$(CONFIG_ARCH_MXC) += \
+ 	imx6sx-sdb-m4.dtb \
+ 	vf610-twr.dtb \
+ 	imx7d-12x12-lpddr3-arm2.dtb \
++	imx7d-12x12-ddr3-arm2.dtb \
+ 	imx7d-12x12-lpddr3-arm2-ecspi.dtb \
+ 	imx7d-12x12-lpddr3-arm2-enet.dtb \
+ 	imx7d-12x12-lpddr3-arm2-flexcan.dtb \
+-- 
+1.8.0
+

@@ -1,0 +1,87 @@
+From 97f80cfa18f35000aea9575cec9e617b1d5a79ad Mon Sep 17 00:00:00 2001
+From: Haoran Wang <b50027@freescale.com>
+Date: Tue, 5 May 2015 10:56:22 +0800
+Subject: [PATCH 484/602] MA-6376 Enable sensors on sabresd_7d
+
+Use sensor fusion as the deamon.
+Modify permissions for the device sysfs.
+
+Signed-off-by: Haoran Wang <b50027@freescale.com>
+---
+ imx7/etc/ueventd.freescale.rc | 14 ++++++++++++++
+ imx7/imx7.mk                  |  1 +
+ sabresd_7d/BoardConfig.mk     |  2 +-
+ sabresd_7d/init.rc            |  7 +++++++
+ 4 files changed, 23 insertions(+), 1 deletion(-)
+
+diff --git a/imx7/etc/ueventd.freescale.rc b/imx7/etc/ueventd.freescale.rc
+index a666615..bb19df8 100644
+--- a/imx7/etc/ueventd.freescale.rc
++++ b/imx7/etc/ueventd.freescale.rc
+@@ -24,6 +24,20 @@
+ /dev/mma8x5x              0640   compass     system
+ /dev/caam_kb              0660   system     system
+ 
++#sensors sysfs
++/sys/class/misc/Freescale*          name        0660  root   input
++/sys/class/misc/Freescale*          max         0660  root   input
++/sys/class/misc/Freescale*          min         0660  root   input
++/sys/class/misc/Freescale*          poll        0660  root   input
++/sys/class/misc/Freescale*          enable      0660  root   input
++/sys/class/misc/Freescale*          position    0660  root   input
++/sys/class/misc/Freescale*          poll_delay  0660  root   input
++/sys/class/misc/Freescale*          fifo        0660  root   input
++/dev/FreescaleAccelerometer                     0660  system input
++/dev/FreescaleMagnetometer                      0660  system input
++/dev/FreescaleGyroscope                         0660  system input
++
++
+ # sysfs properties
+ /sys/devices/virtual/input/input*   name        0660  root   input
+ /sys/devices/virtual/input/input*   max         0660  root   input
+diff --git a/imx7/imx7.mk b/imx7/imx7.mk
+index 361ee85..9b35fd9 100644
+--- a/imx7/imx7.mk
++++ b/imx7/imx7.mk
+@@ -97,6 +97,7 @@ PRODUCT_PACKAGES += \
+ 	audio.r_submix.default			\
+ 	libbt-vendor				\
+ 	magd                                    \
++	fsl_sensor_fusion
+ 
+ # Bluetooth firmware files.
+ PRODUCT_PACKAGES += \
+diff --git a/sabresd_7d/BoardConfig.mk b/sabresd_7d/BoardConfig.mk
+index aba7250..33ad08b 100644
+--- a/sabresd_7d/BoardConfig.mk
++++ b/sabresd_7d/BoardConfig.mk
+@@ -64,7 +64,7 @@ USE_ATHR_GPS_HARDWARE := false
+ USE_QEMU_GPS_HARDWARE := false
+ 
+ #for accelerator sensor, need to define sensor type here
+-#BOARD_HAS_SENSOR := true
++BOARD_USE_SENSOR_FUSION := true
+ #SENSOR_MMA8451 := true
+ 
+ # for recovery service
+diff --git a/sabresd_7d/init.rc b/sabresd_7d/init.rc
+index ce567c2..77e5430 100644
+--- a/sabresd_7d/init.rc
++++ b/sabresd_7d/init.rc
+@@ -155,6 +155,13 @@ service wpa_supplicant /system/bin/wpa_supplicant \
+     disabled
+     oneshot
+ 
++service sensor_fusion /system/bin/fsl_sensor_fusion
++    class main
++    seclabel u:r:sensors:s0
++    user system
++    group input
++    oneshot
++
+ on fs
+ # mount ext4 partitions
+     mount_all /fstab.freescale
+-- 
+1.8.0
+

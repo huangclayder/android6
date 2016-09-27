@@ -1,0 +1,221 @@
+From b2c0fa1647f2461e4bfacd495443a001e7ba4223 Mon Sep 17 00:00:00 2001
+From: Wang Haoran <b50027@freescale.com>
+Date: Thu, 7 Aug 2014 10:23:51 +0800
+Subject: [PATCH 15/25] ENGR00326131-1 Port Realtek RTL8821AS wifi card
+
+Modify the WiFi HAL layer to support Athores and
+Realtek wifi cards. It will load modules depends
+on the vendor info and device info from the device
+nodes.
+
+Signed-off-by: Wang Haoran <b50027@freescale.com>
+---
+ wifi/wifi_unite.c | 96 +++++++++++++++++++++++++++++++++++++++++++++++--------
+ 1 file changed, 82 insertions(+), 14 deletions(-)
+
+diff --git a/wifi/wifi_unite.c b/wifi/wifi_unite.c
+index ec7d179..f58fd94 100644
+--- a/wifi/wifi_unite.c
++++ b/wifi/wifi_unite.c
+@@ -44,11 +44,20 @@ enum Vendor {
+     ATHEROS = 0x1,
+     REALTEK = 0x2
+ };
++enum RealtekDeviceModel {
++    UNKNOWN_MODEL = -1,
++    RTL8723AS = 0x0,
++    RTL8821AS = 0x1
++};
++enum AthoresDeviceModel {
++    ATHEROS_DEFAULT  = 0
++};
+ #ifndef bool
+ typedef enum { false = 0, true = 1 } bool;
+ #endif
+ 
+-int WifiVendor = REALTEK;
++int WifiVendor = UNKNOWN;
++int WifiModel  = UNKNOWN_MODEL;
+ #ifndef IFNAMSIZ
+ #define IFNAMSIZ 16
+ #endif
+@@ -106,8 +115,10 @@ static char primary_iface[PROPERTY_VALUE_MAX];
+ #define WIFI_COMPAT_MODULE_NAME                  "compat"
+ #define WIFI_COMPAT_MODULE_ARG                   ""
+ 
+-#define WIFI_DRIVER_MODULE_PATH_REALTEK          "/system/lib/modules/8723as.ko"
+-#define WIFI_DRIVER_MODULE_NAME_REALTEK          "8723as"
++#define WIFI_DRIVER_MODULE_PATH_REALTEK_8723AS          "/system/lib/modules/8723as.ko"
++#define WIFI_DRIVER_MODULE_PATH_REALTEK_8821AS          "/system/lib/modules/8821as.ko"
++#define WIFI_DRIVER_MODULE_NAME_REALTEK_8723AS          "8723as"
++#define WIFI_DRIVER_MODULE_NAME_REALTEK_8821AS          "8821as"
+ #define WIFI_DRIVER_MODULE_ARG_REALTEK           "ifname=wlan0 if2name=p2p0"
+ #define WIFI_SDIO_IF_DRIVER_MODULE_PATH_REALTEK  "/system/lib/modules/cfg80211_realtek.ko"
+ 
+@@ -121,9 +132,12 @@ static const char DRIVER_COMPAT_MODULE_NAME[]   = WIFI_COMPAT_MODULE_NAME;
+ static const char DRIVER_COMPAT_MODULE_PATH[]   = WIFI_COMPAT_MODULE_PATH;
+ static const char DRIVER_COMPAT_MODULE_ARG[]    = WIFI_COMPAT_MODULE_ARG;
+ 
+-static const char DRIVER_MODULE_NAME_REALTEK[]      = WIFI_DRIVER_MODULE_NAME_REALTEK;
+-static const char DRIVER_MODULE_TAG_REALTEK[]       = WIFI_DRIVER_MODULE_NAME_REALTEK " ";
+-static const char DRIVER_MODULE_PATH_REALTEK[]      = WIFI_DRIVER_MODULE_PATH_REALTEK;
++static const char* DRIVER_MODULE_NAME_REALTEK[]      = {WIFI_DRIVER_MODULE_NAME_REALTEK_8723AS,
++                                                         WIFI_DRIVER_MODULE_NAME_REALTEK_8821AS};
++static const char* DRIVER_MODULE_TAG_REALTEK[]       = {WIFI_DRIVER_MODULE_NAME_REALTEK_8723AS " ",
++                                                         WIFI_DRIVER_MODULE_NAME_REALTEK_8821AS " "};
++static const char* DRIVER_MODULE_PATH_REALTEK[]      = {WIFI_DRIVER_MODULE_PATH_REALTEK_8723AS,
++                                                        WIFI_DRIVER_MODULE_PATH_REALTEK_8821AS};
+ static const char DRIVER_MODULE_ARG_REALTEK[]       = WIFI_DRIVER_MODULE_ARG_REALTEK;
+ static const char DRIVER_SDIO_IF_MODULE_PATH_REALTEK[]  = WIFI_SDIO_IF_DRIVER_MODULE_PATH_REALTEK;
+ 
+@@ -162,10 +176,11 @@ static char supplicant_name[PROPERTY_VALUE_MAX];
+ /* Is either SUPP_PROP_NAME or P2P_PROP_NAME */
+ static char supplicant_prop_name[PROPERTY_KEY_MAX];
+ 
+-int get_wifi_vendor_info()
++int get_wifi_vendor_info(int* model)
+ {
+ #define SYS_SDIO_BUS_BASE_PATH    "/sys/bus/sdio/devices/"
+ #define SYS_SDIO_BUS_MMC_PATH(num)    SYS_SDIO_BUS_BASE_PATH"mmc"#num":0001:1/vendor"
++#define SYS_SDIO_BUS_MMC_PATH_DEVICE(num)    SYS_SDIO_BUS_BASE_PATH"mmc"#num":0001:1/device"
+ #define MAX_SDIO_NUM 4
+     const char* sdio_path[] = {
+         SYS_SDIO_BUS_MMC_PATH(0),
+@@ -173,9 +188,16 @@ int get_wifi_vendor_info()
+         SYS_SDIO_BUS_MMC_PATH(2),
+         SYS_SDIO_BUS_MMC_PATH(3),
+     };
++    const char* sdio_device_path[] = {
++        SYS_SDIO_BUS_MMC_PATH_DEVICE(0),
++        SYS_SDIO_BUS_MMC_PATH_DEVICE(1),
++        SYS_SDIO_BUS_MMC_PATH_DEVICE(2),
++        SYS_SDIO_BUS_MMC_PATH_DEVICE(4),
++    };
+     char linebuf[1024];
+     long value;
+     int i;
++    int vendor = -1;
+     FILE *f = NULL;
+     for (i = 0; i < MAX_SDIO_NUM; i++)
+     {
+@@ -198,15 +220,51 @@ int get_wifi_vendor_info()
+         {
+             ALOGD("detect a realtek card");
+             property_set(DRIVER_VENDOR_NAME, "realtek");
+-            return REALTEK;
++            vendor = REALTEK;
+         } else if (value == 0x0271) {
+             ALOGD("detect an atheros card");
+             property_set(DRIVER_VENDOR_NAME, "atheros");
++            *model = ATHEROS_DEFAULT;
++            fclose(f);
+             return ATHEROS;
+         }
+-
++        else
++        {
++            fclose(f);
++            *model = UNKNOWN_MODEL;
++            return UNKNOWN;
++        }
+     }
+-    return UNKNOWN;
++    fclose(f);
++    f = NULL;
++    f = fopen(sdio_device_path[i], "r");
++    if (f)
++    {
++        if (fgets(linebuf, sizeof(linebuf) -1, f))
++        {
++            ALOGD("read device info:%s",linebuf);
++            value = strtol(linebuf, NULL, 16);
++            if (value == 0x8723)
++            {
++                ALOGD("realtek RTL8723AS detected!");
++                *model = RTL8723AS;
++            }
++            else if (value == 0x8821)
++            {
++                ALOGD("realtek RTL8821AS detected!");
++                *model = RTL8821AS;
++            }
++            else
++            {
++                ALOGE("realtek unkown device: %s ", linebuf);
++                *model = UNKNOWN_MODEL;
++            }
++        }
++    } else
++    {
++        ALOGE("error: Unable to read device file %s ", sdio_device_path[i]);
++    }
++    return vendor;
+ }
+ 
+ int get_wifi_ifname_from_prop(char *ifname)
+@@ -323,7 +381,9 @@ static int insmod(const char *filename, const char *args)
+ 
+     module = load_file(filename, &size);
+     if (!module)
++    {   ALOGE("insmod:load_file %s  error", filename);
+         return -1;
++    }
+ 
+     ret = init_module(module, size, args);
+ 
+@@ -406,7 +466,7 @@ int is_wifi_driver_loaded() {
+     {
+         return check_wifi_driver_loaded_strict(DRIVER_MODULE_TAG_ATHEROS);
+     } else if (WifiVendor == REALTEK) {
+-        return check_wifi_driver_loaded_strict(DRIVER_MODULE_TAG_REALTEK);
++        return check_wifi_driver_loaded_strict(DRIVER_MODULE_TAG_REALTEK[WifiModel]);
+     } else
+         return 0;//Unkown driver
+ }
+@@ -414,9 +474,15 @@ int is_wifi_driver_loaded() {
+ int wifi_insmod_driver_realtek()
+ {
+     if (insmod(DRIVER_SDIO_IF_MODULE_PATH_REALTEK, DRIVER_SDIO_IF_MODULE_ARG) < 0)
++    {
++        ALOGE("%s: error via loading %s",__func__, DRIVER_SDIO_IF_MODULE_PATH_REALTEK);
+         return -1;
+-    if (insmod(DRIVER_MODULE_PATH_REALTEK, DRIVER_MODULE_ARG_REALTEK) < 0)
++    }
++    if (insmod(DRIVER_MODULE_PATH_REALTEK[WifiModel], DRIVER_MODULE_ARG_REALTEK) < 0)
++    {
++        ALOGE("%s: error via loading %s",__func__, DRIVER_MODULE_PATH_REALTEK[WifiModel]);
+         return -1;
++    }
+     return 0;
+ }
+ int wifi_insmod_driver_atheros()
+@@ -437,7 +503,7 @@ int wifi_load_driver()
+     int count = 100; /* wait at most 20 seconds for completion */
+     int ret;
+ 
+-    WifiVendor = get_wifi_vendor_info();
++    WifiVendor = get_wifi_vendor_info(&WifiModel);
+ 
+     if (is_wifi_driver_loaded()) {
+         return 0;
+@@ -447,6 +513,8 @@ int wifi_load_driver()
+         ret =  wifi_insmod_driver_atheros();
+     } else if (WifiVendor == REALTEK) {
+         ALOGD("load driver realtek");
++        if (WifiModel == UNKNOWN_MODEL)
++            return -1;
+         ret =  wifi_insmod_driver_realtek();
+     } else
+         return -1;
+@@ -514,7 +582,7 @@ int wifi_unload_driver()
+ {
+     usleep(200000); /* allow to finish interface down */
+     if (WifiVendor == REALTEK)
+-        return __wifi_unload_driver(DRIVER_MODULE_NAME_REALTEK, false);
++        return __wifi_unload_driver(DRIVER_MODULE_NAME_REALTEK[WifiModel], false);
+     else if (WifiVendor == ATHEROS)
+         return __wifi_unload_driver(DRIVER_MODULE_NAME_ATHEROS, true);
+     else
+-- 
+1.8.0
+

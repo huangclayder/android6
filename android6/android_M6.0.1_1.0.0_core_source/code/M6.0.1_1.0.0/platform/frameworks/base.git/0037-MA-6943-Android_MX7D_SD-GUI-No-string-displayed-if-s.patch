@@ -1,0 +1,28 @@
+From bb0789ecd135710e58a77ec4ebd65e1de3cbe25d Mon Sep 17 00:00:00 2001
+From: Wenbo Zhu <b52619@freescale.com>
+Date: Thu, 13 Aug 2015 11:32:40 +0800
+Subject: [PATCH 37/45] MA-6943 [Android_MX7D_SD] GUI: No string displayed if
+ set Screen Lock password (HDMI display)
+
+add destroyDrawingCache() to refresh UI.
+
+Signed-off-by: Wenbo Zhu <b52619@freescale.com>
+---
+ packages/Keyguard/src/com/android/keyguard/KeyguardPasswordView.java | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/packages/Keyguard/src/com/android/keyguard/KeyguardPasswordView.java b/packages/Keyguard/src/com/android/keyguard/KeyguardPasswordView.java
+index 3a7e6d0..90ae83c 100644
+--- a/packages/Keyguard/src/com/android/keyguard/KeyguardPasswordView.java
++++ b/packages/Keyguard/src/com/android/keyguard/KeyguardPasswordView.java
+@@ -297,6 +297,7 @@ public class KeyguardPasswordView extends KeyguardAbsKeyInputView
+     @Override
+     public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+         if (mCallback != null) {
++            destroyDrawingCache();
+             mCallback.userActivity();
+         }
+     }
+-- 
+1.8.0
+

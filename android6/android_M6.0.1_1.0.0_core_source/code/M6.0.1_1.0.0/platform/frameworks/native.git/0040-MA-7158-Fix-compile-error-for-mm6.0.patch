@@ -1,0 +1,56 @@
+From 8eee52dea2a8ea485b1f2c4e67469f24a6490e7a Mon Sep 17 00:00:00 2001
+From: "guoyin.chen" <guoyin.chen@freescale.com>
+Date: Mon, 26 Oct 2015 17:17:29 +0800
+Subject: [PATCH 40/43] MA-7158 Fix compile error for mm6.0
+
+The build error for SL, SX, and 7D as below:
+SurfaceFlinger.cpp:874:28: error: code will never be executed [-Werror,-Wunreachable-code]
+SurfaceFlinger.cpp:3374:77: error: unused parameter 'rotation' [-Werror,-Wunused-parameter]
+
+Signed-off-by: guoyin.chen <guoyin.chen@freescale.com>
+---
+ services/surfaceflinger/SurfaceFlinger.cpp | 11 ++++++-----
+ 1 file changed, 6 insertions(+), 5 deletions(-)
+
+diff --git a/services/surfaceflinger/SurfaceFlinger.cpp b/services/surfaceflinger/SurfaceFlinger.cpp
+index 21983f1..6876994 100644
+--- a/services/surfaceflinger/SurfaceFlinger.cpp
++++ b/services/surfaceflinger/SurfaceFlinger.cpp
+@@ -867,13 +867,13 @@ void SurfaceFlinger::disableHardwareVsync(bool makeUnavailable) {
+ }
+ 
+ void SurfaceFlinger::onVSyncReceived(int type, nsecs_t timestamp) {
+-    bool needsHwVsync = false;
+ #ifdef VSYNC_DIRECT_REFRESH
++    //bypass unused parameter's compiling error
++    (void)type;
+     mEventThread->onVSyncEvent(timestamp);
+     mSFEventThread->onVSyncEvent(timestamp);
+-    return;
+-#endif
+-
++#else
++    bool needsHwVsync = false;
+     { // Scope for the lock
+         Mutex::Autolock _l(mHWVsyncLock);
+         if (type == 0 && mPrimaryHWVsyncEnabled) {
+@@ -886,6 +886,7 @@ void SurfaceFlinger::onVSyncReceived(int type, nsecs_t timestamp) {
+     } else {
+         disableHardwareVsync(false);
+     }
++#endif
+ }
+ 
+ void SurfaceFlinger::onHotplugReceived(int type, bool connected) {
+@@ -3394,7 +3395,7 @@ void SurfaceFlinger::renderScreenImplLocked(
+         const sp<const DisplayDevice>& hw,
+         Rect sourceCrop, uint32_t reqWidth, uint32_t reqHeight,
+         uint32_t minLayerZ, uint32_t maxLayerZ,
+-        bool yswap, bool useIdentityTransform, Transform::orientation_flags rotation)
++        bool yswap, bool useIdentityTransform, Transform::orientation_flags rotation __unused)
+ {
+     ATRACE_CALL();
+ 
+-- 
+1.8.0
+

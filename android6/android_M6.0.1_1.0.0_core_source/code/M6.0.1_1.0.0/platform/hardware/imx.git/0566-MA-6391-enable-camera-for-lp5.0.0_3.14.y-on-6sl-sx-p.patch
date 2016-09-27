@@ -1,0 +1,82 @@
+From 265b68d3739b45b365bdc33119abcfd2c4831260 Mon Sep 17 00:00:00 2001
+From: Liu Xiaowen <xiaowen.liu@freescale.com>
+Date: Fri, 13 Mar 2015 17:36:45 +0800
+Subject: [PATCH 566/635] MA-6391 enable camera for lp5.0.0_3.14.y on 6sl/sx
+ platform.
+
+camera can't work on 6sl/sx platform because driver change.
+modify v4l2 ioctl to adapt to driver change.
+
+Signed-off-by: Liu Xiaowen <xiaowen.liu@freescale.com>
+---
+ mx6/libcamera/DeviceAdapter.cpp | 18 ++++++++++++++----
+ 1 file changed, 14 insertions(+), 4 deletions(-)
+
+diff --git a/mx6/libcamera/DeviceAdapter.cpp b/mx6/libcamera/DeviceAdapter.cpp
+index 002d516..7ce78eb 100755
+--- a/mx6/libcamera/DeviceAdapter.cpp
++++ b/mx6/libcamera/DeviceAdapter.cpp
+@@ -1,6 +1,6 @@
+ /*
+  * Copyright (C) 2008 The Android Open Source Project
+- * Copyright (C) 2012-2014 Freescale Semiconductor, Inc.
++ * Copyright (C) 2012-2015 Freescale Semiconductor, Inc.
+  *
+  * Licensed under the Apache License, Version 2.0 (the "License");
+  * you may not use this file except in compliance with the License.
+@@ -15,6 +15,7 @@
+  * limitations under the License.
+  */
+ 
++#include <linux/version.h>
+ #include "DeviceAdapter.h"
+ #include "UvcDevice.h"
+ #include "Ov5640.h"
+@@ -277,6 +278,7 @@ status_t DeviceAdapter::registerCameraFrames(CameraFrame *pBuffer,
+ 
+     for (int i = 0; i < num; i++) {
+         CameraFrame *buffer = pBuffer + i;
++#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 14, 0)
+         memset(&mVideoInfo->buf, 0, sizeof(struct v4l2_buffer));
+         mVideoInfo->buf.index    = i;
+         mVideoInfo->buf.type     = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+@@ -289,7 +291,7 @@ status_t DeviceAdapter::registerCameraFrames(CameraFrame *pBuffer,
+             FLOGE("Unable to query buffer (%s)", strerror(errno));
+             return ret;
+         }
+-
++#endif
+         // Associate each Camera buffer
+         buffer->setObserver(this);
+         mPreviewBufs.add((int)buffer, i);
+@@ -319,8 +321,12 @@ status_t DeviceAdapter::fillCameraFrame(CameraFrame *frame)
+     cfilledbuffer.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+     cfilledbuffer.memory = V4L2_MEMORY_USERPTR;
+     cfilledbuffer.index    = i;
++#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 14, 0)
+     cfilledbuffer.m.offset = frame->mPhyAddr;
+-
++#else
++    cfilledbuffer.m.userptr = (unsigned int)frame->mVirtAddr;
++	cfilledbuffer.length = frame->mSize;
++#endif
+     ret = ioctl(mCameraHandle, VIDIOC_QBUF, &cfilledbuffer);
+     if (ret < 0) {
+         FLOGE("fillCameraFrame: VIDIOC_QBUF Failed");
+@@ -346,8 +352,12 @@ status_t DeviceAdapter::startDeviceLocked()
+         mVideoInfo->buf.index    = i;
+         mVideoInfo->buf.type     = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+         mVideoInfo->buf.memory   = V4L2_MEMORY_USERPTR;
++#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 14, 0)
+         mVideoInfo->buf.m.offset = frame->mPhyAddr;
+-
++#else
++        mVideoInfo->buf.m.userptr = (unsigned int)frame->mVirtAddr;
++        mVideoInfo->buf.length = frame->mSize;
++#endif
+         ret = ioctl(mCameraHandle, VIDIOC_QBUF, &mVideoInfo->buf);
+         if (ret < 0) {
+             FLOGE("VIDIOC_QBUF Failed");
+-- 
+1.8.0
+

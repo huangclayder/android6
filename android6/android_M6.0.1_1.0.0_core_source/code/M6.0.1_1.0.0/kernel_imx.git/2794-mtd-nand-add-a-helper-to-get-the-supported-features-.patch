@@ -1,0 +1,43 @@
+From ec72f3413bb55e0d88f278e7f9cc51e95438f8cf Mon Sep 17 00:00:00 2001
+From: Huang Shijie <b32955@freescale.com>
+Date: Fri, 21 Feb 2014 13:39:39 +0800
+Subject: [PATCH] mtd: nand: add a helper to get the supported features for
+ JEDEC
+
+Add a helper to get the supported features for JEDEC compliant NAND.
+Also add a macro JEDEC_FEATURE_16_BIT_BUS.
+
+Signed-off-by: Huang Shijie <b32955@freescale.com>
+Signed-off-by: Brian Norris <computersforpeace@gmail.com>
+---
+ include/linux/mtd/nand.h | 9 +++++++++
+ 1 file changed, 9 insertions(+)
+
+diff --git a/include/linux/mtd/nand.h b/include/linux/mtd/nand.h
+index 384f337..0d5e869 100644
+--- a/include/linux/mtd/nand.h
++++ b/include/linux/mtd/nand.h
+@@ -350,6 +350,9 @@ struct jedec_ecc_info {
+ 	u8 reserved[2];
+ } __packed;
+ 
++/* JEDEC features */
++#define JEDEC_FEATURE_16_BIT_BUS	(1 << 0)
++
+ struct nand_jedec_params {
+ 	/* rev info and features block */
+ 	/* 'J' 'E' 'S' 'D'  */
+@@ -925,4 +928,10 @@ static inline int nand_opcode_8bits(unsigned int command)
+ 	return command == NAND_CMD_READID;
+ }
+ 
++/* return the supported JEDEC features. */
++static inline int jedec_feature(struct nand_chip *chip)
++{
++	return chip->jedec_version ? le16_to_cpu(chip->jedec_params.features)
++		: 0;
++}
+ #endif /* __LINUX_MTD_NAND_H */
+-- 
+1.8.0
+

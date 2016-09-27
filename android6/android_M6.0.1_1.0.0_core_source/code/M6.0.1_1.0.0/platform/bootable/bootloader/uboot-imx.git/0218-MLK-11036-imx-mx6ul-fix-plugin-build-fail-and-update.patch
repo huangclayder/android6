@@ -1,0 +1,91 @@
+From ebdb1cf263cd4d3abb0bef1766f0d6bb40df8048 Mon Sep 17 00:00:00 2001
+From: Peng Fan <Peng.Fan@freescale.com>
+Date: Thu, 4 Jun 2015 18:09:39 +0800
+Subject: [PATCH] MLK-11036 imx: mx6ul fix plugin build fail and update ddr
+
+Since directory name changed, need to change it in imximage.cfg, or
+we will get "Can't stat board/freescale/mx6ulevk/plugin.bin".
+
+Since this commit 7331a4cc0853722b4c3addf1927a2797f39f5de2
+missed to update ddr, here update the plugin code.
+
+Signed-off-by: Peng Fan <Peng.Fan@freescale.com>
+---
+ board/freescale/mx6ul_14x14_ddr3_arm2/imximage.cfg |  2 +-
+ board/freescale/mx6ul_14x14_evk/imximage.cfg       |  2 +-
+ board/freescale/mx6ul_14x14_evk/plugin.S           | 10 +++++++---
+ 3 files changed, 9 insertions(+), 5 deletions(-)
+
+diff --git a/board/freescale/mx6ul_14x14_ddr3_arm2/imximage.cfg b/board/freescale/mx6ul_14x14_ddr3_arm2/imximage.cfg
+index 87c4eaa..2272c86 100644
+--- a/board/freescale/mx6ul_14x14_ddr3_arm2/imximage.cfg
++++ b/board/freescale/mx6ul_14x14_ddr3_arm2/imximage.cfg
+@@ -31,7 +31,7 @@ BOOT_FROM	sd
+ 
+ #ifdef CONFIG_USE_PLUGIN
+ /*PLUGIN    plugin-binary-file    IRAM_FREE_START_ADDR*/
+-PLUGIN	board/freescale/mx6ul_ddr3_arm2/plugin.bin 0x00907000
++PLUGIN	board/freescale/mx6ul_14x14_ddr3_arm2/plugin.bin 0x00907000
+ #else
+ 
+ #ifdef CONFIG_SECURE_BOOT
+diff --git a/board/freescale/mx6ul_14x14_evk/imximage.cfg b/board/freescale/mx6ul_14x14_evk/imximage.cfg
+index 8bbb1fd..53088d8 100644
+--- a/board/freescale/mx6ul_14x14_evk/imximage.cfg
++++ b/board/freescale/mx6ul_14x14_evk/imximage.cfg
+@@ -31,7 +31,7 @@ BOOT_FROM	sd
+ 
+ #ifdef CONFIG_USE_PLUGIN
+ /*PLUGIN    plugin-binary-file    IRAM_FREE_START_ADDR*/
+-PLUGIN	board/freescale/mx6ulevk/plugin.bin 0x00907000
++PLUGIN	board/freescale/mx6ul_14x14_evk/plugin.bin 0x00907000
+ #else
+ 
+ #ifdef CONFIG_SECURE_BOOT
+diff --git a/board/freescale/mx6ul_14x14_evk/plugin.S b/board/freescale/mx6ul_14x14_evk/plugin.S
+index 13b6963..15f0c29 100644
+--- a/board/freescale/mx6ul_14x14_evk/plugin.S
++++ b/board/freescale/mx6ul_14x14_evk/plugin.S
+@@ -13,8 +13,9 @@
+ 	str r1, [r0, #0x4B4]
+ 	ldr r1, =0x00000000
+ 	str r1, [r0, #0x4AC]
+-	ldr r1, =0x00000030
++	ldr r1, =0x00000008
+ 	str r1, [r0, #0x27C]
++	ldr r1, =0x00000030
+ 	str r1, [r0, #0x250]
+ 	str r1, [r0, #0x24C]
+ 	str r1, [r0, #0x490]
+@@ -31,8 +32,9 @@
+ 	ldr r1, =0x00020000
+ 	str r1, [r0, #0x494]
+ 
+-	ldr r1, =0x00000030
++	ldr r1, =0x00000038
+ 	str r1, [r0, #0x280]
++	ldr r1, =0x00000030
+ 	str r1, [r0, #0x284]
+ 
+ 	ldr r1, =0x00020000
+@@ -49,7 +51,7 @@
+ 	str r1, [r0, #0x1C]
+ 	ldr r1, =0xA1390003
+ 	str r1, [r0, #0x800]
+-	ldr r1, =0x00000000
++	ldr r1, =0x00070007
+ 	str r1, [r0, #0x80C]
+ 	ldr r1, =0x41490145
+ 	str r1, [r0, #0x83C]
+@@ -65,6 +67,8 @@
+ 	str r1, [r0, #0x830]
+ 	ldr r1, =0x00922012
+ 	str r1, [r0, #0x8C0]
++	ldr r1, =0x00000F00
++	str r1, [r0, #0x858]
+ 	ldr r1, =0x00000800
+ 	str r1, [r0, #0x8B8]
+ 	ldr r1, =0x0002002D
+-- 
+1.8.0
+

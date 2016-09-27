@@ -1,0 +1,56 @@
+From 7334684877feb277c1269335d83bd1b2e022170b Mon Sep 17 00:00:00 2001
+From: Mark Brown <broonie@linaro.org>
+Date: Thu, 31 Jul 2014 12:53:23 +0100
+Subject: [PATCH] ASoC: wm8960: Convert to params_width()
+
+The CODEC doesn't care how data is laid out in memory.
+
+Signed-off-by: Mark Brown <broonie@linaro.org>
+Acked-by: Charles Keepax <ckeepax@opensource.wolfsonmicro.com>
+(cherry picked from commit 39e9cc46469e1d56522e6de45a6b2468d4d7eb60)
+---
+ sound/soc/codecs/wm8960.c | 15 ++++++---------
+ 1 file changed, 6 insertions(+), 9 deletions(-)
+
+diff --git a/sound/soc/codecs/wm8960.c b/sound/soc/codecs/wm8960.c
+index ba9fcbe..b6aaea8 100644
+--- a/sound/soc/codecs/wm8960.c
++++ b/sound/soc/codecs/wm8960.c
+@@ -634,7 +634,6 @@ static int wm8960_hw_params(struct snd_pcm_substream *substream,
+ 	struct snd_soc_codec *codec = dai->codec;
+ 	struct wm8960_priv *wm8960 = snd_soc_codec_get_drvdata(codec);
+ 	u16 iface = snd_soc_read(codec, WM8960_IFACE1) & 0xfff3;
+-	snd_pcm_format_t format = params_format(params);
+ 	int i;
+ 
+ 	wm8960->bclk = snd_soc_params_to_bclk(params);
+@@ -642,20 +641,18 @@ static int wm8960_hw_params(struct snd_pcm_substream *substream,
+ 		wm8960->bclk *= 2;
+ 
+ 	/* bit size */
+-	switch (format) {
+-	case SNDRV_PCM_FORMAT_S16_LE:
+-	case SNDRV_PCM_FORMAT_S16_BE:
++	switch (params_width(params)) {
++	case 16:
+ 		break;
+-	case SNDRV_PCM_FORMAT_S20_3LE:
+-	case SNDRV_PCM_FORMAT_S20_3BE:
++	case 20:
+ 		iface |= 0x0004;
+ 		break;
+-	case SNDRV_PCM_FORMAT_S24_LE:
+-	case SNDRV_PCM_FORMAT_S24_BE:
++	case 24:
+ 		iface |= 0x0008;
+ 		break;
+ 	default:
+-		dev_err(codec->dev, "unsupported format %i\n", format);
++		dev_err(codec->dev, "unsupported width %d\n",
++			params_width(params));
+ 		return -EINVAL;
+ 	}
+ 
+-- 
+1.8.0
+

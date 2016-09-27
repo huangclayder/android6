@@ -1,0 +1,69 @@
+From 5f1beaa21a10eb4f9192f399c113e5ae25606f9d Mon Sep 17 00:00:00 2001
+From: Brian Bennett <brian.bennett@arm.com>
+Date: Wed, 12 Mar 2014 15:56:51 +0000
+Subject: [PATCH] amba-clcd: add 888 caps support
+
+Add 888 caps support to the CLCD driver and increase the smem_len to
+allow 32bpp to be used.
+
+Signed-off-by: Ryan Harkin <ryan.harkin@linaro.org>
+(cherry picked from commit 4279dae7103c09937081a5ccb82b0db4eddae25b)
+Signed-off-by: Alex Shi <alex.shi@linaro.org>
+---
+ drivers/video/amba-clcd.c |  4 ++--
+ include/linux/amba/clcd.h | 10 +++++++---
+ 2 files changed, 9 insertions(+), 5 deletions(-)
+
+diff --git a/drivers/video/amba-clcd.c b/drivers/video/amba-clcd.c
+index c6c393f..e30cc7a 100644
+--- a/drivers/video/amba-clcd.c
++++ b/drivers/video/amba-clcd.c
+@@ -780,10 +780,10 @@ static int clcdfb_dt_init(struct clcd_fb *fb)
+ 
+ 	if (!fb->panel)
+ 		return -EINVAL;
+-	fb->fb.fix.smem_len = fb->panel->mode.xres * fb->panel->mode.yres * 2;
++	fb->fb.fix.smem_len = fb->panel->mode.xres * fb->panel->mode.yres * 4;
+ 
+ 	fb->board->name		= "Device Tree CLCD PL111";
+-	fb->board->caps		= CLCD_CAP_5551 | CLCD_CAP_565;
++	fb->board->caps		= CLCD_CAP_5551 | CLCD_CAP_565 | CLCD_CAP_888;
+ 	fb->board->check	= clcdfb_check;
+ 	fb->board->decode	= clcdfb_decode;
+ 
+diff --git a/include/linux/amba/clcd.h b/include/linux/amba/clcd.h
+index e82e3ee..4a53250 100644
+--- a/include/linux/amba/clcd.h
++++ b/include/linux/amba/clcd.h
+@@ -243,6 +243,9 @@ static inline void clcdfb_decode(struct clcd_fb *fb, struct clcd_regs *regs)
+ 			val |= CNTL_BGR;
+ 	}
+ 
++	/* Reset the current colour depth */
++	val &= ~CNTL_LCDBPP16_444;
++
+ 	switch (var->bits_per_pixel) {
+ 	case 1:
+ 		val |= CNTL_LCDBPP1;
+@@ -264,14 +267,15 @@ static inline void clcdfb_decode(struct clcd_fb *fb, struct clcd_regs *regs)
+ 		 */
+ 		if (amba_part(fb->dev) == 0x110 ||
+ 		    var->green.length == 5)
+-			val |= CNTL_LCDBPP16;
++			val |= CNTL_LCDBPP16 | CNTL_BGR;
+ 		else if (var->green.length == 6)
+-			val |= CNTL_LCDBPP16_565;
++			val |= CNTL_LCDBPP16_565 | CNTL_BGR;
+ 		else
+-			val |= CNTL_LCDBPP16_444;
++			val |= CNTL_LCDBPP16_444 | CNTL_BGR;
+ 		break;
+ 	case 32:
+ 		val |= CNTL_LCDBPP24;
++		val &= ~CNTL_BGR;
+ 		break;
+ 	}
+ 
+-- 
+1.8.0
+

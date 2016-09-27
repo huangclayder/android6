@@ -1,0 +1,43 @@
+From e3c22473bb168c261f15919b675134e1eba795db Mon Sep 17 00:00:00 2001
+From: "guoyin.chen" <guoyin.chen@freescale.com>
+Date: Fri, 14 Nov 2014 14:05:24 +0800
+Subject: [PATCH 387/602] MA-5839-9 Update android to Lollipop
+
+Unify the feature list for i.mx6dq sabresd with below rules:
+Remove live_wallpaper since it will automatically included
+packages/wallpapers/LivePicker/Android.mk
+
+Signed-off-by: guoyin.chen <guoyin.chen@freescale.com>
+---
+ imx6/sabresd_6dq.mk               | 7 -------
+ sabresd_6dq/required_hardware.xml | 1 -
+ 2 files changed, 8 deletions(-)
+
+diff --git a/imx6/sabresd_6dq.mk b/imx6/sabresd_6dq.mk
+index ab92a09..541a833 100644
+--- a/imx6/sabresd_6dq.mk
++++ b/imx6/sabresd_6dq.mk
+@@ -49,10 +49,3 @@ PRODUCT_COPY_FILES += \
+ 	frameworks/native/data/etc/android.hardware.consumerir.xml:system/etc/permissions/android.hardware.consumerir.xml \
+ 	frameworks/native/data/etc/android.hardware.ethernet.xml:system/etc/permissions/android.hardware.ethernet.xml \
+ 	device/fsl/sabresd_6dq/required_hardware.xml:system/etc/permissions/required_hardware.xml
+-
+-# for PDK build, include only when the dir exists
+-# too early to use $(TARGET_BUILD_PDK)
+-ifneq ($(wildcard packages/wallpapers/LivePicker),)
+-PRODUCT_COPY_FILES += \
+-	packages/wallpapers/LivePicker/android.software.live_wallpaper.xml:system/etc/permissions/android.software.live_wallpaper.xml
+-endif
+diff --git a/sabresd_6dq/required_hardware.xml b/sabresd_6dq/required_hardware.xml
+index b624650..59ba7c6 100644
+--- a/sabresd_6dq/required_hardware.xml
++++ b/sabresd_6dq/required_hardware.xml
+@@ -20,5 +20,4 @@
+ <permissions>
+     <feature name="android.hardware.camera.any" />
+     <feature name="android.hardware.camera.flash" />
+-    <feature name="android.software.live_wallpaper" />
+ </permissions>
+-- 
+1.8.0
+

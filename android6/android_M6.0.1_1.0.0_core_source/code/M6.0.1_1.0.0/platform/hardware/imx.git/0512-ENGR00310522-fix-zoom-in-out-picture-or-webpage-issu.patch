@@ -1,0 +1,35 @@
+From 3d918199aa04d51cf10b4a2372fde985aeed9964 Mon Sep 17 00:00:00 2001
+From: Liu Xiaowen <b37945@freescale.com>
+Date: Mon, 23 Jun 2014 13:19:00 +0800
+Subject: [PATCH 512/635] ENGR00310522 fix zoom in&out picture or webpage
+ issue in Gallery.
+
+the root cause is xdpi/ydpi sent to framework is 0 because width/height is 0.
+Correct the width/height value before calculate xdpi/ydpi value.
+
+Signed-off-by: Liu Xiaowen <b37945@freescale.com>
+---
+ mx6/hwcomposer/hwc_display.cpp | 7 +++++++
+ 1 file changed, 7 insertions(+)
+
+diff --git a/mx6/hwcomposer/hwc_display.cpp b/mx6/hwcomposer/hwc_display.cpp
+index b2649e6..b041211 100644
+--- a/mx6/hwcomposer/hwc_display.cpp
++++ b/mx6/hwcomposer/hwc_display.cpp
+@@ -188,6 +188,13 @@ int hwc_get_framebuffer_info(displayInfo *pInfo)
+         refreshRate = 60;
+     }
+ 
++    if (int(info.width) <= 0 || int(info.height) <= 0) {
++        // the driver doesn't return that information
++        // default to 160 dpi
++        info.width  = ((info.xres * 25.4f)/160.0f + 0.5f);
++        info.height = ((info.yres * 25.4f)/160.0f + 0.5f);
++    }
++
+     pInfo->xres = info.xres;
+     pInfo->yres = info.yres;
+     pInfo->xdpi = 1000 * (info.xres * 25.4f) / info.width;
+-- 
+1.8.0
+

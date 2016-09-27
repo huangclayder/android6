@@ -1,0 +1,37 @@
+From d482c54a9fbf458fdb2270cf990d8ec727823bb1 Mon Sep 17 00:00:00 2001
+From: Peng Fan <Peng.Fan@freescale.com>
+Date: Fri, 31 Jul 2015 13:19:24 +0800
+Subject: [PATCH] MLK-11304 MX6 SabreSD: Disable HDMI detect
+
+As the HDMI splash screen feature is not well supported,
+we should not set it to be the default display. In case,
+users leave the 'panel' uboot environment variable empty
+and connect the board with a HDMI monitor, the HDMI detect
+funtion will work and enable the HDMI splash screen. So,
+this patch disables HDMI detect function so that users
+may only explicitly set the 'panel' variable to be 'HDMI'
+to use HDMI splash screen.
+
+Signed-off-by: Peng Fan <Peng.Fan@freescale.com>
+Signed-off-by: Liu Ying <Ying.Liu@freescale.com>
+Signed-off-by: Ye.Li <B37916@freescale.com>
+---
+ board/freescale/mx6sabresd/mx6sabresd.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/board/freescale/mx6sabresd/mx6sabresd.c b/board/freescale/mx6sabresd/mx6sabresd.c
+index 99620fc..ca67658 100644
+--- a/board/freescale/mx6sabresd/mx6sabresd.c
++++ b/board/freescale/mx6sabresd/mx6sabresd.c
+@@ -795,7 +795,7 @@ struct display_info_t const displays[] = {{
+ 	.bus	= -1,
+ 	.addr	= 0,
+ 	.pixfmt	= IPU_PIX_FMT_RGB24,
+-	.detect	= detect_hdmi,
++	.detect	= NULL,
+ 	.enable	= do_enable_hdmi,
+ 	.mode	= {
+ 		.name           = "HDMI",
+-- 
+1.8.0
+

@@ -1,0 +1,40 @@
+From 742ab69302700dc9137329b4773de1aa0f5df89f Mon Sep 17 00:00:00 2001
+From: Peng Fan <peng.fan@nxp.com>
+Date: Thu, 28 Jan 2016 14:28:35 +0800
+Subject: [PATCH] MLK-12375 imx: mx6ul: fix PMIC_STBY_REQ settinng for TO1.1
+
+TO1.1 already fixed this PMIC_STBY_REQ open drain issue.
+
+Signed-off-by: Peng Fan <peng.fan@nxp.com>
+---
+ arch/arm/cpu/armv7/mx6/soc.c | 14 ++++++++------
+ 1 file changed, 8 insertions(+), 6 deletions(-)
+
+diff --git a/arch/arm/cpu/armv7/mx6/soc.c b/arch/arm/cpu/armv7/mx6/soc.c
+index 79b99b2..4e1ea01 100644
+--- a/arch/arm/cpu/armv7/mx6/soc.c
++++ b/arch/arm/cpu/armv7/mx6/soc.c
+@@ -467,12 +467,14 @@ int arch_cpu_init(void)
+ #endif
+ 
+ #if defined(CONFIG_MX6UL)
+-	/*
+-	 * According to the design team's requirement on i.MX6UL,
+-	 * the PMIC_STBY_REQ PAD should be configured as open
+-	 * drain 100K (0x0000b8a0).
+-	 */
+-	writel(0x0000b8a0, IOMUXC_BASE_ADDR + 0x29c);
++	if (is_soc_rev(CHIP_REV_1_0) == 0) {
++		/*
++		 * According to the design team's requirement on i.MX6UL,
++		 * the PMIC_STBY_REQ PAD should be configured as open
++		 * drain 100K (0x0000b8a0).
++		 */
++		writel(0x0000b8a0, IOMUXC_BASE_ADDR + 0x29c);
++	}
+ #endif
+ 
+ 	/* Set perclk to source from OSC 24MHz */
+-- 
+1.8.0
+

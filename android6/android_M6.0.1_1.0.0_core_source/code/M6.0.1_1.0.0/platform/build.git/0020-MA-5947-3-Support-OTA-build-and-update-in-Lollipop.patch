@@ -1,0 +1,61 @@
+From bd60f16bd57e75b73951fbc04c28770c26b9d722 Mon Sep 17 00:00:00 2001
+From: zhang sanshan <b51434@freescale.com>
+Date: Wed, 21 Jan 2015 19:05:01 +0800
+Subject: [PATCH 20/34] MA-5947-3 Support OTA build and update in Lollipop
+
+The nand ota images should be file orient rather than block orient.
+
+Signed-off-by: zhang sanshan <b51434@freescale.com>
+---
+ core/Makefile                         | 7 ++++++-
+ tools/releasetools/edify_generator.py | 8 +++++++-
+ 2 files changed, 13 insertions(+), 2 deletions(-)
+
+diff --git a/core/Makefile b/core/Makefile
+index 6be04ed..7b587c5 100644
+--- a/core/Makefile
++++ b/core/Makefile
+@@ -1706,6 +1706,11 @@ ifeq ($(TARGET_BUILD_TYPE),debug)
+ endif
+ name := $(name)-ota-$(FILE_NAME_TAG)
+ 
++block_file := 
++ifneq ($(TARGET_USERIMAGES_USE_UBIFS),true)
++block_file := --block
++endif
++
+ INTERNAL_OTA_PACKAGE_TARGET := $(PRODUCT_OUT)/$(name).zip
+ 
+ $(INTERNAL_OTA_PACKAGE_TARGET): KEY_CERT_PAIR := $(DEFAULT_KEY_CERT_PAIR)
+@@ -1714,7 +1719,7 @@ $(INTERNAL_OTA_PACKAGE_TARGET): $(BUILT_TARGET_FILES_PACKAGE) $(DISTTOOLS)
+ 	@echo "Package OTA: $@"
+ 	$(hide) PATH=$(foreach p,$(INTERNAL_USERIMAGES_BINARY_PATHS),$(p):)$$PATH MKBOOTIMG=$(MKBOOTIMG) \
+ 	   ./build/tools/releasetools/ota_from_target_files -v \
+-	   --block \
++	   $(block_file)  \
+ 	   -p $(HOST_OUT) \
+ 	   -k $(KEY_CERT_PAIR) \
+ 	   $(if $(OEM_OTA_CONFIG), -o $(OEM_OTA_CONFIG)) \
+diff --git a/tools/releasetools/edify_generator.py b/tools/releasetools/edify_generator.py
+index a52e328..9896d39 100644
+--- a/tools/releasetools/edify_generator.py
++++ b/tools/releasetools/edify_generator.py
+@@ -291,8 +291,14 @@ class EdifyGenerator(object):
+       args = {'device': p.device, 'fn': fn}
+       if partition_type == "MTD":
+         self.script.append(
+-            'write_raw_image(package_extract_file("%(fn)s"), "%(device)s");'
++            'package_extract_file("%(fn)s", "/tmp/boot.img");'
+             % args)
++        self.script.append(
++            'write_raw_image("/tmp/boot.img", "bootimg");')
++
++        self.script.append(
++            'delete("/tmp/boot.img");')
++	
+       elif partition_type == "EMMC":
+         if mapfn:
+           args["map"] = mapfn
+-- 
+1.8.0
+

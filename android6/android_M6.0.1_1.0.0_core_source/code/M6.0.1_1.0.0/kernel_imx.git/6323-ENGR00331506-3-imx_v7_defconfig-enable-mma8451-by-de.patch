@@ -1,0 +1,27 @@
+From 0afcef7d9e12fec10dd3299a4680d9c75a405114 Mon Sep 17 00:00:00 2001
+From: luweizhou <b45643@freescale.com>
+Date: Mon, 15 Sep 2014 16:36:32 +0800
+Subject: [PATCH] ENGR00331506-3 imx_v7_defconfig: enable mma8451 by default
+
+Enable mma8451 by default.
+
+Signed-off-by: Luwei Zhou <b45643@freescale.com>
+---
+ arch/arm/configs/imx_v7_defconfig | 1 -
+ 1 file changed, 1 deletion(-)
+
+diff --git a/arch/arm/configs/imx_v7_defconfig b/arch/arm/configs/imx_v7_defconfig
+index 93c5b1b..e1cfb0b 100644
+--- a/arch/arm/configs/imx_v7_defconfig
++++ b/arch/arm/configs/imx_v7_defconfig
+@@ -164,7 +164,6 @@ CONFIG_SPI_IMX=y
+ CONFIG_GPIO_SYSFS=y
+ CONFIG_POWER_SUPPLY=y
+ CONFIG_SABRESD_MAX8903=y
+-# CONFIG_HWMON is not set
+ CONFIG_THERMAL=y
+ CONFIG_CPU_THERMAL=y
+ CONFIG_IMX_THERMAL=y
+-- 
+1.8.0
+

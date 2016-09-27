@@ -1,0 +1,115 @@
+From 067a6f0d2cd194d8ce9346c9ff0a66a71758af6d Mon Sep 17 00:00:00 2001
+From: zhang sanshan <b51434@freescale.com>
+Date: Wed, 21 Jan 2015 17:44:17 +0800
+Subject: [PATCH 428/602] MA-5947-2 Support OTA build and update in Lollipop
+
+1 nand ota compile issue
+write_raw_image("/tmp/boot.img", "/dev/mtd/mtd1") fails when do ota update.
+"/dev/mtd/mtd1" is from fstab_nand.freescale. It can't match the name in /proc/mtd.
+boot.img is in /dev/mtd/mtd2. The partition of /dev/mtd/mtd2 is bootimg.
+2 etx format ota compile issue
+ota need sparse ext4 images.
+
+Signed-off-by: zhang sanshan <b51434@freescale.com>
+---
+ evk_6sl/BoardConfig.mk             | 2 +-
+ sabreauto_6q/BoardConfig.mk        | 2 +-
+ sabreauto_6q/fstab_nand.freescale  | 4 ++--
+ sabreauto_6sx/BoardConfig.mk       | 2 +-
+ sabreauto_6sx/fstab_nand.freescale | 4 ++--
+ sabresd_6dq/BoardConfig.mk         | 2 +-
+ sabresd_6sx/BoardConfig.mk         | 2 +-
+ 7 files changed, 9 insertions(+), 9 deletions(-)
+
+diff --git a/evk_6sl/BoardConfig.mk b/evk_6sl/BoardConfig.mk
+index 13fd54d..6bc602c 100644
+--- a/evk_6sl/BoardConfig.mk
++++ b/evk_6sl/BoardConfig.mk
+@@ -71,7 +71,7 @@ USE_QEMU_GPS_HARDWARE := false
+ # for recovery service
+ TARGET_SELECT_KEY := 28
+ # we don't support sparse image.
+-TARGET_USERIMAGES_SPARSE_EXT_DISABLED := true
++TARGET_USERIMAGES_SPARSE_EXT_DISABLED := false
+ 
+ # atheros 3k BT
+ BOARD_USE_AR3K_BLUETOOTH := false
+diff --git a/sabreauto_6q/BoardConfig.mk b/sabreauto_6q/BoardConfig.mk
+index 0992e61..95dcf68 100644
+--- a/sabreauto_6q/BoardConfig.mk
++++ b/sabreauto_6q/BoardConfig.mk
+@@ -76,7 +76,7 @@ SENSOR_MMA8451 := true
+ # for recovery service
+ TARGET_SELECT_KEY := 28
+ # we don't support sparse image.
+-TARGET_USERIMAGES_SPARSE_EXT_DISABLED := true
++TARGET_USERIMAGES_SPARSE_EXT_DISABLED := false
+ 
+ # atheros 3k BT
+ BOARD_USE_AR3K_BLUETOOTH := false
+diff --git a/sabreauto_6q/fstab_nand.freescale b/sabreauto_6q/fstab_nand.freescale
+index 1929817..ef25ae3 100644
+--- a/sabreauto_6q/fstab_nand.freescale
++++ b/sabreauto_6q/fstab_nand.freescale
+@@ -11,5 +11,5 @@
+ /dev/ubi0_3     /data           ubifs   nosuid,nodev,nodiratime,noatime         wait
+ /dev/ubi0_1     /cache          ubifs   nosuid,nodev                            wait
+ /dev/ubi0_2     /device         ubifs   nosuid,nodev                            wait
+-/dev/mtd/mtd1   /boot           mtd     defaults                                defaults
+-/dev/mtd/mtd2   /recovery       mtd     defaults                                defaults
++bootimg         /boot           mtd     defaults                                defaults
++recovery        /recovery       mtd     defaults                                defaults
+diff --git a/sabreauto_6sx/BoardConfig.mk b/sabreauto_6sx/BoardConfig.mk
+index 8ce9608..0397da5 100755
+--- a/sabreauto_6sx/BoardConfig.mk
++++ b/sabreauto_6sx/BoardConfig.mk
+@@ -71,7 +71,7 @@ SENSOR_MMA8451 := true
+ # for recovery service
+ TARGET_SELECT_KEY := 28
+ # we don't support sparse image.
+-TARGET_USERIMAGES_SPARSE_EXT_DISABLED := true
++TARGET_USERIMAGES_SPARSE_EXT_DISABLED := false
+ 
+ BOARD_KERNEL_CMDLINE := console=ttymxc0,115200 init=/init androidboot.console=ttymxc0 consoleblank=0 androidboot.hardware=freescale vmalloc=400M cma=512M 
+ 
+diff --git a/sabreauto_6sx/fstab_nand.freescale b/sabreauto_6sx/fstab_nand.freescale
+index c9bf3f9..053d553 100644
+--- a/sabreauto_6sx/fstab_nand.freescale
++++ b/sabreauto_6sx/fstab_nand.freescale
+@@ -11,5 +11,5 @@
+ /dev/ubi0_3     /data           ubifs   nosuid,nodev,nodiratime,noatime         wait
+ /dev/ubi0_1     /cache          ubifs   nosuid,nodev                            wait
+ /dev/ubi0_2     /device         ubifs   nosuid,nodev                            wait
+-/dev/mtd/mtd1   /boot           mtd     defaults                                defaults
+-/dev/mtd/mtd2   /recovery       mtd     defaults                                defaults
++bootimg         /boot           mtd     defaults                                defaults
++recovery        /recovery       mtd     defaults                                defaults
+diff --git a/sabresd_6dq/BoardConfig.mk b/sabresd_6dq/BoardConfig.mk
+index 6dbeca2..4a9097a 100644
+--- a/sabresd_6dq/BoardConfig.mk
++++ b/sabresd_6dq/BoardConfig.mk
+@@ -79,7 +79,7 @@ SENSOR_MMA8451 := true
+ TARGET_SELECT_KEY := 28
+ 
+ # we don't support sparse image.
+-TARGET_USERIMAGES_SPARSE_EXT_DISABLED := true
++TARGET_USERIMAGES_SPARSE_EXT_DISABLED := false
+ 
+ # uncomment below lins if use NAND
+ #TARGET_USERIMAGES_USE_UBIFS = true
+diff --git a/sabresd_6sx/BoardConfig.mk b/sabresd_6sx/BoardConfig.mk
+index fb783cd..bca161c 100644
+--- a/sabresd_6sx/BoardConfig.mk
++++ b/sabresd_6sx/BoardConfig.mk
+@@ -72,7 +72,7 @@ SENSOR_MMA8451 := true
+ TARGET_SELECT_KEY := 28
+ 
+ # we don't support sparse image.
+-TARGET_USERIMAGES_SPARSE_EXT_DISABLED := true
++TARGET_USERIMAGES_SPARSE_EXT_DISABLED := false
+ 
+ # uncomment below lins if use NAND
+ #TARGET_USERIMAGES_USE_UBIFS = true
+-- 
+1.8.0
+

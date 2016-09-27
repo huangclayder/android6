@@ -1,0 +1,34 @@
+From 95296f20bb0b3333d6f23edbe7bb8e93f623cfa4 Mon Sep 17 00:00:00 2001
+From: Prabhu Sundararaj <prabhu.sundararaj@freescale.com>
+Date: Thu, 12 Mar 2015 16:46:38 -0500
+Subject: [PATCH] MGS-569 [#1650] MX6+ Update GPU AXI cache atttribute
+
+Add the new GPUs to the list to set AXI cache attribute.
+
+Date: Mar 12, 2015
+
+Signed-off-by: Prabhu Sundararaj <prabhu.sundararaj@freescale.com>
+
+Signed-off-by: Xianzhong <b07117@freescale.com>
+Acked-by: Jason Liu
+---
+ drivers/mxc/gpu-viv/hal/kernel/arch/gc_hal_kernel_hardware.c | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/drivers/mxc/gpu-viv/hal/kernel/arch/gc_hal_kernel_hardware.c b/drivers/mxc/gpu-viv/hal/kernel/arch/gc_hal_kernel_hardware.c
+index b2ecc45..eeae631 100644
+--- a/drivers/mxc/gpu-viv/hal/kernel/arch/gc_hal_kernel_hardware.c
++++ b/drivers/mxc/gpu-viv/hal/kernel/arch/gc_hal_kernel_hardware.c
+@@ -1614,7 +1614,9 @@ gckHARDWARE_InitializeHardware(
+     }
+ 
+     if (_IsHardwareMatch(Hardware, gcv2000, 0x5108)
++     || _IsHardwareMatch(Hardware, gcv2000, 0xffff5450)
+      || _IsHardwareMatch(Hardware, gcv320, 0x5007)
++     || _IsHardwareMatch(Hardware, gcv320, 0x5303)
+      || _IsHardwareMatch(Hardware, gcv880, 0x5106)
+      || _IsHardwareMatch(Hardware, gcv400, 0x4645)
+     )
+-- 
+1.8.0
+

@@ -1,0 +1,57 @@
+From 6193cf4e3384a59e29546d13a67657f7faeafc9e Mon Sep 17 00:00:00 2001
+From: Richard Zhu <r65037@freescale.com>
+Date: Tue, 24 Jun 2014 09:59:47 +0800
+Subject: [PATCH] ENGR00319415 pcie: random link down issue after warm-rst
+
+There are about 0.02% percentage on some imx6q/dl/solo
+hw boards, random pcie link down when warm-reset is used.
+Make sure to clear the ref_ssp_en bit16 of gpr1 before
+warm-rst, and set ref_ssp_en after the pcie clks are
+stable to workaround it.
+
+rootcause:
+* gpr regisers wouldn't be reset by warm-rst, while the
+ref_ssp_en is required to be reset by pcie.
+(work-around in u-boot)
+* ref_ssp_en should be set after pcie clks are stable.
+(work-around in kernel)
+
+Signed-off-by: Richard Zhu <r65037@freescale.com>
+(cherry picked from commit 5cc825b12c6b86a22f1a6a0535b52cf3ee142e77)
+Signed-off-by: Peng Fan <Peng.Fan@freescale.com>
+---
+ arch/arm/cpu/armv7/mx6/soc.c | 18 ++++++++++++++++++
+ 1 file changed, 18 insertions(+)
+
+diff --git a/arch/arm/cpu/armv7/mx6/soc.c b/arch/arm/cpu/armv7/mx6/soc.c
+index 00a31e4..8f33508 100644
+--- a/arch/arm/cpu/armv7/mx6/soc.c
++++ b/arch/arm/cpu/armv7/mx6/soc.c
+@@ -381,6 +381,24 @@ static void imx_set_pcie_phy_power_down(void)
+ 
+ int arch_cpu_init(void)
+ {
++#ifndef CONFIG_MX6SX
++	/* this bit is not used by imx6sx anymore */
++	u32 val;
++
++	/*
++	 * There are about 0.02% percentage, random pcie link down
++	 * when warm-reset is used.
++	 * clear the ref_ssp_en bit16 of gpr1 to workaround it.
++	 * then warm-reset imx6q/dl/solo again.
++	 */
++	val = readl(IOMUXC_BASE_ADDR + 0x4);
++	if (val & (0x1 << 16)) {
++		val &= ~(0x1 << 16);
++		writel(val, IOMUXC_BASE_ADDR + 0x4);
++		reset_cpu(0);
++	}
++#endif
++
+ 	init_aips();
+ 
+ 	/* Need to clear MMDC_CHx_MASK to make warm reset work. */
+-- 
+1.8.0
+

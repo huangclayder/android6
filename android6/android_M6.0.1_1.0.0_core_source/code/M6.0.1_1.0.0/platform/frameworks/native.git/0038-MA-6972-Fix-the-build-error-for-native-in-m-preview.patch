@@ -1,0 +1,107 @@
+From 538a3ec5b82ee18ecdbbca58afc31dfe29f052dd Mon Sep 17 00:00:00 2001
+From: "guoyin.chen" <guoyin.chen@freescale.com>
+Date: Thu, 6 Aug 2015 17:01:24 +0800
+Subject: [PATCH 38/43] MA-6972 Fix the build error for native in m-preview
+
+Change log api from ST_LOGE to GLC_LOGE
+Reorder the member variable initialization to align with its definition
+pass the build with -Werror,-Wold-style-cast -Wsign-conversion
+
+Signed-off-by: guoyin.chen <guoyin.chen@freescale.com>
+
+Conflicts:
+	services/surfaceflinger/SurfaceFlinger.cpp
+---
+ libs/gui/GLConsumer.cpp                    | 12 ++++++------
+ libs/gui/SurfaceComposerClient.cpp         |  6 +++---
+ services/surfaceflinger/SurfaceFlinger.cpp |  4 ++--
+ 3 files changed, 11 insertions(+), 11 deletions(-)
+
+diff --git a/libs/gui/GLConsumer.cpp b/libs/gui/GLConsumer.cpp
+index d898993..ae0d0c0 100644
+--- a/libs/gui/GLConsumer.cpp
++++ b/libs/gui/GLConsumer.cpp
+@@ -1002,16 +1002,16 @@ status_t GLConsumer::doGLFenceWaitLocked() const {
+         } else if (SyncFeatures::getInstance().useFenceSync()) {
+             EGLSyncKHR fence = eglCreateSyncKHR(dpy, EGL_SYNC_FENCE_KHR, NULL);
+             if (fence == EGL_NO_SYNC_KHR) {
+-                ST_LOGE("doGLFenceWait: error creating fence: %#x",
++                GLC_LOGE("doGLFenceWait: error creating fence: %#x",
+                         eglGetError());
+                 return UNKNOWN_ERROR;
+             }
+             EGLint result = eglClientWaitSyncKHR(dpy, fence, 0, 1000000000);
+             if (result == EGL_FALSE) {
+-                ST_LOGE("doGLFenceWait: error waiting for fence: %#x", eglGetError());
++                GLC_LOGE("doGLFenceWait: error waiting for fence: %#x", eglGetError());
+                 return UNKNOWN_ERROR;
+             } else if (result == EGL_TIMEOUT_EXPIRED_KHR) {
+-                ST_LOGE("sdoGLFenceWait: timeout waiting for fence");
++                GLC_LOGE("sdoGLFenceWait: timeout waiting for fence");
+                 return TIMED_OUT;
+             }
+             eglDestroySyncKHR(dpy, fence);
+@@ -1026,16 +1026,16 @@ status_t GLConsumer::doGLFenceWaitLocked() const {
+     } else if (SyncFeatures::getInstance().useFenceSync()) {
+         EGLSyncKHR fence = eglCreateSyncKHR(dpy, EGL_SYNC_FENCE_KHR, NULL);
+         if (fence == EGL_NO_SYNC_KHR) {
+-            ST_LOGE("doGLFenceWait: error creating fence: %#x",
++            GLC_LOGE("doGLFenceWait: error creating fence: %#x",
+                     eglGetError());
+             return UNKNOWN_ERROR;
+         }
+         EGLint result = eglClientWaitSyncKHR(dpy, fence, 0, 1000000000);
+         if (result == EGL_FALSE) {
+-            ST_LOGE("doGLFenceWait: error waiting for fence: %#x", eglGetError());
++            GLC_LOGE("doGLFenceWait: error waiting for fence: %#x", eglGetError());
+             return UNKNOWN_ERROR;
+         } else if (result == EGL_TIMEOUT_EXPIRED_KHR) {
+-            ST_LOGE("sdoGLFenceWait: timeout waiting for fence");
++            GLC_LOGE("sdoGLFenceWait: timeout waiting for fence");
+             return TIMED_OUT;
+         }
+         eglDestroySyncKHR(dpy, fence);
+diff --git a/libs/gui/SurfaceComposerClient.cpp b/libs/gui/SurfaceComposerClient.cpp
+index 6b9a146..425ceda 100644
+--- a/libs/gui/SurfaceComposerClient.cpp
++++ b/libs/gui/SurfaceComposerClient.cpp
+@@ -736,11 +736,11 @@ status_t ScreenshotClient::update(const sp<IBinder>& display,
+         if (err == NO_ERROR) {
+             if (mBuffer.format == HAL_PIXEL_FORMAT_BGRA_8888) {
+                 mBuffer.format = HAL_PIXEL_FORMAT_RGBA_8888;
+-                int *pData = (int *)mBuffer.data;
++                unsigned int *pData = reinterpret_cast<unsigned int *>(mBuffer.data);
+                 for (uint32_t i=0; i<mBuffer.height; i++) {
+-                    int *data = pData + i * mBuffer.stride;
++                    unsigned int *data = pData + i * mBuffer.stride;
+                     for (uint32_t j=0; j<mBuffer.width; j++) {
+-                        int value = *data;
++                        unsigned int value = *data;
+                         *data = (value & 0xff00ff00) |
+                                 ((value & 0x00ff0000) >> 16) |
+                                 ((value & 0x000000ff) << 16);
+diff --git a/services/surfaceflinger/SurfaceFlinger.cpp b/services/surfaceflinger/SurfaceFlinger.cpp
+index 1c6b654..21983f1 100644
+--- a/services/surfaceflinger/SurfaceFlinger.cpp
++++ b/services/surfaceflinger/SurfaceFlinger.cpp
+@@ -141,7 +141,6 @@ SurfaceFlinger::SurfaceFlinger()
+         mDebugRegion(0),
+         mDebugDDMS(0),
+         mDebugDisableHWC(0),
+-        mDebugFps(0),
+         mDebugDisableTransformHint(0),
+         mDebugInSwapBuffers(0),
+         mLastSwapBufferTime(0),
+@@ -156,7 +155,8 @@ SurfaceFlinger::SurfaceFlinger()
+         mHasPoweredOff(false),
+         mFrameBuckets(),
+         mTotalTime(0),
+-        mLastSwapTime(0)
++        mLastSwapTime(0),
++        mDebugFps(0)
+ {
+     ALOGI("SurfaceFlinger is starting");
+ 
+-- 
+1.8.0
+

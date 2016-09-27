@@ -1,0 +1,44 @@
+From 848065ae651a9e0ad5150650292ab7bac9b5661d Mon Sep 17 00:00:00 2001
+From: Richard Liu <r66033@freescale.com>
+Date: Tue, 13 Oct 2015 18:08:05 +0800
+Subject: [PATCH 538/602] MA-7101 enlarge system image partition size on
+ android 6.0 Mashmallow
+
+system image partition size large than 377487360,
+enlarge to 377487360 + 64*1024*1024.
+
+Signed-off-by: Richard Liu <r66033@freescale.com>
+---
+ imx6/BoardConfigCommon.mk | 2 +-
+ imx7/BoardConfigCommon.mk | 2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/imx6/BoardConfigCommon.mk b/imx6/BoardConfigCommon.mk
+index 835a4dc..0566450 100644
+--- a/imx6/BoardConfigCommon.mk
++++ b/imx6/BoardConfigCommon.mk
+@@ -60,7 +60,7 @@ ARCH_ARM_USE_NON_NEON_MEMCPY := true
+ BOARD_BOOTIMAGE_PARTITION_SIZE := 16777216
+ BOARD_RECOVERYIMAGE_PARTITION_SIZE := 16777216
+ 
+-BOARD_SYSTEMIMAGE_PARTITION_SIZE := 377487360
++BOARD_SYSTEMIMAGE_PARTITION_SIZE := 444596224
+ BOARD_FLASH_BLOCK_SIZE := 4096
+ TARGET_RECOVERY_UI_LIB := librecovery_ui_imx
+ 
+diff --git a/imx7/BoardConfigCommon.mk b/imx7/BoardConfigCommon.mk
+index 3b9037c..4bd5bed 100644
+--- a/imx7/BoardConfigCommon.mk
++++ b/imx7/BoardConfigCommon.mk
+@@ -60,7 +60,7 @@ ARCH_ARM_USE_NON_NEON_MEMCPY := true
+ BOARD_BOOTIMAGE_PARTITION_SIZE :=  16777216 
+ BOARD_RECOVERYIMAGE_PARTITION_SIZE := 16777216
+ 
+-BOARD_SYSTEMIMAGE_PARTITION_SIZE := 377487360
++BOARD_SYSTEMIMAGE_PARTITION_SIZE := 444596224
+ BOARD_FLASH_BLOCK_SIZE := 4096
+ TARGET_RECOVERY_UI_LIB := librecovery_ui_imx
+ 
+-- 
+1.8.0
+

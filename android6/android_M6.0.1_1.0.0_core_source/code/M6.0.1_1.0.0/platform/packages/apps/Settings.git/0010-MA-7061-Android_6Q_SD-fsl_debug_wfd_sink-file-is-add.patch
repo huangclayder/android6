@@ -1,0 +1,30 @@
+From 952a0493bedc3f01d6bca9b7ce8775ab0bea9242 Mon Sep 17 00:00:00 2001
+From: MJm <B55507@freescale.com>
+Date: Mon, 21 Sep 2015 10:12:04 +0800
+Subject: [PATCH 10/12] MA-7061 [Android_6Q_SD]fsl_debug_wfd_sink file is
+ added automatically under /sdcard after enable
+ developer options
+
+remove the auto adding file
+
+Signed-off-by: Ma Jiamin <b55507@freescale.com>
+---
+ src/com/android/settings/DevelopmentSettings.java | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/src/com/android/settings/DevelopmentSettings.java b/src/com/android/settings/DevelopmentSettings.java
+index 261876f..0d4dc71 100644
+--- a/src/com/android/settings/DevelopmentSettings.java
++++ b/src/com/android/settings/DevelopmentSettings.java
+@@ -521,7 +521,7 @@ public class DevelopmentSettings extends SettingsPreferenceFragment
+ 			File file_default_value = new File(path);
+ 			System.out.println("open the file");
+ 			if(!file_default_value.exists()) {
+-				file_default_value.createNewFile();
++				return false;
+ 			}
+ 			byte echo_default_value[] = new byte[1];
+ 			FileInputStream input_default_value = new FileInputStream(file_default_value);
+-- 
+1.8.0
+

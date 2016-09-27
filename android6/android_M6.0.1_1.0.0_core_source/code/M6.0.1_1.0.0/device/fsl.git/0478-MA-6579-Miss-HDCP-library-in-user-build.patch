@@ -1,0 +1,28 @@
+From cd8b8840d2f64f7ea90a2522663c5ab9a9c3ee21 Mon Sep 17 00:00:00 2001
+From: "guoyin.chen" <guoyin.chen@freescale.com>
+Date: Thu, 23 Apr 2015 18:03:01 +0800
+Subject: [PATCH 478/602] MA-6579 Miss HDCP library in user build
+
+Add libfsl_hdcp_blob.so and libstagefright_hdcp.so into PRODUCT_PACKAGES
+
+Signed-off-by: guoyin.chen <guoyin.chen@freescale.com>
+---
+ imx6/imx6.mk | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/imx6/imx6.mk b/imx6/imx6.mk
+index 08156ad..cb08597 100644
+--- a/imx6/imx6.mk
++++ b/imx6/imx6.mk
+@@ -24,6 +24,8 @@ PRODUCT_PACKAGES += \
+ 	ethernet                                \
+ 	libfsl_wfd.so                           \
+ 	fsl.imx.jar                             \
++	libfsl_hdcp_blob.so                     \
++	libstagefright_hdcp.so                  \
+ 	hwcomposer_fsl.imx6.so                  \
+ 	VideoEditor				\
+ 	FSLProfileApp				\
+-- 
+1.8.0
+

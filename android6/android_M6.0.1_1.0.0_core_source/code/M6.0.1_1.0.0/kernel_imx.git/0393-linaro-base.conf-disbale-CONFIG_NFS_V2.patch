@@ -1,0 +1,25 @@
+From af30887b12638cb21c526db3505e64bf05e02f0a Mon Sep 17 00:00:00 2001
+From: Fathi Boudra <fathi.boudra@linaro.org>
+Date: Fri, 21 Jun 2013 12:44:13 +0300
+Subject: [PATCH] linaro-base.conf: disbale CONFIG_NFS_V2
+
+Signed-off-by: Fathi Boudra <fathi.boudra@linaro.org>
+---
+ linaro/configs/linaro-base.conf | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/linaro/configs/linaro-base.conf b/linaro/configs/linaro-base.conf
+index 97576df7..bf5812c 100644
+--- a/linaro/configs/linaro-base.conf
++++ b/linaro/configs/linaro-base.conf
+@@ -71,6 +71,7 @@ CONFIG_JFFS2_RUBIN=y
+ CONFIG_CRAMFS=y
+ CONFIG_NETWORK_FILESYSTEMS=y
+ CONFIG_NFS_FS=y
++# CONFIG_NFS_V2 is not set
+ CONFIG_NFS_V3=y
+ CONFIG_NFS_V3_ACL=y
+ CONFIG_NFS_V4=y
+-- 
+1.8.0
+

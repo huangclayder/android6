@@ -1,0 +1,27 @@
+From c617377cddb5e9a6719c2a306aef96ea9bc2506f Mon Sep 17 00:00:00 2001
+From: Bao Xiahong <b50906@freescale.com>
+Date: Wed, 7 Jan 2015 16:33:14 +0800
+Subject: [PATCH 421/602] MA-5942 add libavresample
+
+update imx6.mk, add libavresample to support opus.
+
+Signed-off-by: Bao Xiahong <b50906@freescale.com>
+---
+ imx6/imx6.mk | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/imx6/imx6.mk b/imx6/imx6.mk
+index 8d9c9a4..9381f89 100644
+--- a/imx6/imx6.mk
++++ b/imx6/imx6.mk
+@@ -264,6 +264,7 @@ omx_libs := \
+ 	lib_omx_libav_video_dec_arm11_elinux \
+ 	libavcodec \
+ 	libavutil \
++    libavresample \
+ 	lib_omx_libav_audio_dec_arm11_elinux \
+     lib_omx_soft_hevc_dec_arm11_elinux \
+ 
+-- 
+1.8.0
+

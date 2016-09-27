@@ -1,0 +1,34 @@
+From ab3dfcf7195cbba8ea274c88ae6871ef42aed3dd Mon Sep 17 00:00:00 2001
+From: "guoyin.chen" <guoyin.chen@freescale.com>
+Date: Tue, 28 Apr 2015 15:34:58 +0800
+Subject: [PATCH 579/635] MA-6608 Fresh Rate for EPDC Panel is 1 FPS which is
+ too slow
+
+EPDC panel have a variable refresh rate from 2~30HZ
+Previous calculation will have the refresh rate to be 0.03hz
+Adjust the PEDC refresh rate to be 30HZ, which Surfaceflinger will drive
+a software vsync based on the refresh rate
+
+Signed-off-by: guoyin.chen <guoyin.chen@freescale.com>
+---
+ mx7/gralloc/framebuffer.cpp | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/mx7/gralloc/framebuffer.cpp b/mx7/gralloc/framebuffer.cpp
+index 52ab0d9..ff59c8e 100644
+--- a/mx7/gralloc/framebuffer.cpp
++++ b/mx7/gralloc/framebuffer.cpp
+@@ -313,6 +313,10 @@ int mapFrameBufferLocked(struct private_module_t* module)
+         refreshRate = 60*1000;  // 60 Hz
+     }
+ 
++    //epdc panel have a variable refresh rate from 2~30HZ
++    if(isEPDCDisplay())
++        refreshRate = 30*1000;
++
+     if (int(info.width) <= 0 || int(info.height) <= 0) {
+         // the driver doesn't return that information
+         // default to 160 dpi
+-- 
+1.8.0
+

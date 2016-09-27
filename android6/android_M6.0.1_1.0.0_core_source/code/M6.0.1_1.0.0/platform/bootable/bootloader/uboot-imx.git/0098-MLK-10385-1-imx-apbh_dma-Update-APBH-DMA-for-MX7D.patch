@@ -1,0 +1,103 @@
+From c8ebb4157692ac5962713113e9a751f0a8325713 Mon Sep 17 00:00:00 2001
+From: "Ye.Li" <B37916@freescale.com>
+Date: Mon, 9 Mar 2015 11:54:27 +0800
+Subject: [PATCH] MLK-10385-1 imx: apbh_dma: Update APBH-DMA for MX7D
+
+Update APBH-DMA driver and head files with definitions for CONFIG_MX7
+
+Signed-off-by: Ye.Li <B37916@freescale.com>
+(cherry picked from commit 07299056426f1f25aab51ab5531c4846d4c7560f)
+Signed-off-by: Peng Fan <Peng.Fan@freescale.com>
+---
+ arch/arm/include/asm/imx-common/dma.h       | 4 ++--
+ arch/arm/include/asm/imx-common/regs-apbh.h | 8 ++++----
+ drivers/dma/apbh_dma.c                      | 4 ++--
+ 3 files changed, 8 insertions(+), 8 deletions(-)
+
+diff --git a/arch/arm/include/asm/imx-common/dma.h b/arch/arm/include/asm/imx-common/dma.h
+index d5c1f7f..d38d2bf 100644
+--- a/arch/arm/include/asm/imx-common/dma.h
++++ b/arch/arm/include/asm/imx-common/dma.h
+@@ -5,7 +5,7 @@
+  * on behalf of DENX Software Engineering GmbH
+  *
+  * Based on code from LTIB:
+- * Copyright 2008-2010 Freescale Semiconductor, Inc. All Rights Reserved.
++ * Copyright 2008-2015 Freescale Semiconductor, Inc. All Rights Reserved.
+  *
+  * SPDX-License-Identifier:	GPL-2.0+
+  */
+@@ -59,7 +59,7 @@ enum {
+ 	MXS_DMA_CHANNEL_AHB_APBH_RESERVED1,
+ 	MXS_MAX_DMA_CHANNELS,
+ };
+-#elif defined(CONFIG_MX6)
++#elif (defined(CONFIG_MX6) || defined(CONFIG_MX7))
+ enum {
+ 	MXS_DMA_CHANNEL_AHB_APBH_GPMI0 = 0,
+ 	MXS_DMA_CHANNEL_AHB_APBH_GPMI1,
+diff --git a/arch/arm/include/asm/imx-common/regs-apbh.h b/arch/arm/include/asm/imx-common/regs-apbh.h
+index ca77436..ec1c5f3 100644
+--- a/arch/arm/include/asm/imx-common/regs-apbh.h
++++ b/arch/arm/include/asm/imx-common/regs-apbh.h
+@@ -5,7 +5,7 @@
+  * on behalf of DENX Software Engineering GmbH
+  *
+  * Based on code from LTIB:
+- * Copyright 2008-2010 Freescale Semiconductor, Inc. All Rights Reserved.
++ * Copyright 2008-2015 Freescale Semiconductor, Inc. All Rights Reserved.
+  *
+  * SPDX-License-Identifier:	GPL-2.0+
+  */
+@@ -96,7 +96,7 @@ struct mxs_apbh_regs {
+ 	mxs_reg_32(hw_apbh_version)
+ };
+ 
+-#elif (defined(CONFIG_MX28) || defined(CONFIG_MX6))
++#elif (defined(CONFIG_MX28) || defined(CONFIG_MX6) || defined(CONFIG_MX7))
+ struct mxs_apbh_regs {
+ 	mxs_reg_32(hw_apbh_ctrl0)
+ 	mxs_reg_32(hw_apbh_ctrl1)
+@@ -275,7 +275,7 @@ struct mxs_apbh_regs {
+ #define	APBH_CTRL0_CLKGATE_CHANNEL_NAND7		0x0800
+ #define	APBH_CTRL0_CLKGATE_CHANNEL_HSADC		0x1000
+ #define	APBH_CTRL0_CLKGATE_CHANNEL_LCDIF		0x2000
+-#elif defined(CONFIG_MX6)
++#elif (defined(CONFIG_MX6) || defined(CONFIG_MX7))
+ #define	APBH_CTRL0_CLKGATE_CHANNEL_OFFSET		0
+ #define	APBH_CTRL0_CLKGATE_CHANNEL_NAND0		0x0001
+ #define	APBH_CTRL0_CLKGATE_CHANNEL_NAND1		0x0002
+@@ -391,7 +391,7 @@ struct mxs_apbh_regs {
+ #define	APBH_CHANNEL_CTRL_FREEZE_CHANNEL_LCDIF		0x2000
+ #endif
+ 
+-#if defined(CONFIG_MX6)
++#if (defined(CONFIG_MX6) || defined(CONFIG_MX7))
+ #define	APBH_CHANNEL_CTRL_RESET_CHANNEL_OFFSET		16
+ #endif
+ 
+diff --git a/drivers/dma/apbh_dma.c b/drivers/dma/apbh_dma.c
+index 22defcd..c63f4f6 100644
+--- a/drivers/dma/apbh_dma.c
++++ b/drivers/dma/apbh_dma.c
+@@ -5,7 +5,7 @@
+  * on behalf of DENX Software Engineering GmbH
+  *
+  * Based on code from LTIB:
+- * Copyright (C) 2010 Freescale Semiconductor, Inc. All Rights Reserved.
++ * Copyright (C) 2015 Freescale Semiconductor, Inc. All Rights Reserved.
+  *
+  * SPDX-License-Identifier:	GPL-2.0+
+  */
+@@ -215,7 +215,7 @@ static int mxs_dma_reset(int channel)
+ #if defined(CONFIG_MX23)
+ 	uint32_t setreg = (uint32_t)(&apbh_regs->hw_apbh_ctrl0_set);
+ 	uint32_t offset = APBH_CTRL0_RESET_CHANNEL_OFFSET;
+-#elif (defined(CONFIG_MX28) || defined(CONFIG_MX6))
++#elif (defined(CONFIG_MX28) || defined(CONFIG_MX6) || defined(CONFIG_MX7))
+ 	uint32_t setreg = (uint32_t)(&apbh_regs->hw_apbh_channel_ctrl_set);
+ 	uint32_t offset = APBH_CHANNEL_CTRL_RESET_CHANNEL_OFFSET;
+ #endif
+-- 
+1.8.0
+

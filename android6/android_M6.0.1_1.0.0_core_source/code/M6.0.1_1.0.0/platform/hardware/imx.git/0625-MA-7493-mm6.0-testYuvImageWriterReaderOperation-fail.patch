@@ -1,0 +1,81 @@
+From 2f3a865d69955c5da681b28452549e230d98d5c8 Mon Sep 17 00:00:00 2001
+From: fang hui <b31070@freescale.com>
+Date: Fri, 8 Jan 2016 17:47:49 +0800
+Subject: [PATCH 625/635] MA-7493 - [mm6.0] :
+ testYuvImageWriterReaderOperation failed
+
+The case will capture a frame from camera, then imageCopy to a dst buffer,
+then compare the src and dst buffer.
+For nv12, The base addr of cr is 1 byte bigger then cb.
+Should use
+(void*)((int)ycbcr->cb + 1)
+instead of
+(int*)ycbcr->cb + 1
+
+Signed-off-by: fang hui <b31070@freescale.com>
+---
+ mx6/libgralloc_wrapper/CPUBufferManager.cpp | 6 +++---
+ mx6/libgralloc_wrapper/GPUBufferManager.cpp | 6 +++---
+ 2 files changed, 6 insertions(+), 6 deletions(-)
+
+diff --git a/mx6/libgralloc_wrapper/CPUBufferManager.cpp b/mx6/libgralloc_wrapper/CPUBufferManager.cpp
+index b73a239..b620080 100755
+--- a/mx6/libgralloc_wrapper/CPUBufferManager.cpp
++++ b/mx6/libgralloc_wrapper/CPUBufferManager.cpp
+@@ -1,5 +1,5 @@
+ /*
+- * Copyright (C) 2013-2015 Freescale Semiconductor, Inc.
++ * Copyright (C) 2013-2016 Freescale Semiconductor, Inc.
+  *
+  * Licensed under the Apache License, Version 2.0 (the "License");
+  * you may not use this file except in compliance with the License.
+@@ -316,7 +316,7 @@ int CPUBufferManager::lockYCbCr(buffer_handle_t handle, int /*usage*/,
+             ycbcr->cstride = ycbcr->ystride;
+             ycbcr->y = (void*)hnd->base;
+             ycbcr->cb = (void*)(hnd->base + hnd->stride*hnd->height);
+-            ycbcr->cr = (int*)ycbcr->cb + 1;
++            ycbcr->cr = (void*)((int)ycbcr->cb + 1);
+             ycbcr->chroma_step = 2;
+             break;
+ 
+@@ -325,7 +325,7 @@ int CPUBufferManager::lockYCbCr(buffer_handle_t handle, int /*usage*/,
+             ycbcr->cstride = ycbcr->ystride;
+             ycbcr->y = (void*)hnd->base;
+             ycbcr->cr = (void*)(hnd->base + hnd->stride*hnd->height);
+-            ycbcr->cb = (int*)ycbcr->cr + 1;
++            ycbcr->cb = (void*)((int)ycbcr->cr + 1);
+             ycbcr->chroma_step = 2;
+             break;
+ 
+diff --git a/mx6/libgralloc_wrapper/GPUBufferManager.cpp b/mx6/libgralloc_wrapper/GPUBufferManager.cpp
+index 3cb977d..980aa23 100755
+--- a/mx6/libgralloc_wrapper/GPUBufferManager.cpp
++++ b/mx6/libgralloc_wrapper/GPUBufferManager.cpp
+@@ -1,5 +1,5 @@
+ /*
+- * Copyright (C) 2013-2015 Freescale Semiconductor, Inc.
++ * Copyright (C) 2013-2016 Freescale Semiconductor, Inc.
+  *
+  * Licensed under the Apache License, Version 2.0 (the "License");
+  * you may not use this file except in compliance with the License.
+@@ -323,7 +323,7 @@ int GPUBufferManager::lockYUVHandle(private_handle_t* hnd, android_ycbcr* ycbcr)
+             ycbcr->cstride = ycbcr->ystride;
+             ycbcr->y = (void*)hnd->base;
+             ycbcr->cb = (void*)(hnd->base + hnd->stride*hnd->height);
+-            ycbcr->cr = (int*)ycbcr->cb + 1;
++            ycbcr->cr =  (void*)((int)ycbcr->cb + 1);
+             ycbcr->chroma_step = 2;
+             break;
+ 
+@@ -332,7 +332,7 @@ int GPUBufferManager::lockYUVHandle(private_handle_t* hnd, android_ycbcr* ycbcr)
+             ycbcr->cstride = ycbcr->ystride;
+             ycbcr->y = (void*)hnd->base;
+             ycbcr->cr = (void*)(hnd->base + hnd->stride*hnd->height);
+-            ycbcr->cb = (int*)ycbcr->cr + 1;
++            ycbcr->cb = (void*)((int)ycbcr->cr + 1);
+             ycbcr->chroma_step = 2;
+             break;
+ 
+-- 
+1.8.0
+

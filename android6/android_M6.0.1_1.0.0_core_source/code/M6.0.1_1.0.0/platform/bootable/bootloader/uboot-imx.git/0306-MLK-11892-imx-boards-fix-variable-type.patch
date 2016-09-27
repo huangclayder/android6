@@ -1,0 +1,121 @@
+From 0f64ca58972aa4e4c1321869ece526da6e13d48e Mon Sep 17 00:00:00 2001
+From: Peng Fan <Peng.Fan@freescale.com>
+Date: Tue, 24 Nov 2015 17:28:52 +0800
+Subject: [PATCH] MLK-11892 imx: boards: fix variable type
+
+ret should not use unsigned integer. Should use signed interger to
+compare against 0.
+
+Signed-off-by: Peng Fan <Peng.Fan@freescale.com>
+---
+ board/freescale/mx6qsabreauto/mx6qsabreauto.c       | 3 ++-
+ board/freescale/mx6sabresd/mx6sabresd.c             | 3 ++-
+ board/freescale/mx6slevk/mx6slevk.c                 | 3 ++-
+ board/freescale/mx6sx_17x17_arm2/mx6sx_17x17_arm2.c | 4 +++-
+ board/freescale/mx6sx_19x19_arm2/mx6sx_19x19_arm2.c | 3 ++-
+ board/freescale/mx6sxsabreauto/mx6sxsabreauto.c     | 3 ++-
+ board/freescale/mx6sxsabresd/mx6sxsabresd.c         | 3 ++-
+ 7 files changed, 15 insertions(+), 7 deletions(-)
+
+diff --git a/board/freescale/mx6qsabreauto/mx6qsabreauto.c b/board/freescale/mx6qsabreauto/mx6qsabreauto.c
+index de71bfb..21362a4 100644
+--- a/board/freescale/mx6qsabreauto/mx6qsabreauto.c
++++ b/board/freescale/mx6qsabreauto/mx6qsabreauto.c
+@@ -772,7 +772,8 @@ int board_init(void)
+ static struct pmic *pfuze;
+ int power_init_board(void)
+ {
+-	unsigned int value, ret;
++	unsigned int value;
++	int ret;
+ 
+ 	pfuze = pfuze_common_init(I2C_PMIC);
+ 	if (!pfuze)
+diff --git a/board/freescale/mx6sabresd/mx6sabresd.c b/board/freescale/mx6sabresd/mx6sabresd.c
+index 6ef5131..0e4ee2f 100644
+--- a/board/freescale/mx6sabresd/mx6sabresd.c
++++ b/board/freescale/mx6sabresd/mx6sabresd.c
+@@ -972,7 +972,8 @@ int board_init(void)
+ static struct pmic *pfuze;
+ int power_init_board(void)
+ {
+-	unsigned int reg, ret;
++	unsigned int reg;
++	int ret;
+ 
+ 	pfuze = pfuze_common_init(I2C_PMIC);
+ 	if (!pfuze)
+diff --git a/board/freescale/mx6slevk/mx6slevk.c b/board/freescale/mx6slevk/mx6slevk.c
+index b796175..b94fdf0 100644
+--- a/board/freescale/mx6slevk/mx6slevk.c
++++ b/board/freescale/mx6slevk/mx6slevk.c
+@@ -382,7 +382,8 @@ struct i2c_pads_info i2c_pad_info1 = {
+ static struct pmic *pfuze;
+ int power_init_board(void)
+ {
+-	unsigned int reg, ret;
++	unsigned int reg;
++	int ret;
+ 
+ 	pfuze = pfuze_common_init(I2C_PMIC);
+ 	if (!pfuze)
+diff --git a/board/freescale/mx6sx_17x17_arm2/mx6sx_17x17_arm2.c b/board/freescale/mx6sx_17x17_arm2/mx6sx_17x17_arm2.c
+index 5e94f72..ea022f5 100644
+--- a/board/freescale/mx6sx_17x17_arm2/mx6sx_17x17_arm2.c
++++ b/board/freescale/mx6sx_17x17_arm2/mx6sx_17x17_arm2.c
+@@ -111,7 +111,9 @@ struct i2c_pads_info i2c_pad_info2 = {
+ static struct pmic *pfuze;
+ int power_init_board(void)
+ {
+-	unsigned int reg, ret;
++	unsigned int reg;
++	int ret;
++
+ 	pfuze = pfuze_common_init(I2C_PMIC);
+ 	if (!pfuze)
+ 		return -ENODEV;
+diff --git a/board/freescale/mx6sx_19x19_arm2/mx6sx_19x19_arm2.c b/board/freescale/mx6sx_19x19_arm2/mx6sx_19x19_arm2.c
+index a0d5842..46fb0b4 100644
+--- a/board/freescale/mx6sx_19x19_arm2/mx6sx_19x19_arm2.c
++++ b/board/freescale/mx6sx_19x19_arm2/mx6sx_19x19_arm2.c
+@@ -116,7 +116,8 @@ struct i2c_pads_info i2c_pad_info2 = {
+ static struct pmic *pfuze;
+ int power_init_board(void)
+ {
+-	unsigned int ret, reg;
++	unsigned int reg;
++	int ret;
+ 
+ 	pfuze = pfuze_common_init(I2C_PMIC);
+ 	if (!pfuze)
+diff --git a/board/freescale/mx6sxsabreauto/mx6sxsabreauto.c b/board/freescale/mx6sxsabreauto/mx6sxsabreauto.c
+index 4e4dbb8..43a2e3f 100644
+--- a/board/freescale/mx6sxsabreauto/mx6sxsabreauto.c
++++ b/board/freescale/mx6sxsabreauto/mx6sxsabreauto.c
+@@ -126,7 +126,8 @@ struct i2c_pads_info i2c_pad_info3 = {
+ static struct pmic *pfuze;
+ int power_init_board(void)
+ {
+-	unsigned int reg, ret;
++	unsigned int reg;
++	int ret;
+ 
+ 	pfuze = pfuze_common_init(I2C_PMIC);
+ 	if (!pfuze)
+diff --git a/board/freescale/mx6sxsabresd/mx6sxsabresd.c b/board/freescale/mx6sxsabresd/mx6sxsabresd.c
+index 9f0f576..3b238e7 100644
+--- a/board/freescale/mx6sxsabresd/mx6sxsabresd.c
++++ b/board/freescale/mx6sxsabresd/mx6sxsabresd.c
+@@ -463,7 +463,8 @@ struct i2c_pads_info i2c_pad_info2 = {
+ static struct pmic *pfuze;
+ int power_init_board(void)
+ {
+-	unsigned int reg, ret;
++	unsigned int reg;
++	int ret;
+ 
+ 	pfuze = pfuze_common_init(I2C_PMIC);
+ 	if (!pfuze)
+-- 
+1.8.0
+

@@ -1,0 +1,351 @@
+From aa1995470fa126cee8169affe28df485f3b6a2ef Mon Sep 17 00:00:00 2001
+From: Ma Jiamin <b55507@freescale.com>
+Date: Tue, 19 Jan 2016 15:48:55 +0800
+Subject: [PATCH 111/115] MA-7533 Enable Ble Demo on MM6.0
+
+Add a permission:ACCESS_COARSE_LOCATION. This permission must be included in mm6.0 if the app tries to use Bluetooth LE.
+Add a permissionActivity to request the runtime permission.
+
+Signed-off-by: Ma Jiamin<b55507@freescale.com>
+---
+ BleClient/AndroidManifest.xml                      | 11 ++-
+ BleClient/res/layout/permissions.xml               |  7 ++
+ .../freescale/bleclient/PermissionActivity.java    | 97 ++++++++++++++++++++++
+ BleServerEmulator/AndroidManifest.xml              | 30 +++++--
+ BleServerEmulator/res/layout/permissions.xml       |  7 ++
+ .../freescale/bleserver/PermissionActivity.java    | 96 +++++++++++++++++++++
+ 6 files changed, 239 insertions(+), 9 deletions(-)
+ create mode 100755 BleClient/res/layout/permissions.xml
+ create mode 100755 BleClient/src/com/freescale/bleclient/PermissionActivity.java
+ create mode 100755 BleServerEmulator/res/layout/permissions.xml
+ create mode 100755 BleServerEmulator/src/com/freescale/bleserver/PermissionActivity.java
+
+diff --git a/BleClient/AndroidManifest.xml b/BleClient/AndroidManifest.xml
+index 72f0b55..aca52be 100755
+--- a/BleClient/AndroidManifest.xml
++++ b/BleClient/AndroidManifest.xml
+@@ -6,10 +6,11 @@
+ 
+     <uses-sdk
+         android:minSdkVersion="21"
+-        android:targetSdkVersion="21" />
++	android:targetSdkVersion="21" />
+ 
+     <uses-permission android:name="android.permission.BLUETOOTH" />
+     <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" />
++    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+ 
+     <uses-feature
+         android:name="android.hardware.bluetooth_le"
+@@ -21,8 +22,7 @@
+         android:label="@string/app_name"
+         android:theme="@style/AppTheme" >
+         <activity
+-            android:name="com.freescale.bleclient.ScanActivity"
+-            android:label="@string/app_name"
++            android:name="com.freescale.bleclient.PermissionActivity"
+             android:screenOrientation="landscape" >
+             <intent-filter>
+                 <action android:name="android.intent.action.MAIN" />
+@@ -31,6 +31,11 @@
+             </intent-filter>
+         </activity>
+         <activity
++            android:name="com.freescale.bleclient.ScanActivity"
++            android:label="@string/app_name"
++            android:screenOrientation="landscape" >
++        </activity>
++        <activity
+             android:name="com.freescale.bleclient.DeviceControlActivity"
+             android:screenOrientation="landscape" >
+         </activity>
+diff --git a/BleClient/res/layout/permissions.xml b/BleClient/res/layout/permissions.xml
+new file mode 100755
+index 0000000..a7776a1
+--- /dev/null
++++ b/BleClient/res/layout/permissions.xml
+@@ -0,0 +1,7 @@
++<?xml version="1.0" encoding="utf-8"?>
++<FrameLayout
++    xmlns:android="http://schemas.android.com/apk/res/android"
++    android:id="@+id/permissions"
++    android:background="@android:color/black"
++    android:layout_width="match_parent"
++    android:layout_height="match_parent" />
+diff --git a/BleClient/src/com/freescale/bleclient/PermissionActivity.java b/BleClient/src/com/freescale/bleclient/PermissionActivity.java
+new file mode 100755
+index 0000000..8ecbe9f
+--- /dev/null
++++ b/BleClient/src/com/freescale/bleclient/PermissionActivity.java
+@@ -0,0 +1,97 @@
++/*
++ * Copyright (C) 2016 Freescale Semiconductor, Inc.
++ *
++ * Licensed under the Apache License, Version 2.0 (the "License");
++ * you may not use this file except in compliance with the License.
++ * You may obtain a copy of the License at
++ *
++ *      http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++
++package com.freescale.bleclient;
++
++import android.Manifest;
++import android.app.Activity;
++import android.content.pm.PackageManager;
++import android.os.Bundle;
++import android.widget.Toast;
++import android.content.Intent;
++import android.content.DialogInterface;
++import com.freescale.bleclient.R;
++import android.util.Log;
++
++public class PermissionActivity extends Activity {
++
++	private int mNumPermissionsToRequest = 0;
++	private boolean mShouldRequestLocationPermission = false;
++	private boolean mFlagHasLocationPermission = true;
++	private int mIndexPermissionRequestLocation = 0;
++	private static final int PERMISSION_REQUEST_CODE = 0;
++	private static final String TAG = "BleClient PermissionActivity";
++
++	@Override
++	protected void onCreate(Bundle savedInstanceState) {
++		super.onCreate(savedInstanceState);
++		setContentView(R.layout.permissions);
++		checkPermission();
++	}
++
++	private void checkPermission(){
++
++		if(checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION)
++				!= PackageManager.PERMISSION_GRANTED){
++			mNumPermissionsToRequest++;
++			mShouldRequestLocationPermission  = true;
++		}else{
++			mFlagHasLocationPermission  = true;
++		}
++
++		String[] permissionToRequest = new String[mNumPermissionsToRequest];
++		int permissionRequestIndex = 0;
++
++		if(mShouldRequestLocationPermission){
++			permissionToRequest[permissionRequestIndex] = Manifest.permission.ACCESS_COARSE_LOCATION;
++			mIndexPermissionRequestLocation= permissionRequestIndex;
++			permissionRequestIndex++;
++		}
++
++		if(permissionToRequest.length > 0){
++			requestPermissions(permissionToRequest, PERMISSION_REQUEST_CODE);
++		}else{
++			enterScanMenu();
++		}
++	}
++
++	@Override
++	public void onRequestPermissionsResult(int requestCode,
++			String permissions[], int[] grantResults) {
++		switch (requestCode) {
++		case PERMISSION_REQUEST_CODE:
++			if (grantResults.length > 0
++					&& grantResults[0] == PackageManager.PERMISSION_GRANTED) {
++				Log.v(TAG, "Grant permission successfully");
++			} else {
++				Log.v(TAG, "Grant Permission unsuccessfully");
++			}
++			break;
++		default:
++			break;
++		}
++		enterScanMenu();
++	}
++
++	private void enterScanMenu(){
++		Intent enterScan = new Intent(this, ScanActivity.class);
++		startActivity(enterScan);
++		finish();
++	}
++
++}
++
++
+diff --git a/BleServerEmulator/AndroidManifest.xml b/BleServerEmulator/AndroidManifest.xml
+index 609c265..2da5bf6 100755
+--- a/BleServerEmulator/AndroidManifest.xml
++++ b/BleServerEmulator/AndroidManifest.xml
+@@ -5,19 +5,20 @@
+     android:versionName="1.0" >
+ 
+     <uses-sdk
+-        android:minSdkVersion="22"
+-        android:targetSdkVersion="22" />
++        android:minSdkVersion="23"
++         />
+ 
+     <uses-permission android:name="android.permission.BLUETOOTH" />
+     <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" />
++    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
++
+     <application
+         android:allowBackup="true"
+         android:icon="@drawable/ble"
+         android:label="@string/app_name"
+         android:theme="@style/AppTheme" >
+-        <activity
+-            android:name="com.freescale.bleserver.HomeActivity"
+-            android:label="@string/app_name"
++         <activity
++            android:name="com.freescale.bleserver.PermissionActivity"
+             android:screenOrientation="portrait" >
+             <intent-filter>
+                 <action android:name="android.intent.action.MAIN" />
+@@ -26,7 +27,24 @@
+             </intent-filter>
+         </activity>
+         <activity
+-            android:name="com.freescale.bleserver.EditActivity"
++            android:name="com.freescale.bleserver.HomeActivity"
++            android:label="@string/app_name"
++            android:screenOrientation="portrait" >
++        </activity>
++        <activity
++            android:name="com.freescale.bleserver.CpuInfoActivity"
++            android:screenOrientation="portrait" >
++        </activity>
++        <activity
++	    android:name="com.freescale.bleserver.GuideAcitivity"
++            android:screenOrientation="portrait" >
++	</activity>
++        <activity
++	    android:name="com.freescale.bleserver.HeartRateAcitivity"
++            android:screenOrientation="portrait" >
++        </activity>
++        <activity
++	    android:name="com.freescale.bleserver.MessageAcitivity"
+             android:screenOrientation="portrait" >
+         </activity>
+     </application>
+diff --git a/BleServerEmulator/res/layout/permissions.xml b/BleServerEmulator/res/layout/permissions.xml
+new file mode 100755
+index 0000000..a7776a1
+--- /dev/null
++++ b/BleServerEmulator/res/layout/permissions.xml
+@@ -0,0 +1,7 @@
++<?xml version="1.0" encoding="utf-8"?>
++<FrameLayout
++    xmlns:android="http://schemas.android.com/apk/res/android"
++    android:id="@+id/permissions"
++    android:background="@android:color/black"
++    android:layout_width="match_parent"
++    android:layout_height="match_parent" />
+diff --git a/BleServerEmulator/src/com/freescale/bleserver/PermissionActivity.java b/BleServerEmulator/src/com/freescale/bleserver/PermissionActivity.java
+new file mode 100755
+index 0000000..aa4d579
+--- /dev/null
++++ b/BleServerEmulator/src/com/freescale/bleserver/PermissionActivity.java
+@@ -0,0 +1,96 @@
++/*
++ * Copyright (C) 2016 Freescale Semiconductor, Inc.
++ *
++ * Licensed under the Apache License, Version 2.0 (the "License");
++ * you may not use this file except in compliance with the License.
++ * You may obtain a copy of the License at
++ *
++ *      http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++
++package com.freescale.bleserver;
++
++import android.Manifest;
++import android.app.Activity;
++import android.content.pm.PackageManager;
++import android.os.Bundle;
++import android.widget.Toast;
++import android.content.Intent;
++import android.util.Log;
++import com.freescale.bleserver.R;
++
++public class PermissionActivity extends Activity {
++
++	private int mNumPermissionsToRequest = 0;
++	private boolean mShouldRequestLocationPermission = false;
++	private boolean mFlagHasLocationPermission = true;
++	private int mIndexPermissionRequestLocation = 0;
++	private static final int PERMISSION_REQUEST_CODE = 0;
++	private static final String TAG = "BleServer PermissionActivity";
++
++	@Override
++	protected void onCreate(Bundle savedInstanceState) {
++		super.onCreate(savedInstanceState);
++		setContentView(R.layout.permissions);
++		checkPermission();
++	}
++
++	private void checkPermission(){
++
++		if(checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION)
++				!= PackageManager.PERMISSION_GRANTED){
++			mNumPermissionsToRequest++;
++			mShouldRequestLocationPermission  = true;
++		}else{
++			mFlagHasLocationPermission  = true;
++		}
++
++		String[] permissionToRequest = new String[mNumPermissionsToRequest];
++		int permissionRequestIndex = 0;
++
++		if(mShouldRequestLocationPermission){
++			permissionToRequest[permissionRequestIndex] = Manifest.permission.ACCESS_COARSE_LOCATION;
++			mIndexPermissionRequestLocation= permissionRequestIndex;
++			permissionRequestIndex++;
++		}
++
++		if(permissionToRequest.length > 0){
++			requestPermissions(permissionToRequest, PERMISSION_REQUEST_CODE);
++		}else{
++			enterHome();
++		}
++	}
++
++	@Override
++	public void onRequestPermissionsResult(int requestCode,
++			String permissions[], int[] grantResults) {
++		switch (requestCode) {
++		case PERMISSION_REQUEST_CODE:
++			if (grantResults.length > 0
++					&& grantResults[0] == PackageManager.PERMISSION_GRANTED) {
++				Log.v(TAG, "Grant permission successfully");
++			} else {
++				Log.v(TAG, "Grant Permission unsuccessfully");
++			}
++			break;
++		default:
++			break;
++		}
++		enterHome();
++	}
++
++	private void enterHome(){
++		Intent enterVideoMenu = new Intent(this, HomeActivity.class);
++		startActivity(enterVideoMenu);
++		finish();
++	}
++
++}
++
++
+-- 
+1.8.0
+

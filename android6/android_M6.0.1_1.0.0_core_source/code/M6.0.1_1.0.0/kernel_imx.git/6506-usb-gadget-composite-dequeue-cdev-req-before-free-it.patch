@@ -1,0 +1,30 @@
+From b2804c78254d210bccd7e589f3d3ec4cbe0b3abe Mon Sep 17 00:00:00 2001
+From: Li Jun <B47624@freescale.com>
+Date: Tue, 15 Jul 2014 22:07:40 +0800
+Subject: [PATCH] usb: gadget: composite: dequeue cdev->req before free it in
+ composite_dev_cleanup
+
+This patch try to dequeue the cdev->req to guarantee the request is not queued
+before free it.
+
+Signed-off-by: Li Jun <b47624@freescale.com>
+Signed-off-by: Felipe Balbi <balbi@ti.com>
+---
+ drivers/usb/gadget/composite.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/drivers/usb/gadget/composite.c b/drivers/usb/gadget/composite.c
+index 82df926..7ef4087 100644
+--- a/drivers/usb/gadget/composite.c
++++ b/drivers/usb/gadget/composite.c
+@@ -1648,6 +1648,7 @@ void composite_dev_cleanup(struct usb_composite_dev *cdev)
+ 	}
+ 	if (cdev->req) {
+ 		kfree(cdev->req->buf);
++		usb_ep_dequeue(cdev->gadget->ep0, cdev->req);
+ 		usb_ep_free_request(cdev->gadget->ep0, cdev->req);
+ 	}
+ 	cdev->next_string_id = 0;
+-- 
+1.8.0
+

@@ -1,0 +1,51 @@
+From 2fc80b4f79bb1b2b243e76e2e9de9eb4483d0d1d Mon Sep 17 00:00:00 2001
+From: Sandor Yu <R01008@freescale.com>
+Date: Sun, 4 Jan 2015 15:42:12 +0800
+Subject: [PATCH 481/505] MLK-10061: pxp: correct YUV444 format
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+v4l2 define YUV444 and YUV32 format as followed:
+V4L2_PIX_FMT_YUV444  /* 16  xxxxyyyy uuuvvvv */
+V4L2_PIX_FMT_YUV32   /* 32  YUV-8-8-8-8 */
+
+VADC and PXP defined YUV444 as:
+YUV1P444 — 32-bit pixels, 1-plane XYUV
+
+so the format of YUV444 in PXP/VADC should
+V4L2_PIX_FMT_YUV32 in v4l2.
+
+Signed-off-by: Sandor Yu <R01008@freescale.com>
+---
+ test/pxp_v4l2_test/pxp_v4l2_test.c | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/test/pxp_v4l2_test/pxp_v4l2_test.c b/test/pxp_v4l2_test/pxp_v4l2_test.c
+index 932c422..7f9ce88 100644
+--- a/test/pxp_v4l2_test/pxp_v4l2_test.c
++++ b/test/pxp_v4l2_test/pxp_v4l2_test.c
+@@ -1,7 +1,7 @@
+ /*
+  * pxp_test - V4L2 test application for the PxP
+  *
+- * Copyright (C) 2009-2014 Freescale Semiconductor, Inc.
++ * Copyright (C) 2009-2015 Freescale Semiconductor, Inc.
+  * Copyright 2008-2009 Embedded Alley Solutions
+  * Matt Porter <mporter@embeddedalley.com>
+  *
+@@ -130,9 +130,9 @@ static struct pxp_video_format pxp_video_formats[] = {
+ 	 .colorspace = V4L2_COLORSPACE_JPEG,
+ 	 },
+ 	{
+-	 .name = "Y444",
++	 .name = "YUV32",
+ 	 .bpp = 4,
+-	 .fourcc = V4L2_PIX_FMT_YUV444,
++	 .fourcc = V4L2_PIX_FMT_YUV32,
+ 	 .colorspace = V4L2_COLORSPACE_JPEG,
+ 	 },
+ };
+-- 
+1.8.0
+

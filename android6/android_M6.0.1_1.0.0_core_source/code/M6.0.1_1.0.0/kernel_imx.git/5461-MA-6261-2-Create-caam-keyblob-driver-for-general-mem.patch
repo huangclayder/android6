@@ -1,0 +1,32 @@
+From 4aa5877e06091b66c78ba127427293e765c1bddc Mon Sep 17 00:00:00 2001
+From: "guoyin.chen" <guoyin.chen@freescale.com>
+Date: Thu, 2 Jul 2015 16:31:52 +0800
+Subject: [PATCH] MA-6261-2 Create caam keyblob driver for general memory
+ keyblob support
+
+Add caam_keyblob dts entry for sabresd 6dl/dq, which been used for
+imx wfd hdcp stack.
+
+Signed-off-by: guoyin.chen <guoyin.chen@freescale.com>
+---
+ arch/arm/boot/dts/imx6qdl-sabresd.dtsi | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/arch/arm/boot/dts/imx6qdl-sabresd.dtsi b/arch/arm/boot/dts/imx6qdl-sabresd.dtsi
+index 4e537c0..53d7890 100644
+--- a/arch/arm/boot/dts/imx6qdl-sabresd.dtsi
++++ b/arch/arm/boot/dts/imx6qdl-sabresd.dtsi
+@@ -304,6 +304,10 @@
+ 		status = "okay";
+ 	};
+ 
++	caam_keyblob {
++		compatible = "fsl,sec-v4.0-keyblob";
++	};
++
+ 	v4l2_cap_0 {
+ 		compatible = "fsl,imx6q-v4l2-capture";
+ 		ipu_id = <0>;
+-- 
+1.8.0
+

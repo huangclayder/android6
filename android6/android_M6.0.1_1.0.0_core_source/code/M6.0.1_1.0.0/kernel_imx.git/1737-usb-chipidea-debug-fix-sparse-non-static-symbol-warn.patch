@@ -1,0 +1,44 @@
+From 734d7876363a62866470f39ac6e9f72b222ba96c Mon Sep 17 00:00:00 2001
+From: Wei Yongjun <yongjun_wei@trendmicro.com.cn>
+Date: Tue, 22 Jul 2014 10:09:45 +0800
+Subject: [PATCH] usb: chipidea: debug: fix sparse non static symbol warnings
+
+Fixes the following sparse warnings:
+
+drivers/usb/chipidea/debug.c:211:5: warning:
+ symbol 'ci_otg_show' was not declared. Should it be static?
+drivers/usb/chipidea/debug.c:334:5: warning:
+ symbol 'ci_registers_show' was not declared. Should it be static?
+
+Signed-off-by: Wei Yongjun <yongjun_wei@trendmicro.com.cn>
+Signed-off-by: Peter Chen <peter.chen@freescale.com>
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+---
+ drivers/usb/chipidea/debug.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/usb/chipidea/debug.c b/drivers/usb/chipidea/debug.c
+index 7cccab6..795d653 100644
+--- a/drivers/usb/chipidea/debug.c
++++ b/drivers/usb/chipidea/debug.c
+@@ -208,7 +208,7 @@ static const struct file_operations ci_requests_fops = {
+ 	.release	= single_release,
+ };
+ 
+-int ci_otg_show(struct seq_file *s, void *unused)
++static int ci_otg_show(struct seq_file *s, void *unused)
+ {
+ 	struct ci_hdrc *ci = s->private;
+ 	struct otg_fsm *fsm;
+@@ -331,7 +331,7 @@ static const struct file_operations ci_role_fops = {
+ 	.release	= single_release,
+ };
+ 
+-int ci_registers_show(struct seq_file *s, void *unused)
++static int ci_registers_show(struct seq_file *s, void *unused)
+ {
+ 	struct ci_hdrc *ci = s->private;
+ 	u32 tmp_reg;
+-- 
+1.8.0
+

@@ -1,0 +1,30 @@
+From cbc87dd65e9f4112f4a6ae815bcb4712597128ca Mon Sep 17 00:00:00 2001
+From: "Ye.Li" <B37916@freescale.com>
+Date: Wed, 4 Mar 2015 00:01:05 +0800
+Subject: [PATCH] MLK-10363-2 imx: mx7: Enable SNVS clock
+
+Enable SNVS clock in clock_init function as default enabled clock.
+
+Signed-off-by: Ye.Li <B37916@freescale.com>
+(cherry picked from commit df1e45b3098f737d68517c51032472d12fd87666)
+Signed-off-by: Peng Fan <Peng.Fan@freescale.com>
+---
+ arch/arm/cpu/armv7/mx7/clock.c | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/arch/arm/cpu/armv7/mx7/clock.c b/arch/arm/cpu/armv7/mx7/clock.c
+index be42f79..96017d3 100644
+--- a/arch/arm/cpu/armv7/mx7/clock.c
++++ b/arch/arm/cpu/armv7/mx7/clock.c
+@@ -990,6 +990,8 @@ void clock_init(void)
+ 	init_clk_wdog();
+ 
+ 	enable_usboh3_clk(1);
++
++	clock_enable(CCGR_SNVS, 1);
+ }
+ 
+ #ifdef CONFIG_SECURE_BOOT
+-- 
+1.8.0
+

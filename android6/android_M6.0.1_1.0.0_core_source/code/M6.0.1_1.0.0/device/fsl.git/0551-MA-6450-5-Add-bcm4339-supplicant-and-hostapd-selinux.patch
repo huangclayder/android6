@@ -1,0 +1,30 @@
+From c5a3a791c7c75e1ccbd2a532f9b606b18648587c Mon Sep 17 00:00:00 2001
+From: Haoran Wang <b50027@freescale.com>
+Date: Wed, 21 Oct 2015 19:15:29 +0800
+Subject: [PATCH 551/602] MA-6450-5 Add bcm4339 supplicant and hostapd selinux
+ policy
+
+Added the selinux bcm4339 bcm_supplicant and bcm_hostapd
+policy.
+
+Signed-off-by: Haoran Wang <b50027@freescale.com>
+---
+ imx6/sepolicy/file_contexts | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/imx6/sepolicy/file_contexts b/imx6/sepolicy/file_contexts
+index f3e5e85..c1cfeb3 100644
+--- a/imx6/sepolicy/file_contexts
++++ b/imx6/sepolicy/file_contexts
+@@ -2,6 +2,8 @@
+ /system/bin/ingsvcd             u:object_r:gpsd_exec:s0
+ /system/bin/rtl_wpa_supplicant  u:object_r:wpa_exec:s0
+ /system/bin/rtl_hostapd         u:object_r:hostapd_exec:s0
++/system/bin/bcm_supplicant  	u:object_r:wpa_exec:s0
++/system/bin/bcm_hostapd         u:object_r:hostapd_exec:s0
+ /dev/ttyGS[0-9]*                u:object_r:tty_device:s0
+ /dev/ttymxc[0-9]*               u:object_r:tty_device:s0
+ /dev/ttyUSB[0-9]*               u:object_r:tty_device:s0 
+-- 
+1.8.0
+

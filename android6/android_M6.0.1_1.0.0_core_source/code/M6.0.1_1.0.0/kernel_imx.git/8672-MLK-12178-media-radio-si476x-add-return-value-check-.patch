@@ -1,0 +1,44 @@
+From cdf42f3f9a8c23169811fd2d3480f788d4d927e9 Mon Sep 17 00:00:00 2001
+From: Fugang Duan <b38611@freescale.com>
+Date: Mon, 11 Jan 2016 15:14:07 +0800
+Subject: [PATCH] MLK-12178 [media] radio-si476x: add return value check to
+ avoid dead code
+
+Dead code found on below code:
+    si476x_radio_add_new_custom(radio, SI476X_IDX_DIVERSITY_MODE);
+    if (rval < 0)
+            goto exit;
+
+    si476x_radio_add_new_custom(radio, SI476X_IDX_INTERCHIP_LINK);
+    if (rval < 0)  ====> Dead code !!!
+            goto exit;
+
+The piece of code miss return value check after calling .si476x_radio_add_new_custom(),
+the patch fix it.
+
+Signed-off-by: Fugang Duan <B38611@freescale.com>
+---
+ drivers/media/radio/radio-si476x.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/media/radio/radio-si476x.c b/drivers/media/radio/radio-si476x.c
+index bb81a28..09235c7 100644
+--- a/drivers/media/radio/radio-si476x.c
++++ b/drivers/media/radio/radio-si476x.c
+@@ -1551,11 +1551,11 @@ static int si476x_radio_probe(struct platform_device *pdev)
+ 	if (si476x_core_has_diversity(radio->core)) {
+ 		si476x_ctrls[SI476X_IDX_DIVERSITY_MODE].def =
+ 			si476x_phase_diversity_mode_to_idx(radio->core->diversity_mode);
+-		si476x_radio_add_new_custom(radio, SI476X_IDX_DIVERSITY_MODE);
++		rval = si476x_radio_add_new_custom(radio, SI476X_IDX_DIVERSITY_MODE);
+ 		if (rval < 0)
+ 			goto exit;
+ 
+-		si476x_radio_add_new_custom(radio, SI476X_IDX_INTERCHIP_LINK);
++		rval = si476x_radio_add_new_custom(radio, SI476X_IDX_INTERCHIP_LINK);
+ 		if (rval < 0)
+ 			goto exit;
+ 	}
+-- 
+1.8.0
+

@@ -1,0 +1,44 @@
+From 26f8fea617fcebd8835f660534a988c58b9f0517 Mon Sep 17 00:00:00 2001
+From: Zidan Wang <zidan.wang@freescale.com>
+Date: Fri, 27 Nov 2015 13:45:09 +0800
+Subject: [PATCH] MLK-11915-11 ASoC: fsl_asrc_dma: check the return value for
+ snd_pcm_hw_constraint_integer()
+
+check the return value for snd_pcm_hw_constraint_integer().
+Reported by Coverity.
+
+Signed-off-by: Zidan Wang <zidan.wang@freescale.com>
+---
+ sound/soc/fsl/fsl_asrc_dma.c | 9 +++++++--
+ 1 file changed, 7 insertions(+), 2 deletions(-)
+
+diff --git a/sound/soc/fsl/fsl_asrc_dma.c b/sound/soc/fsl/fsl_asrc_dma.c
+index f0bf0b6..e5b9bfb 100644
+--- a/sound/soc/fsl/fsl_asrc_dma.c
++++ b/sound/soc/fsl/fsl_asrc_dma.c
+@@ -293,6 +293,7 @@ static int fsl_asrc_dma_startup(struct snd_pcm_substream *substream)
+ 	struct device *dev = rtd->platform->dev;
+ 	struct fsl_asrc *asrc_priv = dev_get_drvdata(dev);
+ 	struct fsl_asrc_pair *pair;
++	int ret;
+ 
+ 	pair = kzalloc(sizeof(struct fsl_asrc_pair), GFP_KERNEL);
+ 	if (!pair) {
+@@ -304,8 +305,12 @@ static int fsl_asrc_dma_startup(struct snd_pcm_substream *substream)
+ 
+ 	runtime->private_data = pair;
+ 
+-	snd_pcm_hw_constraint_integer(substream->runtime,
+-				      SNDRV_PCM_HW_PARAM_PERIODS);
++	ret = snd_pcm_hw_constraint_integer(substream->runtime,
++			SNDRV_PCM_HW_PARAM_PERIODS);
++	if (ret < 0) {
++		dev_err(dev, "failed to set pcm hw params periods\n");
++		return ret;
++	}
+ 	snd_soc_set_runtime_hwparams(substream, &snd_imx_hardware);
+ 
+ 	return 0;
+-- 
+1.8.0
+

@@ -1,0 +1,93 @@
+From 701733cf4c70d152af5b22159a44069427f54752 Mon Sep 17 00:00:00 2001
+From: "Ye.Li" <B37916@freescale.com>
+Date: Wed, 16 Jul 2014 13:53:34 +0800
+Subject: [PATCH] ENGR00322860 iMX6SX: Add function to check M4 status before
+ booting
+
+Add new function "arch_auxiliary_core_check_up" to check whether M4
+is already up. Therefore, avoid starting M4 again when it is running.
+
+Signed-off-by: Ye.Li <B37916@freescale.com>
+(cherry picked from commit 54a0803b29c5ab459bedfb2c68c1e94b89866aa1)
+Signed-off-by: Peng Fan <Peng.Fan@freescale.com>
+---
+ arch/arm/cpu/armv7/mx6/soc.c              | 13 +++++++++++++
+ arch/arm/include/asm/arch-mx6/sys_proto.h |  1 +
+ common/cmd_bootaux.c                      | 18 +++++++++++++++++-
+ 3 files changed, 31 insertions(+), 1 deletion(-)
+
+diff --git a/arch/arm/cpu/armv7/mx6/soc.c b/arch/arm/cpu/armv7/mx6/soc.c
+index c809711..1e72212 100644
+--- a/arch/arm/cpu/armv7/mx6/soc.c
++++ b/arch/arm/cpu/armv7/mx6/soc.c
+@@ -565,6 +565,19 @@ int arch_auxiliary_core_up(u32 core_id, u32 boot_private_data)
+ 
+ 	return 0;
+ }
++
++int arch_auxiliary_core_check_up(u32 core_id)
++{
++	struct src *src_reg = (struct src *)SRC_BASE_ADDR;
++	unsigned val;
++
++	val = readl(&src_reg->scr);
++
++	if (val & 0x00000010)
++		return 0;  /* assert in reset */
++
++	return 1;
++}
+ #endif
+ 
+ void boot_mode_apply(unsigned cfg_val)
+diff --git a/arch/arm/include/asm/arch-mx6/sys_proto.h b/arch/arm/include/asm/arch-mx6/sys_proto.h
+index b89faca..2fcdd63 100644
+--- a/arch/arm/include/asm/arch-mx6/sys_proto.h
++++ b/arch/arm/include/asm/arch-mx6/sys_proto.h
+@@ -40,6 +40,7 @@ void finish_anatop_bypass(void);
+ 
+ #ifdef CONFIG_MX6SX
+ int arch_auxiliary_core_up(u32 core_id, u32 boot_private_data);
++int arch_auxiliary_core_check_up(u32 core_id);
+ #endif
+ 
+ /*
+diff --git a/common/cmd_bootaux.c b/common/cmd_bootaux.c
+index 188cb73..b15de0e 100644
+--- a/common/cmd_bootaux.c
++++ b/common/cmd_bootaux.c
+@@ -16,14 +16,30 @@ static int __arch_auxiliary_core_up(u32 core_id, u32 boot_private_data)
+ int arch_auxiliary_core_up(u32 core_id, u32 boot_private_data)
+ 	__attribute__((weak, alias("__arch_auxiliary_core_up")));
+ 
++/* Allow for arch specific config before we boot */
++static int __arch_auxiliary_core_check_up(u32 core_id)
++{
++	/* please define platform specific arch_auxiliary_core_check_up() */
++	return 0;
++}
++
++int arch_auxiliary_core_check_up(u32 core_id)
++	__attribute__((weak, alias("__arch_auxiliary_core_check_up")));
++
+ int do_bootaux(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
+ {
+ 	ulong addr;
+-	int ret;
++	int ret, up;
+ 
+ 	if (argc < 2)
+ 		return CMD_RET_USAGE;
+ 
++	up = arch_auxiliary_core_check_up(0);
++	if (up) {
++		printf("## Auxiliary core is already up\n");
++		return CMD_RET_SUCCESS;
++	}
++
+ 	addr = simple_strtoul(argv[1], NULL, 16);
+ 
+ 	printf("## Starting auxiliary core at 0x%08lX ...\n", addr);
+-- 
+1.8.0
+

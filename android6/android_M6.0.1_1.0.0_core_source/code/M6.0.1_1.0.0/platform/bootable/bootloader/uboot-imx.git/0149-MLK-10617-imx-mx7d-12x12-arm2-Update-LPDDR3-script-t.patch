@@ -1,0 +1,38 @@
+From 7865f563bfe31b4d159b16bc85bcc5b2ee04ab12 Mon Sep 17 00:00:00 2001
+From: "Ye.Li" <B37916@freescale.com>
+Date: Sun, 5 Apr 2015 18:34:04 +0800
+Subject: [PATCH] MLK-10617 imx: mx7d 12x12 arm2: Update LPDDR3 script to
+ 7D_lpddr3_0_2.ds5
+
+[The compass link for this script]
+http://compass.freescale.net/livelink/livelink?func=ll&objid=233861153
+&objAction=browse&sort=name
+
+[Changes in the script]
+This script enable MDLL, but make it much more margin for the unlock state .
+
+[DDR stress test result]
+2 boards run the memtester for 3 days, and passed.
+
+Signed-off-by: Ye.Li <B37916@freescale.com>
+(cherry picked from commit 6fa6765b0dcdad8d414931e49edf6ba65a73d23a)
+---
+ board/freescale/mx7d_12x12_lpddr3_arm2/imximage.cfg | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/board/freescale/mx7d_12x12_lpddr3_arm2/imximage.cfg b/board/freescale/mx7d_12x12_lpddr3_arm2/imximage.cfg
+index 05df8f8..f04319a 100644
+--- a/board/freescale/mx7d_12x12_lpddr3_arm2/imximage.cfg
++++ b/board/freescale/mx7d_12x12_lpddr3_arm2/imximage.cfg
+@@ -92,7 +92,7 @@ DATA 4 0x30790000 0x17421e40
+ DATA 4 0x30790004 0x10210100
+ DATA 4 0x30790008 0x00010000
+ DATA 4 0x30790010 0x0007080c
+-DATA 4 0x307900b0 0x10103750
++DATA 4 0x307900b0 0x1010007e
+ 
+ DATA 4 0x3079001C 0x01010000
+ DATA 4 0x3079009c 0x0db60d6e
+-- 
+1.8.0
+

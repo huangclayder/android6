@@ -1,0 +1,69 @@
+From 3ba53c4caf010a26bbd671d9829246fc674b4ef6 Mon Sep 17 00:00:00 2001
+From: Richard Zhu <r65037@freescale.com>
+Date: Tue, 22 Apr 2014 14:49:48 +0800
+Subject: [PATCH] MLK-9148 arm: create standalone dts for a9 when m4 is
+ running
+
+Create standalone dts for a9 when m4 is running, since there
+are some conflictions in the following modules
+* i2c3
+* flexcan1&2
+* uart2
+
+Signed-off-by: Richard Zhu <r65037@freescale.com>
+(cherry picked from commit c156cd72ffa85459b7a0da1912404ec934d87cc1)
+---
+ arch/arm/boot/dts/Makefile          |  1 +
+ arch/arm/boot/dts/imx6sx-sdb-m4.dts | 29 +++++++++++++++++++++++++++++
+ 2 files changed, 30 insertions(+)
+
+diff --git a/arch/arm/boot/dts/Makefile b/arch/arm/boot/dts/Makefile
+index e174fa1..3ebf6d1 100644
+--- a/arch/arm/boot/dts/Makefile
++++ b/arch/arm/boot/dts/Makefile
+@@ -195,6 +195,7 @@ dtb-$(CONFIG_ARCH_MXC) += \
+ 	vf610-cosmic.dtb \
+ 	imx6sx-sdb-canfd.dtb \
+ 	imx6sx-sdb-emmc.dtb \
++	imx6sx-sdb-m4.dtb \
+ 	vf610-twr.dtb
+ dtb-$(CONFIG_ARCH_MXS) += imx23-evk.dtb \
+ 	imx23-olinuxino.dtb \
+diff --git a/arch/arm/boot/dts/imx6sx-sdb-m4.dts b/arch/arm/boot/dts/imx6sx-sdb-m4.dts
+new file mode 100644
+index 0000000..2d70685
+--- /dev/null
++++ b/arch/arm/boot/dts/imx6sx-sdb-m4.dts
+@@ -0,0 +1,29 @@
++/*
++ * Copyright (C) 2014 Freescale Semiconductor, Inc.
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License version 2 as
++ * published by the Free Software Foundation.
++ */
++
++#include "imx6sx-sdb.dts"
++
++/*
++ * The flollowing modules are conflicting with M4, disable them when m4
++ * is running.
++ */
++&flexcan1 {
++	status = "disabled";
++};
++
++&flexcan2 {
++	status = "disabled";
++};
++
++&i2c3 {
++        status = "disabled";
++};
++
++&uart2 {
++	status = "disabled";
++};
+-- 
+1.8.0
+

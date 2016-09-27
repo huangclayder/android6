@@ -1,0 +1,38 @@
+From be02b39ef5eb4afd323e12c69792e234a29b380b Mon Sep 17 00:00:00 2001
+From: Peng Fan <Peng.Fan@freescale.com>
+Date: Tue, 24 Nov 2015 16:54:21 +0800
+Subject: [PATCH] common: cli_hush: avoid dead code
+
+Condition "(value == NULL && ++value == NULL)" actully will
+always return false.
+
+Instead, use condition "(value == NULL || *(value + 1) == 0)" to detect
+such expression "c=". To "c=", *(value + 1) is 0, so directly return -1,
+but not continue.
+
+Signed-off-by: Peng Fan <Peng.Fan@freescale.com>
+Cc: Rabin Vincent <rabin@rab.in>
+Cc: Simon Glass <sjg@chromium.org>
+Cc: Tom Rini <trini@konsulko.com>
+Reviewed-by: Simon Glass <sjg@chromium.org>
+(cherry picked from commit aa722529635c16c52d9d609122fecc96ec8d03e4)
+---
+ common/cli_hush.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/common/cli_hush.c b/common/cli_hush.c
+index 296542f..5d78463 100644
+--- a/common/cli_hush.c
++++ b/common/cli_hush.c
+@@ -2161,7 +2161,7 @@ int set_local_var(const char *s, int flg_export)
+ 	 * NAME=VALUE format.  So the first order of business is to
+ 	 * split 's' on the '=' into 'name' and 'value' */
+ 	value = strchr(name, '=');
+-	if (value == NULL && ++value == NULL) {
++	if (value == NULL || *(value + 1) == 0) {
+ 		free(name);
+ 		return -1;
+ 	}
+-- 
+1.8.0
+

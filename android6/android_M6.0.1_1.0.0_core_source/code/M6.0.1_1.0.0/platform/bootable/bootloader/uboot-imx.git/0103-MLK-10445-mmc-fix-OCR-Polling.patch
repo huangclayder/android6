@@ -1,0 +1,89 @@
+From e6effee8170321c10b04cbe936b75c862012d652 Mon Sep 17 00:00:00 2001
+From: Peng Fan <Peng.Fan@freescale.com>
+Date: Thu, 19 Mar 2015 16:12:52 +0800
+Subject: [PATCH] MLK-10445 mmc: fix OCR Polling
+
+If in mmc_send_op_cond, OCR_BUSY is set in CMD1's response, then
+state is transfered to Ready state, and there is no need to send
+CMD1 again. Otherwise following CMD1 will recieve no response, or
+timeour error from driver such as fsl_esdhc.c.
+
+If not into Ready state in previous CMD1, then continue CMD1 command.
+
+In mmc_complete_op_cond, we use the value mmc->op_cond_response
+from mmc_send_op_cond, since there should be no CMD1 command between
+mmc_send_op_cond and mmc_complete_op_cond
+
+Before fixing this, uboot log shows:
+"
+CMD_SEND:0
+                ARG                      0x00000000
+                MMC_RSP_NONE
+CMD_SEND:8
+                ARG                      0x000001AA
+                MMC_RSP_R1,5,6,7         0x18EC1504
+CMD_SEND:55
+                ARG                      0x00000000
+                MMC_RSP_R1,5,6,7         0x18EC1504
+CMD_SEND:0
+                ARG                      0x00000000
+                MMC_RSP_NONE
+CMD_SEND:1
+                ARG                      0x00000000
+                MMC_RSP_R3,4             0x00FF8080
+CMD_SEND:1
+                ARG                      0x40300000
+                MMC_RSP_R3,4             0xC0FF8080 --> Already OCR_BUSY set
+CMD_SEND:1
+                ARG                      0x40300000
+                MMC_RSP_R3,4             0x0096850A --> Failed CMD1
+MMC init failed
+"
+
+Using this patch, this issue is fixed, emmc can be detected correctly.
+
+This issue exists on mx7dsabresd and mx7d_12x12_lpddr3_arm2 board.
+
+Upstream Patchwork:
+https://patchwork.ozlabs.org/patch/451775/
+
+Signed-off-by: Peng Fan <Peng.Fan@freescale.com>
+(cherry picked from commit ca4113da25b42bce44a2e7998966a47352f11613)
+Signed-off-by: Peng Fan <Peng.Fan@freescale.com>
+---
+ drivers/mmc/mmc.c | 13 +++++++++++--
+ 1 file changed, 11 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/mmc/mmc.c b/drivers/mmc/mmc.c
+index a13769e..43a9a8a 100644
+--- a/drivers/mmc/mmc.c
++++ b/drivers/mmc/mmc.c
+@@ -406,14 +406,23 @@ static int mmc_complete_op_cond(struct mmc *mmc)
+ 
+ 	mmc->op_cond_pending = 0;
+ 	start = get_timer(0);
+-	do {
++	/*
++	 * If in mmc_send_op_cond, OCR_BUSY is set in CMD1's response, then
++	 * state is transfered to Ready state, and there is no need to
++	 * send CMD1 again. Otherwise following CMD1 will recieve no response,
++	 * or timeour error from driver such as fsl_esdhc.c.
++	 *
++	 * If not into Ready state in previous CMD1, then continue CMD1
++	 * command.
++	 */
++	while (!(mmc->op_cond_response & OCR_BUSY)) {
+ 		err = mmc_send_op_cond_iter(mmc, &cmd, 1);
+ 		if (err)
+ 			return err;
+ 		if (get_timer(start) > timeout)
+ 			return UNUSABLE_ERR;
+ 		udelay(100);
+-	} while (!(mmc->op_cond_response & OCR_BUSY));
++	}
+ 
+ 	if (mmc_host_is_spi(mmc)) { /* read OCR for spi */
+ 		cmd.cmdidx = MMC_CMD_SPI_READ_OCR;
+-- 
+1.8.0
+

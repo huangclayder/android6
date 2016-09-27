@@ -1,0 +1,44 @@
+From f0b34540914c5a175dc90728cbf4e1b74812b77c Mon Sep 17 00:00:00 2001
+From: Zhang Sanshan <b51434@freescale.com>
+Date: Tue, 12 May 2015 15:18:55 +0800
+Subject: [PATCH 490/602] MA-6648 can't flash bootloader with
+ fsl-sdcard-partition.sh
+
+The deleted line cause this issue.
+This line is redundant action before make partition.
+
+Signed-off-by: Zhang Sanshan <b51434@freescale.com>
+---
+ common/tools/fsl-sdcard-partition-f2fs.sh | 2 --
+ common/tools/fsl-sdcard-partition.sh      | 2 --
+ 2 files changed, 4 deletions(-)
+
+diff --git a/common/tools/fsl-sdcard-partition-f2fs.sh b/common/tools/fsl-sdcard-partition-f2fs.sh
+index 72a29c5..ec9dbe4 100755
+--- a/common/tools/fsl-sdcard-partition-f2fs.sh
++++ b/common/tools/fsl-sdcard-partition-f2fs.sh
+@@ -114,8 +114,6 @@ if [[ "${not_partition}" -eq "1" && "${flash_images}" -eq "1" ]] ; then
+     exit
+ fi
+ 
+-# destroy the partition table
+-dd if=/dev/zero of=${node} bs=1024 count=1
+ 
+ sfdisk --force -uM ${node} << EOF
+ ,${boot_rom_sizeb},83
+diff --git a/common/tools/fsl-sdcard-partition.sh b/common/tools/fsl-sdcard-partition.sh
+index 2fab51b..08e0050 100755
+--- a/common/tools/fsl-sdcard-partition.sh
++++ b/common/tools/fsl-sdcard-partition.sh
+@@ -114,8 +114,6 @@ if [[ "${not_partition}" -eq "1" && "${flash_images}" -eq "1" ]] ; then
+     exit
+ fi
+ 
+-# destroy the partition table
+-dd if=/dev/zero of=${node} bs=1024 count=1
+ 
+ sfdisk --force -uM ${node} << EOF
+ ,${boot_rom_sizeb},83
+-- 
+1.8.0
+

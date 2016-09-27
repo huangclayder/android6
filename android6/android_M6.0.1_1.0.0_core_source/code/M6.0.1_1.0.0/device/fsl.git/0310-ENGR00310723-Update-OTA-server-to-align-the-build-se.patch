@@ -1,0 +1,24 @@
+From 77bd3e6b33433ba2e3c44d17f99c1218e9767f51 Mon Sep 17 00:00:00 2001
+From: "guoyin.chen" <guoyin.chen@freescale.com>
+Date: Mon, 28 Apr 2014 12:29:43 +0800
+Subject: [PATCH 310/602] ENGR00310723 Update OTA server to align the build
+ server
+
+Align the OTA Server to daily build server as 10.192.224.178
+
+Signed-off-by: guoyin.chen <guoyin.chen@freescale.com>
+---
+ imx6/etc/ota.conf | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/imx6/etc/ota.conf b/imx6/etc/ota.conf
+index a44a432..f8af05c 100644
+--- a/imx6/etc/ota.conf
++++ b/imx6/etc/ota.conf
+@@ -1,2 +1,2 @@
+-server=10.192.224.88
++server=10.192.224.178
+ port=10888
+-- 
+1.8.0
+

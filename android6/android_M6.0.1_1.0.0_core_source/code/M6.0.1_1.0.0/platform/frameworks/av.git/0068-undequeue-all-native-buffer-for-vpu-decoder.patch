@@ -1,0 +1,38 @@
+From 23fdfa46f55757e8b620f1c395ed3f6788d2d98d Mon Sep 17 00:00:00 2001
+From: Ming Zhou <b42586@freescale.com>
+Date: Thu, 20 Nov 2014 18:39:34 +0800
+Subject: [PATCH 68/95] undequeue all native buffer for vpu decoder.
+
+Signed-off-by: Ming Zhou <b42586@freescale.com>
+---
+ media/libstagefright/ACodec.cpp   | 1 +
+ media/libstagefright/OMXCodec.cpp | 1 +
+ 2 files changed, 2 insertions(+)
+
+diff --git a/media/libstagefright/ACodec.cpp b/media/libstagefright/ACodec.cpp
+index 336c300..18fb595 100644
+--- a/media/libstagefright/ACodec.cpp
++++ b/media/libstagefright/ACodec.cpp
+@@ -999,6 +999,7 @@ status_t ACodec::configureOutputBuffersFromNativeWindow(
+             return err;
+         }
+     }
++    *minUndequeuedBuffers = 0;
+ 
+     err = native_window_set_buffer_count(
+             mNativeWindow.get(), def.nBufferCountActual);
+diff --git a/media/libstagefright/OMXCodec.cpp b/media/libstagefright/OMXCodec.cpp
+index c440883..bef4864 100644
+--- a/media/libstagefright/OMXCodec.cpp
++++ b/media/libstagefright/OMXCodec.cpp
+@@ -1883,6 +1883,7 @@ status_t OMXCodec::allocateOutputBuffersFromNativeWindow() {
+             return err;
+         }
+     }
++    minUndequeuedBufs = 0;
+     CODEC_LOGI("OMX-buffers: min=%u actual=%u undeq=%d+1",
+             def.nBufferCountMin, def.nBufferCountActual, minUndequeuedBufs);
+ 
+-- 
+1.8.0
+

@@ -1,0 +1,37 @@
+From 9275cad233e5b98da72dc25d0e22af4c48e6387f Mon Sep 17 00:00:00 2001
+From: "guoyin.chen" <guoyin.chen@freescale.com>
+Date: Wed, 28 Jan 2015 16:01:02 +0800
+Subject: [PATCH 3/6] MA-5963 Upgrade kernel version from 3.10.y to 3.14.y
+
+Comment out FRA_UID_START and FRA_UID_END define and check
+3.14 kernel file header has the definition aligned with those value
+
+Signed-off-by: guoyin.chen <guoyin.chen@freescale.com>
+---
+ server/RouteController.cpp | 10 +++++-----
+ 1 file changed, 5 insertions(+), 5 deletions(-)
+
+diff --git a/server/RouteController.cpp b/server/RouteController.cpp
+index 889779d..8873bb1 100644
+--- a/server/RouteController.cpp
++++ b/server/RouteController.cpp
+@@ -76,11 +76,11 @@ const char* const ROUTE_TABLE_NAME_MAIN  = "main";
+ // upstream (yet?), so we can't just pick them up from kernel headers. When (if?) the changes make
+ // it upstream, we'll remove this and rely on the kernel header values. For now, add a static assert
+ // that will warn us if upstream has given these values some other meaning.
+-const uint16_t FRA_UID_START = 18;
+-const uint16_t FRA_UID_END   = 19;
+-static_assert(FRA_UID_START > FRA_MAX,
+-             "Android-specific FRA_UID_{START,END} values also assigned in Linux uapi. "
+-             "Check that these values match what the kernel does and then update this assertion.");
++//const uint16_t FRA_UID_START = 18;
++//const uint16_t FRA_UID_END   = 19;
++//static_assert(FRA_UID_START > FRA_MAX,
++//             "Android-specific FRA_UID_{START,END} values also assigned in Linux uapi. "
++//             "Check that these values match what the kernel does and then update this assertion.");
+ 
+ const uint16_t NETLINK_REQUEST_FLAGS = NLM_F_REQUEST | NLM_F_ACK;
+ const uint16_t NETLINK_CREATE_REQUEST_FLAGS = NETLINK_REQUEST_FLAGS | NLM_F_CREATE | NLM_F_EXCL;
+-- 
+1.8.0
+

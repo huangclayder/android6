@@ -1,0 +1,37 @@
+From fc97f06a67fe0c8f1cbe81a323a9e18df44a8948 Mon Sep 17 00:00:00 2001
+From: Haoran Wang <b50027@freescale.com>
+Date: Fri, 15 May 2015 15:02:09 +0800
+Subject: [PATCH] MA-6498 Ignore TCP_TIME_WAIT state tcp session when
+ SIOCKILLADDR
+
+When kernel got SIOCKILLADDR ioctl message from userspace,
+it will try to kill all of the socket session. But the
+TCP_TIME_WAIT state session will be locked by tcp stack.
+
+So we have to abandon operate the socket in TCP_TIME_WAIT state.
+Socket in TCP_TIME_WAIT state means the socket in local is closed
+and about two MSL (about 120s) later the sesson will be removed.
+
+So it's OK to ignore those session.
+
+Signed-off-by: Haoran Wang <b50027@freescale.com>
+---
+ net/ipv4/tcp.c | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/net/ipv4/tcp.c b/net/ipv4/tcp.c
+index dea50f9..fe909ef 100644
+--- a/net/ipv4/tcp.c
++++ b/net/ipv4/tcp.c
+@@ -3281,6 +3281,8 @@ restart:
+ 
+ 			if (sysctl_ip_dynaddr && sk->sk_state == TCP_SYN_SENT)
+ 				continue;
++			if (sk->sk_state == TCP_TIME_WAIT)
++				continue;
+ 			if (sock_flag(sk, SOCK_DEAD))
+ 				continue;
+ 
+-- 
+1.8.0
+

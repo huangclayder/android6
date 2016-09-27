@@ -1,0 +1,12 @@
+0001-ENGR00256175-Android-reboot-if-setup-multi-user-with.patch
+0002-ENGR00268874-Screen-overlay-showing-the-stopwatch.patch
+0003-ENGR00281805-fix-system-time-didn-t-show-after-reboo.patch
+0004-ENGR00283484-Multiuser-owner-or-user-info-always-sho.patch
+0005-ENGR00293718-No-other-language-display-for-Show-syst.patch
+0006-MA-6421-1-update-to-lp5.1.patch
+0007-MA-6749-Do-not-find-slotId-when-check-Ethernet-in-Da.patch
+0008-MA-6882-Add-debug-options-to-Settings.patch
+0009-MA-6926-Android_MX7D_SD-Location-GUI-Failed-to-enabl.patch
+0010-MA-7061-Android_6Q_SD-fsl_debug_wfd_sink-file-is-add.patch
+0011-MA-7013-whether-we-can-achieve-the-same-function-by-.patch
+0012-MA-7432-Settings-Settings-Stops-after-reset-network-.patch

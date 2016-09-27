@@ -1,0 +1,46 @@
+From c6b38620963b8bf9c1eb956a924ed8fa8b07f375 Mon Sep 17 00:00:00 2001
+From: Mark Brown <broonie@linaro.org>
+Date: Fri, 13 Dec 2013 10:52:45 +0000
+Subject: [PATCH] arm64: Add scheduler multicore and SMT Kconfig options
+
+Enable additional use of additional scheduler features with the topology
+information.
+
+Reported-by: Hanjun Guo <hanjun.guo@linaro.org>
+Signed-off-by: Mark Brown <broonie@linaro.org>
+(cherry picked from commit d474d10a1a827e0b3402943a62a97d95c0eabf8d)
+Signed-off-by: Alex Shi <alex.shi@linaro.org>
+---
+ arch/arm64/Kconfig | 16 ++++++++++++++++
+ 1 file changed, 16 insertions(+)
+
+diff --git a/arch/arm64/Kconfig b/arch/arm64/Kconfig
+index 24fe253..78b25fd 100644
+--- a/arch/arm64/Kconfig
++++ b/arch/arm64/Kconfig
+@@ -180,6 +180,22 @@ config SCHED_SMT
+ 	  MultiThreading at a cost of slightly increased overhead in some
+ 	  places. If unsure say N here.
+ 
++config SCHED_MC
++	bool "Multi-core scheduler support"
++	depends on ARM_CPU_TOPOLOGY
++	help
++	  Multi-core scheduler support improves the CPU scheduler's decision
++	  making when dealing with multi-core CPU chips at a cost of slightly
++	  increased overhead in some places. If unsure say N here.
++
++config SCHED_SMT
++	bool "SMT scheduler support"
++	depends on ARM_CPU_TOPOLOGY
++	help
++	  Improves the CPU scheduler's decision making when dealing with
++	  MultiThreading at a cost of slightly increased overhead in some
++	  places. If unsure say N here.
++
+ config NR_CPUS
+ 	int "Maximum number of CPUs (2-32)"
+ 	range 2 32
+-- 
+1.8.0
+

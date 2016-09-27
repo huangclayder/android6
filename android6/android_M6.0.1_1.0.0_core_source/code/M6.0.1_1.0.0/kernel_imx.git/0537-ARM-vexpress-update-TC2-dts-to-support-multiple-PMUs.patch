@@ -1,0 +1,44 @@
+From cf1fd40cc0883933a746620e1755b63ac691640d Mon Sep 17 00:00:00 2001
+From: Sudeep KarkadaNagesha <Sudeep.KarkadaNagesha@arm.com>
+Date: Mon, 16 Jul 2012 12:29:43 +0000
+Subject: [PATCH] ARM: vexpress: update TC2 dts to support multiple PMUs
+
+This patch adds support for both A15 and A7 PMUs on vexpress TC2
+
+Signed-off-by: Sudeep KarkadaNagesha <sudeep.karkadanagesha@arm.com>
+(cherry picked from commit f2abc8104ab2cd20d645ee174da590c66af3623a)
+Signed-off-by: Alex Shi <alex.shi@linaro.org>
+---
+ arch/arm/boot/dts/vexpress-v2p-ca15_a7.dts | 11 ++++++++++-
+ 1 file changed, 10 insertions(+), 1 deletion(-)
+
+diff --git a/arch/arm/boot/dts/vexpress-v2p-ca15_a7.dts b/arch/arm/boot/dts/vexpress-v2p-ca15_a7.dts
+index d183108..2d8e115 100644
+--- a/arch/arm/boot/dts/vexpress-v2p-ca15_a7.dts
++++ b/arch/arm/boot/dts/vexpress-v2p-ca15_a7.dts
+@@ -221,12 +221,21 @@
+ 			     <1 10 0xf08>;
+ 	};
+ 
+-	pmu {
++	pmu_a15 {
+ 		compatible = "arm,cortex-a15-pmu";
++		cluster  = <&cluster0>;
+ 		interrupts = <0 68 4>,
+ 			     <0 69 4>;
+ 	};
+ 
++	pmu_a7 {
++		compatible = "arm,cortex-a7-pmu";
++		cluster  = <&cluster1>;
++		interrupts = <0 128 4>,
++			     <0 129 4>,
++			     <0 130 4>;
++	};
++
+ 	oscclk6a: oscclk6a {
+ 		/* Reference 24MHz clock */
+ 		compatible = "fixed-clock";
+-- 
+1.8.0
+

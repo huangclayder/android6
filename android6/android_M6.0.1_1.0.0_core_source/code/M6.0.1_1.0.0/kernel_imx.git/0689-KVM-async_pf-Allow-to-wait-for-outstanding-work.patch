@@ -1,0 +1,40 @@
+From 23d32b54806258d8109e8c6613d6af9958c8a9f4 Mon Sep 17 00:00:00 2001
+From: Dominik Dingel <dingel@linux.vnet.ibm.com>
+Date: Tue, 3 Sep 2013 12:31:16 +0200
+Subject: [PATCH] KVM: async_pf: Allow to wait for outstanding work
+
+On s390 we are not able to cancel work. Instead we will flush the work and wait for
+completion.
+
+Signed-off-by: Dominik Dingel <dingel@linux.vnet.ibm.com>
+Signed-off-by: Christian Borntraeger <borntraeger@de.ibm.com>
+(cherry picked from commit 9f2ceda49c6b8827c795731c204f6c2587886e2c)
+Signed-off-by: Christoffer Dall <christoffer.dall@linaro.org>
+---
+ virt/kvm/async_pf.c | 5 +++++
+ 1 file changed, 5 insertions(+)
+
+diff --git a/virt/kvm/async_pf.c b/virt/kvm/async_pf.c
+index 00980ab..889aad0 100644
+--- a/virt/kvm/async_pf.c
++++ b/virt/kvm/async_pf.c
+@@ -113,11 +113,16 @@ void kvm_clear_async_pf_completion_queue(struct kvm_vcpu *vcpu)
+ 			list_entry(vcpu->async_pf.queue.next,
+ 				   typeof(*work), queue);
+ 		list_del(&work->queue);
++
++#ifdef CONFIG_KVM_ASYNC_PF_SYNC
++		flush_work(&work->work);
++#else
+ 		if (cancel_work_sync(&work->work)) {
+ 			mmdrop(work->mm);
+ 			kvm_put_kvm(vcpu->kvm); /* == work->vcpu->kvm */
+ 			kmem_cache_free(async_pf_cache, work);
+ 		}
++#endif
+ 	}
+ 
+ 	spin_lock(&vcpu->async_pf.lock);
+-- 
+1.8.0
+

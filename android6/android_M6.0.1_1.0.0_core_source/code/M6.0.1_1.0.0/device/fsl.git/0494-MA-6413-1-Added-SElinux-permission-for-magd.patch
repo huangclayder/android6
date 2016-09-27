@@ -1,0 +1,26 @@
+From de80668846630be76efd64ee5f6d89eab2e3b031 Mon Sep 17 00:00:00 2001
+From: Haoran Wang <b50027@freescale.com>
+Date: Tue, 28 Apr 2015 17:55:19 +0800
+Subject: [PATCH 494/602] MA-6413-1 Added SElinux permission for magd
+
+Added the "add_name" permission for magd to access
+fsl_mag.txt.
+
+Signed-off-by: Haoran Wang <b50027@freescale.com>
+---
+ imx6/sepolicy/sensors.te | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/imx6/sepolicy/sensors.te b/imx6/sepolicy/sensors.te
+index 4d34a7a..81f097b 100644
+--- a/imx6/sepolicy/sensors.te
++++ b/imx6/sepolicy/sensors.te
+@@ -25,4 +25,4 @@ wakelock_use(sensors)
+ allow sensors cgroup:dir { create add_name };
+ allow sensors input_device:chr_file rw_file_perms;
+ allow sensors input_device:dir r_dir_perms;
+-allow sensors system_data_file:dir { write };
++allow sensors system_data_file:dir { write add_name };
+-- 
+1.8.0
+

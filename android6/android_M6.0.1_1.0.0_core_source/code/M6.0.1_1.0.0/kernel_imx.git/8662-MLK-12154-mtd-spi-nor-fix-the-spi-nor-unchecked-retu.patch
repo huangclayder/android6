@@ -1,0 +1,40 @@
+From 99be328d4ed8c3cab14bb109863321d80acb35fe Mon Sep 17 00:00:00 2001
+From: Han Xu <han.xu@nxp.com>
+Date: Thu, 7 Jan 2016 15:47:52 -0600
+Subject: [PATCH] MLK-12154: mtd: spi-nor: fix the spi nor unchecked return
+ value issue found by coverity
+
+fixed the unchecked return value issue.
+
+Signed-off-by: Han Xu <han.xu@nxp.com>
+---
+ drivers/mtd/spi-nor/spi-nor.c | 6 ++++--
+ 1 file changed, 4 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/mtd/spi-nor/spi-nor.c b/drivers/mtd/spi-nor/spi-nor.c
+index 84d2723..0f5076b 100644
+--- a/drivers/mtd/spi-nor/spi-nor.c
++++ b/drivers/mtd/spi-nor/spi-nor.c
+@@ -3,7 +3,7 @@
+  * influence from lart.c (Abraham Van Der Merwe) and mtd_dataflash.c
+  *
+  * Copyright (C) 2005, Intec Automation Inc.
+- * Copyright (C) 2014-2015 Freescale Semiconductor, Inc.
++ * Copyright (C) 2014-2016 Freescale Semiconductor, Inc.
+  *
+  * This code is free software; you can redistribute it and/or modify
+  * it under the terms of the GNU General Public License version 2 as
+@@ -792,7 +792,9 @@ static int spi_nor_write(struct mtd_info *mtd, loff_t to, size_t len,
+ 			if (page_size > nor->page_size)
+ 				page_size = nor->page_size;
+ 
+-			wait_till_ready(nor);
++			ret = wait_till_ready(nor);
++			if (ret)
++				goto write_err;
+ 			write_enable(nor);
+ 
+ 			nor->write(nor, to + i, page_size, retlen, buf + i);
+-- 
+1.8.0
+

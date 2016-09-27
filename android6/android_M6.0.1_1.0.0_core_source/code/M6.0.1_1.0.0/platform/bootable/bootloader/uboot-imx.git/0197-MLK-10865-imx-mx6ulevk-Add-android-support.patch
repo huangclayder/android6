@@ -1,0 +1,238 @@
+From 11a6ad7fede3fea34eb99e9decdcd7e23e3726f0 Mon Sep 17 00:00:00 2001
+From: "Ye.Li" <B37916@freescale.com>
+Date: Fri, 8 May 2015 17:45:00 +0800
+Subject: [PATCH] MLK-10865 imx: mx6ulevk: Add android support
+
+Add android features booti, fastboot and recovery to i.MX6UL EVK board.
+Since there is no user button on the board, we can't implement
+the recovery by using button.
+
+Signed-off-by: Ye.Li <B37916@freescale.com>
+---
+ board/freescale/mx6ulevk/mx6ulevk.c | 110 ++++++++++++++++++++++++++++++++++++
+ configs/mx6ulevkandroid_defconfig   |   5 ++
+ include/configs/mx6ulevk.h          |   5 ++
+ include/configs/mx6ulevkandroid.h   |  62 ++++++++++++++++++++
+ 4 files changed, 182 insertions(+)
+
+diff --git a/board/freescale/mx6ulevk/mx6ulevk.c b/board/freescale/mx6ulevk/mx6ulevk.c
+index 5342c25..6b1370e 100644
+--- a/board/freescale/mx6ulevk/mx6ulevk.c
++++ b/board/freescale/mx6ulevk/mx6ulevk.c
+@@ -27,6 +27,14 @@
+ #include <usb.h>
+ #include <usb/ehci-fsl.h>
+ 
++#ifdef CONFIG_FASTBOOT
++#include <fastboot.h>
++#ifdef CONFIG_ANDROID_RECOVERY
++#include <recovery.h>
++#endif
++#endif /*CONFIG_FASTBOOT*/
++
++
+ DECLARE_GLOBAL_DATA_PTR;
+ 
+ #define UART_PAD_CTRL  (PAD_CTL_PKE | PAD_CTL_PUE |		\
+@@ -876,3 +884,105 @@ int checkboard(void)
+ 
+ 	return 0;
+ }
++
++#ifdef CONFIG_FASTBOOT
++
++void board_fastboot_setup(void)
++{
++	switch (get_boot_device()) {
++#if defined(CONFIG_FASTBOOT_STORAGE_MMC)
++	case SD1_BOOT:
++	case MMC1_BOOT:
++		if (!getenv("fastboot_dev"))
++			setenv("fastboot_dev", "mmc0");
++		if (!getenv("bootcmd"))
++			setenv("bootcmd", "booti mmc0");
++		break;
++	case SD2_BOOT:
++	case MMC2_BOOT:
++		if (!getenv("fastboot_dev"))
++			setenv("fastboot_dev", "mmc1");
++		if (!getenv("bootcmd"))
++			setenv("bootcmd", "booti mmc1");
++		break;
++#endif /*CONFIG_FASTBOOT_STORAGE_MMC*/
++#if defined(CONFIG_FASTBOOT_STORAGE_NAND)
++	case NAND_BOOT:
++		if (!getenv("fastboot_dev"))
++			setenv("fastboot_dev", "nand");
++		if (!getenv("fbparts"))
++			setenv("fbparts", ANDROID_FASTBOOT_NAND_PARTS);
++		if (!getenv("bootcmd"))
++			setenv("bootcmd",
++				"nand read ${loadaddr} ${boot_nand_offset} "
++				"${boot_nand_size};booti ${loadaddr}");
++		break;
++#endif /*CONFIG_FASTBOOT_STORAGE_NAND*/
++
++	default:
++		printf("unsupported boot devices\n");
++		break;
++	}
++}
++
++#ifdef CONFIG_ANDROID_RECOVERY
++int check_recovery_cmd_file(void)
++{
++	int recovery_mode = 0;
++
++	recovery_mode = recovery_check_and_clean_flag();
++
++	return recovery_mode;
++}
++
++void board_recovery_setup(void)
++{
++	int bootdev = get_boot_device();
++
++	switch (bootdev) {
++#if defined(CONFIG_FASTBOOT_STORAGE_MMC)
++	case SD1_BOOT:
++	case MMC1_BOOT:
++		if (!getenv("bootcmd_android_recovery"))
++			setenv("bootcmd_android_recovery", "booti mmc0 recovery");
++		break;
++	case SD2_BOOT:
++	case MMC2_BOOT:
++		if (!getenv("bootcmd_android_recovery"))
++			setenv("bootcmd_android_recovery", "booti mmc1 recovery");
++		break;
++#endif /*CONFIG_FASTBOOT_STORAGE_MMC*/
++#if defined(CONFIG_FASTBOOT_STORAGE_NAND)
++	case NAND_BOOT:
++		if (!getenv("bootcmd_android_recovery"))
++			setenv("bootcmd_android_recovery",
++				"nand read ${loadaddr} ${recovery_nand_offset} "
++				"${recovery_nand_size};booti ${loadaddr}");
++		break;
++#endif /*CONFIG_FASTBOOT_STORAGE_NAND*/
++
++	default:
++		printf("Unsupported bootup device for recovery: dev: %d\n",
++			bootdev);
++		return;
++	}
++
++	printf("setup env for recovery..\n");
++	setenv("bootcmd", "run bootcmd_android_recovery");
++}
++#endif /*CONFIG_ANDROID_RECOVERY*/
++
++#endif /*CONFIG_FASTBOOT*/
++
++#ifdef CONFIG_IMX_UDC
++static iomux_v3_cfg_t const otg_udc_pads[] = {
++	MX6_PAD_GPIO1_IO00__ANATOP_OTG1_ID | MUX_PAD_CTRL(NO_PAD_CTRL),
++};
++
++void udc_pins_setting(void)
++{
++	imx_iomux_v3_setup_multiple_pads(otg_udc_pads,
++		ARRAY_SIZE(otg_udc_pads));
++}
++
++#endif /*CONFIG_IMX_UDC*/
+diff --git a/configs/mx6ulevkandroid_defconfig b/configs/mx6ulevkandroid_defconfig
+new file mode 100644
+index 0000000..69b241d
+--- /dev/null
++++ b/configs/mx6ulevkandroid_defconfig
+@@ -0,0 +1,5 @@
++CONFIG_SYS_EXTRA_OPTIONS="IMX_CONFIG=board/freescale/mx6ulevk/imximage.cfg,MX6UL,ANDROID_SUPPORT"
++CONFIG_ARM=y
++CONFIG_TARGET_MX6ULEVK=y
++CONFIG_DM=y
++CONFIG_DM_THERMAL=y
+diff --git a/include/configs/mx6ulevk.h b/include/configs/mx6ulevk.h
+index 7fea922..4dce52c 100644
+--- a/include/configs/mx6ulevk.h
++++ b/include/configs/mx6ulevk.h
+@@ -391,4 +391,9 @@
+ #define CONFIG_MXC_USB_FLAGS   0
+ #define CONFIG_USB_MAX_CONTROLLER_COUNT 2
+ #endif
++
++#if defined(CONFIG_ANDROID_SUPPORT)
++#include "mx6ulevkandroid.h"
++#endif
++
+ #endif
+diff --git a/include/configs/mx6ulevkandroid.h b/include/configs/mx6ulevkandroid.h
+new file mode 100644
+index 0000000..f44145a
+--- /dev/null
++++ b/include/configs/mx6ulevkandroid.h
+@@ -0,0 +1,62 @@
++
++/*
++ * Copyright (C) 2015 Freescale Semiconductor, Inc.
++ *
++ * SPDX-License-Identifier:	GPL-2.0+
++ */
++
++#ifndef __MX6UL_EVK_ANDROID_H
++#define __MX6UL_EVK_ANDROID_H
++
++#define CONFIG_SERIAL_TAG
++
++#define CONFIG_USB_DEVICE
++#define CONFIG_IMX_UDC		       1
++
++#define CONFIG_CMD_FASTBOOT
++#define CONFIG_FASTBOOT		       1
++#define CONFIG_FASTBOOT_VENDOR_ID      0x18d1
++#define CONFIG_FASTBOOT_PRODUCT_ID     0x0d02
++#define CONFIG_FASTBOOT_BCD_DEVICE     0x311
++#define CONFIG_FASTBOOT_MANUFACTURER_STR  "Freescale"
++#define CONFIG_FASTBOOT_PRODUCT_NAME_STR "i.MX6UL EVK Board"
++#define CONFIG_FASTBOOT_INTERFACE_STR	 "Android fastboot"
++#define CONFIG_FASTBOOT_CONFIGURATION_STR  "Android fastboot"
++#define CONFIG_FASTBOOT_SERIAL_NUM	"12345"
++#define CONFIG_FASTBOOT_SATA_NO		 0
++
++#if defined CONFIG_SYS_BOOT_NAND
++#define CONFIG_FASTBOOT_STORAGE_NAND
++#else
++#define CONFIG_FASTBOOT_STORAGE_MMC
++#endif
++
++
++/*  For system.img growing up more than 256MB, more buffer needs
++*   to receive the system.img*/
++#define CONFIG_FASTBOOT_TRANSFER_BUF	0x84000000
++#define CONFIG_FASTBOOT_TRANSFER_BUF_SIZE 0x19000000 /* 400M byte */
++
++
++#define CONFIG_CMD_BOOTI
++#define CONFIG_ANDROID_RECOVERY
++/* which mmc bus is your main storage ? */
++#define CONFIG_ANDROID_MAIN_MMC_BUS 2
++#define CONFIG_ANDROID_BOOT_PARTITION_MMC 1
++#define CONFIG_ANDROID_SYSTEM_PARTITION_MMC 5
++#define CONFIG_ANDROID_RECOVERY_PARTITION_MMC 2
++#define CONFIG_ANDROID_CACHE_PARTITION_MMC 6
++
++#undef CONFIG_EXTRA_ENV_SETTINGS
++#undef CONFIG_BOOTCOMMAND
++
++#define CONFIG_EXTRA_ENV_SETTINGS					\
++	"splashpos=m,m\0"	  \
++	"fdt_high=0xffffffff\0"	  \
++	"initrd_high=0xffffffff\0" \
++
++#if defined(CONFIG_FASTBOOT_STORAGE_NAND)
++#define ANDROID_FASTBOOT_NAND_PARTS "16m@64m(boot) 16m@80m(recovery) 810m@96m(android_root)ubifs"
++#endif
++
++#endif
+-- 
+1.8.0
+

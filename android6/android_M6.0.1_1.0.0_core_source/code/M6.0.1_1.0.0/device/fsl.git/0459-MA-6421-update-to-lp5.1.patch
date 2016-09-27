@@ -1,0 +1,79 @@
+From 06e4efa1bec127283b5f6f3b7863869ac142c282 Mon Sep 17 00:00:00 2001
+From: fang hui <b31070@freescale.com>
+Date: Tue, 24 Mar 2015 11:26:16 +0800
+Subject: [PATCH 459/602] MA-6421 - update to lp5.1
+
+pass build and boot ok
+
+Signed-off-by: fang hui <b31070@freescale.com>
+---
+ imx6/etc/init.rc | 25 ++++++++++---------------
+ imx6/imx6.mk     |  1 +
+ 2 files changed, 11 insertions(+), 15 deletions(-)
+ create mode 100644 imx6/init.recovery.imx6.rc
+
+diff --git a/imx6/etc/init.rc b/imx6/etc/init.rc
+index 2029643..013553d 100755
+--- a/imx6/etc/init.rc
++++ b/imx6/etc/init.rc
+@@ -138,25 +138,18 @@ on init
+     mount cgroup none /dev/cpuctl cpu
+     chown system system /dev/cpuctl
+     chown system system /dev/cpuctl/tasks
+-    chmod 0660 /dev/cpuctl/tasks
++    chmod 0666 /dev/cpuctl/tasks
+     write /dev/cpuctl/cpu.shares 1024
+-    write /dev/cpuctl/cpu.rt_runtime_us 950000
++    write /dev/cpuctl/cpu.rt_runtime_us 800000
+     write /dev/cpuctl/cpu.rt_period_us 1000000
+ 
+-    mkdir /dev/cpuctl/apps
+-    chown system system /dev/cpuctl/apps/tasks
+-    chmod 0666 /dev/cpuctl/apps/tasks
+-    write /dev/cpuctl/apps/cpu.shares 1024
+-    write /dev/cpuctl/apps/cpu.rt_runtime_us 800000
+-    write /dev/cpuctl/apps/cpu.rt_period_us 1000000
+-
+-    mkdir /dev/cpuctl/apps/bg_non_interactive
+-    chown system system /dev/cpuctl/apps/bg_non_interactive/tasks
+-    chmod 0666 /dev/cpuctl/apps/bg_non_interactive/tasks
++    mkdir /dev/cpuctl/bg_non_interactive
++    chown system system /dev/cpuctl/bg_non_interactive/tasks
++    chmod 0666 /dev/cpuctl/bg_non_interactive/tasks
+     # 5.0 %
+-    write /dev/cpuctl/apps/bg_non_interactive/cpu.shares 52
+-    write /dev/cpuctl/apps/bg_non_interactive/cpu.rt_runtime_us 700000
+-    write /dev/cpuctl/apps/bg_non_interactive/cpu.rt_period_us 1000000
++    write /dev/cpuctl/bg_non_interactive/cpu.shares 52
++    write /dev/cpuctl/bg_non_interactive/cpu.rt_runtime_us 700000
++    write /dev/cpuctl/bg_non_interactive/cpu.rt_period_us 1000000
+ 
+     # qtaguid will limit access to specific data based on group memberships.
+     #   net_bw_acct grants impersonation of socket owners.
+@@ -341,6 +334,8 @@ on post-fs-data
+     # the following directory.
+     mkdir /data/mediadrm 0770 mediadrm mediadrm
+ 
++    mkdir /data/adb 0700 root root
++
+     # symlink to bugreport storage location
+     symlink /data/data/com.android.shell/files/bugreports /data/bugreports
+ 
+diff --git a/imx6/imx6.mk b/imx6/imx6.mk
+index 7a5c17a..08156ad 100644
+--- a/imx6/imx6.mk
++++ b/imx6/imx6.mk
+@@ -338,6 +338,7 @@ PRODUCT_COPY_FILES +=	\
+ 	device/fsl/imx6/etc/ueventd.freescale.rc:root/ueventd.freescale.rc \
+ 	device/fsl/imx6/etc/ppp/init.gprs-pppd:system/etc/ppp/init.gprs-pppd \
+ 	device/fsl/imx6/etc/ota.conf:system/etc/ota.conf \
++        device/fsl/imx6/init.recovery.imx6.rc:root/init.recovery.imx6.rc \
+ 	device/fsl/common/display/display_mode_fb0.conf:system/etc/display_mode_fb0.conf \
+ 	device/fsl/common/display/display_mode_fb2.conf:system/etc/display_mode_fb2.conf \
+ 	device/fsl/common/display/display_mode_fb4.conf:system/etc/display_mode_fb4.conf \
+diff --git a/imx6/init.recovery.imx6.rc b/imx6/init.recovery.imx6.rc
+new file mode 100644
+index 0000000..e69de29
+-- 
+1.8.0
+

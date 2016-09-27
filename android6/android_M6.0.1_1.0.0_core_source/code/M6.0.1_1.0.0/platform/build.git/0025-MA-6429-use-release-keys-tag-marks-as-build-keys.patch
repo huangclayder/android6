@@ -1,0 +1,30 @@
+From e3ad48875d0e6943ca4d1deb11a0971cd0edf254 Mon Sep 17 00:00:00 2001
+From: Richard Liu <r66033@freescale.com>
+Date: Thu, 19 Mar 2015 15:49:53 +0800
+Subject: [PATCH 25/34] MA-6429 use release-keys tag marks as build keys
+
+Google CTS BuildVersionTest#testBuildFingerprint limit only
+TAG:release-keys and VARIANT:user can pass, so need indicate
+our BUILD_KEYS is release-keys.
+
+Signed-off-by: Richard Liu <r66033@freescale.com>
+---
+ core/Makefile | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/core/Makefile b/core/Makefile
+index cbe7c60..a99afb8 100644
+--- a/core/Makefile
++++ b/core/Makefile
+@@ -108,7 +108,7 @@ endif
+ ifeq ($(DEFAULT_SYSTEM_DEV_CERTIFICATE),build/target/product/security/testkey)
+ BUILD_KEYS := test-keys
+ else
+-BUILD_KEYS := dev-keys
++BUILD_KEYS := release-keys
+ endif
+ BUILD_VERSION_TAGS += $(BUILD_KEYS)
+ BUILD_VERSION_TAGS := $(subst $(space),$(comma),$(sort $(BUILD_VERSION_TAGS)))
+-- 
+1.8.0
+

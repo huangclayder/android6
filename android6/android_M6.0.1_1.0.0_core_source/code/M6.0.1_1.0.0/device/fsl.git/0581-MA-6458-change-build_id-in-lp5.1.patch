@@ -1,0 +1,92 @@
+From 9f8f69c2263917ea46284d27066cc54827321919 Mon Sep 17 00:00:00 2001
+From: zhang sanshan <b51434@freescale.com>
+Date: Fri, 18 Dec 2015 15:44:42 +0800
+Subject: [PATCH 581/602] MA-6458 change build_id in lp5.1
+
+change to build id to ga rc1.
+
+Signed-off-by: zhang sanshan <b51434@freescale.com>
+---
+ evk_6sl/build_id.mk       | 4 ++--
+ sabreauto_6q/build_id.mk  | 4 ++--
+ sabreauto_6sx/build_id.mk | 4 ++--
+ sabresd_6dq/build_id.mk   | 4 ++--
+ sabresd_6sx/build_id.mk   | 4 ++--
+ sabresd_7d/build_id.mk    | 4 ++--
+ 6 files changed, 12 insertions(+), 12 deletions(-)
+
+diff --git a/evk_6sl/build_id.mk b/evk_6sl/build_id.mk
+index 0a3abae..2852899 100755
+--- a/evk_6sl/build_id.mk
++++ b/evk_6sl/build_id.mk
+@@ -18,5 +18,5 @@
+ # (like "CRB01").  It must be a single word, and is
+ # capitalized by convention.
+ 
+-export BUILD_ID=2.1.0-ga-rc1
+-export BUILD_NUMBER=20151218
++export BUILD_ID=1.0.0-ga-rc1
++export BUILD_NUMBER=20160317
+diff --git a/sabreauto_6q/build_id.mk b/sabreauto_6q/build_id.mk
+index 0a3abae..2852899 100644
+--- a/sabreauto_6q/build_id.mk
++++ b/sabreauto_6q/build_id.mk
+@@ -18,5 +18,5 @@
+ # (like "CRB01").  It must be a single word, and is
+ # capitalized by convention.
+ 
+-export BUILD_ID=2.1.0-ga-rc1
+-export BUILD_NUMBER=20151218
++export BUILD_ID=1.0.0-ga-rc1
++export BUILD_NUMBER=20160317
+diff --git a/sabreauto_6sx/build_id.mk b/sabreauto_6sx/build_id.mk
+index 0a3abae..2852899 100644
+--- a/sabreauto_6sx/build_id.mk
++++ b/sabreauto_6sx/build_id.mk
+@@ -18,5 +18,5 @@
+ # (like "CRB01").  It must be a single word, and is
+ # capitalized by convention.
+ 
+-export BUILD_ID=2.1.0-ga-rc1
+-export BUILD_NUMBER=20151218
++export BUILD_ID=1.0.0-ga-rc1
++export BUILD_NUMBER=20160317
+diff --git a/sabresd_6dq/build_id.mk b/sabresd_6dq/build_id.mk
+index 0a3abae..2852899 100644
+--- a/sabresd_6dq/build_id.mk
++++ b/sabresd_6dq/build_id.mk
+@@ -18,5 +18,5 @@
+ # (like "CRB01").  It must be a single word, and is
+ # capitalized by convention.
+ 
+-export BUILD_ID=2.1.0-ga-rc1
+-export BUILD_NUMBER=20151218
++export BUILD_ID=1.0.0-ga-rc1
++export BUILD_NUMBER=20160317
+diff --git a/sabresd_6sx/build_id.mk b/sabresd_6sx/build_id.mk
+index 0a3abae..2852899 100644
+--- a/sabresd_6sx/build_id.mk
++++ b/sabresd_6sx/build_id.mk
+@@ -18,5 +18,5 @@
+ # (like "CRB01").  It must be a single word, and is
+ # capitalized by convention.
+ 
+-export BUILD_ID=2.1.0-ga-rc1
+-export BUILD_NUMBER=20151218
++export BUILD_ID=1.0.0-ga-rc1
++export BUILD_NUMBER=20160317
+diff --git a/sabresd_7d/build_id.mk b/sabresd_7d/build_id.mk
+index 0a3abae..2852899 100755
+--- a/sabresd_7d/build_id.mk
++++ b/sabresd_7d/build_id.mk
+@@ -18,5 +18,5 @@
+ # (like "CRB01").  It must be a single word, and is
+ # capitalized by convention.
+ 
+-export BUILD_ID=2.1.0-ga-rc1
+-export BUILD_NUMBER=20151218
++export BUILD_ID=1.0.0-ga-rc1
++export BUILD_NUMBER=20160317
+-- 
+1.8.0
+

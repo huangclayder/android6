@@ -1,0 +1,4178 @@
+From 9cf2cfef3c8f1a2bd3b62e833a442ce8868ea9f1 Mon Sep 17 00:00:00 2001
+From: Haoran Wang <b50027@freescale.com>
+Date: Mon, 18 May 2015 12:11:29 +0800
+Subject: [PATCH] MA-6666-1 Upgrade 8821AS drivers to v4.3.18_14139.20150511
+
+Upgrade to v4.3.18_14139.20150511.
+Improve Wifi display quality.
+
+Signed-off-by: Haoran Wang <b50027@freescale.com>
+Acked-by: Jason Liu
+---
+ .../net/wireless/rtlwifi/rtl8821as/core/rtw_ap.c   |    3 +-
+ .../net/wireless/rtlwifi/rtl8821as/core/rtw_cmd.c  |    4 +-
+ .../wireless/rtlwifi/rtl8821as/core/rtw_debug.c    |  268 ++++
+ .../net/wireless/rtlwifi/rtl8821as/core/rtw_mlme.c |    4 +-
+ .../wireless/rtlwifi/rtl8821as/core/rtw_mlme_ext.c | 1379 +++++++++++---------
+ .../wireless/rtlwifi/rtl8821as/core/rtw_pwrctrl.c  |   10 +-
+ .../net/wireless/rtlwifi/rtl8821as/core/rtw_xmit.c |   33 +
+ .../net/wireless/rtlwifi/rtl8821as/hal/hal_com.c   |    6 +-
+ .../rtlwifi/rtl8821as/hal/phydm/phydm_antdiv.c     |   23 +-
+ .../rtlwifi/rtl8821as/hal/phydm/phydm_antdiv.h     |    5 +
+ .../hal/phydm/rtl8821a/halhwimg8821a_bb.c          |  183 +--
+ .../hal/phydm/rtl8821a/halhwimg8821a_bb.h          |    2 +-
+ .../hal/phydm/rtl8821a/halhwimg8821a_mac.c         |  128 +-
+ .../hal/phydm/rtl8821a/halhwimg8821a_mac.h         |    2 +-
+ .../hal/phydm/rtl8821a/halhwimg8821a_rf.c          |  468 +++----
+ .../hal/phydm/rtl8821a/halhwimg8821a_rf.h          |    2 +-
+ .../rtl8821as/hal/rtl8812a/rtl8812a_hal_init.c     |   38 +-
+ .../rtl8821as/hal/rtl8812a/sdio/rtl8812as_xmit.c   |   22 +-
+ .../rtlwifi/rtl8821as/include/Hal8188FPhyReg.h     |    3 +
+ .../rtlwifi/rtl8821as/include/rtl8812a_hal.h       |    4 +-
+ .../wireless/rtlwifi/rtl8821as/include/rtw_debug.h |   15 +
+ .../wireless/rtlwifi/rtl8821as/include/rtw_mlme.h  |   10 +-
+ .../rtlwifi/rtl8821as/include/rtw_mlme_ext.h       |  146 ++-
+ .../wireless/rtlwifi/rtl8821as/include/rtw_p2p.h   |    9 +-
+ .../rtlwifi/rtl8821as/include/rtw_pwrctrl.h        |    9 +-
+ .../rtlwifi/rtl8821as/include/rtw_version.h        |    2 +-
+ .../wireless/rtlwifi/rtl8821as/include/rtw_xmit.h  |    2 +
+ .../rtl8821as/os_dep/linux/ioctl_cfg80211.c        |    1 +
+ .../rtlwifi/rtl8821as/os_dep/linux/os_intfs.c      |    2 +-
+ .../rtlwifi/rtl8821as/os_dep/linux/rtw_proc.c      |   10 +
+ 30 files changed, 1742 insertions(+), 1051 deletions(-)
+
+diff --git a/drivers/net/wireless/rtlwifi/rtl8821as/core/rtw_ap.c b/drivers/net/wireless/rtlwifi/rtl8821as/core/rtw_ap.c
+index 426d779..cce1825 100755
+--- a/drivers/net/wireless/rtlwifi/rtl8821as/core/rtw_ap.c
++++ b/drivers/net/wireless/rtlwifi/rtl8821as/core/rtw_ap.c
+@@ -1369,8 +1369,7 @@ static void rtw_ap_check_scan(_adapter *padapter)
+ 	_enter_critical_bh(&(pmlmepriv->scanned_queue.lock), &irqL);
+ 	phead = get_list_head(queue);
+ 	if (rtw_end_of_queue_search(phead, get_next(phead)) == _TRUE)
+-		if (padapter->registrypriv.wifi_spec)
+-			do_scan = _TRUE;	
++		do_scan = _TRUE;	
+ 	_exit_critical_bh(&(pmlmepriv->scanned_queue.lock), &irqL);
+ 
+ #ifdef CONFIG_AUTO_CHNL_SEL_NHM
+diff --git a/drivers/net/wireless/rtlwifi/rtl8821as/core/rtw_cmd.c b/drivers/net/wireless/rtlwifi/rtl8821as/core/rtw_cmd.c
+index cacebaa..f037309 100755
+--- a/drivers/net/wireless/rtlwifi/rtl8821as/core/rtw_cmd.c
++++ b/drivers/net/wireless/rtlwifi/rtl8821as/core/rtw_cmd.c
+@@ -941,7 +941,7 @@ _func_enter_;
+ 
+ 		pmlmepriv->scan_start_time = rtw_get_current_time();
+ 
+-#ifdef CONFIG_STA_MODE_SCAN_UNDER_AP_MODE
++#ifdef CONFIG_SCAN_BACKOP
+ 		if((padapter->pbuddy_adapter->mlmeextpriv.mlmext_info.state&0x03) == WIFI_FW_AP_STATE)
+ 		{
+ 			if(IsSupported5G(padapter->registrypriv.wireless_mode) 
+@@ -951,7 +951,7 @@ _func_enter_;
+ 				mlme_set_scan_to_timer(pmlmepriv, CONC_SCANNING_TIMEOUT_SINGLE_BAND);
+ 		}		
+ 		else
+-#endif //CONFIG_STA_MODE_SCAN_UNDER_AP_MODE
++#endif /* CONFIG_SCAN_BACKOP */
+ 			mlme_set_scan_to_timer(pmlmepriv, SCANNING_TIMEOUT);
+ 
+ 		rtw_led_control(padapter, LED_CTL_SITE_SURVEY);
+diff --git a/drivers/net/wireless/rtlwifi/rtl8821as/core/rtw_debug.c b/drivers/net/wireless/rtlwifi/rtl8821as/core/rtw_debug.c
+index 407e968..b7ce3b9 100755
+--- a/drivers/net/wireless/rtlwifi/rtl8821as/core/rtw_debug.c
++++ b/drivers/net/wireless/rtlwifi/rtl8821as/core/rtw_debug.c
+@@ -644,6 +644,226 @@ int proc_get_rf_info(struct seq_file *m, void *v)
+ 	return 0;
+ }
+ 
++int proc_get_scan_param(struct seq_file *m, void *v)
++{
++	struct net_device *dev = m->private;
++	_adapter *adapter = (_adapter *)rtw_netdev_priv(dev);
++	struct mlme_ext_priv *mlmeext = &adapter->mlmeextpriv;
++	struct ss_res *ss = &mlmeext->sitesurvey_res;
++
++#define SCAN_PARAM_TITLE_FMT "%10s"
++#define SCAN_PARAM_VALUE_FMT "%-10u"
++#define SCAN_PARAM_TITLE_ARG , "scan_ch_ms"
++#define SCAN_PARAM_VALUE_ARG , ss->scan_ch_ms
++#ifdef CONFIG_80211N_HT
++	#define SCAN_PARAM_TITLE_FMT_HT " %15s %13s"
++	#define SCAN_PARAM_VALUE_FMT_HT " %-15u %-13u"
++	#define SCAN_PARAM_TITLE_ARG_HT , "rx_ampdu_accept", "rx_ampdu_size"
++	#define SCAN_PARAM_VALUE_ARG_HT , ss->rx_ampdu_accept, ss->rx_ampdu_size
++#else
++	#define SCAN_PARAM_TITLE_FMT_HT ""
++	#define SCAN_PARAM_VALUE_FMT_HT ""
++	#define SCAN_PARAM_TITLE_ARG_HT
++	#define SCAN_PARAM_VALUE_ARG_HT
++#endif
++#ifdef CONFIG_SCAN_BACKOP
++	#define SCAN_PARAM_TITLE_FMT_BACKOP " %9s %12s"
++	#define SCAN_PARAM_VALUE_FMT_BACKOP " %-9u %-12u"
++	#define SCAN_PARAM_TITLE_ARG_BACKOP , "backop_ms", "scan_cnt_max"
++	#define SCAN_PARAM_VALUE_ARG_BACKOP , ss->backop_ms, ss->scan_cnt_max
++#else
++	#define SCAN_PARAM_TITLE_FMT_BACKOP ""
++	#define SCAN_PARAM_VALUE_FMT_BACKOP ""
++	#define SCAN_PARAM_TITLE_ARG_BACKOP
++	#define SCAN_PARAM_VALUE_ARG_BACKOP
++#endif
++
++	DBG_871X_SEL_NL(m,
++		SCAN_PARAM_TITLE_FMT
++		SCAN_PARAM_TITLE_FMT_HT
++		SCAN_PARAM_TITLE_FMT_BACKOP
++		"\n"
++		SCAN_PARAM_TITLE_ARG
++		SCAN_PARAM_TITLE_ARG_HT
++		SCAN_PARAM_TITLE_ARG_BACKOP
++	);
++
++	DBG_871X_SEL_NL(m,
++		SCAN_PARAM_VALUE_FMT
++		SCAN_PARAM_VALUE_FMT_HT
++		SCAN_PARAM_VALUE_FMT_BACKOP
++		"\n"
++		SCAN_PARAM_VALUE_ARG
++		SCAN_PARAM_VALUE_ARG_HT
++		SCAN_PARAM_VALUE_ARG_BACKOP
++	);
++
++	return 0;
++}
++
++ssize_t proc_set_scan_param(struct file *file, const char __user *buffer, size_t count, loff_t *pos, void *data)
++{
++	struct net_device *dev = data;
++	_adapter *adapter = (_adapter *)rtw_netdev_priv(dev);
++	struct mlme_ext_priv *mlmeext = &adapter->mlmeextpriv;
++	struct ss_res *ss = &mlmeext->sitesurvey_res;
++
++	char tmp[32] = {0};
++
++u16 scan_ch_ms;
++#define SCAN_PARAM_INPUT_FMT "%hu"
++#define SCAN_PARAM_INPUT_ARG , &scan_ch_ms
++#ifdef CONFIG_80211N_HT
++	u8 rx_ampdu_accept;
++	u8 rx_ampdu_size;
++	#define SCAN_PARAM_INPUT_FMT_HT " %hhu %hhu"
++	#define SCAN_PARAM_INPUT_ARG_HT , &rx_ampdu_accept, &rx_ampdu_size
++#else
++	#define SCAN_PARAM_INPUT_FMT_HT ""
++	#define SCAN_PARAM_INPUT_ARG_HT
++#endif
++#ifdef CONFIG_SCAN_BACKOP
++	u16 backop_ms;
++	u8 scan_cnt_max;
++	#define SCAN_PARAM_INPUT_FMT_BACKOP " %hu %hhu"
++	#define SCAN_PARAM_INPUT_ARG_BACKOP , &backop_ms, &scan_cnt_max
++#else
++	#define SCAN_PARAM_INPUT_FMT_BACKOP ""
++	#define SCAN_PARAM_INPUT_ARG_BACKOP
++#endif
++
++	if (count < 1)
++		return -EFAULT;
++
++	if (count > sizeof(tmp)) {
++		rtw_warn_on(1);
++		return -EFAULT;
++	}
++
++	if (buffer && !copy_from_user(tmp, buffer, count)) {
++
++		int num = sscanf(tmp,
++			SCAN_PARAM_INPUT_FMT
++			SCAN_PARAM_INPUT_FMT_HT
++			SCAN_PARAM_INPUT_FMT_BACKOP
++			SCAN_PARAM_INPUT_ARG
++			SCAN_PARAM_INPUT_ARG_HT
++			SCAN_PARAM_INPUT_ARG_BACKOP
++		);
++
++		if (num-- > 0)
++			ss->scan_ch_ms = scan_ch_ms;
++		#ifdef CONFIG_80211N_HT
++		if (num-- > 0)
++			ss->rx_ampdu_accept = rx_ampdu_accept;
++		if (num-- > 0)
++			ss->rx_ampdu_size = rx_ampdu_size;
++		#endif
++		#ifdef CONFIG_SCAN_BACKOP
++		if (num-- > 0)
++			ss->backop_ms = backop_ms;
++		if (num-- > 0)
++			ss->scan_cnt_max = scan_cnt_max;
++		#endif
++	}
++	
++	return count;	
++}
++
++int proc_get_scan_abort(struct seq_file *m, void *v)
++{
++	struct net_device *dev = m->private;
++	_adapter *adapter = (_adapter *)rtw_netdev_priv(dev);
++	u32 pass_ms;
++
++	pass_ms = rtw_scan_abort_timeout(adapter, 10000);
++
++	DBG_871X_SEL_NL(m, "%u\n", pass_ms);
++
++	return 0;
++}
++
++#ifdef CONFIG_SCAN_BACKOP
++int proc_get_backop_flags_sta(struct seq_file *m, void *v)
++{
++	struct net_device *dev = m->private;
++	_adapter *adapter = (_adapter *)rtw_netdev_priv(dev);
++	struct mlme_ext_priv *mlmeext = &adapter->mlmeextpriv;
++
++	DBG_871X_SEL_NL(m, "0x%02x\n", mlmeext_scan_backop_flags_sta(mlmeext));
++
++	return 0;
++}
++
++ssize_t proc_set_backop_flags_sta(struct file *file, const char __user *buffer, size_t count, loff_t *pos, void *data)
++{
++	struct net_device *dev = data;
++	_adapter *adapter = (_adapter *)rtw_netdev_priv(dev);
++	struct mlme_ext_priv *mlmeext = &adapter->mlmeextpriv;
++
++	char tmp[32];
++	u8 flags;
++
++	if (count < 1)
++		return -EFAULT;
++
++	if (count > sizeof(tmp)) {
++		rtw_warn_on(1);
++		return -EFAULT;
++	}
++
++	if (buffer && !copy_from_user(tmp, buffer, count)) {
++
++		int num = sscanf(tmp, "%hhx", &flags);
++
++		if (num == 1)
++			mlmeext_assign_scan_backop_flags_sta(mlmeext, flags);
++	}
++	
++	return count;
++}
++
++int proc_get_backop_flags_ap(struct seq_file *m, void *v)
++{
++	struct net_device *dev = m->private;
++	_adapter *adapter = (_adapter *)rtw_netdev_priv(dev);
++	struct mlme_ext_priv *mlmeext = &adapter->mlmeextpriv;
++
++	DBG_871X_SEL_NL(m, "0x%02x\n", mlmeext_scan_backop_flags_ap(mlmeext));
++
++	return 0;
++}
++
++ssize_t proc_set_backop_flags_ap(struct file *file, const char __user *buffer, size_t count, loff_t *pos, void *data)
++{
++	struct net_device *dev = data;
++	_adapter *adapter = (_adapter *)rtw_netdev_priv(dev);
++	struct mlme_ext_priv *mlmeext = &adapter->mlmeextpriv;
++
++	char tmp[32];
++	u8 flags;
++
++	if (count < 1)
++		return -EFAULT;
++
++	if (count > sizeof(tmp)) {
++		rtw_warn_on(1);
++		return -EFAULT;
++	}
++
++	if (buffer && !copy_from_user(tmp, buffer, count)) {
++
++		int num = sscanf(tmp, "%hhx", &flags);
++
++		if (num == 1)
++			mlmeext_assign_scan_backop_flags_ap(mlmeext, flags);
++	}
++	
++	return count;
++}
++
++#endif /* CONFIG_SCAN_BACKOP */
++
+ int proc_get_survey_info(struct seq_file *m, void *v)
+ {
+ 	_irqL irqL;
+@@ -2478,6 +2698,54 @@ int proc_get_tx_ring(struct seq_file *m, void *v)
+ }
+ #endif
+ 
++#ifdef CONFIG_GPIO_WAKEUP
++int proc_get_wowlan_gpio_info(struct seq_file *m, void *v)
++{
++	struct net_device *dev = m->private;
++	_adapter *padapter = (_adapter *)rtw_netdev_priv(dev);
++	struct pwrctrl_priv *pwrpriv = adapter_to_pwrctl(padapter);
++	u8 val = pwrpriv->is_high_active;
++
++	DBG_871X_SEL_NL(m, "wakeup_gpio_idx: %d\n", WAKEUP_GPIO_IDX);
++	DBG_871X_SEL_NL(m, "high_active: %d\n", val);
++
++	return 0;
++}
++
++ssize_t proc_set_wowlan_gpio_info(struct file *file, const char __user *buffer,
++		size_t count, loff_t *pos, void *data)
++{
++	struct net_device *dev = data;
++	_adapter *padapter = (_adapter *)rtw_netdev_priv(dev);
++	struct pwrctrl_priv *pwrpriv = adapter_to_pwrctl(padapter);
++	char tmp[32] = {0};
++	int num = 0;
++	u32 is_high_active = 0;
++
++	if (count < 1)
++		return -EFAULT;
++
++	if (count > sizeof(tmp)) {
++		rtw_warn_on(1);
++		return -EFAULT;
++	}
++
++	if (buffer && !copy_from_user(tmp, buffer, count)) {
++
++		num = sscanf(tmp, "%u", &is_high_active);
++
++		is_high_active = is_high_active == 0 ? 0 : 1;
++
++		pwrpriv->is_high_active = is_high_active;
++
++		DBG_871X("set %s %d\n", "gpio_high_active",
++				pwrpriv->is_high_active);
++	}
++	
++	return count;
++}
++#endif /* CONFIG_GPIO_WAKEUP */
++
+ #ifdef CONFIG_P2P_WOWLAN
+ int proc_get_p2p_wowlan_info(struct seq_file *m, void *v)
+ {
+diff --git a/drivers/net/wireless/rtlwifi/rtl8821as/core/rtw_mlme.c b/drivers/net/wireless/rtlwifi/rtl8821as/core/rtw_mlme.c
+index 1cfe391..f7930af 100755
+--- a/drivers/net/wireless/rtlwifi/rtl8821as/core/rtw_mlme.c
++++ b/drivers/net/wireless/rtlwifi/rtl8821as/core/rtw_mlme.c
+@@ -1757,13 +1757,13 @@ void rtw_scan_wait_completed(_adapter *adapter)
+ {
+ 	u32 scan_to = SCANNING_TIMEOUT;
+ 
+-#ifdef CONFIG_STA_MODE_SCAN_UNDER_AP_MODE
++#ifdef CONFIG_SCAN_BACKOP
+ 	if (IsSupported5G(adapter->registrypriv.wireless_mode) 
+ 		&& IsSupported24G(adapter->registrypriv.wireless_mode)) /*dual band*/
+ 		scan_to = CONC_SCANNING_TIMEOUT_DUAL_BAND;
+ 	else /*single band*/
+ 		scan_to = CONC_SCANNING_TIMEOUT_SINGLE_BAND;
+-#endif /*CONFIG_STA_MODE_SCAN_UNDER_AP_MODE*/
++#endif /* CONFIG_SCAN_BACKOP */
+ 
+ 	_rtw_wait_scan_done(adapter, _FALSE, scan_to);
+ }
+diff --git a/drivers/net/wireless/rtlwifi/rtl8821as/core/rtw_mlme_ext.c b/drivers/net/wireless/rtlwifi/rtl8821as/core/rtw_mlme_ext.c
+index a9393cb..9e8294d 100755
+--- a/drivers/net/wireless/rtlwifi/rtl8821as/core/rtw_mlme_ext.c
++++ b/drivers/net/wireless/rtlwifi/rtl8821as/core/rtw_mlme_ext.c
+@@ -684,9 +684,22 @@ static void init_mlme_ext_priv_value(_adapter* padapter)
+ 	else
+ 		pmlmeext->tx_rate = IEEE80211_CCK_RATE_1MB;
+ 
+-	pmlmeext->sitesurvey_res.state = SCAN_DISABLE;
++	mlmeext_set_scan_state(pmlmeext, SCAN_DISABLE);
+ 	pmlmeext->sitesurvey_res.channel_idx = 0;
+ 	pmlmeext->sitesurvey_res.bss_cnt = 0;
++	pmlmeext->sitesurvey_res.scan_ch_ms = SURVEY_TO;
++	pmlmeext->sitesurvey_res.rx_ampdu_accept = RX_AMPDU_ACCEPT_INVALID;
++	pmlmeext->sitesurvey_res.rx_ampdu_size = RX_AMPDU_SIZE_INVALID;
++	#ifdef CONFIG_SCAN_BACKOP
++	mlmeext_assign_scan_backop_flags_sta(pmlmeext, /*SS_BACKOP_EN|*/SS_BACKOP_PS_ANNC|SS_BACKOP_TX_RESUME);
++	mlmeext_assign_scan_backop_flags_ap(pmlmeext, SS_BACKOP_EN|SS_BACKOP_PS_ANNC|SS_BACKOP_TX_RESUME);
++	pmlmeext->sitesurvey_res.scan_cnt = 0;
++	pmlmeext->sitesurvey_res.scan_cnt_max = RTW_SCAN_NUM_OF_CH;
++	pmlmeext->sitesurvey_res.backop_ms = RTW_BACK_OP_CH_MS;
++	#endif
++	#if defined(CONFIG_ANTENNA_DIVERSITY) || defined(DBG_SCAN_SW_ANTDIV_BL)
++	pmlmeext->sitesurvey_res.is_sw_antdiv_bl_scan = 0;
++	#endif
+ 	pmlmeext->scan_abort = _FALSE;
+ 
+ 	pmlmeinfo->state = WIFI_FW_NULL_STATE;
+@@ -912,7 +925,6 @@ int	init_mlme_ext_priv(_adapter* padapter)
+ 	pmlmeext->max_chan_nums = init_channel_set(padapter, pmlmepriv->ChannelPlan,pmlmeext->channel_set);
+ 	init_channel_list(padapter, pmlmeext->channel_set, pmlmeext->max_chan_nums, &pmlmeext->channel_list);
+ 	pmlmeext->last_scan_time = 0;
+-	pmlmeext->chan_scan_time = SURVEY_TO;
+ 	pmlmeext->mlmeext_init = _TRUE;
+ 
+ 
+@@ -1513,8 +1525,7 @@ unsigned int OnProbeRsp(_adapter *padapter, union recv_frame *precv_frame)
+ #endif
+ 
+ 
+-	if (pmlmeext->sitesurvey_res.state == SCAN_PROCESS)
+-	{
++	if (mlmeext_chk_scan_state(pmlmeext, SCAN_PROCESS)) {
+ 		report_survey_event(padapter, precv_frame);	
+ #ifdef CONFIG_CONCURRENT_MODE
+ 		report_survey_event(padapter->pbuddy_adapter, precv_frame);	
+@@ -1571,8 +1582,7 @@ unsigned int OnBeacon(_adapter *padapter, union recv_frame *precv_frame)
+ 	}
+ #endif
+ 
+-	if (pmlmeext->sitesurvey_res.state == SCAN_PROCESS)
+-	{
++	if (mlmeext_chk_scan_state(pmlmeext, SCAN_PROCESS)) {
+ 		report_survey_event(padapter, precv_frame);
+ #ifdef CONFIG_CONCURRENT_MODE
+ 		report_survey_event(padapter->pbuddy_adapter, precv_frame);	
+@@ -3216,6 +3226,15 @@ u8 rtw_rx_ampdu_size(_adapter *adapter)
+ 	}
+ #endif
+ 
++	/* for scan */
++	if (!mlmeext_chk_scan_state(&adapter->mlmeextpriv, SCAN_DISABLE)
++		&& !mlmeext_chk_scan_state(&adapter->mlmeextpriv, SCAN_COMPLETE)
++		&& adapter->mlmeextpriv.sitesurvey_res.rx_ampdu_size != RX_AMPDU_SIZE_INVALID
++	) {
++		size = adapter->mlmeextpriv.sitesurvey_res.rx_ampdu_size;
++		goto exit;
++	}
++
+ 	/* default value based on max_rx_ampdu_factor */
+ 	if (adapter->driver_rx_ampdu_factor != 0xFF)
+ 		max_rx_ampdu_factor = (HT_CAP_AMPDU_FACTOR)adapter->driver_rx_ampdu_factor;
+@@ -3263,6 +3282,15 @@ bool rtw_rx_ampdu_is_accept(_adapter *adapter)
+ 	}
+ #endif
+ 
++	/* for scan */
++	if (!mlmeext_chk_scan_state(&adapter->mlmeextpriv, SCAN_DISABLE)
++		&& !mlmeext_chk_scan_state(&adapter->mlmeextpriv, SCAN_COMPLETE)
++		&& adapter->mlmeextpriv.sitesurvey_res.rx_ampdu_accept != RX_AMPDU_ACCEPT_INVALID
++	) {
++		accept = adapter->mlmeextpriv.sitesurvey_res.rx_ampdu_accept;
++		goto exit;
++	}
++
+ 	/* default value for other cases */
+ 	accept = adapter->mlmeextpriv.mlmext_info.bAcceptAddbaReq;
+ 
+@@ -3293,6 +3321,14 @@ bool rtw_rx_ampdu_set_size(_adapter *adapter, u8 size, u8 reason)
+ 			is_adj = _TRUE;
+ 			DBG_871X(FUNC_ADPT_FMT" fix_rx_ampdu_size:%u\n", FUNC_ADPT_ARG(adapter), size);
+ 		}
++	} else if (reason == RX_AMPDU_DRV_SCAN) {
++		struct ss_res *ss = &adapter->mlmeextpriv.sitesurvey_res;
++
++		if (ss->rx_ampdu_size != size) {
++			ss->rx_ampdu_size = size;
++			is_adj = _TRUE;
++			DBG_871X(FUNC_ADPT_FMT" ss.rx_ampdu_size:%u\n", FUNC_ADPT_ARG(adapter), size);
++		}
+ 	}
+ 
+ 	return is_adj;
+@@ -3321,6 +3357,12 @@ bool rtw_rx_ampdu_set_accept(_adapter *adapter, u8 accept, u8 reason)
+ 			is_adj = _TRUE;
+ 			DBG_871X(FUNC_ADPT_FMT" fix_rx_ampdu_accept:%u\n", FUNC_ADPT_ARG(adapter), accept);
+ 		}
++	} else if (reason == RX_AMPDU_DRV_SCAN) {
++		if (adapter->mlmeextpriv.sitesurvey_res.rx_ampdu_accept != accept) {
++			adapter->mlmeextpriv.sitesurvey_res.rx_ampdu_accept = accept;
++			is_adj = _TRUE;
++			DBG_871X(FUNC_ADPT_FMT" ss.rx_ampdu_accept:%u\n", FUNC_ADPT_ARG(adapter), accept);
++		}
+ 	}
+ 
+ 	return is_adj;
+@@ -10286,450 +10328,6 @@ BOOLEAN IsLegal5GChannel(
+ 	return _FALSE;
+ }
+ 
+-void site_survey(_adapter *padapter)
+-{
+-	unsigned char		survey_channel = 0, val8;
+-	RT_SCAN_TYPE	ScanType = SCAN_PASSIVE;
+-	struct mlme_ext_priv	*pmlmeext = &padapter->mlmeextpriv;
+-	struct mlme_ext_info	*pmlmeinfo = &(pmlmeext->mlmext_info);
+-	u8 initialgain = 0;
+-	u32 channel_scan_time_ms = 0,val32 = 0;
+-
+-#ifdef CONFIG_P2P
+-
+-#ifdef CONFIG_CONCURRENT_MODE
+-
+-#if defined(CONFIG_STA_MODE_SCAN_UNDER_AP_MODE) || defined(CONFIG_ATMEL_RC_PATCH) 
+-	u8 stay_buddy_ch = 0;
+-#endif
+-	struct mlme_priv *pmlmepriv = &(padapter->mlmepriv);
+-	PADAPTER pbuddy_adapter = padapter->pbuddy_adapter;			
+-	struct mlme_ext_priv *pbuddy_mlmeext = &pbuddy_adapter->mlmeextpriv;
+-
+-#endif //CONFIG_CONCURRENT_MODE
+-	struct wifidirect_info *pwdinfo= &(padapter->wdinfo);
+-	static unsigned char  prev_survey_channel = 0;
+-	static unsigned int p2p_scan_count = 0;
+-
+-	if ( ( pwdinfo->rx_invitereq_info.scan_op_ch_only ) || ( pwdinfo->p2p_info.scan_op_ch_only ) )
+-	{
+-		if ( pwdinfo->rx_invitereq_info.scan_op_ch_only )
+-		{
+-			survey_channel = pwdinfo->rx_invitereq_info.operation_ch[pmlmeext->sitesurvey_res.channel_idx];
+-		}
+-		else
+-		{
+-			survey_channel = pwdinfo->p2p_info.operation_ch[pmlmeext->sitesurvey_res.channel_idx];
+-		}
+-		ScanType = SCAN_ACTIVE;
+-	}
+-	else if(rtw_p2p_findphase_ex_is_social(pwdinfo))
+-	{
+-		//	Commented by Albert 2011/06/03
+-		//	The driver is in the find phase, it should go through the social channel.
+-		int ch_set_idx;
+-		survey_channel = pwdinfo->social_chan[pmlmeext->sitesurvey_res.channel_idx];
+-		ch_set_idx = rtw_ch_set_search_ch(pmlmeext->channel_set, survey_channel);
+-		if (ch_set_idx >= 0)
+-			ScanType = pmlmeext->channel_set[ch_set_idx].ScanType;
+-		else
+-			ScanType = SCAN_ACTIVE;
+-	}
+-	else
+-#endif //CONFIG_P2P
+-	{
+-		struct rtw_ieee80211_channel *ch;
+-		if (pmlmeext->sitesurvey_res.channel_idx < pmlmeext->sitesurvey_res.ch_num) {
+-			ch = &pmlmeext->sitesurvey_res.ch[pmlmeext->sitesurvey_res.channel_idx];
+-			survey_channel = ch->hw_value;
+-			ScanType = (ch->flags & RTW_IEEE80211_CHAN_PASSIVE_SCAN) ? SCAN_PASSIVE : SCAN_ACTIVE;
+-		}
+-	}
+-
+-#ifdef CONFIG_AUTO_CHNL_SEL_NHM
+-	if ((ACS_ENABLE == GET_ACS_STATE(padapter)) && (0 != rtw_get_acs_channel(padapter))) {
+-		ACS_OP acs_op = ACS_SELECT;
+-
+-		rtw_hal_set_odm_var(padapter, HAL_ODM_AUTO_CHNL_SEL, &acs_op, _TRUE);
+-	}
+-#endif
+-
+-	if (0) {
+-#ifdef CONFIG_P2P
+-		DBG_871X(FUNC_ADPT_FMT" ch:%u (cnt:%u,idx:%d) at %dms, %c%c%c\n"
+-		, FUNC_ADPT_ARG(padapter)
+-		, survey_channel
+-		, pwdinfo->find_phase_state_exchange_cnt, pmlmeext->sitesurvey_res.channel_idx
+-		, rtw_get_passing_time_ms(padapter->mlmepriv.scan_start_time)
+-		, ScanType?'A':'P', pmlmeext->sitesurvey_res.scan_mode?'A':'P'
+-		, pmlmeext->sitesurvey_res.ssid[0].SsidLength?'S':' ' 
+-		);
+-#else
+- 		DBG_871X(FUNC_ADPT_FMT" ch:%u (cnt:%u) at %dms, %c%c%c\n"
+-                , FUNC_ADPT_ARG(padapter)
+-                , survey_channel
+-                , pmlmeext->sitesurvey_res.channel_idx
+-                , rtw_get_passing_time_ms(padapter->mlmepriv.scan_start_time)
+-                , ScanType?'A':'P', pmlmeext->sitesurvey_res.scan_mode?'A':'P'
+-                , pmlmeext->sitesurvey_res.ssid[0].SsidLength?'S':' '
+-                );
+-#endif // CONFIG_P2P
+-		#ifdef DBG_FIXED_CHAN
+-		DBG_871X(FUNC_ADPT_FMT" fixed_chan:%u\n", pmlmeext->fixed_chan);
+-		#endif
+-	}
+-
+-	if(survey_channel != 0)
+-	{
+-		//PAUSE 4-AC Queue when site_survey
+-		//rtw_hal_get_hwreg(padapter, HW_VAR_TXPAUSE, (u8 *)(&val8));
+-		//val8 |= 0x0f;
+-		//rtw_hal_set_hwreg(padapter, HW_VAR_TXPAUSE, (u8 *)(&val8));
+-#if defined(CONFIG_STA_MODE_SCAN_UNDER_AP_MODE) || defined(CONFIG_ATMEL_RC_PATCH)
+-		if ((padapter->pbuddy_adapter->mlmeextpriv.mlmext_info.state&0x03) == WIFI_FW_AP_STATE) {
+-			if (pmlmeinfo->scan_cnt == RTW_SCAN_NUM_OF_CH) {
+-				if (pmlmeinfo->backop_cnt == 0)
+-					stay_buddy_ch = 1;
+-				else if (pmlmeinfo->backop_cnt == RTW_STAY_AP_CH_MILLISECOND)
+-					stay_buddy_ch = 2;
+-
+-				if (stay_buddy_ch == 2) {
+-					pmlmeinfo->scan_cnt = 1;
+-					pmlmeinfo->backop_cnt = 0;
+-				} else if (stay_buddy_ch == 1) {
+-					pmlmeinfo->backop_cnt++;
+-					survey_channel = pbuddy_mlmeext->cur_channel;
+-				} else {
+-					pmlmeinfo->backop_cnt++;
+-					set_survey_timer(pmlmeext, pmlmeext->chan_scan_time);
+-					return;	
+-				}
+-			} else {
+-				pmlmeinfo->scan_cnt++;
+-			}
+-		} else {
+-			if (pmlmeinfo->backop_cnt > 0) {
+-				stay_buddy_ch = 2;
+-				pmlmeinfo->scan_cnt = 1;
+-				pmlmeinfo->backop_cnt = 0;
+-			}	
+-		}
+-#endif
+-		if(pmlmeext->sitesurvey_res.channel_idx == 0)
+-		{
+-#ifdef DBG_FIXED_CHAN
+-			if(pmlmeext->fixed_chan !=0xff)
+-				set_channel_bwmode(padapter, pmlmeext->fixed_chan, HAL_PRIME_CHNL_OFFSET_DONT_CARE, CHANNEL_WIDTH_20);
+-			else	
+-#endif
+-				set_channel_bwmode(padapter, survey_channel, HAL_PRIME_CHNL_OFFSET_DONT_CARE, CHANNEL_WIDTH_20);
+-		}
+-		else
+-		{
+-#ifdef DBG_FIXED_CHAN
+-			if(pmlmeext->fixed_chan!=0xff)
+-				SelectChannel(padapter, pmlmeext->fixed_chan);
+-			else	
+-#endif
+-				SelectChannel(padapter, survey_channel);
+-		}
+-#ifdef CONFIG_AUTO_CHNL_SEL_NHM
+-		if (ACS_ENABLE == GET_ACS_STATE(padapter)) {
+-			ACS_OP acs_op = ACS_RESET;
+-
+-			rtw_hal_set_odm_var(padapter, HAL_ODM_AUTO_CHNL_SEL, &acs_op, _TRUE);
+-			rtw_set_acs_channel(padapter, survey_channel);
+-			#ifdef DBG_AUTO_CHNL_SEL_NHM
+-			DBG_871X("[ACS-"ADPT_FMT"]-set ch:%u\n",
+-					ADPT_ARG(padapter), rtw_get_acs_channel(padapter));
+-			#endif
+-		}
+-#endif
+-
+-#if defined(CONFIG_STA_MODE_SCAN_UNDER_AP_MODE) || defined(CONFIG_ATMEL_RC_PATCH) 
+-		if( stay_buddy_ch == 1 )
+-		{
+-			val8 = 0; //survey done
+-			rtw_hal_set_hwreg(padapter, HW_VAR_MLME_SITESURVEY, (u8 *)(&val8));
+-
+-			if(check_buddy_mlmeinfo_state(padapter, WIFI_FW_AP_STATE) &&
+-				check_buddy_fwstate(padapter, _FW_LINKED))
+-			{
+-				update_beacon(padapter->pbuddy_adapter, 0, NULL, _TRUE);
+-			}
+-		}
+-		else if( stay_buddy_ch == 2 )
+-		{
+-			val8 = 1; //under site survey
+-			rtw_hal_set_hwreg(padapter, HW_VAR_MLME_SITESURVEY, (u8 *)(&val8));
+-		}
+-#endif
+-
+-		if(ScanType == SCAN_ACTIVE) //obey the channel plan setting...
+-		{
+-			#ifdef CONFIG_P2P
+-			if(rtw_p2p_chk_state(pwdinfo, P2P_STATE_SCAN) || 
+-				rtw_p2p_chk_state(pwdinfo, P2P_STATE_FIND_PHASE_SEARCH)
+-			)
+-			{
+-				issue_probereq_p2p(padapter, NULL);
+-				issue_probereq_p2p(padapter, NULL);
+-				issue_probereq_p2p(padapter, NULL);
+-			}
+-			else
+-			#endif //CONFIG_P2P
+-			{
+-				int i;
+-				for(i=0;i<RTW_SSID_SCAN_AMOUNT;i++){
+-					if(pmlmeext->sitesurvey_res.ssid[i].SsidLength) {
+-						/* IOT issue, When wifi_spec is not set, send one probe req without WPS IE. */
+-						if (padapter->registrypriv.wifi_spec)
+-							issue_probereq(padapter, &(pmlmeext->sitesurvey_res.ssid[i]), NULL);
+-						else
+-							issue_probereq_ex(padapter, &(pmlmeext->sitesurvey_res.ssid[i]), NULL, 0, 0, 0, 0);
+-						issue_probereq(padapter, &(pmlmeext->sitesurvey_res.ssid[i]), NULL);
+-					}
+-				}
+-
+-				if(pmlmeext->sitesurvey_res.scan_mode == SCAN_ACTIVE) {
+-					/* IOT issue, When wifi_spec is not set, send one probe req without WPS IE. */
+-					if (padapter->registrypriv.wifi_spec)
+-						issue_probereq(padapter, NULL, NULL);
+-					else
+-						issue_probereq_ex(padapter, NULL, NULL, 0, 0, 0, 0);
+-					issue_probereq(padapter, NULL, NULL);
+-				}
+-			}
+-		}
+-
+-#if  defined(CONFIG_ATMEL_RC_PATCH)
+-		// treat wlan0 & p2p0 in same way, may be changed in near feature.
+-		// assume home channel is 6, channel switch sequence will be 
+-		//	1,2-6-3,4-6-5,6-6-7,8-6-9,10-6-11,12-6-13,14
+-		//if (rtw_p2p_chk_state(pwdinfo, P2P_STATE_NONE)==_TRUE)
+-
+-		if (check_fwstate(pmlmepriv, _FW_LINKED) == _TRUE)
+-			channel_scan_time_ms = 20;
+-		else
+-			channel_scan_time_ms = 40;
+-#else
+-		channel_scan_time_ms = pmlmeext->chan_scan_time;
+-#endif
+-
+-		set_survey_timer(pmlmeext, channel_scan_time_ms);
+-#if defined(CONFIG_SIGNAL_DISPLAY_DBM) && defined(CONFIG_BACKGROUND_NOISE_MONITOR)
+-		{
+-			struct noise_info info;
+-			info.bPauseDIG = _FALSE;
+-			info.IGIValue = 0;
+-			info.max_time = channel_scan_time_ms/2;//ms
+-			info.chan = survey_channel;
+-			rtw_hal_set_odm_var(padapter, HAL_ODM_NOISE_MONITOR,&info, _FALSE);	
+-		}
+-#endif
+-
+-	}
+-	else
+-	{
+-		//	channel number is 0 or this channel is not valid.
+-#ifdef CONFIG_CONCURRENT_MODE
+-		u8 cur_channel;
+-		u8 cur_bwmode;
+-		u8 cur_ch_offset;
+-
+-		if (rtw_get_ch_setting_union(padapter, &cur_channel, &cur_bwmode, &cur_ch_offset) != 0)
+-		{
+-			if (0)
+-				DBG_871X(FUNC_ADPT_FMT" back to linked/linking union - ch:%u, bw:%u, offset:%u\n",
+-					FUNC_ADPT_ARG(padapter), cur_channel, cur_bwmode, cur_ch_offset);
+-		}
+-		#ifdef CONFIG_IOCTL_CFG80211
+-		else if(padapter->pbuddy_adapter
+-			&& pbuddy_adapter->wdinfo.driver_interface == DRIVER_CFG80211
+-			&& adapter_wdev_data(pbuddy_adapter)->p2p_enabled
+-			&& rtw_p2p_chk_state(&pbuddy_adapter->wdinfo, P2P_STATE_LISTEN)
+-			)
+-		{
+-			cur_channel = pbuddy_adapter->wdinfo.listen_channel;
+-			cur_bwmode = pbuddy_mlmeext->cur_bwmode;
+-			cur_ch_offset = pbuddy_mlmeext->cur_ch_offset;
+-		}
+-		#endif
+-		else
+-		{
+-			cur_channel = pmlmeext->cur_channel;
+-			cur_bwmode = pmlmeext->cur_bwmode;
+-			cur_ch_offset = pmlmeext->cur_ch_offset;
+-		}		
+-#endif
+-
+-#ifdef CONFIG_AUTO_CHNL_SEL_NHM
+-		if (ACS_ENABLE == GET_ACS_STATE(padapter)) {
+-			rtw_set_acs_channel(padapter, 0);
+-			#ifdef DBG_AUTO_CHNL_SEL_NHM
+-			DBG_871X("[ACS-"ADPT_FMT"]-set ch:%u\n", ADPT_ARG(padapter), rtw_get_acs_channel(padapter));
+-			#endif
+-		}
+-#endif
+-	
+-#ifdef CONFIG_P2P
+-		if(rtw_p2p_chk_state(pwdinfo, P2P_STATE_SCAN) || rtw_p2p_chk_state(pwdinfo, P2P_STATE_FIND_PHASE_SEARCH))
+-		{
+-			if( ( pwdinfo->rx_invitereq_info.scan_op_ch_only ) || ( pwdinfo->p2p_info.scan_op_ch_only ) )
+-			{
+-				//	Set the find_phase_state_exchange_cnt to P2P_FINDPHASE_EX_CNT.
+-				//	This will let the following flow to run the scanning end.
+-				rtw_p2p_findphase_ex_set(pwdinfo, P2P_FINDPHASE_EX_MAX);
+-			}
+-			#ifdef CONFIG_DBG_P2P
+-			DBG_871X( "[%s] find phase exchange cnt = %d\n", __FUNCTION__, pwdinfo->find_phase_state_exchange_cnt );
+-			#endif
+-		}
+-
+-		if(rtw_p2p_findphase_ex_is_needed(pwdinfo))
+-		{
+-			//	Set the P2P State to the listen state of find phase and set the current channel to the listen channel
+-			set_channel_bwmode(padapter, pwdinfo->listen_channel, HAL_PRIME_CHNL_OFFSET_DONT_CARE, CHANNEL_WIDTH_20);
+-			rtw_p2p_set_state(pwdinfo, P2P_STATE_FIND_PHASE_LISTEN);
+-			pmlmeext->sitesurvey_res.state = SCAN_DISABLE;
+-
+-			//turn on phy-dynamic functions
+-			rtw_phydm_ability_restore(padapter);
+-			
+-			initialgain = 0xff; //restore RX GAIN
+-			rtw_hal_set_odm_var(padapter, HAL_ODM_INITIAL_GAIN, &initialgain, _FALSE);
+-			
+-			_set_timer( &pwdinfo->find_phase_timer, ( u32 ) ( ( u32 ) ( pwdinfo->listen_dwell ) * 100 ) );
+-		}
+-		else
+-#endif //CONFIG_P2P
+-		{
+-
+-#if defined(CONFIG_STA_MODE_SCAN_UNDER_AP_MODE) || defined(CONFIG_ATMEL_RC_PATCH) 
+-			pmlmeinfo->scan_cnt = 0;
+-			pmlmeinfo->backop_cnt = 0;
+-#endif
+-
+-#ifdef CONFIG_ANTENNA_DIVERSITY
+-			// 20100721:Interrupt scan operation here.
+-			// For SW antenna diversity before link, it needs to switch to another antenna and scan again.
+-			// It compares the scan result and select beter one to do connection.
+-			if(rtw_hal_antdiv_before_linked(padapter))
+-			{				
+-				pmlmeext->sitesurvey_res.bss_cnt = 0;
+-				pmlmeext->sitesurvey_res.channel_idx = -1;
+-				pmlmeext->chan_scan_time = SURVEY_TO /2;			
+-				set_survey_timer(pmlmeext, pmlmeext->chan_scan_time);
+-				return;
+-			}
+-#endif
+-
+-#ifdef CONFIG_P2P
+-			if(rtw_p2p_chk_state(pwdinfo, P2P_STATE_SCAN) || rtw_p2p_chk_state(pwdinfo, P2P_STATE_FIND_PHASE_SEARCH))
+-			{
+-			#ifdef CONFIG_CONCURRENT_MODE
+-				if( pwdinfo->driver_interface == DRIVER_WEXT )
+-				{
+-					if ( check_buddy_fwstate(padapter, _FW_LINKED ) )
+-					{
+-						_set_timer( &pwdinfo->ap_p2p_switch_timer, 500 );
+-					}
+-				}		
+-				rtw_p2p_set_state(pwdinfo, rtw_p2p_pre_state(pwdinfo));
+-			#else
+-				rtw_p2p_set_state(pwdinfo, rtw_p2p_pre_state(pwdinfo));
+-			#endif
+-			}
+-			rtw_p2p_findphase_ex_set(pwdinfo, P2P_FINDPHASE_EX_NONE);
+-#endif //CONFIG_P2P
+-			
+-			pmlmeext->sitesurvey_res.state = SCAN_COMPLETE;
+-
+-			//switch back to the original channel
+-			//SelectChannel(padapter, pmlmeext->cur_channel, pmlmeext->cur_ch_offset);
+-
+-			{
+-#ifdef CONFIG_CONCURRENT_MODE
+-				set_channel_bwmode(padapter, cur_channel, cur_ch_offset, cur_bwmode);
+-#else
+-
+-#ifdef CONFIG_P2P
+-			if( (pwdinfo->driver_interface == DRIVER_WEXT) && (rtw_p2p_chk_state(pwdinfo, P2P_STATE_LISTEN)) )
+-				set_channel_bwmode(padapter, pwdinfo->listen_channel, HAL_PRIME_CHNL_OFFSET_DONT_CARE, CHANNEL_WIDTH_20);
+-			else
+-#endif //CONFIG_P2P
+- 				set_channel_bwmode(padapter, pmlmeext->cur_channel, pmlmeext->cur_ch_offset, pmlmeext->cur_bwmode);
+-
+-#endif //CONFIG_CONCURRENT_MODE
+-			}
+-
+-			//flush 4-AC Queue after site_survey
+-			//val8 = 0;
+-			//rtw_hal_set_hwreg(padapter, HW_VAR_TXPAUSE, (u8 *)(&val8));
+-
+-			//config MSR
+-			Set_MSR(padapter, (pmlmeinfo->state & 0x3));
+-
+-			//turn on phy-dynamic functions
+-			rtw_phydm_ability_restore(padapter);
+-			
+-			initialgain = 0xff; //restore RX GAIN
+-			rtw_hal_set_odm_var(padapter, HAL_ODM_INITIAL_GAIN, &initialgain, _FALSE);	
+-			
+-
+-			if (is_client_associated_to_ap(padapter) == _TRUE)
+-			{
+-				issue_nulldata(padapter, NULL, 0, 3, 500);
+-				
+-#ifdef CONFIG_CONCURRENT_MODE
+-				if(is_client_associated_to_ap(padapter->pbuddy_adapter) == _TRUE)
+-				{
+-					DBG_871X("adapter is surveydone(buddy_adapter is linked), issue nulldata(pwrbit=0)\n");
+-					
+-					issue_nulldata(padapter->pbuddy_adapter, NULL, 0, 3, 500);
+-				}
+-#endif	
+-			}
+-#ifdef CONFIG_CONCURRENT_MODE
+-			else if(is_client_associated_to_ap(padapter->pbuddy_adapter) == _TRUE)
+-			{
+-				issue_nulldata(padapter->pbuddy_adapter, NULL, 0, 3, 500);
+-			}
+-#endif	
+-
+-			val8 = 0; //survey done
+-			rtw_hal_set_hwreg(padapter, HW_VAR_MLME_SITESURVEY, (u8 *)(&val8));
+-
+-			report_surveydone_event(padapter);
+-
+-			pmlmeext->chan_scan_time = SURVEY_TO;
+-			pmlmeext->sitesurvey_res.state = SCAN_DISABLE;
+-
+-			issue_action_BSSCoexistPacket(padapter);
+-			issue_action_BSSCoexistPacket(padapter);
+-			issue_action_BSSCoexistPacket(padapter);
+-
+-		}
+-
+-#ifdef CONFIG_CONCURRENT_MODE
+-		if(check_buddy_mlmeinfo_state(padapter, WIFI_FW_AP_STATE) &&
+-			check_buddy_fwstate(padapter, _FW_LINKED))
+-		{
+-
+-			DBG_871X("survey done, current CH=%d, BW=%d, offset=%d\n", cur_channel, cur_bwmode, cur_ch_offset);
+-
+-			DBG_871X("restart pbuddy_adapter's beacon\n");
+-		
+-			update_beacon(padapter->pbuddy_adapter, 0, NULL, _TRUE);
+-		}
+-#endif
+-
+-	}
+-
+-	return;
+-
+-}
+-
+ //collect bss info from Beacon and Probe request/response frames.
+ u8 collect_bss_info(_adapter *padapter, union recv_frame *precv_frame, WLAN_BSSID_EX *bssid)
+ {
+@@ -12726,70 +12324,33 @@ void linked_status_chk(_adapter *padapter, u8 from_timer)
+ 
+ void survey_timer_hdl(_adapter *padapter)
+ {
+-	struct cmd_obj	*ph2c;
+-	struct sitesurvey_parm	*psurveyPara;
+-	struct cmd_priv					*pcmdpriv=&padapter->cmdpriv;
+-	struct mlme_ext_priv 		*pmlmeext = &padapter->mlmeextpriv;
++	struct cmd_obj *cmd;
++	struct sitesurvey_parm *psurveyPara;
++	struct cmd_priv *pcmdpriv = &padapter->cmdpriv;
++	struct mlme_ext_priv *pmlmeext = &padapter->mlmeextpriv;
+ #ifdef CONFIG_P2P
+ 	struct wifidirect_info *pwdinfo= &(padapter->wdinfo);
+ #endif
+ 
+-	//DBG_871X("marc: survey timer\n");
+-
+-	//issue rtw_sitesurvey_cmd
+-	if (pmlmeext->sitesurvey_res.state > SCAN_START)
+-	{
+-		if(pmlmeext->sitesurvey_res.state ==  SCAN_PROCESS)
+-		{
+-#if defined(CONFIG_STA_MODE_SCAN_UNDER_AP_MODE) || defined(CONFIG_ATMEL_RC_PATCH) 
+-			if (padapter->mlmeextpriv.mlmext_info.scan_cnt != RTW_SCAN_NUM_OF_CH
+-				|| padapter->mlmeextpriv.mlmext_info.backop_cnt == RTW_STAY_AP_CH_MILLISECOND)
+-#endif
+-				pmlmeext->sitesurvey_res.channel_idx++;
+-		}
+-
+-		if(pmlmeext->scan_abort == _TRUE)
+-		{
+-			#ifdef CONFIG_P2P
+-			if(!rtw_p2p_chk_state(&padapter->wdinfo, P2P_STATE_NONE))
+-			{
+-				rtw_p2p_findphase_ex_set(pwdinfo, P2P_FINDPHASE_EX_MAX);
+-				pmlmeext->sitesurvey_res.channel_idx = 3;
+-				DBG_871X("%s idx:%d, cnt:%u\n", __FUNCTION__
+-					, pmlmeext->sitesurvey_res.channel_idx
+-					, pwdinfo->find_phase_state_exchange_cnt
+-				);
+-			}
+-			else
+-			#endif
+-			{
+-				pmlmeext->sitesurvey_res.channel_idx = pmlmeext->sitesurvey_res.ch_num;
+-				DBG_871X("%s idx:%d\n", __FUNCTION__
+-					, pmlmeext->sitesurvey_res.channel_idx
+-				);
+-			}
+-
+-			pmlmeext->scan_abort = _FALSE;//reset
+-		}
+-
+-		if ((ph2c = (struct cmd_obj*)rtw_zmalloc(sizeof(struct cmd_obj))) == NULL)
+-		{
+-			goto exit_survey_timer_hdl;
++	if (mlmeext_scan_state(pmlmeext) > SCAN_DISABLE) {
++		cmd = (struct cmd_obj *)rtw_zmalloc(sizeof(struct cmd_obj));
++		if (cmd == NULL) {
++			rtw_warn_on(1);
++			goto exit;
+ 		}
+ 
+-		if ((psurveyPara = (struct sitesurvey_parm*)rtw_zmalloc(sizeof(struct sitesurvey_parm))) == NULL)
+-		{
+-			rtw_mfree((unsigned char *)ph2c, sizeof(struct cmd_obj));
+-			goto exit_survey_timer_hdl;
++		psurveyPara = (struct sitesurvey_parm *)rtw_zmalloc(sizeof(struct sitesurvey_parm));
++		if (psurveyPara == NULL) {
++			rtw_warn_on(1);
++			rtw_mfree((unsigned char *)cmd, sizeof(struct cmd_obj));
++			goto exit;
+ 		}
+ 
+-		init_h2fwcmd_w_parm_no_rsp(ph2c, psurveyPara, GEN_CMD_CODE(_SiteSurvey));
+-		rtw_enqueue_cmd(pcmdpriv, ph2c);
++		init_h2fwcmd_w_parm_no_rsp(cmd, psurveyPara, GEN_CMD_CODE(_SiteSurvey));
++		rtw_enqueue_cmd(pcmdpriv, cmd);
+ 	}
+ 
+-
+-exit_survey_timer_hdl:
+-
++exit:
+ 	return;
+ }
+ 
+@@ -13425,6 +12986,63 @@ u8 disconnect_hdl(_adapter *padapter, unsigned char *pbuf)
+ 	return 	H2C_SUCCESS;
+ }
+ 
++static const char * const _scan_state_str[] = {
++	"SCAN_DISABLE",
++	"SCAN_START",
++	"SCAN_PS_ANNC_WAIT",
++	"SCAN_ENTER",
++	"SCAN_PROCESS",
++	"SCAN_BACKING_OP",
++	"SCAN_BACK_OP",
++	"SCAN_LEAVING_OP",
++	"SCAN_LEAVE_OP",
++	"SCAN_SW_ANTDIV_BL",
++	"SCAN_TO_P2P_LISTEN",
++	"SCAN_P2P_LISTEN",
++	"SCAN_COMPLETE",
++	"SCAN_STATE_MAX",
++};
++
++const char *scan_state_str(u8 state)
++{
++	state = (state >= SCAN_STATE_MAX) ? SCAN_STATE_MAX : state;
++	return _scan_state_str[state];
++}
++
++static bool scan_abort_hdl(_adapter *adapter)
++{
++	struct mlme_ext_priv *pmlmeext = &adapter->mlmeextpriv;
++	struct mlme_ext_info *pmlmeinfo = &(pmlmeext->mlmext_info);
++	struct ss_res *ss = &pmlmeext->sitesurvey_res;
++#ifdef CONFIG_P2P
++	struct wifidirect_info *pwdinfo = &adapter->wdinfo;
++#endif
++	bool ret = _FALSE;
++
++	if (pmlmeext->scan_abort == _TRUE) {
++		#ifdef CONFIG_P2P
++		if (!rtw_p2p_chk_state(&adapter->wdinfo, P2P_STATE_NONE)) {
++			rtw_p2p_findphase_ex_set(pwdinfo, P2P_FINDPHASE_EX_MAX);
++			ss->channel_idx = 3;
++			DBG_871X("%s idx:%d, cnt:%u\n", __FUNCTION__
++				, ss->channel_idx
++				, pwdinfo->find_phase_state_exchange_cnt
++			);
++		} else
++		#endif
++		{
++			ss->channel_idx = ss->ch_num;
++			DBG_871X("%s idx:%d\n", __FUNCTION__
++				, ss->channel_idx
++			);
++		}
++		pmlmeext->scan_abort = _FALSE;
++		ret = _TRUE;
++	}
++
++	return ret;
++}
++
+ u8 rtw_scan_sparse(_adapter *adapter, struct rtw_ieee80211_channel *ch, u8 ch_num)
+ {
+ /* interval larger than this is treated as backgroud scan */
+@@ -13596,139 +13214,718 @@ static int rtw_scan_ch_decision(_adapter *padapter, struct rtw_ieee80211_channel
+ 	return j;
+ }
+ 
+-u8 sitesurvey_cmd_hdl(_adapter *padapter, u8 *pbuf)
++static void sitesurvey_res_reset(_adapter *adapter, struct sitesurvey_parm *parm)
+ {
+-	struct mlme_ext_priv	*pmlmeext = &padapter->mlmeextpriv;
+-	struct sitesurvey_parm	*pparm = (struct sitesurvey_parm *)pbuf;
+-	u8	bdelayscan = _FALSE;
+-	u8	val8;
+-	u8	initialgain;
+-	u32	i;
+-	struct dvobj_priv *psdpriv = padapter->dvobj;
+-	struct debug_priv *pdbgpriv = &psdpriv->drv_dbg;
++	struct ss_res *ss = &adapter->mlmeextpriv.sitesurvey_res;
++	int i;
++
++	ss->bss_cnt = 0;
++	ss->channel_idx = 0;
++#ifdef CONFIG_SCAN_BACKOP
++	ss->scan_cnt = 0;
++#endif
++#if defined(CONFIG_ANTENNA_DIVERSITY) || defined(DBG_SCAN_SW_ANTDIV_BL)
++	ss->is_sw_antdiv_bl_scan = 0;
++#endif
++	
++	for (i = 0; i < RTW_SSID_SCAN_AMOUNT; i++) {
++		if (parm->ssid[i].SsidLength) {
++			_rtw_memcpy(ss->ssid[i].Ssid, parm->ssid[i].Ssid, IW_ESSID_MAX_SIZE);
++			ss->ssid[i].SsidLength = parm->ssid[i].SsidLength;
++		} else {
++			ss->ssid[i].SsidLength = 0;
++		}
++	}
++
++	ss->ch_num = rtw_scan_ch_decision(adapter
++		, ss->ch, RTW_CHANNEL_SCAN_AMOUNT
++		, parm->ch, parm->ch_num
++	);
++
++	ss->scan_mode = parm->scan_mode;
++}
++
++static u8 sitesurvey_pick_ch_behavior(_adapter *padapter, u8 *ch, RT_SCAN_TYPE *type)
++{
++	u8 next_state;
++	u8 scan_ch = 0;
++	RT_SCAN_TYPE scan_type = SCAN_PASSIVE;
++	struct mlme_ext_priv *pmlmeext = &padapter->mlmeextpriv;
++	struct mlme_ext_info *pmlmeinfo = &pmlmeext->mlmext_info;
++	struct ss_res *ss = &pmlmeext->sitesurvey_res;
+ 
+ #ifdef CONFIG_P2P
+-	struct wifidirect_info*	pwdinfo = &padapter->wdinfo;
++	struct wifidirect_info *pwdinfo = &padapter->wdinfo;
+ #endif
+-#ifdef DBG_CHECK_FW_PS_STATE
+-	if(rtw_fw_ps_state(padapter) == _FAIL)
++
++	/* handle scan abort request */
++	scan_abort_hdl(padapter);
++
++#ifdef CONFIG_P2P
++	if (pwdinfo->rx_invitereq_info.scan_op_ch_only || pwdinfo->p2p_info.scan_op_ch_only) {
++		if (pwdinfo->rx_invitereq_info.scan_op_ch_only)
++			scan_ch = pwdinfo->rx_invitereq_info.operation_ch[ss->channel_idx];
++		else
++			scan_ch = pwdinfo->p2p_info.operation_ch[ss->channel_idx];
++		scan_type = SCAN_ACTIVE;
++	} else if (rtw_p2p_findphase_ex_is_social(pwdinfo)) {
++		/*
++		* Commented by Albert 2011/06/03
++		* The driver is in the find phase, it should go through the social channel.
++		*/
++		int ch_set_idx;
++
++		scan_ch = pwdinfo->social_chan[ss->channel_idx];
++		ch_set_idx = rtw_ch_set_search_ch(pmlmeext->channel_set, scan_ch);
++		if (ch_set_idx >= 0)
++			scan_type = pmlmeext->channel_set[ch_set_idx].ScanType;
++		else
++			scan_type = SCAN_ACTIVE;
++	} else
++#endif /* CONFIG_P2P */
+ 	{
+-		DBG_871X("scan without leave 32k\n");
+-		pdbgpriv->dbg_scan_pwr_state_cnt++;
++		struct rtw_ieee80211_channel *ch;
++
++		if (ss->channel_idx < ss->ch_num) {
++			ch = &ss->ch[ss->channel_idx];
++			scan_ch = ch->hw_value;
++			scan_type = (ch->flags & RTW_IEEE80211_CHAN_PASSIVE_SCAN) ? SCAN_PASSIVE : SCAN_ACTIVE;
++		}
+ 	}
+-#endif //DBG_CHECK_FW_PS_STATE
+ 
+-	if (pmlmeext->sitesurvey_res.state == SCAN_DISABLE)
+-	{
+-#ifdef CONFIG_CONCURRENT_MODE	
+-		//for first time sitesurvey_cmd
+-		rtw_hal_set_hwreg(padapter, HW_VAR_CHECK_TXBUF, 0);	
+-#endif //CONFIG_CONCURRENT_MODE
+-		
+-		pmlmeext->sitesurvey_res.state = SCAN_START;
+-		pmlmeext->sitesurvey_res.bss_cnt = 0;
+-		pmlmeext->sitesurvey_res.channel_idx = 0;
+-
+-		for(i=0;i<RTW_SSID_SCAN_AMOUNT;i++){
+-			if(pparm->ssid[i].SsidLength) {
+-				_rtw_memcpy(pmlmeext->sitesurvey_res.ssid[i].Ssid, pparm->ssid[i].Ssid, IW_ESSID_MAX_SIZE);
+-				pmlmeext->sitesurvey_res.ssid[i].SsidLength= pparm->ssid[i].SsidLength;
+-			} else {
+-				pmlmeext->sitesurvey_res.ssid[i].SsidLength= 0;
++	if (scan_ch != 0) {
++		next_state = SCAN_PROCESS;
++		#ifdef CONFIG_SCAN_BACKOP
++		{
++			u8 sta_num;
++			u8 ld_sta_num;
++			u8 ap_num;
++			u8 ld_ap_num;
++			u8 backop_flags = 0;
++
++			rtw_dev_iface_status(padapter, &sta_num, &ld_sta_num, NULL, &ap_num, &ld_ap_num);
++
++			if ((ld_sta_num > 0 && mlmeext_chk_scan_backop_flags_sta(pmlmeext, SS_BACKOP_EN))
++					|| (sta_num > 0 && mlmeext_chk_scan_backop_flags_sta(pmlmeext, SS_BACKOP_EN_NL))
++			) {
++				backop_flags |= mlmeext_scan_backop_flags_sta(pmlmeext);
+ 			}
+-		}
+ 
+-		pmlmeext->sitesurvey_res.ch_num = rtw_scan_ch_decision(padapter
+-			, pmlmeext->sitesurvey_res.ch, RTW_CHANNEL_SCAN_AMOUNT
+-			, pparm->ch, pparm->ch_num
+-		);
++			if ((ld_ap_num > 0 && mlmeext_chk_scan_backop_flags_ap(pmlmeext, SS_BACKOP_EN))
++					|| (ap_num > 0 && mlmeext_chk_scan_backop_flags_ap(pmlmeext, SS_BACKOP_EN_NL))
++			) {
++				backop_flags |= mlmeext_scan_backop_flags_ap(pmlmeext);
++			}
++
++			if (backop_flags) {
++				if (ss->scan_cnt < ss->scan_cnt_max) {
++					ss->scan_cnt++;
++				} else {
++					mlmeext_assign_scan_backop_flags(pmlmeext, backop_flags);
++					next_state = SCAN_BACKING_OP;
++				}
++			}
++		}
++		#endif /* CONFIG_SCAN_BACKOP */
++	} else if (rtw_p2p_findphase_ex_is_needed(pwdinfo)) {
++		/* go p2p listen */
++		next_state = SCAN_TO_P2P_LISTEN;
+ 
+-		pmlmeext->sitesurvey_res.scan_mode = pparm->scan_mode;
++	#ifdef CONFIG_ANTENNA_DIVERSITY
++	} else if (rtw_hal_antdiv_before_linked(padapter)) {
++		/* go sw antdiv before link */
++		next_state = SCAN_SW_ANTDIV_BL;
++	#endif
++	} else {
++		next_state = SCAN_COMPLETE;
+ 
+-		//issue null data if associating to the AP
+-		if (is_client_associated_to_ap(padapter) == _TRUE)
++		#if defined(DBG_SCAN_SW_ANTDIV_BL)
+ 		{
+-			pmlmeext->sitesurvey_res.state = SCAN_TXNULL;
++			/* for SCAN_SW_ANTDIV_BL state testing */
++			struct dvobj_priv *dvobj = adapter_to_dvobj(padapter);
++			int i;
++			bool is_linked = _FALSE;
+ 
+-			issue_nulldata(padapter, NULL, 1, 3, 500);
++			for (i = 0; i < dvobj->iface_nums; i++) {
++				if (rtw_linked_check(dvobj->padapters[i]))
++					is_linked = _TRUE;
++			}
+ 
+-#ifdef CONFIG_CONCURRENT_MODE
+-			if(is_client_associated_to_ap(padapter->pbuddy_adapter) == _TRUE)
+-			{
+-				DBG_871X("adapter is scanning(buddy_adapter is linked), issue nulldata(pwrbit=1)\n");
+-				
+-				issue_nulldata(padapter->pbuddy_adapter, NULL, 1, 3, 500);
++			if (!is_linked) {
++				static bool fake_sw_antdiv_bl_state = 0;
++
++				if (fake_sw_antdiv_bl_state == 0) {
++					next_state = SCAN_SW_ANTDIV_BL;
++					fake_sw_antdiv_bl_state = 1;
++				} else {
++					fake_sw_antdiv_bl_state = 0;
++				}
+ 			}
++		}
++		#endif /* defined(DBG_SCAN_SW_ANTDIV_BL) */
++	}
++
++	#ifdef CONFIG_SCAN_BACKOP
++	if (next_state != SCAN_PROCESS)
++		ss->scan_cnt = 0;
++	#endif
++
++
++#ifdef DBG_FIXED_CHAN
++	if (pmlmeext->fixed_chan != 0xff && next_state == SCAN_PROCESS)
++		scan_ch = pmlmeext->fixed_chan;
++#endif
++
++	if (ch)
++		*ch = scan_ch;
++	if (type)
++		*type = scan_type;
++
++	return next_state;
++}
++
++void site_survey(_adapter *padapter, u8 survey_channel, RT_SCAN_TYPE ScanType)
++{
++	struct mlme_ext_priv *pmlmeext = &padapter->mlmeextpriv;
++	struct mlme_ext_info *pmlmeinfo = &(pmlmeext->mlmext_info);
++
++#ifdef CONFIG_P2P
++	struct wifidirect_info *pwdinfo = &(padapter->wdinfo);
+ #endif
+-			bdelayscan = _TRUE;
++
++	if (survey_channel != 0) {
++		set_channel_bwmode(padapter, survey_channel, HAL_PRIME_CHNL_OFFSET_DONT_CARE, CHANNEL_WIDTH_20);
++
++		#ifdef CONFIG_AUTO_CHNL_SEL_NHM
++		if (ACS_ENABLE == GET_ACS_STATE(padapter)) {
++			ACS_OP acs_op = ACS_RESET;
++
++			rtw_hal_set_odm_var(padapter, HAL_ODM_AUTO_CHNL_SEL, &acs_op, _TRUE);
++			rtw_set_acs_channel(padapter, survey_channel);
++			#ifdef DBG_AUTO_CHNL_SEL_NHM
++			DBG_871X("[ACS-"ADPT_FMT"]-set ch:%u\n",
++				ADPT_ARG(padapter), rtw_get_acs_channel(padapter));
++			#endif
+ 		}
+-#ifdef CONFIG_CONCURRENT_MODE
+-		else if(is_client_associated_to_ap(padapter->pbuddy_adapter) == _TRUE)
+-		{
+-			#ifdef CONFIG_TDLS
+-			if(padapter->pbuddy_adapter->wdinfo.wfd_tdls_enable == 1)
++		#endif
++
++		if (ScanType == SCAN_ACTIVE) {
++			#ifdef CONFIG_P2P
++			if (rtw_p2p_chk_state(pwdinfo, P2P_STATE_SCAN) || 
++				rtw_p2p_chk_state(pwdinfo, P2P_STATE_FIND_PHASE_SEARCH)
++			) {
++				issue_probereq_p2p(padapter, NULL);
++				issue_probereq_p2p(padapter, NULL);
++				issue_probereq_p2p(padapter, NULL);
++			} else
++			#endif /* CONFIG_P2P */
+ 			{
+-				issue_tunneled_probe_req(padapter->pbuddy_adapter);
++				int i;
++
++				for (i = 0; i < RTW_SSID_SCAN_AMOUNT; i++) {
++					if (pmlmeext->sitesurvey_res.ssid[i].SsidLength) {
++						/* IOT issue, When wifi_spec is not set, send one probe req without WPS IE. */
++						if (padapter->registrypriv.wifi_spec)
++							issue_probereq(padapter, &(pmlmeext->sitesurvey_res.ssid[i]), NULL);
++						else
++							issue_probereq_ex(padapter, &(pmlmeext->sitesurvey_res.ssid[i]), NULL, 0, 0, 0, 0);
++						issue_probereq(padapter, &(pmlmeext->sitesurvey_res.ssid[i]), NULL);
++					}
++				}
++
++				if (pmlmeext->sitesurvey_res.scan_mode == SCAN_ACTIVE) {
++					/* IOT issue, When wifi_spec is not set, send one probe req without WPS IE. */
++					if (padapter->registrypriv.wifi_spec)
++						issue_probereq(padapter, NULL, NULL);
++					else
++						issue_probereq_ex(padapter, NULL, NULL, 0, 0, 0, 0);
++					issue_probereq(padapter, NULL, NULL);
++				}
+ 			}
+-			#endif //CONFIG_TDLS
++		}
++	} else {
++		/* channel number is 0 or this channel is not valid. */
++		rtw_warn_on(1);
++	}
+ 
+-			pmlmeext->sitesurvey_res.state = SCAN_TXNULL;
++	return;
++}
++
++void survey_done_set_ch_bw(_adapter *padapter)
++{
++	struct mlme_ext_priv *pmlmeext = &padapter->mlmeextpriv;
++	u8 cur_channel = 0;
++	u8 cur_bwmode;
++	u8 cur_ch_offset;
++	
++	if (rtw_get_ch_setting_union(padapter, &cur_channel, &cur_bwmode, &cur_ch_offset) != 0) {
++		if (0)
++			DBG_871X(FUNC_ADPT_FMT" back to linked/linking union - ch:%u, bw:%u, offset:%u\n",
++				FUNC_ADPT_ARG(padapter), cur_channel, cur_bwmode, cur_ch_offset);
++	} else {
++		#ifdef CONFIG_P2P
++		struct dvobj_priv *dvobj = adapter_to_dvobj(padapter);
++		_adapter *iface;
++		int i;
++
++		for (i = 0; i < dvobj->iface_nums; i++) {
++			iface = dvobj->padapters[i];
++			if (!iface)
++				continue;
+ 
+-			issue_nulldata(padapter->pbuddy_adapter, NULL, 1, 3, 500);
++			#ifdef CONFIG_IOCTL_CFG80211
++			if (iface->wdinfo.driver_interface == DRIVER_CFG80211 && !adapter_wdev_data(iface)->p2p_enabled)
++				continue;
++			#endif
+ 
+-			bdelayscan = _TRUE;			
++			if (rtw_p2p_chk_state(&iface->wdinfo, P2P_STATE_LISTEN)) {
++				cur_channel = iface->wdinfo.listen_channel;
++				cur_bwmode = CHANNEL_WIDTH_20;
++				cur_ch_offset = HAL_PRIME_CHNL_OFFSET_DONT_CARE;
++				if (0)
++					DBG_871X(FUNC_ADPT_FMT" back to "ADPT_FMT"'s listen ch - ch:%u, bw:%u, offset:%u\n",
++						FUNC_ADPT_ARG(padapter), ADPT_ARG(iface), cur_channel, cur_bwmode, cur_ch_offset);
++				break;
++			}
+ 		}
+-#endif		
+-		if(bdelayscan)
+-		{
+-			//delay 50ms to protect nulldata(1).
+-			set_survey_timer(pmlmeext, 50);
+-			return H2C_SUCCESS;
++		#endif /* CONFIG_P2P */
++
++		if (cur_channel == 0) {
++			cur_channel = pmlmeext->cur_channel;
++			cur_bwmode = pmlmeext->cur_bwmode;
++			cur_ch_offset = pmlmeext->cur_ch_offset;
++			if (0)
++				DBG_871X(FUNC_ADPT_FMT" back to ch:%u, bw:%u, offset:%u\n",
++					FUNC_ADPT_ARG(padapter), cur_channel, cur_bwmode, cur_ch_offset);
+ 		}
+ 	}
+ 
+-	if ((pmlmeext->sitesurvey_res.state == SCAN_START) || (pmlmeext->sitesurvey_res.state == SCAN_TXNULL))
+-	{
+-#ifdef CONFIG_FIND_BEST_CHANNEL
+-#if 0
+-		for (i=0; pmlmeext->channel_set[i].ChannelNum !=0; i++) {
+-			pmlmeext->channel_set[i].rx_count = 0;				
++	set_channel_bwmode(padapter, cur_channel, cur_ch_offset, cur_bwmode);
++}
++
++/**
++ * sitesurvey_ps_annc - check and doing ps announcement for all the adapters of given @dvobj
++ * @dvobj: the dvobj to check
++ * @ps: power saving or not
++ *
++ * Returns: 0: no ps announcement is doing. 1: ps announcement is doing
++ */
++u8 sitesurvey_ps_annc(struct dvobj_priv *dvobj, bool ps)
++{
++	_adapter *adapter;
++	int i;
++	u8 ps_anc = 0;
++
++	for (i = 0; i < dvobj->iface_nums; i++) {
++		adapter = dvobj->padapters[i];
++		if (!adapter)
++			continue;
++
++		if (ps) {
++			if (is_client_associated_to_ap(adapter) == _TRUE) {
++				/* TODO: TDLS peers */
++				issue_nulldata(adapter, NULL, 1, 3, 500);
++				ps_anc = 1;
++			}
++		} else {
++			if (is_client_associated_to_ap(adapter) == _TRUE) {
++				/* TODO: TDLS peers */
++				issue_nulldata(adapter, NULL, 0, 3, 500);
++				ps_anc = 1;
++			}
+ 		}
++	}
++
++	return ps_anc;
++}
++
++void sitesurvey_set_igi(_adapter *adapter, bool enter)
++{
++	u8 igi;
++#ifdef CONFIG_P2P
++	struct wifidirect_info *pwdinfo = &adapter->wdinfo;
+ #endif
+-#endif /* CONFIG_FIND_BEST_CHANNEL */
+ 
+-		//config the initial gain under scaning, need to write the BB registers
++	if (enter) {
+ #ifdef CONFIG_P2P
+ #ifdef CONFIG_IOCTL_CFG80211
+-		if(adapter_wdev_data(padapter)->p2p_enabled == _TRUE && pwdinfo->driver_interface == DRIVER_CFG80211 )
+-			initialgain = 0x30;
++		if (adapter_wdev_data(adapter)->p2p_enabled == _TRUE && pwdinfo->driver_interface == DRIVER_CFG80211)
++			igi = 0x30;
+ 		else
+-#endif //CONFIG_IOCTL_CFG80211
+-		if ( !rtw_p2p_chk_state( pwdinfo, P2P_STATE_NONE ) )
+-			initialgain = 0x28;
++#endif /* CONFIG_IOCTL_CFG80211 */
++		if (!rtw_p2p_chk_state(pwdinfo, P2P_STATE_NONE))
++			igi = 0x28;
+ 		else
+-#endif //CONFIG_P2P
+-			initialgain = 0x1e;
++#endif /* CONFIG_P2P */
++			igi = 0x1e;
++	} else {
++			igi = 0xff; /* restore RX GAIN */
++	}
+ 
+-		rtw_hal_set_odm_var(padapter, HAL_ODM_INITIAL_GAIN, &initialgain, _FALSE);
++	rtw_hal_set_odm_var(adapter, HAL_ODM_INITIAL_GAIN, &igi, _FALSE);
++}
+ 
+-		//disable dynamic functions, such as high power, DIG
++u8 sitesurvey_cmd_hdl(_adapter *padapter, u8 *pbuf)
++{
++	struct sitesurvey_parm	*pparm = (struct sitesurvey_parm *)pbuf;
++	struct dvobj_priv *dvobj = padapter->dvobj;
++	struct debug_priv *pdbgpriv = &dvobj->drv_dbg;
++	struct mlme_ext_priv *pmlmeext = &padapter->mlmeextpriv;
++	struct mlme_ext_info *pmlmeinfo = &(pmlmeext->mlmext_info);
++	struct ss_res *ss = &pmlmeext->sitesurvey_res;
++	u8 val8;
++
++#ifdef CONFIG_P2P
++	struct wifidirect_info *pwdinfo = &padapter->wdinfo;
++#endif
++
++#ifdef DBG_CHECK_FW_PS_STATE
++	if (rtw_fw_ps_state(padapter) == _FAIL) {
++		DBG_871X("scan without leave 32k\n");
++		pdbgpriv->dbg_scan_pwr_state_cnt++;
++	}
++#endif /* DBG_CHECK_FW_PS_STATE */
++
++	/* increase channel idx */
++	if (mlmeext_chk_scan_state(pmlmeext, SCAN_PROCESS))
++		ss->channel_idx++;
++
++	/* update scan state to next state (assigned by previous cmd hdl) */
++	if (mlmeext_scan_state(pmlmeext) != mlmeext_scan_next_state(pmlmeext))
++		mlmeext_set_scan_state(pmlmeext, mlmeext_scan_next_state(pmlmeext));
++
++operation_by_state:
++	switch (mlmeext_scan_state(pmlmeext)) {
++
++	case SCAN_DISABLE:
++		/* 
++		* SW parameter initialization
++		*/
++
++		sitesurvey_res_reset(padapter, pparm);
++		mlmeext_set_scan_state(pmlmeext, SCAN_START);
++		goto operation_by_state;
++
++	case SCAN_START:
++		/*
++		* prepare to leave operating channel
++		*/
++
++		/* apply rx ampdu setting */
++		if (ss->rx_ampdu_accept != RX_AMPDU_ACCEPT_INVALID
++			|| ss->rx_ampdu_size != RX_AMPDU_SIZE_INVALID
++		) {
++			rtw_rx_ampdu_apply(padapter);
++		}
++
++		/* clear HW TX queue before scan */
++		rtw_hal_set_hwreg(padapter, HW_VAR_CHECK_TXBUF, 0);
++
++		/* power save state announcement */
++		if (sitesurvey_ps_annc(adapter_to_dvobj(padapter), 1)) {
++			mlmeext_set_scan_state(pmlmeext, SCAN_PS_ANNC_WAIT);
++			mlmeext_set_scan_next_state(pmlmeext, SCAN_ENTER);
++			set_survey_timer(pmlmeext, 50); /* delay 50ms to protect nulldata(1) */
++		} else {
++			mlmeext_set_scan_state(pmlmeext, SCAN_ENTER);
++			goto operation_by_state;
++		}
++
++		break;
++
++	case SCAN_ENTER:
++		/*
++		* HW register and DM setting for enter scan
++		*/
++
++		/* config the initial gain under scanning */
++		sitesurvey_set_igi(padapter, 1);
++		
++		/* disable dynamic functions, such as high power, DIG */
+ 		rtw_phydm_ability_backup(padapter);
+ 		rtw_phydm_func_disable_all(padapter);
+ 		
+-		//set MSR to no link state
++		/* set MSR to no link state */
+ 		Set_MSR(padapter, _HW_STATE_NOLINK_);
++		val8 = 1; /* under site survey */
++		rtw_hal_set_hwreg(padapter, HW_VAR_MLME_SITESURVEY, (u8 *)(&val8));
+ 
+-		val8 = 1; //under site survey
++		mlmeext_set_scan_state(pmlmeext, SCAN_PROCESS);
++		goto operation_by_state;
++
++	case SCAN_PROCESS:
++	{
++		u8 scan_ch;
++		RT_SCAN_TYPE scan_type;
++		u8 next_state;
++		u32 scan_ms;
++
++		#ifdef CONFIG_AUTO_CHNL_SEL_NHM
++		if ((ACS_ENABLE == GET_ACS_STATE(padapter)) && (0 != rtw_get_acs_channel(padapter))) {
++			ACS_OP acs_op = ACS_SELECT;
++
++			rtw_hal_set_odm_var(padapter, HAL_ODM_AUTO_CHNL_SEL, &acs_op, _TRUE);
++		}
++		#endif
++
++		next_state = sitesurvey_pick_ch_behavior(padapter, &scan_ch, &scan_type);
++		if (next_state != SCAN_PROCESS) {
++			#ifdef CONFIG_AUTO_CHNL_SEL_NHM
++			if (ACS_ENABLE == GET_ACS_STATE(padapter)) {
++				rtw_set_acs_channel(padapter, 0);
++				#ifdef DBG_AUTO_CHNL_SEL_NHM
++				DBG_871X("[ACS-"ADPT_FMT"]-set ch:%u\n", ADPT_ARG(padapter), rtw_get_acs_channel(padapter));
++				#endif
++			}
++			#endif
++
++			mlmeext_set_scan_state(pmlmeext, next_state);
++			goto operation_by_state;
++		}
++
++		/* still SCAN_PROCESS state */
++		if (0)
++			#ifdef CONFIG_P2P
++			DBG_871X(FUNC_ADPT_FMT" %s ch:%u (cnt:%u,idx:%d) at %dms, %c%c%c\n"
++				, FUNC_ADPT_ARG(padapter)
++				, mlmeext_scan_state_str(pmlmeext)
++				, scan_ch
++				, pwdinfo->find_phase_state_exchange_cnt, ss->channel_idx
++				, rtw_get_passing_time_ms(padapter->mlmepriv.scan_start_time)
++				, scan_type?'A':'P', ss->scan_mode?'A':'P'
++				, ss->ssid[0].SsidLength?'S':' ' 
++			);
++			#else
++			DBG_871X(FUNC_ADPT_FMT" %s ch:%u (idx:%d) at %dms, %c%c%c\n"
++				, FUNC_ADPT_ARG(padapter)
++				, mlmeext_scan_state_str(pmlmeext)
++				, scan_ch
++				, ss->channel_idx
++				, rtw_get_passing_time_ms(padapter->mlmepriv.scan_start_time)
++				, scan_type?'A':'P', ss->scan_mode?'A':'P'
++				, ss->ssid[0].SsidLength?'S':' '
++			);
++			#endif /* CONFIG_P2P */
++
++		#ifdef DBG_FIXED_CHAN
++		if (pmlmeext->fixed_chan != 0xff)
++			DBG_871X(FUNC_ADPT_FMT" fixed_chan:%u\n", pmlmeext->fixed_chan);
++		#endif
++
++		site_survey(padapter, scan_ch, scan_type);
++
++		#if defined(CONFIG_ATMEL_RC_PATCH)
++		if (check_fwstate(pmlmepriv, _FW_LINKED) == _TRUE)
++			scan_ms = 20;
++		else
++			scan_ms = 40;
++		#else
++		scan_ms = ss->scan_ch_ms;
++		#endif
++
++		#if defined(CONFIG_ANTENNA_DIVERSITY) || defined(DBG_SCAN_SW_ANTDIV_BL)
++		if (ss->is_sw_antdiv_bl_scan)
++			scan_ms = scan_ms/2;
++		#endif
++
++		#if defined(CONFIG_SIGNAL_DISPLAY_DBM) && defined(CONFIG_BACKGROUND_NOISE_MONITOR)
++		{
++			struct noise_info info;
++
++			info.bPauseDIG = _FALSE;
++			info.IGIValue = 0;
++			info.max_time = scan_ms/2;
++			info.chan = scan_ch;
++			rtw_hal_set_odm_var(padapter, HAL_ODM_NOISE_MONITOR, &info, _FALSE); 
++		}
++		#endif
++
++		set_survey_timer(pmlmeext, scan_ms);
++		break;
++	}
++
++	#ifdef CONFIG_SCAN_BACKOP
++	case SCAN_BACKING_OP:
++	{
++		u8 back_ch, back_bw, back_ch_offset;
++
++		if (rtw_get_ch_setting_union(padapter, &back_ch, &back_bw, &back_ch_offset) == 0)
++			rtw_warn_on(1);
++
++		if (0)
++			DBG_871X(FUNC_ADPT_FMT" %s ch:%u, bw:%u, offset:%u at %dms\n"
++				, FUNC_ADPT_ARG(padapter)
++				, mlmeext_scan_state_str(pmlmeext)
++				, back_ch, back_bw, back_ch_offset
++				, rtw_get_passing_time_ms(padapter->mlmepriv.scan_start_time)
++			);
++
++		set_channel_bwmode(padapter, back_ch, back_ch_offset, back_bw);
++
++		Set_MSR(padapter, (pmlmeinfo->state & 0x3));		
++		val8 = 0; /* survey done */
+ 		rtw_hal_set_hwreg(padapter, HW_VAR_MLME_SITESURVEY, (u8 *)(&val8));
+ 
+-		pmlmeext->sitesurvey_res.state = SCAN_PROCESS;
++		if (mlmeext_chk_scan_backop_flags(pmlmeext, SS_BACKOP_PS_ANNC)) {
++			sitesurvey_set_igi(padapter, 0);
++			sitesurvey_ps_annc(adapter_to_dvobj(padapter), 0);
++		}
++
++		mlmeext_set_scan_state(pmlmeext, SCAN_BACK_OP);
++		ss->backop_time = rtw_get_current_time();
++
++		if (mlmeext_chk_scan_backop_flags(pmlmeext, SS_BACKOP_TX_RESUME)) {
++			int	i;
++
++			/* resume TX */
++			for (i = 0; i < dvobj->iface_nums; i++) {
++				if (!dvobj->padapters[i])
++					continue;
++
++				rtw_os_xmit_schedule(dvobj->padapters[i]);
++			}
++		}
++
++		goto operation_by_state;
+ 	}
++	
++	case SCAN_BACK_OP:
++		if (rtw_get_passing_time_ms(ss->backop_time) >= ss->backop_ms
++			|| pmlmeext->scan_abort
++		) {
++			mlmeext_set_scan_state(pmlmeext, SCAN_LEAVING_OP);
++			goto operation_by_state;
++		}
++		set_survey_timer(pmlmeext, 50);
++		break;
+ 
+-	site_survey(padapter);
++	case SCAN_LEAVING_OP:
++		/*
++		* prepare to leave operating channel
++		*/
+ 
+-	return H2C_SUCCESS;
++		/* clear HW TX queue before scan */
++		rtw_hal_set_hwreg(padapter, HW_VAR_CHECK_TXBUF, 0);
++
++		if (mlmeext_chk_scan_backop_flags(pmlmeext, SS_BACKOP_PS_ANNC)
++			&& sitesurvey_ps_annc(adapter_to_dvobj(padapter), 1)
++		) {
++			mlmeext_set_scan_state(pmlmeext, SCAN_PS_ANNC_WAIT);
++			mlmeext_set_scan_next_state(pmlmeext, SCAN_LEAVE_OP);
++			set_survey_timer(pmlmeext, 50); /* delay 50ms to protect nulldata(1) */
++		} else {
++			mlmeext_set_scan_state(pmlmeext, SCAN_LEAVE_OP);
++			goto operation_by_state;
++		}
++
++		break;
++
++	case SCAN_LEAVE_OP:
++		/*
++		* HW register and DM setting for enter scan
++		*/
++
++		if (mlmeext_chk_scan_backop_flags(pmlmeext, SS_BACKOP_PS_ANNC)) {
++			/* config the initial gain under scanning */
++			sitesurvey_set_igi(padapter, 1);
++		}
++
++		/* set MSR to no link state */
++		Set_MSR(padapter, _HW_STATE_NOLINK_);
++		val8 = 1; //under site survey
++		rtw_hal_set_hwreg(padapter, HW_VAR_MLME_SITESURVEY, (u8 *)(&val8));
++
++		mlmeext_set_scan_state(pmlmeext, SCAN_PROCESS);
++		goto operation_by_state;
++
++	#endif /* CONFIG_SCAN_BACKOP */
++
++	#if defined(CONFIG_ANTENNA_DIVERSITY) || defined(DBG_SCAN_SW_ANTDIV_BL)
++	case SCAN_SW_ANTDIV_BL:
++		/*
++		* 20100721
++		* For SW antenna diversity before link, it needs to switch to another antenna and scan again.
++		* It compares the scan result and select better one to do connection.
++		*/
++		ss->bss_cnt = 0;
++		ss->channel_idx = 0;
++		ss->is_sw_antdiv_bl_scan = 1;
++
++		mlmeext_set_scan_next_state(pmlmeext, SCAN_PROCESS);
++		set_survey_timer(pmlmeext, ss->scan_ch_ms);
++		break;
++	#endif
++
++	#ifdef CONFIG_P2P
++	case SCAN_TO_P2P_LISTEN:
++		/*
++		* Set the P2P State to the listen state of find phase
++		* and set the current channel to the listen channel
++		*/
++		set_channel_bwmode(padapter, pwdinfo->listen_channel, HAL_PRIME_CHNL_OFFSET_DONT_CARE, CHANNEL_WIDTH_20);
++		rtw_p2p_set_state(pwdinfo, P2P_STATE_FIND_PHASE_LISTEN);
+ 	
++		/* turn on phy-dynamic functions */
++		rtw_phydm_ability_restore(padapter);
++
++		sitesurvey_set_igi(padapter, 0);
++
++		mlmeext_set_scan_state(pmlmeext, SCAN_P2P_LISTEN);
++		_set_timer(&pwdinfo->find_phase_timer, (u32)((u32)pwdinfo->listen_dwell * 100));
++		break;
++
++	case SCAN_P2P_LISTEN:
++		mlmeext_set_scan_state(pmlmeext, SCAN_PROCESS);
++		ss->channel_idx = 0;
++		goto operation_by_state;
++	#endif /* CONFIG_P2P */
++
++	case SCAN_COMPLETE:		
++		#ifdef CONFIG_P2P
++		if (rtw_p2p_chk_state(pwdinfo, P2P_STATE_SCAN)
++			|| rtw_p2p_chk_state(pwdinfo, P2P_STATE_FIND_PHASE_SEARCH)
++		) {
++			#ifdef CONFIG_CONCURRENT_MODE
++			if (pwdinfo->driver_interface == DRIVER_WEXT) {
++				if (check_buddy_fwstate(padapter, _FW_LINKED))
++					_set_timer(&pwdinfo->ap_p2p_switch_timer, 500);
++			}
++			rtw_p2p_set_state(pwdinfo, rtw_p2p_pre_state(pwdinfo));
++			#else
++			rtw_p2p_set_state(pwdinfo, rtw_p2p_pre_state(pwdinfo));
++			#endif
++		}
++		rtw_p2p_findphase_ex_set(pwdinfo, P2P_FINDPHASE_EX_NONE);
++		#endif /* CONFIG_P2P */
++
++		/* switch channel */
++		survey_done_set_ch_bw(padapter);
++
++		/* config MSR */
++		Set_MSR(padapter, (pmlmeinfo->state & 0x3));
++		val8 = 0; /* survey done */
++		rtw_hal_set_hwreg(padapter, HW_VAR_MLME_SITESURVEY, (u8 *)(&val8));
++
++		/* turn on phy-dynamic functions */
++		rtw_phydm_ability_restore(padapter);
++
++		sitesurvey_set_igi(padapter, 0);
++
++		sitesurvey_ps_annc(adapter_to_dvobj(padapter), 0);
++
++		/* apply rx ampdu setting */
++		rtw_rx_ampdu_apply(padapter);
++
++		mlmeext_set_scan_state(pmlmeext, SCAN_DISABLE);
++
++		report_surveydone_event(padapter);
++
++		issue_action_BSSCoexistPacket(padapter);
++		issue_action_BSSCoexistPacket(padapter);
++		issue_action_BSSCoexistPacket(padapter);
++	}
++
++	return H2C_SUCCESS;
+ }
+ 
+ u8 setauth_hdl(_adapter *padapter, unsigned char *pbuf)
+diff --git a/drivers/net/wireless/rtlwifi/rtl8821as/core/rtw_pwrctrl.c b/drivers/net/wireless/rtlwifi/rtl8821as/core/rtw_pwrctrl.c
+index 2dffecc..f207e9f7 100755
+--- a/drivers/net/wireless/rtlwifi/rtl8821as/core/rtw_pwrctrl.c
++++ b/drivers/net/wireless/rtlwifi/rtl8821as/core/rtw_pwrctrl.c
+@@ -2182,6 +2182,11 @@ _func_enter_;
+ 	rtw_register_early_suspend(pwrctrlpriv);
+ 	#endif //CONFIG_HAS_EARLYSUSPEND || CONFIG_ANDROID_POWER
+ 
++#ifdef CONFIG_GPIO_WAKEUP
++	/*default low active*/
++	pwrctrlpriv->is_high_active = 0;
++#endif /* CONFIG_GPIO_WAKEUP */
++
+ #ifdef CONFIG_WOWLAN
+ 	pwrctrlpriv->wowlan_pattern_idx = 0;
+ 	pwrctrlpriv->wowlan_from_cmd = _FALSE;
+@@ -2192,14 +2197,15 @@ _func_enter_;
+ 				sizeof(pwrctrlpriv->patterns[i].mask));
+ 		pwrctrlpriv->patterns[i].len = 0;
+ 	}
+-#endif
++
+ #ifdef CONFIG_PNO_SUPPORT
+ 	pwrctrlpriv->pno_inited = _FALSE;
+ 	pwrctrlpriv->pnlo_info = NULL;
+ 	pwrctrlpriv->pscan_info = NULL;
+ 	pwrctrlpriv->pno_ssid_list = NULL;
+ 	pwrctrlpriv->pno_in_resume = _TRUE;
+-#endif
++#endif /* CONFIG_PNO_SUPPORT */
++#endif /* CONFIG_WOWLAN */
+ 
+ _func_exit_;
+ 
+diff --git a/drivers/net/wireless/rtlwifi/rtl8821as/core/rtw_xmit.c b/drivers/net/wireless/rtlwifi/rtl8821as/core/rtw_xmit.c
+index 9b19c8c..64a8443 100755
+--- a/drivers/net/wireless/rtlwifi/rtl8821as/core/rtw_xmit.c
++++ b/drivers/net/wireless/rtlwifi/rtl8821as/core/rtw_xmit.c
+@@ -4733,6 +4733,39 @@ thread_return rtw_xmit_thread(thread_context context)
+ }
+ #endif
+ 
++bool rtw_xmit_ac_blocked(_adapter *adapter)
++{
++	struct dvobj_priv *dvobj = adapter_to_dvobj(adapter);
++	_adapter *iface;
++	struct mlme_ext_priv *mlmeext;
++	struct mlme_ext_info *mlmeextinfo;
++	bool blocked = _FALSE;
++	int i;
++
++	for (i = 0; i < dvobj->iface_nums; i++) {
++		iface = dvobj->padapters[i];
++		mlmeext = &iface->mlmeextpriv;
++
++		/* check scan state */
++		if (mlmeext_scan_state(mlmeext) != SCAN_DISABLE
++			&& mlmeext_scan_state(mlmeext) != SCAN_BACK_OP
++		) {
++			blocked = _TRUE;
++			goto exit;
++		}
++
++		if (mlmeext_scan_state(mlmeext) == SCAN_BACK_OP
++			&& !mlmeext_chk_scan_backop_flags(mlmeext, SS_BACKOP_TX_RESUME)
++		) {
++			blocked = _TRUE;
++			goto exit;
++		}
++	}
++
++exit:
++	return blocked;
++}
++
+ void rtw_sctx_init(struct submit_ctx *sctx, int timeout_ms)
+ {
+ 	sctx->timeout_ms = timeout_ms;
+diff --git a/drivers/net/wireless/rtlwifi/rtl8821as/hal/hal_com.c b/drivers/net/wireless/rtlwifi/rtl8821as/hal/hal_com.c
+index fb6e864..b05d094 100755
+--- a/drivers/net/wireless/rtlwifi/rtl8821as/hal/hal_com.c
++++ b/drivers/net/wireless/rtlwifi/rtl8821as/hal/hal_com.c
+@@ -1605,13 +1605,14 @@ static u8 rtw_hal_set_wowlan_ctrl_cmd(_adapter *adapter, u8 enable, u8 change_un
+ 	u8 discont_wake = 1, gpionum = 0, gpio_dur = 0;
+ 	u8 hw_unicast = 0, gpio_pulse_cnt = 0, gpio_pulse_en = 0;
+ 	u8 sdio_wakeup_enable = 1;
+-	u8 gpio_high_active = 0; //0: low active, 1: high active
++	u8 gpio_high_active = 0;
+ 	u8 pattern_en = 0;
+ 	u8 magic_pkt = 0;
+ 	u8 gpio_unit = 0; /*0: 64ns, 1: 8ms*/
+ 	u8 ret = _FAIL;
+ 
+ #ifdef CONFIG_GPIO_WAKEUP
++	gpio_high_active = ppwrpriv->is_high_active;
+ 	gpionum = WAKEUP_GPIO_IDX;
+ 	sdio_wakeup_enable = 0;
+ #endif //CONFIG_GPIO_WAKEUP
+@@ -1871,10 +1872,11 @@ static u8 rtw_hal_set_ap_wowlan_ctrl_cmd(_adapter *adapter, u8 enable)
+ 	u8 gpionum = 0, gpio_dur = 0;
+ 	u8 gpio_pulse = enable;
+ 	u8 sdio_wakeup_enable = 1;
+-	u8 gpio_high_active = 0; /* 0: low active, 1: high active */
++	u8 gpio_high_active = 0;
+ 	u8 ret = _FAIL;
+ 
+ #ifdef CONFIG_GPIO_WAKEUP
++	gpio_high_active = ppwrpriv->is_high_active;
+ 	gpionum = WAKEUP_GPIO_IDX;
+ 	sdio_wakeup_enable = 0;
+ #endif /*CONFIG_GPIO_WAKEUP*/
+diff --git a/drivers/net/wireless/rtlwifi/rtl8821as/hal/phydm/phydm_antdiv.c b/drivers/net/wireless/rtlwifi/rtl8821as/hal/phydm/phydm_antdiv.c
+index 0d6ea8e..bd9a36f 100644
+--- a/drivers/net/wireless/rtlwifi/rtl8821as/hal/phydm/phydm_antdiv.c
++++ b/drivers/net/wireless/rtlwifi/rtl8821as/hal/phydm/phydm_antdiv.c
+@@ -2626,16 +2626,33 @@ ODM_SW_AntDiv_WorkitemCallback(
+ #elif (DM_ODM_SUPPORT_TYPE == ODM_CE)
+ 
+ VOID
++ODM_SW_AntDiv_WorkitemCallback(
++	IN PVOID	pContext
++)
++{
++	PADAPTER
++	pAdapter = (PADAPTER)pContext;
++	HAL_DATA_TYPE
++	*pHalData = GET_HAL_DATA(pAdapter);
++
++	/*DbgPrint("SW_antdiv_Workitem_Callback");*/
++	odm_S0S1_SwAntDiv(&pHalData->odmpriv, SWAW_STEP_DETERMINE);
++}
++
++VOID
+ ODM_SW_AntDiv_Callback(void *FunctionContext)
+ {
+ 	PDM_ODM_T	pDM_Odm= (PDM_ODM_T)FunctionContext;
+ 	PADAPTER	padapter = pDM_Odm->Adapter;
+ 	if(padapter->net_closed == _TRUE)
+-	    return;
++		return;
++	
++	#if 0 /* Can't do I/O in timer callback*/
+ 	odm_S0S1_SwAntDiv(pDM_Odm, SWAW_STEP_DETERMINE);
++	#else
++	rtw_run_in_thread_cmd(padapter, ODM_SW_AntDiv_WorkitemCallback, padapter);
++	#endif
+ }
+-
+-
+ #endif
+ 
+ #if (DM_ODM_SUPPORT_TYPE & (ODM_WIN|ODM_CE))
+diff --git a/drivers/net/wireless/rtlwifi/rtl8821as/hal/phydm/phydm_antdiv.h b/drivers/net/wireless/rtlwifi/rtl8821as/hal/phydm/phydm_antdiv.h
+index 649ebd3..3e9b43a 100644
+--- a/drivers/net/wireless/rtlwifi/rtl8821as/hal/phydm/phydm_antdiv.h
++++ b/drivers/net/wireless/rtlwifi/rtl8821as/hal/phydm/phydm_antdiv.h
+@@ -375,6 +375,11 @@ ODM_SW_AntDiv_WorkitemCallback(
+ #elif (DM_ODM_SUPPORT_TYPE == ODM_CE)
+ 
+ VOID
++ODM_SW_AntDiv_WorkitemCallback(
++	IN PVOID	pContext
++);
++
++VOID
+ ODM_SW_AntDiv_Callback(
+ 	void 		*FunctionContext
+ 	);
+diff --git a/drivers/net/wireless/rtlwifi/rtl8821as/hal/phydm/rtl8821a/halhwimg8821a_bb.c b/drivers/net/wireless/rtlwifi/rtl8821as/hal/phydm/rtl8821a/halhwimg8821a_bb.c
+index 0163497..42c6260 100644
+--- a/drivers/net/wireless/rtlwifi/rtl8821as/hal/phydm/rtl8821a/halhwimg8821a_bb.c
++++ b/drivers/net/wireless/rtlwifi/rtl8821as/hal/phydm/rtl8821a/halhwimg8821a_bb.c
+@@ -18,25 +18,27 @@
+ * 
+ ******************************************************************************/
+ 
+-/*Image2HeaderVersion: 2.7*/
++/*Image2HeaderVersion: 2.12*/
+ #include "mp_precomp.h"
+ #include "../phydm_precomp.h"
+ 
+ #if (RTL8821A_SUPPORT == 1)
+ static BOOLEAN
+ CheckPositive(
+-    IN  PDM_ODM_T     pDM_Odm,
+-    IN  const u4Byte  Condition1,
+-    IN  const u4Byte  Condition2
+-    )
++	IN  PDM_ODM_T     pDM_Odm,
++	IN  const u4Byte  Condition1,
++	IN  const u4Byte  Condition2,
++	IN	const u4Byte  Condition3,
++	IN	const u4Byte  Condition4
++)
+ {
+-    u1Byte    _BoardType = ((pDM_Odm->BoardType & BIT4) >> 4) << 0 | // _GLNA
+-                           ((pDM_Odm->BoardType & BIT3) >> 3) << 1 | // _GPA 
+-                           ((pDM_Odm->BoardType & BIT7) >> 7) << 2 | // _ALNA
+-                           ((pDM_Odm->BoardType & BIT6) >> 6) << 3 | // _APA 
+-                           ((pDM_Odm->BoardType & BIT2) >> 2) << 4;  // _BT  
++	u1Byte    _BoardType = ((pDM_Odm->BoardType & BIT4) >> 4) << 0 | /* _GLNA*/
++				((pDM_Odm->BoardType & BIT3) >> 3) << 1 | /* _GPA*/ 
++				((pDM_Odm->BoardType & BIT7) >> 7) << 2 | /* _ALNA*/
++				((pDM_Odm->BoardType & BIT6) >> 6) << 3 | /* _APA */
++				((pDM_Odm->BoardType & BIT2) >> 2) << 4;  /* _BT*/  
+ 
+-	u4Byte 	  cond1   = Condition1, cond2 = Condition2;
++	u4Byte	cond1   = Condition1, cond2 = Condition2, cond3 = Condition3, cond4 = Condition4;
+ 	u4Byte    driver1 = pDM_Odm->CutVersion       << 24 | 
+ 				(pDM_Odm->SupportInterface & 0xF0) << 16 | 
+ 				pDM_Odm->SupportPlatform  << 16 | 
+@@ -44,20 +46,27 @@ CheckPositive(
+ 				(pDM_Odm->SupportInterface & 0x0F) << 8  |
+ 				_BoardType;
+ 
+-	u4Byte    driver2 = pDM_Odm->TypeGLNA <<  0 |  
+-		                pDM_Odm->TypeGPA  <<  8 | 
+-		                pDM_Odm->TypeALNA << 16 | 
+-		                pDM_Odm->TypeAPA  << 24; 
++	u4Byte    driver2 = (pDM_Odm->TypeGLNA & 0xFF) <<  0 |  
++				(pDM_Odm->TypeGPA & 0xFF)  <<  8 | 
++				(pDM_Odm->TypeALNA & 0xFF) << 16 | 
++				(pDM_Odm->TypeAPA & 0xFF)  << 24; 
+ 
+-    ODM_RT_TRACE(pDM_Odm, ODM_COMP_INIT, ODM_DBG_TRACE, 
+-                ("===> [8812A] CheckPositive (cond1, cond2) = (0x%X 0x%X)\n", cond1, cond2));
+-    ODM_RT_TRACE(pDM_Odm, ODM_COMP_INIT, ODM_DBG_TRACE, 
+-                ("===> [8812A] CheckPositive (driver1, driver2) = (0x%X 0x%X)\n", driver1, driver2));
++u4Byte    driver3 = 0;
+ 
+-    ODM_RT_TRACE(pDM_Odm, ODM_COMP_INIT, ODM_DBG_TRACE, 
+-                ("	(Platform, Interface) = (0x%X, 0x%X)\n", pDM_Odm->SupportPlatform, pDM_Odm->SupportInterface));
+-    ODM_RT_TRACE(pDM_Odm, ODM_COMP_INIT, ODM_DBG_TRACE, 
+-                ("	(Board, Package) = (0x%X, 0x%X)\n", pDM_Odm->BoardType, pDM_Odm->PackageType));
++	u4Byte    driver4 = (pDM_Odm->TypeGLNA & 0xFF00) >>  8 |
++				(pDM_Odm->TypeGPA & 0xFF00) |
++				(pDM_Odm->TypeALNA & 0xFF00) << 8 |
++				(pDM_Odm->TypeAPA & 0xFF00)  << 16;
++
++	ODM_RT_TRACE(pDM_Odm, ODM_COMP_INIT, ODM_DBG_TRACE, 
++	("===> CheckPositive (cond1, cond2, cond3, cond4) = (0x%X 0x%X 0x%X 0x%X)\n", cond1, cond2, cond3, cond4));
++	ODM_RT_TRACE(pDM_Odm, ODM_COMP_INIT, ODM_DBG_TRACE, 
++	("===> CheckPositive (driver1, driver2, driver3, driver4) = (0x%X 0x%X 0x%X 0x%X)\n", driver1, driver2, driver3, driver4));
++
++	ODM_RT_TRACE(pDM_Odm, ODM_COMP_INIT, ODM_DBG_TRACE, 
++	("	(Platform, Interface) = (0x%X, 0x%X)\n", pDM_Odm->SupportPlatform, pDM_Odm->SupportInterface));
++	ODM_RT_TRACE(pDM_Odm, ODM_COMP_INIT, ODM_DBG_TRACE, 
++	("	(Board, Package) = (0x%X, 0x%X)\n", pDM_Odm->BoardType, pDM_Odm->PackageType));
+ 
+ 
+ 	/*============== Value Defined Check ===============*/
+@@ -78,32 +87,32 @@ CheckPositive(
+ 		u4Byte bitMask = 0;
+ 
+ 		if ((cond1 & 0x0F) == 0) /* BoardType is DONTCARE*/
+-            return TRUE;
++			return TRUE;
+ 
+ 		if ((cond1 & BIT0) != 0) /*GLNA*/
+-            bitMask |= 0x000000FF;
++			bitMask |= 0x000000FF;
+ 		if ((cond1 & BIT1) != 0) /*GPA*/
+-            bitMask |= 0x0000FF00;
++			bitMask |= 0x0000FF00;
+ 		if ((cond1 & BIT2) != 0) /*ALNA*/
+-            bitMask |= 0x00FF0000;
++			bitMask |= 0x00FF0000;
+ 		if ((cond1 & BIT3) != 0) /*APA*/
+-            bitMask |= 0xFF000000;
++			bitMask |= 0xFF000000;
+ 
+-		if ((cond2 & bitMask) == (driver2 & bitMask)) /* BoardType of each RF path is matched*/
+-            return TRUE;
++		if (((cond2 & bitMask) == (driver2 & bitMask)) && ((cond4 & bitMask) == (driver4 & bitMask)))  /* BoardType of each RF path is matched*/
++			return TRUE;
+ 		else
+-            return FALSE;
+-		} else
+-        return FALSE;
++			return FALSE;
++	} else
++		return FALSE;
+ }
+ static BOOLEAN
+ CheckNegative(
+-    IN  PDM_ODM_T     pDM_Odm,
+-    IN  const u4Byte  Condition1,
+-    IN  const u4Byte  Condition2
+-    )
++	IN  PDM_ODM_T     pDM_Odm,
++	IN  const u4Byte  Condition1,
++	IN  const u4Byte  Condition2
++)
+ {
+-    return TRUE;
++	return TRUE;
+ }
+ 
+ /******************************************************************************
+@@ -366,20 +375,22 @@ u4Byte Array_MP_8821A_AGC_TAB[] = {
+ 
+ void
+ ODM_ReadAndConfig_MP_8821A_AGC_TAB(
+- 	IN   PDM_ODM_T  pDM_Odm
+- 	)
++	IN   PDM_ODM_T  pDM_Odm
++)
+ {
+-    u4Byte     i         = 0;
+-    u1Byte     cCond;
+-    BOOLEAN bMatched = TRUE, bSkipped = FALSE;
+-    u4Byte     ArrayLen    = sizeof(Array_MP_8821A_AGC_TAB)/sizeof(u4Byte);
+-    pu4Byte    Array       = Array_MP_8821A_AGC_TAB;
++	u4Byte     i         = 0;
++	u1Byte     cCond;
++	BOOLEAN bMatched = TRUE, bSkipped = FALSE;
++	u4Byte     ArrayLen    = sizeof(Array_MP_8821A_AGC_TAB)/sizeof(u4Byte);
++	pu4Byte    Array       = Array_MP_8821A_AGC_TAB;
+ 	
+-    ODM_RT_TRACE(pDM_Odm, ODM_COMP_INIT, ODM_DBG_LOUD, ("===> ODM_ReadAndConfig_MP_8821A_AGC_TAB\n"));
++	u4Byte	v1 = 0, v2 = 0, pre_v1 = 0, pre_v2 = 0;
++
++	ODM_RT_TRACE(pDM_Odm, ODM_COMP_INIT, ODM_DBG_LOUD, ("===> ODM_ReadAndConfig_MP_8821A_AGC_TAB\n"));
+ 
+ 	while ((i + 1) < ArrayLen) {
+-		u4Byte v1 = Array[i];
+-		u4Byte v2 = Array[i+1];
++		v1 = Array[i];
++		v2 = Array[i + 1];
+ 
+ 		if (v1 & (BIT31 | BIT30)) {/*positive & negative condition*/
+ 			if (v1 & BIT31) {/* positive condition*/
+@@ -393,30 +404,31 @@ ODM_ReadAndConfig_MP_8821A_AGC_TAB(
+ 					if (bSkipped)
+ 						bMatched = FALSE;
+ 					else {
+-						if (CheckPositive(pDM_Odm, v1, v2)) {
+-							bMatched = TRUE;
+-							bSkipped = TRUE;
+-						} else {
+-							bMatched = FALSE;
+-							bSkipped = FALSE;
+-						}
++						pre_v1 = v1;
++						pre_v2 = v2;
+ 					}
+ 				}
+ 			} else if (v1 & BIT30) { /*negative condition*/
+-			/*do nothing*/
++				if (CheckPositive(pDM_Odm, pre_v1, pre_v2, v1, v2)) {
++					bMatched = TRUE;
++					bSkipped = TRUE;
++				} else {
++					bMatched = FALSE;
++					bSkipped = FALSE;
++				}
+ 			}
+ 		} else {
+ 			if (bMatched)
+ 				odm_ConfigBB_AGC_8821A(pDM_Odm, v1, bMaskDWord, v2);
+ 		}
+-	i = i + 2;
++		i = i + 2;
+ 	}
+ }
+ 
+ u4Byte
+ ODM_GetVersion_MP_8821A_AGC_TAB(void)
+ {
+-	   return 49;
++	   return 52;
+ }
+ 
+ /******************************************************************************
+@@ -601,20 +613,22 @@ u4Byte Array_MP_8821A_PHY_REG[] = {
+ 
+ void
+ ODM_ReadAndConfig_MP_8821A_PHY_REG(
+- 	IN   PDM_ODM_T  pDM_Odm
+- 	)
++	IN   PDM_ODM_T  pDM_Odm
++)
+ {
+-    u4Byte     i         = 0;
+-    u1Byte     cCond;
+-    BOOLEAN bMatched = TRUE, bSkipped = FALSE;
+-    u4Byte     ArrayLen    = sizeof(Array_MP_8821A_PHY_REG)/sizeof(u4Byte);
+-    pu4Byte    Array       = Array_MP_8821A_PHY_REG;
++	u4Byte     i         = 0;
++	u1Byte     cCond;
++	BOOLEAN bMatched = TRUE, bSkipped = FALSE;
++	u4Byte     ArrayLen    = sizeof(Array_MP_8821A_PHY_REG)/sizeof(u4Byte);
++	pu4Byte    Array       = Array_MP_8821A_PHY_REG;
+ 	
+-    ODM_RT_TRACE(pDM_Odm, ODM_COMP_INIT, ODM_DBG_LOUD, ("===> ODM_ReadAndConfig_MP_8821A_PHY_REG\n"));
++	u4Byte	v1 = 0, v2 = 0, pre_v1 = 0, pre_v2 = 0;
++
++	ODM_RT_TRACE(pDM_Odm, ODM_COMP_INIT, ODM_DBG_LOUD, ("===> ODM_ReadAndConfig_MP_8821A_PHY_REG\n"));
+ 
+ 	while ((i + 1) < ArrayLen) {
+-		u4Byte v1 = Array[i];
+-		u4Byte v2 = Array[i+1];
++		v1 = Array[i];
++		v2 = Array[i + 1];
+ 
+ 		if (v1 & (BIT31 | BIT30)) {/*positive & negative condition*/
+ 			if (v1 & BIT31) {/* positive condition*/
+@@ -628,30 +642,31 @@ ODM_ReadAndConfig_MP_8821A_PHY_REG(
+ 					if (bSkipped)
+ 						bMatched = FALSE;
+ 					else {
+-						if (CheckPositive(pDM_Odm, v1, v2)) {
+-							bMatched = TRUE;
+-							bSkipped = TRUE;
+-						} else {
+-							bMatched = FALSE;
+-							bSkipped = FALSE;
+-						}
++						pre_v1 = v1;
++						pre_v2 = v2;
+ 					}
+ 				}
+ 			} else if (v1 & BIT30) { /*negative condition*/
+-			/*do nothing*/
++				if (CheckPositive(pDM_Odm, pre_v1, pre_v2, v1, v2)) {
++					bMatched = TRUE;
++					bSkipped = TRUE;
++				} else {
++					bMatched = FALSE;
++					bSkipped = FALSE;
++				}
+ 			}
+ 		} else {
+ 			if (bMatched)
+ 				odm_ConfigBB_PHY_8821A(pDM_Odm, v1, bMaskDWord, v2);
+ 		}
+-	i = i + 2;
++		i = i + 2;
+ 	}
+ }
+ 
+ u4Byte
+ ODM_GetVersion_MP_8821A_PHY_REG(void)
+ {
+-	   return 49;
++	   return 52;
+ }
+ 
+ /******************************************************************************
+@@ -678,14 +693,14 @@ u4Byte Array_MP_8821A_PHY_REG_PG[] = {
+ 
+ void
+ ODM_ReadAndConfig_MP_8821A_PHY_REG_PG(
+- 	IN   PDM_ODM_T  pDM_Odm
+- 	)
++	IN   PDM_ODM_T  pDM_Odm
++)
+ {
+-    u4Byte     i         = 0;
+-    u4Byte     ArrayLen    = sizeof(Array_MP_8821A_PHY_REG_PG)/sizeof(u4Byte);
+-    pu4Byte    Array       = Array_MP_8821A_PHY_REG_PG;
++	u4Byte     i         = 0;
++	u4Byte     ArrayLen    = sizeof(Array_MP_8821A_PHY_REG_PG)/sizeof(u4Byte);
++	pu4Byte    Array       = Array_MP_8821A_PHY_REG_PG;
+ 
+-    ODM_RT_TRACE(pDM_Odm, ODM_COMP_INIT, ODM_DBG_LOUD, ("===> ODM_ReadAndConfig_MP_8821A_PHY_REG_PG\n"));
++	ODM_RT_TRACE(pDM_Odm, ODM_COMP_INIT, ODM_DBG_LOUD, ("===> ODM_ReadAndConfig_MP_8821A_PHY_REG_PG\n"));
+ 
+ 	pDM_Odm->PhyRegPgVersion = 1;
+ 	pDM_Odm->PhyRegPgValueType = PHY_REG_PG_EXACT_VALUE;
+diff --git a/drivers/net/wireless/rtlwifi/rtl8821as/hal/phydm/rtl8821a/halhwimg8821a_bb.h b/drivers/net/wireless/rtlwifi/rtl8821as/hal/phydm/rtl8821a/halhwimg8821a_bb.h
+index 825b6f1..ce5568f 100644
+--- a/drivers/net/wireless/rtlwifi/rtl8821as/hal/phydm/rtl8821a/halhwimg8821a_bb.h
++++ b/drivers/net/wireless/rtlwifi/rtl8821as/hal/phydm/rtl8821a/halhwimg8821a_bb.h
+@@ -18,7 +18,7 @@
+ * 
+ ******************************************************************************/
+ 
+-/*Image2HeaderVersion: 2.7*/
++/*Image2HeaderVersion: 2.12*/
+ #if (RTL8821A_SUPPORT == 1)
+ #ifndef __INC_MP_BB_HW_IMG_8821A_H
+ #define __INC_MP_BB_HW_IMG_8821A_H
+diff --git a/drivers/net/wireless/rtlwifi/rtl8821as/hal/phydm/rtl8821a/halhwimg8821a_mac.c b/drivers/net/wireless/rtlwifi/rtl8821as/hal/phydm/rtl8821a/halhwimg8821a_mac.c
+index 8471065..c201afb 100644
+--- a/drivers/net/wireless/rtlwifi/rtl8821as/hal/phydm/rtl8821a/halhwimg8821a_mac.c
++++ b/drivers/net/wireless/rtlwifi/rtl8821as/hal/phydm/rtl8821a/halhwimg8821a_mac.c
+@@ -18,25 +18,27 @@
+ * 
+ ******************************************************************************/
+ 
+-/*Image2HeaderVersion: 2.7*/
++/*Image2HeaderVersion: 2.12*/
+ #include "mp_precomp.h"
+ #include "../phydm_precomp.h"
+ 
+ #if (RTL8821A_SUPPORT == 1)
+ static BOOLEAN
+ CheckPositive(
+-    IN  PDM_ODM_T     pDM_Odm,
+-    IN  const u4Byte  Condition1,
+-    IN  const u4Byte  Condition2
+-    )
++	IN  PDM_ODM_T     pDM_Odm,
++	IN  const u4Byte  Condition1,
++	IN  const u4Byte  Condition2,
++	IN	const u4Byte  Condition3,
++	IN	const u4Byte  Condition4
++)
+ {
+-    u1Byte    _BoardType = ((pDM_Odm->BoardType & BIT4) >> 4) << 0 | // _GLNA
+-                           ((pDM_Odm->BoardType & BIT3) >> 3) << 1 | // _GPA 
+-                           ((pDM_Odm->BoardType & BIT7) >> 7) << 2 | // _ALNA
+-                           ((pDM_Odm->BoardType & BIT6) >> 6) << 3 | // _APA 
+-                           ((pDM_Odm->BoardType & BIT2) >> 2) << 4;  // _BT  
++	u1Byte    _BoardType = ((pDM_Odm->BoardType & BIT4) >> 4) << 0 | /* _GLNA*/
++				((pDM_Odm->BoardType & BIT3) >> 3) << 1 | /* _GPA*/ 
++				((pDM_Odm->BoardType & BIT7) >> 7) << 2 | /* _ALNA*/
++				((pDM_Odm->BoardType & BIT6) >> 6) << 3 | /* _APA */
++				((pDM_Odm->BoardType & BIT2) >> 2) << 4;  /* _BT*/  
+ 
+-	u4Byte 	  cond1   = Condition1, cond2 = Condition2;
++	u4Byte	cond1   = Condition1, cond2 = Condition2, cond3 = Condition3, cond4 = Condition4;
+ 	u4Byte    driver1 = pDM_Odm->CutVersion       << 24 | 
+ 				(pDM_Odm->SupportInterface & 0xF0) << 16 | 
+ 				pDM_Odm->SupportPlatform  << 16 | 
+@@ -44,20 +46,27 @@ CheckPositive(
+ 				(pDM_Odm->SupportInterface & 0x0F) << 8  |
+ 				_BoardType;
+ 
+-	u4Byte    driver2 = pDM_Odm->TypeGLNA <<  0 |  
+-		                pDM_Odm->TypeGPA  <<  8 | 
+-		                pDM_Odm->TypeALNA << 16 | 
+-		                pDM_Odm->TypeAPA  << 24; 
++	u4Byte    driver2 = (pDM_Odm->TypeGLNA & 0xFF) <<  0 |  
++				(pDM_Odm->TypeGPA & 0xFF)  <<  8 | 
++				(pDM_Odm->TypeALNA & 0xFF) << 16 | 
++				(pDM_Odm->TypeAPA & 0xFF)  << 24; 
+ 
+-    ODM_RT_TRACE(pDM_Odm, ODM_COMP_INIT, ODM_DBG_TRACE, 
+-                ("===> [8812A] CheckPositive (cond1, cond2) = (0x%X 0x%X)\n", cond1, cond2));
+-    ODM_RT_TRACE(pDM_Odm, ODM_COMP_INIT, ODM_DBG_TRACE, 
+-                ("===> [8812A] CheckPositive (driver1, driver2) = (0x%X 0x%X)\n", driver1, driver2));
++u4Byte    driver3 = 0;
+ 
+-    ODM_RT_TRACE(pDM_Odm, ODM_COMP_INIT, ODM_DBG_TRACE, 
+-                ("	(Platform, Interface) = (0x%X, 0x%X)\n", pDM_Odm->SupportPlatform, pDM_Odm->SupportInterface));
+-    ODM_RT_TRACE(pDM_Odm, ODM_COMP_INIT, ODM_DBG_TRACE, 
+-                ("	(Board, Package) = (0x%X, 0x%X)\n", pDM_Odm->BoardType, pDM_Odm->PackageType));
++	u4Byte    driver4 = (pDM_Odm->TypeGLNA & 0xFF00) >>  8 |
++				(pDM_Odm->TypeGPA & 0xFF00) |
++				(pDM_Odm->TypeALNA & 0xFF00) << 8 |
++				(pDM_Odm->TypeAPA & 0xFF00)  << 16;
++
++	ODM_RT_TRACE(pDM_Odm, ODM_COMP_INIT, ODM_DBG_TRACE, 
++	("===> CheckPositive (cond1, cond2, cond3, cond4) = (0x%X 0x%X 0x%X 0x%X)\n", cond1, cond2, cond3, cond4));
++	ODM_RT_TRACE(pDM_Odm, ODM_COMP_INIT, ODM_DBG_TRACE, 
++	("===> CheckPositive (driver1, driver2, driver3, driver4) = (0x%X 0x%X 0x%X 0x%X)\n", driver1, driver2, driver3, driver4));
++
++	ODM_RT_TRACE(pDM_Odm, ODM_COMP_INIT, ODM_DBG_TRACE, 
++	("	(Platform, Interface) = (0x%X, 0x%X)\n", pDM_Odm->SupportPlatform, pDM_Odm->SupportInterface));
++	ODM_RT_TRACE(pDM_Odm, ODM_COMP_INIT, ODM_DBG_TRACE, 
++	("	(Board, Package) = (0x%X, 0x%X)\n", pDM_Odm->BoardType, pDM_Odm->PackageType));
+ 
+ 
+ 	/*============== Value Defined Check ===============*/
+@@ -78,32 +87,32 @@ CheckPositive(
+ 		u4Byte bitMask = 0;
+ 
+ 		if ((cond1 & 0x0F) == 0) /* BoardType is DONTCARE*/
+-            return TRUE;
++			return TRUE;
+ 
+ 		if ((cond1 & BIT0) != 0) /*GLNA*/
+-            bitMask |= 0x000000FF;
++			bitMask |= 0x000000FF;
+ 		if ((cond1 & BIT1) != 0) /*GPA*/
+-            bitMask |= 0x0000FF00;
++			bitMask |= 0x0000FF00;
+ 		if ((cond1 & BIT2) != 0) /*ALNA*/
+-            bitMask |= 0x00FF0000;
++			bitMask |= 0x00FF0000;
+ 		if ((cond1 & BIT3) != 0) /*APA*/
+-            bitMask |= 0xFF000000;
++			bitMask |= 0xFF000000;
+ 
+-		if ((cond2 & bitMask) == (driver2 & bitMask)) /* BoardType of each RF path is matched*/
+-            return TRUE;
++		if (((cond2 & bitMask) == (driver2 & bitMask)) && ((cond4 & bitMask) == (driver4 & bitMask)))  /* BoardType of each RF path is matched*/
++			return TRUE;
+ 		else
+-            return FALSE;
+-		} else
+-        return FALSE;
++			return FALSE;
++	} else
++		return FALSE;
+ }
+ static BOOLEAN
+ CheckNegative(
+-    IN  PDM_ODM_T     pDM_Odm,
+-    IN  const u4Byte  Condition1,
+-    IN  const u4Byte  Condition2
+-    )
++	IN  PDM_ODM_T     pDM_Odm,
++	IN  const u4Byte  Condition1,
++	IN  const u4Byte  Condition2
++)
+ {
+-    return TRUE;
++	return TRUE;
+ }
+ 
+ /******************************************************************************
+@@ -214,20 +223,22 @@ u4Byte Array_MP_8821A_MAC_REG[] = {
+ 
+ void
+ ODM_ReadAndConfig_MP_8821A_MAC_REG(
+- 	IN   PDM_ODM_T  pDM_Odm
+- 	)
++	IN   PDM_ODM_T  pDM_Odm
++)
+ {
+-    u4Byte     i         = 0;
+-    u1Byte     cCond;
+-    BOOLEAN bMatched = TRUE, bSkipped = FALSE;
+-    u4Byte     ArrayLen    = sizeof(Array_MP_8821A_MAC_REG)/sizeof(u4Byte);
+-    pu4Byte    Array       = Array_MP_8821A_MAC_REG;
++	u4Byte     i         = 0;
++	u1Byte     cCond;
++	BOOLEAN bMatched = TRUE, bSkipped = FALSE;
++	u4Byte     ArrayLen    = sizeof(Array_MP_8821A_MAC_REG)/sizeof(u4Byte);
++	pu4Byte    Array       = Array_MP_8821A_MAC_REG;
+ 	
+-    ODM_RT_TRACE(pDM_Odm, ODM_COMP_INIT, ODM_DBG_LOUD, ("===> ODM_ReadAndConfig_MP_8821A_MAC_REG\n"));
++	u4Byte	v1 = 0, v2 = 0, pre_v1 = 0, pre_v2 = 0;
++
++	ODM_RT_TRACE(pDM_Odm, ODM_COMP_INIT, ODM_DBG_LOUD, ("===> ODM_ReadAndConfig_MP_8821A_MAC_REG\n"));
+ 
+ 	while ((i + 1) < ArrayLen) {
+-		u4Byte v1 = Array[i];
+-		u4Byte v2 = Array[i+1];
++		v1 = Array[i];
++		v2 = Array[i + 1];
+ 
+ 		if (v1 & (BIT31 | BIT30)) {/*positive & negative condition*/
+ 			if (v1 & BIT31) {/* positive condition*/
+@@ -241,30 +252,31 @@ ODM_ReadAndConfig_MP_8821A_MAC_REG(
+ 					if (bSkipped)
+ 						bMatched = FALSE;
+ 					else {
+-						if (CheckPositive(pDM_Odm, v1, v2)) {
+-							bMatched = TRUE;
+-							bSkipped = TRUE;
+-						} else {
+-							bMatched = FALSE;
+-							bSkipped = FALSE;
+-						}
++						pre_v1 = v1;
++						pre_v2 = v2;
+ 					}
+ 				}
+ 			} else if (v1 & BIT30) { /*negative condition*/
+-			/*do nothing*/
++				if (CheckPositive(pDM_Odm, pre_v1, pre_v2, v1, v2)) {
++					bMatched = TRUE;
++					bSkipped = TRUE;
++				} else {
++					bMatched = FALSE;
++					bSkipped = FALSE;
++				}
+ 			}
+ 		} else {
+ 			if (bMatched)
+ 				odm_ConfigMAC_8821A(pDM_Odm, v1, (u1Byte)v2);
+ 		}
+-	i = i + 2;
++		i = i + 2;
+ 	}
+ }
+ 
+ u4Byte
+ ODM_GetVersion_MP_8821A_MAC_REG(void)
+ {
+-	   return 49;
++	   return 52;
+ }
+ 
+ #endif /* end of HWIMG_SUPPORT*/
+diff --git a/drivers/net/wireless/rtlwifi/rtl8821as/hal/phydm/rtl8821a/halhwimg8821a_mac.h b/drivers/net/wireless/rtlwifi/rtl8821as/hal/phydm/rtl8821a/halhwimg8821a_mac.h
+index 570acbf..fd5d71b 100644
+--- a/drivers/net/wireless/rtlwifi/rtl8821as/hal/phydm/rtl8821a/halhwimg8821a_mac.h
++++ b/drivers/net/wireless/rtlwifi/rtl8821as/hal/phydm/rtl8821a/halhwimg8821a_mac.h
+@@ -18,7 +18,7 @@
+ * 
+ ******************************************************************************/
+ 
+-/*Image2HeaderVersion: 2.7*/
++/*Image2HeaderVersion: 2.12*/
+ #if (RTL8821A_SUPPORT == 1)
+ #ifndef __INC_MP_MAC_HW_IMG_8821A_H
+ #define __INC_MP_MAC_HW_IMG_8821A_H
+diff --git a/drivers/net/wireless/rtlwifi/rtl8821as/hal/phydm/rtl8821a/halhwimg8821a_rf.c b/drivers/net/wireless/rtlwifi/rtl8821as/hal/phydm/rtl8821a/halhwimg8821a_rf.c
+index 7803fb2..a28ae5e 100644
+--- a/drivers/net/wireless/rtlwifi/rtl8821as/hal/phydm/rtl8821a/halhwimg8821a_rf.c
++++ b/drivers/net/wireless/rtlwifi/rtl8821as/hal/phydm/rtl8821a/halhwimg8821a_rf.c
+@@ -18,25 +18,27 @@
+ * 
+ ******************************************************************************/
+ 
+-/*Image2HeaderVersion: 2.7*/
++/*Image2HeaderVersion: 2.12*/
+ #include "mp_precomp.h"
+ #include "../phydm_precomp.h"
+ 
+ #if (RTL8821A_SUPPORT == 1)
+ static BOOLEAN
+ CheckPositive(
+-    IN  PDM_ODM_T     pDM_Odm,
+-    IN  const u4Byte  Condition1,
+-    IN  const u4Byte  Condition2
+-    )
++	IN  PDM_ODM_T     pDM_Odm,
++	IN  const u4Byte  Condition1,
++	IN  const u4Byte  Condition2,
++	IN	const u4Byte  Condition3,
++	IN	const u4Byte  Condition4
++)
+ {
+-    u1Byte    _BoardType = ((pDM_Odm->BoardType & BIT4) >> 4) << 0 | // _GLNA
+-                           ((pDM_Odm->BoardType & BIT3) >> 3) << 1 | // _GPA 
+-                           ((pDM_Odm->BoardType & BIT7) >> 7) << 2 | // _ALNA
+-                           ((pDM_Odm->BoardType & BIT6) >> 6) << 3 | // _APA 
+-                           ((pDM_Odm->BoardType & BIT2) >> 2) << 4;  // _BT  
++	u1Byte    _BoardType = ((pDM_Odm->BoardType & BIT4) >> 4) << 0 | /* _GLNA*/
++				((pDM_Odm->BoardType & BIT3) >> 3) << 1 | /* _GPA*/ 
++				((pDM_Odm->BoardType & BIT7) >> 7) << 2 | /* _ALNA*/
++				((pDM_Odm->BoardType & BIT6) >> 6) << 3 | /* _APA */
++				((pDM_Odm->BoardType & BIT2) >> 2) << 4;  /* _BT*/  
+ 
+-	u4Byte 	  cond1   = Condition1, cond2 = Condition2;
++	u4Byte	cond1   = Condition1, cond2 = Condition2, cond3 = Condition3, cond4 = Condition4;
+ 	u4Byte    driver1 = pDM_Odm->CutVersion       << 24 | 
+ 				(pDM_Odm->SupportInterface & 0xF0) << 16 | 
+ 				pDM_Odm->SupportPlatform  << 16 | 
+@@ -44,20 +46,27 @@ CheckPositive(
+ 				(pDM_Odm->SupportInterface & 0x0F) << 8  |
+ 				_BoardType;
+ 
+-	u4Byte    driver2 = pDM_Odm->TypeGLNA <<  0 |  
+-		                pDM_Odm->TypeGPA  <<  8 | 
+-		                pDM_Odm->TypeALNA << 16 | 
+-		                pDM_Odm->TypeAPA  << 24; 
++	u4Byte    driver2 = (pDM_Odm->TypeGLNA & 0xFF) <<  0 |  
++				(pDM_Odm->TypeGPA & 0xFF)  <<  8 | 
++				(pDM_Odm->TypeALNA & 0xFF) << 16 | 
++				(pDM_Odm->TypeAPA & 0xFF)  << 24; 
++
++u4Byte    driver3 = 0;
+ 
+-    ODM_RT_TRACE(pDM_Odm, ODM_COMP_INIT, ODM_DBG_TRACE, 
+-                ("===> [8812A] CheckPositive (cond1, cond2) = (0x%X 0x%X)\n", cond1, cond2));
+-    ODM_RT_TRACE(pDM_Odm, ODM_COMP_INIT, ODM_DBG_TRACE, 
+-                ("===> [8812A] CheckPositive (driver1, driver2) = (0x%X 0x%X)\n", driver1, driver2));
++	u4Byte    driver4 = (pDM_Odm->TypeGLNA & 0xFF00) >>  8 |
++				(pDM_Odm->TypeGPA & 0xFF00) |
++				(pDM_Odm->TypeALNA & 0xFF00) << 8 |
++				(pDM_Odm->TypeAPA & 0xFF00)  << 16;
+ 
+-    ODM_RT_TRACE(pDM_Odm, ODM_COMP_INIT, ODM_DBG_TRACE, 
+-                ("	(Platform, Interface) = (0x%X, 0x%X)\n", pDM_Odm->SupportPlatform, pDM_Odm->SupportInterface));
+-    ODM_RT_TRACE(pDM_Odm, ODM_COMP_INIT, ODM_DBG_TRACE, 
+-                ("	(Board, Package) = (0x%X, 0x%X)\n", pDM_Odm->BoardType, pDM_Odm->PackageType));
++	ODM_RT_TRACE(pDM_Odm, ODM_COMP_INIT, ODM_DBG_TRACE, 
++	("===> CheckPositive (cond1, cond2, cond3, cond4) = (0x%X 0x%X 0x%X 0x%X)\n", cond1, cond2, cond3, cond4));
++	ODM_RT_TRACE(pDM_Odm, ODM_COMP_INIT, ODM_DBG_TRACE, 
++	("===> CheckPositive (driver1, driver2, driver3, driver4) = (0x%X 0x%X 0x%X 0x%X)\n", driver1, driver2, driver3, driver4));
++
++	ODM_RT_TRACE(pDM_Odm, ODM_COMP_INIT, ODM_DBG_TRACE, 
++	("	(Platform, Interface) = (0x%X, 0x%X)\n", pDM_Odm->SupportPlatform, pDM_Odm->SupportInterface));
++	ODM_RT_TRACE(pDM_Odm, ODM_COMP_INIT, ODM_DBG_TRACE, 
++	("	(Board, Package) = (0x%X, 0x%X)\n", pDM_Odm->BoardType, pDM_Odm->PackageType));
+ 
+ 
+ 	/*============== Value Defined Check ===============*/
+@@ -78,32 +87,32 @@ CheckPositive(
+ 		u4Byte bitMask = 0;
+ 
+ 		if ((cond1 & 0x0F) == 0) /* BoardType is DONTCARE*/
+-            return TRUE;
++			return TRUE;
+ 
+ 		if ((cond1 & BIT0) != 0) /*GLNA*/
+-            bitMask |= 0x000000FF;
++			bitMask |= 0x000000FF;
+ 		if ((cond1 & BIT1) != 0) /*GPA*/
+-            bitMask |= 0x0000FF00;
++			bitMask |= 0x0000FF00;
+ 		if ((cond1 & BIT2) != 0) /*ALNA*/
+-            bitMask |= 0x00FF0000;
++			bitMask |= 0x00FF0000;
+ 		if ((cond1 & BIT3) != 0) /*APA*/
+-            bitMask |= 0xFF000000;
++			bitMask |= 0xFF000000;
+ 
+-		if ((cond2 & bitMask) == (driver2 & bitMask)) /* BoardType of each RF path is matched*/
+-            return TRUE;
++		if (((cond2 & bitMask) == (driver2 & bitMask)) && ((cond4 & bitMask) == (driver4 & bitMask)))  /* BoardType of each RF path is matched*/
++			return TRUE;
+ 		else
+-            return FALSE;
+-		} else
+-        return FALSE;
++			return FALSE;
++	} else
++		return FALSE;
+ }
+ static BOOLEAN
+ CheckNegative(
+-    IN  PDM_ODM_T     pDM_Odm,
+-    IN  const u4Byte  Condition1,
+-    IN  const u4Byte  Condition2
+-    )
++	IN  PDM_ODM_T     pDM_Odm,
++	IN  const u4Byte  Condition1,
++	IN  const u4Byte  Condition2
++)
+ {
+-    return TRUE;
++	return TRUE;
+ }
+ 
+ /******************************************************************************
+@@ -883,20 +892,22 @@ u4Byte Array_MP_8821A_RadioA[] = {
+ 
+ void
+ ODM_ReadAndConfig_MP_8821A_RadioA(
+- 	IN   PDM_ODM_T  pDM_Odm
+- 	)
++	IN   PDM_ODM_T  pDM_Odm
++)
+ {
+-    u4Byte     i         = 0;
+-    u1Byte     cCond;
+-    BOOLEAN bMatched = TRUE, bSkipped = FALSE;
+-    u4Byte     ArrayLen    = sizeof(Array_MP_8821A_RadioA)/sizeof(u4Byte);
+-    pu4Byte    Array       = Array_MP_8821A_RadioA;
++	u4Byte     i         = 0;
++	u1Byte     cCond;
++	BOOLEAN bMatched = TRUE, bSkipped = FALSE;
++	u4Byte     ArrayLen    = sizeof(Array_MP_8821A_RadioA)/sizeof(u4Byte);
++	pu4Byte    Array       = Array_MP_8821A_RadioA;
+ 	
+-    ODM_RT_TRACE(pDM_Odm, ODM_COMP_INIT, ODM_DBG_LOUD, ("===> ODM_ReadAndConfig_MP_8821A_RadioA\n"));
++	u4Byte	v1 = 0, v2 = 0, pre_v1 = 0, pre_v2 = 0;
++
++	ODM_RT_TRACE(pDM_Odm, ODM_COMP_INIT, ODM_DBG_LOUD, ("===> ODM_ReadAndConfig_MP_8821A_RadioA\n"));
+ 
+ 	while ((i + 1) < ArrayLen) {
+-		u4Byte v1 = Array[i];
+-		u4Byte v2 = Array[i+1];
++		v1 = Array[i];
++		v2 = Array[i + 1];
+ 
+ 		if (v1 & (BIT31 | BIT30)) {/*positive & negative condition*/
+ 			if (v1 & BIT31) {/* positive condition*/
+@@ -910,30 +921,31 @@ ODM_ReadAndConfig_MP_8821A_RadioA(
+ 					if (bSkipped)
+ 						bMatched = FALSE;
+ 					else {
+-						if (CheckPositive(pDM_Odm, v1, v2)) {
+-							bMatched = TRUE;
+-							bSkipped = TRUE;
+-						} else {
+-							bMatched = FALSE;
+-							bSkipped = FALSE;
+-						}
++						pre_v1 = v1;
++						pre_v2 = v2;
+ 					}
+ 				}
+ 			} else if (v1 & BIT30) { /*negative condition*/
+-			/*do nothing*/
++				if (CheckPositive(pDM_Odm, pre_v1, pre_v2, v1, v2)) {
++					bMatched = TRUE;
++					bSkipped = TRUE;
++				} else {
++					bMatched = FALSE;
++					bSkipped = FALSE;
++				}
+ 			}
+ 		} else {
+ 			if (bMatched)
+ 				odm_ConfigRF_RadioA_8821A(pDM_Odm, v1, v2);
+ 		}
+-	i = i + 2;
++		i = i + 2;
+ 	}
+ }
+ 
+ u4Byte
+ ODM_GetVersion_MP_8821A_RadioA(void)
+ {
+-	   return 49;
++	   return 52;
+ }
+ 
+ /******************************************************************************
+@@ -973,8 +985,8 @@ u1Byte gDeltaSwingTableIdx_MP_2GCCKA_P_TxPowerTrack_AP_8821A[] = {0, 0, 1, 1, 2,
+ 
+ void
+ ODM_ReadAndConfig_MP_8821A_TxPowerTrack_AP(
+- 	IN   PDM_ODM_T  pDM_Odm
+- 	)
++	IN   PDM_ODM_T  pDM_Odm
++)
+ {
+ #if (DM_ODM_SUPPORT_TYPE & (ODM_AP))
+ 	PODM_RF_CAL_T  pRFCalibrateInfo = &(pDM_Odm->RFCalibrateInfo);
+@@ -1036,8 +1048,8 @@ u1Byte gDeltaSwingTableIdx_MP_2GCCKA_P_TxPowerTrack_PCIE_8821A[] = {0, 0, 1, 1,
+ 
+ void
+ ODM_ReadAndConfig_MP_8821A_TxPowerTrack_PCIE(
+- 	IN   PDM_ODM_T  pDM_Odm
+- 	)
++	IN   PDM_ODM_T  pDM_Odm
++)
+ {
+ #if DEV_BUS_TYPE == RT_PCI_INTERFACE
+ 	PODM_RF_CAL_T  pRFCalibrateInfo = &(pDM_Odm->RFCalibrateInfo);
+@@ -1099,8 +1111,8 @@ u1Byte gDeltaSwingTableIdx_MP_2GCCKA_P_TxPowerTrack_SDIO_8821A[] = {0, 0, 1, 1,
+ 
+ void
+ ODM_ReadAndConfig_MP_8821A_TxPowerTrack_SDIO(
+- 	IN   PDM_ODM_T  pDM_Odm
+- 	)
++	IN   PDM_ODM_T  pDM_Odm
++)
+ {
+ #if DEV_BUS_TYPE == RT_SDIO_INTERFACE
+ 	PODM_RF_CAL_T  pRFCalibrateInfo = &(pDM_Odm->RFCalibrateInfo);
+@@ -1162,8 +1174,8 @@ u1Byte gDeltaSwingTableIdx_MP_2GCCKA_P_TxPowerTrack_USB_8821A[] = {0, 0, 1, 1, 2
+ 
+ void
+ ODM_ReadAndConfig_MP_8821A_TxPowerTrack_USB(
+- 	IN   PDM_ODM_T  pDM_Odm
+- 	)
++	IN   PDM_ODM_T  pDM_Odm
++)
+ {
+ #if DEV_BUS_TYPE == RT_USB_INTERFACE
+ 	PODM_RF_CAL_T  pRFCalibrateInfo = &(pDM_Odm->RFCalibrateInfo);
+@@ -1192,45 +1204,45 @@ ODM_ReadAndConfig_MP_8821A_TxPowerTrack_USB(
+ *                           TXPWR_LMT_8811AU_FEM.TXT
+ ******************************************************************************/
+ 
+-pu1Byte Array_MP_8821A_TXPWR_LMT_8811AU_FEM[] = { 
++const char *Array_MP_8821A_TXPWR_LMT_8811AU_FEM[] = { 
+ 	"FCC", "2.4G", "20M", "CCK", "1T", "01", "32", 
+-	"ETSI", "2.4G", "20M", "CCK", "1T", "01", "32", 
++	"ETSI", "2.4G", "20M", "CCK", "1T", "01", "28", 
+ 	"MKK", "2.4G", "20M", "CCK", "1T", "01", "32",
+ 	"FCC", "2.4G", "20M", "CCK", "1T", "02", "34", 
+-	"ETSI", "2.4G", "20M", "CCK", "1T", "02", "32", 
++	"ETSI", "2.4G", "20M", "CCK", "1T", "02", "28", 
+ 	"MKK", "2.4G", "20M", "CCK", "1T", "02", "32",
+ 	"FCC", "2.4G", "20M", "CCK", "1T", "03", "34", 
+-	"ETSI", "2.4G", "20M", "CCK", "1T", "03", "32", 
++	"ETSI", "2.4G", "20M", "CCK", "1T", "03", "28", 
+ 	"MKK", "2.4G", "20M", "CCK", "1T", "03", "32",
+ 	"FCC", "2.4G", "20M", "CCK", "1T", "04", "34", 
+-	"ETSI", "2.4G", "20M", "CCK", "1T", "04", "32", 
++	"ETSI", "2.4G", "20M", "CCK", "1T", "04", "28", 
+ 	"MKK", "2.4G", "20M", "CCK", "1T", "04", "32",
+ 	"FCC", "2.4G", "20M", "CCK", "1T", "05", "34", 
+-	"ETSI", "2.4G", "20M", "CCK", "1T", "05", "32", 
++	"ETSI", "2.4G", "20M", "CCK", "1T", "05", "28", 
+ 	"MKK", "2.4G", "20M", "CCK", "1T", "05", "32",
+ 	"FCC", "2.4G", "20M", "CCK", "1T", "06", "34", 
+-	"ETSI", "2.4G", "20M", "CCK", "1T", "06", "32", 
++	"ETSI", "2.4G", "20M", "CCK", "1T", "06", "28", 
+ 	"MKK", "2.4G", "20M", "CCK", "1T", "06", "32",
+ 	"FCC", "2.4G", "20M", "CCK", "1T", "07", "34", 
+-	"ETSI", "2.4G", "20M", "CCK", "1T", "07", "32", 
++	"ETSI", "2.4G", "20M", "CCK", "1T", "07", "28", 
+ 	"MKK", "2.4G", "20M", "CCK", "1T", "07", "32",
+ 	"FCC", "2.4G", "20M", "CCK", "1T", "08", "34", 
+-	"ETSI", "2.4G", "20M", "CCK", "1T", "08", "32", 
++	"ETSI", "2.4G", "20M", "CCK", "1T", "08", "28", 
+ 	"MKK", "2.4G", "20M", "CCK", "1T", "08", "32",
+ 	"FCC", "2.4G", "20M", "CCK", "1T", "09", "34", 
+-	"ETSI", "2.4G", "20M", "CCK", "1T", "09", "32", 
++	"ETSI", "2.4G", "20M", "CCK", "1T", "09", "28", 
+ 	"MKK", "2.4G", "20M", "CCK", "1T", "09", "32",
+ 	"FCC", "2.4G", "20M", "CCK", "1T", "10", "34", 
+-	"ETSI", "2.4G", "20M", "CCK", "1T", "10", "32", 
++	"ETSI", "2.4G", "20M", "CCK", "1T", "10", "28", 
+ 	"MKK", "2.4G", "20M", "CCK", "1T", "10", "32",
+ 	"FCC", "2.4G", "20M", "CCK", "1T", "11", "32", 
+-	"ETSI", "2.4G", "20M", "CCK", "1T", "11", "32", 
++	"ETSI", "2.4G", "20M", "CCK", "1T", "11", "28", 
+ 	"MKK", "2.4G", "20M", "CCK", "1T", "11", "32",
+-	"FCC", "2.4G", "20M", "CCK", "1T", "12", "63", 
+-	"ETSI", "2.4G", "20M", "CCK", "1T", "12", "32", 
++	"FCC", "2.4G", "20M", "CCK", "1T", "12", "28", 
++	"ETSI", "2.4G", "20M", "CCK", "1T", "12", "28", 
+ 	"MKK", "2.4G", "20M", "CCK", "1T", "12", "32",
+-	"FCC", "2.4G", "20M", "CCK", "1T", "13", "63", 
+-	"ETSI", "2.4G", "20M", "CCK", "1T", "13", "32", 
++	"FCC", "2.4G", "20M", "CCK", "1T", "13", "26", 
++	"ETSI", "2.4G", "20M", "CCK", "1T", "13", "28", 
+ 	"MKK", "2.4G", "20M", "CCK", "1T", "13", "32",
+ 	"FCC", "2.4G", "20M", "CCK", "1T", "14", "63", 
+ 	"ETSI", "2.4G", "20M", "CCK", "1T", "14", "63", 
+@@ -1268,10 +1280,10 @@ pu1Byte Array_MP_8821A_TXPWR_LMT_8811AU_FEM[] = {
+ 	"FCC", "2.4G", "20M", "OFDM", "1T", "11", "32", 
+ 	"ETSI", "2.4G", "20M", "OFDM", "1T", "11", "32", 
+ 	"MKK", "2.4G", "20M", "OFDM", "1T", "11", "32",
+-	"FCC", "2.4G", "20M", "OFDM", "1T", "12", "63", 
++	"FCC", "2.4G", "20M", "OFDM", "1T", "12", "26", 
+ 	"ETSI", "2.4G", "20M", "OFDM", "1T", "12", "32", 
+ 	"MKK", "2.4G", "20M", "OFDM", "1T", "12", "32",
+-	"FCC", "2.4G", "20M", "OFDM", "1T", "13", "63", 
++	"FCC", "2.4G", "20M", "OFDM", "1T", "13", "24", 
+ 	"ETSI", "2.4G", "20M", "OFDM", "1T", "13", "32", 
+ 	"MKK", "2.4G", "20M", "OFDM", "1T", "13", "32",
+ 	"FCC", "2.4G", "20M", "OFDM", "1T", "14", "63", 
+@@ -1310,10 +1322,10 @@ pu1Byte Array_MP_8821A_TXPWR_LMT_8811AU_FEM[] = {
+ 	"FCC", "2.4G", "20M", "HT", "1T", "11", "32", 
+ 	"ETSI", "2.4G", "20M", "HT", "1T", "11", "32", 
+ 	"MKK", "2.4G", "20M", "HT", "1T", "11", "32",
+-	"FCC", "2.4G", "20M", "HT", "1T", "12", "63", 
++	"FCC", "2.4G", "20M", "HT", "1T", "12", "26", 
+ 	"ETSI", "2.4G", "20M", "HT", "1T", "12", "32", 
+ 	"MKK", "2.4G", "20M", "HT", "1T", "12", "32",
+-	"FCC", "2.4G", "20M", "HT", "1T", "13", "63", 
++	"FCC", "2.4G", "20M", "HT", "1T", "13", "24", 
+ 	"ETSI", "2.4G", "20M", "HT", "1T", "13", "32", 
+ 	"MKK", "2.4G", "20M", "HT", "1T", "13", "32",
+ 	"FCC", "2.4G", "20M", "HT", "1T", "14", "63", 
+@@ -1385,21 +1397,21 @@ pu1Byte Array_MP_8821A_TXPWR_LMT_8811AU_FEM[] = {
+ 	"FCC", "2.4G", "40M", "HT", "1T", "08", "34", 
+ 	"ETSI", "2.4G", "40M", "HT", "1T", "08", "32", 
+ 	"MKK", "2.4G", "40M", "HT", "1T", "08", "32",
+-	"FCC", "2.4G", "40M", "HT", "1T", "09", "34", 
++	"FCC", "2.4G", "40M", "HT", "1T", "09", "32", 
+ 	"ETSI", "2.4G", "40M", "HT", "1T", "09", "32", 
+ 	"MKK", "2.4G", "40M", "HT", "1T", "09", "32",
+-	"FCC", "2.4G", "40M", "HT", "1T", "10", "34", 
++	"FCC", "2.4G", "40M", "HT", "1T", "10", "24", 
+ 	"ETSI", "2.4G", "40M", "HT", "1T", "10", "32", 
+ 	"MKK", "2.4G", "40M", "HT", "1T", "10", "32",
+-	"FCC", "2.4G", "40M", "HT", "1T", "11", "32", 
++	"FCC", "2.4G", "40M", "HT", "1T", "11", "22", 
+ 	"ETSI", "2.4G", "40M", "HT", "1T", "11", "32", 
+ 	"MKK", "2.4G", "40M", "HT", "1T", "11", "32",
+ 	"FCC", "2.4G", "40M", "HT", "1T", "12", "63", 
+-	"ETSI", "2.4G", "40M", "HT", "1T", "12", "32", 
+-	"MKK", "2.4G", "40M", "HT", "1T", "12", "32",
++	"ETSI", "2.4G", "40M", "HT", "1T", "12", "63", 
++	"MKK", "2.4G", "40M", "HT", "1T", "12", "63",
+ 	"FCC", "2.4G", "40M", "HT", "1T", "13", "63", 
+-	"ETSI", "2.4G", "40M", "HT", "1T", "13", "32", 
+-	"MKK", "2.4G", "40M", "HT", "1T", "13", "32",
++	"ETSI", "2.4G", "40M", "HT", "1T", "13", "63", 
++	"MKK", "2.4G", "40M", "HT", "1T", "13", "63",
+ 	"FCC", "2.4G", "40M", "HT", "1T", "14", "63", 
+ 	"ETSI", "2.4G", "40M", "HT", "1T", "14", "63", 
+ 	"MKK", "2.4G", "40M", "HT", "1T", "14", "63",
+@@ -1766,7 +1778,7 @@ ODM_ReadAndConfig_MP_8821A_TXPWR_LMT_8811AU_FEM(
+ {
+ 	u4Byte     i           = 0;
+ 	u4Byte     ArrayLen    = sizeof(Array_MP_8821A_TXPWR_LMT_8811AU_FEM)/sizeof(pu1Byte);
+-	pu1Byte    *Array      = Array_MP_8821A_TXPWR_LMT_8811AU_FEM;
++	pu1Byte    *Array      = (pu1Byte *)Array_MP_8821A_TXPWR_LMT_8811AU_FEM;
+ 
+ 	ODM_RT_TRACE(pDM_Odm, ODM_COMP_INIT, ODM_DBG_LOUD, ("===> ODM_ReadAndConfig_MP_8821A_TXPWR_LMT_8811AU_FEM\n"));
+ 
+@@ -1788,45 +1800,45 @@ ODM_ReadAndConfig_MP_8821A_TXPWR_LMT_8811AU_FEM(
+ *                           TXPWR_LMT_8811AU_IPA.TXT
+ ******************************************************************************/
+ 
+-pu1Byte Array_MP_8821A_TXPWR_LMT_8811AU_IPA[] = { 
++const char *Array_MP_8821A_TXPWR_LMT_8811AU_IPA[] = { 
+ 	"FCC", "2.4G", "20M", "CCK", "1T", "01", "32", 
+-	"ETSI", "2.4G", "20M", "CCK", "1T", "01", "32", 
++	"ETSI", "2.4G", "20M", "CCK", "1T", "01", "28", 
+ 	"MKK", "2.4G", "20M", "CCK", "1T", "01", "32",
+ 	"FCC", "2.4G", "20M", "CCK", "1T", "02", "34", 
+-	"ETSI", "2.4G", "20M", "CCK", "1T", "02", "32", 
++	"ETSI", "2.4G", "20M", "CCK", "1T", "02", "28", 
+ 	"MKK", "2.4G", "20M", "CCK", "1T", "02", "32",
+ 	"FCC", "2.4G", "20M", "CCK", "1T", "03", "34", 
+-	"ETSI", "2.4G", "20M", "CCK", "1T", "03", "32", 
++	"ETSI", "2.4G", "20M", "CCK", "1T", "03", "28", 
+ 	"MKK", "2.4G", "20M", "CCK", "1T", "03", "32",
+ 	"FCC", "2.4G", "20M", "CCK", "1T", "04", "34", 
+-	"ETSI", "2.4G", "20M", "CCK", "1T", "04", "32", 
++	"ETSI", "2.4G", "20M", "CCK", "1T", "04", "28", 
+ 	"MKK", "2.4G", "20M", "CCK", "1T", "04", "32",
+ 	"FCC", "2.4G", "20M", "CCK", "1T", "05", "34", 
+-	"ETSI", "2.4G", "20M", "CCK", "1T", "05", "32", 
++	"ETSI", "2.4G", "20M", "CCK", "1T", "05", "28", 
+ 	"MKK", "2.4G", "20M", "CCK", "1T", "05", "32",
+ 	"FCC", "2.4G", "20M", "CCK", "1T", "06", "34", 
+-	"ETSI", "2.4G", "20M", "CCK", "1T", "06", "32", 
++	"ETSI", "2.4G", "20M", "CCK", "1T", "06", "28", 
+ 	"MKK", "2.4G", "20M", "CCK", "1T", "06", "32",
+ 	"FCC", "2.4G", "20M", "CCK", "1T", "07", "34", 
+-	"ETSI", "2.4G", "20M", "CCK", "1T", "07", "32", 
++	"ETSI", "2.4G", "20M", "CCK", "1T", "07", "28", 
+ 	"MKK", "2.4G", "20M", "CCK", "1T", "07", "32",
+ 	"FCC", "2.4G", "20M", "CCK", "1T", "08", "34", 
+-	"ETSI", "2.4G", "20M", "CCK", "1T", "08", "32", 
++	"ETSI", "2.4G", "20M", "CCK", "1T", "08", "28", 
+ 	"MKK", "2.4G", "20M", "CCK", "1T", "08", "32",
+ 	"FCC", "2.4G", "20M", "CCK", "1T", "09", "34", 
+-	"ETSI", "2.4G", "20M", "CCK", "1T", "09", "32", 
++	"ETSI", "2.4G", "20M", "CCK", "1T", "09", "28", 
+ 	"MKK", "2.4G", "20M", "CCK", "1T", "09", "32",
+ 	"FCC", "2.4G", "20M", "CCK", "1T", "10", "34", 
+-	"ETSI", "2.4G", "20M", "CCK", "1T", "10", "32", 
++	"ETSI", "2.4G", "20M", "CCK", "1T", "10", "28", 
+ 	"MKK", "2.4G", "20M", "CCK", "1T", "10", "32",
+ 	"FCC", "2.4G", "20M", "CCK", "1T", "11", "32", 
+-	"ETSI", "2.4G", "20M", "CCK", "1T", "11", "32", 
++	"ETSI", "2.4G", "20M", "CCK", "1T", "11", "28", 
+ 	"MKK", "2.4G", "20M", "CCK", "1T", "11", "32",
+-	"FCC", "2.4G", "20M", "CCK", "1T", "12", "63", 
+-	"ETSI", "2.4G", "20M", "CCK", "1T", "12", "32", 
++	"FCC", "2.4G", "20M", "CCK", "1T", "12", "28", 
++	"ETSI", "2.4G", "20M", "CCK", "1T", "12", "28", 
+ 	"MKK", "2.4G", "20M", "CCK", "1T", "12", "32",
+-	"FCC", "2.4G", "20M", "CCK", "1T", "13", "63", 
+-	"ETSI", "2.4G", "20M", "CCK", "1T", "13", "32", 
++	"FCC", "2.4G", "20M", "CCK", "1T", "13", "26", 
++	"ETSI", "2.4G", "20M", "CCK", "1T", "13", "28", 
+ 	"MKK", "2.4G", "20M", "CCK", "1T", "13", "32",
+ 	"FCC", "2.4G", "20M", "CCK", "1T", "14", "63", 
+ 	"ETSI", "2.4G", "20M", "CCK", "1T", "14", "63", 
+@@ -1864,10 +1876,10 @@ pu1Byte Array_MP_8821A_TXPWR_LMT_8811AU_IPA[] = {
+ 	"FCC", "2.4G", "20M", "OFDM", "1T", "11", "32", 
+ 	"ETSI", "2.4G", "20M", "OFDM", "1T", "11", "32", 
+ 	"MKK", "2.4G", "20M", "OFDM", "1T", "11", "32",
+-	"FCC", "2.4G", "20M", "OFDM", "1T", "12", "63", 
++	"FCC", "2.4G", "20M", "OFDM", "1T", "12", "26", 
+ 	"ETSI", "2.4G", "20M", "OFDM", "1T", "12", "32", 
+ 	"MKK", "2.4G", "20M", "OFDM", "1T", "12", "32",
+-	"FCC", "2.4G", "20M", "OFDM", "1T", "13", "63", 
++	"FCC", "2.4G", "20M", "OFDM", "1T", "13", "24", 
+ 	"ETSI", "2.4G", "20M", "OFDM", "1T", "13", "32", 
+ 	"MKK", "2.4G", "20M", "OFDM", "1T", "13", "32",
+ 	"FCC", "2.4G", "20M", "OFDM", "1T", "14", "63", 
+@@ -1906,10 +1918,10 @@ pu1Byte Array_MP_8821A_TXPWR_LMT_8811AU_IPA[] = {
+ 	"FCC", "2.4G", "20M", "HT", "1T", "11", "32", 
+ 	"ETSI", "2.4G", "20M", "HT", "1T", "11", "32", 
+ 	"MKK", "2.4G", "20M", "HT", "1T", "11", "32",
+-	"FCC", "2.4G", "20M", "HT", "1T", "12", "63", 
++	"FCC", "2.4G", "20M", "HT", "1T", "12", "26", 
+ 	"ETSI", "2.4G", "20M", "HT", "1T", "12", "32", 
+ 	"MKK", "2.4G", "20M", "HT", "1T", "12", "32",
+-	"FCC", "2.4G", "20M", "HT", "1T", "13", "63", 
++	"FCC", "2.4G", "20M", "HT", "1T", "13", "24", 
+ 	"ETSI", "2.4G", "20M", "HT", "1T", "13", "32", 
+ 	"MKK", "2.4G", "20M", "HT", "1T", "13", "32",
+ 	"FCC", "2.4G", "20M", "HT", "1T", "14", "63", 
+@@ -1981,21 +1993,21 @@ pu1Byte Array_MP_8821A_TXPWR_LMT_8811AU_IPA[] = {
+ 	"FCC", "2.4G", "40M", "HT", "1T", "08", "34", 
+ 	"ETSI", "2.4G", "40M", "HT", "1T", "08", "32", 
+ 	"MKK", "2.4G", "40M", "HT", "1T", "08", "32",
+-	"FCC", "2.4G", "40M", "HT", "1T", "09", "34", 
++	"FCC", "2.4G", "40M", "HT", "1T", "09", "32", 
+ 	"ETSI", "2.4G", "40M", "HT", "1T", "09", "32", 
+ 	"MKK", "2.4G", "40M", "HT", "1T", "09", "32",
+-	"FCC", "2.4G", "40M", "HT", "1T", "10", "34", 
++	"FCC", "2.4G", "40M", "HT", "1T", "10", "24", 
+ 	"ETSI", "2.4G", "40M", "HT", "1T", "10", "32", 
+ 	"MKK", "2.4G", "40M", "HT", "1T", "10", "32",
+-	"FCC", "2.4G", "40M", "HT", "1T", "11", "32", 
++	"FCC", "2.4G", "40M", "HT", "1T", "11", "22", 
+ 	"ETSI", "2.4G", "40M", "HT", "1T", "11", "32", 
+ 	"MKK", "2.4G", "40M", "HT", "1T", "11", "32",
+ 	"FCC", "2.4G", "40M", "HT", "1T", "12", "63", 
+-	"ETSI", "2.4G", "40M", "HT", "1T", "12", "32", 
+-	"MKK", "2.4G", "40M", "HT", "1T", "12", "32",
++	"ETSI", "2.4G", "40M", "HT", "1T", "12", "63", 
++	"MKK", "2.4G", "40M", "HT", "1T", "12", "63",
+ 	"FCC", "2.4G", "40M", "HT", "1T", "13", "63", 
+-	"ETSI", "2.4G", "40M", "HT", "1T", "13", "32", 
+-	"MKK", "2.4G", "40M", "HT", "1T", "13", "32",
++	"ETSI", "2.4G", "40M", "HT", "1T", "13", "63", 
++	"MKK", "2.4G", "40M", "HT", "1T", "13", "63",
+ 	"FCC", "2.4G", "40M", "HT", "1T", "14", "63", 
+ 	"ETSI", "2.4G", "40M", "HT", "1T", "14", "63", 
+ 	"MKK", "2.4G", "40M", "HT", "1T", "14", "63",
+@@ -2362,7 +2374,7 @@ ODM_ReadAndConfig_MP_8821A_TXPWR_LMT_8811AU_IPA(
+ {
+ 	u4Byte     i           = 0;
+ 	u4Byte     ArrayLen    = sizeof(Array_MP_8821A_TXPWR_LMT_8811AU_IPA)/sizeof(pu1Byte);
+-	pu1Byte    *Array      = Array_MP_8821A_TXPWR_LMT_8811AU_IPA;
++	pu1Byte    *Array      = (pu1Byte *)Array_MP_8821A_TXPWR_LMT_8811AU_IPA;
+ 
+ 	ODM_RT_TRACE(pDM_Odm, ODM_COMP_INIT, ODM_DBG_LOUD, ("===> ODM_ReadAndConfig_MP_8821A_TXPWR_LMT_8811AU_IPA\n"));
+ 
+@@ -2384,45 +2396,45 @@ ODM_ReadAndConfig_MP_8821A_TXPWR_LMT_8811AU_IPA(
+ *                           TXPWR_LMT_8821A.TXT
+ ******************************************************************************/
+ 
+-pu1Byte Array_MP_8821A_TXPWR_LMT_8821A[] = { 
++const char *Array_MP_8821A_TXPWR_LMT_8821A[] = { 
+ 	"FCC", "2.4G", "20M", "CCK", "1T", "01", "32", 
+-	"ETSI", "2.4G", "20M", "CCK", "1T", "01", "32", 
++	"ETSI", "2.4G", "20M", "CCK", "1T", "01", "28", 
+ 	"MKK", "2.4G", "20M", "CCK", "1T", "01", "32",
+ 	"FCC", "2.4G", "20M", "CCK", "1T", "02", "32", 
+-	"ETSI", "2.4G", "20M", "CCK", "1T", "02", "32", 
++	"ETSI", "2.4G", "20M", "CCK", "1T", "02", "28", 
+ 	"MKK", "2.4G", "20M", "CCK", "1T", "02", "32",
+ 	"FCC", "2.4G", "20M", "CCK", "1T", "03", "36", 
+-	"ETSI", "2.4G", "20M", "CCK", "1T", "03", "32", 
++	"ETSI", "2.4G", "20M", "CCK", "1T", "03", "28", 
+ 	"MKK", "2.4G", "20M", "CCK", "1T", "03", "32",
+ 	"FCC", "2.4G", "20M", "CCK", "1T", "04", "36", 
+-	"ETSI", "2.4G", "20M", "CCK", "1T", "04", "32", 
++	"ETSI", "2.4G", "20M", "CCK", "1T", "04", "28", 
+ 	"MKK", "2.4G", "20M", "CCK", "1T", "04", "32",
+ 	"FCC", "2.4G", "20M", "CCK", "1T", "05", "36", 
+-	"ETSI", "2.4G", "20M", "CCK", "1T", "05", "32", 
++	"ETSI", "2.4G", "20M", "CCK", "1T", "05", "28", 
+ 	"MKK", "2.4G", "20M", "CCK", "1T", "05", "32",
+ 	"FCC", "2.4G", "20M", "CCK", "1T", "06", "36", 
+-	"ETSI", "2.4G", "20M", "CCK", "1T", "06", "32", 
++	"ETSI", "2.4G", "20M", "CCK", "1T", "06", "28", 
+ 	"MKK", "2.4G", "20M", "CCK", "1T", "06", "32",
+ 	"FCC", "2.4G", "20M", "CCK", "1T", "07", "36", 
+-	"ETSI", "2.4G", "20M", "CCK", "1T", "07", "32", 
++	"ETSI", "2.4G", "20M", "CCK", "1T", "07", "28", 
+ 	"MKK", "2.4G", "20M", "CCK", "1T", "07", "32",
+ 	"FCC", "2.4G", "20M", "CCK", "1T", "08", "36", 
+-	"ETSI", "2.4G", "20M", "CCK", "1T", "08", "32", 
++	"ETSI", "2.4G", "20M", "CCK", "1T", "08", "28", 
+ 	"MKK", "2.4G", "20M", "CCK", "1T", "08", "32",
+ 	"FCC", "2.4G", "20M", "CCK", "1T", "09", "32", 
+-	"ETSI", "2.4G", "20M", "CCK", "1T", "09", "32", 
++	"ETSI", "2.4G", "20M", "CCK", "1T", "09", "28", 
+ 	"MKK", "2.4G", "20M", "CCK", "1T", "09", "32",
+ 	"FCC", "2.4G", "20M", "CCK", "1T", "10", "32", 
+-	"ETSI", "2.4G", "20M", "CCK", "1T", "10", "32", 
++	"ETSI", "2.4G", "20M", "CCK", "1T", "10", "28", 
+ 	"MKK", "2.4G", "20M", "CCK", "1T", "10", "32",
+ 	"FCC", "2.4G", "20M", "CCK", "1T", "11", "32", 
+-	"ETSI", "2.4G", "20M", "CCK", "1T", "11", "32", 
++	"ETSI", "2.4G", "20M", "CCK", "1T", "11", "28", 
+ 	"MKK", "2.4G", "20M", "CCK", "1T", "11", "32",
+-	"FCC", "2.4G", "20M", "CCK", "1T", "12", "63", 
+-	"ETSI", "2.4G", "20M", "CCK", "1T", "12", "32", 
++	"FCC", "2.4G", "20M", "CCK", "1T", "12", "28", 
++	"ETSI", "2.4G", "20M", "CCK", "1T", "12", "28", 
+ 	"MKK", "2.4G", "20M", "CCK", "1T", "12", "32",
+-	"FCC", "2.4G", "20M", "CCK", "1T", "13", "63", 
+-	"ETSI", "2.4G", "20M", "CCK", "1T", "13", "32", 
++	"FCC", "2.4G", "20M", "CCK", "1T", "13", "26", 
++	"ETSI", "2.4G", "20M", "CCK", "1T", "13", "28", 
+ 	"MKK", "2.4G", "20M", "CCK", "1T", "13", "32",
+ 	"FCC", "2.4G", "20M", "CCK", "1T", "14", "63", 
+ 	"ETSI", "2.4G", "20M", "CCK", "1T", "14", "63", 
+@@ -2460,10 +2472,10 @@ pu1Byte Array_MP_8821A_TXPWR_LMT_8821A[] = {
+ 	"FCC", "2.4G", "20M", "OFDM", "1T", "11", "30", 
+ 	"ETSI", "2.4G", "20M", "OFDM", "1T", "11", "32", 
+ 	"MKK", "2.4G", "20M", "OFDM", "1T", "11", "32",
+-	"FCC", "2.4G", "20M", "OFDM", "1T", "12", "63", 
++	"FCC", "2.4G", "20M", "OFDM", "1T", "12", "26", 
+ 	"ETSI", "2.4G", "20M", "OFDM", "1T", "12", "32", 
+ 	"MKK", "2.4G", "20M", "OFDM", "1T", "12", "32",
+-	"FCC", "2.4G", "20M", "OFDM", "1T", "13", "63", 
++	"FCC", "2.4G", "20M", "OFDM", "1T", "13", "24", 
+ 	"ETSI", "2.4G", "20M", "OFDM", "1T", "13", "32", 
+ 	"MKK", "2.4G", "20M", "OFDM", "1T", "13", "32",
+ 	"FCC", "2.4G", "20M", "OFDM", "1T", "14", "63", 
+@@ -2502,10 +2514,10 @@ pu1Byte Array_MP_8821A_TXPWR_LMT_8821A[] = {
+ 	"FCC", "2.4G", "20M", "HT", "1T", "11", "26", 
+ 	"ETSI", "2.4G", "20M", "HT", "1T", "11", "32", 
+ 	"MKK", "2.4G", "20M", "HT", "1T", "11", "32",
+-	"FCC", "2.4G", "20M", "HT", "1T", "12", "63", 
++	"FCC", "2.4G", "20M", "HT", "1T", "12", "26", 
+ 	"ETSI", "2.4G", "20M", "HT", "1T", "12", "32", 
+ 	"MKK", "2.4G", "20M", "HT", "1T", "12", "32",
+-	"FCC", "2.4G", "20M", "HT", "1T", "13", "63", 
++	"FCC", "2.4G", "20M", "HT", "1T", "13", "24", 
+ 	"ETSI", "2.4G", "20M", "HT", "1T", "13", "32", 
+ 	"MKK", "2.4G", "20M", "HT", "1T", "13", "32",
+ 	"FCC", "2.4G", "20M", "HT", "1T", "14", "63", 
+@@ -2580,18 +2592,18 @@ pu1Byte Array_MP_8821A_TXPWR_LMT_8821A[] = {
+ 	"FCC", "2.4G", "40M", "HT", "1T", "09", "26", 
+ 	"ETSI", "2.4G", "40M", "HT", "1T", "09", "32", 
+ 	"MKK", "2.4G", "40M", "HT", "1T", "09", "32",
+-	"FCC", "2.4G", "40M", "HT", "1T", "10", "26", 
++	"FCC", "2.4G", "40M", "HT", "1T", "10", "24", 
+ 	"ETSI", "2.4G", "40M", "HT", "1T", "10", "32", 
+ 	"MKK", "2.4G", "40M", "HT", "1T", "10", "32",
+-	"FCC", "2.4G", "40M", "HT", "1T", "11", "26", 
++	"FCC", "2.4G", "40M", "HT", "1T", "11", "22", 
+ 	"ETSI", "2.4G", "40M", "HT", "1T", "11", "32", 
+ 	"MKK", "2.4G", "40M", "HT", "1T", "11", "32",
+ 	"FCC", "2.4G", "40M", "HT", "1T", "12", "63", 
+-	"ETSI", "2.4G", "40M", "HT", "1T", "12", "32", 
+-	"MKK", "2.4G", "40M", "HT", "1T", "12", "32",
++	"ETSI", "2.4G", "40M", "HT", "1T", "12", "63", 
++	"MKK", "2.4G", "40M", "HT", "1T", "12", "63",
+ 	"FCC", "2.4G", "40M", "HT", "1T", "13", "63", 
+-	"ETSI", "2.4G", "40M", "HT", "1T", "13", "32", 
+-	"MKK", "2.4G", "40M", "HT", "1T", "13", "32",
++	"ETSI", "2.4G", "40M", "HT", "1T", "13", "63", 
++	"MKK", "2.4G", "40M", "HT", "1T", "13", "63",
+ 	"FCC", "2.4G", "40M", "HT", "1T", "14", "63", 
+ 	"ETSI", "2.4G", "40M", "HT", "1T", "14", "63", 
+ 	"MKK", "2.4G", "40M", "HT", "1T", "14", "63",
+@@ -2958,7 +2970,7 @@ ODM_ReadAndConfig_MP_8821A_TXPWR_LMT_8821A(
+ {
+ 	u4Byte     i           = 0;
+ 	u4Byte     ArrayLen    = sizeof(Array_MP_8821A_TXPWR_LMT_8821A)/sizeof(pu1Byte);
+-	pu1Byte    *Array      = Array_MP_8821A_TXPWR_LMT_8821A;
++	pu1Byte    *Array      = (pu1Byte *)Array_MP_8821A_TXPWR_LMT_8821A;
+ 
+ 	ODM_RT_TRACE(pDM_Odm, ODM_COMP_INIT, ODM_DBG_LOUD, ("===> ODM_ReadAndConfig_MP_8821A_TXPWR_LMT_8821A\n"));
+ 
+@@ -2980,45 +2992,45 @@ ODM_ReadAndConfig_MP_8821A_TXPWR_LMT_8821A(
+ *                           TXPWR_LMT_8821A_SAR_13dBm.TXT
+ ******************************************************************************/
+ 
+-const char *Array_MP_8821A_TXPWR_LMT_8821A_SAR_13dBm[] = {
++const char *Array_MP_8821A_TXPWR_LMT_8821A_SAR_13dBm[] = { 
+ 	"FCC", "2.4G", "20M", "CCK", "1T", "01", "32", 
+-	"ETSI", "2.4G", "20M", "CCK", "1T", "01", "32", 
++	"ETSI", "2.4G", "20M", "CCK", "1T", "01", "28", 
+ 	"MKK", "2.4G", "20M", "CCK", "1T", "01", "32",
+ 	"FCC", "2.4G", "20M", "CCK", "1T", "02", "32", 
+-	"ETSI", "2.4G", "20M", "CCK", "1T", "02", "32", 
++	"ETSI", "2.4G", "20M", "CCK", "1T", "02", "28", 
+ 	"MKK", "2.4G", "20M", "CCK", "1T", "02", "32",
+ 	"FCC", "2.4G", "20M", "CCK", "1T", "03", "34", 
+-	"ETSI", "2.4G", "20M", "CCK", "1T", "03", "32", 
++	"ETSI", "2.4G", "20M", "CCK", "1T", "03", "28", 
+ 	"MKK", "2.4G", "20M", "CCK", "1T", "03", "32",
+ 	"FCC", "2.4G", "20M", "CCK", "1T", "04", "34", 
+-	"ETSI", "2.4G", "20M", "CCK", "1T", "04", "32", 
++	"ETSI", "2.4G", "20M", "CCK", "1T", "04", "28", 
+ 	"MKK", "2.4G", "20M", "CCK", "1T", "04", "32",
+ 	"FCC", "2.4G", "20M", "CCK", "1T", "05", "34", 
+-	"ETSI", "2.4G", "20M", "CCK", "1T", "05", "32", 
++	"ETSI", "2.4G", "20M", "CCK", "1T", "05", "28", 
+ 	"MKK", "2.4G", "20M", "CCK", "1T", "05", "32",
+ 	"FCC", "2.4G", "20M", "CCK", "1T", "06", "34", 
+-	"ETSI", "2.4G", "20M", "CCK", "1T", "06", "32", 
++	"ETSI", "2.4G", "20M", "CCK", "1T", "06", "28", 
+ 	"MKK", "2.4G", "20M", "CCK", "1T", "06", "32",
+ 	"FCC", "2.4G", "20M", "CCK", "1T", "07", "34", 
+-	"ETSI", "2.4G", "20M", "CCK", "1T", "07", "32", 
++	"ETSI", "2.4G", "20M", "CCK", "1T", "07", "28", 
+ 	"MKK", "2.4G", "20M", "CCK", "1T", "07", "32",
+ 	"FCC", "2.4G", "20M", "CCK", "1T", "08", "34", 
+-	"ETSI", "2.4G", "20M", "CCK", "1T", "08", "32", 
++	"ETSI", "2.4G", "20M", "CCK", "1T", "08", "28", 
+ 	"MKK", "2.4G", "20M", "CCK", "1T", "08", "32",
+ 	"FCC", "2.4G", "20M", "CCK", "1T", "09", "32", 
+-	"ETSI", "2.4G", "20M", "CCK", "1T", "09", "32", 
++	"ETSI", "2.4G", "20M", "CCK", "1T", "09", "28", 
+ 	"MKK", "2.4G", "20M", "CCK", "1T", "09", "32",
+ 	"FCC", "2.4G", "20M", "CCK", "1T", "10", "32", 
+-	"ETSI", "2.4G", "20M", "CCK", "1T", "10", "32", 
++	"ETSI", "2.4G", "20M", "CCK", "1T", "10", "28", 
+ 	"MKK", "2.4G", "20M", "CCK", "1T", "10", "32",
+ 	"FCC", "2.4G", "20M", "CCK", "1T", "11", "32", 
+-	"ETSI", "2.4G", "20M", "CCK", "1T", "11", "32", 
++	"ETSI", "2.4G", "20M", "CCK", "1T", "11", "28", 
+ 	"MKK", "2.4G", "20M", "CCK", "1T", "11", "32",
+-	"FCC", "2.4G", "20M", "CCK", "1T", "12", "63", 
+-	"ETSI", "2.4G", "20M", "CCK", "1T", "12", "32", 
++	"FCC", "2.4G", "20M", "CCK", "1T", "12", "28", 
++	"ETSI", "2.4G", "20M", "CCK", "1T", "12", "28", 
+ 	"MKK", "2.4G", "20M", "CCK", "1T", "12", "32",
+-	"FCC", "2.4G", "20M", "CCK", "1T", "13", "63", 
+-	"ETSI", "2.4G", "20M", "CCK", "1T", "13", "32", 
++	"FCC", "2.4G", "20M", "CCK", "1T", "13", "26", 
++	"ETSI", "2.4G", "20M", "CCK", "1T", "13", "28", 
+ 	"MKK", "2.4G", "20M", "CCK", "1T", "13", "32",
+ 	"FCC", "2.4G", "20M", "CCK", "1T", "14", "63", 
+ 	"ETSI", "2.4G", "20M", "CCK", "1T", "14", "63", 
+@@ -3056,10 +3068,10 @@ const char *Array_MP_8821A_TXPWR_LMT_8821A_SAR_13dBm[] = {
+ 	"FCC", "2.4G", "20M", "OFDM", "1T", "11", "30", 
+ 	"ETSI", "2.4G", "20M", "OFDM", "1T", "11", "32", 
+ 	"MKK", "2.4G", "20M", "OFDM", "1T", "11", "32",
+-	"FCC", "2.4G", "20M", "OFDM", "1T", "12", "63", 
++	"FCC", "2.4G", "20M", "OFDM", "1T", "12", "26", 
+ 	"ETSI", "2.4G", "20M", "OFDM", "1T", "12", "32", 
+ 	"MKK", "2.4G", "20M", "OFDM", "1T", "12", "32",
+-	"FCC", "2.4G", "20M", "OFDM", "1T", "13", "63", 
++	"FCC", "2.4G", "20M", "OFDM", "1T", "13", "24", 
+ 	"ETSI", "2.4G", "20M", "OFDM", "1T", "13", "32", 
+ 	"MKK", "2.4G", "20M", "OFDM", "1T", "13", "32",
+ 	"FCC", "2.4G", "20M", "OFDM", "1T", "14", "63", 
+@@ -3098,10 +3110,10 @@ const char *Array_MP_8821A_TXPWR_LMT_8821A_SAR_13dBm[] = {
+ 	"FCC", "2.4G", "20M", "HT", "1T", "11", "26", 
+ 	"ETSI", "2.4G", "20M", "HT", "1T", "11", "32", 
+ 	"MKK", "2.4G", "20M", "HT", "1T", "11", "32",
+-	"FCC", "2.4G", "20M", "HT", "1T", "12", "63", 
++	"FCC", "2.4G", "20M", "HT", "1T", "12", "26", 
+ 	"ETSI", "2.4G", "20M", "HT", "1T", "12", "32", 
+ 	"MKK", "2.4G", "20M", "HT", "1T", "12", "32",
+-	"FCC", "2.4G", "20M", "HT", "1T", "13", "63", 
++	"FCC", "2.4G", "20M", "HT", "1T", "13", "24", 
+ 	"ETSI", "2.4G", "20M", "HT", "1T", "13", "32", 
+ 	"MKK", "2.4G", "20M", "HT", "1T", "13", "32",
+ 	"FCC", "2.4G", "20M", "HT", "1T", "14", "63", 
+@@ -3176,18 +3188,18 @@ const char *Array_MP_8821A_TXPWR_LMT_8821A_SAR_13dBm[] = {
+ 	"FCC", "2.4G", "40M", "HT", "1T", "09", "26", 
+ 	"ETSI", "2.4G", "40M", "HT", "1T", "09", "32", 
+ 	"MKK", "2.4G", "40M", "HT", "1T", "09", "32",
+-	"FCC", "2.4G", "40M", "HT", "1T", "10", "26", 
++	"FCC", "2.4G", "40M", "HT", "1T", "10", "24", 
+ 	"ETSI", "2.4G", "40M", "HT", "1T", "10", "32", 
+ 	"MKK", "2.4G", "40M", "HT", "1T", "10", "32",
+-	"FCC", "2.4G", "40M", "HT", "1T", "11", "26", 
++	"FCC", "2.4G", "40M", "HT", "1T", "11", "22", 
+ 	"ETSI", "2.4G", "40M", "HT", "1T", "11", "32", 
+ 	"MKK", "2.4G", "40M", "HT", "1T", "11", "32",
+ 	"FCC", "2.4G", "40M", "HT", "1T", "12", "63", 
+-	"ETSI", "2.4G", "40M", "HT", "1T", "12", "32", 
+-	"MKK", "2.4G", "40M", "HT", "1T", "12", "32",
++	"ETSI", "2.4G", "40M", "HT", "1T", "12", "63", 
++	"MKK", "2.4G", "40M", "HT", "1T", "12", "63",
+ 	"FCC", "2.4G", "40M", "HT", "1T", "13", "63", 
+-	"ETSI", "2.4G", "40M", "HT", "1T", "13", "32", 
+-	"MKK", "2.4G", "40M", "HT", "1T", "13", "32",
++	"ETSI", "2.4G", "40M", "HT", "1T", "13", "63", 
++	"MKK", "2.4G", "40M", "HT", "1T", "13", "63",
+ 	"FCC", "2.4G", "40M", "HT", "1T", "14", "63", 
+ 	"ETSI", "2.4G", "40M", "HT", "1T", "14", "63", 
+ 	"MKK", "2.4G", "40M", "HT", "1T", "14", "63",
+@@ -3576,45 +3588,45 @@ ODM_ReadAndConfig_MP_8821A_TXPWR_LMT_8821A_SAR_13dBm(
+ *                           TXPWR_LMT_8821A_SAR_5mm.TXT
+ ******************************************************************************/
+ 
+-pu1Byte Array_MP_8821A_TXPWR_LMT_8821A_SAR_5mm[] = { 
++const char *Array_MP_8821A_TXPWR_LMT_8821A_SAR_5mm[] = { 
+ 	"FCC", "2.4G", "20M", "CCK", "1T", "01", "32", 
+-	"ETSI", "2.4G", "20M", "CCK", "1T", "01", "32", 
++	"ETSI", "2.4G", "20M", "CCK", "1T", "01", "28", 
+ 	"MKK", "2.4G", "20M", "CCK", "1T", "01", "32",
+ 	"FCC", "2.4G", "20M", "CCK", "1T", "02", "32", 
+-	"ETSI", "2.4G", "20M", "CCK", "1T", "02", "32", 
++	"ETSI", "2.4G", "20M", "CCK", "1T", "02", "28", 
+ 	"MKK", "2.4G", "20M", "CCK", "1T", "02", "32",
+ 	"FCC", "2.4G", "20M", "CCK", "1T", "03", "34", 
+-	"ETSI", "2.4G", "20M", "CCK", "1T", "03", "32", 
++	"ETSI", "2.4G", "20M", "CCK", "1T", "03", "28", 
+ 	"MKK", "2.4G", "20M", "CCK", "1T", "03", "32",
+ 	"FCC", "2.4G", "20M", "CCK", "1T", "04", "34", 
+-	"ETSI", "2.4G", "20M", "CCK", "1T", "04", "32", 
++	"ETSI", "2.4G", "20M", "CCK", "1T", "04", "28", 
+ 	"MKK", "2.4G", "20M", "CCK", "1T", "04", "32",
+ 	"FCC", "2.4G", "20M", "CCK", "1T", "05", "34", 
+-	"ETSI", "2.4G", "20M", "CCK", "1T", "05", "32", 
++	"ETSI", "2.4G", "20M", "CCK", "1T", "05", "28", 
+ 	"MKK", "2.4G", "20M", "CCK", "1T", "05", "32",
+ 	"FCC", "2.4G", "20M", "CCK", "1T", "06", "34", 
+-	"ETSI", "2.4G", "20M", "CCK", "1T", "06", "32", 
++	"ETSI", "2.4G", "20M", "CCK", "1T", "06", "28", 
+ 	"MKK", "2.4G", "20M", "CCK", "1T", "06", "32",
+ 	"FCC", "2.4G", "20M", "CCK", "1T", "07", "34", 
+-	"ETSI", "2.4G", "20M", "CCK", "1T", "07", "32", 
++	"ETSI", "2.4G", "20M", "CCK", "1T", "07", "28", 
+ 	"MKK", "2.4G", "20M", "CCK", "1T", "07", "32",
+ 	"FCC", "2.4G", "20M", "CCK", "1T", "08", "34", 
+-	"ETSI", "2.4G", "20M", "CCK", "1T", "08", "32", 
++	"ETSI", "2.4G", "20M", "CCK", "1T", "08", "28", 
+ 	"MKK", "2.4G", "20M", "CCK", "1T", "08", "32",
+ 	"FCC", "2.4G", "20M", "CCK", "1T", "09", "32", 
+-	"ETSI", "2.4G", "20M", "CCK", "1T", "09", "32", 
++	"ETSI", "2.4G", "20M", "CCK", "1T", "09", "28", 
+ 	"MKK", "2.4G", "20M", "CCK", "1T", "09", "32",
+ 	"FCC", "2.4G", "20M", "CCK", "1T", "10", "32", 
+-	"ETSI", "2.4G", "20M", "CCK", "1T", "10", "32", 
++	"ETSI", "2.4G", "20M", "CCK", "1T", "10", "28", 
+ 	"MKK", "2.4G", "20M", "CCK", "1T", "10", "32",
+ 	"FCC", "2.4G", "20M", "CCK", "1T", "11", "32", 
+-	"ETSI", "2.4G", "20M", "CCK", "1T", "11", "32", 
++	"ETSI", "2.4G", "20M", "CCK", "1T", "11", "28", 
+ 	"MKK", "2.4G", "20M", "CCK", "1T", "11", "32",
+-	"FCC", "2.4G", "20M", "CCK", "1T", "12", "63", 
+-	"ETSI", "2.4G", "20M", "CCK", "1T", "12", "32", 
++	"FCC", "2.4G", "20M", "CCK", "1T", "12", "28", 
++	"ETSI", "2.4G", "20M", "CCK", "1T", "12", "28", 
+ 	"MKK", "2.4G", "20M", "CCK", "1T", "12", "32",
+-	"FCC", "2.4G", "20M", "CCK", "1T", "13", "63", 
+-	"ETSI", "2.4G", "20M", "CCK", "1T", "13", "32", 
++	"FCC", "2.4G", "20M", "CCK", "1T", "13", "26", 
++	"ETSI", "2.4G", "20M", "CCK", "1T", "13", "28", 
+ 	"MKK", "2.4G", "20M", "CCK", "1T", "13", "32",
+ 	"FCC", "2.4G", "20M", "CCK", "1T", "14", "63", 
+ 	"ETSI", "2.4G", "20M", "CCK", "1T", "14", "63", 
+@@ -3652,10 +3664,10 @@ pu1Byte Array_MP_8821A_TXPWR_LMT_8821A_SAR_5mm[] = {
+ 	"FCC", "2.4G", "20M", "OFDM", "1T", "11", "30", 
+ 	"ETSI", "2.4G", "20M", "OFDM", "1T", "11", "32", 
+ 	"MKK", "2.4G", "20M", "OFDM", "1T", "11", "32",
+-	"FCC", "2.4G", "20M", "OFDM", "1T", "12", "63", 
++	"FCC", "2.4G", "20M", "OFDM", "1T", "12", "26", 
+ 	"ETSI", "2.4G", "20M", "OFDM", "1T", "12", "32", 
+ 	"MKK", "2.4G", "20M", "OFDM", "1T", "12", "32",
+-	"FCC", "2.4G", "20M", "OFDM", "1T", "13", "63", 
++	"FCC", "2.4G", "20M", "OFDM", "1T", "13", "24", 
+ 	"ETSI", "2.4G", "20M", "OFDM", "1T", "13", "32", 
+ 	"MKK", "2.4G", "20M", "OFDM", "1T", "13", "32",
+ 	"FCC", "2.4G", "20M", "OFDM", "1T", "14", "63", 
+@@ -3691,7 +3703,7 @@ pu1Byte Array_MP_8821A_TXPWR_LMT_8821A_SAR_5mm[] = {
+ 	"FCC", "2.4G", "20M", "HT", "1T", "10", "26", 
+ 	"ETSI", "2.4G", "20M", "HT", "1T", "10", "32", 
+ 	"MKK", "2.4G", "20M", "HT", "1T", "10", "32",
+-	"FCC", "2.4G", "20M", "HT", "1T", "11", "26", 
++	"FCC", "2.4G", "20M", "HT", "1T", "11", "24", 
+ 	"ETSI", "2.4G", "20M", "HT", "1T", "11", "32", 
+ 	"MKK", "2.4G", "20M", "HT", "1T", "11", "32",
+ 	"FCC", "2.4G", "20M", "HT", "1T", "12", "63", 
+@@ -3772,18 +3784,18 @@ pu1Byte Array_MP_8821A_TXPWR_LMT_8821A_SAR_5mm[] = {
+ 	"FCC", "2.4G", "40M", "HT", "1T", "09", "26", 
+ 	"ETSI", "2.4G", "40M", "HT", "1T", "09", "32", 
+ 	"MKK", "2.4G", "40M", "HT", "1T", "09", "32",
+-	"FCC", "2.4G", "40M", "HT", "1T", "10", "26", 
++	"FCC", "2.4G", "40M", "HT", "1T", "10", "24", 
+ 	"ETSI", "2.4G", "40M", "HT", "1T", "10", "32", 
+ 	"MKK", "2.4G", "40M", "HT", "1T", "10", "32",
+-	"FCC", "2.4G", "40M", "HT", "1T", "11", "26", 
++	"FCC", "2.4G", "40M", "HT", "1T", "11", "22", 
+ 	"ETSI", "2.4G", "40M", "HT", "1T", "11", "32", 
+ 	"MKK", "2.4G", "40M", "HT", "1T", "11", "32",
+ 	"FCC", "2.4G", "40M", "HT", "1T", "12", "63", 
+-	"ETSI", "2.4G", "40M", "HT", "1T", "12", "32", 
+-	"MKK", "2.4G", "40M", "HT", "1T", "12", "32",
++	"ETSI", "2.4G", "40M", "HT", "1T", "12", "63", 
++	"MKK", "2.4G", "40M", "HT", "1T", "12", "63",
+ 	"FCC", "2.4G", "40M", "HT", "1T", "13", "63", 
+-	"ETSI", "2.4G", "40M", "HT", "1T", "13", "32", 
+-	"MKK", "2.4G", "40M", "HT", "1T", "13", "32",
++	"ETSI", "2.4G", "40M", "HT", "1T", "13", "63", 
++	"MKK", "2.4G", "40M", "HT", "1T", "13", "63",
+ 	"FCC", "2.4G", "40M", "HT", "1T", "14", "63", 
+ 	"ETSI", "2.4G", "40M", "HT", "1T", "14", "63", 
+ 	"MKK", "2.4G", "40M", "HT", "1T", "14", "63",
+@@ -4150,7 +4162,7 @@ ODM_ReadAndConfig_MP_8821A_TXPWR_LMT_8821A_SAR_5mm(
+ {
+ 	u4Byte     i           = 0;
+ 	u4Byte     ArrayLen    = sizeof(Array_MP_8821A_TXPWR_LMT_8821A_SAR_5mm)/sizeof(pu1Byte);
+-	pu1Byte    *Array      = Array_MP_8821A_TXPWR_LMT_8821A_SAR_5mm;
++	pu1Byte    *Array      = (pu1Byte *)Array_MP_8821A_TXPWR_LMT_8821A_SAR_5mm;
+ 
+ 	ODM_RT_TRACE(pDM_Odm, ODM_COMP_INIT, ODM_DBG_LOUD, ("===> ODM_ReadAndConfig_MP_8821A_TXPWR_LMT_8821A_SAR_5mm\n"));
+ 
+@@ -4172,45 +4184,45 @@ ODM_ReadAndConfig_MP_8821A_TXPWR_LMT_8821A_SAR_5mm(
+ *                           TXPWR_LMT_8821A_SAR_8mm.TXT
+ ******************************************************************************/
+ 
+-pu1Byte Array_MP_8821A_TXPWR_LMT_8821A_SAR_8mm[] = { 
++const char *Array_MP_8821A_TXPWR_LMT_8821A_SAR_8mm[] = { 
+ 	"FCC", "2.4G", "20M", "CCK", "1T", "01", "32", 
+-	"ETSI", "2.4G", "20M", "CCK", "1T", "01", "32", 
++	"ETSI", "2.4G", "20M", "CCK", "1T", "01", "28", 
+ 	"MKK", "2.4G", "20M", "CCK", "1T", "01", "32",
+ 	"FCC", "2.4G", "20M", "CCK", "1T", "02", "32", 
+-	"ETSI", "2.4G", "20M", "CCK", "1T", "02", "32", 
++	"ETSI", "2.4G", "20M", "CCK", "1T", "02", "28", 
+ 	"MKK", "2.4G", "20M", "CCK", "1T", "02", "32",
+ 	"FCC", "2.4G", "20M", "CCK", "1T", "03", "36", 
+-	"ETSI", "2.4G", "20M", "CCK", "1T", "03", "32", 
++	"ETSI", "2.4G", "20M", "CCK", "1T", "03", "28", 
+ 	"MKK", "2.4G", "20M", "CCK", "1T", "03", "32",
+ 	"FCC", "2.4G", "20M", "CCK", "1T", "04", "36", 
+-	"ETSI", "2.4G", "20M", "CCK", "1T", "04", "32", 
++	"ETSI", "2.4G", "20M", "CCK", "1T", "04", "28", 
+ 	"MKK", "2.4G", "20M", "CCK", "1T", "04", "32",
+ 	"FCC", "2.4G", "20M", "CCK", "1T", "05", "36", 
+-	"ETSI", "2.4G", "20M", "CCK", "1T", "05", "32", 
++	"ETSI", "2.4G", "20M", "CCK", "1T", "05", "28", 
+ 	"MKK", "2.4G", "20M", "CCK", "1T", "05", "32",
+ 	"FCC", "2.4G", "20M", "CCK", "1T", "06", "36", 
+-	"ETSI", "2.4G", "20M", "CCK", "1T", "06", "32", 
++	"ETSI", "2.4G", "20M", "CCK", "1T", "06", "28", 
+ 	"MKK", "2.4G", "20M", "CCK", "1T", "06", "32",
+ 	"FCC", "2.4G", "20M", "CCK", "1T", "07", "36", 
+-	"ETSI", "2.4G", "20M", "CCK", "1T", "07", "32", 
++	"ETSI", "2.4G", "20M", "CCK", "1T", "07", "28", 
+ 	"MKK", "2.4G", "20M", "CCK", "1T", "07", "32",
+ 	"FCC", "2.4G", "20M", "CCK", "1T", "08", "36", 
+-	"ETSI", "2.4G", "20M", "CCK", "1T", "08", "32", 
++	"ETSI", "2.4G", "20M", "CCK", "1T", "08", "28", 
+ 	"MKK", "2.4G", "20M", "CCK", "1T", "08", "32",
+ 	"FCC", "2.4G", "20M", "CCK", "1T", "09", "32", 
+-	"ETSI", "2.4G", "20M", "CCK", "1T", "09", "32", 
++	"ETSI", "2.4G", "20M", "CCK", "1T", "09", "28", 
+ 	"MKK", "2.4G", "20M", "CCK", "1T", "09", "32",
+ 	"FCC", "2.4G", "20M", "CCK", "1T", "10", "32", 
+-	"ETSI", "2.4G", "20M", "CCK", "1T", "10", "32", 
++	"ETSI", "2.4G", "20M", "CCK", "1T", "10", "28", 
+ 	"MKK", "2.4G", "20M", "CCK", "1T", "10", "32",
+ 	"FCC", "2.4G", "20M", "CCK", "1T", "11", "32", 
+-	"ETSI", "2.4G", "20M", "CCK", "1T", "11", "32", 
++	"ETSI", "2.4G", "20M", "CCK", "1T", "11", "28", 
+ 	"MKK", "2.4G", "20M", "CCK", "1T", "11", "32",
+-	"FCC", "2.4G", "20M", "CCK", "1T", "12", "63", 
+-	"ETSI", "2.4G", "20M", "CCK", "1T", "12", "32", 
++	"FCC", "2.4G", "20M", "CCK", "1T", "12", "28", 
++	"ETSI", "2.4G", "20M", "CCK", "1T", "12", "28", 
+ 	"MKK", "2.4G", "20M", "CCK", "1T", "12", "32",
+-	"FCC", "2.4G", "20M", "CCK", "1T", "13", "63", 
+-	"ETSI", "2.4G", "20M", "CCK", "1T", "13", "32", 
++	"FCC", "2.4G", "20M", "CCK", "1T", "13", "26", 
++	"ETSI", "2.4G", "20M", "CCK", "1T", "13", "28", 
+ 	"MKK", "2.4G", "20M", "CCK", "1T", "13", "32",
+ 	"FCC", "2.4G", "20M", "CCK", "1T", "14", "63", 
+ 	"ETSI", "2.4G", "20M", "CCK", "1T", "14", "63", 
+@@ -4248,10 +4260,10 @@ pu1Byte Array_MP_8821A_TXPWR_LMT_8821A_SAR_8mm[] = {
+ 	"FCC", "2.4G", "20M", "OFDM", "1T", "11", "30", 
+ 	"ETSI", "2.4G", "20M", "OFDM", "1T", "11", "32", 
+ 	"MKK", "2.4G", "20M", "OFDM", "1T", "11", "32",
+-	"FCC", "2.4G", "20M", "OFDM", "1T", "12", "63", 
++	"FCC", "2.4G", "20M", "OFDM", "1T", "12", "26", 
+ 	"ETSI", "2.4G", "20M", "OFDM", "1T", "12", "32", 
+ 	"MKK", "2.4G", "20M", "OFDM", "1T", "12", "32",
+-	"FCC", "2.4G", "20M", "OFDM", "1T", "13", "63", 
++	"FCC", "2.4G", "20M", "OFDM", "1T", "13", "24", 
+ 	"ETSI", "2.4G", "20M", "OFDM", "1T", "13", "32", 
+ 	"MKK", "2.4G", "20M", "OFDM", "1T", "13", "32",
+ 	"FCC", "2.4G", "20M", "OFDM", "1T", "14", "63", 
+@@ -4290,10 +4302,10 @@ pu1Byte Array_MP_8821A_TXPWR_LMT_8821A_SAR_8mm[] = {
+ 	"FCC", "2.4G", "20M", "HT", "1T", "11", "26", 
+ 	"ETSI", "2.4G", "20M", "HT", "1T", "11", "32", 
+ 	"MKK", "2.4G", "20M", "HT", "1T", "11", "32",
+-	"FCC", "2.4G", "20M", "HT", "1T", "12", "63", 
++	"FCC", "2.4G", "20M", "HT", "1T", "12", "26", 
+ 	"ETSI", "2.4G", "20M", "HT", "1T", "12", "32", 
+ 	"MKK", "2.4G", "20M", "HT", "1T", "12", "32",
+-	"FCC", "2.4G", "20M", "HT", "1T", "13", "63", 
++	"FCC", "2.4G", "20M", "HT", "1T", "13", "24", 
+ 	"ETSI", "2.4G", "20M", "HT", "1T", "13", "32", 
+ 	"MKK", "2.4G", "20M", "HT", "1T", "13", "32",
+ 	"FCC", "2.4G", "20M", "HT", "1T", "14", "63", 
+@@ -4368,18 +4380,18 @@ pu1Byte Array_MP_8821A_TXPWR_LMT_8821A_SAR_8mm[] = {
+ 	"FCC", "2.4G", "40M", "HT", "1T", "09", "26", 
+ 	"ETSI", "2.4G", "40M", "HT", "1T", "09", "32", 
+ 	"MKK", "2.4G", "40M", "HT", "1T", "09", "32",
+-	"FCC", "2.4G", "40M", "HT", "1T", "10", "26", 
++	"FCC", "2.4G", "40M", "HT", "1T", "10", "24", 
+ 	"ETSI", "2.4G", "40M", "HT", "1T", "10", "32", 
+ 	"MKK", "2.4G", "40M", "HT", "1T", "10", "32",
+-	"FCC", "2.4G", "40M", "HT", "1T", "11", "26", 
++	"FCC", "2.4G", "40M", "HT", "1T", "11", "22", 
+ 	"ETSI", "2.4G", "40M", "HT", "1T", "11", "32", 
+ 	"MKK", "2.4G", "40M", "HT", "1T", "11", "32",
+ 	"FCC", "2.4G", "40M", "HT", "1T", "12", "63", 
+-	"ETSI", "2.4G", "40M", "HT", "1T", "12", "32", 
+-	"MKK", "2.4G", "40M", "HT", "1T", "12", "32",
++	"ETSI", "2.4G", "40M", "HT", "1T", "12", "63", 
++	"MKK", "2.4G", "40M", "HT", "1T", "12", "63",
+ 	"FCC", "2.4G", "40M", "HT", "1T", "13", "63", 
+-	"ETSI", "2.4G", "40M", "HT", "1T", "13", "32", 
+-	"MKK", "2.4G", "40M", "HT", "1T", "13", "32",
++	"ETSI", "2.4G", "40M", "HT", "1T", "13", "63", 
++	"MKK", "2.4G", "40M", "HT", "1T", "13", "63",
+ 	"FCC", "2.4G", "40M", "HT", "1T", "14", "63", 
+ 	"ETSI", "2.4G", "40M", "HT", "1T", "14", "63", 
+ 	"MKK", "2.4G", "40M", "HT", "1T", "14", "63",
+@@ -4746,7 +4758,7 @@ ODM_ReadAndConfig_MP_8821A_TXPWR_LMT_8821A_SAR_8mm(
+ {
+ 	u4Byte     i           = 0;
+ 	u4Byte     ArrayLen    = sizeof(Array_MP_8821A_TXPWR_LMT_8821A_SAR_8mm)/sizeof(pu1Byte);
+-	pu1Byte    *Array      = Array_MP_8821A_TXPWR_LMT_8821A_SAR_8mm;
++	pu1Byte    *Array      = (pu1Byte *)Array_MP_8821A_TXPWR_LMT_8821A_SAR_8mm;
+ 
+ 	ODM_RT_TRACE(pDM_Odm, ODM_COMP_INIT, ODM_DBG_LOUD, ("===> ODM_ReadAndConfig_MP_8821A_TXPWR_LMT_8821A_SAR_8mm\n"));
+ 
+diff --git a/drivers/net/wireless/rtlwifi/rtl8821as/hal/phydm/rtl8821a/halhwimg8821a_rf.h b/drivers/net/wireless/rtlwifi/rtl8821as/hal/phydm/rtl8821a/halhwimg8821a_rf.h
+index 2dfa77b..cb068c0 100644
+--- a/drivers/net/wireless/rtlwifi/rtl8821as/hal/phydm/rtl8821a/halhwimg8821a_rf.h
++++ b/drivers/net/wireless/rtlwifi/rtl8821as/hal/phydm/rtl8821a/halhwimg8821a_rf.h
+@@ -18,7 +18,7 @@
+ * 
+ ******************************************************************************/
+ 
+-/*Image2HeaderVersion: 2.7*/
++/*Image2HeaderVersion: 2.12*/
+ #if (RTL8821A_SUPPORT == 1)
+ #ifndef __INC_MP_RF_HW_IMG_8821A_H
+ #define __INC_MP_RF_HW_IMG_8821A_H
+diff --git a/drivers/net/wireless/rtlwifi/rtl8821as/hal/rtl8812a/rtl8812a_hal_init.c b/drivers/net/wireless/rtlwifi/rtl8821as/hal/rtl8812a/rtl8812a_hal_init.c
+index bc1fb0c..2a3cfbf 100755
+--- a/drivers/net/wireless/rtlwifi/rtl8821as/hal/rtl8812a/rtl8812a_hal_init.c
++++ b/drivers/net/wireless/rtlwifi/rtl8821as/hal/rtl8812a/rtl8812a_hal_init.c
+@@ -5148,10 +5148,14 @@ static void hw_var_set_mlme_disconnect(PADAPTER Adapter, u8 variable, u8* val)
+ 
+ static void hw_var_set_mlme_sitesurvey(PADAPTER Adapter, u8 variable, u8* val)
+ {
++	struct dvobj_priv *dvobj = adapter_to_dvobj(Adapter);
+ 	u32	value_rcr, rcr_clear_bit, reg_bcn_ctl;
+ 	u16	value_rxfltmap2;
+ 	HAL_DATA_TYPE *pHalData = GET_HAL_DATA(Adapter);
+ 	struct mlme_priv *pmlmepriv=&(Adapter->mlmepriv);
++	u8 ap_num;
++
++	rtw_dev_iface_status(Adapter, NULL, NULL, NULL, &ap_num, NULL);
+ 
+ #ifdef CONFIG_CONCURRENT_MODE
+ 	if(Adapter->iface_type == IFACE_PORT1)
+@@ -5209,13 +5213,8 @@ static void hw_var_set_mlme_sitesurvey(PADAPTER Adapter, u8 variable, u8* val)
+ 		// Save orignal RRSR setting.
+ 		pHalData->RegRRSR = rtw_read16(Adapter, REG_RRSR);
+ 
+-#ifdef CONFIG_CONCURRENT_MODE
+-		if(check_buddy_mlmeinfo_state(Adapter, WIFI_FW_AP_STATE) &&
+-			check_buddy_fwstate(Adapter, _FW_LINKED))
+-		{
++		if (ap_num)
+ 			StopTxBeacon(Adapter);
+-		}
+-#endif
+ 	}
+ 	else//sitesurvey done
+ 	{
+@@ -5240,13 +5239,28 @@ static void hw_var_set_mlme_sitesurvey(PADAPTER Adapter, u8 variable, u8* val)
+ 		// Restore orignal RRSR setting.
+ 		rtw_write16(Adapter, REG_RRSR, pHalData->RegRRSR);
+ 
+-#ifdef CONFIG_CONCURRENT_MODE
+-		if(check_buddy_mlmeinfo_state(Adapter, WIFI_FW_AP_STATE) &&
+-			check_buddy_fwstate(Adapter, _FW_LINKED))
+-		{
+-			ResumeTxBeacon(Adapter);			
++		if (ap_num) {
++			int i;
++			_adapter *iface;
++
++			ResumeTxBeacon(Adapter);
++			for (i = 0; i < dvobj->iface_nums; i++) {
++				iface = dvobj->padapters[i];
++				if (!iface)
++					continue;
++
++				if (check_fwstate(&iface->mlmepriv, WIFI_AP_STATE) == _TRUE
++					&& check_fwstate(&iface->mlmepriv, WIFI_ASOC_STATE) == _TRUE
++				) {
++					iface->mlmepriv.update_bcn = _TRUE;
++					#ifndef CONFIG_INTERRUPT_BASED_TXBCN
++					#if defined(CONFIG_USB_HCI) || defined(CONFIG_SDIO_HCI) || defined(CONFIG_GSPI_HCI)
++					tx_beacon_hdl(iface, NULL);
++					#endif
++					#endif			
++				}
++			}
+ 		}
+-#endif
+ 	}		
+ }
+ 
+diff --git a/drivers/net/wireless/rtlwifi/rtl8821as/hal/rtl8812a/sdio/rtl8812as_xmit.c b/drivers/net/wireless/rtlwifi/rtl8821as/hal/rtl8812a/sdio/rtl8812as_xmit.c
+index 8e50824..516cc2c8 100755
+--- a/drivers/net/wireless/rtlwifi/rtl8821as/hal/rtl8812a/sdio/rtl8812as_xmit.c
++++ b/drivers/net/wireless/rtlwifi/rtl8821as/hal/rtl8812a/sdio/rtl8812as_xmit.c
+@@ -415,8 +415,6 @@ static s32 _dequeue_writeport(PADAPTER padapter)
+ 	struct xmit_priv *pxmitpriv;
+ 	struct dvobj_priv *pdvobjpriv;
+ 	struct xmit_buf *pxmitbuf;
+-	PADAPTER pri_padapter;
+-	s32 ret = _FALSE;
+ 	u8	PageIdx = 0;
+ 	u32	deviceId;
+ #ifdef CONFIG_SDIO_TX_ENABLE_AVAL_INT
+@@ -429,19 +427,8 @@ static s32 _dequeue_writeport(PADAPTER padapter)
+ 	pmlmepriv = &padapter->mlmepriv;
+ 	pxmitpriv = &padapter->xmitpriv;
+ 	pdvobjpriv = adapter_to_dvobj(padapter);
+-	pri_padapter = padapter;
+ 
+-#ifdef CONFIG_CONCURRENT_MODE
+-	if (padapter->adapter_type > 0)
+-		pri_padapter = padapter->pbuddy_adapter;
+-
+-	if (rtw_buddy_adapter_up(padapter))
+-		ret = check_buddy_fwstate(padapter, _FW_UNDER_SURVEY);
+-#endif
+-
+-	ret = ret || check_fwstate(pmlmepriv, _FW_UNDER_SURVEY);
+-
+-	if (_TRUE == ret)
++	if (rtw_xmit_ac_blocked(padapter) == _TRUE)
+ 		pxmitbuf = dequeue_pending_xmitbuf_under_survey(pxmitpriv);
+ 	else
+ 		pxmitbuf = dequeue_pending_xmitbuf(pxmitpriv);
+@@ -467,9 +454,8 @@ static s32 _dequeue_writeport(PADAPTER padapter)
+ 	}
+ 
+ query_free_page:
+-	// check if hardware tx fifo page is enough
+-	if( _FALSE == rtw_hal_sdio_query_tx_freepage(pri_padapter, PageIdx, pxmitbuf->pg_num))
+-	{
++	/* check if hardware tx fifo page is enough */
++	if (_FALSE == rtw_hal_sdio_query_tx_freepage(padapter, PageIdx, pxmitbuf->pg_num)) {
+ #ifdef CONFIG_SDIO_TX_ENABLE_AVAL_INT
+ 		if (!bUpdatePageNum) {
+ 			// Total number of page is NOT available, so update current FIFO status
+@@ -511,7 +497,7 @@ query_free_page:
+ 
+ 	rtw_write_port(padapter, deviceId, pxmitbuf->len, (u8 *)pxmitbuf);
+ 
+-	rtw_hal_sdio_update_tx_freepage(pri_padapter, PageIdx, pxmitbuf->pg_num);
++	rtw_hal_sdio_update_tx_freepage(padapter, PageIdx, pxmitbuf->pg_num);
+ 
+ free_xmitbuf:
+ 	//rtw_free_xmitframe(pxmitpriv, pframe);
+diff --git a/drivers/net/wireless/rtlwifi/rtl8821as/include/Hal8188FPhyReg.h b/drivers/net/wireless/rtlwifi/rtl8821as/include/Hal8188FPhyReg.h
+index 71746db..e955624 100644
+--- a/drivers/net/wireless/rtlwifi/rtl8821as/include/Hal8188FPhyReg.h
++++ b/drivers/net/wireless/rtlwifi/rtl8821as/include/Hal8188FPhyReg.h
+@@ -450,6 +450,8 @@
+ #define 	RF_TXPA_G4					0x46	
+ #define 	RF_TXPA_A4					0x4B	
+ #define 	RF_0x52 					0x52
++#define		RF_RXG_MIX_SWBW				0x87
++#define		RF_DBG_LP_RX2				0xDF
+ #define 	RF_WE_LUT					0xEF	
+ #define 	RF_S0S1 					0xB0
+ 
+@@ -1112,6 +1114,7 @@
+ #define rDPDT_control				0x92c
+ #define rfe_ctrl_anta_src				0x930
+ #define rS0S1_PathSwitch   			0x948
++#define	BBrx_DFIR						0x954
+ #define AGC_table_select				0xb2c
+ 
+ //
+diff --git a/drivers/net/wireless/rtlwifi/rtl8821as/include/rtl8812a_hal.h b/drivers/net/wireless/rtlwifi/rtl8821as/include/rtl8812a_hal.h
+index 76d35c5..89265c2 100755
+--- a/drivers/net/wireless/rtlwifi/rtl8821as/include/rtl8812a_hal.h
++++ b/drivers/net/wireless/rtlwifi/rtl8821as/include/rtl8812a_hal.h
+@@ -157,7 +157,7 @@ typedef struct _RT_FIRMWARE_8812 {
+ 
+ //for 8812
+ // TX 128K, RX 16K, Page size 512B for TX, 128B for RX
+-#define MAX_RX_DMA_BUFFER_SIZE_8812	0x4000   /* 0x4000  // RX 16K */
++#define MAX_RX_DMA_BUFFER_SIZE_8812	0x3E80 /* RX 16K */
+ 
+ #ifdef CONFIG_WOWLAN
+ #define RESV_FMWF	WKFMCAM_SIZE*MAX_WKFM_NUM /* 16 entries, for each is 24 bytes*/
+@@ -206,7 +206,7 @@ typedef struct _RT_FIRMWARE_8812 {
+ #define PAGE_SIZE_TX_8821A					256
+ #define PAGE_SIZE_RX_8821A					128
+ 
+-#define MAX_RX_DMA_BUFFER_SIZE_8821			0x4000	/* RX 16K */
++#define MAX_RX_DMA_BUFFER_SIZE_8821			0x3E80 /* RX 16K */
+ 
+ #ifdef CONFIG_FW_C2H_DEBUG 
+ #define RX_DMA_RESERVED_SIZE_8821	0x100	// 256B, reserved for c2h debug message
+diff --git a/drivers/net/wireless/rtlwifi/rtl8821as/include/rtw_debug.h b/drivers/net/wireless/rtlwifi/rtl8821as/include/rtw_debug.h
+index df7148a..047d7a0 100755
+--- a/drivers/net/wireless/rtlwifi/rtl8821as/include/rtw_debug.h
++++ b/drivers/net/wireless/rtlwifi/rtl8821as/include/rtw_debug.h
+@@ -368,6 +368,15 @@ ssize_t proc_set_roam_tgt_addr(struct file *file, const char __user *buffer, siz
+ int proc_get_qos_option(struct seq_file *m, void *v);
+ int proc_get_ht_option(struct seq_file *m, void *v);
+ int proc_get_rf_info(struct seq_file *m, void *v);
++int proc_get_scan_param(struct seq_file *m, void *v);
++ssize_t proc_set_scan_param(struct file *file, const char __user *buffer, size_t count, loff_t *pos, void *data);
++int proc_get_scan_abort(struct seq_file *m, void *v);
++#ifdef CONFIG_SCAN_BACKOP
++int proc_get_backop_flags_sta(struct seq_file *m, void *v);
++ssize_t proc_set_backop_flags_sta(struct file *file, const char __user *buffer, size_t count, loff_t *pos, void *data);
++int proc_get_backop_flags_ap(struct seq_file *m, void *v);
++ssize_t proc_set_backop_flags_ap(struct file *file, const char __user *buffer, size_t count, loff_t *pos, void *data);
++#endif /* CONFIG_SCAN_BACKOP */
+ int proc_get_survey_info(struct seq_file *m, void *v);
+ ssize_t proc_set_survey_info(struct file *file, const char __user *buffer, size_t count, loff_t *pos, void *data);
+ int proc_get_ap_info(struct seq_file *m, void *v);
+@@ -476,6 +485,12 @@ int proc_get_rx_ring(struct seq_file *m, void *v);
+ int proc_get_tx_ring(struct seq_file *m, void *v);
+ #endif
+ 
++#ifdef CONFIG_GPIO_WAKEUP
++int proc_get_wowlan_gpio_info(struct seq_file *m, void *v);
++ssize_t proc_set_wowlan_gpio_info(struct file *file, const char __user *buffer,
++		size_t count, loff_t *pos, void *data);
++#endif /*CONFIG_GPIO_WAKEUP*/
++
+ #ifdef CONFIG_P2P_WOWLAN
+ int proc_get_p2p_wowlan_info(struct seq_file *m, void *v);
+ #endif /* CONFIG_P2P_WOWLAN */
+diff --git a/drivers/net/wireless/rtlwifi/rtl8821as/include/rtw_mlme.h b/drivers/net/wireless/rtlwifi/rtl8821as/include/rtw_mlme.h
+index 34c9b50..4058731 100755
+--- a/drivers/net/wireless/rtlwifi/rtl8821as/include/rtw_mlme.h
++++ b/drivers/net/wireless/rtlwifi/rtl8821as/include/rtw_mlme.h
+@@ -29,11 +29,11 @@
+ //	Commented by Albert 20101105
+ //	Increase the scanning timeout because of increasing the SURVEY_TO value.
+ 
+-#define 	SCANNING_TIMEOUT 	8000
+-#ifdef CONFIG_STA_MODE_SCAN_UNDER_AP_MODE
+-#define		CONC_SCANNING_TIMEOUT_SINGLE_BAND 10000
+-#define		CONC_SCANNING_TIMEOUT_DUAL_BAND 15000
+-#endif //CONFIG_STA_MODE_SCAN_UNDER_AP_MODE
++#define SCANNING_TIMEOUT 8000
++#ifdef CONFIG_SCAN_BACKOP
++#define CONC_SCANNING_TIMEOUT_SINGLE_BAND 10000
++#define CONC_SCANNING_TIMEOUT_DUAL_BAND 15000
++#endif
+ 
+ #ifdef PALTFORM_OS_WINCE
+ #define	SCANQUEUE_LIFETIME 12000000 // unit:us
+diff --git a/drivers/net/wireless/rtlwifi/rtl8821as/include/rtw_mlme_ext.h b/drivers/net/wireless/rtlwifi/rtl8821as/include/rtw_mlme_ext.h
+index 2c9a511..8089766 100755
+--- a/drivers/net/wireless/rtlwifi/rtl8821as/include/rtw_mlme_ext.h
++++ b/drivers/net/wireless/rtlwifi/rtl8821as/include/rtw_mlme_ext.h
+@@ -293,17 +293,6 @@ typedef enum _HT_IOT_PEER
+ 	HT_IOT_PEER_MAX 				= 18
+ }HT_IOT_PEER_E, *PHTIOT_PEER_E;
+ 
+-
+-enum SCAN_STATE
+-{
+-	SCAN_DISABLE = 0,
+-	SCAN_START = 1,
+-	SCAN_TXNULL = 2,
+-	SCAN_PROCESS = 3,
+-	SCAN_COMPLETE = 4,
+-	SCAN_STATE_MAX,
+-};
+-
+ struct mlme_handler {
+ 	unsigned int   num;
+ 	char* str;
+@@ -316,12 +305,62 @@ struct action_handler {
+ 	unsigned int (*func)(_adapter *padapter, union recv_frame *precv_frame);
+ };
+ 
+-struct	ss_res	
++enum SCAN_STATE
+ {
+-	int	state;
++	SCAN_DISABLE = 0,
++	SCAN_START = 1,
++	SCAN_PS_ANNC_WAIT = 2,
++	SCAN_ENTER = 3,
++	SCAN_PROCESS = 4,
++
++	/* backop */
++	SCAN_BACKING_OP = 5,
++	SCAN_BACK_OP = 6,
++	SCAN_LEAVING_OP = 7,
++	SCAN_LEAVE_OP = 8,
++
++	/* SW antenna diversity (before linked) */
++	SCAN_SW_ANTDIV_BL = 9,
++
++	/* legacy p2p */
++	SCAN_TO_P2P_LISTEN = 10, 
++	SCAN_P2P_LISTEN = 11,
++
++	SCAN_COMPLETE = 12,
++	SCAN_STATE_MAX,
++};
++
++const char *scan_state_str(u8 state);
++
++enum ss_backop_flag {
++	SS_BACKOP_EN = BIT0, /* backop when linked */
++	SS_BACKOP_EN_NL = BIT1, /* backop even when no linked */
++
++	SS_BACKOP_PS_ANNC = BIT4,
++	SS_BACKOP_TX_RESUME = BIT5,
++};
++
++struct ss_res {
++	u8 state;
++	u8 next_state; /* will set to state on next cmd hdl */
+ 	int	bss_cnt;
+ 	int	channel_idx;
+ 	int	scan_mode;
++	u16 scan_ch_ms;
++	u8 rx_ampdu_accept;
++	u8 rx_ampdu_size;
++#ifdef CONFIG_SCAN_BACKOP
++	u8 backop_flags_sta; /* policy for station mode*/
++	u8 backop_flags_ap; /* policy for ap mode */
++	u8 backop_flags; /* per backop runtime decision */
++	u8 scan_cnt;
++	u8 scan_cnt_max;
++	u32 backop_time; /* the start time of backop */
++	u16 backop_ms;
++#endif
++#if defined(CONFIG_ANTENNA_DIVERSITY) || defined(DBG_SCAN_SW_ANTDIV_BL)
++	u8 is_sw_antdiv_bl_scan;
++#endif
+ 	u8 ssid_num;
+ 	u8 ch_num;
+ 	NDIS_802_11_SSID ssid[RTW_SSID_SCAN_AMOUNT];
+@@ -377,10 +416,10 @@ struct FW_Sta_Info
+  * it should switch back to AP's operating channel periodically.
+  * Parameters info:
+  * When the driver scanned RTW_SCAN_NUM_OF_CH channels, it would switch back to AP's operating channel for
+- * RTW_STAY_AP_CH_MILLISECOND * SURVEY_TO milliseconds.
++ * RTW_BACK_OP_CH_MS milliseconds.
+  * Example:
+  * For chip supports 2.4G + 5GHz and AP mode is operating in channel 1, 
+- * RTW_SCAN_NUM_OF_CH is 8, RTW_STAY_AP_CH_MILLISECOND is 3 and SURVEY_TO is 100.
++ * RTW_SCAN_NUM_OF_CH is 8, RTW_BACK_OP_CH_MS is 300
+  * When it's STA mode gets set_scan command, 
+  * it would 
+  * 1. Doing the scan on channel 1.2.3.4.5.6.7.8 
+@@ -389,15 +428,13 @@ struct FW_Sta_Info
+  * 4. Back to channel 1 for 300 milliseconds
+  * 5. ... and so on, till survey done.
+  */
+-#if defined(CONFIG_ATMEL_RC_PATCH) 
+-#define RTW_SCAN_NUM_OF_CH			2
+-#define RTW_STAY_AP_CH_MILLISECOND		2	// this value is a multiplier,for example, when this value is 3, 
+-							// it would stay AP's op ch for  3 * SURVEY_TO millisecond.
+-#elif defined(CONFIG_STA_MODE_SCAN_UNDER_AP_MODE)
+-#define RTW_SCAN_NUM_OF_CH			3
+-#define RTW_STAY_AP_CH_MILLISECOND		4	// this value is a multiplier,for example, when this value is 3, 
+-							// it would stay AP's op ch for  3 * SURVEY_TO millisecond.
+-#endif 
++#if defined(CONFIG_ATMEL_RC_PATCH)
++#define RTW_SCAN_NUM_OF_CH 2
++#define RTW_BACK_OP_CH_MS 200
++#else
++#define RTW_SCAN_NUM_OF_CH 3
++#define RTW_BACK_OP_CH_MS 400
++#endif
+ 
+ struct mlme_ext_info
+ {
+@@ -444,11 +481,6 @@ struct mlme_ext_info
+ 	struct HT_info_element		HT_info;
+ 	WLAN_BSSID_EX			network;//join network or bss_network, if in ap mode, it is the same to cur_network.network
+ 	struct FW_Sta_Info		FW_sta_info[NUM_STA];
+-
+-#if defined(CONFIG_STA_MODE_SCAN_UNDER_AP_MODE) || defined(CONFIG_ATMEL_RC_PATCH)
+-	u8 scan_cnt;
+-	u8 backop_cnt;
+-#endif //CONFIG_STA_MODE_SCAN_UNDER_AP_MODE
+ };
+ 
+ // The channel information about this channel including joining, scanning, and power constraints.
+@@ -573,7 +605,6 @@ struct mlme_ext_priv
+ 	_timer		sa_query_timer;
+ #endif //CONFIG_IEEE80211W
+ 	//_timer		ADDBA_timer;
+-	u16			chan_scan_time;
+ 	u32 last_scan_time;
+ 	u8	scan_abort;
+ 	u8	tx_rate; // TXRATE when USERATE is set.
+@@ -611,6 +642,58 @@ struct mlme_ext_priv
+ };
+ 
+ #define mlmeext_msr(mlmeext) ((mlmeext)->mlmext_info.state & 0x03)
++#define mlmeext_scan_state(mlmeext) ((mlmeext)->sitesurvey_res.state)
++#define mlmeext_scan_state_str(mlmeext) scan_state_str((mlmeext)->sitesurvey_res.state)
++#define mlmeext_chk_scan_state(mlmeext, _state) ((mlmeext)->sitesurvey_res.state == (_state))
++#define mlmeext_set_scan_state(mlmeext, _state) \
++	do { \
++		((mlmeext)->sitesurvey_res.state = (_state)); \
++		((mlmeext)->sitesurvey_res.next_state = (_state)); \
++		/* DBG_871X("set_scan_state:%s\n", scan_state_str(_state)); */ \
++	} while (0)
++
++#define mlmeext_scan_next_state(mlmeext) ((mlmeext)->sitesurvey_res.next_state)
++#define mlmeext_set_scan_next_state(mlmeext, _state) \
++	do { \
++		((mlmeext)->sitesurvey_res.next_state = (_state)); \
++		/* DBG_871X("set_scan_next_state:%s\n", scan_state_str(_state)); */ \
++	} while (0)
++
++#ifdef CONFIG_SCAN_BACKOP
++#define mlmeext_scan_backop_flags(mlmeext) ((mlmeext)->sitesurvey_res.backop_flags)
++#define mlmeext_chk_scan_backop_flags(mlmeext, flags) ((mlmeext)->sitesurvey_res.backop_flags & (flags))
++#define mlmeext_assign_scan_backop_flags(mlmeext, flags) \
++		do { \
++			((mlmeext)->sitesurvey_res.backop_flags = (flags)); \
++			DBG_871X("assign_scan_backop_flags:0x%02x\n", (mlmeext)->sitesurvey_res.backop_flags); \
++		} while (0)
++
++#define mlmeext_scan_backop_flags_sta(mlmeext) ((mlmeext)->sitesurvey_res.backop_flags_sta)
++#define mlmeext_chk_scan_backop_flags_sta(mlmeext, flags) ((mlmeext)->sitesurvey_res.backop_flags_sta & (flags))
++#define mlmeext_assign_scan_backop_flags_sta(mlmeext, flags) \
++	do { \
++		((mlmeext)->sitesurvey_res.backop_flags_sta = (flags)); \
++	} while (0)
++
++#define mlmeext_scan_backop_flags_ap(mlmeext) ((mlmeext)->sitesurvey_res.backop_flags_ap)
++#define mlmeext_chk_scan_backop_flags_ap(mlmeext, flags) ((mlmeext)->sitesurvey_res.backop_flags_ap & (flags))
++#define mlmeext_assign_scan_backop_flags_ap(mlmeext, flags) \
++	do { \
++		((mlmeext)->sitesurvey_res.backop_flags_ap = (flags)); \
++	} while (0)
++#else
++#define mlmeext_scan_backop_flags(mlmeext) (0)
++#define mlmeext_chk_scan_backop_flags(mlmeext, flags) (0)
++#define mlmeext_assign_scan_backop_flags(mlmeext, flags) do {} while (0)
++
++#define mlmeext_scan_backop_flags_sta(mlmeext) (0)
++#define mlmeext_chk_scan_backop_flags_sta(mlmeext, flags) (0)
++#define mlmeext_assign_scan_backop_flags_sta(mlmeext, flags) do {} while (0)
++
++#define mlmeext_scan_backop_flags_ap(mlmeext) (0)
++#define mlmeext_chk_scan_backop_flags_ap(mlmeext, flags) (0)
++#define mlmeext_assign_scan_backop_flags_ap(mlmeext, flags) do {} while (0)
++#endif
+ 
+ void init_mlme_default_rate_set(_adapter* padapter);
+ int init_mlme_ext_priv(_adapter* padapter);
+@@ -680,7 +763,7 @@ void flush_all_cam_entry(_adapter *padapter);
+ 
+ BOOLEAN IsLegal5GChannel(PADAPTER Adapter, u8 channel);
+ 
+-void site_survey(_adapter *padapter);
++void site_survey(_adapter *padapter, u8 survey_channel, RT_SCAN_TYPE ScanType);
+ u8 collect_bss_info(_adapter *padapter, union recv_frame *precv_frame, WLAN_BSSID_EX *bssid);
+ void update_network(WLAN_BSSID_EX *dst, WLAN_BSSID_EX *src, _adapter * padapter, bool update_ie);
+ 
+@@ -852,6 +935,7 @@ unsigned int OnAction_dls(_adapter *padapter, union recv_frame *precv_frame);
+ enum rx_ampdu_reason {
+ 	RX_AMPDU_DRV_FIXED = 1,
+ 	RX_AMPDU_BTCOEX = 2, /* not used, because BTCOEX has its own variable management */
++	RX_AMPDU_DRV_SCAN = 3,
+ };
+ u8 rtw_rx_ampdu_size(_adapter *adapter);
+ bool rtw_rx_ampdu_is_accept(_adapter *adapter);
+diff --git a/drivers/net/wireless/rtlwifi/rtl8821as/include/rtw_p2p.h b/drivers/net/wireless/rtlwifi/rtl8821as/include/rtw_p2p.h
+index 2425cb2b..b1c29e3 100755
+--- a/drivers/net/wireless/rtlwifi/rtl8821as/include/rtw_p2p.h
++++ b/drivers/net/wireless/rtlwifi/rtl8821as/include/rtw_p2p.h
+@@ -148,6 +148,7 @@ void dbg_rtw_p2p_set_role(struct wifidirect_info *wdinfo, enum P2P_ROLE role, co
+ #define rtw_p2p_findphase_ex_set(wdinfo, value) \
+ 	(wdinfo)->find_phase_state_exchange_cnt = (value)
+ 
++#ifdef CONFIG_P2P
+ //is this find phase exchange for social channel scan?
+ #define rtw_p2p_findphase_ex_is_social(wdinfo)   \
+ 	(wdinfo)->find_phase_state_exchange_cnt >= P2P_FINDPHASE_EX_SOCIAL_FIRST
+@@ -155,7 +156,13 @@ void dbg_rtw_p2p_set_role(struct wifidirect_info *wdinfo, enum P2P_ROLE role, co
+ //should we need find phase exchange anymore?
+ #define rtw_p2p_findphase_ex_is_needed(wdinfo) \
+ 	((wdinfo)->find_phase_state_exchange_cnt < P2P_FINDPHASE_EX_MAX && \
+-	(wdinfo)->find_phase_state_exchange_cnt != P2P_FINDPHASE_EX_NONE)
++	(wdinfo)->find_phase_state_exchange_cnt != P2P_FINDPHASE_EX_NONE && \
++	!(wdinfo)->rx_invitereq_info.scan_op_ch_only && \
++	!(wdinfo)->p2p_info.scan_op_ch_only)
++#else
++#define rtw_p2p_findphase_ex_is_social(wdinfo) 0
++#define rtw_p2p_findphase_ex_is_needed(wdinfo) 0
++#endif /* CONFIG_P2P */
+ 
+ #endif
+ 
+diff --git a/drivers/net/wireless/rtlwifi/rtl8821as/include/rtw_pwrctrl.h b/drivers/net/wireless/rtlwifi/rtl8821as/include/rtw_pwrctrl.h
+index 8d94b04..284b834 100755
+--- a/drivers/net/wireless/rtlwifi/rtl8821as/include/rtw_pwrctrl.h
++++ b/drivers/net/wireless/rtlwifi/rtl8821as/include/rtw_pwrctrl.h
+@@ -349,11 +349,15 @@ struct pwrctrl_priv
+ 	u8		wowlan_mode;
+ 	u8		wowlan_p2p_mode;
+ 	u8		wowlan_pno_enable;
++#ifdef CONFIG_GPIO_WAKEUP
++	u8		is_high_active;
++#endif /* CONFIG_GPIO_WAKEUP */
+ #ifdef CONFIG_WOWLAN
+ 	u8		wowlan_txpause_status;
+ 	u8		wowlan_pattern;
+ 	u8		wowlan_pattern_idx;
+ 	u8		wowlan_from_cmd;
++	u64		wowlan_fw_iv;
+ 	struct rtl_priv_pattern	patterns[MAX_WKFM_NUM];
+ #ifdef CONFIG_PNO_SUPPORT
+ 	u8		pno_in_resume;
+@@ -361,9 +365,8 @@ struct pwrctrl_priv
+ 	pno_nlo_info_t	*pnlo_info;
+ 	pno_scan_info_t	*pscan_info;
+ 	pno_ssid_list_t	*pno_ssid_list;
+-#endif
+-	u64		wowlan_fw_iv;
+-#endif // CONFIG_WOWLAN
++#endif /* CONFIG_PNO_SUPPORT */
++#endif /* CONFIG_WOWLAN */
+ 	_timer 	pwr_state_check_timer;
+ 	int		pwr_state_check_interval;
+ 	u8		pwr_state_check_cnts;
+diff --git a/drivers/net/wireless/rtlwifi/rtl8821as/include/rtw_version.h b/drivers/net/wireless/rtlwifi/rtl8821as/include/rtw_version.h
+index 08a77e8..1f30d80 100644
+--- a/drivers/net/wireless/rtlwifi/rtl8821as/include/rtw_version.h
++++ b/drivers/net/wireless/rtlwifi/rtl8821as/include/rtw_version.h
+@@ -1,2 +1,2 @@
+-#define DRIVERVERSION	"v4.3.18_14095.20150506_BTCOEX20150128-51_beta"
++#define DRIVERVERSION	"v4.3.18_14139.20150511_BTCOEX20150128-51_beta"
+ #define BTCOEXVERSION	"BTCOEX20150128-51"
+diff --git a/drivers/net/wireless/rtlwifi/rtl8821as/include/rtw_xmit.h b/drivers/net/wireless/rtlwifi/rtl8821as/include/rtw_xmit.h
+index 8931e08..0050306 100755
+--- a/drivers/net/wireless/rtlwifi/rtl8821as/include/rtw_xmit.h
++++ b/drivers/net/wireless/rtlwifi/rtl8821as/include/rtw_xmit.h
+@@ -454,6 +454,8 @@ enum {
+ 	XMITBUF_CMD = 2,
+ };
+ 
++bool rtw_xmit_ac_blocked(_adapter *adapter);
++
+ struct  submit_ctx{
+ 	u32 submit_time; /* */
+ 	u32 timeout_ms; /* <0: not synchronous, 0: wait forever, >0: up to ms waiting */
+diff --git a/drivers/net/wireless/rtlwifi/rtl8821as/os_dep/linux/ioctl_cfg80211.c b/drivers/net/wireless/rtlwifi/rtl8821as/os_dep/linux/ioctl_cfg80211.c
+index 99742f9..edfc377 100755
+--- a/drivers/net/wireless/rtlwifi/rtl8821as/os_dep/linux/ioctl_cfg80211.c
++++ b/drivers/net/wireless/rtlwifi/rtl8821as/os_dep/linux/ioctl_cfg80211.c
+@@ -3340,6 +3340,7 @@ static int cfg80211_rtw_disconnect(struct wiphy *wiphy, struct net_device *ndev,
+ 	}
+ 
+ 	padapter->mlmepriv.not_indic_disco = _FALSE;
++    cfg80211_disconnected(padapter->pnetdev, 0, NULL, 0, GFP_ATOMIC);
+ 
+ 	DBG_871X(FUNC_NDEV_FMT" return 0\n", FUNC_NDEV_ARG(ndev));
+ 	return 0;
+diff --git a/drivers/net/wireless/rtlwifi/rtl8821as/os_dep/linux/os_intfs.c b/drivers/net/wireless/rtlwifi/rtl8821as/os_dep/linux/os_intfs.c
+index a3961bf..695d546 100755
+--- a/drivers/net/wireless/rtlwifi/rtl8821as/os_dep/linux/os_intfs.c
++++ b/drivers/net/wireless/rtlwifi/rtl8821as/os_dep/linux/os_intfs.c
+@@ -1400,7 +1400,7 @@ u8 rtw_reset_drv_sw(_adapter *padapter)
+ 	pwrctrlpriv->pwr_state_check_cnts = 0;
+ 
+ 	//mlmeextpriv
+-	padapter->mlmeextpriv.sitesurvey_res.state= SCAN_DISABLE;
++	mlmeext_set_scan_state(&padapter->mlmeextpriv, SCAN_DISABLE);
+ 
+ #ifdef CONFIG_NEW_SIGNAL_STAT_PROCESS
+ 	rtw_set_signal_stat_timer(&padapter->recvpriv);
+diff --git a/drivers/net/wireless/rtlwifi/rtl8821as/os_dep/linux/rtw_proc.c b/drivers/net/wireless/rtlwifi/rtl8821as/os_dep/linux/rtw_proc.c
+index f363968..d8afebf 100755
+--- a/drivers/net/wireless/rtlwifi/rtl8821as/os_dep/linux/rtw_proc.c
++++ b/drivers/net/wireless/rtlwifi/rtl8821as/os_dep/linux/rtw_proc.c
+@@ -888,6 +888,12 @@ const struct rtw_proc_hdl adapter_proc_hdls [] = {
+ 	{"qos_option", proc_get_qos_option, NULL},
+ 	{"ht_option", proc_get_ht_option, NULL},
+ 	{"rf_info", proc_get_rf_info, NULL},
++	{"scan_param", proc_get_scan_param, proc_set_scan_param},
++	{"scan_abort", proc_get_scan_abort, NULL},	
++#ifdef CONFIG_SCAN_BACKOP
++	{"backop_flags_sta", proc_get_backop_flags_sta, proc_set_backop_flags_sta},
++	{"backop_flags_ap", proc_get_backop_flags_ap, proc_set_backop_flags_ap},
++#endif
+ 	{"survey_info", proc_get_survey_info, proc_set_survey_info},
+ 	{"ap_info", proc_get_ap_info, NULL},
+ 	{"trx_info", proc_get_trx_info, proc_reset_trx_info},
+@@ -977,6 +983,10 @@ const struct rtw_proc_hdl adapter_proc_hdls [] = {
+ 	{"rx_ring", proc_get_rx_ring, NULL},
+ 	{"tx_ring", proc_get_tx_ring, NULL},
+ #endif
++#ifdef CONFIG_GPIO_WAKEUP
++	{"wowlan_gpio_info", proc_get_wowlan_gpio_info,
++		proc_set_wowlan_gpio_info},
++#endif
+ #ifdef CONFIG_P2P_WOWLAN
+ 	{"p2p_wowlan_info", proc_get_p2p_wowlan_info, NULL},
+ #endif
+-- 
+1.8.0
+

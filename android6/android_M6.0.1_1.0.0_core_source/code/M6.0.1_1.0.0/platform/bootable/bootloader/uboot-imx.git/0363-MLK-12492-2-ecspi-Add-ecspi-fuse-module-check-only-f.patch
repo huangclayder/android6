@@ -1,0 +1,33 @@
+From 9433975cef6a5aef3ff4709ebe68ba97f78740f0 Mon Sep 17 00:00:00 2001
+From: Ye Li <ye.li@nxp.com>
+Date: Fri, 4 Mar 2016 10:22:24 +0800
+Subject: [PATCH] MLK-12492-2 ecspi: Add ecspi fuse module check only for MX6
+
+Need the CONFIG_MX6 for using the mx6_ecspi_fused funtion, otherwise will
+break build for other platforms like MX7.
+
+Signed-off-by: Ye Li <ye.li@nxp.com>
+---
+ drivers/spi/mxc_spi.c | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/drivers/spi/mxc_spi.c b/drivers/spi/mxc_spi.c
+index 7d84865..04d280f 100644
+--- a/drivers/spi/mxc_spi.c
++++ b/drivers/spi/mxc_spi.c
+@@ -414,10 +414,12 @@ struct spi_slave *spi_setup_slave(unsigned int bus, unsigned int cs,
+ 		return NULL;
+ 	}
+ 
++#ifdef CONFIG_MX6
+ 	if (mx6_ecspi_fused(spi_bases[bus])) {
+ 		printf("ECSPI@0x%lx is fused, disable it\n", spi_bases[bus]);
+ 		return NULL;
+ 	}
++#endif
+ 
+ 	mxcs = spi_alloc_slave(struct mxc_spi_slave, bus, cs);
+ 	if (!mxcs) {
+-- 
+1.8.0
+

@@ -1,0 +1,34 @@
+From 62ce7a55d0dcfdfef22e17e9af13ba3b07de6d05 Mon Sep 17 00:00:00 2001
+From: Sachin Kamat <sachin.kamat@linaro.org>
+Date: Fri, 30 May 2014 12:08:48 +0530
+Subject: [PATCH] PCI: imx6: Fix imx6_add_pcie_port() section mismatch warning
+
+imx6_add_pcie_port() is called only from from imx6_pcie_probe() which is
+annotated with __init.  Thus it makes sense to annotate
+imx6_add_pcie_port() with __init to avoid section mismatch warnings.
+
+[bhelgaas: changelog]
+Signed-off-by: Sachin Kamat <sachin.kamat@linaro.org>
+Signed-off-by: Bjorn Helgaas <bhelgaas@google.com>
+Cc: Sean Cross <xobs@kosagi.com>
+(cherry picked from commit 44cb5e94f96cef72a977fc5fdea8095bc0ae25ba)
+---
+ drivers/pci/host/pci-imx6.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/pci/host/pci-imx6.c b/drivers/pci/host/pci-imx6.c
+index 821a018..1f164b3 100644
+--- a/drivers/pci/host/pci-imx6.c
++++ b/drivers/pci/host/pci-imx6.c
+@@ -487,7 +487,7 @@ static struct pcie_host_ops imx6_pcie_host_ops = {
+ 	.host_init = imx6_pcie_host_init,
+ };
+ 
+-static int imx6_add_pcie_port(struct pcie_port *pp,
++static int __init imx6_add_pcie_port(struct pcie_port *pp,
+ 			struct platform_device *pdev)
+ {
+ 	int ret;
+-- 
+1.8.0
+

@@ -1,0 +1,32 @@
+From eb8774f6697bd6f93eb110b9d02aafd17dafae12 Mon Sep 17 00:00:00 2001
+From: Fathi Boudra <fabo@debian.org>
+Date: Wed, 6 Mar 2013 15:50:38 +0200
+Subject: [PATCH] ubuntu-minimal.conf: add CONFIG_CGROUPS and
+ CONFIG_AUTOFS4_FS for systemd
+
+Signed-off-by: Fathi Boudra <fathi.boudra@linaro.org>
+---
+ linaro/configs/ubuntu-minimal.conf | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/linaro/configs/ubuntu-minimal.conf b/linaro/configs/ubuntu-minimal.conf
+index 2c6a13e..057ad01 100644
+--- a/linaro/configs/ubuntu-minimal.conf
++++ b/linaro/configs/ubuntu-minimal.conf
+@@ -1,4 +1,5 @@
+ # CONFIG_LOCALVERSION_AUTO is not set
++CONFIG_CGROUPS=y
+ # CONFIG_COMPAT_BRK is not set
+ CONFIG_DEFAULT_MMAP_MIN_ADDR=32768
+ CONFIG_SECCOMP=y
+@@ -14,6 +15,7 @@ CONFIG_INPUT_MISC=y
+ CONFIG_INPUT_UINPUT=y
+ # CONFIG_DEVKMEM is not set
+ CONFIG_FRAMEBUFFER_CONSOLE=y
++CONFIG_AUTOFS4_FS=y
+ CONFIG_TMPFS_POSIX_ACL=y
+ CONFIG_STRICT_DEVMEM=y
+ CONFIG_SECURITY=y
+-- 
+1.8.0
+

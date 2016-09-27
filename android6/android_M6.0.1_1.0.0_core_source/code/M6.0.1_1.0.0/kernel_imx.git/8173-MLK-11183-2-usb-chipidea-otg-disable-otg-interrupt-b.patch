@@ -1,0 +1,39 @@
+From 303105b310816c17c06c553ee073d31aba13f12c Mon Sep 17 00:00:00 2001
+From: Peter Chen <peter.chen@freescale.com>
+Date: Thu, 2 Jul 2015 09:41:04 +0800
+Subject: [PATCH] MLK-11183-2 usb: chipidea: otg: disable otg interrupt before
+ flush_workqueue
+
+We do not want (care) the interrupt during we remove the otg function,
+so move it beforehand.
+
+Signed-off-by: Peter Chen <peter.chen@freescale.com>
+---
+ drivers/usb/chipidea/otg.c | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/drivers/usb/chipidea/otg.c b/drivers/usb/chipidea/otg.c
+index 9f9cd6a..9bb4278 100644
+--- a/drivers/usb/chipidea/otg.c
++++ b/drivers/usb/chipidea/otg.c
+@@ -217,14 +217,14 @@ int ci_hdrc_otg_init(struct ci_hdrc *ci)
+  */
+ void ci_hdrc_otg_destroy(struct ci_hdrc *ci)
+ {
++	/* Disable all OTG irq and clear status */
++	hw_write_otgsc(ci, OTGSC_INT_EN_BITS | OTGSC_INT_STATUS_BITS,
++						OTGSC_INT_STATUS_BITS);
+ 	if (ci->wq) {
+ 		flush_workqueue(ci->wq);
+ 		destroy_workqueue(ci->wq);
+ 		ci->wq = NULL;
+ 	}
+-	/* Disable all OTG irq and clear status */
+-	hw_write_otgsc(ci, OTGSC_INT_EN_BITS | OTGSC_INT_STATUS_BITS,
+-						OTGSC_INT_STATUS_BITS);
+ 	if (ci_otg_is_fsm_mode(ci))
+ 		ci_hdrc_otg_fsm_remove(ci);
+ }
+-- 
+1.8.0
+

@@ -1,0 +1,44 @@
+From e99a85de7370f0630ce507ea4399fdcde42da146 Mon Sep 17 00:00:00 2001
+From: Peng Fan <Peng.Fan@freescale.com>
+Date: Tue, 31 Mar 2015 09:23:19 +0800
+Subject: [PATCH] MLK-10774-40 imx: mx7dsabresd: Add build target for QPSI and
+ NAND
+
+Add targets for building u-boot to support QSPI booting and NAND booting.
+NAND booting can't work on mx7d TO1.0
+
+Signed-off-by: Peng Fan <Peng.Fan@freescale.com>
+---
+ configs/mx7dsabresd_nand_defconfig  | 7 +++++++
+ configs/mx7dsabresd_qspi1_defconfig | 7 +++++++
+ 2 files changed, 14 insertions(+)
+
+diff --git a/configs/mx7dsabresd_nand_defconfig b/configs/mx7dsabresd_nand_defconfig
+new file mode 100644
+index 0000000..a75c79c
+--- /dev/null
++++ b/configs/mx7dsabresd_nand_defconfig
+@@ -0,0 +1,7 @@
++CONFIG_SYS_EXTRA_OPTIONS="IMX_CONFIG=board/freescale/mx7dsabresd/imximage.cfg,MX7D,SYS_BOOT_NAND"
++CONFIG_ARM=y
++CONFIG_TARGET_MX7DSABRESD=y
++CONFIG_SYS_MALLOC_F=y
++CONFIG_SYS_MALLOC_F_LEN=0x400
++CONFIG_DM=y
++CONFIG_DM_THERMAL=y
+diff --git a/configs/mx7dsabresd_qspi1_defconfig b/configs/mx7dsabresd_qspi1_defconfig
+new file mode 100644
+index 0000000..732b99a
+--- /dev/null
++++ b/configs/mx7dsabresd_qspi1_defconfig
+@@ -0,0 +1,7 @@
++CONFIG_SYS_EXTRA_OPTIONS="IMX_CONFIG=board/freescale/mx7dsabresd/imximage.cfg,MX7D,SYS_BOOT_QSPI"
++CONFIG_ARM=y
++CONFIG_TARGET_MX7DSABRESD=y
++CONFIG_SYS_MALLOC_F=y
++CONFIG_SYS_MALLOC_F_LEN=0x400
++CONFIG_DM=y
++CONFIG_DM_THERMAL=y
+-- 
+1.8.0
+

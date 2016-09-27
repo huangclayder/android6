@@ -1,0 +1,73 @@
+From 014830fb8b7d1e49c8138c71184b5215bd51d382 Mon Sep 17 00:00:00 2001
+From: Zhang Sanshan <b51434@freescale.com>
+Date: Wed, 3 Jun 2015 13:27:10 +0800
+Subject: [PATCH 496/602] MA-6764 [Android_MX7D_SD] Udisk: Udisk cannot mount.
+ 100%
+
+The default udisk port is setted in USB HOST rather then otg.
+If the board have no USB HOST port, system set USB otg as udisk port.
+USB HOST use usbotg2 rather then usbotg1.
+
+Signed-off-by: Zhang Sanshan <b51434@freescale.com>
+---
+ evk_6sl/fstab-f2fs.freescale    | 2 +-
+ evk_6sl/fstab.freescale         | 2 +-
+ sabresd_7d/fstab-f2fs.freescale | 2 +-
+ sabresd_7d/fstab.freescale      | 2 +-
+ 4 files changed, 4 insertions(+), 4 deletions(-)
+
+diff --git a/evk_6sl/fstab-f2fs.freescale b/evk_6sl/fstab-f2fs.freescale
+index 17e632e..d3ade45 100644
+--- a/evk_6sl/fstab-f2fs.freescale
++++ b/evk_6sl/fstab-f2fs.freescale
+@@ -4,7 +4,7 @@
+ # specify MF_CHECK, and must come before any filesystems that do specify MF_CHECK
+ 
+ /devices/soc0/soc.1/2100000.aips-bus/2190000.usdhc/mmc_host /mnt/media_rw/extsd vfat defaults voldmanaged=extsd:auto
+-/devices/soc0/soc.1/2100000.aips-bus/2184000.usb/ci_hdrc.0 /mnt/media_rw/udisk vfat defaults voldmanaged=udisk:auto
++/devices/soc0/soc.1/2100000.aips-bus/2184200.usb/ci_hdrc.1 /mnt/media_rw/udisk vfat defaults voldmanaged=udisk:auto
+ /dev/block/mmcblk1p5    /system      ext4    ro                                                                               wait
+ /dev/block/mmcblk1p4    /data        f2fs    nosuid,nodev,noatime    wait,encryptable=/dev/block/mmcblk1p9
+ /dev/block/mmcblk1p4    /data        ext4    nosuid,nodev,nodiratime,noatime,nomblk_io_submit,noauto_da_alloc,errors=panic    wait,encryptable=/dev/block/mmcblk1p9
+diff --git a/evk_6sl/fstab.freescale b/evk_6sl/fstab.freescale
+index 2442318..8beca58 100644
+--- a/evk_6sl/fstab.freescale
++++ b/evk_6sl/fstab.freescale
+@@ -4,7 +4,7 @@
+ # specify MF_CHECK, and must come before any filesystems that do specify MF_CHECK
+ 
+ /devices/soc0/soc.1/2100000.aips-bus/2190000.usdhc/mmc_host /mnt/media_rw/extsd vfat defaults voldmanaged=extsd:auto
+-/devices/soc0/soc.1/2100000.aips-bus/2184000.usb/ci_hdrc.0 /mnt/media_rw/udisk vfat defaults voldmanaged=udisk:auto
++/devices/soc0/soc.1/2100000.aips-bus/2184200.usb/ci_hdrc.1 /mnt/media_rw/udisk vfat defaults voldmanaged=udisk:auto
+ /dev/block/mmcblk1p5    /system      ext4    ro,barrier=1                                                                               wait,verify
+ /dev/block/mmcblk1p4    /data        ext4    nosuid,nodev,nodiratime,noatime,nomblk_io_submit,noauto_da_alloc,errors=panic    wait,encryptable=/dev/block/mmcblk1p9
+ /dev/block/mmcblk1p6    /cache       ext4    nosuid,nodev,nomblk_io_submit                                                    wait
+diff --git a/sabresd_7d/fstab-f2fs.freescale b/sabresd_7d/fstab-f2fs.freescale
+index 6503e57..3f58516 100644
+--- a/sabresd_7d/fstab-f2fs.freescale
++++ b/sabresd_7d/fstab-f2fs.freescale
+@@ -2,7 +2,7 @@
+ #<src>                                                  <mnt_point>         <type>    <mnt_flags and options>                       <fs_mgr_flags>
+ # The filesystem that contains the filesystem checker binary (typically /system) cannot
+ # specify MF_CHECK, and must come before any filesystems that do specify MF_CHECK
+-/devices/soc.3/30800000.aips-bus/30b10000.usb/ci_hdrc.0 /mnt/media_rw/udisk vfat defaults voldmanaged=udisk:auto
++/devices/soc.3/30800000.aips-bus/30b20000.usb/ci_hdrc.1 /mnt/media_rw/udisk vfat defaults voldmanaged=udisk:auto
+ /dev/block/mmcblk0p5    /system      ext4    ro                                                                               wait
+ /dev/block/mmcblk0p4    /data        f2fs    nosuid,nodev,noatime    wait,encryptable=/dev/block/mmcblk0p9
+ /dev/block/mmcblk0p4    /data        ext4    nosuid,nodev,nodiratime,noatime,nomblk_io_submit,noauto_da_alloc,errors=panic    wait,encryptable=/dev/block/mmcblk0p9
+diff --git a/sabresd_7d/fstab.freescale b/sabresd_7d/fstab.freescale
+index 7d18ac5..c4cba3b 100644
+--- a/sabresd_7d/fstab.freescale
++++ b/sabresd_7d/fstab.freescale
+@@ -3,7 +3,7 @@
+ # The filesystem that contains the filesystem checker binary (typically /system) cannot
+ # specify MF_CHECK, and must come before any filesystems that do specify MF_CHECK
+ 
+-/devices/soc.3/30800000.aips-bus/30b10000.usb/ci_hdrc.0 /mnt/media_rw/udisk vfat defaults voldmanaged=udisk:auto
++/devices/soc.3/30800000.aips-bus/30b20000.usb/ci_hdrc.1 /mnt/media_rw/udisk vfat defaults voldmanaged=udisk:auto
+ /dev/block/mmcblk0p5    /system      ext4    ro,barrier=1                                                                     wait,verify
+ /dev/block/mmcblk0p4    /data        ext4    nosuid,nodev,nodiratime,noatime,nomblk_io_submit,noauto_da_alloc,errors=panic    wait,encryptable=/dev/block/mmcblk0p9
+ /dev/block/mmcblk0p6    /cache       ext4    nosuid,nodev,nomblk_io_submit                                                    wait
+-- 
+1.8.0
+

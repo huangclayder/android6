@@ -1,0 +1,32 @@
+From e2be1ad9d2c69c1dc2346e0523f48fb4d2f92234 Mon Sep 17 00:00:00 2001
+From: Richard Zhu <Richard.Zhu@freescale.com>
+Date: Thu, 26 Nov 2015 09:37:31 +0800
+Subject: [PATCH] MLK-11895 imx: mcc: fix the logical dead codes
+
+Fix the logical dead codes, since it is never be
+reached.
+
+Signed-off-by: Richard Zhu <Richard.Zhu@freescale.com>
+---
+ drivers/char/imx_amp/imx_mcc_test.c | 5 +----
+ 1 file changed, 1 insertion(+), 4 deletions(-)
+
+diff --git a/drivers/char/imx_amp/imx_mcc_test.c b/drivers/char/imx_amp/imx_mcc_test.c
+index 94616fbf..2aa7007 100644
+--- a/drivers/char/imx_amp/imx_mcc_test.c
++++ b/drivers/char/imx_amp/imx_mcc_test.c
+@@ -214,10 +214,7 @@ static ssize_t imx_mcc_pingpong_en(struct device *dev,
+ 		pr_info("imx mcc test end after %08d times tests.\n", i/2);
+ 	}
+ 
+-	if (ret)
+-		return ret;
+-	else
+-		return count;
++	return count;
+ }
+ 
+ static DEVICE_ATTR(pingpong_en, S_IWUGO, NULL, imx_mcc_pingpong_en);
+-- 
+1.8.0
+

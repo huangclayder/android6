@@ -1,0 +1,43 @@
+From 44869a7d1715ec022d17f793cd20a5cc7dc34ffa Mon Sep 17 00:00:00 2001
+From: Richard Zhu <Richard.Zhu@freescale.com>
+Date: Thu, 5 Nov 2015 18:12:33 +0800
+Subject: [PATCH] MLK-11827 arm: imx6sx: correct the wrong qspi dts configures
+
+- previous patch makes the wrong qspi port on imx6sx sdb and
+sabreauto boards.
+- nor flash is used qspi2 on imx6sx-sdb board, and qspi1 on
+sabreauto board.
+
+Signed-off-by: Richard Zhu <Richard.Zhu@freescale.com>
+---
+ arch/arm/boot/dts/imx6sx-sabreauto-m4.dts | 1 +
+ arch/arm/boot/dts/imx6sx-sdb-m4.dts       | 1 -
+ 2 files changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/arch/arm/boot/dts/imx6sx-sabreauto-m4.dts b/arch/arm/boot/dts/imx6sx-sabreauto-m4.dts
+index 3696c1a..f76bab1 100644
+--- a/arch/arm/boot/dts/imx6sx-sabreauto-m4.dts
++++ b/arch/arm/boot/dts/imx6sx-sabreauto-m4.dts
+@@ -61,6 +61,7 @@
+ };
+ 
+ &qspi_m4 {
++	reg = <0x021e0000 0x4000>;
+ 	status = "okay";
+ };
+ 
+diff --git a/arch/arm/boot/dts/imx6sx-sdb-m4.dts b/arch/arm/boot/dts/imx6sx-sdb-m4.dts
+index d52d5bc..c3962a7 100644
+--- a/arch/arm/boot/dts/imx6sx-sdb-m4.dts
++++ b/arch/arm/boot/dts/imx6sx-sdb-m4.dts
+@@ -61,7 +61,6 @@
+ };
+ 
+ &qspi_m4 {
+-	reg = <0x021e0000 0x4000>;
+ 	status = "okay";
+ };
+ 
+-- 
+1.8.0
+

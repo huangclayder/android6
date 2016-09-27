@@ -1,0 +1,28 @@
+From f02a26548be066eff0b2e10059d7f87ac99b8df3 Mon Sep 17 00:00:00 2001
+From: Haoran Wang <b50027@freescale.com>
+Date: Thu, 12 Nov 2015 13:08:03 +0800
+Subject: [PATCH 6/6] MA-7250 bcmdhd use hostapd in Softap
+
+Rename bcm_hostapd to hostapd.
+
+Signed-off-by: Haoran Wang <b50027@freescale.com>
+---
+ server/SoftapController.cpp | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/server/SoftapController.cpp b/server/SoftapController.cpp
+index c24ae5e..97c3e21 100644
+--- a/server/SoftapController.cpp
++++ b/server/SoftapController.cpp
+@@ -52,7 +52,7 @@ using android::base::WriteStringToFile;
+ static const char HOSTAPD_CONF_FILE[]    = "/data/misc/wifi/hostapd.conf";
+ static const char HOSTAPD_BIN_FILE[]    = "/system/bin/hostapd";
+ static const char HOSTAPD_BIN_FILE_RTL[]    = "/system/bin/rtl_hostapd";
+-static const char HOSTAPD_BIN_FILE_BCM[]    = "/system/bin/bcm_hostapd";
++static const char HOSTAPD_BIN_FILE_BCM[]    = "/system/bin/hostapd";
+ static const char DRIVER_VENDOR_NAME[]  = "wlan.vendor";
+ 
+ SoftapController::SoftapController()
+-- 
+1.8.0
+

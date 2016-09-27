@@ -1,0 +1,69 @@
+From b2702aaec81b26ca947533b48ddbbeaca5ce7c35 Mon Sep 17 00:00:00 2001
+From: "Ye.Li" <B37916@freescale.com>
+Date: Mon, 8 Jun 2015 09:56:37 +0800
+Subject: [PATCH] MLK-11062 imx: mx7d arm2: Add nand mtdpart info to u-boot
+ environments
+
+For nand boot, the mtdpart info are needs to load kernel and rootfs.
+
+Signed-off-by: Ye.Li <B37916@freescale.com>
+---
+ include/configs/mx7d_arm2.h | 22 ++++++++++++++++++++++
+ 1 file changed, 22 insertions(+)
+
+diff --git a/include/configs/mx7d_arm2.h b/include/configs/mx7d_arm2.h
+index 39b5eb0..2be10cd 100644
+--- a/include/configs/mx7d_arm2.h
++++ b/include/configs/mx7d_arm2.h
+@@ -113,6 +113,11 @@
+ #endif
+ 
+ #define CONFIG_SYS_MMC_IMG_LOAD_PART	1
++#ifdef CONFIG_SYS_BOOT_NAND
++#define CONFIG_MFG_NAND_PARTITION "mtdparts=gpmi-nand:64m(boot),16m(kernel),16m(dtb),-(rootfs) "
++#else
++#define CONFIG_MFG_NAND_PARTITION ""
++#endif
+ 
+ #ifdef CONFIG_VIDEO
+ #define CONFIG_VIDEO_MODE \
+@@ -134,12 +139,28 @@
+ 		"g_mass_storage.stall=0 g_mass_storage.removable=1 " \
+ 		"g_mass_storage.idVendor=0x066F g_mass_storage.idProduct=0x37FF "\
+ 		"g_mass_storage.iSerialNumber=\"\" "\
++		CONFIG_MFG_NAND_PARTITION \
+ 		"clk_ignore_unused "\
+ 		"\0" \
+ 	"initrd_addr=0x83800000\0" \
+ 	"initrd_high=0xffffffff\0" \
+ 	"bootcmd_mfg=run mfgtool_args;bootz ${loadaddr} ${initrd_addr} ${fdt_addr};\0" \
+ 
++#if defined(CONFIG_SYS_BOOT_NAND)
++#define CONFIG_EXTRA_ENV_SETTINGS \
++	CONFIG_MFG_ENV_SETTINGS \
++	CONFIG_VIDEO_MODE \
++	"fdt_addr=0x83000000\0" \
++	"fdt_high=0xffffffff\0"	  \
++	"console=ttymxc0\0" \
++	"bootargs=console=ttymxc0,115200 ubi.mtd=3 "  \
++		"root=ubi0:rootfs rootfstype=ubifs "		     \
++		"mtdparts=gpmi-nand:64m(boot),16m(kernel),16m(dtb),-(rootfs)\0"\
++	"bootcmd=nand read ${loadaddr} 0x4000000 0x800000;"\
++		"nand read ${fdt_addr} 0x5000000 0x100000;"\
++		"bootz ${loadaddr} - ${fdt_addr}\0"
++
++#else
+ #define CONFIG_EXTRA_ENV_SETTINGS \
+ 	CONFIG_MFG_ENV_SETTINGS \
+ 	UPDATE_M4_ENV \
+@@ -218,6 +239,7 @@
+ 			   "fi; " \
+ 		   "fi; " \
+ 	   "else run netboot; fi"
++#endif
+ 
+ /* Miscellaneous configurable options */
+ #define CONFIG_SYS_LONGHELP
+-- 
+1.8.0
+

@@ -1,0 +1,75 @@
+From 5ad251a83cc016948a9b0de02ab9f3b4f5a777d5 Mon Sep 17 00:00:00 2001
+From: Hongzhang Yang <Hongzhang.Yang@freescale.com>
+Date: Tue, 23 Dec 2014 16:35:01 +0800
+Subject: [PATCH 265/280] MLK-10052 VPU shared memory file cannot be opened
+
+Bug:
+In current design, user who created VPU shared memory file sets RW
+permission for itself only. It has a problem that other users cannot
+open the file for RW.
+
+Solution:
+- User who created VPU shared memory file sets RW permission for group
+  and others as well
+- Don't unlink the shared memory file because /dev/shm/ has sticky bit
+  to forbid user to delete file created by another user.
+
+Signed-off-by: Hongzhang Yang <Hongzhang.Yang@freescale.com>
+---
+ vpu/vpu_util.c | 26 +++-----------------------
+ 1 file changed, 3 insertions(+), 23 deletions(-)
+
+diff --git a/vpu/vpu_util.c b/vpu/vpu_util.c
+index 20cdbc4..993b269 100644
+--- a/vpu/vpu_util.c
++++ b/vpu/vpu_util.c
+@@ -1254,23 +1254,7 @@ static void *get_shared_buf(int size, int create) {
+ 			return NULL;
+ 		}
+ 
+-		ret = close(fd_share);
+-		if(-1 == ret) {
+-			perror("close failed");
+-			return NULL;
+-		}
+-
+-		ret = unlink(FN_SHARE);
+-		if(-1 == ret) {
+-			perror("unlink failed");
+-			return NULL;
+-		}
+-
+-		fd_share = open(FN_SHARE, O_RDWR|O_CREAT, S_IRUSR|S_IWUSR);
+-		if(-1 == (ret = fd_share)) {
+-			perror("open failed");
+-			return NULL;
+-		}
++		chmod(FN_SHARE, S_IRUSR|S_IWUSR|S_IRGRP|S_IWGRP|S_IROTH|S_IWOTH);
+ 
+ 		ret = ftruncate(fd_share, size);
+ 		if(-1 == ret) {
+@@ -1283,6 +1267,8 @@ static void *get_shared_buf(int size, int create) {
+ 		if(NULL == buf)
+ 			perror("mmap failed");
+ 
++		memset(buf, 0, size);
++
+ 		return buf;
+ 	} else {
+ 		fd_share = open(FN_SHARE, O_RDWR, S_IRUSR|S_IWUSR);
+@@ -1309,12 +1295,6 @@ static void release_shared_buf(void *buf, int size, int destroy) {
+ 	ret = close(fd_share);
+ 	if(-1 == ret)
+ 		perror("close failed");
+-
+-	if (destroy) {
+-		ret = unlink(FN_SHARE);
+-		if(-1 == ret)
+-			perror("unlink failed");
+-	}
+ }
+ 
+ shared_mem_t *vpu_semaphore_open(void)
+-- 
+1.8.0
+

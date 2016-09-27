@@ -1,0 +1,34 @@
+From b400850cc1aa44b67b6fe4afe356bc32dc0f60bf Mon Sep 17 00:00:00 2001
+From: Christian Borntraeger <borntraeger@de.ibm.com>
+Date: Thu, 4 Sep 2014 21:13:31 +0200
+Subject: [PATCH] KVM: remove redundant check of in_spin_loop
+
+The expression `vcpu->spin_loop.in_spin_loop' is always true,
+because it is evaluated only when the condition
+`!vcpu->spin_loop.in_spin_loop' is false.
+
+Signed-off-by: Christian Borntraeger <borntraeger@de.ibm.com>
+Signed-off-by: Paolo Bonzini <pbonzini@redhat.com>
+(cherry picked from commit 34656113182b704682e23d1363417536addfec97)
+Signed-off-by: Christoffer Dall <christoffer.dall@linaro.org>
+---
+ virt/kvm/kvm_main.c | 3 +--
+ 1 file changed, 1 insertion(+), 2 deletions(-)
+
+diff --git a/virt/kvm/kvm_main.c b/virt/kvm/kvm_main.c
+index 4cf3757..38f82ca 100644
+--- a/virt/kvm/kvm_main.c
++++ b/virt/kvm/kvm_main.c
+@@ -1794,8 +1794,7 @@ static bool kvm_vcpu_eligible_for_directed_yield(struct kvm_vcpu *vcpu)
+ 	bool eligible;
+ 
+ 	eligible = !vcpu->spin_loop.in_spin_loop ||
+-			(vcpu->spin_loop.in_spin_loop &&
+-			 vcpu->spin_loop.dy_eligible);
++		    vcpu->spin_loop.dy_eligible;
+ 
+ 	if (vcpu->spin_loop.in_spin_loop)
+ 		kvm_vcpu_set_dy_eligible(vcpu, !vcpu->spin_loop.dy_eligible);
+-- 
+1.8.0
+

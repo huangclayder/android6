@@ -1,0 +1,50 @@
+From 077bf86bbaa478cf56e0893a35cf014c8c1ec12b Mon Sep 17 00:00:00 2001
+From: Ke Qinghua <qinghua.ke@freescale.com>
+Date: Thu, 10 Jul 2014 16:07:19 +0800
+Subject: [PATCH 07/22] ENGR00321316 Suspend: System resume automatically
+ after press Power to suspend mode. 100%
+
+The functionality is per design, change healthd alarm wake up time to slow(10min)
+
+Signed-off-by: Ke Qinghua <qinghua.ke@freescale.com>
+
+Conflicts:
+	healthd/BatteryMonitor.cpp
+---
+ healthd/BatteryMonitor.cpp | 13 ++++++++++---
+ 1 file changed, 10 insertions(+), 3 deletions(-)
+
+diff --git a/healthd/BatteryMonitor.cpp b/healthd/BatteryMonitor.cpp
+index 5f11918..8e02e7e 100644
+--- a/healthd/BatteryMonitor.cpp
++++ b/healthd/BatteryMonitor.cpp
+@@ -15,7 +15,7 @@
+  */
+ 
+ /*
+- * Copyright (C) 2013 Freescale Semiconductor, Inc.
++ * Copyright (C) 2013-2014 Freescale Semiconductor, Inc.
+  */
+ 
+ #define LOG_TAG "healthd"
+@@ -329,8 +329,15 @@ bool BatteryMonitor::update(void) {
+     }
+ 
+     healthd_mode_ops->battery_update(&props);
+-    return props.chargerAcOnline | props.chargerUsbOnline |
+-            props.chargerWirelessOnline;
++    if (!strcmp(prop, "1")) {
++        return false;
++    } else {
++        if (0 == props.batteryTemperature)
++            return false;
++        else
++            return props.chargerAcOnline | props.chargerUsbOnline |
++                props.chargerWirelessOnline;
++    }
+ }
+ 
+ status_t BatteryMonitor::getProperty(int id, struct BatteryProperty *val) {
+-- 
+1.8.0
+

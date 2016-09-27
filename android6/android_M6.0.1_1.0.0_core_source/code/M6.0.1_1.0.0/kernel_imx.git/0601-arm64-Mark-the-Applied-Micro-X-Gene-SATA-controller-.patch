@@ -1,0 +1,52 @@
+From 675a9566f85f405f4747d47fdde5e3ffed5ec997 Mon Sep 17 00:00:00 2001
+From: Catalin Marinas <catalin.marinas@arm.com>
+Date: Fri, 25 Apr 2014 16:39:49 +0100
+Subject: [PATCH] arm64: Mark the Applied Micro X-Gene SATA controller as DMA
+ coherent
+
+Since the default DMA ops for arm64 are non-coherent, mark the X-Gene
+controller explicitly as dma-coherent to avoid additional cache
+maintenance.
+
+Signed-off-by: Catalin Marinas <catalin.marinas@arm.com>
+Cc: Loc Ho <lho@apm.com>
+(cherry picked from commit 7a8d1ec16dfbb7785e82ccc97b0076cc34911701)
+Signed-off-by: Mark Brown <broonie@linaro.org>
+
+Conflicts:
+	Documentation/devicetree/bindings/ata/apm-xgene.txt
+---
+ arch/arm64/boot/dts/apm-storm.dtsi | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/arch/arm64/boot/dts/apm-storm.dtsi b/arch/arm64/boot/dts/apm-storm.dtsi
+index 93f4b2d..f8c40a6 100644
+--- a/arch/arm64/boot/dts/apm-storm.dtsi
++++ b/arch/arm64/boot/dts/apm-storm.dtsi
+@@ -307,6 +307,7 @@
+ 			      <0x0 0x1f21e000 0x0 0x1000>,
+ 			      <0x0 0x1f217000 0x0 0x1000>;
+ 			interrupts = <0x0 0x86 0x4>;
++			dma-coherent;
+ 			status = "disabled";
+ 			clocks = <&sata01clk 0>;
+ 			phys = <&phy1 0>;
+@@ -321,6 +322,7 @@
+ 			      <0x0 0x1f22e000 0x0 0x1000>,
+ 			      <0x0 0x1f227000 0x0 0x1000>;
+ 			interrupts = <0x0 0x87 0x4>;
++			dma-coherent;
+ 			status = "ok";
+ 			clocks = <&sata23clk 0>;
+ 			phys = <&phy2 0>;
+@@ -334,6 +336,7 @@
+ 			      <0x0 0x1f23d000 0x0 0x1000>,
+ 			      <0x0 0x1f23e000 0x0 0x1000>;
+ 			interrupts = <0x0 0x88 0x4>;
++			dma-coherent;
+ 			status = "ok";
+ 			clocks = <&sata45clk 0>;
+ 			phys = <&phy3 0>;
+-- 
+1.8.0
+

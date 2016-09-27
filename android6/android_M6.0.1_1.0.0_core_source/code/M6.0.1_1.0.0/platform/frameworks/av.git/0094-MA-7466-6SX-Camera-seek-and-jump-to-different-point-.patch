@@ -1,0 +1,29 @@
+From 56aaf9a0b05b0096befa11b8fed6e368bf29c318 Mon Sep 17 00:00:00 2001
+From: xumao <b34688@freescale.com>
+Date: Wed, 6 Jan 2016 16:50:16 +0800
+Subject: [PATCH 94/95] MA-7466 6SX Camera: seek and jump to different point
+ when play record video
+
+set default idr interval to 30 frames
+
+Signed-off-by: xumao <b34688@freescale.com>
+---
+ media/libstagefright/codecs/avcenc/SoftAVCEnc.h | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/media/libstagefright/codecs/avcenc/SoftAVCEnc.h b/media/libstagefright/codecs/avcenc/SoftAVCEnc.h
+index 4418a7f..4fed29c 100644
+--- a/media/libstagefright/codecs/avcenc/SoftAVCEnc.h
++++ b/media/libstagefright/codecs/avcenc/SoftAVCEnc.h
+@@ -81,7 +81,7 @@ namespace android {
+ #define DEFAULT_SRCH_RNG_X          64
+ #define DEFAULT_SRCH_RNG_Y          48
+ #define DEFAULT_I_INTERVAL          30
+-#define DEFAULT_IDR_INTERVAL        1000
++#define DEFAULT_IDR_INTERVAL        30
+ #define DEFAULT_B_FRAMES            0
+ #define DEFAULT_DISABLE_DEBLK_LEVEL 0
+ #define DEFAULT_HPEL                1
+-- 
+1.8.0
+

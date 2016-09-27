@@ -1,0 +1,100 @@
+From 0aec7b360a6c87288f543238b38f57910a1cda50 Mon Sep 17 00:00:00 2001
+From: "guoyin.chen" <guoyin.chen@freescale.com>
+Date: Fri, 14 Nov 2014 13:59:34 +0800
+Subject: [PATCH 386/602] MA-5839-8 Update android to Lollipop
+
+Unify the feature list for i.mx6sl evk with below rules:
+1. Include the feature file if it exist in frameworks/native/data/etc
+2. Add those feature into required_hardware.xml if it cannot be
+find in framework/native/data/etc
+3. remove live_wallpaper since it will automatically included
+packages/wallpapers/LivePicker/Android.mk
+
+Signed-off-by: guoyin.chen <guoyin.chen@freescale.com>
+---
+ evk_6sl/required_hardware.xml | 15 ---------------
+ imx6/evk_6sl.mk               | 30 ++++++++++++++++--------------
+ 2 files changed, 16 insertions(+), 29 deletions(-)
+
+diff --git a/evk_6sl/required_hardware.xml b/evk_6sl/required_hardware.xml
+index 6bb6dbe..3e87bef 100644
+--- a/evk_6sl/required_hardware.xml
++++ b/evk_6sl/required_hardware.xml
+@@ -19,23 +19,8 @@
+ -->
+ <permissions>
+     <feature name="android.hardware.camera.any" />
+-    <feature name="android.hardware.camera" />
+-    <feature name="android.hardware.camera.front" />
+     <feature name="android.hardware.camera.flash" />
+-    <feature name="android.hardware.touchscreen" />
+-    <feature name="android.hardware.touchscreen.multitouch" />
+-    <feature name="android.hardware.touchscreen.multitouch.distinct" />
+     <feature name="android.hardware.microphone" />
+-    <feature name="android.hardware.screen.portrait" />
+-    <feature name="android.hardware.screen.landscape" />
+-    <feature name="android.software.app_widgets" />
+     <feature name="android.software.home_screen" />
+     <feature name="android.software.input_methods" />
+-    <!-- Feature to specify if the device supports adding device admins. -->
+-    <feature name="android.software.device_admin" />
+-
+-    <!-- This is added by FSL. -->
+-    <feature name="android.software.live_wallpaper" />
+-
+-
+ </permissions>
+diff --git a/imx6/evk_6sl.mk b/imx6/evk_6sl.mk
+index 5104437..303cada 100644
+--- a/imx6/evk_6sl.mk
++++ b/imx6/evk_6sl.mk
+@@ -17,7 +17,6 @@ PRODUCT_NAME := evk_6sl
+ PRODUCT_DEVICE := evk_6sl
+ 
+ PRODUCT_COPY_FILES += \
+-	device/fsl/evk_6sl/required_hardware.xml:system/etc/permissions/required_hardware.xml \
+ 	device/fsl/evk_6sl/init.rc:root/init.freescale.rc \
+ 	device/fsl/common/input/imx-keypad.idc:system/usr/idc/imx-keypad.idc \
+ 	device/fsl/common/input/imx-keypad.kl:system/usr/keylayout/imx-keypad.kl \
+@@ -33,22 +32,25 @@ PRODUCT_CHARACTERISTICS := tablet
+ PRODUCT_AAPT_CONFIG += xlarge large tvdpi hdpi
+ 
+ PRODUCT_COPY_FILES += \
+-	frameworks/native/data/etc/android.hardware.location.gps.xml:system/etc/permissions/android.hardware.location.gps.xml \
++	frameworks/native/data/etc/android.hardware.audio.output.xml:system/etc/permissions/android.hardware.audio.output.xml \
++	frameworks/native/data/etc/android.hardware.touchscreen.xml:system/etc/permissions/android.hardware.touchscreen.xml \
++	frameworks/native/data/etc/android.hardware.touchscreen.multitouch.xml:system/etc/permissions/android.hardware.touchscreen.multitouch.xml \
++	frameworks/native/data/etc/android.hardware.touchscreen.multitouch.distinct.xml:system/etc/permissions/android.hardware.touchscreen.multitouch.distinct.xml \
++	frameworks/native/data/etc/android.hardware.screen.portrait.xml:system/etc/permissions/android.hardware.screen.portrait.xml \
++	frameworks/native/data/etc/android.hardware.screen.landscape.xml:system/etc/permissions/android.hardware.screen.landscape.xml \
++	frameworks/native/data/etc/android.software.app_widgets.xml:system/etc/permissions/android.software.app_widgets.xml \
++	frameworks/native/data/etc/android.software.voice_recognizers.xml:system/etc/permissions/android.software.voice_recognizers.xml \
++	frameworks/native/data/etc/android.software.backup.xml:system/etc/permissions/android.software.backup.xml \
++	frameworks/native/data/etc/android.software.print.xml:system/etc/permissions/android.software.print.xml \
++	frameworks/native/data/etc/android.software.device_admin.xml:system/etc/permissions/android.software.device_admin.xml \
++	frameworks/native/data/etc/android.software.managed_users.xml:system/etc/permissions/android.software.managed_users.xml \
+ 	frameworks/native/data/etc/android.hardware.wifi.xml:system/etc/permissions/android.hardware.wifi.xml \
+ 	frameworks/native/data/etc/android.hardware.wifi.direct.xml:system/etc/permissions/android.hardware.wifi.direct.xml \
+ 	frameworks/native/data/etc/android.hardware.sensor.light.xml:system/etc/permissions/android.hardware.sensor.light.xml \
+-	frameworks/native/data/etc/android.hardware.sensor.accelerometer.xml:system/etc/permissions/android.hardware.sensor.accelerometer.xml \
+-	frameworks/native/data/etc/android.hardware.faketouch.xml:system/etc/permissions/android.hardware.faketouch.xml \
+-	frameworks/native/data/etc/android.hardware.touchscreen.multitouch.jazzhand.xml:system/etc/permissions/android.hardware.touchscreen.multitouch.jazzhand.xml \
+ 	frameworks/native/data/etc/android.software.sip.voip.xml:system/etc/permissions/android.software.sip.voip.xml \
+ 	frameworks/native/data/etc/android.hardware.usb.host.xml:system/etc/permissions/android.hardware.usb.host.xml \
+ 	frameworks/native/data/etc/android.hardware.usb.accessory.xml:system/etc/permissions/android.hardware.usb.accessory.xml \
+-    frameworks/native/data/etc/android.hardware.ethernet.xml:system/etc/permissions/android.hardware.ethernet.xml \
+-	frameworks/native/data/etc/android.hardware.bluetooth_le.xml:system/etc/permissions/android.hardware.bluetooth_le.xml
+-
+-# for PDK build, include only when the dir exists
+-# too early to use $(TARGET_BUILD_PDK)
+-ifneq ($(wildcard packages/wallpapers/LivePicker),)
+-PRODUCT_COPY_FILES += \
+-	packages/wallpapers/LivePicker/android.software.live_wallpaper.xml:system/etc/permissions/android.software.live_wallpaper.xml
+-endif
++	frameworks/native/data/etc/android.hardware.camera.xml:system/etc/permissions/android.hardware.camera.xml \
++	frameworks/native/data/etc/android.hardware.camera.front.xml:system/etc/permissions/android.hardware.camera.front.xml \
++	frameworks/native/data/etc/android.hardware.ethernet.xml:system/etc/permissions/android.hardware.ethernet.xml \
++	device/fsl/evk_6sl/required_hardware.xml:system/etc/permissions/required_hardware.xml
+-- 
+1.8.0
+

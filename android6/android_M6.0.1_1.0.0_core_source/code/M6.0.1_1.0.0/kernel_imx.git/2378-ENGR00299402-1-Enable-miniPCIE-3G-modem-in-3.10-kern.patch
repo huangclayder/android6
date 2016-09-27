@@ -1,0 +1,38 @@
+From 936404d41b3ca11bb73cf2a823077adae3f17465 Mon Sep 17 00:00:00 2001
+From: "guoyin.chen" <guoyin.chen@freescale.com>
+Date: Fri, 30 Jan 2015 16:03:52 +0800
+Subject: [PATCH] ENGR00299402-1 Enable miniPCIE 3G modem in 3.10 kernel
+
+3G modem device need to have ttyUSB* inteface for AT and data channel
+Add USB_SERIAL, USB_SERIAL_WWAN, USB_SERIAL_OPTION, and PPP configs
+
+Signed-off-by: guoyin.chen <guoyin.chen@freescale.com>
+---
+ arch/arm/configs/imx_v7_android_defconfig | 3 +--
+ 1 file changed, 1 insertion(+), 2 deletions(-)
+
+diff --git a/arch/arm/configs/imx_v7_android_defconfig b/arch/arm/configs/imx_v7_android_defconfig
+index e8eaddb..51d1ab5 100644
+--- a/arch/arm/configs/imx_v7_android_defconfig
++++ b/arch/arm/configs/imx_v7_android_defconfig
+@@ -18,9 +18,7 @@ CONFIG_PERF_EVENTS=y
+ # CONFIG_SLUB_DEBUG is not set
+ # CONFIG_COMPAT_BRK is not set
+ CONFIG_MODULES=y
+-# CONFIG_MODULE_FORCE_LOAD is not set
+ CONFIG_MODULE_UNLOAD=y
+-# CONFIG_MODULE_FORCE_UNLOAD is not set
+ CONFIG_MODVERSIONS=y
+ CONFIG_MODULE_SRCVERSION_ALL=y
+ # CONFIG_BLK_DEV_BSG is not set
+@@ -253,6 +251,7 @@ CONFIG_PPP=y
+ CONFIG_PPP_BSDCOMP=y
+ CONFIG_PPP_DEFLATE=y
+ CONFIG_PPP_MPPE=y
++CONFIG_PPPOE=y
+ CONFIG_PPPOLAC=y
+ CONFIG_PPPOPNS=y
+ CONFIG_USB_PEGASUS=y
+-- 
+1.8.0
+

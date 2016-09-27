@@ -1,0 +1,29 @@
+From a68efcd208d47b2a1c08578596a05125afa79e20 Mon Sep 17 00:00:00 2001
+From: "guoyin.chen" <guoyin.chen@freescale.com>
+Date: Tue, 13 Jan 2015 15:15:18 +0800
+Subject: [PATCH 423/602] MA-6117-1 Enable F2FS in Android Lollipop
+
+Add f2fs binary into PRODUCT_PACKAGES
+
+Signed-off-by: guoyin.chen <guoyin.chen@freescale.com>
+---
+ imx6/imx6.mk | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/imx6/imx6.mk b/imx6/imx6.mk
+index 9381f89..2a2ad1c 100644
+--- a/imx6/imx6.mk
++++ b/imx6/imx6.mk
+@@ -328,6 +328,9 @@ PRODUCT_PACKAGES += \
+ PRODUCT_PACKAGES += \
+     libGLES_android
+ 
++PRODUCT_PACKAGES += \
++    fsck.f2fs mkfs.f2fs
++
+ PRODUCT_COPY_FILES +=	\
+ 	device/fsl/common/input/Dell_Dell_USB_Keyboard.kl:system/usr/keylayout/Dell_Dell_USB_Keyboard.kl \
+ 	device/fsl/common/input/Dell_Dell_USB_Keyboard.idc:system/usr/idc/Dell_Dell_USB_Keyboard.idc \
+-- 
+1.8.0
+

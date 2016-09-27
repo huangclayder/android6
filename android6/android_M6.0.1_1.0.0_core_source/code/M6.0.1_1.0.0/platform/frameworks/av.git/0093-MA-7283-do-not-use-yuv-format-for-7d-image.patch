@@ -1,0 +1,46 @@
+From d765dccace1079b8fcdce2780e29d3ae73f469ac Mon Sep 17 00:00:00 2001
+From: Ming Zhou <ming.zhou@nxp.com>
+Date: Mon, 4 Jan 2016 14:23:18 +0800
+Subject: [PATCH 93/95] MA-7283: do not use yuv format for 7d image.
+
+use software render for 7d full image when playing files with nuplayer.
+
+Signed-off-by: Ming Zhou <ming.zhou@nxp.com>
+---
+ media/libstagefright/colorconversion/SoftwareRenderer.cpp | 13 ++++++++++---
+ 1 file changed, 10 insertions(+), 3 deletions(-)
+
+diff --git a/media/libstagefright/colorconversion/SoftwareRenderer.cpp b/media/libstagefright/colorconversion/SoftwareRenderer.cpp
+index e92c192..7a75f18 100644
+--- a/media/libstagefright/colorconversion/SoftwareRenderer.cpp
++++ b/media/libstagefright/colorconversion/SoftwareRenderer.cpp
+@@ -38,6 +38,11 @@ static int ALIGN(int x, int y) {
+     return (x + y - 1) & ~(y - 1);
+ }
+ 
++static bool supportYUVComposer() {
++    char prop[PROPERTY_VALUE_MAX];
++    return !(property_get("sys.composer.no-yuv-support", prop, NULL) > 0);
++}
++
+ SoftwareRenderer::SoftwareRenderer(
+         const sp<ANativeWindow> &nativeWindow, int32_t rotation)
+     : mColorFormat(OMX_COLOR_FormatUnused),
+@@ -112,9 +117,11 @@ void SoftwareRenderer::resetFormatIfChanged(const sp<AMessage> &format) {
+             case OMX_COLOR_FormatYUV420SemiPlanar:
+             case OMX_TI_COLOR_FormatYUV420PackedSemiPlanar:
+             {
+-                halFormat = HAL_PIXEL_FORMAT_YV12;
+-                bufWidth = (mCropWidth + 1) & ~1;
+-                bufHeight = (mCropHeight + 1) & ~1;
++                if(supportYUVComposer()){
++                    halFormat = HAL_PIXEL_FORMAT_YV12;
++                    bufWidth = (mCropWidth + 1) & ~1;
++                    bufHeight = (mCropHeight + 1) & ~1;
++                }
+                 break;
+             }
+             case OMX_COLOR_Format24bitRGB888:
+-- 
+1.8.0
+

@@ -1,0 +1,30 @@
+From 113856bc801614319910646d8f98ee53d5de5856 Mon Sep 17 00:00:00 2001
+From: Liu Ying <Ying.Liu@freescale.com>
+Date: Mon, 30 Nov 2015 17:11:10 +0800
+Subject: [PATCH] MLK-11921-3 mxc IPUv3: regs: Fix the macro WROD definition
+
+This patch adds missing parentheses around the argument of the macro
+WROD to avoid any potential macro expansion issue.
+
+Signed-off-by: Liu Ying <Ying.Liu@freescale.com>
+(cherry picked from commit fbd769f115064b390cb358d860955293fb5bff7e)
+---
+ drivers/mxc/ipu3/ipu_regs.h | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/mxc/ipu3/ipu_regs.h b/drivers/mxc/ipu3/ipu_regs.h
+index 79051cf..099346d 100644
+--- a/drivers/mxc/ipu3/ipu_regs.h
++++ b/drivers/mxc/ipu3/ipu_regs.h
+@@ -696,7 +696,7 @@ enum di_sync_wave {
+ };
+ 
+ /* DC template opcodes */
+-#define WROD(lf)		(0x18 | (lf << 1))
++#define WROD(lf)		(0x18 | ((lf) << 1))
+ #define WRG	        	(0x01)
+ 
+ #endif
+-- 
+1.8.0
+

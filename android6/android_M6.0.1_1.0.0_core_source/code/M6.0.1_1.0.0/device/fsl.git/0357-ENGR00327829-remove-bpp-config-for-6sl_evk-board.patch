@@ -1,0 +1,29 @@
+From 90fc387d9249197ddd6d781dc37b31ddc1b5491d Mon Sep 17 00:00:00 2001
+From: b37945 <b37945@freescale.com>
+Date: Wed, 20 Aug 2014 15:05:04 +0800
+Subject: [PATCH 357/602] ENGR00327829 remove bpp config for 6sl_evk board.
+
+Remove bpp config for 6sl_evk board.
+The bpp config is moved to DTS.
+
+Signed-off-by: b37945 <b37945@freescale.com>
+---
+ evk_6sl/BoardConfig.mk | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/evk_6sl/BoardConfig.mk b/evk_6sl/BoardConfig.mk
+index db080d8..8568e3b 100644
+--- a/evk_6sl/BoardConfig.mk
++++ b/evk_6sl/BoardConfig.mk
+@@ -77,7 +77,7 @@ IMX_CAMERA_HAL_V2 := false
+ # define frame buffer count
+ NUM_FRAMEBUFFER_SURFACE_BUFFERS := 3
+ 
+-BOARD_KERNEL_CMDLINE := console=ttymxc0,115200 init=/init androidboot.console=ttymxc0 consoleblank=0 video=mxc_elcdif_fb:bpp=32 androidboot.hardware=freescale
++BOARD_KERNEL_CMDLINE := console=ttymxc0,115200 init=/init androidboot.console=ttymxc0 consoleblank=0 androidboot.hardware=freescale
+ TARGET_BOOTLOADER_CONFIG := imx6sl:mx6slevkandroid_config
+ TARGET_BOARD_DTS_CONFIG := imx6sl:imx6sl-evk-csi.dtb
+ 
+-- 
+1.8.0
+

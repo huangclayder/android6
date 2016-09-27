@@ -1,0 +1,33 @@
+From d70a85b4c40644ac46abc84bcb549727437f44a6 Mon Sep 17 00:00:00 2001
+From: "xuegang.liu" <xuegang.liu@freescale.com>
+Date: Wed, 18 Mar 2015 10:20:39 +0800
+Subject: [PATCH 453/602] MA-6414 fix evk_6sl can't boot issue on 3.14 kernel
+
+Root cause is the decompressed zImage size is larger than reserved size,
+that cause the decompressed zImage overlap with kernel dtb, normally the
+decompressed zImage is put at the ARM start address + 0x8000, so currently
+the reserved zImage space is 1M_allign_down(0x81700000 -  0x80008000) = 22M,
+it is not enought after kernel build-in new modules, fix this issue by enlarge
+the reserved space for decompressed zImage.
+
+Signed-off-by: Richard Liu <r66033@freescale.com>
+---
+ imx6/soc/imx6sl.mk | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/imx6/soc/imx6sl.mk b/imx6/soc/imx6sl.mk
+index c05ff66..990d992 100644
+--- a/imx6/soc/imx6sl.mk
++++ b/imx6/soc/imx6sl.mk
+@@ -7,7 +7,7 @@ BOARD_HAVE_VPU := false
+ HAVE_FSL_IMX_GPU2D := true
+ HAVE_FSL_IMX_GPU3D := false
+ HAVE_FSL_IMX_IPU := false
+-BOARD_KERNEL_BASE := 0x80800000
++BOARD_KERNEL_BASE := 0x82800000
+ LOAD_KERNEL_ENTRY := 0x80008000
+ TARGET_KERNEL_DEFCONF := imx_v7_android_defconfig
+ -include external/fsl_imx_omx/codec_env.mk
+-- 
+1.8.0
+

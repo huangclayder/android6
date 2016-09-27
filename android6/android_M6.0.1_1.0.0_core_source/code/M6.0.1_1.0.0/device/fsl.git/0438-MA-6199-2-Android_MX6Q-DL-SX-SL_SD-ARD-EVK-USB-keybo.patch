@@ -1,0 +1,32 @@
+From 00aaa35cbb6435aca7390b8c4a2107f62d701b34 Mon Sep 17 00:00:00 2001
+From: zhang sanshan <b51434@freescale.com>
+Date: Thu, 5 Feb 2015 12:37:54 +0800
+Subject: [PATCH 438/602] MA-6199-2 [Android_MX6Q/DL/SX/SL_SD/ARD/EVK]USB
+ keyboard: F1~F12 can't work normally.100%
+
+F1-F9 can't work normally.up down left right and esc work fine.
+It encounter problem when sparse Dell_Dell_USB_Keyboard.kl. So it use default file Generic.kl.
+lollipop did not support WAKE_DROPPED.
+This patch  use WAKE to replace WAKE_DROPPED.
+
+Signed-off-by: zhang sanshan <b51434@freescale.com>
+---
+ common/input/Dell_Dell_USB_Keyboard.kl | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/common/input/Dell_Dell_USB_Keyboard.kl b/common/input/Dell_Dell_USB_Keyboard.kl
+index 73d7022..3572a60 100644
+--- a/common/input/Dell_Dell_USB_Keyboard.kl
++++ b/common/input/Dell_Dell_USB_Keyboard.kl
+@@ -9,7 +9,7 @@ key 8     7
+ key 9     8
+ key 10    9
+ key 11    0
+-key 1     BACK              WAKE_DROPPED
++key 1     BACK              WAKE     
+ key 230   SOFT_RIGHT        WAKE
+ key 60    SOFT_RIGHT        WAKE
+ key 107   ENDCALL           WAKE
+-- 
+1.8.0
+

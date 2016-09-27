@@ -1,0 +1,92 @@
+From de97093a7ee648cbd2cbcdfecc23e004562d4b6a Mon Sep 17 00:00:00 2001
+From: "guoyin.chen" <guoyin.chen@freescale.com>
+Date: Thu, 26 Dec 2013 13:43:15 +0800
+Subject: [PATCH 290/602] ENGR00293354 update kernel and uboot build for
+ 3.10.17 kernel
+
+BOARD_KERNEL_BASE as the zImage load address in boot.img
+LOAD_KERNEL_ENTRY as the kernel entry address to build uImage
+Update bootlader's build config in imx_v2013.04
+Add TARGET_BOARD_DTS_CONFIG to set different dtb file differnt soc
+
+Signed-off-by: guoyin.chen <guoyin.chen@freescale.com>
+---
+ evk_6sl/BoardConfig.mk      | 3 ++-
+ imx6/soc/imx6dq.mk          | 7 +++----
+ imx6/soc/imx6sl.mk          | 3 ++-
+ sabreauto_6q/BoardConfig.mk | 3 ++-
+ sabresd_6dq/BoardConfig.mk  | 3 ++-
+ 5 files changed, 11 insertions(+), 8 deletions(-)
+
+diff --git a/evk_6sl/BoardConfig.mk b/evk_6sl/BoardConfig.mk
+index 2716c22..9e1f35e 100644
+--- a/evk_6sl/BoardConfig.mk
++++ b/evk_6sl/BoardConfig.mk
+@@ -78,4 +78,5 @@ IMX_CAMERA_HAL_V2 := false
+ NUM_FRAMEBUFFER_SURFACE_BUFFERS := 3
+ 
+ BOARD_KERNEL_CMDLINE := console=ttymxc0,115200 init=/init androidboot.console=ttymxc0 video=mxc_elcdif_fb:bpp=32 androidboot.hardware=freescale csi
+-TARGET_BOOTLOADER_CONFIG := mx6sl:mx6sl_evk_android_config
++TARGET_BOOTLOADER_CONFIG := mx6sl:mx6slevkandroid
++TARGET_BOARD_DTS_CONFIG := mx6sl:imx6sl-evk.dtb
+diff --git a/imx6/soc/imx6dq.mk b/imx6/soc/imx6dq.mk
+index 8059fc8..5ef98de 100644
+--- a/imx6/soc/imx6dq.mk
++++ b/imx6/soc/imx6dq.mk
+@@ -7,12 +7,11 @@ BOARD_HAVE_VPU := true
+ HAVE_FSL_IMX_GPU2D := true
+ HAVE_FSL_IMX_GPU3D := true
+ HAVE_FSL_IMX_IPU := true
+-BOARD_KERNEL_BASE := 0x10800000
+-TARGET_KERNEL_DEFCONF := imx6_android_defconfig
+-
++BOARD_KERNEL_BASE := 0x14000000
++LOAD_KERNEL_ENTRY := 0x10008000
++TARGET_KERNEL_DEFCONF := imx_v7_android_defconfig
+ -include external/fsl_vpu_omx/codec_env.mk
+ -include external/fsl_imx_omx/codec_env.mk
+-
+ TARGET_HAVE_IMX_GRALLOC := true
+ TARGET_HAVE_IMX_HWCOMPOSER = true
+ USE_OPENGL_RENDERER := true
+diff --git a/imx6/soc/imx6sl.mk b/imx6/soc/imx6sl.mk
+index f21c433..c0c46b8 100644
+--- a/imx6/soc/imx6sl.mk
++++ b/imx6/soc/imx6sl.mk
+@@ -8,7 +8,8 @@ HAVE_FSL_IMX_GPU2D := true
+ HAVE_FSL_IMX_GPU3D := false
+ HAVE_FSL_IMX_IPU := false
+ BOARD_KERNEL_BASE := 0x80800000
+-TARGET_KERNEL_DEFCONF := imx6s_android_defconfig
++LOAD_KERNEL_ENTRY := 0x80008000
++TARGET_KERNEL_DEFCONF := imx_v7_android_defconfig
+ -include external/fsl_vpu_omx/codec_env.mk
+ TARGET_HAVE_IMX_GRALLOC := true
+ TARGET_HAVE_IMX_HWCOMPOSER = true
+diff --git a/sabreauto_6q/BoardConfig.mk b/sabreauto_6q/BoardConfig.mk
+index e6bce36..3433b3a 100644
+--- a/sabreauto_6q/BoardConfig.mk
++++ b/sabreauto_6q/BoardConfig.mk
+@@ -102,4 +102,5 @@ $(error "TARGET_USERIMAGES_USE_UBIFS and TARGET_USERIMAGES_USE_EXT4 config open
+ endif
+ endif
+ 
+-TARGET_BOOTLOADER_CONFIG := mx6q:mx6q_sabreauto_android_config mx6dl:mx6dl_sabreauto_android_config mx6solo:mx6solo_sabreauto_android_config mx6q-nand:mx6q_sabreauto_nand_android_config mx6dl-nand:mx6dl_sabreauto_nand_android_config mx6solo-nand:mx6solo_sabreauto_nand_android_config
++TARGET_BOOTLOADER_CONFIG := mx6q:mx6qsabreautoandroid mx6dl:mx6dlsabreautoandroid mx6solo:mx6solosabresdandroid mx6q-nand:mx6qsabreautoandroid_nand mx6dl-nand:mx6dlsabreautoandroid_nand mx6solo-nand:mx6solosabreauto_nand
++TARGET_BOARD_DTS_CONFIG := mx6q:imx6q-sabreauto.dtb mx6dl:imx6dl-sabreauto.dtb
+diff --git a/sabresd_6dq/BoardConfig.mk b/sabresd_6dq/BoardConfig.mk
+index 7c7a67a..cff4fd7 100755
+--- a/sabresd_6dq/BoardConfig.mk
++++ b/sabresd_6dq/BoardConfig.mk
+@@ -106,6 +106,7 @@ NUM_FRAMEBUFFER_SURFACE_BUFFERS := 3
+ #define consumer IR HAL support
+ IMX6_CONSUMER_IR_HAL := true
+ 
+-TARGET_BOOTLOADER_CONFIG := 6q:mx6q_sabresd_android_config 6dl:mx6dl_sabresd_android_config
++TARGET_BOOTLOADER_CONFIG := 6q:mx6qsabresdandroid 6dl:mx6dlsabresdandroid
++TARGET_BOARD_DTS_CONFIG := 6q:imx6q-sabresd.dtb 6dl:imx6dl-sabresd.dtb
+ 
+ 
+-- 
+1.8.0
+

@@ -1,0 +1,44 @@
+From c5694e27b7dddc49319a8c8555059a7c7b9f3fe2 Mon Sep 17 00:00:00 2001
+From: Haibo Chen <haibo.chen@freescale.com>
+Date: Wed, 28 Jan 2015 09:56:46 +0800
+Subject: [PATCH] MLK-10154 ARM: dts: imx6qdl-sd: add egalax touch to i2c2 bus
+
+Add egalax touch to i2c2 bus, which can make lvds0 touch screen
+work.
+
+Signed-off-by: Haibo Chen <haibo.chen@freescale.com>
+---
+ arch/arm/boot/dts/imx6qdl-sabresd.dtsi | 10 ++++++++++
+ 1 file changed, 10 insertions(+)
+
+diff --git a/arch/arm/boot/dts/imx6qdl-sabresd.dtsi b/arch/arm/boot/dts/imx6qdl-sabresd.dtsi
+index d6d54de..a74362b 100644
+--- a/arch/arm/boot/dts/imx6qdl-sabresd.dtsi
++++ b/arch/arm/boot/dts/imx6qdl-sabresd.dtsi
+@@ -471,6 +471,15 @@
+ 		mclk = <24000000>;
+ 		mclk_source = <0>;
+ 	};
++
++	egalax_ts@04 {
++		compatible = "eeti,egalax_ts";
++		reg = <0x04>;
++		interrupt-parent = <&gpio6>;
++		interrupts = <8 2>;
++		wakeup-gpios = <&gpio6 8 0>;
++	};
++
+ };
+ 
+ &i2c3 {
+@@ -520,6 +529,7 @@
+ 				MX6QDL_PAD_NANDF_D3__GPIO2_IO03 0x80000000
+ 				MX6QDL_PAD_GPIO_0__CCM_CLKO1    0x130b0
+ 				MX6QDL_PAD_NANDF_CLE__GPIO6_IO07 0x80000000
++				MX6QDL_PAD_NANDF_ALE__GPIO6_IO08 0x80000000
+ 				MX6QDL_PAD_ENET_TXD1__GPIO1_IO29 0x80000000
+ 				MX6QDL_PAD_EIM_D22__GPIO3_IO22  0x80000000
+ 				MX6QDL_PAD_ENET_CRS_DV__GPIO1_IO25 0x80000000
+-- 
+1.8.0
+

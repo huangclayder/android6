@@ -1,0 +1,143 @@
+From e7d4767331f1a2cbef61b4e89beb73731f267499 Mon Sep 17 00:00:00 2001
+From: "Ye.Li" <B37916@freescale.com>
+Date: Tue, 25 Aug 2015 15:07:15 +0800
+Subject: [PATCH] MLK-11408-2 imx: mx7d: Isolate 26 IP resources to domain 0
+ for A core
+
+In current design, if any peripheral was assigned to both A7 and M4,
+it will receive ipg_stop or ipg_wait when any of the 2 platforms
+enter low power mode. We will have a risk that, if A7 enter wait,
+M4 enter stop, peripheral will have chance to get ipg_stop and ipg_wait
+asserted same time.
+
+There are 26 peripherals impacted by this IC issue:
+SIM2(sim2/emvsim2)
+SIM1(sim1/emvsim1)
+UART1/UART2/UART3/UART4/UART5/UART6/UART7
+SAI1/SAI2/SAI3
+WDOG1/WDOG2/WDOG3/WDOG4
+GPT1/GPT2/GPT3/GPT4
+PWM1/PWM2/PWM3/PWM4
+ENET1/ENET2
+
+Software Workaround:
+The solution is set M4 to a different domain with A core.
+So the peripherals are not shared by them. This way requires
+the uboot implemented the RDC driver and set the 26 IPs above to domain 0 only.
+CM4 image will set the M4 to domain 1 only.
+
+This patch enables the CONFIG_MXC_RDC for mx7d SABRESD board and ARM2 boards, and
+setup the 26 IP resources to domain 0.
+
+Signed-off-by: Ye.Li <B37916@freescale.com>
+---
+ arch/arm/cpu/armv7/mx7/soc.c  | 51 +++++++++++++++++++++++++++++++++++++++++++
+ include/configs/mx7d_arm2.h   |  2 ++
+ include/configs/mx7dsabresd.h |  2 ++
+ 3 files changed, 55 insertions(+)
+
+diff --git a/arch/arm/cpu/armv7/mx7/soc.c b/arch/arm/cpu/armv7/mx7/soc.c
+index e30493e..58621ce 100644
+--- a/arch/arm/cpu/armv7/mx7/soc.c
++++ b/arch/arm/cpu/armv7/mx7/soc.c
+@@ -18,6 +18,10 @@
+ #include <dm.h>
+ #include <imx_thermal.h>
+ #include <mxsfb.h>
++#ifdef CONFIG_MXC_RDC
++#include <asm/imx-common/rdc-sema.h>
++#include <asm/arch/imx-rdc.h>
++#endif
+ #ifdef CONFIG_FSL_FASTBOOT
+ #ifdef CONFIG_ANDROID_RECOVERY
+ #include <recovery.h>
+@@ -39,6 +43,50 @@ U_BOOT_DEVICE(imx7_thermal) = {
+ };
+ #endif
+ 
++#ifdef CONFIG_MXC_RDC
++static rdc_peri_cfg_t const resources[] = {
++    (RDC_PER_SIM1 | RDC_DOMAIN(0)),
++    (RDC_PER_SIM2 | RDC_DOMAIN(0)),
++    (RDC_PER_UART1 | RDC_DOMAIN(0)),
++    (RDC_PER_UART2 | RDC_DOMAIN(0)),
++    (RDC_PER_UART3 | RDC_DOMAIN(0)),
++    (RDC_PER_UART4 | RDC_DOMAIN(0)),
++    (RDC_PER_UART5 | RDC_DOMAIN(0)),
++    (RDC_PER_UART6 | RDC_DOMAIN(0)),
++    (RDC_PER_UART7 | RDC_DOMAIN(0)),
++    (RDC_PER_SAI1 | RDC_DOMAIN(0)),
++    (RDC_PER_SAI2 | RDC_DOMAIN(0)),
++    (RDC_PER_SAI3 | RDC_DOMAIN(0)),
++    (RDC_PER_WDOG1 | RDC_DOMAIN(0)),
++    (RDC_PER_WDOG2 | RDC_DOMAIN(0)),
++    (RDC_PER_WDOG3 | RDC_DOMAIN(0)),
++    (RDC_PER_WDOG4 | RDC_DOMAIN(0)),
++    (RDC_PER_GPT1 | RDC_DOMAIN(0)),
++    (RDC_PER_GPT2 | RDC_DOMAIN(0)),
++    (RDC_PER_GPT3 | RDC_DOMAIN(0)),
++    (RDC_PER_GPT4 | RDC_DOMAIN(0)),
++    (RDC_PER_PWM1 | RDC_DOMAIN(0)),
++    (RDC_PER_PWM2 | RDC_DOMAIN(0)),
++    (RDC_PER_PWM3 | RDC_DOMAIN(0)),
++    (RDC_PER_PWM4 | RDC_DOMAIN(0)),
++    (RDC_PER_ENET1 | RDC_DOMAIN(0)),
++    (RDC_PER_ENET2 | RDC_DOMAIN(0)),
++};
++
++static void isolate_resource(void)
++{
++    /* At default, all resources are in domain 0 - 3. Here we setup 
++     * some resources to domain 0 where M4 codes will move the M4
++     * out of this domain. Then M4 is not able to access them any longer.
++     * This is a workaround for ic issue. In current design, if any peripheral 
++     * was assigned to both A7 and M4, it will receive ipg_stop or ipg_wait 
++     * when any of the 2 platforms enter low power mode. So M4 sleep will cause
++     * some peripherals fail to work at A core side.
++     */
++    imx_rdc_setup_peripherals(resources, ARRAY_SIZE(resources));
++}
++#endif
++
+ u32 get_cpu_rev(void)
+ {
+ 	struct mxc_ccm_anatop_reg *ccm_anatop = (struct mxc_ccm_anatop_reg *)
+@@ -167,6 +215,9 @@ int arch_cpu_init(void)
+ 
+ 	set_epdc_qos();
+ 
++#ifdef CONFIG_MXC_RDC
++    isolate_resource();
++#endif
+ 	return 0;
+ }
+ 
+diff --git a/include/configs/mx7d_arm2.h b/include/configs/mx7d_arm2.h
+index ecc3d22..3e94672 100644
+--- a/include/configs/mx7d_arm2.h
++++ b/include/configs/mx7d_arm2.h
+@@ -100,6 +100,8 @@
+ #define CONFIG_CMD_SETEXPR
+ 
+ #ifdef CONFIG_CMD_BOOTAUX
++#define CONFIG_MXC_RDC /* Enable RDC to isolate the peripherals for A7 and M4 */
++
+ #define UPDATE_M4_ENV \
+ 	"m4image=m4_qspi.bin\0" \
+ 	"loadm4image=fatload mmc ${mmcdev}:${mmcpart} ${loadaddr} ${m4image}\0" \
+diff --git a/include/configs/mx7dsabresd.h b/include/configs/mx7dsabresd.h
+index 9c38a7e..2d4bfae 100644
+--- a/include/configs/mx7dsabresd.h
++++ b/include/configs/mx7dsabresd.h
+@@ -123,6 +123,8 @@
+ #define CONFIG_CMD_SETEXPR
+ 
+ #ifdef CONFIG_CMD_BOOTAUX
++#define CONFIG_MXC_RDC /* Enable RDC to isolate the peripherals for A7 and M4 */
++
+ #define UPDATE_M4_ENV \
+ 	"m4image=m4_qspi.bin\0" \
+ 	"loadm4image=fatload mmc ${mmcdev}:${mmcpart} ${loadaddr} ${m4image}\0" \
+-- 
+1.8.0
+

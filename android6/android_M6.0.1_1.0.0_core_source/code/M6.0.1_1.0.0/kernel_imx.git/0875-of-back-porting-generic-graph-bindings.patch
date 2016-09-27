@@ -1,0 +1,108 @@
+From 866d53b62ef6c767776875e62e2780390bcaba4c Mon Sep 17 00:00:00 2001
+From: Mathieu Poirier <mathieu.poirier@linaro.org>
+Date: Wed, 8 Oct 2014 13:09:30 -0600
+Subject: [PATCH] of: back-porting generic graph bindings
+
+This patch is back-porting the generic _portion_ of
+f2a575f67695dcba9062acd666ae5aab2380b95c to 3.14
+
+Signed-off-by: Mathieu Poirier <mathieu.poirier@linaro.org>
+
+Conflicts:
+	drivers/of/base.c
+---
+ drivers/of/base.c        | 32 ++++++++++++++++++++++++++++++++
+ include/linux/of_graph.h | 19 +++++++++++++++++++
+ 2 files changed, 51 insertions(+)
+
+diff --git a/drivers/of/base.c b/drivers/of/base.c
+index 5a00afe..f80b6e6 100644
+--- a/drivers/of/base.c
++++ b/drivers/of/base.c
+@@ -21,6 +21,7 @@
+ #include <linux/cpu.h>
+ #include <linux/module.h>
+ #include <linux/of.h>
++#include <linux/of_graph.h>
+ #include <linux/spinlock.h>
+ #include <linux/slab.h>
+ #include <linux/proc_fs.h>
+@@ -1984,6 +1985,37 @@ struct device_node *of_find_next_cache_node(const struct device_node *np)
+ }
+ 
+ /**
++ * of_graph_parse_endpoint() - parse common endpoint node properties
++ * @node: pointer to endpoint device_node
++ * @endpoint: pointer to the OF endpoint data structure
++ *
++ * The caller should hold a reference to @node.
++ */
++int of_graph_parse_endpoint(const struct device_node *node,
++			    struct of_endpoint *endpoint)
++{
++	struct device_node *port_node = of_get_parent(node);
++
++	WARN_ONCE(!port_node, "%s(): endpoint %s has no parent node\n",
++		  __func__, node->full_name);
++
++	memset(endpoint, 0, sizeof(*endpoint));
++
++	endpoint->local_node = node;
++	/*
++	 * It doesn't matter whether the two calls below succeed.
++	 * If they don't then the default value 0 is used.
++	 */
++	of_property_read_u32(port_node, "reg", &endpoint->port);
++	of_property_read_u32(node, "reg", &endpoint->id);
++
++	of_node_put(port_node);
++
++	return 0;
++}
++EXPORT_SYMBOL(of_graph_parse_endpoint);
++
++/**
+  * of_graph_get_next_endpoint() - get next endpoint node
+  * @parent: pointer to the parent device node
+  * @prev: previous endpoint node, or NULL to get first
+diff --git a/include/linux/of_graph.h b/include/linux/of_graph.h
+index 3bbeb60..56e0507 100644
+--- a/include/linux/of_graph.h
++++ b/include/linux/of_graph.h
+@@ -14,7 +14,21 @@
+ #ifndef __LINUX_OF_GRAPH_H
+ #define __LINUX_OF_GRAPH_H
+ 
++/**
++ * struct of_endpoint - the OF graph endpoint data structure
++ * @port: identifier (value of reg property) of a port this endpoint belongs to
++ * @id: identifier (value of reg property) of this endpoint
++ * @local_node: pointer to device_node of this endpoint
++ */
++struct of_endpoint {
++	unsigned int port;
++	unsigned int id;
++	const struct device_node *local_node;
++};
++
+ #ifdef CONFIG_OF
++int of_graph_parse_endpoint(const struct device_node *node,
++				struct of_endpoint *endpoint);
+ struct device_node *of_graph_get_next_endpoint(const struct device_node *parent,
+ 					struct device_node *previous);
+ struct device_node *of_graph_get_remote_port_parent(
+@@ -22,6 +36,11 @@ struct device_node *of_graph_get_remote_port_parent(
+ struct device_node *of_graph_get_remote_port(const struct device_node *node);
+ #else
+ 
++static inline int of_graph_parse_endpoint(const struct device_node *node,
++					struct of_endpoint *endpoint)
++{
++	return -ENOSYS;
++}
+ static inline struct device_node *of_graph_get_next_endpoint(
+ 					const struct device_node *parent,
+ 					struct device_node *previous)
+-- 
+1.8.0
+

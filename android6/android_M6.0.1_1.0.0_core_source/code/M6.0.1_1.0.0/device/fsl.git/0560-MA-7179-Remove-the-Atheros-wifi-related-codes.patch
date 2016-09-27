@@ -1,0 +1,185 @@
+From b19602e1e83afd60dce4a7209bd7204338dc16d6 Mon Sep 17 00:00:00 2001
+From: Haoran Wang <b50027@freescale.com>
+Date: Thu, 29 Oct 2015 19:43:47 +0800
+Subject: [PATCH 560/602] MA-7179 Remove the Atheros wifi related codes
+
+Remove the Atheros wifi releated codes.
+The AR6223 module is not support in i.MX.
+
+Signed-off-by: Haoran Wang <b50027@freescale.com>
+---
+ evk_6sl/BoardConfig.mk       |  4 ----
+ imx6/imx6.mk                 | 11 -----------
+ sabreauto_6q/BoardConfig.mk  |  4 ----
+ sabreauto_6sx/BoardConfig.mk |  4 ----
+ sabresd_6dq/BoardConfig.mk   |  4 ----
+ sabresd_6sx/BoardConfig.mk   |  4 ----
+ sabresd_7d/BoardConfig.mk    |  2 --
+ 7 files changed, 33 deletions(-)
+
+diff --git a/evk_6sl/BoardConfig.mk b/evk_6sl/BoardConfig.mk
+index b29b0c0..e436601 100644
+--- a/evk_6sl/BoardConfig.mk
++++ b/evk_6sl/BoardConfig.mk
+@@ -43,8 +43,6 @@ TARGET_KERNEL_MODULES        := \
+ BOARD_WPA_SUPPLICANT_DRIVER  := NL80211
+ BOARD_HOSTAPD_DRIVER         := NL80211
+ 
+-BOARD_HOSTAPD_PRIVATE_LIB_QCOM              := lib_driver_cmd_qcwcn
+-BOARD_WPA_SUPPLICANT_PRIVATE_LIB_QCOM       := lib_driver_cmd_qcwcn
+ BOARD_HOSTAPD_PRIVATE_LIB_RTL               := lib_driver_cmd_rtl
+ BOARD_WPA_SUPPLICANT_PRIVATE_LIB_RTL        := lib_driver_cmd_rtl
+ BOARD_HOSTAPD_PRIVATE_LIB_BCM               := lib_driver_cmd_bcmdhd
+@@ -83,8 +81,6 @@ TARGET_SELECT_KEY := 28
+ # we don't support sparse image.
+ TARGET_USERIMAGES_SPARSE_EXT_DISABLED := false
+ DM_VERITY_RUNTIME_CONFIG := true
+-# atheros 3k BT
+-BOARD_USE_AR3K_BLUETOOTH := false
+ 
+ USE_ION_ALLOCATOR := false
+ USE_GPU_ALLOCATOR := true
+diff --git a/imx6/imx6.mk b/imx6/imx6.mk
+index 2e4fa72..0f2ce74 100644
+--- a/imx6/imx6.mk
++++ b/imx6/imx6.mk
+@@ -41,7 +41,6 @@ PRODUCT_PACKAGES += \
+ 	ip-up-vpn				\
+ 	ip-up-ppp0				\
+ 	ip-down-ppp0				\
+-	wpa_supplicant				\
+ 	rtl_wpa_supplicant			\
+ 	bcm_supplicant				\
+ 	wpa_supplicant.conf			\
+@@ -78,7 +77,6 @@ PRODUCT_PACKAGES += \
+ 
+ # Wifi AP mode
+ PRODUCT_PACKAGES += \
+-	hostapd 				\
+ 	rtl_hostapd 				\
+ 	bcm_hostapd					\
+ 	hostapd_cli
+@@ -115,19 +113,10 @@ PRODUCT_PACKAGES += \
+ 	power.imx6				\
+ 	audio.r_submix.default			\
+ 	libbt-vendor				\
+-	libbt-vendor-ar3k			\
+ 	libbt-vendor-broadcom		\
+ 	magd                                    \
+ 	consumerir.imx6
+ 
+-# Bluetooth firmware files.
+-PRODUCT_PACKAGES += \
+-	ar3kbdaddr_ar3001			\
+-	PS_ASIC_ar3001				\
+-	RamPatch_ar3001				\
+-	ar3kbdaddr_ar3002			\
+-	PS_ASIC_ar3002				\
+-	RamPatch_ar3002				\
+ 
+ # Freescale VPU firmware files.
+ PRODUCT_PACKAGES += \
+diff --git a/sabreauto_6q/BoardConfig.mk b/sabreauto_6q/BoardConfig.mk
+index 905eb48..d28c335 100644
+--- a/sabreauto_6q/BoardConfig.mk
++++ b/sabreauto_6q/BoardConfig.mk
+@@ -52,8 +52,6 @@ TARGET_KERNEL_MODULES        := \
+ BOARD_WPA_SUPPLICANT_DRIVER  := NL80211
+ BOARD_HOSTAPD_DRIVER         := NL80211
+ 
+-BOARD_HOSTAPD_PRIVATE_LIB_QCOM              := lib_driver_cmd_qcwcn
+-BOARD_WPA_SUPPLICANT_PRIVATE_LIB_QCOM       := lib_driver_cmd_qcwcn
+ BOARD_HOSTAPD_PRIVATE_LIB_RTL               := lib_driver_cmd_rtl
+ BOARD_WPA_SUPPLICANT_PRIVATE_LIB_RTL        := lib_driver_cmd_rtl
+ #for intel vendor
+@@ -82,8 +80,6 @@ TARGET_SELECT_KEY := 28
+ # we don't support sparse image.
+ TARGET_USERIMAGES_SPARSE_EXT_DISABLED := false
+ DM_VERITY_RUNTIME_CONFIG := true
+-# atheros 3k BT
+-BOARD_USE_AR3K_BLUETOOTH := false
+ 
+ # camera hal v2
+ IMX_CAMERA_HAL_V2 := true
+diff --git a/sabreauto_6sx/BoardConfig.mk b/sabreauto_6sx/BoardConfig.mk
+index 7cf90fb..fc6a48e 100755
+--- a/sabreauto_6sx/BoardConfig.mk
++++ b/sabreauto_6sx/BoardConfig.mk
+@@ -47,8 +47,6 @@ TARGET_KERNEL_MODULES        := \
+ BOARD_WPA_SUPPLICANT_DRIVER  := NL80211
+ BOARD_HOSTAPD_DRIVER         := NL80211
+ 
+-BOARD_HOSTAPD_PRIVATE_LIB_QCOM              := lib_driver_cmd_qcwcn
+-BOARD_WPA_SUPPLICANT_PRIVATE_LIB_QCOM       := lib_driver_cmd_qcwcn
+ BOARD_HOSTAPD_PRIVATE_LIB_RTL               := lib_driver_cmd_rtl
+ BOARD_WPA_SUPPLICANT_PRIVATE_LIB_RTL        := lib_driver_cmd_rtl
+ #for intel vendor
+@@ -95,8 +93,6 @@ $(error "TARGET_USERIMAGES_USE_UBIFS and TARGET_USERIMAGES_USE_EXT4 config open
+ endif
+ endif
+ 
+-# atheros 3k BT
+-BOARD_USE_AR3K_BLUETOOTH := false
+ 
+ USE_ION_ALLOCATOR := false
+ USE_GPU_ALLOCATOR := true
+diff --git a/sabresd_6dq/BoardConfig.mk b/sabresd_6dq/BoardConfig.mk
+index 7fe33d0..82d5a3e 100644
+--- a/sabresd_6dq/BoardConfig.mk
++++ b/sabresd_6dq/BoardConfig.mk
+@@ -56,8 +56,6 @@ TARGET_KERNEL_MODULES        := \
+ BOARD_WPA_SUPPLICANT_DRIVER  := NL80211
+ BOARD_HOSTAPD_DRIVER         := NL80211
+ 
+-BOARD_HOSTAPD_PRIVATE_LIB_QCOM              := lib_driver_cmd_qcwcn
+-BOARD_WPA_SUPPLICANT_PRIVATE_LIB_QCOM       := lib_driver_cmd_qcwcn
+ BOARD_HOSTAPD_PRIVATE_LIB_RTL               := lib_driver_cmd_rtl
+ BOARD_WPA_SUPPLICANT_PRIVATE_LIB_RTL        := lib_driver_cmd_rtl
+ BOARD_HOSTAPD_PRIVATE_LIB_BCM               := lib_driver_cmd_bcmdhd
+@@ -120,8 +118,6 @@ ifeq ($(TARGET_USERIMAGES_USE_UBIFS),true)
+ BOARD_KERNEL_CMDLINE +=  mtdparts=gpmi-nand:16m(bootloader),16m(bootimg),128m(recovery),-(root) gpmi_debug_init ubi.mtd=3
+ endif
+ 
+-# atheros 3k BT
+-BOARD_USE_AR3K_BLUETOOTH := true
+ 
+ # Broadcom BCM4339 BT
+ BOARD_HAVE_BLUETOOTH_BCM := true
+diff --git a/sabresd_6sx/BoardConfig.mk b/sabresd_6sx/BoardConfig.mk
+index e8f3504..92d17bb 100644
+--- a/sabresd_6sx/BoardConfig.mk
++++ b/sabresd_6sx/BoardConfig.mk
+@@ -44,8 +44,6 @@ TARGET_KERNEL_MODULES        := \
+                                 kernel_imx/drivers/net/wireless/rtlwifi/rtl8821as/8821as.ko:system/lib/modules/8821as.ko \
+                                 kernel_imx/drivers/net/wireless/bcmdhd/bcmdhd.ko:system/lib/modules/bcmdhd.ko
+ 
+-BOARD_HOSTAPD_PRIVATE_LIB_QCOM              := lib_driver_cmd_qcwcn
+-BOARD_WPA_SUPPLICANT_PRIVATE_LIB_QCOM       := lib_driver_cmd_qcwcn
+ BOARD_HOSTAPD_PRIVATE_LIB_RTL               := lib_driver_cmd_rtl
+ BOARD_WPA_SUPPLICANT_PRIVATE_LIB_RTL        := lib_driver_cmd_rtl
+ BOARD_HOSTAPD_PRIVATE_LIB_BCM               := lib_driver_cmd_bcmdhd
+@@ -109,8 +107,6 @@ ifeq ($(TARGET_USERIMAGES_USE_UBIFS),true)
+ BOARD_KERNEL_CMDLINE +=  mtdparts=gpmi-nand:16m(bootloader),16m(bootimg),128m(recovery),-(root) gpmi_debug_init ubi.mtd=3
+ endif
+ 
+-# atheros 3k BT
+-BOARD_USE_AR3K_BLUETOOTH := true
+ 
+ BOARD_HAVE_BLUETOOTH_BCM := true
+ BOARD_BLUETOOTH_BDROID_BUILDCFG_INCLUDE_DIR := device/fsl/sabresd_6sx/bluetooth
+diff --git a/sabresd_7d/BoardConfig.mk b/sabresd_7d/BoardConfig.mk
+index 6c5b5b4..b4deb0e 100644
+--- a/sabresd_7d/BoardConfig.mk
++++ b/sabresd_7d/BoardConfig.mk
+@@ -45,8 +45,6 @@ TARGET_KERNEL_MODULES        := \
+ BOARD_WPA_SUPPLICANT_DRIVER  := NL80211
+ BOARD_HOSTAPD_DRIVER         := NL80211
+ 
+-BOARD_HOSTAPD_PRIVATE_LIB_QCOM              := lib_driver_cmd_qcwcn
+-BOARD_WPA_SUPPLICANT_PRIVATE_LIB_QCOM       := lib_driver_cmd_qcwcn
+ BOARD_HOSTAPD_PRIVATE_LIB_RTL               := lib_driver_cmd_rtl
+ BOARD_WPA_SUPPLICANT_PRIVATE_LIB_RTL        := lib_driver_cmd_rtl
+ BOARD_HOSTAPD_PRIVATE_LIB_BCM               := lib_driver_cmd_bcmdhd
+-- 
+1.8.0
+

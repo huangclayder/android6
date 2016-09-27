@@ -1,0 +1,29 @@
+From 0917d8feddcdb4ba0d58120d68e94796bbf4f4bd Mon Sep 17 00:00:00 2001
+From: fang hui <b31070@freescale.com>
+Date: Tue, 5 May 2015 14:37:48 +0800
+Subject: [PATCH] MA-6625 - [sabresd_7d]: support uvc camera
+
+enable ion for jpeg buffer alloc.
+
+Signed-off-by: fang hui <b31070@freescale.com>
+---
+ arch/arm/boot/dts/imx7d.dtsi | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/arch/arm/boot/dts/imx7d.dtsi b/arch/arm/boot/dts/imx7d.dtsi
+index cb1575d..c269fb6 100644
+--- a/arch/arm/boot/dts/imx7d.dtsi
++++ b/arch/arm/boot/dts/imx7d.dtsi
+@@ -1295,5 +1295,9 @@
+ 			pcie-phy-supply = <&reg_1p0d>;
+ 			status = "disabled";
+ 		};
++		imx_ion {
++			compatible = "fsl,mxc-ion";
++			fsl,heap-id = <0>;
++		};
+ 	};
+ };
+-- 
+1.8.0
+

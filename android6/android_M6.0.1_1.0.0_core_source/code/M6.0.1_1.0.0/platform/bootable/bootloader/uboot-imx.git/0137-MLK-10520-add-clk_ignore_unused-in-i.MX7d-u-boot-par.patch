@@ -1,0 +1,41 @@
+From 20b8ac7bbe20e06d107f8922da887e88e8863d2e Mon Sep 17 00:00:00 2001
+From: Han Xu <b45815@freescale.com>
+Date: Tue, 31 Mar 2015 14:58:34 -0500
+Subject: [PATCH] MLK-10520 add clk_ignore_unused in i.MX7d u-boot parameter
+
+add this parameter in u-boot as a temporary workaround.
+
+Signed-off-by: Han Xu <b45815@freescale.com>
+(cherry picked from commit f0beee980914360c8783406ef8694974467eb07b)
+---
+ include/configs/mx7d_arm2.h   | 1 +
+ include/configs/mx7dsabresd.h | 1 +
+ 2 files changed, 2 insertions(+)
+
+diff --git a/include/configs/mx7d_arm2.h b/include/configs/mx7d_arm2.h
+index bb4fd60..081545e 100644
+--- a/include/configs/mx7d_arm2.h
++++ b/include/configs/mx7d_arm2.h
+@@ -134,6 +134,7 @@
+ 		"g_mass_storage.stall=0 g_mass_storage.removable=1 " \
+ 		"g_mass_storage.idVendor=0x066F g_mass_storage.idProduct=0x37FF "\
+ 		"g_mass_storage.iSerialNumber=\"\" "\
++		"clk_ignore_unused "\
+ 		"\0" \
+ 	"initrd_addr=0x83800000\0" \
+ 	"initrd_high=0xffffffff\0" \
+diff --git a/include/configs/mx7dsabresd.h b/include/configs/mx7dsabresd.h
+index 65ace67..f851779 100644
+--- a/include/configs/mx7dsabresd.h
++++ b/include/configs/mx7dsabresd.h
+@@ -156,6 +156,7 @@
+ 		"g_mass_storage.idVendor=0x066F g_mass_storage.idProduct=0x37FF "\
+ 		"g_mass_storage.iSerialNumber=\"\" "\
+ 		CONFIG_MFG_NAND_PARTITION \
++		"clk_ignore_unused "\
+ 		"\0" \
+ 	"initrd_addr=0x83800000\0" \
+ 	"initrd_high=0xffffffff\0" \
+-- 
+1.8.0
+

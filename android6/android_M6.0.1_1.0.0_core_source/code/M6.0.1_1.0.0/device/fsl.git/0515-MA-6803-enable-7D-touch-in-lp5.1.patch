@@ -1,0 +1,43 @@
+From f9b09db1a4b5f44f243a383c4bebed3a6923a3c0 Mon Sep 17 00:00:00 2001
+From: Zhang Sanshan <b51434@freescale.com>
+Date: Wed, 17 Jun 2015 21:20:06 +0800
+Subject: [PATCH 515/602] MA-6803 enable 7D touch in lp5.1
+
+add touch dts for 7d.
+add idc file for touch. The name is defined by device name.
+This filr define touch type , calibration and so on.
+
+Signed-off-by: Zhang Sanshan <b51434@freescale.com>
+---
+ imx7/imx7.mk              | 1 +
+ sabresd_7d/BoardConfig.mk | 2 +-
+ 2 files changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/imx7/imx7.mk b/imx7/imx7.mk
+index 53793c2..b466101 100644
+--- a/imx7/imx7.mk
++++ b/imx7/imx7.mk
+@@ -332,6 +332,7 @@ PRODUCT_COPY_FILES +=	\
+ 	device/fsl/common/input/eGalax_Touch_Screen.idc:system/usr/idc/eGalax_Touch_Screen.idc \
+ 	device/fsl/common/input/eGalax_Touch_Screen.idc:system/usr/idc/HannStar_P1003_Touchscreen.idc \
+ 	device/fsl/common/input/eGalax_Touch_Screen.idc:system/usr/idc/Novatek_NT11003_Touch_Screen.idc \
++	device/fsl/common/input/eGalax_Touch_Screen.idc:system/usr/idc/ADS7846_Touchscreen.idc \
+ 	device/fsl/imx7/etc/init.rc:root/init.rc \
+ 	device/fsl/imx7/etc/apns-conf.xml:system/etc/apns-conf.xml \
+ 	device/fsl/imx7/etc/init.usb.rc:root/init.freescale.usb.rc \
+diff --git a/sabresd_7d/BoardConfig.mk b/sabresd_7d/BoardConfig.mk
+index e9c8666..5843084 100644
+--- a/sabresd_7d/BoardConfig.mk
++++ b/sabresd_7d/BoardConfig.mk
+@@ -89,7 +89,7 @@ TARGET_VSYNC_DIRECT_REFRESH := true
+ 
+ BOARD_KERNEL_CMDLINE := console=ttymxc0,115200 init=/init androidboot.console=ttymxc0 consoleblank=0 androidboot.hardware=freescale 
+ TARGET_BOOTLOADER_CONFIG := imx7d:mx7dsabresdandroid_config
+-TARGET_BOARD_DTS_CONFIG := imx7d:imx7d-sdb.dtb imx7d-epdc:imx7d-sdb-epdc.dtb
++TARGET_BOARD_DTS_CONFIG := imx7d:imx7d-sdb.dtb imx7d-touch:imx7d-sdb-touch.dtb imx7d-epdc:imx7d-sdb-epdc.dtb
+ 
+ BOARD_SEPOLICY_DIRS := \
+        device/fsl/imx7/sepolicy \
+-- 
+1.8.0
+

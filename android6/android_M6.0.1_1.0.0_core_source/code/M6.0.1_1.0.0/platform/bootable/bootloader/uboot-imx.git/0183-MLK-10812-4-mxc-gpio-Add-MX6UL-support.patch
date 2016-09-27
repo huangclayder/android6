@@ -1,0 +1,35 @@
+From e1b7fed490d2129f6331d1b2175426087a52e3ce Mon Sep 17 00:00:00 2001
+From: Peng Fan <Peng.Fan@freescale.com>
+Date: Mon, 13 Apr 2015 09:39:35 +0800
+Subject: [PATCH] MLK-10812-4 mxc:gpio Add MX6UL support
+
+comment out GPIO6/7 for MX6UL
+
+Signed-off-by: Peng Fan <Peng.Fan@freescale.com>
+---
+ drivers/gpio/mxc_gpio.c | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/drivers/gpio/mxc_gpio.c b/drivers/gpio/mxc_gpio.c
+index 12f0e6c..1cf10c3 100644
+--- a/drivers/gpio/mxc_gpio.c
++++ b/drivers/gpio/mxc_gpio.c
+@@ -52,11 +52,15 @@ static unsigned long gpio_ports[] = {
+ #if defined(CONFIG_MX27) || defined(CONFIG_MX53) || defined(CONFIG_MX6) || \
+ 		defined(CONFIG_MX7)
+ 	[4] = GPIO5_BASE_ADDR,
++#if !defined(CONFIG_MX6UL)
+ 	[5] = GPIO6_BASE_ADDR,
+ #endif
++#endif
+ #if defined(CONFIG_MX53) || defined(CONFIG_MX6) || defined(CONFIG_MX7)
++#if !defined(CONFIG_MX6UL)
+ 	[6] = GPIO7_BASE_ADDR,
+ #endif
++#endif
+ };
+ 
+ #ifdef CONFIG_MXC_RDC
+-- 
+1.8.0
+

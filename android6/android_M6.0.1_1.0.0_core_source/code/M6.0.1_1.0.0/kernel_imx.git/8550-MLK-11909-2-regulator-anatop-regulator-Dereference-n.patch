@@ -1,0 +1,35 @@
+From e5d41f4bbded2f2b948a13d4dc04596cd896b072 Mon Sep 17 00:00:00 2001
+From: Robin Gong <b38343@freescale.com>
+Date: Thu, 26 Nov 2015 17:05:07 +0800
+Subject: [PATCH] MLK-11909-2 regulator: anatop-regulator: Dereference null
+ return value (NULL_RETURNS)
+
+Dereference null return value (NULL_RETURNS).
+
+Signed-off-by: Robin Gong <b38343@freescale.com>
+---
+ drivers/regulator/anatop-regulator.c | 7 +++++++
+ 1 file changed, 7 insertions(+)
+
+diff --git a/drivers/regulator/anatop-regulator.c b/drivers/regulator/anatop-regulator.c
+index 8ddf2cd..bee7aad 100644
+--- a/drivers/regulator/anatop-regulator.c
++++ b/drivers/regulator/anatop-regulator.c
+@@ -242,7 +242,14 @@ static int anatop_regulator_probe(struct platform_device *pdev)
+ 	if (!sreg)
+ 		return -ENOMEM;
+ 	sreg->initdata = initdata;
++
+ 	sreg->name = of_get_property(np, "regulator-name", NULL);
++
++	if (!sreg->name) {
++		dev_err(dev, "no regulator-name set\n");
++		return -EINVAL;
++	}
++
+ 	rdesc = &sreg->rdesc;
+ 	rdesc->name = sreg->name;
+ 	rdesc->type = REGULATOR_VOLTAGE;
+-- 
+1.8.0
+

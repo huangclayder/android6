@@ -1,0 +1,37 @@
+From df1b7235c7bb77472cfbad129e19572f5527954d Mon Sep 17 00:00:00 2001
+From: Jon Medhurst <tixy@linaro.org>
+Date: Tue, 26 Mar 2013 13:06:11 +0000
+Subject: [PATCH] ARM: vexpress: Update TC2 device tree for HDLCD hack
+
+Signed-off-by: Jon Medhurst <tixy@linaro.org>
+(cherry picked from commit c2fbaa5ec72ba6468dd09ce2206bd2328c4deafb)
+Signed-off-by: Alex Shi <alex.shi@linaro.org>
+---
+ arch/arm/boot/dts/vexpress-v2p-ca15_a7.dts | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/arch/arm/boot/dts/vexpress-v2p-ca15_a7.dts b/arch/arm/boot/dts/vexpress-v2p-ca15_a7.dts
+index 15f98cb..6667a03 100644
+--- a/arch/arm/boot/dts/vexpress-v2p-ca15_a7.dts
++++ b/arch/arm/boot/dts/vexpress-v2p-ca15_a7.dts
+@@ -9,6 +9,8 @@
+ 
+ /dts-v1/;
+ 
++/memreserve/ 0xff000000 0x01000000;
++
+ / {
+ 	model = "V2P-CA15_CA7";
+ 	arm,hbi = <0x249>;
+@@ -86,6 +88,8 @@
+ 		compatible = "arm,hdlcd";
+ 		reg = <0 0x2b000000 0 0x1000>;
+ 		interrupts = <0 85 4>;
++		mode = "1024x768-16@60";
++		framebuffer = <0 0xff000000 0 0x01000000>;
+ 		clocks = <&oscclk5>;
+ 		clock-names = "pxlclk";
+ 	};
+-- 
+1.8.0
+

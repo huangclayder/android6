@@ -1,0 +1,37 @@
+From 52b83c7596f9741c3d212d29f784052c45a097d7 Mon Sep 17 00:00:00 2001
+From: Liu Xiaowen <b37945@freescale.com>
+Date: Thu, 7 Nov 2013 10:57:00 +0800
+Subject: [PATCH 38/43] ENGR00215174 update to pass build for android 4.4.
+
+modify property_get input buffer size required in android 4.4.
+delete additional code added by update.
+
+Signed-off-by: Liu Xiaowen <b37945@freescale.com>
+---
+ reference-ril/reference-ril.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/reference-ril/reference-ril.c b/reference-ril/reference-ril.c
+index ddb40fa..a6835da 100755
+--- a/reference-ril/reference-ril.c
++++ b/reference-ril/reference-ril.c
+@@ -801,7 +801,7 @@ static void requestOrSendDataCallList(RIL_Token *t)
+                 const char* separator = " ";
+                 const int   dnslist_sz = 128;
+                 char*       dnslist = alloca(dnslist_sz);
+-                char  propName[PROP_NAME_MAX];
++                char  propName[PROP_VALUE_MAX];
+                 memset(dnslist, 0, 128);
+                 property_get("net.ppp0.dns1", propName, "8.8.8.8");
+                 strlcat(dnslist, propName, dnslist_sz);
+@@ -3598,6 +3598,7 @@ onRequest (int request, void *data, size_t datalen, RIL_Token t)
+                     RIL_onRequestComplete(t, RIL_E_SUCCESS, &tech, sizeof(tech));
+             }
+             break;
++
+         case RIL_REQUEST_SET_PREFERRED_NETWORK_TYPE:
+             requestSetPreferredNetworkType(request, data, datalen, t);
+             break;
+-- 
+1.8.0
+

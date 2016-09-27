@@ -1,0 +1,30 @@
+From 83e877b231830aabfa7ae4dc25f95e8778364d9d Mon Sep 17 00:00:00 2001
+From: Fugang Duan <b38611@freescale.com>
+Date: Mon, 20 Apr 2015 18:33:38 +0800
+Subject: [PATCH] MLK-10702 imx: mx7d: clock: correct fec MDC root clock
+
+In i.MX7d platform, fec MDC root clock is ENET_AXI_ROOT_CLK, not
+ipg clock, correct it.
+
+Signed-off-by: Fugang Duan <B38611@freescale.com>
+(cherry picked from commit 07105e18dd0899c47ef80d3fddecf3ef250d895a)
+---
+ arch/arm/cpu/armv7/mx7/clock.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/arch/arm/cpu/armv7/mx7/clock.c b/arch/arm/cpu/armv7/mx7/clock.c
+index 79a8e75..39fdd75 100644
+--- a/arch/arm/cpu/armv7/mx7/clock.c
++++ b/arch/arm/cpu/armv7/mx7/clock.c
+@@ -59,7 +59,7 @@ u32 imx_get_uartclk(void)
+ 
+ u32 imx_get_fecclk(void)
+ {
+-	return get_ipg_clk();
++	return get_root_clk(ENET_AXI_CLK_ROOT);
+ }
+ 
+ #ifdef CONFIG_MXC_OCOTP
+-- 
+1.8.0
+

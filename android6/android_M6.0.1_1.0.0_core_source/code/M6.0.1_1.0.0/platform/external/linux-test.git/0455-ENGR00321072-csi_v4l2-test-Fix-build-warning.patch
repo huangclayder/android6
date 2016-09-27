@@ -1,0 +1,74 @@
+From 5b72bec8d427621872352030829ca82a8004bce8 Mon Sep 17 00:00:00 2001
+From: Sandor Yu <R01008@freescale.com>
+Date: Thu, 3 Jul 2014 16:51:34 +0800
+Subject: [PATCH 455/505] ENGR00321072 csi_v4l2 test: Fix build warning
+
+Fix csi_v4l2_capture and csi_v4l2_tvin build warning.
+Fix incorrect help description for csi_v4l2_tvin.
+
+Signed-off-by: Sandor Yu <R01008@freescale.com>
+(cherry picked from commit bacbc48cc42473fc46ae2dd7b03020f282e15c8c)
+---
+ test/mxc_v4l2_test/csi_v4l2_capture.c | 6 +-----
+ test/mxc_v4l2_test/csi_v4l2_tvin.c    | 7 +++----
+ 2 files changed, 4 insertions(+), 9 deletions(-)
+
+diff --git a/test/mxc_v4l2_test/csi_v4l2_capture.c b/test/mxc_v4l2_test/csi_v4l2_capture.c
+index 1307778..1f03f90 100644
+--- a/test/mxc_v4l2_test/csi_v4l2_capture.c
++++ b/test/mxc_v4l2_test/csi_v4l2_capture.c
+@@ -162,12 +162,8 @@ int stop_capturing(int fd_v4l)
+ 
+ static int find_video_device(void)
+ {
+-	char v4l_devname[20] = "/dev/video";
+-	char index[3];
+-	char v4l_device[20];
+ 	struct v4l2_capability cap;
+ 	int fd_v4l;
+-	int i = 0;
+ 
+ 	if ((fd_v4l = open(g_v4l_device, O_RDWR, 0)) < 0) {
+ 		printf("unable to open %s for capture, continue searching "
+@@ -319,7 +315,7 @@ int v4l_capture_test(int fd_v4l)
+ 	unsigned char *fb0;
+ 	struct timeval tv1, tv2;
+ 	int j = 0;
+-	int out_w, out_h;
++	int out_w = 0, out_h = 0;
+ 	FILE * fd_y_file = 0;
+ 
+ 	if (g_saved_to_file == 1) {
+diff --git a/test/mxc_v4l2_test/csi_v4l2_tvin.c b/test/mxc_v4l2_test/csi_v4l2_tvin.c
+index d9140e6..47fa271 100644
+--- a/test/mxc_v4l2_test/csi_v4l2_tvin.c
++++ b/test/mxc_v4l2_test/csi_v4l2_tvin.c
+@@ -159,10 +159,8 @@ int stop_capturing(int fd_v4l)
+ 
+ static int find_video_device(void)
+ {
+-	char v4l_device[20];
+ 	struct v4l2_capability cap;
+ 	int fd_v4l;
+-	int i = 0;
+ 
+ 	if ((fd_v4l = open(g_v4l_device, O_RDWR, 0)) < 0) {
+ 		printf("unable to open %s for capture, continue searching "
+@@ -434,11 +432,12 @@ FAIL:
+ 
+ void print_help(void)
+ {
+-	printf("CSI Video4Linux capture Device Test\n"
+-		"Syntax: ./csi_v4l2_capture -ow <capture output width>\n"
++	printf("CSI Video4Linux capture Device Test for VADC\n"
++		"Syntax: ./csi_v4l2_tvin -ow <capture output width>\n"
+ 		" -oh <capture output height>\n"
+ 		" -hf <horizontal flip>\n"
+ 		" -vf <vertical flip>\n"
++		" -d <device select, /dev/video2> \n" \
+ 		" -r <rotation 0, 90, 180, 270>\n"
+ 		" -loop <times>\n"
+ #ifdef	GET_CONTI_PHY_MEM_VIA_PXP_LIB
+-- 
+1.8.0
+

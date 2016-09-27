@@ -1,0 +1,40 @@
+From 54df421991ac853e5b26036fd2205d5318e832bc Mon Sep 17 00:00:00 2001
+From: Peng Fan <Peng.Fan@freescale.com>
+Date: Thu, 27 Aug 2015 15:52:28 +0800
+Subject: [PATCH] MLK-11433 driver: fastboot: Discard unused directory
+
+CONFIG_FASTBOOT is not used, since we have CONFIG_FSL_FASTBOOT and
+CONFIG_CMD_FASTBOOT for fastboot. "drivers/fastboot" can be discarded.
+
+Signed-off-by: Peng Fan <Peng.Fan@freescale.com>
+---
+ drivers/Makefile          | 1 -
+ drivers/fastboot/Makefile | 8 --------
+ 2 files changed, 9 deletions(-)
+
+diff --git a/drivers/Makefile b/drivers/Makefile
+index 2350a9a..5ef58c0 100644
+--- a/drivers/Makefile
++++ b/drivers/Makefile
+@@ -23,4 +23,3 @@ obj-y += input/
+ # SOC specific infrastructure drivers.
+ obj-y += soc/
+ obj-y += thermal/
+-obj-y += fastboot/
+diff --git a/drivers/fastboot/Makefile b/drivers/fastboot/Makefile
+deleted file mode 100644
+index 251120d..0000000
+--- a/drivers/fastboot/Makefile
++++ /dev/null
+@@ -1,8 +0,0 @@
+-#
+-# (C) Copyright 2000-2007
+-# Wolfgang Denk, DENX Software Engineering, wd@denx.de.
+-#
+-# SPDX-License-Identifier:	GPL-2.0+
+-#
+-
+-obj-$(CONFIG_FASTBOOT) += fastboot.o
+-- 
+1.8.0
+

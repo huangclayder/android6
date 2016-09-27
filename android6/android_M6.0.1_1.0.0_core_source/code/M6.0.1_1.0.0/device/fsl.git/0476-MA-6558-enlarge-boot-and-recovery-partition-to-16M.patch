@@ -1,0 +1,32 @@
+From 9115344a72c41dc93577994e75d6ab89f7345583 Mon Sep 17 00:00:00 2001
+From: Zhang Sanshan <b51434@freescale.com>
+Date: Mon, 20 Apr 2015 17:23:35 +0800
+Subject: [PATCH 476/602] MA-6558 enlarge boot and recovery partition to 16M
+
+enlarge boot and recovery partition to 16M
+
+Signed-off-by: Zhang Sanshan <b51434@freescale.com>
+---
+ common/tools/fsl-sdcard-partition-f2fs.sh | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/common/tools/fsl-sdcard-partition-f2fs.sh b/common/tools/fsl-sdcard-partition-f2fs.sh
+index b422269..72a29c5 100755
+--- a/common/tools/fsl-sdcard-partition-f2fs.sh
++++ b/common/tools/fsl-sdcard-partition-f2fs.sh
+@@ -2,10 +2,10 @@
+ 
+ # partition size in MB
+ BOOTLOAD_RESERVE=8
+-BOOT_ROM_SIZE=8
++BOOT_ROM_SIZE=16
+ SYSTEM_ROM_SIZE=512
+ CACHE_SIZE=512
+-RECOVERY_ROM_SIZE=8
++RECOVERY_ROM_SIZE=16
+ DEVICE_SIZE=8
+ MISC_SIZE=6
+ DATAFOOTER_SIZE=2
+-- 
+1.8.0
+

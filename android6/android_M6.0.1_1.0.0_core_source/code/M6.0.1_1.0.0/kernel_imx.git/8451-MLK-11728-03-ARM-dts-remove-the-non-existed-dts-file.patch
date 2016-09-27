@@ -1,0 +1,35 @@
+From 3c8a65784fd0578898138e12452b85e2eab4c06c Mon Sep 17 00:00:00 2001
+From: Fugang Duan <b38611@freescale.com>
+Date: Mon, 19 Oct 2015 14:39:53 +0800
+Subject: [PATCH] MLK-11728-03 ARM: dts: remove the non-existed dts file from
+ Makefile
+
+Remove the non-existed dts file from Makefile.
+
+Signed-off-by: Fugang Duan <B38611@freescale.com>
+---
+ arch/arm/boot/dts/Makefile | 2 --
+ 1 file changed, 2 deletions(-)
+
+diff --git a/arch/arm/boot/dts/Makefile b/arch/arm/boot/dts/Makefile
+index 710bb5f..143cd8f 100644
+--- a/arch/arm/boot/dts/Makefile
++++ b/arch/arm/boot/dts/Makefile
+@@ -181,14 +181,12 @@ dtb-$(CONFIG_ARCH_MXC) += \
+ 	imx6qp-sabresd-btwifi.dtb \
+ 	imx6qp-sabresd-ldo.dtb \
+ 	imx6qp-sabresd-hdcp.dtb \
+-	imx6qp-sabresd-uart.dtb \
+ 	imx6q-sabrelite.dtb \
+ 	imx6q-sabresd.dtb \
+ 	imx6q-sabresd-btwifi.dtb \
+ 	imx6q-sabresd-enetirq.dtb \
+ 	imx6q-sabresd-ldo.dtb \
+ 	imx6q-sabresd-hdcp.dtb \
+-	imx6q-sabresd-uart.dtb \
+ 	imx6q-sbc6x.dtb \
+ 	imx6q-udoo.dtb \
+ 	imx6q-wandboard.dtb \
+-- 
+1.8.0
+

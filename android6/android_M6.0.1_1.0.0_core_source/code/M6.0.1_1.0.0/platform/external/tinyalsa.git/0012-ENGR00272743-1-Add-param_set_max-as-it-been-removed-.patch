@@ -1,0 +1,35 @@
+From fcac848e6d2b9092b6e22b6ac47bcf32a7e0176b Mon Sep 17 00:00:00 2001
+From: "guoyin.chen" <guoyin.chen@freescale.com>
+Date: Fri, 26 Jul 2013 14:13:12 +0800
+Subject: [PATCH 12/13] ENGR00272743-1 Add param_set_max() as it been removed
+ in jb4.3
+
+Add param_set_max() as it will be used in pcm_get_near_param()
+
+Signed-off-by: guoyin.chen <guoyin.chen@freescale.com>
+---
+ pcm.c | 8 ++++++++
+ 1 file changed, 8 insertions(+)
+
+diff --git a/pcm.c b/pcm.c
+index 6903595..290bbb2 100644
+--- a/pcm.c
++++ b/pcm.c
+@@ -199,6 +199,14 @@ static unsigned int param_get_max(struct snd_pcm_hw_params *p, int n)
+     return 0;
+ }
+ 
++static void param_set_max(struct snd_pcm_hw_params *p, int n, unsigned int val)
++{
++    if (param_is_interval(n)) {
++        struct snd_interval *i = param_to_interval(p, n);
++        i->max = val;
++    }
++}
++
+ static void param_set_int(struct snd_pcm_hw_params *p, int n, unsigned int val)
+ {
+     if (param_is_interval(n)) {
+-- 
+1.8.0
+

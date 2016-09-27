@@ -1,0 +1,40 @@
+From 094be23e8e8ae64cdf8863a7a2d267f26b1b0b27 Mon Sep 17 00:00:00 2001
+From: Ben Hutchings <ben@decadent.org.uk>
+Date: Wed, 12 Feb 2014 22:14:59 +0000
+Subject: [PATCH] ethtool: Move kernel-doc comment next to struct ethtool_dump
+ definition
+
+The kernel-doc script does not tolerate the macro definition in between.
+
+Signed-off-by: Ben Hutchings <ben@decadent.org.uk>
+Signed-off-by: David S. Miller <davem@davemloft.net>
+---
+ include/uapi/linux/ethtool.h | 5 ++---
+ 1 file changed, 2 insertions(+), 3 deletions(-)
+
+diff --git a/include/uapi/linux/ethtool.h b/include/uapi/linux/ethtool.h
+index 79be416..24418ac 100644
+--- a/include/uapi/linux/ethtool.h
++++ b/include/uapi/linux/ethtool.h
+@@ -920,9 +920,6 @@ struct ethtool_flash {
+  * 	 for %ETHTOOL_GET_DUMP_FLAG command
+  * @data: data collected for get dump data operation
+  */
+-
+-#define ETH_FW_DUMP_DISABLE 0
+-
+ struct ethtool_dump {
+ 	__u32	cmd;
+ 	__u32	version;
+@@ -931,6 +928,8 @@ struct ethtool_dump {
+ 	__u8	data[0];
+ };
+ 
++#define ETH_FW_DUMP_DISABLE 0
++
+ /* for returning and changing feature sets */
+ 
+ /**
+-- 
+1.8.0
+

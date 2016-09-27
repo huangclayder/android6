@@ -1,0 +1,48 @@
+From 25833a05b33cc4dd62b39613465692abeba44c3b Mon Sep 17 00:00:00 2001
+From: Ke Qinghua <qinghua.ke@freescale.com>
+Date: Fri, 6 Jun 2014 17:10:13 +0800
+Subject: [PATCH 504/635] ENGR00317265 Upgrade android kk4.4.2 to kk4.4.3
+
+Fix build error for kk4.4.3 upgrade.
+
+Signed-off-by: Ke Qinghua <qinghua.ke@freescale.com>
+---
+ mx6/libcamera/Android.mk  | 2 +-
+ mx6/libcamera2/Android.mk | 2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
+ mode change 100755 => 100644 mx6/libcamera/Android.mk
+ mode change 100755 => 100644 mx6/libcamera2/Android.mk
+
+diff --git a/mx6/libcamera/Android.mk b/mx6/libcamera/Android.mk
+old mode 100755
+new mode 100644
+index a04d601..632cc3a
+--- a/mx6/libcamera/Android.mk
++++ b/mx6/libcamera/Android.mk
+@@ -51,7 +51,7 @@ LOCAL_SHARED_LIBRARIES:= \
+     libdl \
+     libc \
+     libjpeg \
+-    libexif \
++    libjhead \
+     libion
+ 
+ LOCAL_C_INCLUDES += \
+diff --git a/mx6/libcamera2/Android.mk b/mx6/libcamera2/Android.mk
+old mode 100755
+new mode 100644
+index d99e9d1..9fd38bf
+--- a/mx6/libcamera2/Android.mk
++++ b/mx6/libcamera2/Android.mk
+@@ -54,7 +54,7 @@ LOCAL_SHARED_LIBRARIES:= \
+     libdl \
+     libc \
+     libjpeg \
+-    libexif \
++    libjhead \
+     libion \
+     libcamera_metadata \
+     libg2d
+-- 
+1.8.0
+

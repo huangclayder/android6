@@ -1,0 +1,28 @@
+From a5d9ba626c267cdb577b7cf7abf125a665d5e4f3 Mon Sep 17 00:00:00 2001
+From: fang hui <b31070@freescale.com>
+Date: Tue, 12 May 2015 09:47:31 +0800
+Subject: [PATCH 489/602] MA-6646 - [sabreauto_6sx]: tv-in not worked on lp5.1
+
+On auto6sx, set back_camera_name to mx6s-csi
+
+Signed-off-by: fang hui <b31070@freescale.com>
+---
+ sabreauto_6sx/init.rc | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/sabreauto_6sx/init.rc b/sabreauto_6sx/init.rc
+index f11e5af..6848d43 100755
+--- a/sabreauto_6sx/init.rc
++++ b/sabreauto_6sx/init.rc
+@@ -47,7 +47,7 @@ on boot
+     #For portrait mode, orient is 90
+     #the android before honycomb are all in portrait mode
+     setprop camera.disable_zsl_mode 1
+-    setprop back_camera_name csi_v4l2
++    setprop back_camera_name mx6s-csi
+     setprop back_camera_orient 0
+     setprop front_camera_name uvc
+     setprop front_camera_orient 0
+-- 
+1.8.0
+

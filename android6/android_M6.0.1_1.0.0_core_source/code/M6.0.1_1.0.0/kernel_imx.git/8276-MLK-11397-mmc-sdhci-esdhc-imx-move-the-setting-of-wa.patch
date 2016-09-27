@@ -1,0 +1,66 @@
+From 05f72329a3c288e15c2f187305a21815d6bffc6d Mon Sep 17 00:00:00 2001
+From: Haibo Chen <haibo.chen@freescale.com>
+Date: Thu, 25 Jun 2015 10:08:46 +0800
+Subject: [PATCH] MLK-11397 mmc: sdhci-esdhc-imx: move the setting of
+ watermark level out of probe
+
+Currently, we config the watermark_level register only in probe.
+This will cause the mmc write operation timeout issue after system
+resume back in LPSR mode. Because in LPSR mode, after system resume
+back, the watermark_level register(0x44) changes to 0x08000880, which
+set the write watermark level as 0, and set the read watermark level
+as 128. This value is incorrect.
+
+This patch move the setting of watermark level register out of probe,
+so after system resume back, mmc driver will set back this watermark
+level register back to 0x10401040.
+
+Signed-off-by: Haibo Chen <haibo.chen@freescale.com>
+---
+ drivers/mmc/host/sdhci-esdhc-imx.c | 22 +++++++++++++---------
+ 1 file changed, 13 insertions(+), 9 deletions(-)
+
+diff --git a/drivers/mmc/host/sdhci-esdhc-imx.c b/drivers/mmc/host/sdhci-esdhc-imx.c
+index ea03809..e00db8a 100644
+--- a/drivers/mmc/host/sdhci-esdhc-imx.c
++++ b/drivers/mmc/host/sdhci-esdhc-imx.c
+@@ -602,6 +602,19 @@ static void esdhc_writeb_le(struct sdhci_host *host, u8 val, int reg)
+ 		mask = 0xffff & ~(ESDHC_CTRL_BUSWIDTH_MASK | ESDHC_CTRL_D3CD);
+ 
+ 		esdhc_clrset_le(host, mask, new_val, reg);
++
++		/*
++		 * The imx6q ROM code will change the default watermark
++		 * level setting to something insane.  Change it back here.
++		 */
++		if (esdhc_is_usdhc(imx_data)) {
++			if (is_imx7d_usdhc(imx_data))
++				writel(0x10401040,
++					host->ioaddr + ESDHC_WTMK_LVL);
++			else
++				writel(0x08100810,
++					host->ioaddr + ESDHC_WTMK_LVL);
++		}
+ 		return;
+ 	}
+ 	esdhc_clrset_le(host, 0xff, val, reg);
+@@ -1143,16 +1156,7 @@ static int sdhci_esdhc_imx_probe(struct platform_device *pdev)
+ 		host->quirks |= SDHCI_QUIRK_NO_MULTIBLOCK
+ 			| SDHCI_QUIRK_BROKEN_ADMA;
+ 
+-	/*
+-	 * The imx6q ROM code will change the default watermark level setting
+-	 * to something insane.  Change it back here.
+-	 */
+ 	if (esdhc_is_usdhc(imx_data)) {
+-		if (is_imx7d_usdhc(imx_data))
+-			writel(0x10401040, host->ioaddr + ESDHC_WTMK_LVL);
+-		else
+-			writel(0x08100810, host->ioaddr + ESDHC_WTMK_LVL);
+-
+ 		/*
+ 		 * ROM code will change the burst_length_enable setting to
+ 		 * zero if this usdhc is choosed to boot system. Change it
+-- 
+1.8.0
+

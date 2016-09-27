@@ -1,0 +1,31 @@
+From 96dfcf0b35a03c0d75ec7f6887020a6f9fb833c1 Mon Sep 17 00:00:00 2001
+From: Nicolin Chen <nicoleotsuka@gmail.com>
+Date: Thu, 17 Jul 2014 21:21:38 +0800
+Subject: [PATCH] ASoC: fsl_sai: Fix incorrect register writing in
+ fsl_sai_isr()
+
+In the rx irq handling part, we should clear the flags in RCSR not TCSR.
+
+Signed-off-by: Nicolin Chen <nicoleotsuka@gmail.com>
+Signed-off-by: Mark Brown <broonie@linaro.org>
+(cherry picked from commit 4800f88b615f194ae3c1577038a7ccd871c907c9)
+---
+ sound/soc/fsl/fsl_sai.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/sound/soc/fsl/fsl_sai.c b/sound/soc/fsl/fsl_sai.c
+index b10dbd8..1b6ee2c 100644
+--- a/sound/soc/fsl/fsl_sai.c
++++ b/sound/soc/fsl/fsl_sai.c
+@@ -106,7 +106,7 @@ irq_rx:
+ 	xcsr &= ~FSL_SAI_CSR_xF_MASK;
+ 
+ 	if (flags)
+-		regmap_write(sai->regmap, FSL_SAI_TCSR, flags | xcsr);
++		regmap_write(sai->regmap, FSL_SAI_RCSR, flags | xcsr);
+ 
+ out:
+ 	if (irq_none)
+-- 
+1.8.0
+

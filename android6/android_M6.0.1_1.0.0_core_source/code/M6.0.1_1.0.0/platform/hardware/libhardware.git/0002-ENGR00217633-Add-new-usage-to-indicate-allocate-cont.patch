@@ -1,0 +1,42 @@
+From d3e521d605d473956fa9369240465ce8ccbbd63b Mon Sep 17 00:00:00 2001
+From: Zhang Jiejing <jiejing.zhang@freescale.com>
+Date: Fri, 10 Aug 2012 15:59:05 +0800
+Subject: [PATCH 2/6] ENGR00217633 Add new usage to indicate allocate
+ contiguous memory
+
+Add new usage to indicate allocate contiguous memory
+
+Change-Id: I5f2b42d192f411300678dff7f1495856a71a98f0
+Signed-off-by: Richard Liu <r66033@freescale.com>
+
+Conflicts:
+	include/hardware/gralloc.h
+---
+ include/hardware/gralloc.h | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/include/hardware/gralloc.h b/include/hardware/gralloc.h
+index 2f79795..38c2a19 100644
+--- a/include/hardware/gralloc.h
++++ b/include/hardware/gralloc.h
+@@ -14,6 +14,7 @@
+  * limitations under the License.
+  */
+ 
++/*Copyright 2009-2012 Freescale Semiconductor, Inc.*/
+ 
+ #ifndef ANDROID_GRALLOC_INTERFACE_H
+ #define ANDROID_GRALLOC_INTERFACE_H
+@@ -138,6 +139,9 @@ enum {
+      * gralloc modules. */
+     GRALLOC_USAGE_ALLOC_MASK            = ~(GRALLOC_USAGE_FOREIGN_BUFFERS),
+ 
++    /* Indicate the buffer will be physical continue, some hw such as vpu need this kind of memory as it does not has mmu */
++    GRALLOC_USAGE_FORCE_CONTIGUOUS = 0x08000000,
++
+     /* implementation-specific private usage flags */
+     GRALLOC_USAGE_PRIVATE_0             = 0x10000000,
+     GRALLOC_USAGE_PRIVATE_1             = 0x20000000,
+-- 
+1.8.0
+

@@ -1,0 +1,38 @@
+From a7f154d249b78f4115cedb6bf0c2a5e6da4998d8 Mon Sep 17 00:00:00 2001
+From: "Mathieu J. Poirier" <mathieu.poirier@linaro.org>
+Date: Tue, 11 Jun 2013 17:07:50 -0600
+Subject: [PATCH] timer: Avoid masking EVENTEN bit in CNTKCTL register
+
+Will Deacon has a better solution and his patch should
+be coming in soon.  In the mean time please consider for inclusion.
+
+This is an in-between solution that prevents the EVENTEN bit in
+the CNTKCTL register from being mask, resulting in events between
+clusters being lost.
+
+Bug: LP1188778
+
+Signed-off-by: Mathieu Poirier <mathieu.poirier@linaro.org>
+Signed-off-by: Sudeep KarkadaNagesha <Sudeep.KarkadaNagesha@arm.com>
+Signed-off-by: Jon Medhurst <tixy@linaro.org>
+(cherry picked from commit fcae584f9275c526af9003a4a4b943929873203a)
+Signed-off-by: Alex Shi <alex.shi@linaro.org>
+---
+ arch/arm/include/asm/arch_timer.h | 1 -
+ 1 file changed, 1 deletion(-)
+
+diff --git a/arch/arm/include/asm/arch_timer.h b/arch/arm/include/asm/arch_timer.h
+index 0704e0c..be467f3 100644
+--- a/arch/arm/include/asm/arch_timer.h
++++ b/arch/arm/include/asm/arch_timer.h
+@@ -107,7 +107,6 @@ static inline void arch_counter_set_user_access(void)
+ 	/* Also disable virtual event stream */
+ 	cntkctl &= ~(ARCH_TIMER_USR_PT_ACCESS_EN
+ 			| ARCH_TIMER_USR_VT_ACCESS_EN
+-			| ARCH_TIMER_VIRT_EVT_EN
+ 			| ARCH_TIMER_USR_VCT_ACCESS_EN
+ 			| ARCH_TIMER_USR_PCT_ACCESS_EN);
+ 	arch_timer_set_cntkctl(cntkctl);
+-- 
+1.8.0
+

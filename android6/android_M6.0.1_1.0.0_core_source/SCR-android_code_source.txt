@@ -1,0 +1,362 @@
+Freescale Software Content Register
+
+Release - Android M6.0.1_1.0.0 GA
+
+Date Created:              2016-February-29
+
+License Files:             EULA.txt: LA_OPT_BASE_LICENSE
+
+Package Category:          i.MX Android
+
+Type of content:           Individual Patches
+
+Description and comments:  These are individual patches for the Android platform.
+
+Release Location:          freescale.com
+
+--------------------------------------------
+Patches:                   device/fsl
+Outgoing License:          Apache-2.0
+Origin:                    Freescale Semiconductor, Inc.
+                           The Android Open Source Project (Apache-2.0) - https://source.android.com/
+                           Broadcom Corporation (Apache-2.0)
+
+--------------------------------------------
+Patches:                   device/fsl-proprietary
+Outgoing License:          LA_OPT_BASE_LICENSE
+Origin:                    Freescale Semiconductor, Inc.
+                           The Android Open Source Project (Apache-2.0) - https://source.android.com/
+                           The Khronos Group, Inc.
+                           Silicon Graphics, Inc.
+
+--------------------------------------------
+Patches:                   platform/bionic
+Outgoing License:          Apache-2.0
+Origin:                    Freescale Semiconductor, Inc.
+                           The Android Open Source Project (Apache-2.0) - https://source.android.com/
+
+--------------------------------------------
+Patches:                   platform/bootable/recovery
+Outgoing License:          Apache-2.0
+Origin:                    Freescale Semiconductor, Inc.
+                           The Android Open Source Project (Apache-2.0) - https://source.android.com/
+
+--------------------------------------------
+Patches:                   platform/build
+Outgoing License:          Apache-2.0
+Origin:                    Freescale Semiconductor, Inc.
+                           The Android Open Source Project (Apache-2.0) - https://source.android.com/
+
+--------------------------------------------
+Patches:                   platform/external/busybox
+Outgoing License:          GPL-2.0
+Origin:                    Freescale Semiconductor, Inc.
+                           busybox (GPL-2.0) - www.busybox.net
+
+--------------------------------------------
+Patches:                   platform/external/dnsmasq
+Outgoing License:          GPL-2.0
+Origin:                    Freescale Semiconductor, Inc.
+                           The Android Open Source Project (Apache-2.0) - https://source.android.com/
+
+--------------------------------------------
+Patches:                   platform/external/fsl_vpu_omx
+Outgoing License:          LA_OPT_BASE_LICENSE
+Origin:                    Freescale Semiconductor, Inc.
+                           The Khronos Group Inc. (MIT)
+                           PacketVideo (Apache-2.0)
+
+--------------------------------------------
+Patches:                   platform/external/kernel-headers
+Outgoing License:          GPL-2.0
+Origin:                    Freescale Semiconductor, Inc.
+                           The Android Open Source Project (GPL-2.0) - https://source.android.com/
+
+--------------------------------------------
+Patches:                   platform/external/linux-firmware-imx
+Outgoing License:          LA_OPT_BASE_LICENSE
+Origin:                    Freescale Semiconductor, Inc.
+                           Chips&Media, Inc.
+                           Qualcom Atheros, Inc. (Apache-2.0)
+                           Qualcom Atheros, Inc.
+
+--------------------------------------------
+Patches:                   platform/external/linux-lib
+Outgoing License:          LA_OPT_BASE_LICENSE
+Origin:                    Freescale Semiconductor, Inc.
+                           Chips&Media, Inc.
+
+--------------------------------------------
+Patches:                   platform/external/linux-test
+Outgoing License:          Each test has its own license
+Origin:                    Freescale Semiconductor, Inc.
+                           Linux Test Project (GPL-2.0+) - https://github.com/linux-test-project/ltp
+                           Chips and Media Resource (GPL2+)
+                           RTC Test in Linux Kernel (GPL-2.0+)
+                           BlueZ (GPL-2.0+) - http://www.bluez.org/
+                           Embedded Alley v4l2 test (GPL-2.0+)
+                           Android Open Source Project (Apache-2.0) - https://source.android.com/
+                           Hantro Memalloc in Linux (GPL-2.0+)
+                           Linux driver for Atheros AR5210 802.11a (GPL-2.0+) - http://sourceforge.net/projects/ar5k/
+                           Hannu Savolainen's soundcard.h (BSD-2-clause)
+
+--------------------------------------------
+Patches:                   platform/external/linux-tools-perf
+Outgoing License:          GPL-2.0
+Origin:                    Freescale Semiconductor, Inc.
+                           The Android Open Source Project (GPL-2.0) - https://source.android.com/
+
+--------------------------------------------
+Patches:                   platform/external/mtd-utils
+Outgoing License:          GPL-2.0
+Origin:                    Freescale Semiconductor, Inc.
+                           linux-mtd(GPL-2.0) - http://www.linux-mtd.infradead.org/
+
+--------------------------------------------
+Patches:                   platform/external/ntfs-3g
+Outgoing License:          GPL-2.0
+Origin:                    Freescale Semiconductor, Inc.
+                           Tuxera Inc.(GPL-2.0) - http://www.tuxera.com/community/open-source-ntfs-3g/
+
+--------------------------------------------
+Patches:                   platform/external/powerdebug
+Outgoing License:          EPL-1.0
+Origin:                    Freescale Semiconductor, Inc.
+                           Linaro Limited.(EPL-1.0) - https://launchpad.net/linaro-powerdebug
+
+Patches:                   platform/external/ppp
+Outgoing License:          Apache-2.0
+Origin:                    Freescale Semiconductor, Inc.
+                           The Android Open Source Project (Apache-2.0) - https://source.android.com/
+
+--------------------------------------------
+Patches:                   platform/external/ppp
+Outgoing License:          BSD-3-clause
+Origin:                    Freescale Semiconductor, Inc.
+                           The Android Open Source Project (Apache-2.0) - https://source.android.com/
+
+--------------------------------------------
+Patches:                   platform/external/skia
+Outgoing License:          BSD-3-clause
+Origin:                    Freescale Semiconductor, Inc.
+                           The Android Open Source Project (Apache-2.0) - https://source.android.com/
+
+--------------------------------------------
+Patches:                   platform/external/tinyalsa
+Outgoing License:          Apache-2.0
+Origin:                    Freescale Semiconductor, Inc.
+                           The Android Open Source Project (Apache-2.0) - https://source.android.com/
+
+--------------------------------------------
+Patches:                   platform/external/wpa_supplicant_8
+Outgoing License:          BSD-3-clause
+Origin:                    Freescale Semiconductor, Inc.
+                           The Android Open Source Project (Apache-2.0) - https://source.android.com/
+                           Qualcom Atheros, Inc. (BSD-3-clause)
+
+--------------------------------------------
+Patches:                   platform/frameworks/av
+Outgoing License:          Apache-2.0
+Origin:                    Freescale Semiconductor, Inc.
+                           The Android Open Source Project (Apache-2.0) - https://source.android.com/
+                           PacketVideo (Apache-2.0)
+
+--------------------------------------------
+Patches:                   platform/frameworks/base
+Outgoing License:          Apache-2.0
+Origin:                    Freescale Semiconductor, Inc.
+                           The Android Open Source Project (Apache-2.0) - https://source.android.com/
+
+--------------------------------------------
+Patches:                   platform/frameworks/native
+Outgoing License:          Apache-2.0
+Origin:                    Freescale Semiconductor, Inc.
+                           The Android Open Source Project (Apache-2.0) - https://source.android.com/
+
+--------------------------------------------
+Patches:                   platform/frameworks/opt/net/ethernet
+Outgoing License:          Apache-2.0
+Origin:                    Freescale Semiconductor, Inc.
+                           The Android Open Source Project (Apache-2.0) - https://source.android.com/
+
+--------------------------------------------
+Patches:                   platform/frameworks/opt/telephony
+Outgoing License:          Apache-2.0
+Origin:                    Freescale Semiconductor, Inc.
+                           The Android Open Source Project (Apache-2.0) - https://source.android.com/
+
+--------------------------------------------
+Patches:                   platform/hardware/broadcom/libbt
+Outgoing License:          Apache-2.0
+Origin:                    Freescale Semiconductor, Inc.
+                           The Android Open Source Project (Apache-2.0) - https://source.android.com/
+
+--------------------------------------------
+Patches:                   platform/hardware/broadcom/wlan
+Outgoing License:          Apache-2.0
+Origin:                    Freescale Semiconductor, Inc.
+                           The Android Open Source Project (Apache-2.0) - https://source.android.com/
+
+--------------------------------------------
+Patches:                   platform/hardware/imx
+Outgoing License:          Apache-2.0
+Origin:                    Freescale Semiconductor, Inc.
+                           The Android Open Source Project (Apache-2.0) - https://source.android.com/
+                           Broadcom Corporation (Apache-2.0)
+                           Qualcom Atheros, Inc. (Apache-2.0)
+
+--------------------------------------------
+Patches:                   platform/hardware/imx/wlan
+Outgoing License:          GPL-2.0
+Origin:                    Freescale Semiconductor, Inc.
+                           Broadcom Corporation (GPL-2.0)
+                           Qualcom Atheros, Inc. (GPL-2.0)
+
+--------------------------------------------
+Patches:                   platform/hardware/libhardware
+Outgoing License:          Apache-2.0
+Origin:                    Freescale Semiconductor, Inc.
+                           The Android Open Source Project (Apache-2.0) - https://source.android.com/
+
+--------------------------------------------
+Patches:                   platform/hardware/libhardware_legacy
+Outgoing License:          Apache-2.0
+Origin:                    Freescale Semiconductor, Inc.
+                           The Android Open Source Project (Apache-2.0) - https://source.android.com/
+
+--------------------------------------------
+Patches:                   platform/hardware/qcom/wlan
+Outgoing License:          BSD-3-clause
+Origin:                    Freescale Semiconductor, Inc.
+                           The Android Open Source Project (Apache-2.0) - https://source.android.com/
+
+--------------------------------------------
+Patches:                   platform/hardware/realtek
+Outgoing License:          Apache-2.0
+Origin:                    Freescale Semiconductor, Inc.
+                           The Android Open Source Project (Apache-2.0) - https://source.android.com/
+
+--------------------------------------------
+Patches:                   platform/hardware/realtek
+Outgoing License:          BSD-3-clause
+Origin:                    Freescale Semiconductor, Inc.
+                           Atheros Communications (BSD-3-clause)
+
+--------------------------------------------
+Patches:                   platform/hardware/ril
+Outgoing License:          Apache-2.0
+Origin:                    Freescale Semiconductor, Inc.
+                           The Android Open Source Project (Apache-2.0) - https://source.android.com/
+
+--------------------------------------------
+Patches:                   platform/libcore
+Outgoing License:          Apache-2.0
+Origin:                    Freescale Semiconductor, Inc.
+                           The Android Open Source Project (Apache-2.0) - https://source.android.com/
+
+--------------------------------------------
+Patches:                   platform/packages/apps/Browser
+Outgoing License:          Apache-2.0
+Origin:                    The Android Open Source Project (Apache-2.0) - https://source.android.com/
+
+--------------------------------------------
+Patches:                   platform/packages/apps/Camera2
+Outgoing License:          Apache-2.0
+Origin:                    Freescale Semiconductor, Inc.
+                           The Android Open Source Project (Apache-2.0) - https://source.android.com/
+
+--------------------------------------------
+Patches:                   platform/packages/apps/DeskClock
+Outgoing License:          Apache-2.0
+Origin:                    Freescale Semiconductor, Inc.
+                           The Android Open Source Project (Apache-2.0) - https://source.android.com/
+
+--------------------------------------------
+Patches:                   platform/packages/apps/Email
+Outgoing License:          Apache-2.0
+Origin:                    Freescale Semiconductor, Inc.
+                           The Android Open Source Project (Apache-2.0) - https://source.android.com/
+
+--------------------------------------------
+Patches:                   platform/packages/apps/fsl_imx_demo
+Outgoing License:          Apache-2.0
+Origin:                    Freescale Semiconductor, Inc.
+                           The Android Open Source Project (Apache-2.0) - https://source.android.com/
+
+--------------------------------------------
+Patches:                   platform/packages/apps/Gallery
+Outgoing License:          Apache-2.0
+Origin:                    Freescale Semiconductor, Inc.
+                           The Android Open Source Project (Apache-2.0) - https://source.android.com/
+
+--------------------------------------------
+Patches:                   platform/packages/apps/Gallery2
+Outgoing License:          Apache-2.0
+Origin:                    Freescale Semiconductor, Inc.
+                           The Android Open Source Project (Apache-2.0) - https://source.android.com/
+
+--------------------------------------------
+Patches:                   platform/packages/apps/Launcher2
+Outgoing License:          Apache-2.0
+Origin:                    Freescale Semiconductor, Inc.
+                           The Android Open Source Project (Apache-2.0) - https://source.android.com/
+
+--------------------------------------------
+Patches:                   platform/packages/apps/LegacyCamera
+Outgoing License:          Apache-2.0
+Origin:                    Freescale Semiconductor, Inc.
+                           The Android Open Source Project (Apache-2.0) - https://source.android.com/
+
+--------------------------------------------
+Patches:                   platform/packages/apps/Settings
+Outgoing License:          Apache-2.0
+Origin:                    Freescale Semiconductor, Inc.
+                           The Android Open Source Project (Apache-2.0) - https://source.android.com/
+
+--------------------------------------------
+Patches:                   platform/packages/apps/SoundRecorder
+Outgoing License:          Apache-2.0
+Origin:                    Freescale Semiconductor, Inc.
+                           The Android Open Source Project (Apache-2.0) - https://source.android.com/
+
+--------------------------------------------
+Patches:                   platform/packages/apps/Contacts
+Outgoing License:          Apache-2.0
+Origin:                    Freescale Semiconductor, Inc.
+                           The Android Open Source Project (Apache-2.0) - https://source.android.com/
+
+--------------------------------------------
+Patches:                   platform/packages/apps/Exchange
+Outgoing License:          Apache-2.0
+Origin:                    Freescale Semiconductor, Inc.
+                           The Android Open Source Project (Apache-2.0) - https://source.android.com/
+
+--------------------------------------------
+Patches:                   platform/system/core
+Outgoing License:          Apache-2.0
+Origin:                    Freescale Semiconductor, Inc.
+                           The Android Open Source Project (Apache-2.0) - https://source.android.com/
+
+--------------------------------------------
+Patches:                   platform/system/extras
+Outgoing License:          Apache-2.0
+Origin:                    Freescale Semiconductor, Inc.
+                           The Android Open Source Project (Apache-2.0) - https://source.android.com/
+
+--------------------------------------------
+Patches:                   platform/system/netd
+Outgoing License:          Apache-2.0
+Origin:                    Freescale Semiconductor, Inc.
+                           The Android Open Source Project (Apache-2.0) - https://source.android.com/
+
+--------------------------------------------
+Patches:                   platform/system/vold
+Outgoing License:          Apache-2.0
+Origin:                    Freescale Semiconductor, Inc.
+                           The Android Open Source Project (Apache-2.0) - https://source.android.com/
+
+--------------------------------------------
+Patches:                   platform/system/bt
+Outgoing License:          Apache-2.0
+Origin:                    Freescale Semiconductor, Inc.
+                           The Android Open Source Project (Apache-2.0) - https://source.android.com/

@@ -1,0 +1,43 @@
+From 98f13112377a9cfccfbf8a51d0ed74c8f98c3b29 Mon Sep 17 00:00:00 2001
+From: Haoran Wang <b50027@freescale.com>
+Date: Mon, 9 Feb 2015 22:13:25 +0800
+Subject: [PATCH 442/602] MA-6240 Enable Multi User Settings
+
+Modify the overlay configuration xml files to enable
+the multiuser UI in Settings pannel.
+
+Signed-off-by: Haoran Wang <b50027@freescale.com>
+---
+ sabreauto_6q/overlay/frameworks/base/core/res/res/values/config.xml | 2 ++
+ sabresd_6dq/overlay/frameworks/base/core/res/res/values/config.xml  | 2 ++
+ 2 files changed, 4 insertions(+)
+
+diff --git a/sabreauto_6q/overlay/frameworks/base/core/res/res/values/config.xml b/sabreauto_6q/overlay/frameworks/base/core/res/res/values/config.xml
+index d51d234..4d49876 100755
+--- a/sabreauto_6q/overlay/frameworks/base/core/res/res/values/config.xml
++++ b/sabreauto_6q/overlay/frameworks/base/core/res/res/values/config.xml
+@@ -177,6 +177,8 @@
+ 
+     <!--  Maximum number of supported users -->
+     <integer name="config_multiuserMaximumUsers">8</integer>
++    <!--  Whether Multiuser UI should be shown -->
++    <bool name="config_enableMultiUserUI">true</bool>
+ 
+     <!-- Whether a software navigation bar should be shown. NOTE: in the future this may be
+          autodetected from the Configuration. -->
+diff --git a/sabresd_6dq/overlay/frameworks/base/core/res/res/values/config.xml b/sabresd_6dq/overlay/frameworks/base/core/res/res/values/config.xml
+index 17a281f..a19ef85 100755
+--- a/sabresd_6dq/overlay/frameworks/base/core/res/res/values/config.xml
++++ b/sabresd_6dq/overlay/frameworks/base/core/res/res/values/config.xml
+@@ -176,6 +176,8 @@
+ 
+     <!--  Maximum number of supported users -->
+     <integer name="config_multiuserMaximumUsers">8</integer>
++    <!--  Whether Multiuser UI should be shown -->
++    <bool name="config_enableMultiUserUI">true</bool>
+ 
+     <!-- Whether a software navigation bar should be shown. NOTE: in the future this may be
+          autodetected from the Configuration. -->
+-- 
+1.8.0
+

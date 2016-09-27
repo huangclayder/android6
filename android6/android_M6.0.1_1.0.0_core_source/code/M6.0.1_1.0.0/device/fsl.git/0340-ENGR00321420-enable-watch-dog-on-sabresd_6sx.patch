@@ -1,0 +1,30 @@
+From 476a86af508257c5577ce38033971a70e81ab421 Mon Sep 17 00:00:00 2001
+From: Fang Hui <b31070@freescale.com>
+Date: Mon, 7 Jul 2014 10:31:54 +0800
+Subject: [PATCH 340/602] ENGR00321420 enable watch dog on sabresd_6sx
+
+add watch dog service in init.rc
+
+Signed-off-by: Fang Hui <b31070@freescale.com>
+---
+ sabresd_6sx/init.rc | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/sabresd_6sx/init.rc b/sabresd_6sx/init.rc
+index 9d201b6..dc65bc2 100755
+--- a/sabresd_6sx/init.rc
++++ b/sabresd_6sx/init.rc
+@@ -110,6 +110,10 @@ on boot
+ # mount the debugfs
+     mount debugfs none /sys/kernel/debug/
+ 
++# Set watchdog timer to 30 seconds and pet it every 10 seconds to get a 20 second margin
++    service watchdogd /sbin/watchdogd 10 20
++    class core
++
+ on charger
+     # Enable Power modes and set the CPU Freq Sampling rates
+     write /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor "powersave"
+-- 
+1.8.0
+

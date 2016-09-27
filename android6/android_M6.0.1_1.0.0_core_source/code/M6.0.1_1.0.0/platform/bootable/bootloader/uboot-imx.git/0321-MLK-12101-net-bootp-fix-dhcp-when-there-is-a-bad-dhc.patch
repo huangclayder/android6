@@ -1,0 +1,43 @@
+From 43488f288a5a4ec0c632c229cad088099842a3a9 Mon Sep 17 00:00:00 2001
+From: Peng Fan <peng.fan@nxp.com>
+Date: Tue, 29 Dec 2015 18:53:08 +0800
+Subject: [PATCH] MLK-12101: net: bootp: fix dhcp when there is a bad dhcp
+ server
+
+There is a bad dhcp server which always gives board ipaddr 0.0.0.0,
+and board can not get ipaddr from correct dhcp server, since the bad
+dhcp server always reply the board's dhcp packet with bad address.
+We can ignore the bad dhcp server by checking the assigned ipaddr,
+checking whether it is 0 or not.
+
+Signed-off-by: Peng Fan <peng.fan@nxp.com>
+---
+ net/bootp.c | 5 +++++
+ 1 file changed, 5 insertions(+)
+
+diff --git a/net/bootp.c b/net/bootp.c
+index 8106601..5331727 100644
+--- a/net/bootp.c
++++ b/net/bootp.c
+@@ -6,6 +6,7 @@
+  *	Copyright 2000 Roland Borde
+  *	Copyright 2000 Paolo Scaffardi
+  *	Copyright 2000-2004 Wolfgang Denk, wd@denx.de
++ *      Copyright (C) 2015 Freescale Semiconductor, Inc.
+  */
+ 
+ #include <common.h>
+@@ -949,6 +950,10 @@ DhcpHandler(uchar *pkt, unsigned dest, IPaddr_t sip, unsigned src,
+ 	if (BootpCheckPkt(pkt, dest, src, len))
+ 		return;
+ 
++	/* Ignore pkts with ip address which is 0 */
++	if (NetReadIP(&bp->bp_yiaddr) == 0)
++		return;
++
+ 	debug("DHCPHandler: got DHCP packet: (src=%d, dst=%d, len=%d) state:"
+ 		" %d\n", src, dest, len, dhcp_state);
+ 
+-- 
+1.8.0
+

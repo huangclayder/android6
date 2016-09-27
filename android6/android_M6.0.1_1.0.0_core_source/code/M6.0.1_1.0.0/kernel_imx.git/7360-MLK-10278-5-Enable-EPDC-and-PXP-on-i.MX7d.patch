@@ -1,0 +1,35 @@
+From 6b9e110fd5030461d363127daf20f39d4b5eb31d Mon Sep 17 00:00:00 2001
+From: Robby Cai <r63905@freescale.com>
+Date: Sun, 15 Feb 2015 19:39:04 +0800
+Subject: [PATCH] MLK-10278-5 Enable EPDC and PXP on i.MX7d
+
+Enable PXP and EPDC for EPDC to work
+
+Signed-off-by: Robby Cai <r63905@freescale.com>
+---
+ arch/arm/configs/imx_v7_defconfig | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/arch/arm/configs/imx_v7_defconfig b/arch/arm/configs/imx_v7_defconfig
+index 3644010..002ac32 100644
+--- a/arch/arm/configs/imx_v7_defconfig
++++ b/arch/arm/configs/imx_v7_defconfig
+@@ -251,6 +251,7 @@ CONFIG_FB_MXC_MIPI_DSI=y
+ CONFIG_FB_MXC_TRULY_WVGA_SYNC_PANEL=y
+ CONFIG_FB_MXC_HDMI=y
+ CONFIG_FB_MXC_EINK_PANEL=y
++CONFIG_FB_MXC_EINK_V2_PANEL=y
+ CONFIG_FB_MXS_SII902X=y
+ CONFIG_FB_MXC_DCIC=m
+ CONFIG_HANNSTAR_CABC=y
+@@ -332,6 +333,7 @@ CONFIG_RTC_DRV_MXC=y
+ CONFIG_RTC_DRV_SNVS=y
+ CONFIG_DMADEVICES=y
+ CONFIG_MXC_PXP_V2=y
++CONFIG_MXC_PXP_V3=y
+ CONFIG_IMX_SDMA=y
+ CONFIG_MXS_DMA=y
+ CONFIG_STAGING=y
+-- 
+1.8.0
+

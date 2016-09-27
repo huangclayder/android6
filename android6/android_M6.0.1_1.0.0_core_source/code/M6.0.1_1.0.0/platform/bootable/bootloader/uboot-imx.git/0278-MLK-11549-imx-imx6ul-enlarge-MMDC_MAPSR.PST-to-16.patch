@@ -1,0 +1,30 @@
+From e1ca547d198dde94c4d8278c99499ec2d2008880 Mon Sep 17 00:00:00 2001
+From: Anson Huang <b20788@freescale.com>
+Date: Tue, 15 Sep 2015 19:09:18 +0800
+Subject: [PATCH] MLK-11549 imx: imx6ul: enlarge MMDC_MAPSR.PST to 16
+
+MMDC auto power saving timer can NOT be too small,
+as enter/exit auto self-refresh mode too frequently
+may introduce too many latency for MMDC access,
+set it to 0x10, same as previous value on i.MX6.
+
+Signed-off-by: Anson Huang <b20788@freescale.com>
+---
+ board/freescale/mx6ul_14x14_evk/imximage_lpddr2.cfg | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/board/freescale/mx6ul_14x14_evk/imximage_lpddr2.cfg b/board/freescale/mx6ul_14x14_evk/imximage_lpddr2.cfg
+index b8dfa5e..716214b 100644
+--- a/board/freescale/mx6ul_14x14_evk/imximage_lpddr2.cfg
++++ b/board/freescale/mx6ul_14x14_evk/imximage_lpddr2.cfg
+@@ -116,6 +116,6 @@ DATA 4 0x021B0020 0x00001800
+ DATA 4 0x021B0818 0x00000000
+ DATA 4 0x021B0800 0xA1310003
+ DATA 4 0x021B0004 0x00025576
+-DATA 4 0x021B0404 0x00010106
++DATA 4 0x021B0404 0x00011006
+ DATA 4 0x021B001C 0x00000000
+ #endif
+-- 
+1.8.0
+

@@ -1,0 +1,850 @@
+From 2c487bdb14df7526826a4544801c8058dd88f33c Mon Sep 17 00:00:00 2001
+From: "guoyin.chen" <guoyin.chen@freescale.com>
+Date: Thu, 5 Feb 2015 13:05:40 +0800
+Subject: [PATCH 7/8] MA-6217 H264/MKV:One clip can't seek and subtitle can't
+ display
+
+Use off64_t to support file larger for 4G
+Remove off_t definition as bionic have it defined
+
+Signed-off-by: guoyin.chen <guoyin.chen@freescale.com>
+---
+ config.h                                 |  2 ++
+ include/fuse-lite/fuse.h                 | 22 +++++++++++-----------
+ include/fuse-lite/fuse_lowlevel.h        |  8 ++++----
+ include/fuse-lite/fuse_lowlevel_compat.h |  2 +-
+ include/ntfs-3g/acls.h                   |  2 +-
+ include/ntfs-3g/attrib.h                 |  4 ++--
+ libfuse-lite/fuse.c                      | 24 ++++++++++++------------
+ libfuse-lite/fuse_lowlevel.c             |  4 ++--
+ libntfs-3g/acls.c                        |  6 +++---
+ libntfs-3g/attrib.c                      |  6 +++---
+ libntfs-3g/device.c                      |  2 +-
+ libntfs-3g/security.c                    | 12 ++++++------
+ libntfs-3g/xattrs.c                      | 10 +++++-----
+ ntfsprogs/mkntfs.c                       |  6 +++---
+ ntfsprogs/ntfsclone.c                    | 20 ++++++++++----------
+ ntfsprogs/ntfsresize.c                   | 10 +++++-----
+ ntfsprogs/ntfsundelete.c                 |  2 +-
+ src/lowntfs-3g.c                         | 12 ++++++------
+ src/ntfs-3g.c                            | 14 +++++++-------
+ src/secaudit.c                           | 10 +++++-----
+ src/secaudit.h                           |  2 +-
+ 21 files changed, 91 insertions(+), 89 deletions(-)
+
+diff --git a/config.h b/config.h
+index a0974bd..d90c91b 100644
+--- a/config.h
++++ b/config.h
+@@ -359,10 +359,12 @@
+ #endif
+ 
+ /* Define to `long int' if <sys/types.h> does not define. */
++/*
+ #ifndef _OFF_T_DEFINED_
+ #define _OFF_T_DEFINED_
+ typedef long int off_t;
+ #endif
++*/
+ 
+ /* Define to `unsigned int' if <sys/types.h> does not define. */
+ /* #undef size_t */
+diff --git a/include/fuse-lite/fuse.h b/include/fuse-lite/fuse.h
+index 16c4ea9..b970ce1 100644
+--- a/include/fuse-lite/fuse.h
++++ b/include/fuse-lite/fuse.h
+@@ -46,7 +46,7 @@ struct fuse_cmd;
+  * @return 1 if buffer is full, zero otherwise
+  */
+ typedef int (*fuse_fill_dir_t) (void *buf, const char *name,
+-				const struct stat *stbuf, off_t off);
++				const struct stat *stbuf, off64_t off);
+ 
+ /**
+  * The file system operations:
+@@ -125,7 +125,7 @@ struct fuse_operations {
+ 	int (*chown) (const char *, uid_t, gid_t);
+ 
+ 	/** Change the size of a file */
+-	int (*truncate) (const char *, off_t);
++	int (*truncate) (const char *, off64_t);
+ 
+ 	/** Change the access and/or modification times of a file
+ 	 *
+@@ -163,7 +163,7 @@ struct fuse_operations {
+ 	 *
+ 	 * Changed in version 2.2
+ 	 */
+-	int (*read) (const char *, char *, size_t, off_t,
++	int (*read) (const char *, char *, size_t, off64_t,
+ 		     struct fuse_file_info *);
+ 
+ 	/** Write data to an open file
+@@ -174,7 +174,7 @@ struct fuse_operations {
+ 	 *
+ 	 * Changed in version 2.2
+ 	 */
+-	int (*write) (const char *, const char *, size_t, off_t,
++	int (*write) (const char *, const char *, size_t, off64_t,
+ 		      struct fuse_file_info *);
+ 
+ 	/** Get file system statistics
+@@ -274,7 +274,7 @@ struct fuse_operations {
+ 	 *
+ 	 * Introduced in version 2.3
+ 	 */
+-	int (*readdir) (const char *, void *, fuse_fill_dir_t, off_t,
++	int (*readdir) (const char *, void *, fuse_fill_dir_t, off64_t,
+ 			struct fuse_file_info *);
+ 
+ 	/** Release directory
+@@ -352,7 +352,7 @@ struct fuse_operations {
+ 	 *
+ 	 * Introduced in version 2.5
+ 	 */
+-	int (*ftruncate) (const char *, off_t, struct fuse_file_info *);
++	int (*ftruncate) (const char *, off64_t, struct fuse_file_info *);
+ 
+ 	/**
+ 	 * Get attributes from an open file
+@@ -563,9 +563,9 @@ int fuse_fs_release(struct fuse_fs *fs,	 const char *path,
+ int fuse_fs_open(struct fuse_fs *fs, const char *path,
+ 		 struct fuse_file_info *fi);
+ int fuse_fs_read(struct fuse_fs *fs, const char *path, char *buf, size_t size,
+-		 off_t off, struct fuse_file_info *fi);
++		 off64_t off, struct fuse_file_info *fi);
+ int fuse_fs_write(struct fuse_fs *fs, const char *path, const char *buf,
+-		  size_t size, off_t off, struct fuse_file_info *fi);
++		  size_t size, off64_t off, struct fuse_file_info *fi);
+ int fuse_fs_fsync(struct fuse_fs *fs, const char *path, int datasync,
+ 		  struct fuse_file_info *fi);
+ int fuse_fs_flush(struct fuse_fs *fs, const char *path,
+@@ -574,7 +574,7 @@ int fuse_fs_statfs(struct fuse_fs *fs, const char *path, struct statvfs *buf);
+ int fuse_fs_opendir(struct fuse_fs *fs, const char *path,
+ 		    struct fuse_file_info *fi);
+ int fuse_fs_readdir(struct fuse_fs *fs, const char *path, void *buf,
+-		    fuse_fill_dir_t filler, off_t off,
++		    fuse_fill_dir_t filler, off64_t off,
+ 		    struct fuse_file_info *fi);
+ int fuse_fs_fsyncdir(struct fuse_fs *fs, const char *path, int datasync,
+ 		     struct fuse_file_info *fi);
+@@ -586,8 +586,8 @@ int fuse_fs_lock(struct fuse_fs *fs, const char *path,
+ 		 struct fuse_file_info *fi, int cmd, struct flock *lock);
+ int fuse_fs_chmod(struct fuse_fs *fs, const char *path, mode_t mode);
+ int fuse_fs_chown(struct fuse_fs *fs, const char *path, uid_t uid, gid_t gid);
+-int fuse_fs_truncate(struct fuse_fs *fs, const char *path, off_t size);
+-int fuse_fs_ftruncate(struct fuse_fs *fs, const char *path, off_t size,
++int fuse_fs_truncate(struct fuse_fs *fs, const char *path, off64_t size);
++int fuse_fs_ftruncate(struct fuse_fs *fs, const char *path, off64_t size,
+ 		      struct fuse_file_info *fi);
+ int fuse_fs_utimens(struct fuse_fs *fs, const char *path,
+ 		    const struct timespec tv[2]);
+diff --git a/include/fuse-lite/fuse_lowlevel.h b/include/fuse-lite/fuse_lowlevel.h
+index 0d4eb19..b7926af 100644
+--- a/include/fuse-lite/fuse_lowlevel.h
++++ b/include/fuse-lite/fuse_lowlevel.h
+@@ -412,7 +412,7 @@ struct fuse_lowlevel_ops {
+ 	 * @param off offset to read from
+ 	 * @param fi file information
+ 	 */
+-	void (*read) (fuse_req_t req, fuse_ino_t ino, size_t size, off_t off,
++	void (*read) (fuse_req_t req, fuse_ino_t ino, size_t size, off64_t off,
+ 		      struct fuse_file_info *fi);
+ 
+ 	/**
+@@ -439,7 +439,7 @@ struct fuse_lowlevel_ops {
+ 	 * @param fi file information
+ 	 */
+ 	void (*write) (fuse_req_t req, fuse_ino_t ino, const char *buf,
+-		       size_t size, off_t off, struct fuse_file_info *fi);
++		       size_t size, off64_t off, struct fuse_file_info *fi);
+ 
+ 	/**
+ 	 * Flush method
+@@ -561,7 +561,7 @@ struct fuse_lowlevel_ops {
+ 	 * @param off offset to continue reading the directory stream
+ 	 * @param fi file information
+ 	 */
+-	void (*readdir) (fuse_req_t req, fuse_ino_t ino, size_t size, off_t off,
++	void (*readdir) (fuse_req_t req, fuse_ino_t ino, size_t size, off64_t off,
+ 			 struct fuse_file_info *fi);
+ 
+ 	/**
+@@ -1020,7 +1020,7 @@ int fuse_reply_bmap(fuse_req_t req, uint64_t idx);
+  */
+ size_t fuse_add_direntry(fuse_req_t req, char *buf, size_t bufsize,
+ 			 const char *name, const struct stat *stbuf,
+-			 off_t off);
++			 off64_t off);
+ 
+ /* ----------------------------------------------------------- *
+  * Utility functions					       *
+diff --git a/include/fuse-lite/fuse_lowlevel_compat.h b/include/fuse-lite/fuse_lowlevel_compat.h
+index 753d46b..d0eaa8f 100644
+--- a/include/fuse-lite/fuse_lowlevel_compat.h
++++ b/include/fuse-lite/fuse_lowlevel_compat.h
+@@ -12,5 +12,5 @@
+ size_t fuse_dirent_size(size_t namelen);
+ 
+ char *fuse_add_dirent(char *buf, const char *name, const struct stat *stbuf,
+-		      off_t off);
++		      off64_t off);
+ 
+diff --git a/include/ntfs-3g/acls.h b/include/ntfs-3g/acls.h
+index 8a83d32..159a3dc 100644
+--- a/include/ntfs-3g/acls.h
++++ b/include/ntfs-3g/acls.h
+@@ -130,7 +130,7 @@ struct MAPLIST {
+ 	char maptext[LINESZ + 1];
+ };
+ 
+-typedef int (*FILEREADER)(void *fileid, char *buf, size_t size, off_t pos);
++typedef int (*FILEREADER)(void *fileid, char *buf, size_t size, off64_t pos);
+ 
+ /*
+  *		Constants defined in acls.c
+diff --git a/include/ntfs-3g/attrib.h b/include/ntfs-3g/attrib.h
+index 67fb957..0c6b757 100644
+--- a/include/ntfs-3g/attrib.h
++++ b/include/ntfs-3g/attrib.h
+@@ -385,10 +385,10 @@ extern int   ntfs_attr_remove(ntfs_inode *ni, const ATTR_TYPES type,
+ extern s64   ntfs_attr_get_free_bits(ntfs_attr *na);
+ extern int ntfs_attr_data_read(ntfs_inode *ni,
+ 		ntfschar *stream_name, int stream_name_len,
+-		char *buf, size_t size, off_t offset);
++		char *buf, size_t size, off64_t offset);
+ extern int ntfs_attr_data_write(ntfs_inode *ni,
+ 		ntfschar *stream_name, int stream_name_len,
+-		char *buf, size_t size, off_t offset);
++		char *buf, size_t size, off64_t offset);
+ 
+ #endif /* defined _NTFS_ATTRIB_H */
+ 
+diff --git a/libfuse-lite/fuse.c b/libfuse-lite/fuse.c
+index cf186cc..378d69d 100644
+--- a/libfuse-lite/fuse.c
++++ b/libfuse-lite/fuse.c
+@@ -80,8 +80,8 @@ struct fuse {
+ 
+ struct lock {
+     int type;
+-    off_t start;
+-    off_t end;
++    off64_t start;
++    off64_t end;
+     pid_t pid;
+     uint64_t owner;
+     struct lock *next;
+@@ -628,7 +628,7 @@ int fuse_fs_open(struct fuse_fs *fs, const char *path,
+ }
+ 
+ int fuse_fs_read(struct fuse_fs *fs, const char *path, char *buf, size_t size,
+-                 off_t off, struct fuse_file_info *fi)
++                 off64_t off, struct fuse_file_info *fi)
+ {
+     fuse_get_context()->private_data = fs->user_data;
+     if (fs->op.read)
+@@ -638,7 +638,7 @@ int fuse_fs_read(struct fuse_fs *fs, const char *path, char *buf, size_t size,
+ }
+ 
+ int fuse_fs_write(struct fuse_fs *fs, const char *path, const char *buf,
+-                  size_t size, off_t off, struct fuse_file_info *fi)
++                  size_t size, off64_t off, struct fuse_file_info *fi)
+ {
+     fuse_get_context()->private_data = fs->user_data;
+     if (fs->op.write)
+@@ -700,7 +700,7 @@ int fuse_fs_releasedir(struct fuse_fs *fs, const char *path,
+ }
+ 
+ int fuse_fs_readdir(struct fuse_fs *fs, const char *path, void *buf,
+-                    fuse_fill_dir_t filler, off_t off,
++                    fuse_fill_dir_t filler, off64_t off,
+                     struct fuse_file_info *fi)
+ {
+     fuse_get_context()->private_data = fs->user_data;
+@@ -739,7 +739,7 @@ int fuse_fs_chown(struct fuse_fs *fs, const char *path, uid_t uid, gid_t gid)
+         return -ENOSYS;
+ }
+ 
+-int fuse_fs_truncate(struct fuse_fs *fs, const char *path, off_t size)
++int fuse_fs_truncate(struct fuse_fs *fs, const char *path, off64_t size)
+ {
+     fuse_get_context()->private_data = fs->user_data;
+     if (fs->op.truncate)
+@@ -748,7 +748,7 @@ int fuse_fs_truncate(struct fuse_fs *fs, const char *path, off_t size)
+         return -ENOSYS;
+ }
+ 
+-int fuse_fs_ftruncate(struct fuse_fs *fs, const char *path, off_t size,
++int fuse_fs_ftruncate(struct fuse_fs *fs, const char *path, off64_t size,
+                       struct fuse_file_info *fi)
+ {
+     fuse_get_context()->private_data = fs->user_data;
+@@ -1615,7 +1615,7 @@ static void fuse_lib_open(fuse_req_t req, fuse_ino_t ino,
+ }
+ 
+ static void fuse_lib_read(fuse_req_t req, fuse_ino_t ino, size_t size,
+-                          off_t off, struct fuse_file_info *fi)
++                          off64_t off, struct fuse_file_info *fi)
+ {
+     struct fuse *f = req_fuse_prepare(req);
+     char *path;
+@@ -1659,7 +1659,7 @@ static void fuse_lib_read(fuse_req_t req, fuse_ino_t ino, size_t size,
+ }
+ 
+ static void fuse_lib_write(fuse_req_t req, fuse_ino_t ino, const char *buf,
+-                       size_t size, off_t off, struct fuse_file_info *fi)
++                       size_t size, off64_t off, struct fuse_file_info *fi)
+ {
+     struct fuse *f = req_fuse_prepare(req);
+     char *path;
+@@ -1808,7 +1808,7 @@ static int extend_contents(struct fuse_dh *dh, unsigned minsize)
+ }
+ 
+ static int fill_dir(void *dh_, const char *name, const struct stat *statp,
+-                    off_t off)
++                    off64_t off)
+ {
+     struct fuse_dh *dh = (struct fuse_dh *) dh_;
+     struct stat stbuf;
+@@ -1856,7 +1856,7 @@ static int fill_dir(void *dh_, const char *name, const struct stat *statp,
+ }
+ 
+ static int readdir_fill(struct fuse *f, fuse_req_t req, fuse_ino_t ino,
+-                        size_t size, off_t off, struct fuse_dh *dh,
++                        size_t size, off64_t off, struct fuse_dh *dh,
+                         struct fuse_file_info *fi)
+ {
+     int err = -ENOENT;
+@@ -1886,7 +1886,7 @@ static int readdir_fill(struct fuse *f, fuse_req_t req, fuse_ino_t ino,
+ }
+ 
+ static void fuse_lib_readdir(fuse_req_t req, fuse_ino_t ino, size_t size,
+-                             off_t off, struct fuse_file_info *llfi)
++                             off64_t off, struct fuse_file_info *llfi)
+ {
+     struct fuse *f = req_fuse_prepare(req);
+     struct fuse_file_info fi;
+diff --git a/libfuse-lite/fuse_lowlevel.c b/libfuse-lite/fuse_lowlevel.c
+index 48a4262..528dcf5 100644
+--- a/libfuse-lite/fuse_lowlevel.c
++++ b/libfuse-lite/fuse_lowlevel.c
+@@ -218,7 +218,7 @@ size_t fuse_dirent_size(size_t namelen)
+ }
+ 
+ char *fuse_add_dirent(char *buf, const char *name, const struct stat *stbuf,
+-                      off_t off)
++                      off64_t off)
+ {
+     unsigned namelen = strlen(name);
+     unsigned entlen = FUSE_NAME_OFFSET + namelen;
+@@ -238,7 +238,7 @@ char *fuse_add_dirent(char *buf, const char *name, const struct stat *stbuf,
+ }
+ 
+ size_t fuse_add_direntry(fuse_req_t req, char *buf, size_t bufsize,
+-                         const char *name, const struct stat *stbuf, off_t off)
++                         const char *name, const struct stat *stbuf, off64_t off)
+ {
+     size_t entsize;
+ 
+diff --git a/libntfs-3g/acls.c b/libntfs-3g/acls.c
+index fe466c2..0561794 100644
+--- a/libntfs-3g/acls.c
++++ b/libntfs-3g/acls.c
+@@ -3957,7 +3957,7 @@ static SID *encodesid(const char *sidstr)
+  */
+ 
+ static struct MAPLIST *getmappingitem(FILEREADER reader, void *fileid,
+-		off_t *poffs, char *buf, int *psrc, s64 *psize)
++		off64_t *poffs, char *buf, int *psrc, s64 *psize)
+ {
+ 	int src;
+ 	int dst;
+@@ -4044,13 +4044,13 @@ struct MAPLIST *ntfs_read_mapping(FILEREADER reader, void *fileid)
+ 	struct MAPLIST *firstitem;
+ 	struct MAPLIST *lastitem;
+ 	int src;
+-	off_t offs;
++	off64_t offs;
+ 	s64 size;
+ 
+ 	firstitem = (struct MAPLIST*)NULL;
+ 	lastitem = (struct MAPLIST*)NULL;
+ 	offs = 0;
+-	size = reader(fileid, buf, (size_t)BUFSZ, (off_t)0);
++	size = reader(fileid, buf, (size_t)BUFSZ, (off64_t)0);
+ 	if (size > 0) {
+ 		src = 0;
+ 		do {
+diff --git a/libntfs-3g/attrib.c b/libntfs-3g/attrib.c
+index 281a620..8985c13 100644
+--- a/libntfs-3g/attrib.c
++++ b/libntfs-3g/attrib.c
+@@ -6603,7 +6603,7 @@ err_exit:
+ 
+ int ntfs_attr_data_read(ntfs_inode *ni,
+ 		ntfschar *stream_name, int stream_name_len,
+-		char *buf, size_t size, off_t offset)
++		char *buf, size_t size, off64_t offset)
+ {
+ 	ntfs_attr *na = NULL;
+ 	int res, total = 0;
+@@ -6618,7 +6618,7 @@ int ntfs_attr_data_read(ntfs_inode *ni,
+ 			size = na->data_size - offset;
+ 		while (size) {
+ 			res = ntfs_attr_pread(na, offset, size, buf + total);
+-			if ((off_t)res < (off_t)size)
++			if ((off64_t)res < (off64_t)size)
+ 				ntfs_log_perror("ntfs_attr_pread partial read "
+ 					"(%lld : %lld <> %d)",
+ 					(long long)offset,
+@@ -6648,7 +6648,7 @@ exit:
+ 
+ int ntfs_attr_data_write(ntfs_inode *ni,
+ 		ntfschar *stream_name, int stream_name_len,
+-		char *buf, size_t size, off_t offset)
++		char *buf, size_t size, off64_t offset)
+ {
+ 	ntfs_attr *na = NULL;
+ 	int res, total = 0;
+diff --git a/libntfs-3g/device.c b/libntfs-3g/device.c
+index 274abac..4a50b6a 100644
+--- a/libntfs-3g/device.c
++++ b/libntfs-3g/device.c
+@@ -563,7 +563,7 @@ s64 ntfs_device_size_get(struct ntfs_device *dev, int block_size)
+ #ifdef DIOCGMEDIASIZE
+ 	{
+ 		/* FreeBSD */
+-		off_t size;
++		off64_t size;
+ 
+ 		if (dev->d_ops->ioctl(dev, DIOCGMEDIASIZE, &size) >= 0) {
+ 			ntfs_log_debug("DIOCGMEDIASIZE nr bytes = %llu (0x%llx)\n",
+diff --git a/libntfs-3g/security.c b/libntfs-3g/security.c
+index b5df43f..68e9fdc 100644
+--- a/libntfs-3g/security.c
++++ b/libntfs-3g/security.c
+@@ -433,7 +433,7 @@ static INDEX_ENTRY *ntfs_ie_get_first(INDEX_HEADER *ih)
+  *	file. Stuffing is just a way to get to the same result.
+  */
+ 
+-static int entersecurity_stuff(ntfs_volume *vol, off_t offs)
++static int entersecurity_stuff(ntfs_volume *vol, off64_t offs)
+ {
+ 	int res;
+ 	int written;
+@@ -475,7 +475,7 @@ static int entersecurity_stuff(ntfs_volume *vol, off_t offs)
+ 
+ static int entersecurity_data(ntfs_volume *vol,
+ 			const SECURITY_DESCRIPTOR_RELATIVE *attr, s64 attrsz,
+-			le32 hash, le32 keyid, off_t offs, int gap)
++			le32 hash, le32 keyid, off64_t offs, int gap)
+ {
+ 	int res;
+ 	int written1;
+@@ -530,7 +530,7 @@ static int entersecurity_data(ntfs_volume *vol,
+  */
+ 
+ static int entersecurity_indexes(ntfs_volume *vol, s64 attrsz,
+-			le32 hash, le32 keyid, off_t offs)
++			le32 hash, le32 keyid, off64_t offs)
+ {
+ 	union {
+ 		struct {
+@@ -621,7 +621,7 @@ static le32 entersecurityattr(ntfs_volume *vol,
+ 	le32 securid;
+ 	le32 keyid;
+ 	u32 newkey;
+-	off_t offs;
++	off64_t offs;
+ 	int gap;
+ 	int size;
+ 	BOOL found;
+@@ -3998,7 +3998,7 @@ static int ntfs_default_mapping(struct SECURITY_CONTEXT *scx)
+  *		Basic read from a user mapping file on another volume
+  */
+ 
+-static int basicread(void *fileid, char *buf, size_t size, off_t offs __attribute__((unused)))
++static int basicread(void *fileid, char *buf, size_t size, off64_t offs __attribute__((unused)))
+ {
+ 	return (read(*(int*)fileid, buf, size));
+ }
+@@ -4008,7 +4008,7 @@ static int basicread(void *fileid, char *buf, size_t size, off_t offs __attribut
+  *		Read from a user mapping file on current NTFS partition
+  */
+ 
+-static int localread(void *fileid, char *buf, size_t size, off_t offs)
++static int localread(void *fileid, char *buf, size_t size, off64_t offs)
+ {
+ 	return (ntfs_attr_data_read((ntfs_inode*)fileid,
+ 			AT_UNNAMED, 0, buf, size, offs));
+diff --git a/libntfs-3g/xattrs.c b/libntfs-3g/xattrs.c
+index 5be2c06..ece75d4 100644
+--- a/libntfs-3g/xattrs.c
++++ b/libntfs-3g/xattrs.c
+@@ -239,7 +239,7 @@ enum SYSTEMXATTRS ntfs_xattr_system_type(const char *name,
+  *		Basic read from a user mapping file on another volume
+  */
+ 
+-static int basicread(void *fileid, char *buf, size_t size, off_t offs __attribute__((unused)))
++static int basicread(void *fileid, char *buf, size_t size, off64_t offs __attribute__((unused)))
+ {
+ 	return (read(*(int*)fileid, buf, size));
+ }
+@@ -249,7 +249,7 @@ static int basicread(void *fileid, char *buf, size_t size, off_t offs __attribut
+  *		Read from a user mapping file on current NTFS partition
+  */
+ 
+-static int localread(void *fileid, char *buf, size_t size, off_t offs)
++static int localread(void *fileid, char *buf, size_t size, off64_t offs)
+ {
+ 	return (ntfs_attr_data_read((ntfs_inode*)fileid,
+ 			AT_UNNAMED, 0, buf, size, offs));
+@@ -266,7 +266,7 @@ static int localread(void *fileid, char *buf, size_t size, off_t offs)
+  */
+ 
+ static struct XATTRMAPPING *getmappingitem(FILEREADER reader, void *fileid,
+-		off_t *poffs, char *buf, int *psrc, s64 *psize)
++		off64_t *poffs, char *buf, int *psrc, s64 *psize)
+ {
+ 	int src;
+ 	int dst;
+@@ -363,13 +363,13 @@ static struct XATTRMAPPING *ntfs_read_xattr_mapping(FILEREADER reader,
+ 	struct XATTRMAPPING *lastitem;
+ 	BOOL duplicated;
+ 	int src;
+-	off_t offs;
++	off64_t offs;
+ 	s64 size;
+ 
+ 	firstitem = (struct XATTRMAPPING*)NULL;
+ 	lastitem = (struct XATTRMAPPING*)NULL;
+ 	offs = 0;
+-	size = reader(fileid, buf, (size_t)BUFSZ, (off_t)0);
++	size = reader(fileid, buf, (size_t)BUFSZ, (off64_t)0);
+ 	if (size > 0) {
+ 		src = 0;
+ 		do {
+diff --git a/ntfsprogs/mkntfs.c b/ntfsprogs/mkntfs.c
+index d8a6b3c..6f48d5e 100644
+--- a/ntfsprogs/mkntfs.c
++++ b/ntfsprogs/mkntfs.c
+@@ -857,7 +857,7 @@ static s64 ntfs_rlwrite(struct ntfs_device *dev, const runlist *rl,
+ 			delta -= length;
+ 		}
+ 		if (dev->d_ops->seek(dev, rl[i].lcn * g_vol->cluster_size,
+-				SEEK_SET) == (off_t)-1)
++				SEEK_SET) == (off64_t)-1)
+ 			return -1LL;
+ 		retry = 0;
+ 		do {
+@@ -4120,7 +4120,7 @@ static BOOL mkntfs_fill_device_with_zeroes(void)
+ 				position / progress_inc);
+ 			/* Seek to next cluster. */
+ 			g_vol->dev->d_ops->seek(g_vol->dev,
+-					((off_t)position + 1) *
++					((off64_t)position + 1) *
+ 					g_vol->cluster_size, SEEK_SET);
+ 		}
+ 	}
+@@ -4276,7 +4276,7 @@ static int create_backup_boot_sector(u8 *buff)
+ 	if (size < opts.sector_size)
+ 		size = opts.sector_size;
+ 	if (g_vol->dev->d_ops->seek(g_vol->dev, (opts.num_sectors + 1) *
+-			opts.sector_size - size, SEEK_SET) == (off_t)-1) {
++			opts.sector_size - size, SEEK_SET) == (off64_t)-1) {
+ 		ntfs_log_perror("Seek failed");
+ 		goto bb_err;
+ 	}
+diff --git a/ntfsprogs/ntfsclone.c b/ntfsprogs/ntfsclone.c
+index 7d56cc6..f09e386 100644
+--- a/ntfsprogs/ntfsclone.c
++++ b/ntfsprogs/ntfsclone.c
+@@ -571,16 +571,16 @@ static int io_all(void *fd, void *buf, int count, int do_write)
+ }
+ 
+ 
+-static void rescue_sector(void *fd, off_t pos, void *buff)
++static void rescue_sector(void *fd, off64_t pos, void *buff)
+ {
+ 	const char *badsector_magic = "BadSectoR\0";
+ 	struct ntfs_device *dev = fd;
+ 
+ 	if (opt.restore_image) {
+-		if (lseek(*(int *)fd, pos, SEEK_SET) == (off_t)-1)
++		if (lseek(*(int *)fd, pos, SEEK_SET) == (off64_t)-1)
+ 			perr_exit("lseek");
+ 	} else {
+-		if (vol->dev->d_ops->seek(dev, pos, SEEK_SET) == (off_t)-1)
++		if (vol->dev->d_ops->seek(dev, pos, SEEK_SET) == (off64_t)-1)
+ 			perr_exit("seek input");
+ 	}
+ 
+@@ -599,14 +599,14 @@ static void copy_cluster(int rescue, u64 rescue_lcn, u64 lcn)
+ 	/* vol is NULL if opt.restore_image is set */
+ 	s32 csize = le32_to_cpu(image_hdr.cluster_size);
+ 	void *fd = (void *)&fd_in;
+-	off_t rescue_pos;
++	off64_t rescue_pos;
+ 
+ 	if (!opt.restore_image) {
+ 		csize = vol->cluster_size;
+ 		fd = vol->dev;
+ 	}
+ 
+-	rescue_pos = (off_t)(rescue_lcn * csize);
++	rescue_pos = (off64_t)(rescue_lcn * csize);
+ 
+ 		/* possible partial cluster holding the backup boot sector */
+ 	if ((lcn + 1)*csize > full_device_size) {
+@@ -655,17 +655,17 @@ static void copy_cluster(int rescue, u64 rescue_lcn, u64 lcn)
+ 
+ static void lseek_to_cluster(s64 lcn)
+ {
+-	off_t pos;
++	off64_t pos;
+ 
+-	pos = (off_t)(lcn * vol->cluster_size);
++	pos = (off64_t)(lcn * vol->cluster_size);
+ 
+-	if (vol->dev->d_ops->seek(vol->dev, pos, SEEK_SET) == (off_t)-1)
++	if (vol->dev->d_ops->seek(vol->dev, pos, SEEK_SET) == (off64_t)-1)
+ 		perr_exit("lseek input");
+ 
+ 	if (opt.std_out || opt.save_image || opt.metadata_image)
+ 		return;
+ 
+-	if (lseek(fd_out, pos, SEEK_SET) == (off_t)-1)
++	if (lseek(fd_out, pos, SEEK_SET) == (off64_t)-1)
+ 		perr_exit("lseek output");
+ }
+ 
+@@ -860,7 +860,7 @@ static void restore_image(void)
+ 					err_exit("restore_image: corrupt image\n");
+ 				else
+ 					if (lseek(fd_out, count * csize,
+-							SEEK_CUR) == (off_t)-1)
++							SEEK_CUR) == (off64_t)-1)
+ 						perr_exit("restore_image: lseek");
+ 			}
+ 			pos += count;
+diff --git a/ntfsprogs/ntfsresize.c b/ntfsprogs/ntfsresize.c
+index 441de03..616264b 100644
+--- a/ntfsprogs/ntfsresize.c
++++ b/ntfsprogs/ntfsresize.c
+@@ -1709,11 +1709,11 @@ static int write_mft_record(ntfs_volume *v, const MFT_REF mref, MFT_RECORD *buf)
+ 
+ static void lseek_to_cluster(ntfs_volume *vol, s64 lcn)
+ {
+-	off_t pos;
++	off64_t pos;
+ 
+-	pos = (off_t)(lcn * vol->cluster_size);
++	pos = (off64_t)(lcn * vol->cluster_size);
+ 
+-	if (vol->dev->d_ops->seek(vol->dev, pos, SEEK_SET) == (off_t)-1)
++	if (vol->dev->d_ops->seek(vol->dev, pos, SEEK_SET) == (off64_t)-1)
+ 		perr_exit("seek failed to position %lld", (long long)lcn);
+ }
+ 
+@@ -2483,7 +2483,7 @@ static void update_bootsector(ntfs_resize_t *r)
+ 
+ 	printf("Updating Boot record ...\n");
+ 
+-	if (vol->dev->d_ops->seek(vol->dev, 0, SEEK_SET) == (off_t)-1)
++	if (vol->dev->d_ops->seek(vol->dev, 0, SEEK_SET) == (off64_t)-1)
+ 		perr_exit("lseek");
+ 
+ 	if (vol->dev->d_ops->read(vol->dev, &bs, bs_size) == -1)
+@@ -2500,7 +2500,7 @@ static void update_bootsector(ntfs_resize_t *r)
+ 		r->progress.flags &= ~NTFS_PROGBAR_SUPPRESS;
+ 	}
+ 
+-	if (vol->dev->d_ops->seek(vol->dev, 0, SEEK_SET) == (off_t)-1)
++	if (vol->dev->d_ops->seek(vol->dev, 0, SEEK_SET) == (off64_t)-1)
+ 		perr_exit("lseek");
+ 
+ 	if (!opt.ro_flag)
+diff --git a/ntfsprogs/ntfsundelete.c b/ntfsprogs/ntfsundelete.c
+index 8cbfd92..26ed378 100644
+--- a/ntfsprogs/ntfsundelete.c
++++ b/ntfsprogs/ntfsundelete.c
+@@ -1948,7 +1948,7 @@ static int undelete_file(ntfs_volume *vol, long long inode)
+ 				if (d->percent == 100 && d->size_alloc >= d->size_data &&
+ 					(d->size_alloc - d->size_data) <= (long long)vol->cluster_size &&
+ 					cluster_count * (long long)vol->cluster_size == d->size_alloc) {
+-					if (ftruncate(fd, (off_t)d->size_data))
++					if (ftruncate(fd, (off64_t)d->size_data))
+ 						ntfs_log_perror("Truncation failed");
+ 				} else ntfs_log_quiet("Truncation not performed because file has an "
+ 					"inconsistent $MFT record.\n");
+diff --git a/src/lowntfs-3g.c b/src/lowntfs-3g.c
+index a281da6..6d5a284 100644
+--- a/src/lowntfs-3g.c
++++ b/src/lowntfs-3g.c
+@@ -1104,7 +1104,7 @@ static void ntfs_fuse_releasedir(fuse_req_t req,
+ }
+ 
+ static void ntfs_fuse_readdir(fuse_req_t req, fuse_ino_t ino, size_t size,
+-			off_t off __attribute__((unused)),
++			off64_t off __attribute__((unused)),
+ 			struct fuse_file_info *fi __attribute__((unused)))
+ {
+ 	ntfs_fuse_fill_item_t *first;
+@@ -1256,7 +1256,7 @@ static void ntfs_fuse_open(fuse_req_t req, fuse_ino_t ino,
+ }
+ 
+ static void ntfs_fuse_read(fuse_req_t req, fuse_ino_t ino, size_t size,
+-			off_t offset,
++			off64_t offset,
+ 			struct fuse_file_info *fi __attribute__((unused)))
+ {
+ 	ntfs_inode *ni = NULL;
+@@ -1296,7 +1296,7 @@ static void ntfs_fuse_read(fuse_req_t req, fuse_ino_t ino, size_t size,
+ 		max_read = ((na->data_size+511) & ~511) + 2;
+ 	}
+ #endif /* HAVE_SETXATTR */
+-	if (offset + (off_t)size > max_read) {
++	if (offset + (off64_t)size > max_read) {
+ 		if (max_read < offset)
+ 			goto ok;
+ 		size = max_read - offset;
+@@ -1331,7 +1331,7 @@ exit:
+ }
+ 
+ static void ntfs_fuse_write(fuse_req_t req, fuse_ino_t ino, const char *buf, 
+-			size_t size, off_t offset,
++			size_t size, off64_t offset,
+ 			struct fuse_file_info *fi __attribute__((unused)))
+ {
+ 	ntfs_inode *ni = NULL;
+@@ -1490,9 +1490,9 @@ static int ntfs_fuse_chownmod(struct SECURITY_CONTEXT *scx, fuse_ino_t ino,
+ 
+ static int ntfs_fuse_trunc(struct SECURITY_CONTEXT *scx, fuse_ino_t ino, 
+ #if !KERNELPERMS | (POSIXACLS & !KERNELACLS)
+-		off_t size, BOOL chkwrite, struct stat *stbuf)
++		off64_t size, BOOL chkwrite, struct stat *stbuf)
+ #else
+-		off_t size, BOOL chkwrite __attribute__((unused)),
++		off64_t size, BOOL chkwrite __attribute__((unused)),
+ 		struct stat *stbuf)
+ #endif
+ {
+diff --git a/src/ntfs-3g.c b/src/ntfs-3g.c
+index 8919761..1252df1 100644
+--- a/src/ntfs-3g.c
++++ b/src/ntfs-3g.c
+@@ -1089,7 +1089,7 @@ static int ntfs_fuse_opendir(const char *path,
+ #endif
+ 
+ static int ntfs_fuse_readdir(const char *path, void *buf,
+-		fuse_fill_dir_t filler, off_t offset __attribute__((unused)),
++		fuse_fill_dir_t filler, off64_t offset __attribute__((unused)),
+ 		struct fuse_file_info *fi __attribute__((unused)))
+ {
+ 	ntfs_fuse_fill_context_t fill_ctx;
+@@ -1189,7 +1189,7 @@ static int ntfs_fuse_open(const char *org_path,
+ }
+ 
+ static int ntfs_fuse_read(const char *org_path, char *buf, size_t size,
+-		off_t offset, struct fuse_file_info *fi __attribute__((unused)))
++		off64_t offset, struct fuse_file_info *fi __attribute__((unused)))
+ {
+ 	ntfs_inode *ni = NULL;
+ 	ntfs_attr *na = NULL;
+@@ -1225,7 +1225,7 @@ static int ntfs_fuse_read(const char *org_path, char *buf, size_t size,
+ 		max_read = ((na->data_size+511) & ~511) + 2;
+ 	}
+ #endif /* HAVE_SETXATTR */
+-	if (offset + (off_t)size > max_read) {
++	if (offset + (off64_t)size > max_read) {
+ 		if (max_read < offset)
+ 			goto ok;
+ 		size = max_read - offset;
+@@ -1259,7 +1259,7 @@ exit:
+ }
+ 
+ static int ntfs_fuse_write(const char *org_path, const char *buf, size_t size,
+-		off_t offset, struct fuse_file_info *fi __attribute__((unused)))
++		off64_t offset, struct fuse_file_info *fi __attribute__((unused)))
+ {
+ 	ntfs_inode *ni = NULL;
+ 	ntfs_attr *na = NULL;
+@@ -1363,7 +1363,7 @@ out:
+  *	Common part for truncate() and ftruncate()
+  */
+ 
+-static int ntfs_fuse_trunc(const char *org_path, off_t size,
++static int ntfs_fuse_trunc(const char *org_path, off64_t size,
+ #if !KERNELPERMS | (POSIXACLS & !KERNELACLS)
+ 			BOOL chkwrite)
+ #else
+@@ -1439,12 +1439,12 @@ exit:
+ 	return res;
+ }
+ 
+-static int ntfs_fuse_truncate(const char *org_path, off_t size)
++static int ntfs_fuse_truncate(const char *org_path, off64_t size)
+ {
+ 	return ntfs_fuse_trunc(org_path, size, TRUE);
+ }
+ 
+-static int ntfs_fuse_ftruncate(const char *org_path, off_t size,
++static int ntfs_fuse_ftruncate(const char *org_path, off64_t size,
+ 			struct fuse_file_info *fi __attribute__((unused)))
+ {
+ 	/*
+diff --git a/src/secaudit.c b/src/secaudit.c
+index 122d7cf..a05a20b 100644
+--- a/src/secaudit.c
++++ b/src/secaudit.c
+@@ -447,8 +447,8 @@ void showposix(const struct POSIX_SECURITY*);
+ int linux_permissions(const char*, BOOL);
+ uid_t linux_owner(const char*);
+ gid_t linux_group(const char*);
+-int basicread(void*, char*, size_t, off_t);
+-int dummyread(void*, char*, size_t, off_t);
++int basicread(void*, char*, size_t, off64_t);
++int dummyread(void*, char*, size_t, off64_t);
+ int local_build_mapping(struct MAPPING *[], const char*);
+ void newblock(s32);
+ void freeblocks(void);
+@@ -2113,7 +2113,7 @@ void freeblocks(void)
+  */
+ 
+ int basicread(void *fileid, char *buf, size_t size,
+-		off_t pos __attribute__((unused)))
++		off64_t pos __attribute__((unused)))
+ {
+ 	return (read(*(int*)fileid, buf, size));
+ }
+@@ -2125,11 +2125,11 @@ int basicread(void *fileid, char *buf, size_t size,
+  */
+ 
+ int dummyread(void *fileid  __attribute__((unused)),
+-		char *buf, size_t size, off_t pos)
++		char *buf, size_t size, off64_t pos)
+ {
+ 	size_t sz;
+ 
+-	if (pos >= (off_t)(sizeof(dummymapping) - 1))
++	if (pos >= (off64_t)(sizeof(dummymapping) - 1))
+ 		sz = 0;
+ 	else
+ 		if ((size + pos) >= (sizeof(dummymapping) - 1))
+diff --git a/src/secaudit.h b/src/secaudit.h
+index 75c8ece..fa114c5 100644
+--- a/src/secaudit.h
++++ b/src/secaudit.h
+@@ -656,7 +656,7 @@ struct group {
+ 	gid_t gr_gid;
+ } ;
+ 
+-typedef int (*FILEREADER)(void *fileid, char *buf, size_t size, off_t pos);
++typedef int (*FILEREADER)(void *fileid, char *buf, size_t size, off64_t pos);
+ 
+ /*
+  *		Data defined in secaudit.c
+-- 
+1.8.0
+

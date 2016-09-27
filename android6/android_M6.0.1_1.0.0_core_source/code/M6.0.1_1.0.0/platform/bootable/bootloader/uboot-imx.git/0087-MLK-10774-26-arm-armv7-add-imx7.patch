@@ -1,0 +1,27 @@
+From 9aa94179b8386fa0c83168ba7445ecdc37f1c5d6 Mon Sep 17 00:00:00 2001
+From: Peng Fan <Peng.Fan@freescale.com>
+Date: Mon, 9 Mar 2015 10:35:38 +0800
+Subject: [PATCH] MLK-10774-26 arm:armv7 add imx7
+
+Modify Makefile to support MX7
+
+Signed-off-by: Peng Fan <Peng.Fan@freescale.com>
+---
+ arch/arm/cpu/armv7/Makefile | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/arch/arm/cpu/armv7/Makefile b/arch/arm/cpu/armv7/Makefile
+index 42cb676..828f366 100644
+--- a/arch/arm/cpu/armv7/Makefile
++++ b/arch/arm/cpu/armv7/Makefile
+@@ -46,6 +46,7 @@ obj-$(CONFIG_ARCH_EXYNOS) += exynos/
+ obj-$(if $(filter ls102xa,$(SOC)),y) += ls102xa/
+ obj-$(if $(filter mx5,$(SOC)),y) += mx5/
+ obj-$(CONFIG_MX6) += mx6/
++obj-$(CONFIG_MX7) += mx7/
+ obj-$(CONFIG_OMAP34XX) += omap3/
+ obj-$(CONFIG_OMAP44XX) += omap4/
+ obj-$(CONFIG_OMAP54XX) += omap5/
+-- 
+1.8.0
+

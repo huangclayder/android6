@@ -1,0 +1,39 @@
+From f1b3ce3fd7e921d56b92149f193055e02a2c13a9 Mon Sep 17 00:00:00 2001
+From: Robby Cai <r63905@freescale.com>
+Date: Mon, 16 Mar 2015 21:15:06 +0800
+Subject: [PATCH] MLK-10432 epdc: correct EPDC pixel clock
+
+Need enable the epdc pixel rate after call clk_set_rate since there's
+CLK_SET_RATE_GATE flag for the clock, otherwise clk_set_rate call may fail.
+
+Signed-off-by: Robby Cai <r63905@freescale.com>
+---
+ drivers/video/mxc/mxc_epdc_v2_fb.c | 5 +++--
+ 1 file changed, 3 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/video/mxc/mxc_epdc_v2_fb.c b/drivers/video/mxc/mxc_epdc_v2_fb.c
+index cb92c1a..a44b302 100644
+--- a/drivers/video/mxc/mxc_epdc_v2_fb.c
++++ b/drivers/video/mxc/mxc_epdc_v2_fb.c
+@@ -4703,8 +4703,6 @@ static void mxc_epdc_fb_fw_handler(const struct firmware *fw,
+ 	clk_prepare_enable(fb_data->epdc_clk_axi);
+ 
+ 	target_pix_clk = fb_data->cur_mode->vmode->pixclock;
+-	/* Enable pix clk for EPDC */
+-	clk_prepare_enable(fb_data->epdc_clk_pix);
+ 
+ 	rounded_pix_clk = clk_round_rate(fb_data->epdc_clk_pix, target_pix_clk);
+ 
+@@ -4730,6 +4728,9 @@ static void mxc_epdc_fb_fw_handler(const struct firmware *fw,
+ 
+ 	clk_set_rate(fb_data->epdc_clk_pix, rounded_pix_clk);
+ 
++	/* Enable pix clk for EPDC */
++	clk_prepare_enable(fb_data->epdc_clk_pix);
++
+ 	epdc_init_sequence(fb_data);
+ 
+ 	/* Disable clocks */
+-- 
+1.8.0
+

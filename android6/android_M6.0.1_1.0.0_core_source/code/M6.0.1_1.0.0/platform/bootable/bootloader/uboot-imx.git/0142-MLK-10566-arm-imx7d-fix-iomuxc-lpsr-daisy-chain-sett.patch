@@ -1,0 +1,51 @@
+From 26cd1312117d87f1b3e74a0316853902b5a460ac Mon Sep 17 00:00:00 2001
+From: Adrian Alonso <aalonso@freescale.com>
+Date: Thu, 2 Apr 2015 18:17:11 -0500
+Subject: [PATCH] MLK-10566: arm :imx7d: fix iomuxc-lpsr daisy chain settings
+
+* For IOMUXC LPSR pads when daisy chain register needs to be set the
+  result offsets for sel_input register is incorrect as base address is
+  0x302C0000 and the passed offset does not resolve to the intended input
+  sel pad register; input sel base offset should start in 0x30330000.
+* Add an addiotional fixed offset of 0x70000 to address the
+  input sel offset:
+
+  INPUT_SEL = 0x302C0000 + 0x70000 + sel_input_ofs.
+
+Signed-off-by: Adrian Alonso <aalonso@freescale.com>
+Signed-off-by: Ye.Li <B37916@freescale.com>
+(cherry picked from commit 5d4612613eb2e85f1929d8cf5cb6aac6ba9e5fd7)
+---
+ arch/arm/imx-common/iomux-v3.c             | 3 +++
+ arch/arm/include/asm/imx-common/iomux-v3.h | 1 +
+ 2 files changed, 4 insertions(+)
+
+diff --git a/arch/arm/imx-common/iomux-v3.c b/arch/arm/imx-common/iomux-v3.c
+index 50877d5..caea52e 100644
+--- a/arch/arm/imx-common/iomux-v3.c
++++ b/arch/arm/imx-common/iomux-v3.c
+@@ -48,6 +48,9 @@ void imx_iomux_v3_setup_pad(iomux_v3_cfg_t pad)
+ 		base = (void *)IOMUXC_LPSR_BASE_ADDR;
+ 		mux_mode &= ~IOMUX_CONFIG_LPSR;
+ 	}
++
++	if (sel_input_ofs)
++		sel_input_ofs += IOMUX_LPSR_SEL_INPUT_OFS;
+ #endif
+ 
+ 	__raw_writel(mux_mode, base + mux_ctrl_ofs);
+diff --git a/arch/arm/include/asm/imx-common/iomux-v3.h b/arch/arm/include/asm/imx-common/iomux-v3.h
+index 402b492..49c21d6 100644
+--- a/arch/arm/include/asm/imx-common/iomux-v3.h
++++ b/arch/arm/include/asm/imx-common/iomux-v3.h
+@@ -87,6 +87,7 @@ typedef u64 iomux_v3_cfg_t;
+ 
+ #ifdef CONFIG_MX7
+ 
++#define IOMUX_LPSR_SEL_INPUT_OFS 0x70000
+ #define IOMUX_CONFIG_LPSR	0x8
+ #define MUX_MODE_LPSR		((iomux_v3_cfg_t)IOMUX_CONFIG_LPSR << \
+ 	MUX_MODE_SHIFT)
+-- 
+1.8.0
+

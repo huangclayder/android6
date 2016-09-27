@@ -1,0 +1,47 @@
+From 416f7c8d664dfcad4a229b86619f5c4ee1cb8c82 Mon Sep 17 00:00:00 2001
+From: Haoran Wang <b50027@freescale.com>
+Date: Tue, 2 Feb 2016 17:13:14 +0800
+Subject: [PATCH 596/602] MA-7586 Integrate BLE peripheral demos
+
+Added BLE peripheral server and client demo
+in maddev_mm6.0 build.
+
+Signed-off-by: Haoran Wang <b50027@freescale.com>
+---
+ imx6/imx6.mk | 4 +++-
+ imx7/imx7.mk | 4 +++-
+ 2 files changed, 6 insertions(+), 2 deletions(-)
+
+diff --git a/imx6/imx6.mk b/imx6/imx6.mk
+index 25aca24..b3c3808 100644
+--- a/imx6/imx6.mk
++++ b/imx6/imx6.mk
+@@ -20,7 +20,9 @@ PRODUCT_PACKAGES += \
+ 	CactusPlayer                            \
+ 	WfdSink                                 \
+ 	wfd                                     \
+-    A2dpSinkApp                             \
++	A2dpSinkApp                             \
++	BleServerEmulator                       \
++	BleClient                               \
+ 	ethernet                                \
+ 	libfsl_wfd.so                           \
+ 	libfsl_wfd                           \
+diff --git a/imx7/imx7.mk b/imx7/imx7.mk
+index 73e59a3..6f15c75 100644
+--- a/imx7/imx7.mk
++++ b/imx7/imx7.mk
+@@ -18,7 +18,9 @@ PRODUCT_PACKAGES += \
+ 	Email					\
+ 	FSLOta					\
+ 	CactusPlayer                            \
+-    A2dpSinkApp                             \
++	A2dpSinkApp                             \
++	BleServerEmulator                       \
++	BleClient                               \
+ 	ethernet                                \
+ 	VideoEditor				\
+ 	FSLProfileApp				\
+-- 
+1.8.0
+

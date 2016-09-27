@@ -1,0 +1,37 @@
+From 661ec81a45cb4cb32c9fdf44b3ce3457c7fbd55a Mon Sep 17 00:00:00 2001
+From: Paul Gortmaker <paul.gortmaker@windriver.com>
+Date: Tue, 21 Jan 2014 16:22:52 -0500
+Subject: [PATCH] mtd: delete non-required instances of include <linux/init.h>
+
+None of these files are actually using any __init type directives
+and hence don't need to include <linux/init.h>.  Most are just a
+left over from __devinit and __cpuinit removal, or simply due to
+code getting copied from one driver to the next.
+
+Cc: David Woodhouse <dwmw2@infradead.org>
+Cc: Brian Norris <computersforpeace@gmail.com>
+Cc: linux-mtd@lists.infradead.org
+Signed-off-by: Paul Gortmaker <paul.gortmaker@windriver.com>
+[Brian: dropped one incorrect hunk]
+Signed-off-by: Brian Norris <computersforpeace@gmail.com>
+
+Signed-off-by: Huang Shijie <b32955@freescale.com>
+---
+ drivers/mtd/devices/m25p80.c | 1 -
+ 1 file changed, 1 deletion(-)
+
+diff --git a/drivers/mtd/devices/m25p80.c b/drivers/mtd/devices/m25p80.c
+index f0871a2..1e147a8 100644
+--- a/drivers/mtd/devices/m25p80.c
++++ b/drivers/mtd/devices/m25p80.c
+@@ -15,7 +15,6 @@
+  *
+  */
+ 
+-#include <linux/init.h>
+ #include <linux/err.h>
+ #include <linux/errno.h>
+ #include <linux/module.h>
+-- 
+1.8.0
+

@@ -1,0 +1,28 @@
+From 22d6b3fcdc6a7f11c746c35bc7b27f5253e7ac86 Mon Sep 17 00:00:00 2001
+From: Jianzheng Zhou <jianzheng.zhou@freescale.com>
+Date: Wed, 16 Apr 2014 14:09:54 +0800
+Subject: [PATCH 305/602] ENGR00307817 sabresd_sx:add sabresd_sx index
+
+Add new sabresd_sx board support in this Android.mk.
+
+Signed-off-by: Jianzheng Zhou <jianzheng.zhou@freescale.com>
+---
+ common/wifi/Android.mk | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/common/wifi/Android.mk b/common/wifi/Android.mk
+index 8ebbfdc..1cea14d 100644
+--- a/common/wifi/Android.mk
++++ b/common/wifi/Android.mk
+@@ -23,7 +23,7 @@
+ # *not* include it on all devices, so it is safe even with hardware-specific
+ # components.
+ 
+-ifneq ($(filter sabresd_6dq sabreauto_6q evk_6sl arm2_6sl arm2_6dq,$(TARGET_DEVICE)),)
++ifneq ($(filter sabresd_6dq sabreauto_6q evk_6sl arm2_6sl arm2_6dq sabresd_6sx,$(TARGET_DEVICE)),)
+ 
+ LOCAL_PATH := $(call my-dir)
+ 
+-- 
+1.8.0
+

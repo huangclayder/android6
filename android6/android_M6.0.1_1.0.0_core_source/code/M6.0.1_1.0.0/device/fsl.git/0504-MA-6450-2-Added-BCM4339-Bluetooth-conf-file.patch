@@ -1,0 +1,28 @@
+From 9d999cee74102fcd1663efa6ff6ebd82fac0a998 Mon Sep 17 00:00:00 2001
+From: Haoran Wang <b50027@freescale.com>
+Date: Fri, 26 Jun 2015 15:43:27 +0800
+Subject: [PATCH 504/602] MA-6450-2 Added BCM4339 Bluetooth conf file
+
+Added the missed BCM4339 bluetooth configuration
+file to fix the BT cannot find peers issue.
+
+Signed-off-by: Haoran Wang <b50027@freescale.com>
+---
+ imx7/imx7.mk | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/imx7/imx7.mk b/imx7/imx7.mk
+index aa12689..8d048e6 100644
+--- a/imx7/imx7.mk
++++ b/imx7/imx7.mk
+@@ -109,6 +109,7 @@ PRODUCT_PACKAGES += \
+ 	RamPatch_ar3002				\
+ 	Type_ZP.hcd					\
+ 	bcmdhd.cal					\
++	bt_vendor.conf				\
+ 	fw_bcmdhd.bin
+ 
+ 
+-- 
+1.8.0
+

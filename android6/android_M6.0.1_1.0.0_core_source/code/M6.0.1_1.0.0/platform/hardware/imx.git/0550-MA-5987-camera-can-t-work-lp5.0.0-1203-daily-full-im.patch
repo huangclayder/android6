@@ -1,0 +1,62 @@
+From d4e187f852d61b90c162d639cadfd08ece3232ba Mon Sep 17 00:00:00 2001
+From: Fang Hui <b31070@freescale.com>
+Date: Fri, 12 Dec 2014 16:49:17 +0800
+Subject: [PATCH 550/635] MA-5987 - camera can't work(lp5.0.0 1203 daily full
+ image auto dl)
+
+calulate timeval reasonable, or select will fail.
+Since bionic will take tv.tv_usec >= 1000000 as err parameter.
+
+Signed-off-by: Fang Hui <b31070@freescale.com>
+---
+ mx6/libcamera2/UvcDevice.cpp     | 4 ++--
+ mx6/libcamera2/UvcDevice.h       | 2 +-
+ mx6/libcamera2/UvcMJPGDevice.cpp | 4 ++--
+ 3 files changed, 5 insertions(+), 5 deletions(-)
+
+diff --git a/mx6/libcamera2/UvcDevice.cpp b/mx6/libcamera2/UvcDevice.cpp
+index 7df2235..5a3b235 100644
+--- a/mx6/libcamera2/UvcDevice.cpp
++++ b/mx6/libcamera2/UvcDevice.cpp
+@@ -368,8 +368,8 @@ CameraFrame * UvcDevice::acquireCameraFrame()
+ 
+     FD_ZERO(&rfds);
+     FD_SET(mCameraHandle, &rfds);
+-    tv.tv_sec = 0;
+-    tv.tv_usec = MAX_DEQUEUE_WAIT_TIME*1000;
++    tv.tv_sec = MAX_DEQUEUE_WAIT_TIME;
++    tv.tv_usec = 0;
+     n = select(mCameraHandle+1, &rfds, NULL, NULL, &tv);
+     if(n < 0) {
+         FLOGE("Error!Query the V4L2 Handler state error.");
+diff --git a/mx6/libcamera2/UvcDevice.h b/mx6/libcamera2/UvcDevice.h
+index cfd7ef4..4d68de7 100755
+--- a/mx6/libcamera2/UvcDevice.h
++++ b/mx6/libcamera2/UvcDevice.h
+@@ -26,7 +26,7 @@
+ #define DEFAULT_PICTURE_W   (640)
+ #define DEFAULT_PICTURE_H   (480)
+ #define FORMAT_STRING_LEN 64
+-#define MAX_DEQUEUE_WAIT_TIME  (5000)  //5000ms for uvc camera
++#define MAX_DEQUEUE_WAIT_TIME  5  //5s for uvc camera
+ 
+ using namespace android;
+ 
+diff --git a/mx6/libcamera2/UvcMJPGDevice.cpp b/mx6/libcamera2/UvcMJPGDevice.cpp
+index 9392fad..65f41b7 100755
+--- a/mx6/libcamera2/UvcMJPGDevice.cpp
++++ b/mx6/libcamera2/UvcMJPGDevice.cpp
+@@ -530,8 +530,8 @@ CaptureFrame:
+ 
+     FD_ZERO(&rfds);
+     FD_SET(mCameraHandle, &rfds);
+-    tv.tv_sec = 0;
+-    tv.tv_usec = MAX_DEQUEUE_WAIT_TIME*1000;
++    tv.tv_sec = MAX_DEQUEUE_WAIT_TIME;
++    tv.tv_usec = 0;
+ 
+     n = select(mCameraHandle+1, &rfds, NULL, NULL, &tv);
+     if(n < 0) {
+-- 
+1.8.0
+

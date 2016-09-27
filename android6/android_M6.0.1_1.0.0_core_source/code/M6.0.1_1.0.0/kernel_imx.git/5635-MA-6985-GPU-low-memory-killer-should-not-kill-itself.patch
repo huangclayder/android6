@@ -1,0 +1,91 @@
+From 8cf6b1d17d6e09c53a258468c1b6392cb8108d39 Mon Sep 17 00:00:00 2001
+From: "xuegang.liu" <xuegang.liu@freescale.com>
+Date: Wed, 12 Aug 2015 10:39:46 +0800
+Subject: [PATCH] MA-6985 GPU low memory killer should not kill itself
+
+GPU low memory killer should check return status and not
+kill itself. GPU low memory killer will send sigkill to
+kill itself when there is still no free memory after kill
+other threads, but to response the sigkill of kill itself
+it need to exit from kernel space, but without success
+allocate it will not exit from kernel space, so GPU low
+memory killer should not send sigkill to kill itself.
+
+Signed-off-by: Richard Liu <r66033@freescale.com>
+---
+ drivers/mxc/gpu-viv/hal/os/linux/kernel/gc_hal_kernel_os.c        | 5 +++--
+ .../kernel/platform/freescale/gc_hal_kernel_platform_imx6q14.c    | 8 +++++---
+ 2 files changed, 8 insertions(+), 5 deletions(-)
+
+diff --git a/drivers/mxc/gpu-viv/hal/os/linux/kernel/gc_hal_kernel_os.c b/drivers/mxc/gpu-viv/hal/os/linux/kernel/gc_hal_kernel_os.c
+index 49c9745..976e572 100644
+--- a/drivers/mxc/gpu-viv/hal/os/linux/kernel/gc_hal_kernel_os.c
++++ b/drivers/mxc/gpu-viv/hal/os/linux/kernel/gc_hal_kernel_os.c
+@@ -608,6 +608,7 @@ _ShrinkMemory(
+     )
+ {
+     gcsPLATFORM * platform;
++    gceSTATUS status = gcvSTATUS_OK;
+ 
+     gcmkHEADER_ARG("Os=0x%X", Os);
+     gcmkVERIFY_OBJECT(Os, gcvOBJ_OS);
+@@ -616,7 +617,7 @@ _ShrinkMemory(
+ 
+     if (platform && platform->ops->shrinkMemory)
+     {
+-        platform->ops->shrinkMemory(platform);
++        status = platform->ops->shrinkMemory(platform);
+     }
+     else
+     {
+@@ -625,7 +626,7 @@ _ShrinkMemory(
+     }
+ 
+     gcmkFOOTER_NO();
+-    return gcvSTATUS_OK;
++    return status;
+ }
+ 
+ /*******************************************************************************
+diff --git a/drivers/mxc/gpu-viv/hal/os/linux/kernel/platform/freescale/gc_hal_kernel_platform_imx6q14.c b/drivers/mxc/gpu-viv/hal/os/linux/kernel/platform/freescale/gc_hal_kernel_platform_imx6q14.c
+index df7bc8c..eee8194 100644
+--- a/drivers/mxc/gpu-viv/hal/os/linux/kernel/platform/freescale/gc_hal_kernel_platform_imx6q14.c
++++ b/drivers/mxc/gpu-viv/hal/os/linux/kernel/platform/freescale/gc_hal_kernel_platform_imx6q14.c
+@@ -207,7 +207,7 @@ static int force_contiguous_lowmem_shrink(IN gckKERNEL Kernel)
+ 		selected_tasksize = tasksize;
+ 		selected_oom_adj = oom_adj;
+ 	}
+-	if (selected) {
++	if (selected && selected_oom_adj > 0) {
+ 		gckOS_Print("<gpu> send sigkill to %d (%s), adj %d, size %d\n",
+ 			     selected->pid, selected->comm,
+ 			     selected_oom_adj, selected_tasksize);
+@@ -233,6 +233,7 @@ _ShrinkMemory(
+     struct platform_device *pdev;
+     gckGALDEVICE galDevice;
+     gckKERNEL kernel;
++    gceSTATUS status = gcvSTATUS_OK;
+ 
+     pdev = Platform->device;
+ 
+@@ -242,14 +243,15 @@ _ShrinkMemory(
+ 
+     if (kernel != gcvNULL)
+     {
+-        force_contiguous_lowmem_shrink(kernel);
++        if (force_contiguous_lowmem_shrink(kernel) != 0)
++            status = gcvSTATUS_OUT_OF_MEMORY;
+     }
+     else
+     {
+         gcmkPRINT("%s(%d) can't find kernel! ", __FUNCTION__, __LINE__);
+     }
+ 
+-    return gcvSTATUS_OK;
++    return status;
+ }
+ #endif
+ 
+-- 
+1.8.0
+

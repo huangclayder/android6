@@ -1,0 +1,36 @@
+From 0a9388ff8ef77778f5e81d8dbc980cacf87fc12b Mon Sep 17 00:00:00 2001
+From: Sandor Yu <R01008@freescale.com>
+Date: Fri, 4 Dec 2015 18:05:28 +0800
+Subject: [PATCH] MLK-11953: arm: dts: Fix HDMI compliance test 7-15 failed
+
+i.MX6QP SabreSD board HDMI compliance test 7-15 Vcec2 test failed,
+the value is 0.403V, which should be 0.274V>Vcec2>0.196V.
+
+Disable the pad internal PU resistor, and change the external PU
+resistor(R647) from 47K to 100K.
+With all the changes, the calculated voltage on CEC is 0.248V, and the
+test value is 0.250V.
+
+In the patch disable CEC pin internal PULL/Keep function.
+
+Signed-off-by: Sandor Yu <R01008@freescale.com>
+---
+ arch/arm/boot/dts/imx6qdl-sabresd.dtsi | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/arch/arm/boot/dts/imx6qdl-sabresd.dtsi b/arch/arm/boot/dts/imx6qdl-sabresd.dtsi
+index 2d2e483..77f0483 100644
+--- a/arch/arm/boot/dts/imx6qdl-sabresd.dtsi
++++ b/arch/arm/boot/dts/imx6qdl-sabresd.dtsi
+@@ -629,7 +629,7 @@
+ 
+ 		pinctrl_hdmi_cec: hdmicecgrp {
+ 			fsl,pins = <
+-				MX6QDL_PAD_KEY_ROW2__HDMI_TX_CEC_LINE 0x1f8b0
++				MX6QDL_PAD_KEY_ROW2__HDMI_TX_CEC_LINE 0x108b0
+ 			>;
+ 		};
+ 
+-- 
+1.8.0
+

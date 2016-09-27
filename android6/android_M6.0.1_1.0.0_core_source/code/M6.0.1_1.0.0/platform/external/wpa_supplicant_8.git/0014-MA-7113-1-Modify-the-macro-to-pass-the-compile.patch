@@ -1,0 +1,31 @@
+From c4353cf80d601dc8573b333b33af916978edd238 Mon Sep 17 00:00:00 2001
+From: Haoran Wang <b50027@freescale.com>
+Date: Thu, 15 Oct 2015 20:02:41 +0800
+Subject: [PATCH 14/22] MA-7113-1 Modify the macro to pass the compile
+
+Check the macro VER_0_8_UNITE to compile
+wpa_supplicant.
+
+Signed-off-by: Haoran Wang <b50027@freescale.com>
+---
+ Android.mk | 5 ++++-
+ 1 file changed, 4 insertions(+), 1 deletion(-)
+
+diff --git a/Android.mk b/Android.mk
+index bd7a409..175edc1 100644
+--- a/Android.mk
++++ b/Android.mk
+@@ -1,6 +1,9 @@
+ LOCAL_PATH:= $(call my-dir)
+ 
+-ifneq ($(filter VER_0_8_X VER_2_1_DEVEL,$(WPA_SUPPLICANT_VERSION)),)
++ifndef WPA_SUPPLICANT_VERSION
++WPA_SUPPLICANT_VERSION := VER_0_8_X
++endif
++ifeq ($(WPA_SUPPLICANT_VERSION),$(filter $(WPA_SUPPLICANT_VERSION),VER_0_8_X VER_0_8_UNITE))
+ # The order of the 2 Android.mks does matter!
+ # TODO: Clean up the Android.mks, reset all the temporary variables at the
+ # end of each Android.mk, so that one Android.mk doesn't depend on variables
+-- 
+1.8.0
+

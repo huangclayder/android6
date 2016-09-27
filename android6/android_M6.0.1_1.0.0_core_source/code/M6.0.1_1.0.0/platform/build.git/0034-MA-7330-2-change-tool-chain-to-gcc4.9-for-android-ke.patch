@@ -1,0 +1,32 @@
+From e439b1e89e8d3a480aba91082ed0b650aad8788a Mon Sep 17 00:00:00 2001
+From: Zhang Sanshan <b51434@freescale.com>
+Date: Fri, 4 Dec 2015 11:09:19 +0800
+Subject: [PATCH 34/34] MA-7330-2 change tool chain to gcc4.9 for android
+ kernel and uboot
+
+kernel will hang at "Starting kernel ..." when using zImage compiled by android gcc 4.9
+Need add option '-mno-android' to pass tool chain error.
+no-android is used to disable generation of position-independent code.
+
+Signed-off-by: Zhang Sanshan <b51434@freescale.com>
+---
+ core/Makefile | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/core/Makefile b/core/Makefile
+index 3a0c498..0ceab9b 100644
+--- a/core/Makefile
++++ b/core/Makefile
+@@ -1000,7 +1000,8 @@ endif
+ .PHONY: kernelimage
+ ifneq ($(strip $(TARGET_NO_KERNEL)),true)
+ KERNEL_CROSS_TOOLCHAIN := `pwd`/prebuilts/gcc/linux-x86/arm/arm-linux-androideabi-4.9/bin/arm-linux-androideabi-
+-KERNEL_ENV := ARCH=arm CROSS_COMPILE=$(KERNEL_CROSS_TOOLCHAIN) LOADADDR=$(LOAD_KERNEL_ENTRY)
++KERNEL_CFLAGS := KCFLAGS=-mno-android
++KERNEL_ENV := ARCH=arm CROSS_COMPILE=$(KERNEL_CROSS_TOOLCHAIN) LOADADDR=$(LOAD_KERNEL_ENTRY) $(KERNEL_CFLAGS)
+ HOST_PROCESSOR := $(shell cat /proc/cpuinfo | grep processor | wc -l)
+ INSTALLED_KERNEL_TARGET := $(PRODUCT_OUT)/kernel
+ TARGET_PREBUILT_KERNEL := $(PRODUCT_OUT)/kernel
+-- 
+1.8.0
+

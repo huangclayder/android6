@@ -1,0 +1,33 @@
+From 99d0687e986f4553b9f8605e41b6bf6bd62c202b Mon Sep 17 00:00:00 2001
+From: Robby Cai <r63905@freescale.com>
+Date: Mon, 28 Sep 2015 18:01:27 +0800
+Subject: [PATCH] MLK-11647 ARM: dts: imx6qp-sabresd: Correct DOVDD supply for
+ mipi camera
+
+DOVDD ( GEN_1V8 ) is supplied by SW4 on i.MX6dqp-sabresd board
+This patch corrects it.
+
+Signed-off-by: Robby Cai <r63905@freescale.com>
+(cherry picked from commit 50f1b6782d3ee8644129f98caff12c183411230c)
+---
+ arch/arm/boot/dts/imx6qp-sabresd.dts | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/arch/arm/boot/dts/imx6qp-sabresd.dts b/arch/arm/boot/dts/imx6qp-sabresd.dts
+index ffc2e7a..516b5f1 100644
+--- a/arch/arm/boot/dts/imx6qp-sabresd.dts
++++ b/arch/arm/boot/dts/imx6qp-sabresd.dts
+@@ -33,6 +33,10 @@
+ 	DOVDD-supply = <&sw4_reg>; /* 1.8v */
+ };
+ 
++&ov564x_mipi {
++	DOVDD-supply = <&sw4_reg>; /* 1.8v */
++};
++
+ &pcie {
+ 	power-on-gpio = <&gpio3 19 0>;
+ 	reset-gpio = <&gpio7 12 0>;
+-- 
+1.8.0
+

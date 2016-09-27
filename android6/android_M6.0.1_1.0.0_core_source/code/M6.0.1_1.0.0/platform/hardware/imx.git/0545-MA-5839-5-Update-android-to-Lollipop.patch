@@ -1,0 +1,303 @@
+From 53588612fe96e57901f8a5d7d1f767043fb3fd28 Mon Sep 17 00:00:00 2001
+From: "guoyin.chen" <guoyin.chen@freescale.com>
+Date: Wed, 12 Nov 2014 14:04:56 +0800
+Subject: [PATCH 545/635] MA-5839-5 Update android to Lollipop
+
+comment unused parameters;
+use new atomic func for mRefCount;
+add new camera include directory
+enable -Werror flags
+
+Signed-off-by: guoyin.chen <guoyin.chen@freescale.com>
+---
+ mx6/libcamera/Android.mk           |  3 ++-
+ mx6/libcamera/CameraBridge.cpp     |  2 +-
+ mx6/libcamera/CameraHal.cpp        | 10 +++++-----
+ mx6/libcamera/CameraModule.cpp     |  6 +++++-
+ mx6/libcamera/CameraUtil.cpp       | 11 +++++------
+ mx6/libcamera/CameraUtil.h         |  4 ++--
+ mx6/libcamera/DeviceAdapter.cpp    |  6 +++---
+ mx6/libcamera/NV12_resize.c        |  2 +-
+ mx6/libcamera/PhysMemAdapter.cpp   |  8 ++++----
+ mx6/libcamera/YuvToJpegEncoder.cpp |  4 ++--
+ mx6/libcamera/messageQueue.cpp     |  6 +++---
+ 11 files changed, 33 insertions(+), 29 deletions(-)
+
+diff --git a/mx6/libcamera/Android.mk b/mx6/libcamera/Android.mk
+index 632cc3a..66e000b 100644
+--- a/mx6/libcamera/Android.mk
++++ b/mx6/libcamera/Android.mk
+@@ -58,6 +58,7 @@ LOCAL_C_INCLUDES += \
+ 	frameworks/base/include/binder \
+ 	frameworks/base/include/ui \
+ 	frameworks/base/camera/libcameraservice \
++	system/media/camera/include \
+ 	hardware/imx/mx6/libgralloc_wrapper \
+ 	external/jpeg \
+ 	external/jhead
+@@ -85,7 +86,7 @@ endif
+ #Define this for switch the Camera through V4L2 MXC IOCTL
+ #LOCAL_CPPFLAGS += -DV4L2_CAMERA_SWITCH
+ 
+-#LOCAL_CPPFLAGS += -Werror
++LOCAL_CPPFLAGS += -Werror
+ 
+ LOCAL_MODULE_PATH := $(TARGET_OUT_SHARED_LIBRARIES)/hw
+ LOCAL_MODULE:= camera.$(TARGET_BOARD_PLATFORM)
+diff --git a/mx6/libcamera/CameraBridge.cpp b/mx6/libcamera/CameraBridge.cpp
+index 76232d1..bae925b 100644
+--- a/mx6/libcamera/CameraBridge.cpp
++++ b/mx6/libcamera/CameraBridge.cpp
+@@ -351,7 +351,7 @@ void CameraBridge::setCameraFrameProvider(CameraFrameProvider *frameProvider)
+     mFrameProvider = frameProvider;
+ }
+ 
+-void CameraBridge::setCameraEventProvider(int32_t              msgs,
++void CameraBridge::setCameraEventProvider(int32_t              /*msgs*/,
+                                           CameraEventProvider *eventProvider)
+ {
+     if (eventProvider != NULL) {
+diff --git a/mx6/libcamera/CameraHal.cpp b/mx6/libcamera/CameraHal.cpp
+index a101c7b..08dc32c 100644
+--- a/mx6/libcamera/CameraHal.cpp
++++ b/mx6/libcamera/CameraHal.cpp
+@@ -199,9 +199,9 @@ status_t CameraHal::setParameters(CameraParameters& params)
+     return ret;
+ }
+ 
+-status_t CameraHal::sendCommand(int32_t command,
+-                                int32_t arg1,
+-                                int32_t arg2)
++status_t CameraHal::sendCommand(int32_t /*command*/,
++                                int32_t /*arg1*/,
++                                int32_t /*arg2*/)
+ {
+     return BAD_VALUE;
+ }
+@@ -440,7 +440,7 @@ status_t CameraHal::cancelAutoFocus()
+     return ret;
+ }
+ 
+-status_t CameraHal::storeMetaDataInBuffers(bool enable)
++status_t CameraHal::storeMetaDataInBuffers(bool /*enable*/)
+ {
+     // return mCameraBridge->useMetaDataBufferMode(enable);
+     return -1;
+@@ -660,7 +660,7 @@ void CameraHal::UnLockWakeLock()
+     }
+ }
+ 
+-status_t CameraHal::dump(int fd) const
++status_t CameraHal::dump(int /*fd*/) const
+ {
+     return NO_ERROR;
+ }
+diff --git a/mx6/libcamera/CameraModule.cpp b/mx6/libcamera/CameraModule.cpp
+index f32ce53..c125099 100644
+--- a/mx6/libcamera/CameraModule.cpp
++++ b/mx6/libcamera/CameraModule.cpp
+@@ -1,6 +1,6 @@
+ /*
+  * Copyright (C) Freescale - http://www.Freescale.com/
+- * Copyright (C) 2012-2013 Freescale Semiconductor, Inc.
++ * Copyright (C) 2012-2014 Freescale Semiconductor, Inc.
+  *
+  * Licensed under the Apache License, Version 2.0 (the "License");
+  * you may not use this file except in compliance with the License.
+@@ -60,6 +60,10 @@ camera_module_t HAL_MODULE_INFO_SYM = {
+     },
+     get_number_of_cameras: camera_get_number_of_cameras,
+     get_camera_info: camera_get_camera_info,
++    set_callbacks: NULL,
++    get_vendor_tag_ops: NULL,
++    open_legacy: NULL,
++    reserved: {0}
+ };
+ 
+ typedef struct fsl_camera_device {
+diff --git a/mx6/libcamera/CameraUtil.cpp b/mx6/libcamera/CameraUtil.cpp
+index a98e167..3df5af5 100644
+--- a/mx6/libcamera/CameraUtil.cpp
++++ b/mx6/libcamera/CameraUtil.cpp
+@@ -1,6 +1,6 @@
+ /*
+  * Copyright (C) 2008 The Android Open Source Project
+- * Copyright (C) 2012 Freescale Semiconductor, Inc.
++ * Copyright (C) 2012-2014 Freescale Semiconductor, Inc.
+  *
+  * Licensed under the Apache License, Version 2.0 (the "License");
+  * you may not use this file except in compliance with the License.
+@@ -16,7 +16,6 @@
+  */
+ 
+ #include "CameraUtil.h"
+-#include <sys/atomics.h>
+ 
+ int convertPixelFormatToV4L2Format(PixelFormat format)
+ {
+@@ -129,7 +128,7 @@ void CameraFrame::initialize(buffer_handle_t *buf_h,
+     mFormat    = handle->format;
+ 
+     mObserver  = NULL;
+-    mRefCount  = 0;
++    atomic_init(&mRefCount, 0);
+     mBufState  = BUFS_CREATE;
+     mFrameType = INVALID_FRAME;
+     mIndex     = index;
+@@ -147,14 +146,14 @@ void CameraFrame::removeState(CAMERA_BUFS_STATE state)
+ 
+ void CameraFrame::addReference()
+ {
+-    __atomic_inc(&mRefCount);
++    atomic_fetch_add(&mRefCount, 1);
+ }
+ 
+ void CameraFrame::release()
+ {
+     FSL_ASSERT(mRefCount > 0, "mRefCount=%d invalid value", mRefCount);
+ 
+-    int prevCount = __atomic_dec(&mRefCount);
++    int prevCount = atomic_fetch_sub(&mRefCount, 1);
+     if ((prevCount == 1) && (mObserver != NULL)) {
+         mObserver->handleFrameRelease(this);
+     }
+@@ -171,7 +170,7 @@ void CameraFrame::reset()
+     mVirtAddr  = NULL;
+     mPhyAddr   = 0;
+     mObserver  = NULL;
+-    mRefCount  = 0;
++    atomic_init(&mRefCount, 0);
+     mBufState  = BUFS_CREATE;
+     mFrameType = INVALID_FRAME;
+ }
+diff --git a/mx6/libcamera/CameraUtil.h b/mx6/libcamera/CameraUtil.h
+index a9924fa..77ea2a5 100644
+--- a/mx6/libcamera/CameraUtil.h
++++ b/mx6/libcamera/CameraUtil.h
+@@ -1,6 +1,6 @@
+ /*
+  * Copyright (C) 2008 The Android Open Source Project
+- * Copyright (C) 2012-2013 Freescale Semiconductor, Inc.
++ * Copyright (C) 2012-2014 Freescale Semiconductor, Inc.
+  *
+  * Licensed under the Apache License, Version 2.0 (the "License");
+  * you may not use this file except in compliance with the License.
+@@ -189,7 +189,7 @@ public:
+ 
+ private:
+     CameraFrameObserver *mObserver;
+-    int                  mRefCount;
++    atomic_int mRefCount;
+     int                  mBufState;
+ };
+ 
+diff --git a/mx6/libcamera/DeviceAdapter.cpp b/mx6/libcamera/DeviceAdapter.cpp
+index 092e632..7dcca2e 100755
+--- a/mx6/libcamera/DeviceAdapter.cpp
++++ b/mx6/libcamera/DeviceAdapter.cpp
+@@ -125,8 +125,8 @@ status_t DeviceAdapter::initialize(const CameraInfo& info)
+     return NO_ERROR;
+ }
+ 
+-int DeviceAdapter::getCaptureMode(int width,
+-                          int height)
++int DeviceAdapter::getCaptureMode(int /*width*/,
++                          int /*height*/)
+ {
+     return 0;
+ }
+@@ -487,7 +487,7 @@ CameraFrame * DeviceAdapter::acquireCameraFrame()
+ }
+ 
+ // #define FSL_CAMERAHAL_DUMP
+-static void bufferDump(CameraFrame *frame)
++static void bufferDump(CameraFrame * /*frame*/)
+ {
+ #ifdef FSL_CAMERAHAL_DUMP
+ 
+diff --git a/mx6/libcamera/NV12_resize.c b/mx6/libcamera/NV12_resize.c
+index cdd11bc..0e9cf16 100644
+--- a/mx6/libcamera/NV12_resize.c
++++ b/mx6/libcamera/NV12_resize.c
+@@ -28,7 +28,7 @@ VT_resizeFrame_Video_opt2_lp
+  structConvImage* i_img_ptr,        /* Points to the input image           */
+  structConvImage* o_img_ptr,        /* Points to the output image          */
+  IC_rect_type*  cropout,          /* how much to resize to in final image */
+- mmUint16 dummy                         /* Transparent pixel value              */
++ mmUint16 dummy __unused                         /* Transparent pixel value              */
+  )
+ {
+   ALOGV("VT_resizeFrame_Video_opt2_lp+");
+diff --git a/mx6/libcamera/PhysMemAdapter.cpp b/mx6/libcamera/PhysMemAdapter.cpp
+index 4b23366..07a68ed 100644
+--- a/mx6/libcamera/PhysMemAdapter.cpp
++++ b/mx6/libcamera/PhysMemAdapter.cpp
+@@ -34,10 +34,10 @@ PhysMemAdapter::~PhysMemAdapter()
+     ion_close(mIonFd);
+ }
+ 
+-int PhysMemAdapter::allocatePreviewBuffer(int width,
+-                                          int height,
+-                                          int format,
+-                                          int numBufs)
++int PhysMemAdapter::allocatePreviewBuffer(int /*width*/,
++                                          int /*height*/,
++                                          int /*format*/,
++                                          int /*numBufs*/)
+ {
+     return BAD_VALUE;
+ }
+diff --git a/mx6/libcamera/YuvToJpegEncoder.cpp b/mx6/libcamera/YuvToJpegEncoder.cpp
+index d8149ff..8169c96 100644
+--- a/mx6/libcamera/YuvToJpegEncoder.cpp
++++ b/mx6/libcamera/YuvToJpegEncoder.cpp
+@@ -1,6 +1,6 @@
+ /*
+  * Copyright (C) 2008 The Android Open Source Project
+- * Copyright (C) 2012-2013 Freescale Semiconductor, Inc.
++ * Copyright (C) 2012-2014 Freescale Semiconductor, Inc.
+  *
+  * Licensed under the Apache License, Version 2.0 (the "License");
+  * you may not use this file except in compliance with the License.
+@@ -278,7 +278,7 @@ void Yuv422IToJpegEncoder::deinterleave(uint8_t *yuv,
+                                         uint8_t *vRows,
+                                         int      rowIndex,
+                                         int      width,
+-                                        int      height) {
++                                        int      /*height*/) {
+     for (int row = 0; row < 16; ++row) {
+         uint8_t *yuvSeg = yuv + (rowIndex + row) * width * 2;
+         for (int i = 0; i < (width >> 1); ++i) {
+diff --git a/mx6/libcamera/messageQueue.cpp b/mx6/libcamera/messageQueue.cpp
+index c5cf781..150f675 100644
+--- a/mx6/libcamera/messageQueue.cpp
++++ b/mx6/libcamera/messageQueue.cpp
+@@ -1,6 +1,6 @@
+ /*
+  * Copyright (C) 2008 The Android Open Source Project
+- * Copyright (C) 2009-2012 Freescale Semiconductor, Inc.
++ * Copyright (C) 2009-2014 Freescale Semiconductor, Inc.
+  *
+  * Licensed under the Apache License, Version 2.0 (the "License");
+  * you may not use this file except in compliance with the License.
+@@ -126,7 +126,7 @@ status_t CMessageQueue::postSyncMessage(const sp<SyncMessage>& message,
+ }
+ 
+ status_t CMessageQueue::queueMessage(const sp<CMessage>& message,
+-                                     int32_t             flags)
++                                     int32_t             /*flags*/)
+ {
+     Mutex::Autolock _l(mLock);
+ 
+@@ -136,7 +136,7 @@ status_t CMessageQueue::queueMessage(const sp<CMessage>& message,
+ }
+ 
+ status_t CMessageQueue::queueSyncMessage(const sp<SyncMessage>& message,
+-                                         int32_t                flags)
++                                         int32_t                /*flags*/)
+ {
+     Mutex::Autolock _l(mLock);
+ 
+-- 
+1.8.0
+

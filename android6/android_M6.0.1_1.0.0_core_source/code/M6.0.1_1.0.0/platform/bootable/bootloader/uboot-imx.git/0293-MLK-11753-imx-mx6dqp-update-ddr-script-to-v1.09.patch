@@ -1,0 +1,137 @@
+From 1e771cb709b71b9a471de94a1b8f22c345ca2bb3 Mon Sep 17 00:00:00 2001
+From: Peng Fan <Peng.Fan@freescale.com>
+Date: Fri, 23 Oct 2015 15:55:23 +0800
+Subject: [PATCH] MLK-11753 imx: mx6dqp: update ddr script to v1.09
+
+ddr script update to 1.09:
+http://compass.freescale.net/livelink/livelink?func=ll&objId=
+234694528&objAction=browse&viewType=1
+
+arik_r2_sabre_ddr3_528_1.09.inc is for sabre-auto board.
+arik_r2_sdb_ddr3_528_1.09.inc is for sabre-sd board.
+
+Changelog:
+1. Optimize DQS duty cycle setting
+2. Optimize ZQ PU/PD value
+
+Test results:
+2 ARD boards.
+2 6QP-SDB boards.
+1 6DP-SDB board.
+All passed overnight memtester stress test.
+
+Signed-off-by: Peng Fan <Peng.Fan@freescale.com>
+(cherry picked from commit ba8dcef9d8e10e46130559ce6defe4411bd1d1a6)
+---
+ board/freescale/mx6qsabreauto/mx6qp.cfg | 5 +++--
+ board/freescale/mx6qsabreauto/plugin.S  | 6 +++++-
+ board/freescale/mx6sabresd/mx6qp.cfg    | 5 +++--
+ board/freescale/mx6sabresd/plugin.S     | 8 ++++++--
+ 4 files changed, 17 insertions(+), 7 deletions(-)
+
+diff --git a/board/freescale/mx6qsabreauto/mx6qp.cfg b/board/freescale/mx6qsabreauto/mx6qp.cfg
+index 8c65a70..4b3e50a 100644
+--- a/board/freescale/mx6qsabreauto/mx6qp.cfg
++++ b/board/freescale/mx6qsabreauto/mx6qp.cfg
+@@ -109,8 +109,8 @@ DATA 4 0x021b481c 0x33333333
+ DATA 4 0x021b4820 0x33333333
+ DATA 4 0x021b4824 0x33333333
+ DATA 4 0x021b4828 0x33333333
+-DATA 4 0x021b08c0 0x24912492
+-DATA 4 0x021b48c0 0x24912492
++DATA 4 0x021b08c0 0x24912249
++DATA 4 0x021b48c0 0x24914289
+ DATA 4 0x021b08b8 0x00000800
+ DATA 4 0x021b48b8 0x00000800
+ DATA 4 0x021b0004 0x00020036
+@@ -126,6 +126,7 @@ DATA 4 0x021b0030 0x008E1023
+ DATA 4 0x021b0040 0x00000047
+ DATA 4 0x021b0400 0x14420000
+ DATA 4 0x021b0000 0x841A0000
++DATA 4 0x021b0890 0x00400C58
+ DATA 4 0x00bb0008 0x00000004
+ DATA 4 0x00bb000c 0x2891E41A
+ DATA 4 0x00bb0038 0x00000564
+diff --git a/board/freescale/mx6qsabreauto/plugin.S b/board/freescale/mx6qsabreauto/plugin.S
+index ee13dfc..129b03d 100644
+--- a/board/freescale/mx6qsabreauto/plugin.S
++++ b/board/freescale/mx6qsabreauto/plugin.S
+@@ -108,8 +108,9 @@
+ 	str r2, [r1, #0x824]
+ 	str r2, [r1, #0x828]
+ 
+-	ldr r2, =0x24912492
++	ldr r2, =0x24912249
+ 	str r2, [r0, #0x8c0]
++	ldr r2, =0x24914289
+ 	str r2, [r1, #0x8c0]
+ 
+ 	ldr r2, =0x00000800
+@@ -145,6 +146,9 @@
+ 	ldr r2, =0x841A0000
+ 	str r2, [r0, #0x000]
+ 
++	ldr r2, =0x00400C58
++	str r2, [r0, #0x890]
++
+ 	ldr r3, =0x00bb0000
+ 	ldr r2, =0x00000004
+ 	str r2, [r3, #0x008]
+diff --git a/board/freescale/mx6sabresd/mx6qp.cfg b/board/freescale/mx6sabresd/mx6qp.cfg
+index 9f0089a..cd59f77 100644
+--- a/board/freescale/mx6sabresd/mx6qp.cfg
++++ b/board/freescale/mx6sabresd/mx6qp.cfg
+@@ -104,8 +104,8 @@ DATA 4, 0x021b481c, 0x33333333
+ DATA 4, 0x021b4820, 0x33333333
+ DATA 4, 0x021b4824, 0x33333333
+ DATA 4, 0x021b4828, 0x33333333
+-DATA 4, 0x021b08c0, 0x24912492
+-DATA 4, 0x021b48c0, 0x24912492
++DATA 4, 0x021b08c0, 0x24912249
++DATA 4, 0x021b48c0, 0x24914289
+ DATA 4, 0x021b08b8, 0x00000800
+ DATA 4, 0x021b48b8, 0x00000800
+ DATA 4, 0x021b0004, 0x00020036
+@@ -120,6 +120,7 @@ DATA 4, 0x021b0030, 0x008E1023
+ DATA 4, 0x021b0040, 0x00000027
+ DATA 4, 0x021b0400, 0x14420000
+ DATA 4, 0x021b0000, 0x831A0000
++DATA 4, 0x021b0890, 0x00400C58
+ DATA 4, 0x00bb0008, 0x00000004
+ DATA 4, 0x00bb000c, 0x2891E41A
+ DATA 4, 0x00bb0038, 0x00000564
+diff --git a/board/freescale/mx6sabresd/plugin.S b/board/freescale/mx6sabresd/plugin.S
+index 4ea3c16..f803d73 100644
+--- a/board/freescale/mx6sabresd/plugin.S
++++ b/board/freescale/mx6sabresd/plugin.S
+@@ -1,5 +1,5 @@
+ /*
+- * Copyright (C) 2012-2014 Freescale Semiconductor, Inc.
++ * Copyright (C) 2012-2015 Freescale Semiconductor, Inc.
+  *
+  * SPDX-License-Identifier:	GPL-2.0+
+  */
+@@ -109,8 +109,9 @@
+ 	str r2, [r1, #0x824]
+ 	str r2, [r1, #0x828]
+ 
+-	ldr r2, =0x24912492
++	ldr r2, =0x24912249
+ 	str r2, [r0, #0x8c0]
++	ldr r2, =0x24914289
+ 	str r2, [r1, #0x8c0]
+ 
+ 	ldr r2, =0x00000800
+@@ -147,6 +148,9 @@
+ 	ldr r2, =0x831A0000
+ 	str r2, [r0, #0x000]
+ 
++	ldr r2, =0x00400C58
++	str r2, [r0, #0x890]
++
+ 	ldr r3, =0x00bb0000
+ 	ldr r2, =0x00000004
+ 	str r2, [r3, #0x008]
+-- 
+1.8.0
+

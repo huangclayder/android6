@@ -1,0 +1,50 @@
+From f5759b126788abb9c1ac371ce86cc2fbe1f241c3 Mon Sep 17 00:00:00 2001
+From: Lars-Peter Clausen <lars@metafoo.de>
+Date: Tue, 19 Aug 2014 15:51:30 +0200
+Subject: [PATCH] ASoC: Replace list_empty(&card->codec_dev_list) with
+ !card->instantiated
+
+With componentization we no longer necessarily need a snd_soc_codec struct for a
+card. Instead of checking if the card's CODEC list is empty just use
+card->instantiated to check if the card has been instantiated yet.
+
+Signed-off-by: Lars-Peter Clausen <lars@metafoo.de>
+Signed-off-by: Mark Brown <broonie@linaro.org>
+(cherry picked from commit c5599b87a8317738a541d8893cb327df5d04b007)
+---
+ sound/soc/soc-core.c | 12 ++++--------
+ 1 file changed, 4 insertions(+), 8 deletions(-)
+
+diff --git a/sound/soc/soc-core.c b/sound/soc/soc-core.c
+index c1d9d85..56a21e7 100644
+--- a/sound/soc/soc-core.c
++++ b/sound/soc/soc-core.c
+@@ -560,10 +560,8 @@ int snd_soc_suspend(struct device *dev)
+ 	struct snd_soc_codec *codec;
+ 	int i;
+ 
+-	/* If the initialization of this soc device failed, there is no codec
+-	 * associated with it. Just bail out in this case.
+-	 */
+-	if (list_empty(&card->codec_dev_list))
++	/* If the card is not initialized yet there is nothing to do */
++	if (!card->instantiated)
+ 		return 0;
+ 
+ 	/* Due to the resume being scheduled into a workqueue we could
+@@ -806,10 +804,8 @@ int snd_soc_resume(struct device *dev)
+ 	struct snd_soc_card *card = dev_get_drvdata(dev);
+ 	int i, ac97_control = 0;
+ 
+-	/* If the initialization of this soc device failed, there is no codec
+-	 * associated with it. Just bail out in this case.
+-	 */
+-	if (list_empty(&card->codec_dev_list))
++	/* If the card is not initialized yet there is nothing to do */
++	if (!card->instantiated)
+ 		return 0;
+ 
+ 	/* activate pins from sleep state */
+-- 
+1.8.0
+

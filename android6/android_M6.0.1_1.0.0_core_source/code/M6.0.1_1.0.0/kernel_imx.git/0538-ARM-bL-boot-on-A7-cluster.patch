@@ -1,0 +1,76 @@
+From be1840a7070243915827ac9c7d9f62dcf2ffe156 Mon Sep 17 00:00:00 2001
+From: Vincent Guittot <vincent.guittot@linaro.org>
+Date: Fri, 17 May 2013 11:20:19 +0200
+Subject: [PATCH] ARM: bL boot on A7 cluster
+
+Ensure that A7 cluster will be mapped on CPU0-2
+
+Suggested-by: Chris Redpath <Chris.Redpath@arm.com>
+Signed-off-by: Vincent Guittot <vincent.guittot@linaro.org>
+(cherry picked from commit c48cef534ea5a5badecec75a66daac233033dc0d)
+Signed-off-by: Alex Shi <alex.shi@linaro.org>
+---
+ arch/arm/boot/dts/vexpress-v2p-ca15_a7.dts | 40 +++++++++++++++---------------
+ 1 file changed, 20 insertions(+), 20 deletions(-)
+
+diff --git a/arch/arm/boot/dts/vexpress-v2p-ca15_a7.dts b/arch/arm/boot/dts/vexpress-v2p-ca15_a7.dts
+index 2d8e115..381da5b 100644
+--- a/arch/arm/boot/dts/vexpress-v2p-ca15_a7.dts
++++ b/arch/arm/boot/dts/vexpress-v2p-ca15_a7.dts
+@@ -75,26 +75,6 @@
+ 		#address-cells = <1>;
+ 		#size-cells = <0>;
+ 
+-		cpu0: cpu@0 {
+-			device_type = "cpu";
+-			compatible = "arm,cortex-a15";
+-			reg = <0>;
+-			cci-control-port = <&cci_control1>;
+-			cluster = <&cluster0>;
+-			core = <&core0>;
+-			clock-frequency = <1000000000>;
+-		};
+-
+-		cpu1: cpu@1 {
+-			device_type = "cpu";
+-			compatible = "arm,cortex-a15";
+-			reg = <1>;
+-			cci-control-port = <&cci_control1>;
+-			cluster = <&cluster0>;
+-			core = <&core1>;
+-			clock-frequency = <1000000000>;
+-		};
+-
+ 		cpu2: cpu@2 {
+ 			device_type = "cpu";
+ 			compatible = "arm,cortex-a7";
+@@ -124,6 +104,26 @@
+ 			core = <&core4>;
+ 			clock-frequency = <800000000>;
+ 		};
++
++		cpu0: cpu@0 {
++			device_type = "cpu";
++			compatible = "arm,cortex-a15";
++			reg = <0>;
++			cci-control-port = <&cci_control1>;
++			cluster = <&cluster0>;
++			core = <&core0>;
++			clock-frequency = <1000000000>;
++		};
++
++		cpu1: cpu@1 {
++			device_type = "cpu";
++			compatible = "arm,cortex-a15";
++			reg = <1>;
++			cci-control-port = <&cci_control1>;
++			cluster = <&cluster0>;
++			core = <&core1>;
++			clock-frequency = <1000000000>;
++		};
+ 	};
+ 
+ 	memory@80000000 {
+-- 
+1.8.0
+

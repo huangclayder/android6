@@ -1,0 +1,86 @@
+From 4f6bc939db723669d1f897f8abca5277b5f674b7 Mon Sep 17 00:00:00 2001
+From: Peng Fan <Peng.Fan@freescale.com>
+Date: Fri, 3 Jul 2015 15:35:48 +0800
+Subject: [PATCH] MLK-11216-2 imx: mx7d-ddr3 remove epdc qos settings
+
+Remove epdc qos settings from plugin.S, since set_epdc_qos does same thing.
+
+Signed-off-by: Peng Fan <Peng.Fan@freescale.com>
+---
+ board/freescale/mx7d_12x12_ddr3_arm2/plugin.S | 24 ------------------------
+ board/freescale/mx7d_19x19_ddr3_arm2/plugin.S | 24 ------------------------
+ 2 files changed, 48 deletions(-)
+
+diff --git a/board/freescale/mx7d_12x12_ddr3_arm2/plugin.S b/board/freescale/mx7d_12x12_ddr3_arm2/plugin.S
+index 28dbd5c..d3e6f9e 100644
+--- a/board/freescale/mx7d_12x12_ddr3_arm2/plugin.S
++++ b/board/freescale/mx7d_12x12_ddr3_arm2/plugin.S
+@@ -142,30 +142,6 @@ wait_stat:
+ .endm
+ 
+ .macro imx7_qos_setting
+-	ldr r0, =QOSC_IPS_BASE_ADDR
+-	ldr r1, =0x0
+-	str r1, [r0, #0x0]
+-	str r1, [r0, #0x060]
+-	str r1, [r0, #0x3400]
+-	str r1, [r0, #0x2c00]
+-	str r1, [r0, #0x3c00]
+-
+-	ldr r1, =0x0f020722
+-	str r1, [r0, #0x34d0]
+-	str r1, [r0, #0x34e0]
+-
+-	ldr r1, =0x1
+-	str r1, [r0, #0x2c00]
+-	str r1, [r0, #0x3c00]
+-
+-	ldr r1, =0x0f020222
+-	str r1, [r0, #0x2c50]
+-	str r1, [r0, #0x3c50]
+-	str r1, [r0, #0x2c60]
+-	str r1, [r0, #0x3c60]
+-	ldr r1, =0x0f020422
+-	str r1, [r0, #0x2c70]
+-	str r1, [r0, #0x3c70]
+ .endm
+ 
+ .macro imx7_ddr_setting
+diff --git a/board/freescale/mx7d_19x19_ddr3_arm2/plugin.S b/board/freescale/mx7d_19x19_ddr3_arm2/plugin.S
+index df0a176..caea322 100644
+--- a/board/freescale/mx7d_19x19_ddr3_arm2/plugin.S
++++ b/board/freescale/mx7d_19x19_ddr3_arm2/plugin.S
+@@ -142,30 +142,6 @@ wait_stat:
+ .endm
+ 
+ .macro imx7_qos_setting
+-	ldr r0, =QOSC_IPS_BASE_ADDR
+-	ldr r1, =0x0
+-	str r1, [r0, #0x0]
+-	str r1, [r0, #0x060]
+-	str r1, [r0, #0x3400]
+-	str r1, [r0, #0x2c00]
+-	str r1, [r0, #0x3c00]
+-
+-	ldr r1, =0x0f020722
+-	str r1, [r0, #0x34d0]
+-	str r1, [r0, #0x34e0]
+-
+-	ldr r1, =0x1
+-	str r1, [r0, #0x2c00]
+-	str r1, [r0, #0x3c00]
+-
+-	ldr r1, =0x0f020222
+-	str r1, [r0, #0x2c50]
+-	str r1, [r0, #0x3c50]
+-	str r1, [r0, #0x2c60]
+-	str r1, [r0, #0x3c60]
+-	ldr r1, =0x0f020422
+-	str r1, [r0, #0x2c70]
+-	str r1, [r0, #0x3c70]
+ .endm
+ 
+ .macro imx7_ddr_setting
+-- 
+1.8.0
+

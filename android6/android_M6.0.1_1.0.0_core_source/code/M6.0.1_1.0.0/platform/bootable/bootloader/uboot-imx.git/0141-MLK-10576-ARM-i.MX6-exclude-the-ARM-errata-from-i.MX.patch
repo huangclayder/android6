@@ -1,0 +1,44 @@
+From 6da68bd152dc659dde382e6327d939ec41467537 Mon Sep 17 00:00:00 2001
+From: Nitin Garg <nitin.garg@freescale.com>
+Date: Fri, 3 Apr 2015 09:59:45 -0500
+Subject: [PATCH] MLK-10576 ARM: i.MX6: exclude the ARM errata from i.MX6 UP
+ system
+
+The ARM errata 751472, 794072, 761320, 845369 only applied
+to the following configuration:
+
+This erratum affects configurations with either:
+- One processor if the ACP is present
+- Two or more processors
+
+i.MX6 family does not have the ACP and thus only the MPCore system
+will be impacted, which are the i.MX6DQ, i.MX6DL, and i.MX6QP.
+
+Signed-off-by: Nitin Garg <nitin.garg@freescale.com>
+Signed-off-by: Jason Liu <r64343@freescale.com>
+(cherry picked from commit 0db960784ba4f631ee5c0321b5d25f3b1ac55640)
+---
+ include/configs/mx6_common.h | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/include/configs/mx6_common.h b/include/configs/mx6_common.h
+index a3c8346..c96ba97 100644
+--- a/include/configs/mx6_common.h
++++ b/include/configs/mx6_common.h
+@@ -18,10 +18,13 @@
+ #define __MX6_COMMON_H
+ 
+ #define CONFIG_ARM_ERRATA_743622
++#if (defined(CONFIG_MX6QP) || defined(CONFIG_MX6Q) ||\
++defined(CONFIG_MX6DL)) && !defined(CONFIG_MX6SOLO)
+ #define CONFIG_ARM_ERRATA_751472
+ #define CONFIG_ARM_ERRATA_794072
+ #define CONFIG_ARM_ERRATA_761320
+ #define CONFIG_ARM_ERRATA_845369
++#endif
+ #define CONFIG_BOARD_POSTCLK_INIT
+ #define CONFIG_LDO_BYPASS_CHECK
+ 
+-- 
+1.8.0
+

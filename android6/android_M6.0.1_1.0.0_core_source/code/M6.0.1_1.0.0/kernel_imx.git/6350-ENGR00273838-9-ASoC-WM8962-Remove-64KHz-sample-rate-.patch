@@ -1,0 +1,35 @@
+From ed3891df5966fc2b1c0bfd8ae7e1526d0658501a Mon Sep 17 00:00:00 2001
+From: Nicolin Chen <b42378@freescale.com>
+Date: Mon, 5 Aug 2013 17:26:45 +0800
+Subject: [PATCH] ENGR00273838-9 ASoC: WM8962: Remove 64KHz sample rate
+ support
+
+64KHz is not in the auto samplerate list of WM8962. When playing a 64KHz
+wave file, 'Unsupported rate 64000Hz' will be prompted.
+
+Thus remove to let alsa-lib handle it.
+
+Acked-by: Wang Shengjiu <b02247@freescale.com>
+Signed-off-by: Nicolin Chen <b42378@freescale.com>
+(cherry picked from commit 8ef4c44e90e1c4cc04d0351cc4df76923885bd58)
+---
+ sound/soc/codecs/wm8962.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/sound/soc/codecs/wm8962.c b/sound/soc/codecs/wm8962.c
+index 7006646..8f5fe19 100644
+--- a/sound/soc/codecs/wm8962.c
++++ b/sound/soc/codecs/wm8962.c
+@@ -2943,7 +2943,8 @@ static int wm8962_mute(struct snd_soc_dai *dai, int mute)
+ 				   WM8962_DAC_MUTE, val);
+ }
+ 
+-#define WM8962_RATES SNDRV_PCM_RATE_8000_96000
++#define WM8962_RATES (SNDRV_PCM_RATE_8000_48000 |\
++			SNDRV_PCM_RATE_88200 | SNDRV_PCM_RATE_96000)
+ 
+ #define WM8962_FORMATS (SNDRV_PCM_FMTBIT_S16_LE | SNDRV_PCM_FMTBIT_S20_3LE |\
+ 			SNDRV_PCM_FMTBIT_S24_LE | SNDRV_PCM_FMTBIT_S32_LE)
+-- 
+1.8.0
+

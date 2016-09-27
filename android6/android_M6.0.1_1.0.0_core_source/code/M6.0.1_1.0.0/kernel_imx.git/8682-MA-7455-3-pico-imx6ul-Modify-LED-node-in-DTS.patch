@@ -1,0 +1,37 @@
+From 1f62ee064974ab2bf643957c86d1f04d4ab1bb20 Mon Sep 17 00:00:00 2001
+From: Haoran Wang <Haoran.Wang@freescale.com>
+Date: Tue, 5 Jan 2016 00:22:31 +0800
+Subject: [PATCH] MA-7455-3 pico-imx6ul: Modify LED node in DTS
+
+Modify LED name to "led0" for Brillo common lights
+HAL.
+Set LED mode to be timer by default.It will blink
+in 1Hz when kernel boot.
+
+Change-Id: I1a89ce0fbd46c8d3f056ee9d9c9e00bd9b0a9616
+Signed-off-by: Haoran Wang <Haoran.Wang@freescale.com>
+---
+ arch/arm/boot/dts/imx6ul-picosom-hobbit.dts | 7 ++++---
+ 1 file changed, 4 insertions(+), 3 deletions(-)
+
+diff --git a/arch/arm/boot/dts/imx6ul-picosom-hobbit.dts b/arch/arm/boot/dts/imx6ul-picosom-hobbit.dts
+index 22fe013..b3e932b 100644
+--- a/arch/arm/boot/dts/imx6ul-picosom-hobbit.dts
++++ b/arch/arm/boot/dts/imx6ul-picosom-hobbit.dts
+@@ -141,9 +141,10 @@
+ 
+ 	leds {
+ 		compatible = "gpio-leds";
+-		hobbitled {
+-			label = "hobbitled";
+-			gpios = <&gpio1 29 GPIO_ACTIVE_LOW>;
++		led0 {
++			label = "led0";
++			gpios = <&gpio1 29 GPIO_ACTIVE_HIGH>;
++			linux,default-trigger = "timer";
+ 		};
+ 	};
+ };
+-- 
+1.8.0
+

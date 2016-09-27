@@ -1,0 +1,150 @@
+From 1eb44fca8789cc1aa605cbfcc7691829b188629e Mon Sep 17 00:00:00 2001
+From: Anson Huang <b20788@freescale.com>
+Date: Thu, 30 Jul 2015 11:27:22 +0800
+Subject: [PATCH] MLK-11299 ARM: imx7d: initialize PMIC standby mode and
+ voltage
+
+Datasheet Rev-B defines standby voltage as 1V for i.MX7D, we add
+25mV for board level IR drop.
+
+Signed-off-by: Anson Huang <b20788@freescale.com>
+---
+ .../mx7d_12x12_ddr3_arm2/mx7d_12x12_ddr3_arm2.c    | 10 ++++++++
+ .../mx7d_12x12_lpddr3_arm2.c                       | 10 ++++++++
+ .../mx7d_19x19_ddr3_arm2/mx7d_19x19_ddr3_arm2.c    | 10 ++++++++
+ .../mx7d_19x19_lpddr3_arm2.c                       | 27 ++++++++++++++++++++++
+ board/freescale/mx7dsabresd/mx7dsabresd.c          | 10 ++++++++
+ 5 files changed, 67 insertions(+)
+
+diff --git a/board/freescale/mx7d_12x12_ddr3_arm2/mx7d_12x12_ddr3_arm2.c b/board/freescale/mx7d_12x12_ddr3_arm2/mx7d_12x12_ddr3_arm2.c
+index 0c1b4ce..19d1ebb 100644
+--- a/board/freescale/mx7d_12x12_ddr3_arm2/mx7d_12x12_ddr3_arm2.c
++++ b/board/freescale/mx7d_12x12_ddr3_arm2/mx7d_12x12_ddr3_arm2.c
+@@ -316,6 +316,16 @@ int power_init_board(void)
+ 	reg |= 0x1;
+ 	pmic_reg_write(p, PFUZE300_LDOGCTL, reg);
+ 
++	/* SW1A/1B mode set to APS/APS */
++	reg = 0x8;
++	pmic_reg_write(p, PFUZE300_SW1AMODE, reg);
++	pmic_reg_write(p, PFUZE300_SW1BMODE, reg);
++
++	/* SW1A/1B standby voltage set to 1.025V */
++	reg = 0xd;
++	pmic_reg_write(p, PFUZE300_SW1ASTBY, reg);
++	pmic_reg_write(p, PFUZE300_SW1BSTBY, reg);
++
+ 	return 0;
+ }
+ #endif
+diff --git a/board/freescale/mx7d_12x12_lpddr3_arm2/mx7d_12x12_lpddr3_arm2.c b/board/freescale/mx7d_12x12_lpddr3_arm2/mx7d_12x12_lpddr3_arm2.c
+index ce11a21..7bed3ad 100644
+--- a/board/freescale/mx7d_12x12_lpddr3_arm2/mx7d_12x12_lpddr3_arm2.c
++++ b/board/freescale/mx7d_12x12_lpddr3_arm2/mx7d_12x12_lpddr3_arm2.c
+@@ -869,6 +869,16 @@ int power_init_board(void)
+ 	reg |= 0x1;
+ 	pmic_reg_write(p, PFUZE300_LDOGCTL, reg);
+ 
++	/* SW1A/1B mode set to APS/APS */
++	reg = 0x8;
++	pmic_reg_write(p, PFUZE300_SW1AMODE, reg);
++	pmic_reg_write(p, PFUZE300_SW1BMODE, reg);
++
++	/* SW1A/1B standby voltage set to 1.025V */
++	reg = 0xd;
++	pmic_reg_write(p, PFUZE300_SW1ASTBY, reg);
++	pmic_reg_write(p, PFUZE300_SW1BSTBY, reg);
++
+ 	return 0;
+ }
+ #endif
+diff --git a/board/freescale/mx7d_19x19_ddr3_arm2/mx7d_19x19_ddr3_arm2.c b/board/freescale/mx7d_19x19_ddr3_arm2/mx7d_19x19_ddr3_arm2.c
+index 84e08ba..6b75ec6 100644
+--- a/board/freescale/mx7d_19x19_ddr3_arm2/mx7d_19x19_ddr3_arm2.c
++++ b/board/freescale/mx7d_19x19_ddr3_arm2/mx7d_19x19_ddr3_arm2.c
+@@ -620,6 +620,16 @@ int power_init_board(void)
+ 	reg |= 0x1;
+ 	pmic_reg_write(p, PFUZE300_LDOGCTL, reg);
+ 
++	/* SW1A/1B mode set to APS/APS */
++	reg = 0x8;
++	pmic_reg_write(p, PFUZE300_SW1AMODE, reg);
++	pmic_reg_write(p, PFUZE300_SW1BMODE, reg);
++
++	/* SW1A/1B standby voltage set to 1.025V */
++	reg = 0xd;
++	pmic_reg_write(p, PFUZE300_SW1ASTBY, reg);
++	pmic_reg_write(p, PFUZE300_SW1BSTBY, reg);
++
+ 	return 0;
+ }
+ #endif
+diff --git a/board/freescale/mx7d_19x19_lpddr3_arm2/mx7d_19x19_lpddr3_arm2.c b/board/freescale/mx7d_19x19_lpddr3_arm2/mx7d_19x19_lpddr3_arm2.c
+index 27ee853..442c356 100644
+--- a/board/freescale/mx7d_19x19_lpddr3_arm2/mx7d_19x19_lpddr3_arm2.c
++++ b/board/freescale/mx7d_19x19_lpddr3_arm2/mx7d_19x19_lpddr3_arm2.c
+@@ -553,6 +553,11 @@ static const struct boot_mode board_boot_modes[] = {
+ #define PFUZE_FABID	0x4
+ 
+ #define PFUZE_LDOGCTL	0x69
++#define PFUZE300_SW1ASTBY	0x21
++#define PFUZE300_SW1AMODE	0x23
++#define PFUZE300_SW1BSTBY	0x2f
++#define PFUZE300_SW1BMODE	0x31
++
+ 
+ static int setup_pmic_voltages(void)
+ {
+@@ -582,6 +587,28 @@ static int setup_pmic_voltages(void)
+ 			printf("Set LDOCTL error!\n");
+ 			return -1;
+ 		}
++
++		/* SW1A/1B mode set to APS/APS */
++		value = 0x8;
++		if (i2c_write(CONFIG_PMIC_I2C_SLAVE, PFUZE300_SW1AMODE, 1, &value, 1)) {
++			printf("Set PFUZE300_SW1AMODE error!\n");
++			return -1;
++		}
++		if (i2c_write(CONFIG_PMIC_I2C_SLAVE, PFUZE300_SW1BMODE, 1, &value, 1)) {
++			printf("Set PFUZE300_SW1BMODE error!\n");
++			return -1;
++		}
++
++		/* SW1A/1B standby voltage set to 1.025V */
++		value = 0xd;
++		if (i2c_write(CONFIG_PMIC_I2C_SLAVE, PFUZE300_SW1ASTBY, 1, &value, 1)) {
++			printf("Set PFUZE300_SW1ASTBY error!\n");
++			return -1;
++		}
++		if (i2c_write(CONFIG_PMIC_I2C_SLAVE, PFUZE300_SW1BSTBY, 1, &value, 1)) {
++			printf("Set PFUZE300_SW1BSTBY error!\n");
++			return -1;
++		}
+ 	}
+ 
+ 	return 0;
+diff --git a/board/freescale/mx7dsabresd/mx7dsabresd.c b/board/freescale/mx7dsabresd/mx7dsabresd.c
+index 77e730d..8d15b63 100644
+--- a/board/freescale/mx7dsabresd/mx7dsabresd.c
++++ b/board/freescale/mx7dsabresd/mx7dsabresd.c
+@@ -990,6 +990,16 @@ int power_init_board(void)
+ 	reg |= 0x1;
+ 	pmic_reg_write(p, PFUZE300_LDOGCTL, reg);
+ 
++	/* SW1A/1B mode set to APS/APS */
++	reg = 0x8;
++	pmic_reg_write(p, PFUZE300_SW1AMODE, reg);
++	pmic_reg_write(p, PFUZE300_SW1BMODE, reg);
++
++	/* SW1A/1B standby voltage set to 1.025V */
++	reg = 0xd;
++	pmic_reg_write(p, PFUZE300_SW1ASTBY, reg);
++	pmic_reg_write(p, PFUZE300_SW1BSTBY, reg);
++
+ 	return 0;
+ }
+ #endif
+-- 
+1.8.0
+

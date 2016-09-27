@@ -1,0 +1,47 @@
+From 14aaffb20ce2ccac9ed66d4dc256508435ce8fab Mon Sep 17 00:00:00 2001
+From: Haoran Wang <b50027@freescale.com>
+Date: Fri, 23 Oct 2015 10:54:52 +0800
+Subject: [PATCH 22/25] MA-7148 Update firmware path for bcm4339 wifi
+
+Change BCM4339 wifi firmware path for all platforms.
+
+This patch fixed the hostapd cannot broadcast the
+SSID for BCM4339 issue.
+
+Signed-off-by: Haoran Wang <b50027@freescale.com>
+---
+ wifi/wifi_unite.c | 9 ++++++---
+ 1 file changed, 6 insertions(+), 3 deletions(-)
+
+diff --git a/wifi/wifi_unite.c b/wifi/wifi_unite.c
+index 7d4d77a..80de308 100644
+--- a/wifi/wifi_unite.c
++++ b/wifi/wifi_unite.c
+@@ -1248,11 +1248,13 @@ int wifi_change_fw_path(const char *fwpath)
+     int len;
+     int fd;
+     int ret = 0;
+-#ifndef SABRESD_7D
+-    return ret;
+-#endif
++    char vendor_name[255];
++    property_get(DRIVER_VENDOR_NAME, vendor_name, "");
++    if (strcmp(vendor_name, "broadcom"))
++	return ret;
+     if (!fwpath)
+         return ret;
++    ALOGD("Set wifi firmware path:%s", fwpath);
+     fd = TEMP_FAILURE_RETRY(open(WIFI_DRIVER_FW_PATH_PARAM, O_WRONLY));
+     if (fd < 0) {
+         ALOGE("Failed to open wlan fw path param (%s)", strerror(errno));
+@@ -1263,6 +1265,7 @@ int wifi_change_fw_path(const char *fwpath)
+         ALOGE("Failed to write wlan fw path param (%s)", strerror(errno));
+         ret = -1;
+     }
++
+     close(fd);
+     return ret;
+ }
+-- 
+1.8.0
+

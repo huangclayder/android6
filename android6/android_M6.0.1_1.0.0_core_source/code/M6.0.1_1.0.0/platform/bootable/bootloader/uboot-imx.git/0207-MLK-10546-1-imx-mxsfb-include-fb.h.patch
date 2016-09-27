@@ -1,0 +1,35 @@
+From 00b8997167f0e63fbacf9f2ac9c64bf1d2acd07f Mon Sep 17 00:00:00 2001
+From: Peng Fan <Peng.Fan@freescale.com>
+Date: Fri, 22 May 2015 13:29:38 +0800
+Subject: [PATCH] MLK-10546-1 imx: mxsfb include fb.h
+
+Include fb.h in mxsfb.h.
+
+Signed-off-by: Peng Fan <Peng.Fan@freescale.com>
+---
+ include/mxsfb.h | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
+
+diff --git a/include/mxsfb.h b/include/mxsfb.h
+index ddea7aa..f7f9597 100644
+--- a/include/mxsfb.h
++++ b/include/mxsfb.h
+@@ -1,5 +1,5 @@
+ /*
+- * Copyright (C) 2014 Freescale Semiconductor, Inc.
++ * Copyright (C) 2014-2015 Freescale Semiconductor, Inc.
+  *
+  * SPDX-License-Identifier:	GPL-2.0+
+  */
+@@ -7,6 +7,8 @@
+ #ifndef __MXSFB_H__
+ #define __MXSFB_H__
+ 
++#include <linux/fb.h>
++
+ #ifdef CONFIG_VIDEO_MXS
+ struct display_panel {
+ 	unsigned int reg_base;
+-- 
+1.8.0
+

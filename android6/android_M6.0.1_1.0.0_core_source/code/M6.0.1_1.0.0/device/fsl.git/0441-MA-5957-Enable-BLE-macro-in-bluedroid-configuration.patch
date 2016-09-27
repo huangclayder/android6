@@ -1,0 +1,40 @@
+From 5b8cb8d47238e5438a79c01cb6308032cea06a2d Mon Sep 17 00:00:00 2001
+From: Haoran Wang <b50027@freescale.com>
+Date: Sat, 7 Feb 2015 22:46:27 +0800
+Subject: [PATCH 441/602] MA-5957 Enable BLE macro in bluedroid configuration
+
+Enable BLE configuration for bluedroid stack.
+
+Signed-off-by: Haoran Wang <b50027@freescale.com>
+---
+ sabresd_6dq/bluetooth/bdroid_buildcfg.h | 3 +++
+ sabresd_6sx/bluetooth/bdroid_buildcfg.h | 2 ++
+ 2 files changed, 5 insertions(+)
+
+diff --git a/sabresd_6dq/bluetooth/bdroid_buildcfg.h b/sabresd_6dq/bluetooth/bdroid_buildcfg.h
+index 25c7ebc..ee4212c 100644
+--- a/sabresd_6dq/bluetooth/bdroid_buildcfg.h
++++ b/sabresd_6dq/bluetooth/bdroid_buildcfg.h
+@@ -34,4 +34,7 @@
+ /*Enable A2dp Sink */
+ #define BTA_AV_SINK_INCLUDED TRUE
+ 
++#define BLE_PRIVACY_SPT TRUE
++#define BLE_VND_INCLUDED TRUE
++
+ #endif
+diff --git a/sabresd_6sx/bluetooth/bdroid_buildcfg.h b/sabresd_6sx/bluetooth/bdroid_buildcfg.h
+index 4f85e5c..ee4212c 100644
+--- a/sabresd_6sx/bluetooth/bdroid_buildcfg.h
++++ b/sabresd_6sx/bluetooth/bdroid_buildcfg.h
+@@ -34,5 +34,7 @@
+ /*Enable A2dp Sink */
+ #define BTA_AV_SINK_INCLUDED TRUE
+ 
++#define BLE_PRIVACY_SPT TRUE
++#define BLE_VND_INCLUDED TRUE
+ 
+ #endif
+-- 
+1.8.0
+

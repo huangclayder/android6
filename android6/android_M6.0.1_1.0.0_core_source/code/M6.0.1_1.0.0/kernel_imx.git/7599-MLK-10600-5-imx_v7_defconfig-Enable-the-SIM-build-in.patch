@@ -1,0 +1,40 @@
+From 32acbe045a5db9b0e19536d700441c3ffc77dd8b Mon Sep 17 00:00:00 2001
+From: Luwei Zhou <b45643@freescale.com>
+Date: Wed, 8 Apr 2015 15:29:35 +0800
+Subject: [PATCH] MLK-10600-5 imx_v7_defconfig: Enable the SIM build in the
+ default config.
+
+Enable the SIM build in the default config.
+
+Signed-off-by: Luwei Zhou <b45643@freescale.com>
+---
+ arch/arm/configs/imx_v7_defconfig | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/arch/arm/configs/imx_v7_defconfig b/arch/arm/configs/imx_v7_defconfig
+index 48269f2..43f152f 100644
+--- a/arch/arm/configs/imx_v7_defconfig
++++ b/arch/arm/configs/imx_v7_defconfig
+@@ -272,10 +272,10 @@ CONFIG_SND_SOC=y
+ CONFIG_SND_IMX_SOC=y
+ CONFIG_SND_SOC_EUKREA_TLV320=y
+ CONFIG_SND_SOC_IMX_CS42888=y
++CONFIG_SND_SOC_IMX_SII902X=y
+ CONFIG_SND_SOC_IMX_WM8958=y
+ CONFIG_SND_SOC_IMX_WM8960=y
+ CONFIG_SND_SOC_IMX_WM8962=y
+-CONFIG_SND_SOC_IMX_SII902X=y
+ CONFIG_SND_SOC_IMX_SGTL5000=y
+ CONFIG_SND_SOC_IMX_MQS=y
+ CONFIG_SND_SOC_IMX_SPDIF=y
+@@ -327,6 +327,7 @@ CONFIG_MXC_GPU_VIV=y
+ CONFIG_MXC_IPU_V3_PRE=y
+ CONFIG_MXC_MIPI_CSI2=y
+ CONFIG_MXC_MLB150=m
++CONFIG_MXC_SIM=y
+ CONFIG_NEW_LEDS=y
+ CONFIG_LEDS_CLASS=y
+ CONFIG_LEDS_GPIO=y
+-- 
+1.8.0
+

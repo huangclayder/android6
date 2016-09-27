@@ -1,0 +1,47 @@
+From 0d4904f5929cecd66f0b60cf8ebdcb0e6a2f733e Mon Sep 17 00:00:00 2001
+From: Peng Fan <Peng.Fan@freescale.com>
+Date: Thu, 21 May 2015 09:09:58 +0800
+Subject: [PATCH] MLK-11035 imx: mx6 update thermal slope factors
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+From temp sensor guys:
+"
+I confirmed the math with him(had do the accuracy study) today.
+The new, final equation is:
+
+Tmeas = (Nmeas - n1) / slope + t1 + offset
+
+n1= fused room count
+t1= 25
+offset=3.580661
+slope= 0.4148468 – 0.0015423*n1
+"
+
+87723f903454aaf17336e0fe9098ea7911c19f3c update the thermal with not
+accurate slope parameters. This patch fix it.
+
+Signed-off-by: Peng Fan <Peng.Fan@freescale.com>
+---
+ drivers/thermal/imx_thermal.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/thermal/imx_thermal.c b/drivers/thermal/imx_thermal.c
+index 3fb23c2..5d7a1a8 100644
+--- a/drivers/thermal/imx_thermal.c
++++ b/drivers/thermal/imx_thermal.c
+@@ -23,8 +23,8 @@
+ #define TEMPERATURE_HOT		80
+ #define TEMPERATURE_MAX		125
+ #define FACTOR0			10000000
+-#define FACTOR1			16549
+-#define FACTOR2			4445388
++#define FACTOR1			15423
++#define FACTOR2			4148468
+ #define OFFSET			3580661
+ #define MEASURE_FREQ		327
+ 
+-- 
+1.8.0
+

@@ -1,0 +1,73 @@
+From 0be6e4ba84b7615482d3a7a68005e5e364ff854b Mon Sep 17 00:00:00 2001
+From: Felipe Balbi <balbi@ti.com>
+Date: Tue, 25 Feb 2014 14:47:54 -0600
+Subject: [PATCH] usb: dwc3: workaround: bogus hibernation events
+
+Revision 2.20a of the core has a known issue
+which would generate bogus hibernation events
+_and_ random failures on USB CV TD.9.23 test
+case.
+
+The suggested workaround is to ignore hibernation
+events which don't match currently connected
+speed.
+
+Signed-off-by: Felipe Balbi <balbi@ti.com>
+(cherry picked from commit d396f34012ca907c28e502e68c15c230187846bf)
+Signed-off-by: Mark Brown <broonie@kernel.org>
+---
+ drivers/usb/dwc3/gadget.c | 31 +++++++++++++++++++++++++++++++
+ 1 file changed, 31 insertions(+)
+
+diff --git a/drivers/usb/dwc3/gadget.c b/drivers/usb/dwc3/gadget.c
+index 09e9619..4dabe2e 100644
+--- a/drivers/usb/dwc3/gadget.c
++++ b/drivers/usb/dwc3/gadget.c
+@@ -2385,6 +2385,30 @@ static void dwc3_gadget_linksts_change_interrupt(struct dwc3 *dwc,
+ 	dev_vdbg(dwc->dev, "%s link %d\n", __func__, dwc->link_state);
+ }
+ 
++static void dwc3_gadget_hibernation_interrupt(struct dwc3 *dwc,
++		unsigned int evtinfo)
++{
++	unsigned int is_ss = evtinfo & BIT(4);
++
++	/**
++	 * WORKAROUND: DWC3 revison 2.20a with hibernation support
++	 * have a known issue which can cause USB CV TD.9.23 to fail
++	 * randomly.
++	 *
++	 * Because of this issue, core could generate bogus hibernation
++	 * events which SW needs to ignore.
++	 *
++	 * Refers to:
++	 *
++	 * STAR#9000546576: Device Mode Hibernation: Issue in USB 2.0
++	 * Device Fallback from SuperSpeed
++	 */
++	if (is_ss ^ (dwc->speed == USB_SPEED_SUPER))
++		return;
++
++	/* enter hibernation here */
++}
++
+ static void dwc3_gadget_interrupt(struct dwc3 *dwc,
+ 		const struct dwc3_event_devt *event)
+ {
+@@ -2401,6 +2425,13 @@ static void dwc3_gadget_interrupt(struct dwc3 *dwc,
+ 	case DWC3_DEVICE_EVENT_WAKEUP:
+ 		dwc3_gadget_wakeup_interrupt(dwc);
+ 		break;
++	case DWC3_DEVICE_EVENT_HIBER_REQ:
++		if (dev_WARN_ONCE(dwc->dev, !dwc->has_hibernation,
++					"unexpected hibernation event\n"))
++			break;
++
++		dwc3_gadget_hibernation_interrupt(dwc, event->event_info);
++		break;
+ 	case DWC3_DEVICE_EVENT_LINK_STATUS_CHANGE:
+ 		dwc3_gadget_linksts_change_interrupt(dwc, event->event_info);
+ 		break;
+-- 
+1.8.0
+

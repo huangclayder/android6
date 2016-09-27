@@ -1,0 +1,44 @@
+From 5cf7015475072dc24477eb798a46e5bfcc574bff Mon Sep 17 00:00:00 2001
+From: Xiaowen Liu <xiaowen.liu@freescale.com>
+Date: Tue, 17 Nov 2015 09:00:14 -0500
+Subject: [PATCH 85/95] MA-7121 enable camera hal v3 interface.
+
+Add KEY_SUPPORTED_VIDEO_SIZES property.
+Use stream width and height to set buffer size.
+
+Signed-off-by: Xiaowen Liu <xiaowen.liu@freescale.com>
+---
+ services/camera/libcameraservice/api1/client2/Parameters.cpp     | 2 ++
+ services/camera/libcameraservice/device3/Camera3OutputStream.cpp | 3 ++-
+ 2 files changed, 4 insertions(+), 1 deletion(-)
+
+diff --git a/services/camera/libcameraservice/api1/client2/Parameters.cpp b/services/camera/libcameraservice/api1/client2/Parameters.cpp
+index 4bf8146..8589685 100644
+--- a/services/camera/libcameraservice/api1/client2/Parameters.cpp
++++ b/services/camera/libcameraservice/api1/client2/Parameters.cpp
+@@ -138,6 +138,8 @@ status_t Parameters::initialize(const CameraMetadata *info, int deviceVersion) {
+                     availableVideoSizes[i].height);
+         }
+         ALOGV("Supported video sizes are: %s", supportedVideoSizes.string());
++        params.set(CameraParameters::KEY_SUPPORTED_VIDEO_SIZES,
++                supportedVideoSizes);
+     }
+ 
+     camera_metadata_ro_entry_t availableFpsRanges =
+diff --git a/services/camera/libcameraservice/device3/Camera3OutputStream.cpp b/services/camera/libcameraservice/device3/Camera3OutputStream.cpp
+index 3f0a736..48efb5d 100644
+--- a/services/camera/libcameraservice/device3/Camera3OutputStream.cpp
++++ b/services/camera/libcameraservice/device3/Camera3OutputStream.cpp
+@@ -296,7 +296,8 @@ status_t Camera3OutputStream::configureQueueLocked() {
+         return res;
+     }
+ 
+-    if (mMaxSize == 0) {
++    // match camera hal to use width&height to calculate size.
++    if (true/*mMaxSize == 0*/) {
+         // For buffers of known size
+         res = native_window_set_buffers_dimensions(mConsumer.get(),
+                 camera3_stream::width, camera3_stream::height);
+-- 
+1.8.0
+

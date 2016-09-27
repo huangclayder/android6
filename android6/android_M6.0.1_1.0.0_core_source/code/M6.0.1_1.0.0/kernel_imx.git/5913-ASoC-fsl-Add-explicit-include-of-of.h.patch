@@ -1,0 +1,29 @@
+From d93d09611b39daf9df31730387aa2cc00c71e717 Mon Sep 17 00:00:00 2001
+From: Mark Brown <broonie@linaro.org>
+Date: Tue, 15 Apr 2014 12:02:02 +0100
+Subject: [PATCH] ASoC: fsl: Add explicit include of of.h
+
+Hopefully fixing a build failure reported by Stephen Rothwell - though
+quite why the other OF headers don't include this as well I'm not sure.
+
+Signed-off-by: Mark Brown <broonie@linaro.org>
+(cherry picked from commit 9c72a04ca78606bf10211efa93b3332c710afc65)
+---
+ sound/soc/fsl/fsl_ssi.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/sound/soc/fsl/fsl_ssi.c b/sound/soc/fsl/fsl_ssi.c
+index fdb123d..25865d8f 100644
+--- a/sound/soc/fsl/fsl_ssi.c
++++ b/sound/soc/fsl/fsl_ssi.c
+@@ -40,6 +40,7 @@
+ #include <linux/delay.h>
+ #include <linux/slab.h>
+ #include <linux/spinlock.h>
++#include <linux/of.h>
+ #include <linux/of_address.h>
+ #include <linux/of_irq.h>
+ #include <linux/of_platform.h>
+-- 
+1.8.0
+

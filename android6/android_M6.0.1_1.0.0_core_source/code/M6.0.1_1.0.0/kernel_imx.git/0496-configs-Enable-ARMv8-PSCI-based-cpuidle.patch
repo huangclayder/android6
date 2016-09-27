@@ -1,0 +1,32 @@
+From 389226f5d7adb6593ab5a68a329c8599a60fa4d9 Mon Sep 17 00:00:00 2001
+From: Mark Brown <broonie@linaro.org>
+Date: Fri, 30 May 2014 11:27:15 +0100
+Subject: [PATCH] configs: Enable ARMv8 PSCI based cpuidle
+
+Signed-off-by: Mark Brown <broonie@linaro.org>
+---
+ linaro/configs/linaro-base.conf | 1 +
+ linaro/configs/vexpress64.conf  | 1 +
+ 2 files changed, 2 insertions(+)
+
+diff --git a/linaro/configs/linaro-base.conf b/linaro/configs/linaro-base.conf
+index 34ed2db..4ec01a9 100644
+--- a/linaro/configs/linaro-base.conf
++++ b/linaro/configs/linaro-base.conf
+@@ -96,3 +96,4 @@ CONFIG_JUMP_LABEL=y
+ CONFIG_STRICT_DEVMEM=y
+ CONFIG_KGDB=y
+ CONFIG_KGDB_TESTS=y
++CONFIG_OF_IDLE_STATES=y
+diff --git a/linaro/configs/vexpress64.conf b/linaro/configs/vexpress64.conf
+index e6deb16..d6a7146 100644
+--- a/linaro/configs/vexpress64.conf
++++ b/linaro/configs/vexpress64.conf
+@@ -51,3 +51,4 @@ CONFIG_PM_OPP=y
+ CONFIG_GENERIC_CPUFREQ_CPU0=y
+ CONFIG_ARM_BIG_LITTLE_CPUFREQ=y
+ CONFIG_ARM_DT_BL_CPUFREQ=y
++CONFIG_ARM64_CPUIDLE=y
+-- 
+1.8.0
+

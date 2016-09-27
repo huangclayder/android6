@@ -1,0 +1,36 @@
+From 49b15a3f53d5d9ec2ea1b9e306a2a40c649f7239 Mon Sep 17 00:00:00 2001
+From: "guoyin.chen" <guoyin.chen@freescale.com>
+Date: Mon, 11 May 2015 12:59:56 +0800
+Subject: [PATCH] MA-6644 Update android kernel config based on latest update
+ in imx_v7_defconfig
+
+Add CONFIG_SOC_IMX6UL and CONFIG_MXC_SIM config
+
+Signed-off-by: guoyin.chen <guoyin.chen@freescale.com>
+---
+ arch/arm/configs/imx_v7_android_defconfig | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/arch/arm/configs/imx_v7_android_defconfig b/arch/arm/configs/imx_v7_android_defconfig
+index 2930e7b..15cc456 100644
+--- a/arch/arm/configs/imx_v7_android_defconfig
++++ b/arch/arm/configs/imx_v7_android_defconfig
+@@ -35,6 +35,7 @@ CONFIG_SOC_IMX53=y
+ CONFIG_SOC_IMX6Q=y
+ CONFIG_SOC_IMX6SL=y
+ CONFIG_SOC_IMX6SX=y
++CONFIG_SOC_IMX6UL=y
+ CONFIG_SOC_IMX7D=y
+ CONFIG_SOC_VF610=y
+ CONFIG_MXC_REBOOT_ANDROID_CMD=y
+@@ -505,6 +506,7 @@ CONFIG_GPU_LOW_MEMORY_KILLER=y
+ CONFIG_MXC_IPU_V3_PRE=y
+ CONFIG_MXC_MIPI_CSI2=y
+ CONFIG_MXC_MLB150=y
++CONFIG_MXC_SIM=y
+ CONFIG_LEDS_GPIO=y
+ CONFIG_LEDS_TRIGGERS=y
+ CONFIG_LEDS_TRIGGER_TIMER=y
+-- 
+1.8.0
+

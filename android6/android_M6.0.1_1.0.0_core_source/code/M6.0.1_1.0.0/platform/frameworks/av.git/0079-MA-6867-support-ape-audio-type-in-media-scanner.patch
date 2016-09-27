@@ -1,0 +1,52 @@
+From f1dff14bca468056caeed7542a20742f5400a7a2 Mon Sep 17 00:00:00 2001
+From: Bao Xiahong <b50906@freescale.com>
+Date: Tue, 14 Jul 2015 11:14:42 +0800
+Subject: [PATCH 79/95] MA-6867 support ape audio type in media scanner
+
+add ape to in media scanner
+
+Signed-off-by: Bao Xiahong <b50906@freescale.com>
+---
+ media/libmediaplayerservice/MediaPlayerFactory.cpp | 3 ++-
+ media/libstagefright/StagefrightMediaScanner.cpp   | 4 ++--
+ 2 files changed, 4 insertions(+), 3 deletions(-)
+
+diff --git a/media/libmediaplayerservice/MediaPlayerFactory.cpp b/media/libmediaplayerservice/MediaPlayerFactory.cpp
+index addc470..f79c0c7 100644
+--- a/media/libmediaplayerservice/MediaPlayerFactory.cpp
++++ b/media/libmediaplayerservice/MediaPlayerFactory.cpp
+@@ -371,7 +371,8 @@ class OMXPlayerFactory : public MediaPlayerFactory::IFactory {
+                 //".ogg,   
+                 ".webm",   
+                 ".amr",
+-                ".awb"
++                ".awb",
++                ".ape"
+             };
+ 
+             char value[PROPERTY_VALUE_MAX];
+diff --git a/media/libstagefright/StagefrightMediaScanner.cpp b/media/libstagefright/StagefrightMediaScanner.cpp
+index e7bb6a9..ff42cf0 100644
+--- a/media/libstagefright/StagefrightMediaScanner.cpp
++++ b/media/libstagefright/StagefrightMediaScanner.cpp
+@@ -14,7 +14,7 @@
+  * limitations under the License.
+  */
+ 
+-/* Copyright 2009-2014 Freescale Semiconductor, Inc. */
++/* Copyright 2009-2015 Freescale Semiconductor, Inc. */
+ 
+ //#define LOG_NDEBUG 0
+ #define LOG_TAG "StagefrightMediaScanner"
+@@ -45,7 +45,7 @@ static bool FileHasAcceptableExtension(const char *extension) {
+         ".avi", ".mpeg", ".mpg", ".awb", ".mpga"
+ #ifdef FSL_GM_PLAYER
+         , ".divx", ".mov", ".m4v", ".adts", ".asf", ".wmv", ".vob",
+-        ".f4v", ".flv", ".rmvb", ".rm", ".ra", ".rv"
++        ".f4v", ".flv", ".rmvb", ".rm", ".ra", ".rv", ".ape"
+ #endif
+     };
+     static const size_t kNumValidExtensions =
+-- 
+1.8.0
+

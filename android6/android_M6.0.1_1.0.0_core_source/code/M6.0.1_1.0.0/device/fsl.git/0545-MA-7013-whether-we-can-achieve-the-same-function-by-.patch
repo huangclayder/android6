@@ -1,0 +1,45 @@
+From 9f196aa89684bec72a9e638eb5dfd2d4cb69a45f Mon Sep 17 00:00:00 2001
+From: MJm <B55507@freescale.com>
+Date: Wed, 14 Oct 2015 09:28:06 +0800
+Subject: [PATCH 545/602] MA-7013 whether we can achieve the same function by
+ removing the SHOW_SYSTEM_TIME in api/current.txt
+
+Add PRODUCT_PACKAGE = freescale-extended.xml in imx6.mk and imx7.mk
+
+Signed-off-by: Ma Jiamin<b55507@freescale.com>
+---
+ imx6/imx6.mk | 3 ++-
+ imx7/imx7.mk | 3 ++-
+ 2 files changed, 4 insertions(+), 2 deletions(-)
+
+diff --git a/imx6/imx6.mk b/imx6/imx6.mk
+index 308df66..6877bea 100644
+--- a/imx6/imx6.mk
++++ b/imx6/imx6.mk
+@@ -55,7 +55,8 @@ PRODUCT_PACKAGES += \
+ 	display_mode_fb4.conf
+ 
+ #FREESCALE_EXTENDED
+-PRODUCT_PACKAGES += freescale-extended
++PRODUCT_PACKAGES += freescale-extended 		\
++		    freescale-extended.xml
+ 
+ # Debug utils
+ PRODUCT_PACKAGES += \
+diff --git a/imx7/imx7.mk b/imx7/imx7.mk
+index 2d4f597..bd13455 100644
+--- a/imx7/imx7.mk
++++ b/imx7/imx7.mk
+@@ -49,7 +49,8 @@ PRODUCT_PACKAGES += \
+ 	display_mode_fb4.conf
+ 
+ #FREESCALE_EXTENDED
+-PRODUCT_PACKAGES += freescale-extended
++PRODUCT_PACKAGES += freescale-extended         \
++		    freescale-extended.xml
+ 
+ # Debug utils
+ PRODUCT_PACKAGES += \
+-- 
+1.8.0
+

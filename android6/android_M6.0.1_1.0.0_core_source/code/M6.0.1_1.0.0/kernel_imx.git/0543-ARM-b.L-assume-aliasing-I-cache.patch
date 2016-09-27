@@ -1,0 +1,45 @@
+From 6b71859d5a360c94415543fe9cf4bda500f0a4d0 Mon Sep 17 00:00:00 2001
+From: Nicolas Pitre <nicolas.pitre@linaro.org>
+Date: Wed, 13 Jun 2012 09:19:05 -0400
+Subject: [PATCH] ARM: b.L: assume aliasing I-cache
+
+To deal with the I-cache discrepancy between Cortex-A15 and Cortex-A7,
+let's assume aliasing I-cache in both cases.
+
+Note: this might need to be refined i.e. detect a big.LITTLE system
+somehow by probing all CPUs not only the boot one.
+
+Signed-off-by: Nicolas Pitre <nico@linaro.org>
+(cherry picked from commit eb63514d2340259f017bc48b7795744cb8aeaaf8)
+Signed-off-by: Alex Shi <alex.shi@linaro.org>
+---
+ arch/arm/kernel/setup.c | 13 +++++++++++++
+ 1 file changed, 13 insertions(+)
+
+diff --git a/arch/arm/kernel/setup.c b/arch/arm/kernel/setup.c
+index 1e8b030..4a5e943 100644
+--- a/arch/arm/kernel/setup.c
++++ b/arch/arm/kernel/setup.c
+@@ -273,6 +273,19 @@ static int cpu_has_aliasing_icache(unsigned int arch)
+ 	int aliasing_icache;
+ 	unsigned int id_reg, num_sets, line_size;
+ 
++#ifdef CONFIG_BIG_LITTLE
++	/*
++	 * We expect a combination of Cortex-A15 and Cortex-A7 cores.
++	 * A7 = VIPT aliasing I-cache
++	 * A15 = PIPT (non-aliasing) I-cache
++	 * To cater for this discrepancy, let's assume aliasing I-cache
++	 * all the time.  This means unneeded extra work on the A15 but
++	 * only ptrace is affected which is not performance critical.
++	 */
++	if ((read_cpuid_id() & 0xff0ffff0) == 0x410fc0f0)
++		return 1;
++#endif
++
+ 	/* PIPT caches never alias. */
+ 	if (icache_is_pipt())
+ 		return 0;
+-- 
+1.8.0
+

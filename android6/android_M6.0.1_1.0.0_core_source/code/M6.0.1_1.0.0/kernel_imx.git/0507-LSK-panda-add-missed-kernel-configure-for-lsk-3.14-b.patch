@@ -1,0 +1,29 @@
+From 962af4da9ae6ab3e00ee7117717b90ffb1d89ddb Mon Sep 17 00:00:00 2001
+From: Alex Shi <alex.shi@linaro.org>
+Date: Tue, 8 Jul 2014 11:25:53 +0800
+Subject: [PATCH] LSK/panda: add missed kernel configure for lsk 3.14 booting
+
+Without the added configs, the lsk 3.14 boot hang on panda board
+from 'start kernel'
+
+Signed-off-by: Alex Shi <alex.shi@linaro.org>
+---
+ linaro/configs/omap4.conf | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/linaro/configs/omap4.conf b/linaro/configs/omap4.conf
+index 50fb9d9..d0a2b80 100644
+--- a/linaro/configs/omap4.conf
++++ b/linaro/configs/omap4.conf
+@@ -9,6 +9,8 @@ CONFIG_PARTITION_ADVANCED=y
+ CONFIG_GPIO_PCA953X=y
+ CONFIG_OMAP_RESET_CLOCKS=y
+ CONFIG_OMAP_MUX_DEBUG=y
++CONFIG_ARCH_OMAP3=y
++CONFIG_ARCH_OMAP4=y
+ CONFIG_ARCH_OMAP2PLUS=y
+ CONFIG_SOC_OMAP5=y
+ # CONFIG_ARCH_OMAP2 is not set
+-- 
+1.8.0
+

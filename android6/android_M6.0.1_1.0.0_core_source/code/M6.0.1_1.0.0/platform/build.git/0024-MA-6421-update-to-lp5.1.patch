@@ -1,0 +1,56 @@
+From 6d73ddc9ece3ff6e291e05f76498ad549633e581 Mon Sep 17 00:00:00 2001
+From: fang hui <b31070@freescale.com>
+Date: Tue, 24 Mar 2015 11:21:17 +0800
+Subject: [PATCH 24/34] MA-6421 - update to lp5.1
+
+make compile ok
+
+Change-Id: I435b977f7f39ffac4a8cf0db4e52aabe17b1564a
+Signed-off-by: fang hui <b31070@freescale.com>
+
+Conflicts:
+	core/Makefile
+---
+ core/Makefile | 19 ++++++++++---------
+ 1 file changed, 10 insertions(+), 9 deletions(-)
+
+diff --git a/core/Makefile b/core/Makefile
+index f9d948d..cbe7c60 100644
+--- a/core/Makefile
++++ b/core/Makefile
+@@ -508,14 +508,15 @@ else ifeq (true,$(PRODUCTS.$(INTERNAL_PRODUCT).PRODUCT_SUPPORTS_BOOT_SIGNER)) #
+ $(INSTALLED_BOOTIMAGE_TARGET): $(MKBOOTIMG) $(INTERNAL_BOOTIMAGE_FILES) $(BOOT_SIGNER)
+ 	$(call pretty,"Target boot image: $@")
+ 	for dtsplat in $(TARGET_BOARD_DTS_CONFIG); do \
+-		DTS_PLATFORM=`echo $$dtsplat | cut -d':' -f1`; \
+-		DTS_BOARD=`echo $$dtsplat | cut -d':' -f2`; \
+-		BOOT_IMAGE_BOARD=$(patsubst %.img,%-$$DTS_PLATFORM.img,$@); \
+-		$(MKBOOTIMG) $(INTERNAL_BOOTIMAGE_ARGS) --second $(PRODUCT_OUT)/$$DTS_BOARD $(BOARD_MKBOOTIMG_ARGS) --output $@; \
+-	$(BOOT_SIGNER) /boot $@ $(PRODUCTS.$(INTERNAL_PRODUCT).PRODUCT_VERITY_SIGNING_KEY).pk8 $(PRODUCTS.$(INTERNAL_PRODUCT).PRODUCT_VERITY_SIGNING_KEY).x509.pem $@
+-	        $(call assert-max-image-size,$@,$(BOARD_BOOTIMAGE_PARTITION_SIZE)); \
+-		cp -f $@ $$BOOT_IMAGE_BOARD; \
+-	done
++                DTS_PLATFORM=`echo $$dtsplat | cut -d':' -f1`; \
++                DTS_BOARD=`echo $$dtsplat | cut -d':' -f2`; \
++                BOOT_IMAGE_BOARD=$(patsubst %.img,%-$$DTS_PLATFORM.img,$@); \
++                $(MKBOOTIMG) $(INTERNAL_BOOTIMAGE_ARGS) --second $(PRODUCT_OUT)/$$DTS_BOARD $(BOARD_MKBOOTIMG_ARGS) --output $@; \
++        $(BOOT_SIGNER) /boot $@ $(PRODUCTS.$(INTERNAL_PRODUCT).PRODUCT_VERITY_SIGNING_KEY).pk8 $(PRODUCTS.$(INTERNAL_PRODUCT).PRODUCT_VERITY_SIGNING_KEY).x509.pem $@; \
++                $(call assert-max-image-size,$@,$(BOARD_BOOTIMAGE_PARTITION_SIZE)); \
++                cp -f $@ $$BOOT_IMAGE_BOARD; \
++        done
++
+ .PHONY: bootimage-nodeps
+ bootimage-nodeps: $(MKBOOTIMG) $(BOOT_SIGNER)
+ 	@echo "make $@: ignoring dependencies"
+@@ -936,7 +937,7 @@ define build-recoveryimage-target
+ 	RECOVERY_IMAGE_BOARD=$(patsubst %.img,%-$$DTS_PLATFORM.img,$(1)); \
+ 	$(MKBOOTIMG) $(INTERNAL_RECOVERYIMAGE_ARGS) --second $(PRODUCT_OUT)/$$DTS_BOARD $(BOARD_MKBOOTIMG_ARGS) --output $(1); \
+ 	if [ $(PRODUCTS.$(INTERNAL_PRODUCT).PRODUCT_SUPPORTS_VERITY) = true ]; then \
+-	  $(BOOT_SIGNER) /recovery $(1) $(PRODUCTS.$(INTERNAL_PRODUCT).PRODUCT_VERITY_SIGNING_KEY).pk8 $(PRODUCTS.$(INTERNAL_PRODUCT).PRODUCT_VERITY_SIGNING_KEY).x509.pem $(1)
++	  $(BOOT_SIGNER) /recovery $(1) $(PRODUCTS.$(INTERNAL_PRODUCT).PRODUCT_VERITY_SIGNING_KEY).pk8 $(PRODUCTS.$(INTERNAL_PRODUCT).PRODUCT_VERITY_SIGNING_KEY).x509.pem $(1) \
+ 	fi;\
+     $(call assert-max-image-size,$(1),$(BOARD_RECOVERYIMAGE_PARTITION_SIZE)); \
+     cp -f $(1) $$RECOVERY_IMAGE_BOARD; \
+-- 
+1.8.0
+

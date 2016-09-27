@@ -1,0 +1,31 @@
+From bc1a422df39a4f625a2147a0d74fd1c188d2967b Mon Sep 17 00:00:00 2001
+From: Fang Hui <b31070@freescale.com>
+Date: Fri, 15 Aug 2014 16:27:03 +0800
+Subject: [PATCH 374/602] ENGR00324853 Update for l-preview build
+
+Add libGLES_android for PRODUCT_PACKAGES,
+since build/core/product/embedded.mk removed this module.
+
+Change-Id: I12650dd9b2bf5e53fb7705577cb7dbb68460efa3
+Signed-off-by: Fang Hui <b31070@freescale.com>
+---
+ imx6/imx6.mk | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/imx6/imx6.mk b/imx6/imx6.mk
+index a5a2e3f..b1d017b 100644
+--- a/imx6/imx6.mk
++++ b/imx6/imx6.mk
+@@ -323,6 +323,9 @@ PRODUCT_PACKAGES += \
+     charger_res_images \
+     charger
+ 
++PRODUCT_PACKAGES += \
++    libGLES_android
++
+ PRODUCT_COPY_FILES +=	\
+ 	device/fsl/common/input/Dell_Dell_USB_Keyboard.kl:system/usr/keylayout/Dell_Dell_USB_Keyboard.kl \
+ 	device/fsl/common/input/Dell_Dell_USB_Keyboard.idc:system/usr/idc/Dell_Dell_USB_Keyboard.idc \
+-- 
+1.8.0
+

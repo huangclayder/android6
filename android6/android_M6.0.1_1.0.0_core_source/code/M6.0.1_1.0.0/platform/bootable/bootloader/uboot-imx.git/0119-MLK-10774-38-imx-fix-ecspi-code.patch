@@ -1,0 +1,157 @@
+From 8c1bbc981820071a19ddde66633c35287952bfda Mon Sep 17 00:00:00 2001
+From: Peng Fan <Peng.Fan@freescale.com>
+Date: Thu, 26 Mar 2015 13:38:49 +0800
+Subject: [PATCH] MLK-10774-38 imx: fix ecspi code
+
+This commit 155fa9af95ac5be857a7327e7a968a296e60d4c8
+"spi: mxc: fix sf probe when using mxc_spi"
+introduces "board_spi_cs_gpio" function to discard gpio in
+CONFIG_SF_DEFAULT_CS for spi flash.
+
+Follow this rule to make imx boards work fine.
+
+Signed-off-by: Peng Fan <Peng.Fan@freescale.com>
+---
+ board/freescale/mx6sx_17x17_arm2/mx6sx_17x17_arm2.c             | 5 +++++
+ board/freescale/mx6sx_19x19_arm2/mx6sx_19x19_arm2.c             | 5 +++++
+ board/freescale/mx7d_12x12_lpddr3_arm2/mx7d_12x12_lpddr3_arm2.c | 5 +++++
+ board/freescale/mx7d_19x19_ddr3_arm2/mx7d_19x19_ddr3_arm2.c     | 5 +++++
+ include/configs/mx6qsabreauto.h                                 | 2 +-
+ include/configs/mx6sabresd.h                                    | 2 +-
+ include/configs/mx6sx_arm2.h                                    | 2 +-
+ include/configs/mx7d_12x12_lpddr3_arm2.h                        | 2 +-
+ include/configs/mx7d_19x19_ddr3_arm2.h                          | 2 +-
+ 9 files changed, 25 insertions(+), 5 deletions(-)
+
+diff --git a/board/freescale/mx6sx_17x17_arm2/mx6sx_17x17_arm2.c b/board/freescale/mx6sx_17x17_arm2/mx6sx_17x17_arm2.c
+index ca8919c..db0de6e 100644
+--- a/board/freescale/mx6sx_17x17_arm2/mx6sx_17x17_arm2.c
++++ b/board/freescale/mx6sx_17x17_arm2/mx6sx_17x17_arm2.c
+@@ -484,6 +484,11 @@ void setup_spinor(void)
+ 					 ARRAY_SIZE(ecspi4_pads));
+ 	gpio_direction_output(IMX_GPIO_NR(6, 10), 0);
+ }
++
++int board_spi_cs_gpio(unsigned bus, unsigned cs)
++{
++	return (bus == 0 && cs == 0) ? (IMX_GPIO_NR(6, 10)) : -1;
++}
+ #endif
+ 
+ #ifdef CONFIG_SYS_USE_EIMNOR
+diff --git a/board/freescale/mx6sx_19x19_arm2/mx6sx_19x19_arm2.c b/board/freescale/mx6sx_19x19_arm2/mx6sx_19x19_arm2.c
+index 1db32a3..7236d57 100644
+--- a/board/freescale/mx6sx_19x19_arm2/mx6sx_19x19_arm2.c
++++ b/board/freescale/mx6sx_19x19_arm2/mx6sx_19x19_arm2.c
+@@ -507,6 +507,11 @@ void setup_spinor(void)
+ 					 ARRAY_SIZE(ecspi4_pads));
+ 	gpio_direction_output(IMX_GPIO_NR(6, 10), 0);
+ }
++
++int board_spi_cs_gpio(unsigned bus, unsigned cs)
++{
++	return (bus == 0 && cs == 0) ? (IMX_GPIO_NR(6, 10)) : -1;
++}
+ #endif
+ 
+ #ifdef CONFIG_SYS_USE_EIMNOR
+diff --git a/board/freescale/mx7d_12x12_lpddr3_arm2/mx7d_12x12_lpddr3_arm2.c b/board/freescale/mx7d_12x12_lpddr3_arm2/mx7d_12x12_lpddr3_arm2.c
+index efef8f7..b8086ff 100644
+--- a/board/freescale/mx7d_12x12_lpddr3_arm2/mx7d_12x12_lpddr3_arm2.c
++++ b/board/freescale/mx7d_12x12_lpddr3_arm2/mx7d_12x12_lpddr3_arm2.c
+@@ -535,6 +535,11 @@ void setup_spinor(void)
+ 					 ARRAY_SIZE(ecspi1_pads));
+ 	gpio_direction_output(IMX_GPIO_NR(4, 19), 0);
+ }
++
++int board_spi_cs_gpio(unsigned bus, unsigned cs)
++{
++	return (bus == 0 && cs == 0) ? (IMX_GPIO_NR(4, 19)) : -1;
++}
+ #endif
+ 
+ int board_early_init_f(void)
+diff --git a/board/freescale/mx7d_19x19_ddr3_arm2/mx7d_19x19_ddr3_arm2.c b/board/freescale/mx7d_19x19_ddr3_arm2/mx7d_19x19_ddr3_arm2.c
+index b7766a2..b3b4152 100644
+--- a/board/freescale/mx7d_19x19_ddr3_arm2/mx7d_19x19_ddr3_arm2.c
++++ b/board/freescale/mx7d_19x19_ddr3_arm2/mx7d_19x19_ddr3_arm2.c
+@@ -540,6 +540,11 @@ void setup_spinor(void)
+ 					 ARRAY_SIZE(ecspi1_pads));
+ 	gpio_direction_output(IMX_GPIO_NR(4, 19), 0);
+ }
++
++int board_spi_cs_gpio(unsigned bus, unsigned cs)
++{
++	return (bus == 0 && cs == 0) ? (IMX_GPIO_NR(4, 19)) : -1;
++}
+ #endif
+ 
+ int board_early_init_f(void)
+diff --git a/include/configs/mx6qsabreauto.h b/include/configs/mx6qsabreauto.h
+index b978821..e6445d7 100644
+--- a/include/configs/mx6qsabreauto.h
++++ b/include/configs/mx6qsabreauto.h
+@@ -76,7 +76,7 @@
+ #define CONFIG_SYS_MMC_ENV_PART                0       /* user partition */
+ 
+ #ifdef CONFIG_SYS_USE_SPINOR
+-#define CONFIG_SF_DEFAULT_CS   (1|(IMX_GPIO_NR(3, 19)<<8))
++#define CONFIG_SF_DEFAULT_CS   1
+ #endif
+ /* I2C Configs */
+ #define CONFIG_CMD_I2C
+diff --git a/include/configs/mx6sabresd.h b/include/configs/mx6sabresd.h
+index d44a9cb..a37873e 100644
+--- a/include/configs/mx6sabresd.h
++++ b/include/configs/mx6sabresd.h
+@@ -40,7 +40,7 @@
+ #define CONFIG_SYS_MMC_ENV_PART                0       /* user partition */
+ 
+ #ifdef CONFIG_SYS_USE_SPINOR
+-#define CONFIG_SF_DEFAULT_CS   (0|(IMX_GPIO_NR(4, 9)<<8))
++#define CONFIG_SF_DEFAULT_CS   0
+ #endif
+ 
+ /*
+diff --git a/include/configs/mx6sx_arm2.h b/include/configs/mx6sx_arm2.h
+index 5aa34ae..defa733 100644
+--- a/include/configs/mx6sx_arm2.h
++++ b/include/configs/mx6sx_arm2.h
+@@ -340,7 +340,7 @@
+ #define CONFIG_SF_DEFAULT_BUS  3
+ #define CONFIG_SF_DEFAULT_SPEED 20000000
+ #define CONFIG_SF_DEFAULT_MODE (SPI_MODE_0)
+-#define CONFIG_SF_DEFAULT_CS   (0|(IMX_GPIO_NR(6, 10)<<8))
++#define CONFIG_SF_DEFAULT_CS   0
+ #endif
+ 
+ #ifdef CONFIG_SYS_USE_EIMNOR
+diff --git a/include/configs/mx7d_12x12_lpddr3_arm2.h b/include/configs/mx7d_12x12_lpddr3_arm2.h
+index c6cd1c1..f0fa30d 100644
+--- a/include/configs/mx7d_12x12_lpddr3_arm2.h
++++ b/include/configs/mx7d_12x12_lpddr3_arm2.h
+@@ -59,7 +59,7 @@
+ #define CONFIG_SF_DEFAULT_BUS  0
+ #define CONFIG_SF_DEFAULT_SPEED 20000000
+ #define CONFIG_SF_DEFAULT_MODE (SPI_MODE_0)
+-#define CONFIG_SF_DEFAULT_CS   (0|(IMX_GPIO_NR(4, 19)<<8))
++#define CONFIG_SF_DEFAULT_CS   0
+ #endif
+ 
+ #define CONFIG_VIDEO
+diff --git a/include/configs/mx7d_19x19_ddr3_arm2.h b/include/configs/mx7d_19x19_ddr3_arm2.h
+index c096df6..dddc248 100644
+--- a/include/configs/mx7d_19x19_ddr3_arm2.h
++++ b/include/configs/mx7d_19x19_ddr3_arm2.h
+@@ -68,7 +68,7 @@
+ #define CONFIG_SF_DEFAULT_BUS  0
+ #define CONFIG_SF_DEFAULT_SPEED 20000000
+ #define CONFIG_SF_DEFAULT_MODE (SPI_MODE_0)
+-#define CONFIG_SF_DEFAULT_CS   (0|(IMX_GPIO_NR(4, 19)<<8))
++#define CONFIG_SF_DEFAULT_CS   0
+ #endif
+ 
+ #define CONFIG_VIDEO
+-- 
+1.8.0
+

@@ -1,0 +1,50 @@
+From d4431f3052c812918592e24806cfa73dda8159c0 Mon Sep 17 00:00:00 2001
+From: Zhang Sanshan <b51434@freescale.com>
+Date: Wed, 18 Nov 2015 15:34:14 +0800
+Subject: [PATCH 20/22] MA-7259 add option in cmdline to disable watchdog
+
+add option androidboot.watchdogd=disabled in cmdline.
+If disbale watchdog, the init code will not execute watchdog.
+
+Signed-off-by: Zhang Sanshan <b51434@freescale.com>
+---
+ init/init.cpp | 11 ++++++++++-
+ 1 file changed, 10 insertions(+), 1 deletion(-)
+
+diff --git a/init/init.cpp b/init/init.cpp
+index 37ef197..1e92cba 100644
+--- a/init/init.cpp
++++ b/init/init.cpp
+@@ -85,6 +85,7 @@ bool waiting_for_exec = false;
+ 
+ static int epoll_fd = -1;
+ 
++#define PROPERTY_MAX_VALUE 92
+ void register_epoll_handler(int fd, void (*fn)()) {
+     epoll_event ev;
+     ev.events = EPOLLIN;
+@@ -997,12 +998,20 @@ static void selinux_initialize(bool in_kernel_domain) {
+ }
+ 
+ int main(int argc, char** argv) {
++    char watchdog[PROPERTY_MAX_VALUE];
++    int ret;
++
++    ret = property_get("ro.boot.watchdogd", watchdog);
++
+     if (!strcmp(basename(argv[0]), "ueventd")) {
+         return ueventd_main(argc, argv);
+     }
+ 
+     if (!strcmp(basename(argv[0]), "watchdogd")) {
+-        return watchdogd_main(argc, argv);
++	if ( ret && !(strcmp(watchdog, "disabled")))
++		return 0;
++	else
++        	return watchdogd_main(argc, argv);
+     }
+ 
+     // Clear the umask.
+-- 
+1.8.0
+

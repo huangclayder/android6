@@ -1,0 +1,96 @@
+From 6fa4352eaacc8283d5c66539cb94256996ff5b1a Mon Sep 17 00:00:00 2001
+From: Peng Fan <Peng.Fan@freescale.com>
+Date: Wed, 17 Jun 2015 16:46:46 +0800
+Subject: [PATCH] MLK-11121 imx: mx6qpsabreauto use correct cfg file
+
+IPU on/ L2 on --> nand fail
+IPU close/ L2 on --> nand ok
+IPU on/ L2 close --> nand ok
+
+This problem is because mx6qp.cfg should be used for mx6qpsabreauto, but
+not imximage.cfg which is for mx6qsabreauto.
+
+Signed-off-by: Peng Fan <Peng.Fan@freescale.com>
+---
+ configs/mx6qpsabreauto_defconfig             | 2 +-
+ configs/mx6qpsabreauto_eimnor_defconfig      | 2 +-
+ configs/mx6qpsabreauto_nand_defconfig        | 2 +-
+ configs/mx6qpsabreauto_sata_defconfig        | 2 +-
+ configs/mx6qpsabreauto_spinor_defconfig      | 2 +-
+ configs/mx6qpsabreautoandroid_defconfig      | 2 +-
+ configs/mx6qpsabreautoandroid_nand_defconfig | 2 +-
+ 7 files changed, 7 insertions(+), 7 deletions(-)
+
+diff --git a/configs/mx6qpsabreauto_defconfig b/configs/mx6qpsabreauto_defconfig
+index d2e8f1b..7cd4476 100644
+--- a/configs/mx6qpsabreauto_defconfig
++++ b/configs/mx6qpsabreauto_defconfig
+@@ -1,4 +1,4 @@
+-CONFIG_SYS_EXTRA_OPTIONS="IMX_CONFIG=board/freescale/mx6qsabreauto/imximage.cfg,MX6QP"
++CONFIG_SYS_EXTRA_OPTIONS="IMX_CONFIG=board/freescale/mx6qsabreauto/mx6qp.cfg,MX6QP"
+ CONFIG_ARM=y
+ CONFIG_TARGET_MX6QSABREAUTO=y
+ CONFIG_SYS_MALLOC_F=y
+diff --git a/configs/mx6qpsabreauto_eimnor_defconfig b/configs/mx6qpsabreauto_eimnor_defconfig
+index 5207818..5fee2b3 100644
+--- a/configs/mx6qpsabreauto_eimnor_defconfig
++++ b/configs/mx6qpsabreauto_eimnor_defconfig
+@@ -1,4 +1,4 @@
+-CONFIG_SYS_EXTRA_OPTIONS="IMX_CONFIG=board/freescale/mx6qsabreauto/imximage.cfg,MX6QP,SYS_BOOT_EIMNOR"
++CONFIG_SYS_EXTRA_OPTIONS="IMX_CONFIG=board/freescale/mx6qsabreauto/mx6qp.cfg,MX6QP,SYS_BOOT_EIMNOR"
+ CONFIG_ARM=y
+ CONFIG_TARGET_MX6QSABREAUTO=y
+ CONFIG_SYS_MALLOC_F=y
+diff --git a/configs/mx6qpsabreauto_nand_defconfig b/configs/mx6qpsabreauto_nand_defconfig
+index 7c890a3..36fc50f 100644
+--- a/configs/mx6qpsabreauto_nand_defconfig
++++ b/configs/mx6qpsabreauto_nand_defconfig
+@@ -1,4 +1,4 @@
+-CONFIG_SYS_EXTRA_OPTIONS="IMX_CONFIG=board/freescale/mx6qsabreauto/imximage.cfg,MX6QP,SYS_BOOT_NAND"
++CONFIG_SYS_EXTRA_OPTIONS="IMX_CONFIG=board/freescale/mx6qsabreauto/mx6qp.cfg,MX6QP,SYS_BOOT_NAND"
+ CONFIG_ARM=y
+ CONFIG_TARGET_MX6QSABREAUTO=y
+ CONFIG_SYS_MALLOC_F=y
+diff --git a/configs/mx6qpsabreauto_sata_defconfig b/configs/mx6qpsabreauto_sata_defconfig
+index b3eb4e1..0058447 100644
+--- a/configs/mx6qpsabreauto_sata_defconfig
++++ b/configs/mx6qpsabreauto_sata_defconfig
+@@ -1,4 +1,4 @@
+-CONFIG_SYS_EXTRA_OPTIONS="IMX_CONFIG=board/freescale/mx6qsabreauto/imximage.cfg,MX6QP,SYS_BOOT_SATA"
++CONFIG_SYS_EXTRA_OPTIONS="IMX_CONFIG=board/freescale/mx6qsabreauto/mx6qp.cfg,MX6QP,SYS_BOOT_SATA"
+ CONFIG_ARM=y
+ CONFIG_TARGET_MX6QSABREAUTO=y
+ CONFIG_SYS_MALLOC_F=y
+diff --git a/configs/mx6qpsabreauto_spinor_defconfig b/configs/mx6qpsabreauto_spinor_defconfig
+index 401eaa6..9f1647f 100644
+--- a/configs/mx6qpsabreauto_spinor_defconfig
++++ b/configs/mx6qpsabreauto_spinor_defconfig
+@@ -1,4 +1,4 @@
+-CONFIG_SYS_EXTRA_OPTIONS="IMX_CONFIG=board/freescale/mx6qsabreauto/imximage.cfg,MX6QP,SYS_BOOT_SPINOR"
++CONFIG_SYS_EXTRA_OPTIONS="IMX_CONFIG=board/freescale/mx6qsabreauto/mx6qp.cfg,MX6QP,SYS_BOOT_SPINOR"
+ CONFIG_ARM=y
+ CONFIG_TARGET_MX6QSABREAUTO=y
+ CONFIG_SYS_MALLOC_F=y
+diff --git a/configs/mx6qpsabreautoandroid_defconfig b/configs/mx6qpsabreautoandroid_defconfig
+index 78738f2..967279b 100644
+--- a/configs/mx6qpsabreautoandroid_defconfig
++++ b/configs/mx6qpsabreautoandroid_defconfig
+@@ -1,4 +1,4 @@
+-CONFIG_SYS_EXTRA_OPTIONS="IMX_CONFIG=board/freescale/mx6qsabreauto/imximage.cfg,MX6QP,ANDROID_SUPPORT"
++CONFIG_SYS_EXTRA_OPTIONS="IMX_CONFIG=board/freescale/mx6qsabreauto/mx6qp.cfg,MX6QP,ANDROID_SUPPORT"
+ CONFIG_ARM=y
+ CONFIG_TARGET_MX6QSABREAUTO=y
+ CONFIG_SYS_MALLOC_F=y
+diff --git a/configs/mx6qpsabreautoandroid_nand_defconfig b/configs/mx6qpsabreautoandroid_nand_defconfig
+index 035e48a..057ee26 100644
+--- a/configs/mx6qpsabreautoandroid_nand_defconfig
++++ b/configs/mx6qpsabreautoandroid_nand_defconfig
+@@ -1,4 +1,4 @@
+-CONFIG_SYS_EXTRA_OPTIONS="IMX_CONFIG=board/freescale/mx6qsabreauto/imximage.cfg,MX6QP,SYS_BOOT_NAND,ANDROID_SUPPORT"
++CONFIG_SYS_EXTRA_OPTIONS="IMX_CONFIG=board/freescale/mx6qsabreauto/mx6qp.cfg,MX6QP,SYS_BOOT_NAND,ANDROID_SUPPORT"
+ CONFIG_ARM=y
+ CONFIG_TARGET_MX6QSABREAUTO=y
+ CONFIG_SYS_MALLOC_F=y
+-- 
+1.8.0
+

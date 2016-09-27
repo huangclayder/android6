@@ -1,0 +1,28 @@
+From 40de3ff895b6c187ee0ae7efe21a64e2badc73f0 Mon Sep 17 00:00:00 2001
+From: Li Jun <jun.li@freescale.com>
+Date: Fri, 23 Jan 2015 09:58:43 +0800
+Subject: [PATCH] MLK-10102-11 usb: chipidea: imx: export
+ imx_usbmisc_power_lost_check
+
+Export imx_usbmisc_power_lost_check.
+
+Signed-off-by: Li Jun <b47624@freescale.com>
+---
+ drivers/usb/chipidea/usbmisc_imx.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/drivers/usb/chipidea/usbmisc_imx.c b/drivers/usb/chipidea/usbmisc_imx.c
+index f970031..4139ae1 100644
+--- a/drivers/usb/chipidea/usbmisc_imx.c
++++ b/drivers/usb/chipidea/usbmisc_imx.c
+@@ -420,6 +420,7 @@ int imx_usbmisc_power_lost_check(struct imx_usbmisc_data *data)
+ 		return 0;
+ 	return usbmisc->ops->power_lost_check(data);
+ }
++EXPORT_SYMBOL_GPL(imx_usbmisc_power_lost_check);
+ 
+ static const struct of_device_id usbmisc_imx_dt_ids[] = {
+ 	{
+-- 
+1.8.0
+

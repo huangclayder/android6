@@ -1,0 +1,45 @@
+From 206479c8c95d5ad532a18d40e24bde47bf35a220 Mon Sep 17 00:00:00 2001
+From: Liu Xiaowen <xiaowen.liu@freescale.com>
+Date: Tue, 20 Jan 2015 13:16:17 +0800
+Subject: [PATCH 10/21] MA-6127 factory reset can't show icon on low
+ resolution device in recovery.
+
+Icon y position coodinate is caculated to less than 0
+when device is low resolution in draw_background_locked().
+So, when do gr_blit, the icon will be ignored to draw.
+
+The solution is when icon postion coordinate is less than 0
+reset it to 0 to ensure it can show.
+
+Signed-off-by: Liu Xiaowen <xiaowen.liu@freescale.com>
+---
+ screen_ui.cpp | 7 +++++++
+ 1 file changed, 7 insertions(+)
+
+diff --git a/screen_ui.cpp b/screen_ui.cpp
+index a560530..668f9ee 100644
+--- a/screen_ui.cpp
++++ b/screen_ui.cpp
+@@ -1,5 +1,6 @@
+ /*
+  * Copyright (C) 2011 The Android Open Source Project
++ * Copyright (C) 2015 Freescale Semiconductor, Inc.
+  *
+  * Licensed under the Apache License, Version 2.0 (the "License");
+  * you may not use this file except in compliance with the License.
+@@ -106,6 +107,12 @@ void ScreenRecoveryUI::draw_background_locked(Icon icon) {
+ 
+         iconX = (gr_fb_width() - iconWidth) / 2;
+         iconY = (gr_fb_height() - (iconHeight+textHeight+40+sh)) / 2;
++        if (iconX < 0) {
++            iconX = 0;
++        }
++        if (iconY < 0) {
++            iconY = 0;
++        }
+ 
+         int textX = (gr_fb_width() - textWidth) / 2;
+         int textY = ((gr_fb_height() - (iconHeight+textHeight+40+sh)) / 2) + iconHeight + 40;
+-- 
+1.8.0
+

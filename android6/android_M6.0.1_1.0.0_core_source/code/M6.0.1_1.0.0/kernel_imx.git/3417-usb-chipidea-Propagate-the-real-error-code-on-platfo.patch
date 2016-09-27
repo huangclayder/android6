@@ -1,0 +1,33 @@
+From 85f11923a9d48ddec4219eaebaaca9ff0969d512 Mon Sep 17 00:00:00 2001
+From: Fabio Estevam <fabio.estevam@freescale.com>
+Date: Wed, 19 Feb 2014 13:41:44 +0800
+Subject: [PATCH] usb: chipidea: Propagate the real error code on
+ platform_get_irq() failure
+
+No need to return a 'fake' return value on platform_get_irq() failure.
+
+Just return the error code itself instead.
+
+Signed-off-by: Peter Chen <peter.chen@freescale.com>
+Signed-off-by: Fabio Estevam <fabio.estevam@freescale.com>
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+---
+ drivers/usb/chipidea/core.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/usb/chipidea/core.c b/drivers/usb/chipidea/core.c
+index 65aeaac..ca6831c 100644
+--- a/drivers/usb/chipidea/core.c
++++ b/drivers/usb/chipidea/core.c
+@@ -575,7 +575,7 @@ static int ci_hdrc_probe(struct platform_device *pdev)
+ 	ci->irq = platform_get_irq(pdev, 0);
+ 	if (ci->irq < 0) {
+ 		dev_err(dev, "missing IRQ\n");
+-		ret = -ENODEV;
++		ret = ci->irq;
+ 		goto deinit_phy;
+ 	}
+ 
+-- 
+1.8.0
+

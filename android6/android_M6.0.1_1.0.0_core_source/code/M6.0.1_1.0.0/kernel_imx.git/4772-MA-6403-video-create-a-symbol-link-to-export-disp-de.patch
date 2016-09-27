@@ -1,0 +1,137 @@
+From 4e2cbcf4daea81a882ad721f793f26a94a68c4f2 Mon Sep 17 00:00:00 2001
+From: Liu Xiaowen <b37945@freescale.com>
+Date: Mon, 17 Feb 2014 15:26:19 +0800
+Subject: [PATCH] MA-6403 video: create a symbol link to export disp dev info.
+
+Create symbol link to export display device's info in related
+framebuffer device sysfs dir:
+/sys/class/graphics/fbx/disp_dev ->
+hdmi device: /sys/device/platform/mxc_hdmi
+ldb device: /sys/device/platform/mxc_ldb
+mipi device: /sys/device/platform/mxc_mipi_dsi
+
+Signed-off-by: Liu Xiaowen <b37945@freescale.com>
+---
+ drivers/video/mxc/mipi_dsi.c     |  3 ++-
+ drivers/video/mxc/mxc_dispdrv.c  | 17 ++++++++++++++++-
+ drivers/video/mxc/mxc_dispdrv.h  |  4 +++-
+ drivers/video/mxc/mxc_hdmi.c     |  2 ++
+ drivers/video/mxc/mxc_ipuv3_fb.c | 10 ++++++++++
+ 5 files changed, 33 insertions(+), 3 deletions(-)
+
+diff --git a/drivers/video/mxc/mipi_dsi.c b/drivers/video/mxc/mipi_dsi.c
+index 708b158..c2fc954 100644
+--- a/drivers/video/mxc/mipi_dsi.c
++++ b/drivers/video/mxc/mipi_dsi.c
+@@ -1,5 +1,5 @@
+ /*
+- * Copyright (C) 2011-2014 Freescale Semiconductor, Inc. All Rights Reserved.
++ * Copyright (C) 2011-2015 Freescale Semiconductor, Inc. All Rights Reserved.
+  *
+  * This program is free software; you can redistribute it and/or modify
+  * it under the terms of the GNU General Public License as published by
+@@ -916,6 +916,7 @@ static int mipi_dsi_probe(struct platform_device *pdev)
+ 
+ 	mxc_dispdrv_setdata(mipi_dsi->disp_mipi, mipi_dsi);
+ 	dev_set_drvdata(&pdev->dev, mipi_dsi);
++	mxc_dispdrv_setdev(mipi_dsi->disp_mipi, &pdev->dev);
+ 
+ 	dev_info(&pdev->dev, "i.MX MIPI DSI driver probed\n");
+ 	return ret;
+diff --git a/drivers/video/mxc/mxc_dispdrv.c b/drivers/video/mxc/mxc_dispdrv.c
+index 805c1c9..0037398 100644
+--- a/drivers/video/mxc/mxc_dispdrv.c
++++ b/drivers/video/mxc/mxc_dispdrv.c
+@@ -1,5 +1,5 @@
+ /*
+- * Copyright (C) 2011-2014 Freescale Semiconductor, Inc. All Rights Reserved.
++ * Copyright (C) 2011-2015 Freescale Semiconductor, Inc. All Rights Reserved.
+  */
+ 
+ /*
+@@ -48,8 +48,23 @@ struct mxc_dispdrv_entry {
+ 	bool active;
+ 	void *priv;
+ 	struct list_head list;
++	struct device *dev;
+ };
+ 
++void mxc_dispdrv_setdev(struct mxc_dispdrv_handle *drv_handle, struct device *dev)
++{
++	struct mxc_dispdrv_entry *dentry;
++	dentry = (struct mxc_dispdrv_entry *)drv_handle;
++	dentry->dev = dev;
++}
++
++struct device *mxc_dispdrv_getdev(struct mxc_dispdrv_handle *drv_handle)
++{
++	struct mxc_dispdrv_entry *dentry;
++	dentry = (struct mxc_dispdrv_entry *)drv_handle;
++	return dentry->dev;
++}
++
+ struct mxc_dispdrv_handle *mxc_dispdrv_register(struct mxc_dispdrv_driver *drv)
+ {
+ 	struct mxc_dispdrv_entry *new;
+diff --git a/drivers/video/mxc/mxc_dispdrv.h b/drivers/video/mxc/mxc_dispdrv.h
+index 58d8a07..b56a985 100644
+--- a/drivers/video/mxc/mxc_dispdrv.h
++++ b/drivers/video/mxc/mxc_dispdrv.h
+@@ -1,5 +1,5 @@
+ /*
+- * Copyright (C) 2011-2014 Freescale Semiconductor, Inc. All Rights Reserved.
++ * Copyright (C) 2011-2015 Freescale Semiconductor, Inc. All Rights Reserved.
+  */
+ 
+ /*
+@@ -49,4 +49,6 @@ struct mxc_dispdrv_handle *mxc_dispdrv_gethandle(char *name,
+ void mxc_dispdrv_puthandle(struct mxc_dispdrv_handle *handle);
+ int mxc_dispdrv_setdata(struct mxc_dispdrv_handle *handle, void *data);
+ void *mxc_dispdrv_getdata(struct mxc_dispdrv_handle *handle);
++void mxc_dispdrv_setdev(struct mxc_dispdrv_handle *drv_handle, struct device *dev);
++struct device *mxc_dispdrv_getdev(struct mxc_dispdrv_handle *drv_handle);
+ #endif
+diff --git a/drivers/video/mxc/mxc_hdmi.c b/drivers/video/mxc/mxc_hdmi.c
+index 0995342..c1465b6 100644
+--- a/drivers/video/mxc/mxc_hdmi.c
++++ b/drivers/video/mxc/mxc_hdmi.c
+@@ -2854,6 +2854,8 @@ static int mxc_hdmi_probe(struct platform_device *pdev)
+ 
+ 	platform_set_drvdata(pdev, hdmi);
+ 
++	mxc_dispdrv_setdev(hdmi->disp_mxc_hdmi, &pdev->dev);
++
+ 	return 0;
+ edispdrv:
+ 	iounmap(hdmi->gpr_base);
+diff --git a/drivers/video/mxc/mxc_ipuv3_fb.c b/drivers/video/mxc/mxc_ipuv3_fb.c
+index 6948ac1..23a4366 100644
+--- a/drivers/video/mxc/mxc_ipuv3_fb.c
++++ b/drivers/video/mxc/mxc_ipuv3_fb.c
+@@ -2379,6 +2379,7 @@ static int mxcfb_probe(struct platform_device *pdev)
+ 	struct ipuv3_fb_platform_data *plat_data;
+ 	struct fb_info *fbi;
+ 	struct mxcfb_info *mxcfbi;
++	struct device *disp_dev;
+ 	struct resource *res;
+ 	int ret = 0;
+ 
+@@ -2510,6 +2511,15 @@ static int mxcfb_probe(struct platform_device *pdev)
+ 		dev_err(&pdev->dev, "Error %d on creating file for disp "
+ 				    " device propety\n", ret);
+ 
++	disp_dev = mxc_dispdrv_getdev(mxcfbi->dispdrv);
++	if (disp_dev) {
++		ret = sysfs_create_link(&fbi->dev->kobj,
++				&disp_dev->kobj, "disp_dev");
++		if (ret)
++			dev_err(&pdev->dev,
++				"Error %d on creating file\n", ret);
++	}
++
+ 	return 0;
+ 
+ mxcfb_setupoverlay_failed:
+-- 
+1.8.0
+

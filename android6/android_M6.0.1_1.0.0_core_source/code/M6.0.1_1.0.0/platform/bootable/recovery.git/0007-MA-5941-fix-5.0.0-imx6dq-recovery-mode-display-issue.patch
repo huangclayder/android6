@@ -1,0 +1,53 @@
+From a5591fe972a0f752d1c5c8ab792fb025cc6fcbec Mon Sep 17 00:00:00 2001
+From: Liu Xiaowen <b37945@freescale.com>
+Date: Thu, 4 Dec 2014 18:31:07 +0800
+Subject: [PATCH 07/21] MA-5941 fix 5.0.0 imx6dq recovery mode display issue.
+
+fix 5.0.0 imx6dq recovery mode display issue.
+
+Signed-off-by: Liu Xiaowen <b37945@freescale.com>
+---
+ minui/graphics_fbdev.cpp | 27 +++++++++++++++++++++++++++
+ 1 file changed, 27 insertions(+)
+
+diff --git a/minui/graphics_fbdev.cpp b/minui/graphics_fbdev.cpp
+index 997e9ca..9c98b68 100644
+--- a/minui/graphics_fbdev.cpp
++++ b/minui/graphics_fbdev.cpp
+@@ -99,6 +99,33 @@ static GRSurface* fbdev_init(minui_backend* backend) {
+         return NULL;
+     }
+ 
++    vi.red.offset     = 0;
++    vi.red.length     = 8;
++    vi.green.offset   = 8;
++    vi.green.length   = 8;
++    vi.blue.offset    = 16;
++    vi.blue.length    = 8;
++    vi.transp.offset  = 24;
++    vi.transp.length  = 8;
++    vi.yres_virtual = vi.yres * 2;
++
++    if (ioctl(fd, FBIOPUT_VSCREENINFO, &vi) < 0) {
++        perror("failed to put fb0 info");
++        close(fd);
++        return NULL;
++    }
++
++    if (ioctl(fd, FBIOGET_FSCREENINFO, &fi) < 0) {
++        perror("failed to get fb0 info");
++        close(fd);
++        return NULL;
++    }
++    if (ioctl(fd, FBIOGET_VSCREENINFO, &vi) < 0) {
++        perror("failed to get fb0 info");
++        close(fd);
++        return NULL;
++    }
++
+     // We print this out for informational purposes only, but
+     // throughout we assume that the framebuffer device uses an RGBX
+     // pixel format.  This is the case for every development device I
+-- 
+1.8.0
+

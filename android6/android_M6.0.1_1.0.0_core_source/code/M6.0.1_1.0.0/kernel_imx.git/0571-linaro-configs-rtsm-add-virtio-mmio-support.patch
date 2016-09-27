@@ -1,0 +1,30 @@
+From 9fd8733cfd1812c68a38e9f269926b362268e9f5 Mon Sep 17 00:00:00 2001
+From: Ryan Harkin <ryan.harkin@linaro.org>
+Date: Tue, 14 Jan 2014 15:46:58 +0000
+Subject: [PATCH] linaro/configs: rtsm: add virtio mmio support
+
+Add support for the virtio mmio block device to the configs.  This also
+requires a corresponding DTB change to also add the virtio device.
+
+Signed-off-by: Ryan Harkin <ryan.harkin@linaro.org>
+(cherry picked from commit f4ee755ffcb7fa4b716382d9c277f672612445df)
+Signed-off-by: Alex Shi <alex.shi@linaro.org>
+---
+ linaro/configs/vexpress.conf | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/linaro/configs/vexpress.conf b/linaro/configs/vexpress.conf
+index bb67b3f..a601ed4 100644
+--- a/linaro/configs/vexpress.conf
++++ b/linaro/configs/vexpress.conf
+@@ -57,3 +57,7 @@ CONFIG_LEDS_GPIO=y
+ CONFIG_LEDS_TRIGGERS=y
+ CONFIG_LEDS_TRIGGER_HEARTBEAT=y
+ CONFIG_LEDS_TRIGGER_CPU=y
++CONFIG_VIRTIO=y
++CONFIG_VIRTIO_BLK=y
++CONFIG_VIRTIO_MMIO=y
++CONFIG_VIRTIO_MMIO_CMDLINE_DEVICES=y
+-- 
+1.8.0
+

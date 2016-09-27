@@ -1,0 +1,30 @@
+From 75bda4d34d63c8d66917d9f31e1263b24b1577f9 Mon Sep 17 00:00:00 2001
+From: Fugang Duan <b38611@freescale.com>
+Date: Fri, 17 Apr 2015 18:25:51 +0800
+Subject: [PATCH] MLK-10700 ARM: dts: enable uart3, uart5, uart6, enet1, enet2
+ wake up irq in GPC
+
+In megafix mode, enable uart3, uart5, uart6, enet1, enet2 wake up irq in GPC.
+
+Signed-off-by: Fugang Duan <B38611@freescale.com>
+(cherry picked from commit e79e2ed7b93cfbddb4229e0539179f2d5419b449)
+---
+ arch/arm/boot/dts/imx7d.dtsi | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/arch/arm/boot/dts/imx7d.dtsi b/arch/arm/boot/dts/imx7d.dtsi
+index b394e62..cb1575d 100644
+--- a/arch/arm/boot/dts/imx7d.dtsi
++++ b/arch/arm/boot/dts/imx7d.dtsi
+@@ -630,7 +630,7 @@
+ 				compatible = "fsl,imx7d-gpc";
+ 				reg = <0x303a0000 0x10000>;
+ 				interrupts = <GIC_SPI 87 IRQ_TYPE_LEVEL_HIGH>;
+-				fsl,mf-mix-wakeup-irq = <0x4000000 0xc00 0x0 0x0>;
++				fsl,mf-mix-wakeup-irq = <0x54010000 0xc00 0x0 0x400010>;
+ 				#power-domain-cells = <1>;
+ 				pcie-phy-supply = <&reg_1p0d>;
+ 			};
+-- 
+1.8.0
+

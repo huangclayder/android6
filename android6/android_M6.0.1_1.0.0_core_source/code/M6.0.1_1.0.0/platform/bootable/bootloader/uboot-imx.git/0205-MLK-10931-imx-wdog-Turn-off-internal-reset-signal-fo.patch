@@ -1,0 +1,32 @@
+From 7ae2b544aedaf79c59c54a8cfd917da76eac4d73 Mon Sep 17 00:00:00 2001
+From: "Ye.Li" <B37916@freescale.com>
+Date: Fri, 15 May 2015 14:25:14 +0800
+Subject: [PATCH] MLK-10931 imx: wdog: Turn off internal reset signal for mx7d
+
+Set wdog WCR register SRS bit to turn off internal reset signal WDOG_RESET_B_DEB
+for mx7d. So that the warm reset is disabled.
+
+Signed-off-by: Ye.Li <B37916@freescale.com>
+---
+ drivers/watchdog/imx_watchdog.c | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/drivers/watchdog/imx_watchdog.c b/drivers/watchdog/imx_watchdog.c
+index 1d18d4b..5f3c0fc 100644
+--- a/drivers/watchdog/imx_watchdog.c
++++ b/drivers/watchdog/imx_watchdog.c
+@@ -55,7 +55,11 @@ void reset_cpu(ulong addr)
+ {
+ 	struct watchdog_regs *wdog = (struct watchdog_regs *)WDOG1_BASE_ADDR;
+ 
++#if defined(CONFIG_MX7)
++	writew((WCR_WDE | WCR_SRS), &wdog->wcr);
++#else
+ 	writew(WCR_WDE, &wdog->wcr);
++#endif
+ 	writew(0x5555, &wdog->wsr);
+ 	writew(0xaaaa, &wdog->wsr);	/* load minimum 1/2 second timeout */
+ 	while (1) {
+-- 
+1.8.0
+

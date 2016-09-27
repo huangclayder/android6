@@ -1,0 +1,31 @@
+From 39fd2bdad2db83e7b2dbe7c5d421c3c60837740b Mon Sep 17 00:00:00 2001
+From: Fancy Fang <chen.fang@freescale.com>
+Date: Mon, 30 Mar 2015 11:34:41 +0800
+Subject: [PATCH] MLK-10501 ARM: dts: imx7d-sdb: enable pxp v4l2 output
+
+Add the dts support for pxp v4l2 output module on
+the imx7D SDB board.
+
+Signed-off-by: Fancy Fang <chen.fang@freescale.com>
+---
+ arch/arm/boot/dts/imx7d-sdb.dts | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/arch/arm/boot/dts/imx7d-sdb.dts b/arch/arm/boot/dts/imx7d-sdb.dts
+index d748c57..2117d55 100644
+--- a/arch/arm/boot/dts/imx7d-sdb.dts
++++ b/arch/arm/boot/dts/imx7d-sdb.dts
+@@ -27,6 +27,10 @@
+ 		status = "okay";
+ 	};
+ 
++	pxp_v4l2_out {
++		compatible = "fsl,imx7d-pxp-v4l2", "fsl,imx6sx-pxp-v4l2", "fsl,imx6sl-pxp-v4l2";
++		status = "okay";
++	};
+ 
+ 	regulators {
+ 		compatible = "simple-bus";
+-- 
+1.8.0
+

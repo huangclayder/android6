@@ -1,0 +1,47 @@
+From a2a0968c05fc81e0620c7a60a0f4a4cf4795a3c6 Mon Sep 17 00:00:00 2001
+From: eagle <eaglezhou@freescale.com>
+Date: Fri, 29 May 2015 17:28:02 +0800
+Subject: [PATCH 273/280] MA-6755: Vpu can't work after soc_id name changed
+
+vpu lib v5.4.30
+(1) add new soc name "i.MX6QP"
+---
+ vpu/vpu_lib.h | 8 +++++---
+ 1 file changed, 5 insertions(+), 3 deletions(-)
+
+diff --git a/vpu/vpu_lib.h b/vpu/vpu_lib.h
+index 58f77cb..beee8eb 100644
+--- a/vpu/vpu_lib.h
++++ b/vpu/vpu_lib.h
+@@ -673,7 +673,8 @@ typedef enum {
+ 	MX51,
+ 	MX53,
+ 	MX61,
+-	MX63
++	MX63,
++	MX63P
+ } SocIndex;
+ 
+ typedef struct {
+@@ -686,7 +687,8 @@ static const SocInfo soc_info[] = {
+ 	{0x51, "i.MX51"},
+ 	{0x53, "i.MX53"},
+ 	{0x61, "i.MX6DL"},
+-	{0x63, "i.MX6Q"}
++	{0x63, "i.MX6Q"},
++	{0x63, "i.MX6QP"}
+ };
+ 
+ #define VPU_FW_VERSION(major, minor, release)	 \
+@@ -707,7 +709,7 @@ static const SocInfo soc_info[] = {
+  * v4.2.2 [2008.09.03] support encoder on MX51
+  * v4.0.2 [2008.08.21] add the IOClkGateSet() for power saving.
+  */
+-#define VPU_LIB_VERSION_CODE	VPU_LIB_VERSION(5, 4, 29)
++#define VPU_LIB_VERSION_CODE	VPU_LIB_VERSION(5, 4, 30)
+ 
+ extern unsigned int system_rev;
+ 
+-- 
+1.8.0
+

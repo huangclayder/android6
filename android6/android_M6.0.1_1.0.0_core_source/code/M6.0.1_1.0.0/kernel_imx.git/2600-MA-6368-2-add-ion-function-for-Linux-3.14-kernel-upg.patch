@@ -1,0 +1,77 @@
+From a9f28be75d6661722a9cd9f4e072d93a13db02b1 Mon Sep 17 00:00:00 2001
+From: Liu Xiaowen <xiaowen.liu@freescale.com>
+Date: Tue, 10 Mar 2015 10:42:12 +0800
+Subject: [PATCH] MA-6368-2 add ion function for Linux 3.14 kernel upgrade.
+
+add ion config to 6sl, 6sx and 6dq.
+enable ion function in default android config.
+
+Signed-off-by: Liu Xiaowen <xiaowen.liu@freescale.com>
+---
+ arch/arm/boot/dts/imx6qdl.dtsi            | 5 +++++
+ arch/arm/boot/dts/imx6sl.dtsi             | 5 +++++
+ arch/arm/boot/dts/imx6sx.dtsi             | 5 +++++
+ arch/arm/configs/imx_v7_android_defconfig | 1 +
+ 4 files changed, 16 insertions(+)
+
+diff --git a/arch/arm/boot/dts/imx6qdl.dtsi b/arch/arm/boot/dts/imx6qdl.dtsi
+index e5d6cf9..821f178 100644
+--- a/arch/arm/boot/dts/imx6qdl.dtsi
++++ b/arch/arm/boot/dts/imx6qdl.dtsi
+@@ -1188,5 +1188,10 @@
+ 			resets = <&src 2>;
+ 			bypass_reset = <0>;
+ 		};
++
++		imx_ion {
++			compatible = "fsl,mxc-ion";
++			fsl,heap-id = <0>;
++		};
+ 	};
+ };
+diff --git a/arch/arm/boot/dts/imx6sl.dtsi b/arch/arm/boot/dts/imx6sl.dtsi
+index 1f17ffc..08ba137 100644
+--- a/arch/arm/boot/dts/imx6sl.dtsi
++++ b/arch/arm/boot/dts/imx6sl.dtsi
+@@ -947,5 +947,10 @@
+ 				power-domains = <&gpc 1>;
+ 			};
+ 		};
++
++		imx_ion {
++			compatible = "fsl,mxc-ion";
++			fsl,heap-id = <0>;
++		};
+ 	};
+ };
+diff --git a/arch/arm/boot/dts/imx6sx.dtsi b/arch/arm/boot/dts/imx6sx.dtsi
+index 1106889..14268f5 100644
+--- a/arch/arm/boot/dts/imx6sx.dtsi
++++ b/arch/arm/boot/dts/imx6sx.dtsi
+@@ -1492,6 +1492,11 @@
+ 			power-domains = <&gpc 2>;
+ 			status = "disabled";
+ 		};
++
++		imx_ion {
++			compatible = "fsl,mxc-ion";
++			fsl,heap-id = <0>;
++		};
+ 	};
+ };
+ 
+diff --git a/arch/arm/configs/imx_v7_android_defconfig b/arch/arm/configs/imx_v7_android_defconfig
+index 60962e2..c5a9219 100644
+--- a/arch/arm/configs/imx_v7_android_defconfig
++++ b/arch/arm/configs/imx_v7_android_defconfig
+@@ -512,6 +512,7 @@ CONFIG_ANDROID_LOW_MEMORY_KILLER=y
+ CONFIG_ANDROID_INTF_ALARM_DEV=y
+ CONFIG_SYNC=y
+ CONFIG_ION=y
++CONFIG_ION_MXC=y
+ # CONFIG_IOMMU_SUPPORT is not set
+ CONFIG_IIO=y
+ CONFIG_VF610_ADC=y
+-- 
+1.8.0
+

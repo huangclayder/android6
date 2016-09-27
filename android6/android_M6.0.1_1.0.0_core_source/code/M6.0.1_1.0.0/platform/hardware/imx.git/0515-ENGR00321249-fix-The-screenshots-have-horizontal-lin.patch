@@ -1,0 +1,29 @@
+From 08fb84c215af449deb62187fbe5f9e823ead22f7 Mon Sep 17 00:00:00 2001
+From: b37945 <b37945@freescale.com>
+Date: Fri, 4 Jul 2014 15:22:11 +0800
+Subject: [PATCH 515/635] ENGR00321249 fix The screenshots have horizontal
+ lines and gray blocks.
+
+The root cause is stride alignment is not set correctly in gpuheler library.
+correct stride value to pass to gpuheler library.
+
+Signed-off-by: b37945 <b37945@freescale.com>
+---
+ mx6/libgralloc_wrapper/BufferManager.cpp | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/mx6/libgralloc_wrapper/BufferManager.cpp b/mx6/libgralloc_wrapper/BufferManager.cpp
+index 5be360a..c2ab553 100755
+--- a/mx6/libgralloc_wrapper/BufferManager.cpp
++++ b/mx6/libgralloc_wrapper/BufferManager.cpp
+@@ -130,6 +130,7 @@ int BufferManager::alloc(int w, int h, int format, int usage,
+             alignedh = ALIGN_PIXEL_4(h);
+             int c_stride = (alignedw/2+15)/16*16;
+             size = alignedw * alignedh + c_stride * h;
++            w = alignedw;
+             } break;
+ 
+         case HAL_PIXEL_FORMAT_YCbCr_422_SP:
+-- 
+1.8.0
+

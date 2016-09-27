@@ -1,0 +1,81 @@
+From 24356fe059abbc9eae1b192f7af8a46f204a36f4 Mon Sep 17 00:00:00 2001
+From: zhang sanshan <b51434@freescale.com>
+Date: Tue, 22 Sep 2015 22:11:03 +0800
+Subject: [PATCH] MA-7053 when I add selinux=disable in the cmdline, the board
+ do OTA update will fail
+
+The ota update script will set selinux label with set_metadata when do nand ota update.
+The root cause is set_metadata will fail if disable selinux in recovery mode.
+This patch is a workaround which will enable selinux in recovery mode,
+even if have disable selinux in commandline.
+
+Signed-off-by: zhang sanshan <b51434@freescale.com>
+---
+ common/image-android.c  | 34 +++++++++++++++++++++++++++++++---
+ include/android_image.h |  3 +++
+ 2 files changed, 34 insertions(+), 3 deletions(-)
+
+diff --git a/common/image-android.c b/common/image-android.c
+index d56380d..78a1f32 100644
+--- a/common/image-android.c
++++ b/common/image-android.c
+@@ -78,9 +78,14 @@ int android_image_get_kernel(const struct andr_img_hdr *hdr, int verify,
+ 					serialnr.high,
+ 					serialnr.low);
+ #endif
+-
+-	setenv("bootargs", commandline);
+-
++	if (getenv("bootcmd_android_recovery")) {
++		char new_commandline[ANDR_BOOT_ARGS_SIZE];
++		char cmd_selinux[30] = "androidboot.selinux=disabled";
++		del_sub_str(commandline, cmd_selinux, new_commandline);
++		setenv("bootargs", new_commandline);
++	} else {
++		setenv("bootargs", commandline);
++	}
+ 	if (os_data) {
+ 		*os_data = (ulong)hdr;
+ 		*os_data += hdr->page_size;
+@@ -151,3 +156,26 @@ int android_image_get_fdt(const struct andr_img_hdr *hdr,
+ 	return 0;
+ }
+ 
++void del_sub_str(const char *str, const char *sub_str, char *cmdline)
++{
++	int str_len = strlen(str);
++	int sub_str_len = strlen(sub_str);
++
++	while (*str != '\0') {
++		while (*str != *sub_str && *str != '\0') {
++			*cmdline = *str;
++			str++;
++			cmdline++;
++		}
++		if (strncmp(str, sub_str, sub_str_len) != 0) {
++			*cmdline = *str;
++			str++;
++			cmdline++;
++			continue;
++		}  else {
++			str += sub_str_len;
++		}
++
++	}
++	*cmdline = '\0';
++}
+diff --git a/include/android_image.h b/include/android_image.h
+index 094d60a..07dfd94 100644
+--- a/include/android_image.h
++++ b/include/android_image.h
+@@ -66,4 +66,7 @@ struct andr_img_hdr {
+  * 6. if second_size != 0: jump to second_addr
+  *    else: jump to kernel_addr
+  */
++
++void del_sub_str(const char *str, const char *sub_str, char *cmdline);
++
+ #endif
+-- 
+1.8.0
+

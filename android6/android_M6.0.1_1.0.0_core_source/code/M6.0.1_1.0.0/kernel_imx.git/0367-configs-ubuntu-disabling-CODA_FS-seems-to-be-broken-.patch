@@ -1,0 +1,26 @@
+From 46255caa020381e6e0cf7a51d4b50c52b4229c9b Mon Sep 17 00:00:00 2001
+From: Ricardo Salveti de Araujo <ricardo.salveti@linaro.org>
+Date: Mon, 25 Jun 2012 16:06:19 -0300
+Subject: [PATCH] configs: ubuntu: disabling CODA_FS, seems to be broken atm
+
+Signed-off-by: Ricardo Salveti de Araujo <ricardo.salveti@linaro.org>
+---
+ linaro/configs/ubuntu.conf | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/linaro/configs/ubuntu.conf b/linaro/configs/ubuntu.conf
+index 98af752..55aff9c 100644
+--- a/linaro/configs/ubuntu.conf
++++ b/linaro/configs/ubuntu.conf
+@@ -1926,7 +1926,7 @@ CONFIG_NCPFS_NFS_NS=y
+ CONFIG_NCPFS_OS2_NS=y
+ CONFIG_NCPFS_NLS=y
+ CONFIG_NCPFS_EXTRAS=y
+-CONFIG_CODA_FS=m
++# CONFIG_CODA_FS is not set
+ CONFIG_AFS_FS=m
+ CONFIG_9P_FS=m
+ CONFIG_9P_FS_POSIX_ACL=y
+-- 
+1.8.0
+

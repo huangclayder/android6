@@ -1,0 +1,38 @@
+From 0d4400a4ae6f654a8f15166056153b121dac5d00 Mon Sep 17 00:00:00 2001
+From: Ming Zhou <b42586@freescale.com>
+Date: Mon, 20 Oct 2014 10:01:53 +0800
+Subject: [PATCH 70/95] ENGR00133115: support rm,rmvb,ra,rv files in media
+ scanner.
+
+support rm,rmvb,ra,rv files in media scanner.
+
+Signed-off-by: Ming Zhou <b42586@freescale.com>
+---
+ media/libstagefright/StagefrightMediaScanner.cpp | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/media/libstagefright/StagefrightMediaScanner.cpp b/media/libstagefright/StagefrightMediaScanner.cpp
+index 382912c..e7bb6a9 100644
+--- a/media/libstagefright/StagefrightMediaScanner.cpp
++++ b/media/libstagefright/StagefrightMediaScanner.cpp
+@@ -14,7 +14,7 @@
+  * limitations under the License.
+  */
+ 
+-/* Copyright 2009-2013 Freescale Semiconductor Inc. */
++/* Copyright 2009-2014 Freescale Semiconductor, Inc. */
+ 
+ //#define LOG_NDEBUG 0
+ #define LOG_TAG "StagefrightMediaScanner"
+@@ -45,7 +45,7 @@ static bool FileHasAcceptableExtension(const char *extension) {
+         ".avi", ".mpeg", ".mpg", ".awb", ".mpga"
+ #ifdef FSL_GM_PLAYER
+         , ".divx", ".mov", ".m4v", ".adts", ".asf", ".wmv", ".vob",
+-        ".f4v", ".flv"
++        ".f4v", ".flv", ".rmvb", ".rm", ".ra", ".rv"
+ #endif
+     };
+     static const size_t kNumValidExtensions =
+-- 
+1.8.0
+

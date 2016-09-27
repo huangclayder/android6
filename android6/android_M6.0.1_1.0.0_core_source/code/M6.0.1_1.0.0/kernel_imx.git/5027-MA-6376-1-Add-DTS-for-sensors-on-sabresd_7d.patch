@@ -1,0 +1,66 @@
+From 2a09acfb950a98e7e5779230938dc851f3120b8e Mon Sep 17 00:00:00 2001
+From: Haoran Wang <b50027@freescale.com>
+Date: Mon, 4 May 2015 21:29:01 +0800
+Subject: [PATCH] MA-6376-1 Add DTS for sensors on sabresd_7d
+
+Added DTS for fxos8700, fxas2100 and mpl3115.
+Modify SENSORS_RST pin to be always high in
+SPI GPIO.
+
+Signed-off-by: Haoran Wang <b50027@freescale.com>
+---
+ arch/arm/boot/dts/imx7d-sdb.dts | 31 ++++++++++++++++++++++++++++++-
+ 1 file changed, 30 insertions(+), 1 deletion(-)
+
+diff --git a/arch/arm/boot/dts/imx7d-sdb.dts b/arch/arm/boot/dts/imx7d-sdb.dts
+index 3256aa9..d382e18 100644
+--- a/arch/arm/boot/dts/imx7d-sdb.dts
++++ b/arch/arm/boot/dts/imx7d-sdb.dts
+@@ -135,7 +135,7 @@
+ 			#gpio-cells = <2>;
+ 			reg = <0>;
+ 			registers-number = <1>;
+-			registers-default = /bits/ 8 <0x44>; /* Enable PERI_3V3 and HDMI_RST*/
++			registers-default = /bits/ 8 <0x54>; /* Enable PERI_3V3 and HDMI_RST*/
+ 			spi-max-frequency = <100000>;
+ 		};
+ 	};
+@@ -336,6 +336,35 @@
+ 	pinctrl-names = "default";
+ 	pinctrl-0 = <&pinctrl_i2c2>;
+ 	status = "okay";
++
++
++    fxos8700@0e {
++        compatible = "fsl,fxos8700";
++        reg = <0x1e>;
++        position = <3>;
++        interrupt-parent = <&gpio1>;
++        interrupts = <5 1>;
++        shared-interrupt;
++    };
++
++    fxas2100x@0e {
++        compatible = "fsl,fxas2100x";
++        reg = <0x20>;
++        position = <3>;
++        interrupt-parent = <&gpio1>;
++        interrupts = <5 1>;
++        shared-interrupt;
++    };
++
++    mpl3115@0e {
++        compatible = "fsl,mpl3115";
++        reg = <0x60>;
++        position = <3>;
++        interrupt-parent = <&gpio1>;
++        interrupts = <5 1>;
++        shared-interrupt;
++    };
++
+ };
+ 
+ &i2c3 {
+-- 
+1.8.0
+

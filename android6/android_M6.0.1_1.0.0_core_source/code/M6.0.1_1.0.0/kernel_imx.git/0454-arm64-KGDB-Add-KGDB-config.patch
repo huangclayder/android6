@@ -1,0 +1,30 @@
+From a9a2fb03c42d4305de60ed92df19822b630b21c7 Mon Sep 17 00:00:00 2001
+From: Vijaya Kumar K <Vijaya.Kumar@caviumnetworks.com>
+Date: Tue, 28 Jan 2014 11:20:22 +0000
+Subject: [PATCH] arm64: KGDB: Add KGDB config
+
+Add HAVE_ARCH_KGDB for arm64 Kconfig
+
+Signed-off-by: Vijaya Kumar K <Vijaya.Kumar@caviumnetworks.com>
+Signed-off-by: Catalin Marinas <catalin.marinas@arm.com>
+(cherry picked from commit 9529247db9ecfc5a723e17093614e7437ab0d5bd)
+Signed-off-by: Alex Shi <alex.shi@linaro.org>
+---
+ arch/arm64/Kconfig | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/arch/arm64/Kconfig b/arch/arm64/Kconfig
+index 27bbcfc..0cb33a2 100644
+--- a/arch/arm64/Kconfig
++++ b/arch/arm64/Kconfig
+@@ -26,6 +26,7 @@ config ARM64
+ 	select GENERIC_TIME_VSYSCALL
+ 	select HARDIRQS_SW_RESEND
+ 	select HAVE_ARCH_JUMP_LABEL
++	select HAVE_ARCH_KGDB
+ 	select HAVE_ARCH_TRACEHOOK
+ 	select HAVE_DEBUG_BUGVERBOSE
+ 	select HAVE_DEBUG_KMEMLEAK
+-- 
+1.8.0
+

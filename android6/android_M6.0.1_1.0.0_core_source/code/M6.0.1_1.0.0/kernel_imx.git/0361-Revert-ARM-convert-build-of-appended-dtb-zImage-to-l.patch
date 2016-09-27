@@ -1,0 +1,130 @@
+From 6d9237a0e310789914597c58b894dc2efa3f2e27 Mon Sep 17 00:00:00 2001
+From: Jon Medhurst <tixy@linaro.org>
+Date: Tue, 22 Apr 2014 14:56:34 +0100
+Subject: [PATCH] Revert "ARM: convert build of appended dtb zImage to list of
+ dtbs"
+
+This reverts commit ef5983ef500479762df7bdf28bc6b433ca834974.
+
+And is required to get 'make dtbs' working again.
+
+Conflicts:
+	arch/arm/boot/dts/Makefile
+	scripts/Makefile.lib
+
+Signed-off-by: John Stultz <john.stultz@linaro.org>
+---
+ arch/arm/Kconfig           | 14 +++++++-------
+ arch/arm/Makefile          |  5 +----
+ arch/arm/boot/.gitignore   |  1 -
+ arch/arm/boot/Makefile     | 12 ------------
+ arch/arm/boot/dts/Makefile |  2 +-
+ 5 files changed, 9 insertions(+), 25 deletions(-)
+
+diff --git a/arch/arm/Kconfig b/arch/arm/Kconfig
+index f3b988e..4cec356 100644
+--- a/arch/arm/Kconfig
++++ b/arch/arm/Kconfig
+@@ -1954,16 +1954,16 @@ config BUILD_ARM_APPENDED_DTB_IMAGE
+ 	bool "Build a concatenated zImage/dtb by default"
+ 	depends on OF
+ 	help
+-	  Enabling this option will cause a concatenated zImage and list of
+-	  DTBs to be built by default (instead of a standalone zImage.)
+-	  The image will built in arch/arm/boot/zImage-dtb
++	  Enabling this option will cause a concatenated zImage and DTB to
++	  be built by default (instead of a standalone zImage.)  The image
++	  will built in arch/arm/boot/zImage-dtb.<dtb name>
+ 
+-config BUILD_ARM_APPENDED_DTB_IMAGE_NAMES
+-	string "Default dtb names"
++config BUILD_ARM_APPENDED_DTB_IMAGE_NAME
++	string "Default dtb name"
+ 	depends on BUILD_ARM_APPENDED_DTB_IMAGE
+ 	help
+-	  Space separated list of names of dtbs to append when
+-	  building a concatenated zImage-dtb.
++	  name of the dtb to append when building a concatenated
++	  zImage/dtb.
+ 
+ # Compressed boot loader in ROM.  Yes, we really want to ask about
+ # TEXT and BSS so we preserve their values in the config files.
+diff --git a/arch/arm/Makefile b/arch/arm/Makefile
+index 55eba0e8..1115c76 100644
+--- a/arch/arm/Makefile
++++ b/arch/arm/Makefile
+@@ -278,7 +278,7 @@ libs-y				:= arch/arm/lib/ $(libs-y)
+ ifeq ($(CONFIG_XIP_KERNEL),y)
+ KBUILD_IMAGE := xipImage
+ else ifeq ($(CONFIG_BUILD_ARM_APPENDED_DTB_IMAGE),y)
+-KBUILD_IMAGE := zImage-dtb
++KBUILD_IMAGE := zImage-dtb.$(CONFIG_BUILD_ARM_APPENDED_DTB_IMAGE_NAME)
+ else
+ KBUILD_IMAGE := zImage
+ endif
+@@ -316,9 +316,6 @@ PHONY += dtbs
+ dtbs: scripts
+ 	$(Q)$(MAKE) $(build)=$(boot)/dts MACHINE=$(MACHINE) dtbs
+ 
+-zImage-dtb: vmlinux scripts dtbs
+-	$(Q)$(MAKE) $(build)=$(boot) MACHINE=$(MACHINE) $(boot)/$@
+-
+ # We use MRPROPER_FILES and CLEAN_FILES now
+ archclean:
+ 	$(Q)$(MAKE) $(clean)=$(boot)
+diff --git a/arch/arm/boot/.gitignore b/arch/arm/boot/.gitignore
+index ad7a025..3c79f85 100644
+--- a/arch/arm/boot/.gitignore
++++ b/arch/arm/boot/.gitignore
+@@ -4,4 +4,3 @@ xipImage
+ bootpImage
+ uImage
+ *.dtb
+-zImage-dtb
+\ No newline at end of file
+diff --git a/arch/arm/boot/Makefile b/arch/arm/boot/Makefile
+index d09b00a..a2e18ef 100644
+--- a/arch/arm/boot/Makefile
++++ b/arch/arm/boot/Makefile
+@@ -28,14 +28,6 @@ export ZRELADDR INITRD_PHYS PARAMS_PHYS
+ 
+ targets := Image zImage xipImage bootpImage uImage
+ 
+-DTB_NAMES := $(subst $\",,$(CONFIG_BUILD_ARM_APPENDED_DTB_IMAGE_NAMES))
+-ifneq ($(DTB_NAMES),)
+-DTB_LIST := $(addsuffix .dtb,$(DTB_NAMES))
+-else
+-DTB_LIST := $(dtb-y)
+-endif
+-DTB_OBJS := $(addprefix $(obj)/dts/,$(DTB_LIST))
+-
+ ifeq ($(CONFIG_XIP_KERNEL),y)
+ 
+ $(obj)/xipImage: vmlinux FORCE
+@@ -64,10 +56,6 @@ $(obj)/zImage:	$(obj)/compressed/vmlinux FORCE
+ 	$(call if_changed,objcopy)
+ 	@$(kecho) '  Kernel: $@ is ready'
+ 
+-$(obj)/zImage-dtb:	$(obj)/zImage $(DTB_OBJS) FORCE
+-	$(call if_changed,cat)
+-	@echo '  Kernel: $@ is ready'
+-
+ endif
+ 
+ ifneq ($(LOADADDR),)
+diff --git a/arch/arm/boot/dts/Makefile b/arch/arm/boot/dts/Makefile
+index 78a3b81..982d8ab 100644
+--- a/arch/arm/boot/dts/Makefile
++++ b/arch/arm/boot/dts/Makefile
+@@ -336,7 +336,7 @@ endif
+ 
+ # *.dtb used to be generated in the directory above. Clean out the
+ # old build results so people don't accidentally use them.
+-dtbs: $(addprefix $(obj)/, $(DTB_LIST))
++dtbs: $(addprefix $(obj)/, $(dtb-y))
+ 	$(Q)rm -f $(obj)/../*.dtb
+ 
+ clean-files := *.dtb
+-- 
+1.8.0
+

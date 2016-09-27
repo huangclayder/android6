@@ -1,0 +1,55 @@
+From 56a379320045ccab8589ec85764629929c8dc29d Mon Sep 17 00:00:00 2001
+From: Shengjiu Wang <shengjiu.wang@freescale.com>
+Date: Tue, 9 Sep 2014 13:48:20 +0800
+Subject: [PATCH] ARM: dts: imx6sl: add baud clock and clock-names for ssi
+
+Baud clock is used for bit clock generation in master mode. Ipg clock
+is peripheral clock and peripheral access clock.
+
+Signed-off-by: Shengjiu Wang <shengjiu.wang@freescale.com>
+Signed-off-by: Shawn Guo <shawn.guo@freescale.com>
+(cherry picked from commit 3269ddcbd8307fcbaf1e6bfffe65e288cc5faadb)
+---
+ arch/arm/boot/dts/imx6sl.dtsi | 12 +++++++++---
+ 1 file changed, 9 insertions(+), 3 deletions(-)
+
+diff --git a/arch/arm/boot/dts/imx6sl.dtsi b/arch/arm/boot/dts/imx6sl.dtsi
+index 24e8e3d..d99fa81 100644
+--- a/arch/arm/boot/dts/imx6sl.dtsi
++++ b/arch/arm/boot/dts/imx6sl.dtsi
+@@ -232,7 +232,9 @@
+ 					compatible = "fsl,imx6sl-ssi","fsl,imx21-ssi";
+ 					reg = <0x02028000 0x4000>;
+ 					interrupts = <0 46 IRQ_TYPE_LEVEL_HIGH>;
+-					clocks = <&clks IMX6SL_CLK_SSI1>;
++					clocks = <&clks IMX6SL_CLK_SSI1_IPG>,
++						 <&clks IMX6SL_CLK_SSI1>;
++					clock-names = "ipg", "baud";
+ 					dmas = <&sdma 37 1 0>,
+ 					       <&sdma 38 1 0>;
+ 					dma-names = "rx", "tx";
+@@ -244,7 +246,9 @@
+ 					compatible = "fsl,imx6sl-ssi","fsl,imx21-ssi";
+ 					reg = <0x0202c000 0x4000>;
+ 					interrupts = <0 47 IRQ_TYPE_LEVEL_HIGH>;
+-					clocks = <&clks IMX6SL_CLK_SSI2>;
++					clocks = <&clks IMX6SL_CLK_SSI2_IPG>,
++						 <&clks IMX6SL_CLK_SSI2>;
++					clock-names = "ipg", "baud";
+ 					dmas = <&sdma 41 1 0>,
+ 					       <&sdma 42 1 0>;
+ 					dma-names = "rx", "tx";
+@@ -256,7 +260,9 @@
+ 					compatible = "fsl,imx6sl-ssi","fsl,imx21-ssi";
+ 					reg = <0x02030000 0x4000>;
+ 					interrupts = <0 48 IRQ_TYPE_LEVEL_HIGH>;
+-					clocks = <&clks IMX6SL_CLK_SSI3>;
++					clocks = <&clks IMX6SL_CLK_SSI3_IPG>,
++						 <&clks IMX6SL_CLK_SSI3>;
++					clock-names = "ipg", "baud";
+ 					dmas = <&sdma 45 1 0>,
+ 					       <&sdma 46 1 0>;
+ 					dma-names = "rx", "tx";
+-- 
+1.8.0
+

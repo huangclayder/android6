@@ -1,0 +1,27 @@
+From 5aaf8e7be8c48ed14d821b3edef18825bd71e39e Mon Sep 17 00:00:00 2001
+From: Sandor Yu <R01008@freescale.com>
+Date: Fri, 26 Jun 2015 15:21:06 +0800
+Subject: [PATCH] MLK-11063-5: defconfig: Add ov5647 mipi csi variable
+
+Add CONFIG_MXC_CAMERA_OV5647_MIPI to imx_v7_defconfig
+
+Signed-off-by: Sandor Yu <R01008@freescale.com>
+---
+ arch/arm/configs/imx_v7_defconfig | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/arch/arm/configs/imx_v7_defconfig b/arch/arm/configs/imx_v7_defconfig
+index b8a62e3..86e8305 100644
+--- a/arch/arm/configs/imx_v7_defconfig
++++ b/arch/arm/configs/imx_v7_defconfig
+@@ -248,6 +248,7 @@ CONFIG_VIDEO_MXC_PXP_V4L2=y
+ CONFIG_VIDEO_MXC_CSI_CAMERA=m
+ CONFIG_MXC_VADC=m
+ CONFIG_MXC_MIPI_CSI=m
++CONFIG_MXC_CAMERA_OV5647_MIPI=m
+ CONFIG_SOC_CAMERA=y
+ CONFIG_VIDEO_MX3=y
+ CONFIG_V4L_MEM2MEM_DRIVERS=y
+-- 
+1.8.0
+

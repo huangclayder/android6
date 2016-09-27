@@ -1,0 +1,32 @@
+From b2876e235a96eeaea18f258c989114a396e7d6a3 Mon Sep 17 00:00:00 2001
+From: Richard Liu <r66033@freescale.com>
+Date: Wed, 21 Oct 2015 17:26:42 +0800
+Subject: [PATCH 19/22] MA-7144 remove unneeded code for extsd and udisk
+ support on android 6.0
+
+/mnt/media_rw/extsd and /mnt/media_rw/udisk are not needed
+on android 6.0, so remove them.
+
+Signed-off-by: Richard Liu <r66033@freescale.com>
+---
+ rootdir/init.rc | 4 ----
+ 1 file changed, 4 deletions(-)
+
+diff --git a/rootdir/init.rc b/rootdir/init.rc
+index eb903fd..d926637 100644
+--- a/rootdir/init.rc
++++ b/rootdir/init.rc
+@@ -71,10 +71,6 @@ on init
+ 
+     # Storage views to support runtime permissions
+     mkdir /storage 0755 root root
+-    mkdir /mnt/media_rw/extsd 0755 system system
+-    symlink /mnt/media_rw/extsd /storage/extsd
+-    mkdir /mnt/media_rw/udisk 0755 system system
+-    symlink /mnt/media_rw/udisk /storage/udisk
+     mkdir /mnt/runtime 0700 root root
+     mkdir /mnt/runtime/default 0755 root root
+     mkdir /mnt/runtime/default/self 0755 root root
+-- 
+1.8.0
+

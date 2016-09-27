@@ -1,0 +1,29 @@
+From b97d3f5f7ef836a81400f0d3a2de88535c94e8c2 Mon Sep 17 00:00:00 2001
+From: Frank Li <Frank.Li@freescale.com>
+Date: Sat, 13 Sep 2014 05:00:57 +0800
+Subject: [PATCH] ARM: dts: imx6sx: add multi-queue support enet
+
+Enable 3 queues suppport for ethernet
+
+Signed-off-by: Frank Li <Frank.Li@freescale.com>
+Signed-off-by: David S. Miller <davem@davemloft.net>
+---
+ arch/arm/boot/dts/imx6sx.dtsi | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/arch/arm/boot/dts/imx6sx.dtsi b/arch/arm/boot/dts/imx6sx.dtsi
+index 5162263..30acfa3 100644
+--- a/arch/arm/boot/dts/imx6sx.dtsi
++++ b/arch/arm/boot/dts/imx6sx.dtsi
+@@ -818,6 +818,8 @@
+ 					 <&clks IMX6SX_CLK_ENET_PTP>;
+ 				clock-names = "ipg", "ahb", "ptp",
+ 					      "enet_clk_ref", "enet_out";
++				fsl,num-tx-queues=<3>;
++				fsl,num-rx-queues=<3>;
+ 				status = "disabled";
+                         };
+ 
+-- 
+1.8.0
+

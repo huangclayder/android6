@@ -1,0 +1,83 @@
+From 8b95d448241f4042baaa27899962d844f71aa638 Mon Sep 17 00:00:00 2001
+From: Marc Zyngier <marc.zyngier@arm.com>
+Date: Fri, 9 Aug 2013 18:19:11 +0100
+Subject: [PATCH] arm64: KVM: move HCR_EL2.{IMO,FMO} manipulation into the
+ vgic switch code
+
+GICv3 requires the IMO and FMO bits to be tightly coupled with some
+of the interrupt controller's register switch.
+
+In order to have similar code paths, move the manipulation of these
+bits to the GICv2 switch code.
+
+Acked-by: Catalin Marinas <catalin.marinas@arm.com>
+Reviewed-by: Christoffer Dall <christoffer.dall@linaro.org>
+Signed-off-by: Marc Zyngier <marc.zyngier@arm.com>
+(cherry picked from commit ac3c3747e2db2f326ffc601651de544cdd33a8e9)
+Signed-off-by: Christoffer Dall <christoffer.dall@linaro.org>
+---
+ arch/arm64/include/asm/kvm_arm.h |  5 +++--
+ arch/arm64/kvm/hyp.S             | 17 ++++++++++++-----
+ 2 files changed, 15 insertions(+), 7 deletions(-)
+
+diff --git a/arch/arm64/include/asm/kvm_arm.h b/arch/arm64/include/asm/kvm_arm.h
+index 3d69030..cc83520 100644
+--- a/arch/arm64/include/asm/kvm_arm.h
++++ b/arch/arm64/include/asm/kvm_arm.h
+@@ -76,9 +76,10 @@
+  */
+ #define HCR_GUEST_FLAGS (HCR_TSC | HCR_TSW | HCR_TWE | HCR_TWI | HCR_VM | \
+ 			 HCR_TVM | HCR_BSU_IS | HCR_FB | HCR_TAC | \
+-			 HCR_AMO | HCR_IMO | HCR_FMO | \
+-			 HCR_SWIO | HCR_TIDCP | HCR_RW)
++			 HCR_AMO | HCR_SWIO | HCR_TIDCP | HCR_RW)
+ #define HCR_VIRT_EXCP_MASK (HCR_VA | HCR_VI | HCR_VF)
++#define HCR_INT_OVERRIDE   (HCR_FMO | HCR_IMO)
++
+ 
+ /* Hyp System Control Register (SCTLR_EL2) bits */
+ #define SCTLR_EL2_EE	(1 << 25)
+diff --git a/arch/arm64/kvm/hyp.S b/arch/arm64/kvm/hyp.S
+index 56df9a3..5945f3b 100644
+--- a/arch/arm64/kvm/hyp.S
++++ b/arch/arm64/kvm/hyp.S
+@@ -335,11 +335,8 @@
+ .endm
+ 
+ .macro activate_traps
+-	ldr	x2, [x0, #VCPU_IRQ_LINES]
+-	ldr	x1, [x0, #VCPU_HCR_EL2]
+-	orr	x2, x2, x1
+-	msr	hcr_el2, x2
+-
++	ldr     x2, [x0, #VCPU_HCR_EL2]
++	msr     hcr_el2, x2
+ 	ldr	x2, =(CPTR_EL2_TTA)
+ 	msr	cptr_el2, x2
+ 
+@@ -382,12 +379,22 @@
+ 	ldr	x24, [x24, VGIC_SAVE_FN]
+ 	kern_hyp_va	x24
+ 	blr	x24
++	mrs	x24, hcr_el2
++	mov	x25, #HCR_INT_OVERRIDE
++	neg	x25, x25
++	and	x24, x24, x25
++	msr	hcr_el2, x24
+ .endm
+ 
+ /*
+  * Call into the vgic backend for state restoring
+  */
+ .macro restore_vgic_state
++	mrs	x24, hcr_el2
++	ldr	x25, [x0, #VCPU_IRQ_LINES]
++	orr	x24, x24, #HCR_INT_OVERRIDE
++	orr	x24, x24, x25
++	msr	hcr_el2, x24
+ 	adr	x24, __vgic_sr_vectors
+ 	ldr	x24, [x24, #VGIC_RESTORE_FN]
+ 	kern_hyp_va	x24
+-- 
+1.8.0
+

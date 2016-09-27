@@ -1,0 +1,104 @@
+From 3f88ef54367487f7fa9db99b32419c1d26a058d4 Mon Sep 17 00:00:00 2001
+From: Wang Haoran <b50027@freescale.com>
+Date: Fri, 15 Aug 2014 13:30:56 +0800
+Subject: [PATCH 64/95] ENGR00326554 UIBC support rotated resulotion and some
+ update
+
+This commit includes two work.
+
+1.The rotated resolution like 786x1024 is not
+  supported in VideoFormat.cpp. So try the swapped
+  one.
+2.Recalculate the UIBC paramaters when any kind of the
+  touch event arrived.
+
+Signed-off-by: Wang Haoran <b50027@freescale.com>
+---
+ media/libstagefright/wifi-display/VideoFormats.cpp |  9 +++++++
+ .../wifi-display/source/WifiDisplaySource.cpp      | 30 +++++++++++-----------
+ .../wifi-display/source/WifiDisplaySource.h        |  1 +
+ 3 files changed, 25 insertions(+), 15 deletions(-)
+
+diff --git a/media/libstagefright/wifi-display/VideoFormats.cpp b/media/libstagefright/wifi-display/VideoFormats.cpp
+index 44a2f8b..7ff40df 100644
+--- a/media/libstagefright/wifi-display/VideoFormats.cpp
++++ b/media/libstagefright/wifi-display/VideoFormats.cpp
+@@ -154,6 +154,15 @@ void VideoFormats::setNativeResolution(ResolutionType type, size_t index) {
+ }
+ 
+ void VideoFormats::ConvertDpyInfo2Resolution(DisplayInfo Dpy, ResolutionType& type, size_t& index) {
++
++    //Resolution which w < h like 768x1024 is not declare in standard.
++    //So swap it and the UIBC and media service will be self-adaption.
++    if (Dpy.w < Dpy.h) {
++        uint32_t tmp = Dpy.w;
++        Dpy.w = Dpy.h;
++        Dpy.h = tmp;
++    }
++
+      for (size_t i = 0; i < kNumResolutionTypes; ++i) {
+         for (size_t j = 0; j < 32; ++j) {
+             if (Dpy.w > 1280) {
+diff --git a/media/libstagefright/wifi-display/source/WifiDisplaySource.cpp b/media/libstagefright/wifi-display/source/WifiDisplaySource.cpp
+index e510c75..b10445e 100644
+--- a/media/libstagefright/wifi-display/source/WifiDisplaySource.cpp
++++ b/media/libstagefright/wifi-display/source/WifiDisplaySource.cpp
+@@ -329,6 +329,20 @@ bool WifiDisplaySource::checkUIBCtimeStamp(const uint8_t *data) {
+     return true;
+ 
+ }
++void WifiDisplaySource::recalculateUibcParamaterViaOrientation() {
++    uint8_t ori = getOrientation();
++    /* Orientation = 0 and 2 are the same and 1 and 3 are same*/
++    if ((ori & 0x1) ^ (mOrientation & 0x1)) {
++        ALOGW("sendrolon on UIBC swaped");
++        mOrientation = ori;
++        size_t tmp = mResolution_RealW;
++        mResolution_RealW = mResolution_RealH;
++        mResolution_RealH = tmp;
++        calc_uibc_parameter(mVideoWidth, mVideoHeight);
++    }
++
++
++}
+ void WifiDisplaySource::parseUIBCtouchEvent(const uint8_t *data) {
+     if (!checkUIBCtimeStamp(data))
+         return;
+@@ -338,21 +352,7 @@ void WifiDisplaySource::parseUIBCtouchEvent(const uint8_t *data) {
+             int32_t y = (int32_t)U16_AT(&data[11]);
+             int32_t action = (int32_t)data[6];
+             int32_t abs_x, abs_y;
+-            if (action == TOUCH_ACTION_DOWN) {
+-                uint8_t ori = getOrientation();
+-                bool swap = false;
+-                /* Orientation = 0 and 2 are the same and 1 and 3 are same*/
+-                if ((ori & 0x1) ^ (mOrientation & 0x1)) {
+-                    ALOGW("sendrolon on UIBC swaped");
+-                    mOrientation = ori;
+-                    size_t tmp = mResolution_RealW;
+-                    mResolution_RealW = mResolution_RealH;
+-                    mResolution_RealH = tmp;
+-                    calc_uibc_parameter(mVideoWidth, mVideoHeight);
+-
+-                }
+-
+-            }
++            recalculateUibcParamaterViaOrientation();
+             calculateNormalXY(x, y, &abs_x, &abs_y);
+ 
+             ALOGI("WFD UIBC TOUCH x=%d y=%d action=%d", abs_x, abs_y,action);
+diff --git a/media/libstagefright/wifi-display/source/WifiDisplaySource.h b/media/libstagefright/wifi-display/source/WifiDisplaySource.h
+index c4e8a0c..7f9c0ae 100644
+--- a/media/libstagefright/wifi-display/source/WifiDisplaySource.h
++++ b/media/libstagefright/wifi-display/source/WifiDisplaySource.h
+@@ -212,6 +212,7 @@ private:
+     void parseUIBCtouchEvent(const uint8_t *data);
+     void parseUIBCscrollEvent(const uint8_t *data);
+     void parseUIBCkeyEvent(const uint8_t *data);
++    void recalculateUibcParamaterViaOrientation();
+ 
+     uint8_t getOrientation();
+     uint8_t mOrientation;
+-- 
+1.8.0
+

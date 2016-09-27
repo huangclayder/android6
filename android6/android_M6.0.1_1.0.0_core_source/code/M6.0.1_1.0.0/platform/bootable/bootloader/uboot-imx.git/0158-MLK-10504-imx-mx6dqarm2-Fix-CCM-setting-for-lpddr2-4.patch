@@ -1,0 +1,45 @@
+From 620cf5f3d4cf37b065b5857a8ea91d61bf6c471d Mon Sep 17 00:00:00 2001
+From: "Ye.Li" <B37916@freescale.com>
+Date: Mon, 30 Mar 2015 16:03:13 +0800
+Subject: [PATCH] MLK-10504 imx: mx6dqarm2: Fix CCM setting for lpddr2 400Mhz
+ support
+
+Current uboot supports for running LPDDR2 at 400MHz on MX6Q ARM2 board,
+but there is a problem in switching pre_periph_clk_sel to pll2_pfd2.
+We cannot directly change the parent of pre_periph_clk_sel as this mux
+is not a glitchless mux. We need to follow the correct procedure and wait
+for the busy bits to clear before switching.
+
+Change to follow the procedure:
+1. Set periph_clk2 to OSC.
+2. Switch the periph_clk to periph_clk2, checking the CCM_CDHIPR for periph_clk
+   , ahb_podf and axi_podf busy bits.
+3. Setting the pre_periph_clk to PLL2 PFD 396M.
+4. Switch the periph_clk back to pre_periph_clk and checking CCM_CDHIPR busy bits.
+
+Signed-off-by: Ye.Li <B37916@freescale.com>
+(cherry picked from commit 7490062ff86e1132b95bf153091f28f7940c0cf9)
+---
+ board/freescale/mx6qarm2/imximage.cfg | 6 ++++++
+ 1 file changed, 6 insertions(+)
+
+diff --git a/board/freescale/mx6qarm2/imximage.cfg b/board/freescale/mx6qarm2/imximage.cfg
+index fbc28ba..425f24a 100644
+--- a/board/freescale/mx6qarm2/imximage.cfg
++++ b/board/freescale/mx6qarm2/imximage.cfg
+@@ -209,6 +209,12 @@ DATA 4, 0x020e001c, 0x007F007F
+ 
+ #elif defined(CONFIG_MX6DQ_LPDDR2)
+ /* DCD */
++DATA 4 0x020C4018 0x21324
++DATA 4 0x020C4014 0x2018D00
++CHECK_BITS_CLR 4 0x020C4048 0x3F
++DATA 4 0x020C4018 0x61324
++DATA 4 0x020C4014 0x18D00
++CHECK_BITS_CLR 4 0x020C4048 0x3F
+ DATA 4 0x020C4018 0x60324
+ 
+ DATA 4 0x020E05a8 0x00003038
+-- 
+1.8.0
+

@@ -1,0 +1,82 @@
+From 1984e86c197db909826684dfb54f3c9647c85579 Mon Sep 17 00:00:00 2001
+From: Wang Haoran <b50027@freescale.com>
+Date: Wed, 24 Dec 2014 13:21:43 +0800
+Subject: [PATCH 417/602] MA-5040-3 disable location provider
+
+Disable location provider to null in Settings.
+Then we can pass the cts case
+android.location#testModeAndProviderApisConsistent.
+
+Signed-off-by: Wang Haoran <b50027@freescale.com>
+---
+ .../SettingsProvider/res/values/defaults.xml       | 22 ++++++++++++++++++++++
+ .../SettingsProvider/res/values/defaults.xml       |  2 ++
+ .../SettingsProvider/res/values/defaults.xml       |  2 ++
+ .../SettingsProvider/res/values/defaults.xml       |  2 ++
+ 4 files changed, 28 insertions(+)
+ create mode 100644 evk_6sl/overlay/frameworks/base/packages/SettingsProvider/res/values/defaults.xml
+
+diff --git a/evk_6sl/overlay/frameworks/base/packages/SettingsProvider/res/values/defaults.xml b/evk_6sl/overlay/frameworks/base/packages/SettingsProvider/res/values/defaults.xml
+new file mode 100644
+index 0000000..9acfb98
+--- /dev/null
++++ b/evk_6sl/overlay/frameworks/base/packages/SettingsProvider/res/values/defaults.xml
+@@ -0,0 +1,22 @@
++<?xml version="1.0" encoding="utf-8"?>
++<!--
++/**
++ * Copyright (c) 2009, The Android Open Source Project
++ *
++ * Licensed under the Apache License, Version 2.0 (the "License");
++ * you may not use this file except in compliance with the License.
++ * You may obtain a copy of the License at
++ *
++ *     http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++-->
++<resources>
++    <!-- Disable GPS Provider-->
++    <string name="def_location_providers_allowed" translatable="false"></string>
++</resources>
+diff --git a/sabreauto_6q/overlay/frameworks/base/packages/SettingsProvider/res/values/defaults.xml b/sabreauto_6q/overlay/frameworks/base/packages/SettingsProvider/res/values/defaults.xml
+index 3f2232a..f299a33 100644
+--- a/sabreauto_6q/overlay/frameworks/base/packages/SettingsProvider/res/values/defaults.xml
++++ b/sabreauto_6q/overlay/frameworks/base/packages/SettingsProvider/res/values/defaults.xml
+@@ -19,4 +19,6 @@
+ <resources>
+     <!-- Default for Settings.Secure.USER_SETUP_COMPLETE -->
+     <bool name="def_user_setup_complete">true</bool>
++    <!-- Disable GPS Provider-->
++    <string name="def_location_providers_allowed" translatable="false"></string>
+ </resources>
+diff --git a/sabreauto_6sx/overlay/frameworks/base/packages/SettingsProvider/res/values/defaults.xml b/sabreauto_6sx/overlay/frameworks/base/packages/SettingsProvider/res/values/defaults.xml
+index 3f2232a..f299a33 100644
+--- a/sabreauto_6sx/overlay/frameworks/base/packages/SettingsProvider/res/values/defaults.xml
++++ b/sabreauto_6sx/overlay/frameworks/base/packages/SettingsProvider/res/values/defaults.xml
+@@ -19,4 +19,6 @@
+ <resources>
+     <!-- Default for Settings.Secure.USER_SETUP_COMPLETE -->
+     <bool name="def_user_setup_complete">true</bool>
++    <!-- Disable GPS Provider-->
++    <string name="def_location_providers_allowed" translatable="false"></string>
+ </resources>
+diff --git a/sabresd_6sx/overlay/frameworks/base/packages/SettingsProvider/res/values/defaults.xml b/sabresd_6sx/overlay/frameworks/base/packages/SettingsProvider/res/values/defaults.xml
+index 3f2232a..f299a33 100644
+--- a/sabresd_6sx/overlay/frameworks/base/packages/SettingsProvider/res/values/defaults.xml
++++ b/sabresd_6sx/overlay/frameworks/base/packages/SettingsProvider/res/values/defaults.xml
+@@ -19,4 +19,6 @@
+ <resources>
+     <!-- Default for Settings.Secure.USER_SETUP_COMPLETE -->
+     <bool name="def_user_setup_complete">true</bool>
++    <!-- Disable GPS Provider-->
++    <string name="def_location_providers_allowed" translatable="false"></string>
+ </resources>
+-- 
+1.8.0
+

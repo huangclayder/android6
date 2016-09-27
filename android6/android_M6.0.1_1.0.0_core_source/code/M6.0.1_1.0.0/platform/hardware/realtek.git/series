@@ -1,0 +1,10 @@
+0001-create-for-android-develop.patch
+0002-ENGR00235825-1-realtek-wifi-changes-in-hardware-real.patch
+0003-ENGR00232913-Wifi-enable-realtek-wifi.patch
+0004-ENGR00215174-wifi-delete-wpa_supplicant_8_lib.patch
+0005-ENGR00256988-Wifi-add-maddev_jb4.3-branch-for-realte.patch
+0006-ENGR00290615-Wifi-enable-wifi-on-KK4.4.patch
+0007-MA-5839-Fix-compile-error-for-upgrade-Android-L.patch
+0008-MA-5839-1-Merged-changes-from-qcom-lib.patch
+0009-MA-5944-Upgrade-Realtek-wpa_supplicant_lib-for-Lolli.patch
+0010-MA-7113-Fix-compile-error-for-marshmallow.patch

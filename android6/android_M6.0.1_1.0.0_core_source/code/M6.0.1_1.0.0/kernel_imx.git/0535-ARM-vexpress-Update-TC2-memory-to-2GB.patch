@@ -1,0 +1,31 @@
+From 3d5c9e6badc172c3ee2be75efaa6866ece40670a Mon Sep 17 00:00:00 2001
+From: Jon Medhurst <tixy@linaro.org>
+Date: Tue, 26 Mar 2013 13:04:51 +0000
+Subject: [PATCH] ARM: vexpress: Update TC2 memory to 2GB
+
+All TC2 boards 'in the wild' will have 2GB of memory, so lets make it
+all available.
+
+Signed-off-by: Jon Medhurst <tixy@linaro.org>
+(cherry picked from commit bc808b4665eb53fc1247e47509ac023bab9588d8)
+Signed-off-by: Alex Shi <alex.shi@linaro.org>
+---
+ arch/arm/boot/dts/vexpress-v2p-ca15_a7.dts | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/arch/arm/boot/dts/vexpress-v2p-ca15_a7.dts b/arch/arm/boot/dts/vexpress-v2p-ca15_a7.dts
+index 203a1a7..d290c1b 100644
+--- a/arch/arm/boot/dts/vexpress-v2p-ca15_a7.dts
++++ b/arch/arm/boot/dts/vexpress-v2p-ca15_a7.dts
+@@ -123,7 +123,7 @@
+ 
+ 	memory@80000000 {
+ 		device_type = "memory";
+-		reg = <0 0x80000000 0 0x40000000>;
++		reg = <0 0x80000000 0 0x80000000>;
+ 	};
+ 
+ 	wdt@2a490000 {
+-- 
+1.8.0
+

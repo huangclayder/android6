@@ -1,0 +1,30 @@
+From efe8b3256d3d4601662f973d05474762d1b8cdbc Mon Sep 17 00:00:00 2001
+From: Richard Zhu <Richard.Zhu@freescale.com>
+Date: Mon, 23 Mar 2015 17:30:11 +0800
+Subject: [PATCH] MLK-10456-1 arm: sata: enable sata on imx6qp sabreauto board
+
+enable sata on imx6qp sabreauto board
+
+Signed-off-by: Richard Zhu <Richard.Zhu@freescale.com>
+---
+ arch/arm/boot/dts/imx6qp-sabreauto.dts | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/arch/arm/boot/dts/imx6qp-sabreauto.dts b/arch/arm/boot/dts/imx6qp-sabreauto.dts
+index a247b42..bddfe12 100644
+--- a/arch/arm/boot/dts/imx6qp-sabreauto.dts
++++ b/arch/arm/boot/dts/imx6qp-sabreauto.dts
+@@ -9,6 +9,10 @@
+ #include "imx6q-sabreauto.dts"
+ #include "imx6qp.dtsi"
+ 
++&sata {
++	status = "okay";
++};
++
+ &fec {
+ 	pinctrl-assert-gpios = <&max7322 0 GPIO_ACTIVE_HIGH>;
+ };
+-- 
+1.8.0
+

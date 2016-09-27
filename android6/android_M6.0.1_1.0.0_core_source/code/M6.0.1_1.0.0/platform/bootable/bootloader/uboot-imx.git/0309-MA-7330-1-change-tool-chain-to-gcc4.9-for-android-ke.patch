@@ -1,0 +1,44 @@
+From 7000dc5701d643ab8ea58feb2f1cfa66015c4ac8 Mon Sep 17 00:00:00 2001
+From: Zhang Sanshan <b51434@freescale.com>
+Date: Fri, 4 Dec 2015 11:00:02 +0800
+Subject: [PATCH] MA-7330-1 change tool chain to gcc4.9 for android kernel and
+ uboot
+
+uboot will fail when loader zImage which is larger than 9M.
+Increasing CONFIG_SYS_BOOTM_LEN from 8 MB to 16 MB is necessary to
+support uncompressing images larger than 8 MB.
+
+Signed-off-by: Zhang Sanshan <b51434@freescale.com>
+---
+ include/configs/mx6_common.h | 2 ++
+ include/configs/mx7_common.h | 1 +
+ 2 files changed, 3 insertions(+)
+
+diff --git a/include/configs/mx6_common.h b/include/configs/mx6_common.h
+index c2c3c50..819867e 100644
+--- a/include/configs/mx6_common.h
++++ b/include/configs/mx6_common.h
+@@ -28,6 +28,8 @@ defined(CONFIG_MX6DL)) && !defined(CONFIG_MX6SOLO)
+ #define CONFIG_ARM_ERRATA_845369
+ #endif
+ 
++#define CONFIG_SYS_BOOTM_LEN   0x1000000
++
+ #ifndef CONFIG_SYS_L2CACHE_OFF
+ #define CONFIG_SYS_L2_PL310
+ #define CONFIG_SYS_PL310_BASE	L2_PL310_BASE
+diff --git a/include/configs/mx7_common.h b/include/configs/mx7_common.h
+index 3e5c811..8aa7b49 100644
+--- a/include/configs/mx7_common.h
++++ b/include/configs/mx7_common.h
+@@ -16,6 +16,7 @@
+ #define CONFIG_SYSCOUNTER_TIMER
+ #define CONFIG_SC_TIMER_CLK 8000000 /* 8Mhz */
+ 
++#define CONFIG_SYS_BOOTM_LEN   0x1000000
+ #define CONFIG_IOMUX_LPSR
+ #define CONFIG_IMX_FIXED_IVT_OFFSET
+ #endif
+-- 
+1.8.0
+

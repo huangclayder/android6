@@ -1,0 +1,30 @@
+From 187ef0095ee1ab1f913d296d9356a64feaab3b07 Mon Sep 17 00:00:00 2001
+From: Fang Hui <b31070@freescale.com>
+Date: Mon, 26 Jan 2015 15:13:35 +0800
+Subject: [PATCH 430/602] MA-6151 - [Android_MX6Q_SD] Accessory: Failed to
+ output audio from i.MX6Q to K70.100%.
+
+It's caused by commit 78a796c87c88836644b6edaa212b4db0bdab2f7c
+miss a "}" for a2dp input.
+The parsed audio hal module has no usb module.
+
+Signed-off-by: Fang Hui <b31070@freescale.com>
+---
+ sabresd_6dq/audio_policy.conf | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/sabresd_6dq/audio_policy.conf b/sabresd_6dq/audio_policy.conf
+index 23fd22e..e290fc7 100644
+--- a/sabresd_6dq/audio_policy.conf
++++ b/sabresd_6dq/audio_policy.conf
+@@ -61,6 +61,7 @@ audio_hw_modules {
+        channel_masks AUDIO_CHANNEL_IN_STEREO
+        formats AUDIO_FORMAT_PCM_16_BIT
+        devices AUDIO_DEVICE_IN_BLUETOOTH_A2DP
++     }
+     }
+   }
+   r_submix {
+-- 
+1.8.0
+

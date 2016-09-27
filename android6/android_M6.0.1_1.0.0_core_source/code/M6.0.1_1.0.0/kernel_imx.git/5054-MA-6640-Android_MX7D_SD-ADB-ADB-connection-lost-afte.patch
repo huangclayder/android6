@@ -1,0 +1,71 @@
+From ff5e843f7ca71eb2d02c9931338348c41994cb00 Mon Sep 17 00:00:00 2001
+From: Li Jun <jun.li@freescale.com>
+Date: Thu, 14 May 2015 16:20:11 +0800
+Subject: [PATCH] MA-6640 [Android_MX7D_SD]ADB: ADB connection lost after
+ reboot the board. 100%
+
+usb: chipidea: stay in b_idle until application issue gadget connect.
+OTG status machine will pull up dp when boot up.
+This patch stop the otg status machine.
+
+Signed-off-by: Li Jun <jun.li@freescale.com>
+---
+ drivers/usb/chipidea/otg_fsm.c | 13 ++++---------
+ drivers/usb/chipidea/udc.c     |  9 +++++++--
+ 2 files changed, 11 insertions(+), 11 deletions(-)
+
+diff --git a/drivers/usb/chipidea/otg_fsm.c b/drivers/usb/chipidea/otg_fsm.c
+index ec8f75f..a2f53e7 100644
+--- a/drivers/usb/chipidea/otg_fsm.c
++++ b/drivers/usb/chipidea/otg_fsm.c
+@@ -379,7 +379,10 @@ static int a_bidl_adis_tmout(struct ci_hdrc *ci)
+ static int b_se0_srp_tmout(struct ci_hdrc *ci)
+ {
+ 	ci->fsm.b_se0_srp = 1;
+-	return 0;
++	if (ci->fsm.power_up)
++		return 1;
++	else
++		return 0;
+ }
+ 
+ static int b_srp_fail_tmout(struct ci_hdrc *ci)
+@@ -718,14 +721,6 @@ int ci_otg_fsm_work(struct ci_hdrc *ci)
+ 				ci->id_event = false;
+ 		} else if (ci->fsm.otg->state == OTG_STATE_B_IDLE) {
+ 			ci->fsm.b_sess_vld = hw_read_otgsc(ci, OTGSC_BSV);
+-			if (ci->fsm.b_sess_vld) {
+-				ci->fsm.power_up = 0;
+-				/*
+-				 * Further transite to b_periphearl state
+-				 * when register gadget driver with vbus on
+-				 */
+-				ci_otg_queue_work(ci);
+-			}
+ 		} else if (ci->fsm.otg->state == OTG_STATE_A_HOST) {
+ 			pm_runtime_mark_last_busy(ci->dev);
+ 			pm_runtime_put_autosuspend(ci->dev);
+diff --git a/drivers/usb/chipidea/udc.c b/drivers/usb/chipidea/udc.c
+index 55ebd3d..779ce8e 100644
+--- a/drivers/usb/chipidea/udc.c
++++ b/drivers/usb/chipidea/udc.c
+@@ -1600,9 +1600,14 @@ static int ci_udc_pullup(struct usb_gadget *_gadget, int is_on)
+ 	if (!ci->vbus_active)
+ 		return -EOPNOTSUPP;
+ 
+-	if (is_on)
++	if (is_on) {
++		if (ci->fsm.power_up) {
++			ci->fsm.power_up = 0;
++			ci_otg_queue_work(ci);
++			return 0;
++		}
+ 		hw_write(ci, OP_USBCMD, USBCMD_RS, USBCMD_RS);
+-	else
++	} else
+ 		hw_write(ci, OP_USBCMD, USBCMD_RS, 0);
+ 
+ 	return 0;
+-- 
+1.8.0
+

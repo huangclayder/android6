@@ -1,0 +1,29 @@
+From e94e1bd2560863fe8e4de8ab640f0de1b31a6e3e Mon Sep 17 00:00:00 2001
+From: Liu Xiaowen <b37945@freescale.com>
+Date: Mon, 10 Nov 2014 13:04:50 +0800
+Subject: [PATCH 27/43] MA-5839-2 Update android to Lollipop.
+
+Fix the build error as Lollipop Update.
+change format asign.
+
+Signed-off-by: Liu Xiaowen <b37945@freescale.com>
+---
+ services/surfaceflinger/DisplayHardware/HWComposer.cpp | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/services/surfaceflinger/DisplayHardware/HWComposer.cpp b/services/surfaceflinger/DisplayHardware/HWComposer.cpp
+index 224310c..010fd87 100644
+--- a/services/surfaceflinger/DisplayHardware/HWComposer.cpp
++++ b/services/surfaceflinger/DisplayHardware/HWComposer.cpp
+@@ -407,7 +407,7 @@ status_t HWComposer::queryDisplayProperties(int disp) {
+                     config.colorTransform = values[i];
+                     break;
+                 case HWC_DISPLAY_FORMAT:
+-                    config.format = values[i];
++                    mDisplayData[disp].format = values[i];
+                     break;
+                 default:
+                     ALOG_ASSERT(false, "unknown display attribute[%zu] %#x",
+-- 
+1.8.0
+

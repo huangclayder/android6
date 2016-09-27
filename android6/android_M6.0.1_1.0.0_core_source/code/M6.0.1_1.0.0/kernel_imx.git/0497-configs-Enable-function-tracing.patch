@@ -1,0 +1,26 @@
+From cdf323d8b56cfb1a89e6d90553b836215bae4ece Mon Sep 17 00:00:00 2001
+From: Mark Brown <broonie@linaro.org>
+Date: Fri, 30 May 2014 18:26:10 +0100
+Subject: [PATCH] configs: Enable function tracing
+
+Signed-off-by: Mark Brown <broonie@linaro.org>
+---
+ linaro/configs/linaro-base.conf | 5 +++++
+ 1 file changed, 5 insertions(+)
+
+diff --git a/linaro/configs/linaro-base.conf b/linaro/configs/linaro-base.conf
+index 4ec01a9..4d2ac02 100644
+--- a/linaro/configs/linaro-base.conf
++++ b/linaro/configs/linaro-base.conf
+@@ -97,3 +97,8 @@ CONFIG_STRICT_DEVMEM=y
+ CONFIG_KGDB=y
+ CONFIG_KGDB_TESTS=y
+ CONFIG_OF_IDLE_STATES=y
++CONFIG_FTRACE=y
++CONFIG_FUNCTION_TRACER=y
++CONFIG_FTRACE_SYSCALLS=y
++CONFIG_STACK_TRACER=y
++CONFIG_FUNCTION_PROFILER=y
+-- 
+1.8.0
+

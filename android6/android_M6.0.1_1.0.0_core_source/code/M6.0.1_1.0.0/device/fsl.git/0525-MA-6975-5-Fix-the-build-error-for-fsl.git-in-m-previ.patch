@@ -1,0 +1,193 @@
+From c147d5796bd90b28669f9e25aa204008259dde5c Mon Sep 17 00:00:00 2001
+From: "guoyin.chen" <guoyin.chen@freescale.com>
+Date: Tue, 11 Aug 2015 15:29:22 +0800
+Subject: [PATCH 525/602] MA-6975-5 Fix the build error for fsl.git in
+ m-preview
+
+remove BOARD_SEPOLICY_UNION as build warning
+
+Signed-off-by: guoyin.chen <guoyin.chen@freescale.com>
+---
+ evk_6sl/BoardConfig.mk       | 20 +-------------------
+ sabreauto_6q/BoardConfig.mk  | 21 ---------------------
+ sabreauto_6sx/BoardConfig.mk | 20 --------------------
+ sabresd_6dq/BoardConfig.mk   | 22 ----------------------
+ sabresd_6sx/BoardConfig.mk   | 21 ---------------------
+ sabresd_7d/BoardConfig.mk    | 20 +-------------------
+ 6 files changed, 2 insertions(+), 122 deletions(-)
+
+diff --git a/evk_6sl/BoardConfig.mk b/evk_6sl/BoardConfig.mk
+index 1174279..e3e6c92 100644
+--- a/evk_6sl/BoardConfig.mk
++++ b/evk_6sl/BoardConfig.mk
+@@ -89,22 +89,4 @@ TARGET_BOARD_DTS_CONFIG := imx6sl:imx6sl-evk-csi.dtb
+ BOARD_SEPOLICY_DIRS := \
+        device/fsl/imx6/sepolicy \
+        device/fsl/evk_6sl/sepolicy
+-BOARD_SEPOLICY_UNION := \
+-       domain.te \
+-       system_app.te \
+-       system_server.te \
+-       untrusted_app.te \
+-       sensors.te \
+-       kernel.te \
+-       mediaserver.te \
+-       file_contexts \
+-       genfs_contexts \
+-       fs_use \
+-       rild.te \
+-       init.te \
+-       netd.te \
+-       bootanim.te \
+-       dnsmasq.te \
+-       recovery.te \
+-       device.te \
+-       zygote.te
++
+diff --git a/sabreauto_6q/BoardConfig.mk b/sabreauto_6q/BoardConfig.mk
+index dd62b78..f314268 100644
+--- a/sabreauto_6q/BoardConfig.mk
++++ b/sabreauto_6q/BoardConfig.mk
+@@ -123,24 +123,3 @@ BOARD_SEPOLICY_DIRS := \
+        device/fsl/imx6/sepolicy \
+        device/fsl/sabreauto_6q/sepolicy
+ 
+-BOARD_SEPOLICY_UNION := \
+-       domain.te \
+-       system_app.te \
+-       system_server.te \
+-       untrusted_app.te \
+-       sensors.te \
+-       kernel.te \
+-       mediaserver.te \
+-       file_contexts \
+-       genfs_contexts \
+-       fs_use \
+-       rild.te \
+-       init.te \
+-       netd.te \
+-       bootanim.te \
+-       dnsmasq.te \
+-       recovery.te \
+-       install_recovery.te \
+-       device.te \
+-       zygote.te
+-
+diff --git a/sabreauto_6sx/BoardConfig.mk b/sabreauto_6sx/BoardConfig.mk
+index 87f1a5f..b37bfb0 100755
+--- a/sabreauto_6sx/BoardConfig.mk
++++ b/sabreauto_6sx/BoardConfig.mk
+@@ -116,23 +116,3 @@ BOARD_SEPOLICY_DIRS := \
+        device/fsl/imx6/sepolicy \
+        device/fsl/sabreauto_6sx/sepolicy
+ 
+-BOARD_SEPOLICY_UNION := \
+-       domain.te \
+-       system_app.te \
+-       system_server.te \
+-       untrusted_app.te \
+-       sensors.te \
+-       kernel.te \
+-       mediaserver.te \
+-       file_contexts \
+-       genfs_contexts \
+-       fs_use \
+-       rild.te \
+-       init.te \
+-       netd.te \
+-       bootanim.te \
+-       dnsmasq.te \
+-       recovery.te \
+-       install_recovery.te \
+-       device.te \
+-       zygote.te
+diff --git a/sabresd_6dq/BoardConfig.mk b/sabresd_6dq/BoardConfig.mk
+index 28dfad7..8efff5a 100644
+--- a/sabresd_6dq/BoardConfig.mk
++++ b/sabresd_6dq/BoardConfig.mk
+@@ -129,25 +129,3 @@ BOARD_SEPOLICY_DIRS := \
+        device/fsl/imx6/sepolicy \
+        device/fsl/sabresd_6dq/sepolicy
+ 
+-BOARD_SEPOLICY_UNION := \
+-       domain.te \
+-       system_app.te \
+-       system_server.te \
+-       untrusted_app.te \
+-       sensors.te \
+-       bluetooth.te \
+-       kernel.te \
+-       mediaserver.te \
+-       file_contexts \
+-       genfs_contexts \
+-       fs_use  \
+-       rild.te \
+-       init.te \
+-       netd.te \
+-       bootanim.te \
+-       dnsmasq.te \
+-       recovery.te \
+-       device.te \
+-       zygote.te
+-
+-
+diff --git a/sabresd_6sx/BoardConfig.mk b/sabresd_6sx/BoardConfig.mk
+index 8f28cac..3658978 100644
+--- a/sabresd_6sx/BoardConfig.mk
++++ b/sabresd_6sx/BoardConfig.mk
+@@ -115,24 +115,3 @@ TARGET_BOARD_DTS_CONFIG := imx6sx:imx6sx-sdb.dtb
+ BOARD_SEPOLICY_DIRS := \
+        device/fsl/imx6/sepolicy \
+        device/fsl/sabresd_6sx/sepolicy
+-
+-BOARD_SEPOLICY_UNION := \
+-       domain.te \
+-       system_app.te \
+-       system_server.te \
+-       untrusted_app.te \
+-       sensors.te \
+-       bluetooth.te \
+-       kernel.te \
+-       mediaserver.te \
+-       file_contexts \
+-       genfs_contexts \
+-       fs_use  \
+-       rild.te \
+-       init.te \
+-       netd.te \
+-       bootanim.te \
+-       dnsmasq.te \
+-       recovery.te \
+-       device.te \
+-       zygote.te
+diff --git a/sabresd_7d/BoardConfig.mk b/sabresd_7d/BoardConfig.mk
+index fd53a70..77272d9 100644
+--- a/sabresd_7d/BoardConfig.mk
++++ b/sabresd_7d/BoardConfig.mk
+@@ -99,22 +99,4 @@ TARGET_BOARD_DTS_CONFIG := imx7d:imx7d-sdb.dtb imx7d-touch:imx7d-sdb-touch.dtb i
+ BOARD_SEPOLICY_DIRS := \
+        device/fsl/imx7/sepolicy \
+        device/fsl/sabresd_7d/sepolicy
+-BOARD_SEPOLICY_UNION := \
+-       domain.te \
+-       system_app.te \
+-       system_server.te \
+-       untrusted_app.te \
+-       sensors.te \
+-       kernel.te \
+-       mediaserver.te \
+-       file_contexts \
+-       genfs_contexts \
+-       fs_use \
+-       rild.te \
+-       init.te \
+-       netd.te \
+-       bootanim.te \
+-       dnsmasq.te \
+-       recovery.te \
+-	   bluetooth.te \
+-       device.te
++
+-- 
+1.8.0
+

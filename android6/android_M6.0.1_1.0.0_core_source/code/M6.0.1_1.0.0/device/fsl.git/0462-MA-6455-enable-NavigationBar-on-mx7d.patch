@@ -1,0 +1,30 @@
+From b0c16317cec2502e2eb2b0e86585c656bdc426ee Mon Sep 17 00:00:00 2001
+From: "xuegang.liu" <xuegang.liu@freescale.com>
+Date: Wed, 25 Mar 2015 15:22:53 +0800
+Subject: [PATCH 462/602] MA-6455 enable NavigationBar on mx7d
+
+Set sys.device.type to tablet on mx7d, then NavigationBar
+can be seen and work.
+
+Signed-off-by: Richard Liu <r66033@freescale.com>
+---
+ sabresd_7d/init.rc | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/sabresd_7d/init.rc b/sabresd_7d/init.rc
+index 8f0e1d4..c132ed7 100644
+--- a/sabresd_7d/init.rc
++++ b/sabresd_7d/init.rc
+@@ -64,6 +64,9 @@ on boot
+     # Set the density to 120dpi for 640x480 lcd panel
+     setprop ro.sf.lcd_density 120
+ 
++    # Set sys.device.type to tablet to enable NavigationBar
++    setprop sys.device.type tablet
++
+     # Set extsd access permission
+     setprop persist.sampling_profiler 1
+ 
+-- 
+1.8.0
+

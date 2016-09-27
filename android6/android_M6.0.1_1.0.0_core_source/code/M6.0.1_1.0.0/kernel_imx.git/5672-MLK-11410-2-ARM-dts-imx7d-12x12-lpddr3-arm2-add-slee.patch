@@ -1,0 +1,47 @@
+From f1fa9632d9841f6e0de5c4bb919a1b273d56fe4b Mon Sep 17 00:00:00 2001
+From: Zidan Wang <zidan.wang@freescale.com>
+Date: Tue, 25 Aug 2015 16:17:16 +0800
+Subject: [PATCH] MLK-11410-2 ARM: dts: imx7d-12x12-lpddr3-arm2: add sleep
+ state for SAI
+
+add SAI sleep state for imx7d-12x12-lpddr3-arm2 board.
+
+Signed-off-by: Zidan Wang <zidan.wang@freescale.com>
+---
+ arch/arm/boot/dts/imx7d-12x12-lpddr3-arm2-sai.dts | 4 ++++
+ arch/arm/boot/dts/imx7d-12x12-lpddr3-arm2.dts     | 3 ++-
+ 2 files changed, 6 insertions(+), 1 deletion(-)
+
+diff --git a/arch/arm/boot/dts/imx7d-12x12-lpddr3-arm2-sai.dts b/arch/arm/boot/dts/imx7d-12x12-lpddr3-arm2-sai.dts
+index 7d989c2..2fd2e8b 100644
+--- a/arch/arm/boot/dts/imx7d-12x12-lpddr3-arm2-sai.dts
++++ b/arch/arm/boot/dts/imx7d-12x12-lpddr3-arm2-sai.dts
+@@ -29,6 +29,10 @@
+ 	status = "okay";
+ };
+ 
++&sdma {
++	status = "okay";
++};
++
+ &usdhc2 {
+ 	no-1-8-v;
+ };
+diff --git a/arch/arm/boot/dts/imx7d-12x12-lpddr3-arm2.dts b/arch/arm/boot/dts/imx7d-12x12-lpddr3-arm2.dts
+index 056bbb7..968ff0f 100644
+--- a/arch/arm/boot/dts/imx7d-12x12-lpddr3-arm2.dts
++++ b/arch/arm/boot/dts/imx7d-12x12-lpddr3-arm2.dts
+@@ -948,8 +948,9 @@
+ };
+ 
+ &sai1 {
+-	pinctrl-names = "default";
++	pinctrl-names = "default", "sleep";
+ 	pinctrl-0 = <&pinctrl_sai1>;
++	pinctrl-1 = <&pinctrl_sai1>;
+ 	status = "disabled";
+ };
+ 
+-- 
+1.8.0
+

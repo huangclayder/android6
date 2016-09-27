@@ -1,0 +1,37 @@
+From 3cc8607541799819874eb864b34d950dd7658cfb Mon Sep 17 00:00:00 2001
+From: zhang sanshan <b51434@freescale.com>
+Date: Mon, 13 Jul 2015 17:18:00 +0800
+Subject: [PATCH] MA-6849 [Android_MX7D_SD]Touch: Main 3 buttons can't be
+ touched, can't operate system easily with this defect.100%
+
+The edge of touch screen is not precise.
+The root cause is that xScale\yScale is not correct.
+This patch Define the boundary of X and Y axis and make xScale\yScale more precise.
+
+Signed-off-by: zhang sanshan <b51434@freescale.com>
+---
+ arch/arm/boot/dts/imx7d-sdb-touch.dts | 8 ++++----
+ 1 file changed, 4 insertions(+), 4 deletions(-)
+
+diff --git a/arch/arm/boot/dts/imx7d-sdb-touch.dts b/arch/arm/boot/dts/imx7d-sdb-touch.dts
+index 1adb979..ce94b42 100644
+--- a/arch/arm/boot/dts/imx7d-sdb-touch.dts
++++ b/arch/arm/boot/dts/imx7d-sdb-touch.dts
+@@ -20,10 +20,10 @@
+ 		interrupt-parent = <&gpio2>;
+ 		interrupts = <13 0>;
+ 		pendown-gpio = <&gpio2 13 0>;
+-		ti,x-min = /bits/ 16 <0>;
+-		ti,x-max = /bits/ 16 <0>;
+-		ti,y-min = /bits/ 16 <0>;
+-		ti,y-max = /bits/ 16 <0>;
++		ti,x-min = /bits/ 16 <177>;
++		ti,x-max = /bits/ 16 <3923>;
++		ti,y-min = /bits/ 16 <347>;
++		ti,y-max = /bits/ 16 <3803>;
+ 		ti,pressure-max = /bits/ 16 <0>;
+ 		ti,x-plat-ohms = /bits/ 16 <400>;
+ 		ti,yx_swap_en;
+-- 
+1.8.0
+

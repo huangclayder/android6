@@ -1,0 +1,39 @@
+From 8c11515f82876e69aa14e1c31fcb5031cf4edfcc Mon Sep 17 00:00:00 2001
+From: Li Jun <B47624@freescale.com>
+Date: Wed, 24 Sep 2014 13:31:19 +0800
+Subject: [PATCH] MLK-9606-1 usb: otg: test: add otg test device into otg and
+ EH TPL
+
+This patch add otg test device with VID(0x1a0a) and PID(0x0200) into otg and
+EH TPL.
+
+Acked-by: Peter Chen <peter.chen@freescale.com>
+Signed-off-by: Li Jun <b47624@freescale.com>
+(cherry picked from commit b88ee5e2cbf55aaed3b6c5dd0aff7f826f9e357d)
+---
+ drivers/usb/core/otg_whitelist.h | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/drivers/usb/core/otg_whitelist.h b/drivers/usb/core/otg_whitelist.h
+index 1703d9a..b261550 100644
+--- a/drivers/usb/core/otg_whitelist.h
++++ b/drivers/usb/core/otg_whitelist.h
+@@ -27,6 +27,7 @@ static struct usb_device_id whitelist_table [] = {
+ #define TEST_HS_HOST_PORT_SUSPEND_RESUME	0x0106
+ #define TEST_SINGLE_STEP_GET_DEV_DESC		0x0107
+ #define TEST_SINGLE_STEP_SET_FEATURE		0x0108
++#define TEST_OTG_TEST_DEVICE_SUPPORT		0x0200
+ { USB_DEVICE(0x1a0a, TEST_SE0_NAK_PID) },
+ { USB_DEVICE(0x1a0a, TEST_J_PID) },
+ { USB_DEVICE(0x1a0a, TEST_K_PID) },
+@@ -34,6 +35,7 @@ static struct usb_device_id whitelist_table [] = {
+ { USB_DEVICE(0x1a0a, TEST_HS_HOST_PORT_SUSPEND_RESUME) },
+ { USB_DEVICE(0x1a0a, TEST_SINGLE_STEP_GET_DEV_DESC) },
+ { USB_DEVICE(0x1a0a, TEST_SINGLE_STEP_SET_FEATURE) },
++{ USB_DEVICE(0x1a0a, TEST_OTG_TEST_DEVICE_SUPPORT) },
+ #endif
+ 
+ #define USB_INTERFACE_CLASS_INFO(cl) \
+-- 
+1.8.0
+

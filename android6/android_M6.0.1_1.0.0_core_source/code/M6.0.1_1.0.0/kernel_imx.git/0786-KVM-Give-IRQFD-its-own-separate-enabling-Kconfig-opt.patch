@@ -1,0 +1,221 @@
+From 0c226cbe862216a44597556ab2ada3b69566ec64 Mon Sep 17 00:00:00 2001
+From: Christoffer Dall <christoffer.dall@linaro.org>
+Date: Thu, 2 Oct 2014 22:22:54 +0200
+Subject: [PATCH] KVM: Give IRQFD its own separate enabling Kconfig option
+
+Currently, the IRQFD code is conditional on CONFIG_HAVE_KVM_IRQ_ROUTING.
+So that we can have the IRQFD code compiled in without having the
+IRQ routing code, this creates a new CONFIG_HAVE_KVM_IRQFD, makes
+the IRQFD code conditional on it instead of CONFIG_HAVE_KVM_IRQ_ROUTING,
+and makes all the platforms that currently select HAVE_KVM_IRQ_ROUTING
+also select HAVE_KVM_IRQFD.
+
+Signed-off-by: Paul Mackerras <paulus@samba.org>
+Tested-by: Eric Auger <eric.auger@linaro.org>
+Tested-by: Cornelia Huck <cornelia.huck@de.ibm.com>
+Signed-off-by: Paolo Bonzini <pbonzini@redhat.com>
+(cherry picked from commit 297e21053a52f060944e9f0de4c64fad9bcd72fc)
+Signed-off-by: Christoffer Dall <christoffer.dall@linaro.org>
+---
+ arch/ia64/kvm/Kconfig    |  1 +
+ arch/powerpc/kvm/Kconfig |  1 +
+ arch/s390/kvm/Kconfig    | 52 ------------------------------------------------
+ arch/x86/kvm/Kconfig     |  1 +
+ include/linux/kvm_host.h |  8 ++++----
+ virt/kvm/Kconfig         |  3 +++
+ virt/kvm/eventfd.c       |  6 +++---
+ virt/kvm/kvm_main.c      |  2 +-
+ 8 files changed, 14 insertions(+), 60 deletions(-)
+
+diff --git a/arch/ia64/kvm/Kconfig b/arch/ia64/kvm/Kconfig
+index 990b864..3d50ea9 100644
+--- a/arch/ia64/kvm/Kconfig
++++ b/arch/ia64/kvm/Kconfig
+@@ -25,6 +25,7 @@ config KVM
+ 	select PREEMPT_NOTIFIERS
+ 	select ANON_INODES
+ 	select HAVE_KVM_IRQCHIP
++	select HAVE_KVM_IRQFD
+ 	select HAVE_KVM_IRQ_ROUTING
+ 	select KVM_APIC_ARCHITECTURE
+ 	select KVM_MMIO
+diff --git a/arch/powerpc/kvm/Kconfig b/arch/powerpc/kvm/Kconfig
+index 141b202..ab7881c 100644
+--- a/arch/powerpc/kvm/Kconfig
++++ b/arch/powerpc/kvm/Kconfig
+@@ -173,6 +173,7 @@ config KVM_MPIC
+ 	bool "KVM in-kernel MPIC emulation"
+ 	depends on KVM && E500
+ 	select HAVE_KVM_IRQCHIP
++	select HAVE_KVM_IRQFD
+ 	select HAVE_KVM_IRQ_ROUTING
+ 	select HAVE_KVM_MSI
+ 	help
+diff --git a/arch/s390/kvm/Kconfig b/arch/s390/kvm/Kconfig
+deleted file mode 100644
+index 70b46ea..0000000
+--- a/arch/s390/kvm/Kconfig
++++ /dev/null
+@@ -1,52 +0,0 @@
+-#
+-# KVM configuration
+-#
+-source "virt/kvm/Kconfig"
+-
+-menuconfig VIRTUALIZATION
+-	def_bool y
+-	prompt "KVM"
+-	---help---
+-	  Say Y here to get to see options for using your Linux host to run other
+-	  operating systems inside virtual machines (guests).
+-	  This option alone does not add any kernel code.
+-
+-	  If you say N, all options in this submenu will be skipped and disabled.
+-
+-if VIRTUALIZATION
+-
+-config KVM
+-	def_tristate y
+-	prompt "Kernel-based Virtual Machine (KVM) support"
+-	depends on HAVE_KVM
+-	select PREEMPT_NOTIFIERS
+-	select ANON_INODES
+-	select HAVE_KVM_CPU_RELAX_INTERCEPT
+-	select HAVE_KVM_EVENTFD
+-	---help---
+-	  Support hosting paravirtualized guest machines using the SIE
+-	  virtualization capability on the mainframe. This should work
+-	  on any 64bit machine.
+-
+-	  This module provides access to the hardware capabilities through
+-	  a character device node named /dev/kvm.
+-
+-	  To compile this as a module, choose M here: the module
+-	  will be called kvm.
+-
+-	  If unsure, say N.
+-
+-config KVM_S390_UCONTROL
+-	bool "Userspace controlled virtual machines"
+-	depends on KVM
+-	---help---
+-	  Allow CAP_SYS_ADMIN users to create KVM virtual machines that are
+-	  controlled by userspace.
+-
+-	  If unsure, say N.
+-
+-# OK, it's a little counter-intuitive to do this, but it puts it neatly under
+-# the virtualization menu.
+-source drivers/vhost/Kconfig
+-
+-endif # VIRTUALIZATION
+diff --git a/arch/x86/kvm/Kconfig b/arch/x86/kvm/Kconfig
+index 287e4c8..f9d16ff 100644
+--- a/arch/x86/kvm/Kconfig
++++ b/arch/x86/kvm/Kconfig
+@@ -27,6 +27,7 @@ config KVM
+ 	select MMU_NOTIFIER
+ 	select ANON_INODES
+ 	select HAVE_KVM_IRQCHIP
++	select HAVE_KVM_IRQFD
+ 	select HAVE_KVM_IRQ_ROUTING
+ 	select HAVE_KVM_EVENTFD
+ 	select KVM_APIC_ARCHITECTURE
+diff --git a/include/linux/kvm_host.h b/include/linux/kvm_host.h
+index 5c3e5b4..a5cbe4f 100644
+--- a/include/linux/kvm_host.h
++++ b/include/linux/kvm_host.h
+@@ -425,7 +425,7 @@ void kvm_vcpu_uninit(struct kvm_vcpu *vcpu);
+ int __must_check vcpu_load(struct kvm_vcpu *vcpu);
+ void vcpu_put(struct kvm_vcpu *vcpu);
+ 
+-#ifdef CONFIG_HAVE_KVM_IRQ_ROUTING
++#ifdef CONFIG_HAVE_KVM_IRQFD
+ int kvm_irqfd_init(void);
+ void kvm_irqfd_exit(void);
+ #else
+@@ -916,20 +916,20 @@ int kvm_set_routing_entry(struct kvm_kernel_irq_routing_entry *e,
+ 			  const struct kvm_irq_routing_entry *ue);
+ void kvm_free_irq_routing(struct kvm *kvm);
+ 
+-int kvm_send_userspace_msi(struct kvm *kvm, struct kvm_msi *msi);
+-
+ #else
+ 
+ static inline void kvm_free_irq_routing(struct kvm *kvm) {}
+ 
+ #endif
+ 
++int kvm_send_userspace_msi(struct kvm *kvm, struct kvm_msi *msi);
++
+ #ifdef CONFIG_HAVE_KVM_EVENTFD
+ 
+ void kvm_eventfd_init(struct kvm *kvm);
+ int kvm_ioeventfd(struct kvm *kvm, struct kvm_ioeventfd *args);
+ 
+-#ifdef CONFIG_HAVE_KVM_IRQCHIP
++#ifdef CONFIG_HAVE_KVM_IRQFD
+ int kvm_irqfd(struct kvm *kvm, struct kvm_irqfd *args);
+ void kvm_irqfd_release(struct kvm *kvm);
+ void kvm_irq_routing_update(struct kvm *);
+diff --git a/virt/kvm/Kconfig b/virt/kvm/Kconfig
+index 13f2d19..fc0c5e603 100644
+--- a/virt/kvm/Kconfig
++++ b/virt/kvm/Kconfig
+@@ -6,6 +6,9 @@ config HAVE_KVM
+ config HAVE_KVM_IRQCHIP
+        bool
+ 
++config HAVE_KVM_IRQFD
++       bool
++
+ config HAVE_KVM_IRQ_ROUTING
+        bool
+ 
+diff --git a/virt/kvm/eventfd.c b/virt/kvm/eventfd.c
+index 6e0a4e6..d36ada5 100644
+--- a/virt/kvm/eventfd.c
++++ b/virt/kvm/eventfd.c
+@@ -39,7 +39,7 @@
+ #include "irq.h"
+ #include "iodev.h"
+ 
+-#ifdef CONFIG_HAVE_KVM_IRQ_ROUTING
++#ifdef CONFIG_HAVE_KVM_IRQFD
+ /*
+  * --------------------------------------------------------------------
+  * irqfd: Allows an fd to be used to inject an interrupt to the guest
+@@ -450,7 +450,7 @@ out:
+ void
+ kvm_eventfd_init(struct kvm *kvm)
+ {
+-#ifdef CONFIG_HAVE_KVM_IRQ_ROUTING
++#ifdef CONFIG_HAVE_KVM_IRQFD
+ 	spin_lock_init(&kvm->irqfds.lock);
+ 	INIT_LIST_HEAD(&kvm->irqfds.items);
+ 	INIT_LIST_HEAD(&kvm->irqfds.resampler_list);
+@@ -459,7 +459,7 @@ kvm_eventfd_init(struct kvm *kvm)
+ 	INIT_LIST_HEAD(&kvm->ioeventfds);
+ }
+ 
+-#ifdef CONFIG_HAVE_KVM_IRQ_ROUTING
++#ifdef CONFIG_HAVE_KVM_IRQFD
+ /*
+  * shutdown any irqfd's that match fd+gsi
+  */
+diff --git a/virt/kvm/kvm_main.c b/virt/kvm/kvm_main.c
+index 9e99bfb..da18068 100644
+--- a/virt/kvm/kvm_main.c
++++ b/virt/kvm/kvm_main.c
+@@ -2334,7 +2334,7 @@ static long kvm_vm_ioctl_check_extension_generic(struct kvm *kvm, long arg)
+ #ifdef CONFIG_HAVE_KVM_MSI
+ 	case KVM_CAP_SIGNAL_MSI:
+ #endif
+-#ifdef CONFIG_HAVE_KVM_IRQ_ROUTING
++#ifdef CONFIG_HAVE_KVM_IRQFD
+ 	case KVM_CAP_IRQFD_RESAMPLE:
+ #endif
+ 	case KVM_CAP_CHECK_EXTENSION_VM:
+-- 
+1.8.0
+

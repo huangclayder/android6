@@ -1,0 +1,28 @@
+From 2f1a9c1f015209c4276e4f4a3c57c718adb3904b Mon Sep 17 00:00:00 2001
+From: Xiubo Li <Li.Xiubo@freescale.com>
+Date: Fri, 4 Apr 2014 15:10:29 +0800
+Subject: [PATCH] ASoC: spdif: Add VF610+ compatibles support.
+
+Signed-off-by: Xiubo Li <Li.Xiubo@freescale.com>
+Acked-by: Nicolin Chen <Guangyu.Chen@freescale.com>
+Signed-off-by: Mark Brown <broonie@linaro.org>
+(cherry picked from commit 1014fad0fca91181acc68396d84573e4ae301380)
+---
+ sound/soc/fsl/fsl_spdif.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/sound/soc/fsl/fsl_spdif.c b/sound/soc/fsl/fsl_spdif.c
+index 173553c..daa6198 100644
+--- a/sound/soc/fsl/fsl_spdif.c
++++ b/sound/soc/fsl/fsl_spdif.c
+@@ -1186,6 +1186,7 @@ static int fsl_spdif_probe(struct platform_device *pdev)
+ 
+ static const struct of_device_id fsl_spdif_dt_ids[] = {
+ 	{ .compatible = "fsl,imx35-spdif", },
++	{ .compatible = "fsl,vf610-spdif", },
+ 	{}
+ };
+ MODULE_DEVICE_TABLE(of, fsl_spdif_dt_ids);
+-- 
+1.8.0
+

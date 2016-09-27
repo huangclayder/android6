@@ -1,0 +1,78 @@
+From 49b81cb2c61306e7aef2ac7526f5ab20a7f06063 Mon Sep 17 00:00:00 2001
+From: Richard Liu <r66033@freescale.com>
+Date: Wed, 29 Oct 2014 14:00:09 +0800
+Subject: [PATCH 25/43] MA-5801 fix system freeze with simulate secondary
+ display in settings
+
+It is android framework native issue, settings->developer options framework code
+
+has defect doDebugFlashRegions() does not call beginFrame and prepareFrame.
+
+Signed-off-by: Richard Liu <r66033@freescale.com>
+
+Conflicts:
+	services/surfaceflinger/DisplayHardware/VirtualDisplaySurface.cpp
+---
+ .../DisplayHardware/VirtualDisplaySurface.cpp              | 14 ++++++++++----
+ services/surfaceflinger/SurfaceFlinger.cpp                 |  9 +++++++++
+ 2 files changed, 19 insertions(+), 4 deletions(-)
+
+diff --git a/services/surfaceflinger/DisplayHardware/VirtualDisplaySurface.cpp b/services/surfaceflinger/DisplayHardware/VirtualDisplaySurface.cpp
+index 8877e76..db5aabc 100644
+--- a/services/surfaceflinger/DisplayHardware/VirtualDisplaySurface.cpp
++++ b/services/surfaceflinger/DisplayHardware/VirtualDisplaySurface.cpp
+@@ -328,7 +328,9 @@ status_t VirtualDisplaySurface::dequeueBuffer(int* pslot, sp<Fence>* fence, bool
+     if (mDisplayId < 0)
+         return mSource[SOURCE_SINK]->dequeueBuffer(pslot, fence, async, w, h, format, usage);
+ 
+-    VDS_LOGW_IF(mDbgState != DBG_STATE_PREPARED,
++    // In GLES_DONE state (after queueBuffer), eglSwapBuffers may call dequeueBuffer
++    // for next frame.
++    VDS_LOGW_IF((mDbgState != DBG_STATE_PREPARED) && (mDbgState != DBG_STATE_GLES_DONE),
+             "Unexpected dequeueBuffer() in %s state", dbgStateStr());
+     mDbgState = DBG_STATE_GLES;
+ 
+@@ -472,9 +474,13 @@ void VirtualDisplaySurface::cancelBuffer(int pslot, const sp<Fence>& fence) {
+             "Unexpected cancelBuffer(pslot=%d) in %s state", pslot,
+             dbgStateStr());
+     VDS_LOGV("cancelBuffer pslot=%d", pslot);
+-    Source source = fbSourceForCompositionType(mCompositionType);
+-    return mSource[source]->cancelBuffer(
+-            mapProducer2SourceSlot(source, pslot), fence);
++    if (mCompositionType == COMPOSITION_MIXED) {
++        Source source = fbSourceForCompositionType(mCompositionType);
++        mSource[source]->cancelBuffer(
++                mapProducer2SourceSlot(source, pslot), fence);
++    } else {
++        /* Nothing for GLES-only, HWC composition. */
++    }
+ }
+ 
+ int VirtualDisplaySurface::query(int what, int* value) {
+diff --git a/services/surfaceflinger/SurfaceFlinger.cpp b/services/surfaceflinger/SurfaceFlinger.cpp
+index 7cc2999..8d0bfb8 100644
+--- a/services/surfaceflinger/SurfaceFlinger.cpp
++++ b/services/surfaceflinger/SurfaceFlinger.cpp
+@@ -1013,10 +1013,19 @@ void SurfaceFlinger::doDebugFlashRegions()
+         usleep(mDebugRegion * 1000);
+     }
+ 
++    for (size_t dpy=0 ; dpy<mDisplays.size() ; dpy++) {
++        mDisplays[dpy]->beginFrame();
++    }
++
+     HWComposer& hwc(getHwComposer());
+     if (hwc.initCheck() == NO_ERROR) {
+         status_t err = hwc.prepare();
+         ALOGE_IF(err, "HWComposer::prepare failed (%s)", strerror(-err));
++
++        for (size_t dpy=0 ; dpy<mDisplays.size() ; dpy++) {
++            sp<const DisplayDevice> hw(mDisplays[dpy]);
++            hw->prepareFrame(hwc);
++        }
+     }
+ }
+ 
+-- 
+1.8.0
+

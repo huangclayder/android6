@@ -1,0 +1,37 @@
+From 65b116a293169ddd41458e5c58042b2827eaf1b1 Mon Sep 17 00:00:00 2001
+From: zhang sanshan <b51434@freescale.com>
+Date: Wed, 6 Jan 2016 18:22:51 +0800
+Subject: [PATCH] MA-7474 [iMx7D]Touch is not accurate at the bottom of the
+ screen
+
+The cause is the lcd do not need the covert board on 7D SDB TO1.1 board.
+The covert board may lead resistance changed which send to lcd ic.
+This cause the (x-min)&(y-min) increased and (x-max)&(y-max) decrease.
+
+Signed-off-by: Zhang Sanshan <pete.zhang@nxp.com>
+---
+ arch/arm/boot/dts/imx7d-sdb.dts | 8 ++++----
+ 1 file changed, 4 insertions(+), 4 deletions(-)
+
+diff --git a/arch/arm/boot/dts/imx7d-sdb.dts b/arch/arm/boot/dts/imx7d-sdb.dts
+index 7c4a64c..5cd91f6 100644
+--- a/arch/arm/boot/dts/imx7d-sdb.dts
++++ b/arch/arm/boot/dts/imx7d-sdb.dts
+@@ -244,10 +244,10 @@
+ 		interrupt-parent = <&gpio2>;
+ 		interrupts = <29 0>;
+ 		pendown-gpio = <&gpio2 29 0>;
+-		ti,x-min = /bits/ 16 <177>;
+-		ti,x-max = /bits/ 16 <3923>;
+-		ti,y-min = /bits/ 16 <347>;
+-		ti,y-max = /bits/ 16 <3803>;
++		ti,x-min = /bits/ 16 <304>;
++		ti,x-max = /bits/ 16 <3872>;
++		ti,y-min = /bits/ 16 <768>;
++		ti,y-max = /bits/ 16 <3472>;
+ 		ti,pressure-max = /bits/ 16 <0>;
+ 		ti,x-plat-ohms = /bits/ 16 <400>;
+ 		ti,yx_swap_en;
+-- 
+1.8.0
+

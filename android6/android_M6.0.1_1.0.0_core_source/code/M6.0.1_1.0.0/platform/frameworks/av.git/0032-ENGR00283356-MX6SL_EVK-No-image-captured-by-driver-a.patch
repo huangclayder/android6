@@ -1,0 +1,71 @@
+From f84b267e30704d80a8bb54cb60e39c5f69a570b5 Mon Sep 17 00:00:00 2001
+From: Fang Hui <b31070@freescale.com>
+Date: Thu, 24 Oct 2013 10:47:26 +0800
+Subject: [PATCH 32/95] ENGR00283356 MX6SL_EVK, No image captured by driver
+ after long time recording
+
+Bitstream overflow cause the encoder error, enlarge the bitstream buffer size.
+
+Signed-off-by: Fang Hui <b31070@freescale.com>
+
+Conflicts:
+	media/libstagefright/codecs/avc/enc/SoftAVCEncoder.cpp
+---
+ media/libstagefright/codecs/avc/enc/SoftAVCEncoder.cpp   | 3 ++-
+ media/libstagefright/codecs/avc/enc/src/bitstream_io.cpp | 6 ++++++
+ 2 files changed, 8 insertions(+), 1 deletion(-)
+
+diff --git a/media/libstagefright/codecs/avc/enc/SoftAVCEncoder.cpp b/media/libstagefright/codecs/avc/enc/SoftAVCEncoder.cpp
+index fa6ec40..89fbe2e 100644
+--- a/media/libstagefright/codecs/avc/enc/SoftAVCEncoder.cpp
++++ b/media/libstagefright/codecs/avc/enc/SoftAVCEncoder.cpp
+@@ -1,5 +1,6 @@
+ /*
+  * Copyright (C) 2012 The Android Open Source Project
++ * Copyright (C) 2013 Freescale Semiconductor, Inc.
+  *
+  * Licensed under the Apache License, Version 2.0 (the "License");
+  * you may not use this file except in compliance with the License.
+@@ -158,7 +159,7 @@ SoftAVCEncoder::SoftAVCEncoder(
+     : SoftVideoEncoderOMXComponent(
+             name, "video_encoder.avc", OMX_VIDEO_CodingAVC,
+             kProfileLevels, NELEM(kProfileLevels),
+-            176 /* width */, 144 /* height */,
++            320 /* width */, 240 /* height */,
+             callbacks, appData, component),
+       mIDRFrameRefreshIntervalInSec(1),
+       mAVCEncProfile(AVC_BASELINE),
+diff --git a/media/libstagefright/codecs/avc/enc/src/bitstream_io.cpp b/media/libstagefright/codecs/avc/enc/src/bitstream_io.cpp
+index d71c327..d390d0a 100644
+--- a/media/libstagefright/codecs/avc/enc/src/bitstream_io.cpp
++++ b/media/libstagefright/codecs/avc/enc/src/bitstream_io.cpp
+@@ -1,5 +1,6 @@
+ /* ------------------------------------------------------------------
+  * Copyright (C) 1998-2009 PacketVideo
++ * Copyright (C) 2013 Freescale Semiconductor, Inc.
+  *
+  * Licensed under the Apache License, Version 2.0 (the "License");
+  * you may not use this file except in compliance with the License.
+@@ -15,7 +16,9 @@
+  * and limitations under the License.
+  * -------------------------------------------------------------------
+  */
++
+ #include "avcenc_lib.h"
++#include <cutils/log.h>
+ 
+ #define WORD_SIZE 32
+ 
+@@ -90,6 +93,9 @@ AVCEnc_Status AVCBitstreamSaveWord(AVCEncBitstream *stream)
+ 
+     if (stream->buf_size - stream->write_pos <= (num_bits >> 3) + 2) /* 2 more bytes for possible EPBS */
+     {
++        ALOGW("BitStream overflow, size %d, pos %d, bits %d",
++            stream->buf_size, stream->write_pos, num_bits);
++
+         if (AVCENC_SUCCESS != AVCBitstreamUseOverrunBuffer(stream, (num_bits >> 3) + 2))
+         {
+             return AVCENC_BITSTREAM_BUFFER_FULL;
+-- 
+1.8.0
+

@@ -1,0 +1,43 @@
+From 7421718cbf6ebd902d13d9fe9b126bcdedb9b9de Mon Sep 17 00:00:00 2001
+From: "guoyin.chen" <guoyin.chen@freescale.com>
+Date: Tue, 26 Aug 2014 11:21:20 +0800
+Subject: [PATCH 05/21] ENGR00323028 The "Erasing" characters were shaded by a
+ blue Lines
+
+SL EVK has the display panel with 640*480
+There is no enough space to put recovery text and progress bar
+Reduce the space between icon and recovery text if there is a overlap
+between recovery text and progress bar
+
+Signed-off-by: guoyin.chen <guoyin.chen@freescale.com>
+---
+ screen_ui.cpp | 13 +++++++++++++
+ 1 file changed, 13 insertions(+)
+
+diff --git a/screen_ui.cpp b/screen_ui.cpp
+index ff95915..a560530 100644
+--- a/screen_ui.cpp
++++ b/screen_ui.cpp
+@@ -110,6 +110,19 @@ void ScreenRecoveryUI::draw_background_locked(Icon icon) {
+         int textX = (gr_fb_width() - textWidth) / 2;
+         int textY = ((gr_fb_height() - (iconHeight+textHeight+40+sh)) / 2) + iconHeight + 40;
+ 
++        if (progressBarType != EMPTY) {
++            int progressHeight = gr_get_height(progressBarEmpty);
++            //Be sure to align below with draw_progress_locked();
++            int progressY = (3*gr_fb_height() + iconHeight - 2*progressHeight)/4;
++            int moveY = textY + textHeight - progressY;
++            if (( moveY > 0) && (moveY < 30)) {
++                //Dont have enough space for progress bar show_text
++                //Move the text a bit
++                //Make sure the text and icon have at least 10pixel space
++                textY -= moveY;
++            }
++        }
++
+         gr_blit(surface, 0, 0, iconWidth, iconHeight, iconX, iconY);
+         if (stageHeight > 0) {
+             int sw = gr_get_width(stageMarkerEmpty);
+-- 
+1.8.0
+

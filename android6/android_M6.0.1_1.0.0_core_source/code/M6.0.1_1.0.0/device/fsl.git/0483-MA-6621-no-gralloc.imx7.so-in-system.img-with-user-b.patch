@@ -1,0 +1,28 @@
+From b9c74c2bc2d58c9b75f99b3daf0e7ec3827bce69 Mon Sep 17 00:00:00 2001
+From: "guoyin.chen" <guoyin.chen@freescale.com>
+Date: Mon, 4 May 2015 13:42:14 +0800
+Subject: [PATCH 483/602] MA-6621 no gralloc.imx7.so in system.img with user
+ build option
+
+Add gralloc.imx7.so into PRODUCT_PACKAGES
+
+Signed-off-by: guoyin.chen <guoyin.chen@freescale.com>
+---
+ imx7/imx7.mk | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/imx7/imx7.mk b/imx7/imx7.mk
+index 03e1648..361ee85 100644
+--- a/imx7/imx7.mk
++++ b/imx7/imx7.mk
+@@ -89,6 +89,7 @@ PRODUCT_PACKAGES += \
+ 	sensors.SABRESD				\
+ 	sensors.ARM2				\
+ 	sensors.SABREAUTO			\
++	gralloc.imx7				\
+ 	overlay.imx7				\
+ 	lights.imx7				\
+ 	camera.imx7				\
+-- 
+1.8.0
+

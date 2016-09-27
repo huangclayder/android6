@@ -1,0 +1,28 @@
+From b665adf53e09f488f889ada12dba4a7c9706a60e Mon Sep 17 00:00:00 2001
+From: Ke Qinghua <qinghua.ke@freescale.com>
+Date: Tue, 14 Jan 2014 16:54:19 +0800
+Subject: [PATCH 06/22] ENGR00295141 Android Linux 3.10 kernel upgrade
+
+"MTD_MODE_RAW" to "MTD_FILE_MODE_RAW"
+
+Signed-off-by: Ke Qinghua <qinghua.ke@freescale.com>
+---
+ toolbox/nandread.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/toolbox/nandread.c b/toolbox/nandread.c
+index bd19942..6a8c644 100644
+--- a/toolbox/nandread.c
++++ b/toolbox/nandread.c
+@@ -45,7 +45,7 @@ int nandread_main(int argc, char **argv)
+     struct mtd_info_user mtdinfo;
+     struct mtd_ecc_stats initial_ecc, last_ecc, ecc;
+     struct mtd_oob_buf oobbuf;
+-    nand_ecclayout_t ecclayout;
++    struct nand_ecclayout_user ecclayout;
+ 
+     do {
+         c = getopt(argc, argv, "d:f:s:S:L:Rhv");
+-- 
+1.8.0
+

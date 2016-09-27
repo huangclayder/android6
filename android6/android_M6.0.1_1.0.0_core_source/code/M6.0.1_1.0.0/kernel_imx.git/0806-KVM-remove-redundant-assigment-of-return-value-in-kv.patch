@@ -1,0 +1,42 @@
+From 18cf135259766d2878ecb870a057cc5cc20dbe81 Mon Sep 17 00:00:00 2001
+From: Christian Borntraeger <borntraeger@de.ibm.com>
+Date: Thu, 4 Sep 2014 21:13:32 +0200
+Subject: [PATCH] KVM: remove redundant assigment of return value in
+ kvm_dev_ioctl
+
+The first statement of kvm_dev_ioctl is
+        long r = -EINVAL;
+
+No need to reassign the same value.
+
+Signed-off-by: Christian Borntraeger <borntraeger@de.ibm.com>
+Signed-off-by: Paolo Bonzini <pbonzini@redhat.com>
+(cherry picked from commit a13f533b2f1d53a7c0baa7490498caeab7bc8ba5)
+Signed-off-by: Christoffer Dall <christoffer.dall@linaro.org>
+---
+ virt/kvm/kvm_main.c | 2 --
+ 1 file changed, 2 deletions(-)
+
+diff --git a/virt/kvm/kvm_main.c b/virt/kvm/kvm_main.c
+index 38f82ca..4ef039b 100644
+--- a/virt/kvm/kvm_main.c
++++ b/virt/kvm/kvm_main.c
+@@ -2631,7 +2631,6 @@ static long kvm_dev_ioctl(struct file *filp,
+ 
+ 	switch (ioctl) {
+ 	case KVM_GET_API_VERSION:
+-		r = -EINVAL;
+ 		if (arg)
+ 			goto out;
+ 		r = KVM_API_VERSION;
+@@ -2643,7 +2642,6 @@ static long kvm_dev_ioctl(struct file *filp,
+ 		r = kvm_vm_ioctl_check_extension_generic(NULL, arg);
+ 		break;
+ 	case KVM_GET_VCPU_MMAP_SIZE:
+-		r = -EINVAL;
+ 		if (arg)
+ 			goto out;
+ 		r = PAGE_SIZE;     /* struct kvm_run */
+-- 
+1.8.0
+

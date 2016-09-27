@@ -1,0 +1,85 @@
+From 8c6ea7ef31fdb867bdbfa096f45fc3f4b70ae892 Mon Sep 17 00:00:00 2001
+From: David Hildenbrand <dahi@linux.vnet.ibm.com>
+Date: Mon, 12 May 2014 16:05:13 +0200
+Subject: [PATCH] KVM: prepare for KVM_(S|G)ET_MP_STATE on other architectures
+
+Highlight the aspects of the ioctls that are actually specific to x86
+and ia64. As defined restrictions (irqchip) and mp states may not apply
+to other architectures, these parts are flagged to belong to x86 and ia64.
+
+In preparation for the use of KVM_(S|G)ET_MP_STATE by s390.
+Fix a spelling error (KVM_SET_MP_STATE vs. KVM_SET_MPSTATE) on the way.
+
+Signed-off-by: David Hildenbrand <dahi@linux.vnet.ibm.com>
+Reviewed-by: Cornelia Huck <cornelia.huck@de.ibm.com>
+Acked-by: Christian Borntraeger <borntraeger@de.ibm.com>
+Signed-off-by: Christian Borntraeger <borntraeger@de.ibm.com>
+(cherry picked from commit 0b4820d6d8b6448bc9f7fac1bb1a801a53b425e1)
+Signed-off-by: Christoffer Dall <christoffer.dall@linaro.org>
+---
+ Documentation/virtual/kvm/api.txt | 21 ++++++++++++---------
+ include/uapi/linux/kvm.h          |  3 ++-
+ 2 files changed, 14 insertions(+), 10 deletions(-)
+
+diff --git a/Documentation/virtual/kvm/api.txt b/Documentation/virtual/kvm/api.txt
+index 1426c8e..e1a5426 100644
+--- a/Documentation/virtual/kvm/api.txt
++++ b/Documentation/virtual/kvm/api.txt
+@@ -969,18 +969,20 @@ uniprocessor guests).
+ 
+ Possible values are:
+ 
+- - KVM_MP_STATE_RUNNABLE:        the vcpu is currently running
++ - KVM_MP_STATE_RUNNABLE:        the vcpu is currently running [x86, ia64]
+  - KVM_MP_STATE_UNINITIALIZED:   the vcpu is an application processor (AP)
+-                                 which has not yet received an INIT signal
++                                 which has not yet received an INIT signal [x86,
++                                 ia64]
+  - KVM_MP_STATE_INIT_RECEIVED:   the vcpu has received an INIT signal, and is
+-                                 now ready for a SIPI
++                                 now ready for a SIPI [x86, ia64]
+  - KVM_MP_STATE_HALTED:          the vcpu has executed a HLT instruction and
+-                                 is waiting for an interrupt
++                                 is waiting for an interrupt [x86, ia64]
+  - KVM_MP_STATE_SIPI_RECEIVED:   the vcpu has just received a SIPI (vector
+-                                 accessible via KVM_GET_VCPU_EVENTS)
++                                 accessible via KVM_GET_VCPU_EVENTS) [x86, ia64]
+ 
+-This ioctl is only useful after KVM_CREATE_IRQCHIP.  Without an in-kernel
+-irqchip, the multiprocessing state must be maintained by userspace.
++On x86 and ia64, this ioctl is only useful after KVM_CREATE_IRQCHIP. Without an
++in-kernel irqchip, the multiprocessing state must be maintained by userspace on
++these architectures.
+ 
+ 
+ 4.39 KVM_SET_MP_STATE
+@@ -994,8 +996,9 @@ Returns: 0 on success; -1 on error
+ Sets the vcpu's current "multiprocessing state"; see KVM_GET_MP_STATE for
+ arguments.
+ 
+-This ioctl is only useful after KVM_CREATE_IRQCHIP.  Without an in-kernel
+-irqchip, the multiprocessing state must be maintained by userspace.
++On x86 and ia64, this ioctl is only useful after KVM_CREATE_IRQCHIP. Without an
++in-kernel irqchip, the multiprocessing state must be maintained by userspace on
++these architectures.
+ 
+ 
+ 4.40 KVM_SET_IDENTITY_MAP_ADDR
+diff --git a/include/uapi/linux/kvm.h b/include/uapi/linux/kvm.h
+index ca7333d..0bbbf82 100644
+--- a/include/uapi/linux/kvm.h
++++ b/include/uapi/linux/kvm.h
+@@ -399,8 +399,9 @@ struct kvm_vapic_addr {
+ 	__u64 vapic_addr;
+ };
+ 
+-/* for KVM_SET_MPSTATE */
++/* for KVM_SET_MP_STATE */
+ 
++/* not all states are valid on all architectures */
+ #define KVM_MP_STATE_RUNNABLE          0
+ #define KVM_MP_STATE_UNINITIALIZED     1
+ #define KVM_MP_STATE_INIT_RECEIVED     2
+-- 
+1.8.0
+

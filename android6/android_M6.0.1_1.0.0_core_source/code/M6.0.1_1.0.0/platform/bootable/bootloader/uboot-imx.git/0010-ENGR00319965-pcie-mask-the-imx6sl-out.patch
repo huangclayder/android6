@@ -1,0 +1,46 @@
+From d73835c61a6a0e65760929364ee1290cc4c65d01 Mon Sep 17 00:00:00 2001
+From: Richard Zhu <r65037@freescale.com>
+Date: Wed, 25 Jun 2014 14:20:16 +0800
+Subject: [PATCH] ENGR00319965 pcie: mask the imx6sl out
+
+imx6sl doesn't have the pcie module, mask the pcie
+related codes from imx6sl.
+
+Signed-off-by: Richard Zhu <r65037@freescale.com>
+(cherry picked from commit acaff11da33f8f0cb1521d3c48e64e7ed9a87bec)
+Signed-off-by: Peng Fan <Peng.Fan@freescale.com>
+---
+ arch/arm/cpu/armv7/mx6/soc.c | 9 +++++++--
+ 1 file changed, 7 insertions(+), 2 deletions(-)
+
+diff --git a/arch/arm/cpu/armv7/mx6/soc.c b/arch/arm/cpu/armv7/mx6/soc.c
+index 8f33508..496148d 100644
+--- a/arch/arm/cpu/armv7/mx6/soc.c
++++ b/arch/arm/cpu/armv7/mx6/soc.c
+@@ -381,8 +381,11 @@ static void imx_set_pcie_phy_power_down(void)
+ 
+ int arch_cpu_init(void)
+ {
+-#ifndef CONFIG_MX6SX
+-	/* this bit is not used by imx6sx anymore */
++#if !defined(CONFIG_MX6SX) && !defined(CONFIG_MX6SL)
++	/*
++	 * imx6sl doesn't have pcie at all.
++	 * this bit is not used by imx6sx anymore
++	 */
+ 	u32 val;
+ 
+ 	/*
+@@ -426,7 +429,9 @@ int arch_cpu_init(void)
+ 
+ 	imx_set_wdog_powerdown(false); /* Disable PDE bit of WMCR register */
+ 
++#ifndef CONFIG_MX6SL
+ 	imx_set_pcie_phy_power_down();
++#endif
+ 	imx_set_vddpu_power_down();
+ 
+ #ifdef CONFIG_APBH_DMA
+-- 
+1.8.0
+

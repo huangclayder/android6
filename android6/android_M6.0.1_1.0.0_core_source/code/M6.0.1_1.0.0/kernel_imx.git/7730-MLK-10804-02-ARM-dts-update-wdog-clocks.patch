@@ -1,0 +1,36 @@
+From c8e942c1c992772e80efc1fef4ed1bc97efd06b9 Mon Sep 17 00:00:00 2001
+From: Bai Ping <b51503@freescale.com>
+Date: Wed, 6 May 2015 01:36:54 +0800
+Subject: [PATCH] MLK-10804-02 ARM: dts: update wdog clocks
+
+update the wdogs clocks for i.MX6UL.
+
+Signed-off-by: Bai Ping <b51503@freescale.com>
+---
+ arch/arm/boot/dts/imx6ul.dtsi | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/arch/arm/boot/dts/imx6ul.dtsi b/arch/arm/boot/dts/imx6ul.dtsi
+index 391aea5..a6e10a2 100644
+--- a/arch/arm/boot/dts/imx6ul.dtsi
++++ b/arch/arm/boot/dts/imx6ul.dtsi
+@@ -488,14 +488,14 @@
+ 				compatible = "fsl,imx6ul-wdt", "fsl,imx21-wdt";
+ 				reg = <0x020bc000 0x4000>;
+ 				interrupts = <GIC_SPI 80 IRQ_TYPE_LEVEL_HIGH>;
+-				clocks = <&clks IMX6UL_CLK_DUMMY>;
++				clocks = <&clks IMX6UL_CLK_WDOG1>;
+ 			};
+ 
+ 			wdog2: wdog@020c0000 {
+ 				compatible = "fsl,imx6ul-wdt", "fsl,imx21-wdt";
+ 				reg = <0x020c0000 0x4000>;
+ 				interrupts = <GIC_SPI 81 IRQ_TYPE_LEVEL_HIGH>;
+-				clocks = <&clks IMX6UL_CLK_DUMMY>;
++				clocks = <&clks IMX6UL_CLK_WDOG2>;
+ 				status = "disabled";
+ 			};
+ 
+-- 
+1.8.0
+

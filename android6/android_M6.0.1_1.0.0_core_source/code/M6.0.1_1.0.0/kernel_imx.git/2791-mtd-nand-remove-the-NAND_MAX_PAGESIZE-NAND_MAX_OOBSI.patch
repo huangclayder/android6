@@ -1,0 +1,37 @@
+From 114105df15d3a6fa848a4b0858b319ab0090ea4c Mon Sep 17 00:00:00 2001
+From: Huang Shijie <shijie8@gmail.com>
+Date: Sat, 21 Dec 2013 00:02:30 +0800
+Subject: [PATCH] mtd: nand: remove the NAND_MAX_PAGESIZE/NAND_MAX_OOBSIZE
+
+There is no reference to these two macros now.
+Just remove them.
+
+Signed-off-by: Huang Shijie <shijie8@gmail.com>
+Signed-off-by: Brian Norris <computersforpeace@gmail.com>
+Signed-off-by: Huang Shijie <b32955@freescale.com>
+---
+ include/linux/mtd/nand.h | 8 --------
+ 1 file changed, 8 deletions(-)
+
+diff --git a/include/linux/mtd/nand.h b/include/linux/mtd/nand.h
+index 1697a87..4d92040 100644
+--- a/include/linux/mtd/nand.h
++++ b/include/linux/mtd/nand.h
+@@ -52,14 +52,6 @@ extern int nand_unlock(struct mtd_info *mtd, loff_t ofs, uint64_t len);
+ #define NAND_MAX_CHIPS		8
+ 
+ /*
+- * This constant declares the max. oobsize / page, which
+- * is supported now. If you add a chip with bigger oobsize/page
+- * adjust this accordingly.
+- */
+-#define NAND_MAX_OOBSIZE	744
+-#define NAND_MAX_PAGESIZE	8192
+-
+-/*
+  * Constants for hardware specific CLE/ALE/NCE function
+  *
+  * These are bits which can be or'ed to set/clear multiple
+-- 
+1.8.0
+

@@ -1,0 +1,36 @@
+From db9b75c27d1eccb76b1fa1b5abae65eb0c0e2be6 Mon Sep 17 00:00:00 2001
+From: zhang sanshan <b51434@freescale.com>
+Date: Thu, 30 Jul 2015 09:08:33 +0800
+Subject: [PATCH] MA-6899 [Android_MX6QP/SX_ARD]Brightness: NAND boot is
+ darker than SDCard boot for 6QP, and brightness is dark for
+ 6SX_ARD. 100%
+
+1 The brightness on imx6sx_ard with nand\sd boot is darker than other board.
+The hannstar star cabc is enable when boot. The root cause is the pin LVDS_EN is connected at i2c expander a I\O7,
+the configure for cabc pin is not correct.
+
+2 The brightness with nand boot is darker than sd boot on imx6q_ard\imx6qp_ard.
+The i2c3 is disable for it's pin is confict with weim when boot up with nand. So cabc driver is not loaded when nand boot up,
+and did not set BACKLITE_ON to low.
+
+Signed-off-by: zhang sanshan <b51434@freescale.com>
+---
+ arch/arm/boot/dts/imx6sx-sabreauto.dts | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/arch/arm/boot/dts/imx6sx-sabreauto.dts b/arch/arm/boot/dts/imx6sx-sabreauto.dts
+index 15fc78a..d5c5d64 100644
+--- a/arch/arm/boot/dts/imx6sx-sabreauto.dts
++++ b/arch/arm/boot/dts/imx6sx-sabreauto.dts
+@@ -53,7 +53,7 @@
+ 		compatible = "hannstar,cabc";
+ 
+ 		lvds0 {
+-			gpios = <&max7310_a 0 GPIO_ACTIVE_HIGH>;
++			gpios = <&max7310_a 7 GPIO_ACTIVE_HIGH>;
+ 		};
+ 	};
+ 
+-- 
+1.8.0
+

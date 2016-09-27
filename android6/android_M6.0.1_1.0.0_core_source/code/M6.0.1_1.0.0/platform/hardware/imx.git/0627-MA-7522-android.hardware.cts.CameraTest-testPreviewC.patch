@@ -1,0 +1,61 @@
+From b49562e4733cadc8173ba2265262680ffaf18fe1 Mon Sep 17 00:00:00 2001
+From: fang hui <b31070@freescale.com>
+Date: Thu, 14 Jan 2016 16:34:20 +0800
+Subject: [PATCH 627/635] MA-7522 -
+ android.hardware.cts.CameraTest#testPreviewCallback
+ FAIL
+
+The case often failed since process crash.
+And crashed on different place.
+
+Should Release buffers after stream off.
+
+Signed-off-by: fang hui <b31070@freescale.com>
+---
+ mx6/libcamera3/VideoStream.cpp | 18 +++++++++---------
+ 1 file changed, 9 insertions(+), 9 deletions(-)
+
+diff --git a/mx6/libcamera3/VideoStream.cpp b/mx6/libcamera3/VideoStream.cpp
+index f5fb900..7fa5859 100644
+--- a/mx6/libcamera3/VideoStream.cpp
++++ b/mx6/libcamera3/VideoStream.cpp
+@@ -1,5 +1,5 @@
+ /*
+- * Copyright (C) 2015 Freescale Semiconductor, Inc.
++ * Copyright (C) 2015-2016 Freescale Semiconductor, Inc.
+  *
+  * Licensed under the Apache License, Version 2.0 (the "License");
+  * you may not use this file except in compliance with the License.
+@@ -202,14 +202,6 @@ int32_t VideoStream::handleStopLocked(bool force)
+         return 0;
+     }
+ 
+-    if (force || mChanged) {
+-        ret = freeBuffersLocked();
+-        if (ret != 0) {
+-            ALOGE("%s freeBuffersLocked failed", __func__);
+-            return -1;
+-        }
+-    }
+-
+     ret = onDeviceStopLocked();
+     if (ret < 0) {
+         mState = STATE_ERROR;
+@@ -219,6 +211,14 @@ int32_t VideoStream::handleStopLocked(bool force)
+         mState = STATE_STOP;
+     }
+ 
++    if (force || mChanged) {
++        ret = freeBuffersLocked();
++        if (ret != 0) {
++            ALOGE("%s freeBuffersLocked failed", __func__);
++            return -1;
++        }
++    }
++
+     if (force) {
+         // clear request messages.
+         mMessageQueue.clearMessages();
+-- 
+1.8.0
+

@@ -1,0 +1,330 @@
+From a807fdc1d5eeb421e83e7d05cc2bdb1ed842fe87 Mon Sep 17 00:00:00 2001
+From: "guoyin.chen" <guoyin.chen@freescale.com>
+Date: Mon, 10 Aug 2015 17:58:46 +0800
+Subject: [PATCH 597/635] MA-6973 Fix the build error for imx hal in m-preview
+
+bt stack folder change from externan/bluedroid to system/bt
+remove utils.h header due to no header in system/bt
+add string.h for memset/memcpy reference
+remove consumerir hal since no driver implementation in 3.14.y kernel
+
+Signed-off-by: guoyin.chen <guoyin.chen@freescale.com>
+---
+ libbt-ath3k/Android.mk                  |   2 +-
+ libbt-ath3k/include/bt_vendor_QCA3002.h |   3 +-
+ libbt-ath3k/vnd_buildcfg.mk             |   4 +-
+ libsensors/InputEventReader.cpp         |   1 +
+ libsensors/SensorBase.h                 |   3 +-
+ mx6/consumerir/Android.mk               |  27 -----
+ mx6/consumerir/consumerir.c             | 182 --------------------------------
+ 7 files changed, 7 insertions(+), 215 deletions(-)
+ delete mode 100644 mx6/consumerir/Android.mk
+ delete mode 100644 mx6/consumerir/consumerir.c
+
+diff --git a/libbt-ath3k/Android.mk b/libbt-ath3k/Android.mk
+index 1aefdeb..c8a41b0 100644
+--- a/libbt-ath3k/Android.mk
++++ b/libbt-ath3k/Android.mk
+@@ -20,7 +20,7 @@ ifneq ($(BOARD_USE_AR3K_BLUETOOTH),)
+ 
+ include $(CLEAR_VARS)
+ 
+-BDROID_DIR:= external/bluetooth/bluedroid
++BDROID_DIR := $(TOP_DIR)system/bt
+ 
+ LOCAL_SRC_FILES := \
+         src/bt_vendor_QCA3002.c \
+diff --git a/libbt-ath3k/include/bt_vendor_QCA3002.h b/libbt-ath3k/include/bt_vendor_QCA3002.h
+index 69e0ea8..c3bffcc 100644
+--- a/libbt-ath3k/include/bt_vendor_QCA3002.h
++++ b/libbt-ath3k/include/bt_vendor_QCA3002.h
+@@ -1,6 +1,6 @@
+ /*
+  * Copyright 2012 The Android Open Source Project
+- * Copyright (C) 2013 Freescale Semiconductor, Inc.
++ * Copyright (C) 2013-2015 Freescale Semiconductor, Inc.
+  *
+  * Licensed under the Apache License, Version 2.0 (the "License");
+  * you may not use this file except in compliance with the License.
+@@ -21,7 +21,6 @@
+ #include "bt_vendor_lib.h"
+ #include "vnd_buildcfg.h"
+ #include "userial_vendor_QCA3002.h"
+-#include "utils.h"
+ 
+ #ifndef FALSE
+ #define FALSE  0
+diff --git a/libbt-ath3k/vnd_buildcfg.mk b/libbt-ath3k/vnd_buildcfg.mk
+index efce64d..945835e 100644
+--- a/libbt-ath3k/vnd_buildcfg.mk
++++ b/libbt-ath3k/vnd_buildcfg.mk
+@@ -22,11 +22,11 @@ ifeq (,$(wildcard $(SRC)))
+ SRC := $(call my-dir)/include/vnd_generic.txt
+ endif
+ GEN := $(intermediates)/vnd_buildcfg.h
+-TOOL := $(TOP_DIR)external/bluetooth/bluedroid/tools/gen-buildcfg.sh
++TOOL := $(TOP_DIR)hardware/broadcom/libbt/gen-buildcfg.sh
+ 
+ $(GEN): PRIVATE_PATH := $(call my-dir)
+ $(GEN): PRIVATE_CUSTOM_TOOL = $(TOOL) $< $@
+ $(GEN): $(SRC)  $(TOOL)
+ 	$(transform-generated-source)
+ 
+-LOCAL_GENERATED_SOURCES += $(GEN)
+\ No newline at end of file
++LOCAL_GENERATED_SOURCES += $(GEN)
+diff --git a/libsensors/InputEventReader.cpp b/libsensors/InputEventReader.cpp
+index 1014f29..a0b9c00 100755
+--- a/libsensors/InputEventReader.cpp
++++ b/libsensors/InputEventReader.cpp
+@@ -18,6 +18,7 @@
+ #include <errno.h>
+ #include <unistd.h>
+ #include <poll.h>
++#include <string.h>
+ 
+ #include <sys/cdefs.h>
+ #include <sys/types.h>
+diff --git a/libsensors/SensorBase.h b/libsensors/SensorBase.h
+index f59cd90..91c7929 100755
+--- a/libsensors/SensorBase.h
++++ b/libsensors/SensorBase.h
+@@ -1,5 +1,5 @@
+ /*
+- * Copyright (C) 2011-2014 Freescale Semiconductor, Inc.
++ * Copyright (C) 2011-2015 Freescale Semiconductor, Inc.
+  * Copyright (C) 2008 The Android Open Source Project
+  *
+  * Licensed under the Apache License, Version 2.0 (the "License");
+@@ -22,6 +22,7 @@
+ #include <errno.h>
+ #include <sys/cdefs.h>
+ #include <sys/types.h>
++#include <string.h>
+ #include "InputEventReader.h"
+ #include "sensors.h"
+ 
+diff --git a/mx6/consumerir/Android.mk b/mx6/consumerir/Android.mk
+deleted file mode 100644
+index b7c9e3d..0000000
+--- a/mx6/consumerir/Android.mk
++++ /dev/null
+@@ -1,27 +0,0 @@
+-# Copyright (C) 2013 The Android Open Source Project
+-#
+-# Licensed under the Apache License, Version 2.0 (the "License");
+-# you may not use this file except in compliance with the License.
+-# You may obtain a copy of the License at
+-#
+-#      http://www.apache.org/licenses/LICENSE-2.0
+-#
+-# Unless required by applicable law or agreed to in writing, software
+-# distributed under the License is distributed on an "AS IS" BASIS,
+-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+-# See the License for the specific language governing permissions and
+-# limitations under the License.
+-
+-LOCAL_PATH := $(call my-dir)
+-
+-ifeq ($(IMX6_CONSUMER_IR_HAL),true)
+-include $(CLEAR_VARS)
+-LOCAL_PRELINK_MODULE := false
+-LOCAL_MODULE := consumerir.$(TARGET_BOARD_PLATFORM)
+-LOCAL_MODULE_PATH := $(TARGET_OUT_SHARED_LIBRARIES)/hw
+-LOCAL_SRC_FILES := consumerir.c
+-LOCAL_SHARED_LIBRARIES := liblog libcutils
+-LOCAL_MODULE_TAGS := optional
+-
+-include $(BUILD_SHARED_LIBRARY)
+-endif
+diff --git a/mx6/consumerir/consumerir.c b/mx6/consumerir/consumerir.c
+deleted file mode 100644
+index 7da65c6..0000000
+--- a/mx6/consumerir/consumerir.c
++++ /dev/null
+@@ -1,182 +0,0 @@
+-/*
+- * Copyright (C) 2009-2013 Freescale Semiconductor, Inc. All Rights Reserved.
+- *
+- * Licensed under the Apache License, Version 2.0 (the "License");
+- * you may not use this file except in compliance with the License.
+- * You may obtain a copy of the License at
+- *
+- *      http://www.apache.org/licenses/LICENSE-2.0
+- *
+- * Unless required by applicable law or agreed to in writing, software
+- * distributed under the License is distributed on an "AS IS" BASIS,
+- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+- * See the License for the specific language governing permissions and
+- * limitations under the License.
+- */
+-
+-#define LOG_TAG "ConsumerIrHal"
+-
+-#include <fcntl.h>
+-#include <errno.h>
+-#include <string.h>
+-#include <cutils/log.h>
+-#include <hardware/hardware.h>
+-#include <hardware/consumerir.h>
+-#include <linux/ioctl.h>
+-#include <linux/ir.h>
+-
+-
+-#define ARRAY_SIZE(a) (sizeof(a) / sizeof(a[0]))
+-#define DEF_CONSUMERIR_DEV "/dev/ir"
+-
+-static int consumerir_open(const hw_module_t* module, const char* name,
+-        hw_device_t** device);
+-
+-static struct hw_module_methods_t consumerir_module_methods = {
+-    .open = consumerir_open,
+-};
+-
+-consumerir_module_t HAL_MODULE_INFO_SYM = {
+-    .common = {
+-        .tag                = HARDWARE_MODULE_TAG,
+-        .module_api_version = CONSUMERIR_MODULE_API_VERSION_1_0,
+-        .hal_api_version    = HARDWARE_HAL_API_VERSION,
+-        .id                 = CONSUMERIR_HARDWARE_MODULE_ID,
+-        .name               = "Freescale i.MX IR HAL",
+-        .author             = "Freescale Semiconductor, Inc.",
+-        .methods            = &consumerir_module_methods,
+-    },
+-};
+-
+-static int consumerir_transmit(struct consumerir_device *dev,
+-   int carrier_freq, const int pattern[], int pattern_len)
+-{
+-    int fp;
+-    int result = -1;
+-    struct ir_data_pattern ir_data;
+-
+-    memset(&ir_data, 0x00, sizeof(ir_data));
+-    ir_data.len = pattern_len;
+-	ir_data.pattern = (int *)pattern;
+-    fp = open(DEF_CONSUMERIR_DEV,O_RDWR);
+-    if (-1 == fp) {
+-         ALOGE("can not open file %s\n", DEF_CONSUMERIR_DEV);
+-        return -1;
+-    }
+-    result = ioctl(fp, IR_CFG_CARRIER,(void *)carrier_freq);
+-    if(result) {
+-		ALOGE("can not set IR carrier frequence.\n");
+-		close(fp);
+-        return -1;
+-    }
+-    result = ioctl(fp,IR_DATA_TRANSMIT,&ir_data);
+-	if (result) {
+-		ALOGE("IR data transmit failed.\n");
+-	} else {
+-	    ALOGI("IR data transmit succeed.\n");
+-	}
+-
+-    close(fp);
+-    return 0;
+-}
+-
+-static int consumerir_get_num_carrier_freqs(struct consumerir_device *dev)
+-{
+-    int result = -1;
+-    int fp;
+-    int num = 0;
+-    fp = open(DEF_CONSUMERIR_DEV,O_RDWR);
+-    if (-1 == fp) {
+-         ALOGE("can not open file %s\n", DEF_CONSUMERIR_DEV);
+-        return -1;
+-    }
+-    result = ioctl(fp,IR_GET_CARRIER_FREQS_NUM,&num);
+-	if (result) {
+-		num = 0;
+-		ALOGE("IR get num of carrier frequence failed.\n");
+-	}
+-    close(fp);
+-    return num;
+-}
+-
+-static int consumerir_get_carrier_freqs(struct consumerir_device *dev,
+-    size_t len, consumerir_freq_range_t *ranges)
+-{
+-    int result = -1;
+-    int fp;
+-	size_t freq_num = 0;
+-	size_t i = 0;
+-	size_t to_copy;
+-	struct ir_carrier_freq ir_freq_range;
+-
+-	if ((!dev) || (!ranges)) {
+-        return -1;
+-	}
+-
+-	memset(&ir_freq_range,0x00,sizeof(ir_freq_range));
+-
+-    fp = open(DEF_CONSUMERIR_DEV,O_RDWR);
+-    if (-1 == fp) {
+-         ALOGE("can not open file %s\n", DEF_CONSUMERIR_DEV);
+-        return -1;
+-    }
+-
+-	result = ioctl(fp, IR_GET_CARRIER_FREQS_NUM, &freq_num);
+-	if (result) {
+-		freq_num = 0;
+-		ALOGE("IR get num of carrier frequence failed.\n");
+-		return -1;
+-	}
+-
+-	to_copy = freq_num < len ? freq_num : len;
+-	for (i = 0; i < to_copy; i++)
+-	{
+-	    ir_freq_range.id = i;
+-        result = ioctl(fp,IR_GET_CARRIER_FREQS,&ir_freq_range);
+-        if (result) {
+-	        ALOGE("IR get carrier frequence failed.\n");
+-        } else {
+-            ranges[i].min = ir_freq_range.min;
+-            ranges[i].max = ir_freq_range.max;
+-	        ALOGI("min=%d,max:%d\n",ir_freq_range.min,ir_freq_range.max);
+-        }
+-	}
+-    close(fp);
+-    return to_copy;
+-}
+-
+-static int consumerir_close(hw_device_t *dev)
+-{
+-    free(dev);
+-    return 0;
+-}
+-
+-/*
+- * Generic device handling
+- */
+-static int consumerir_open(const hw_module_t* module, const char* name,
+-        hw_device_t** device)
+-{
+-    if (strcmp(name, CONSUMERIR_TRANSMITTER) != 0) {
+-        return -EINVAL;
+-    }
+-    if (device == NULL) {
+-        ALOGE("NULL device on open");
+-        return -EINVAL;
+-    }
+-
+-    consumerir_device_t *dev = malloc(sizeof(consumerir_device_t));
+-    memset(dev, 0, sizeof(consumerir_device_t));
+-
+-    dev->common.tag = HARDWARE_DEVICE_TAG;
+-    dev->common.version = 0;
+-    dev->common.module = (struct hw_module_t*) module;
+-    dev->common.close = consumerir_close;
+-
+-    dev->transmit = consumerir_transmit;
+-    dev->get_num_carrier_freqs = consumerir_get_num_carrier_freqs;
+-    dev->get_carrier_freqs = consumerir_get_carrier_freqs;
+-
+-    *device = (hw_device_t*) dev;
+-    return 0;
+-}
+-- 
+1.8.0
+

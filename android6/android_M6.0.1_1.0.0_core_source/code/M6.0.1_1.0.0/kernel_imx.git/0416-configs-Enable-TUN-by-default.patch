@@ -1,0 +1,37 @@
+From 1525fe63b3047db126b0f86c718d221dd9e8b018 Mon Sep 17 00:00:00 2001
+From: Mark Brown <broonie@linaro.org>
+Date: Tue, 8 Apr 2014 19:45:50 +0100
+Subject: [PATCH] configs: Enable TUN by default
+
+There some tests in LTP for TUN so make sure we get coverage.
+
+Signed-off-by: Mark Brown <broonie@linaro.org>
+---
+ linaro/configs/android.conf      | 1 +
+ linaro/configs/distribution.conf | 1 +
+ 2 files changed, 2 insertions(+)
+
+diff --git a/linaro/configs/android.conf b/linaro/configs/android.conf
+index e1bf601..e4fd1ad 100644
+--- a/linaro/configs/android.conf
++++ b/linaro/configs/android.conf
+@@ -39,3 +39,4 @@ CONFIG_ADF=y
+ CONFIG_ADF_FBDEV=y
+ CONFIG_ADF_MEMBLOCK=y
+ CONFIG_DMA_SHARED_BUFFER=y
++CONFIG_TUN=y
+diff --git a/linaro/configs/distribution.conf b/linaro/configs/distribution.conf
+index fbcfed1..a89a2e2 100644
+--- a/linaro/configs/distribution.conf
++++ b/linaro/configs/distribution.conf
+@@ -25,6 +25,7 @@ CONFIG_IP6_NF_MANGLE=m
+ CONFIG_BRIDGE_NF_EBTABLES=m
+ CONFIG_BRIDGE_EBT_MARK_T=m
+ CONFIG_BRIDGE=m
++CONFIG_TUN=y
+ CONFIG_DEVTMPFS=y
+ CONFIG_DEVTMPFS_MOUNT=y
+ CONFIG_BLK_DEV_RAM=y
+-- 
+1.8.0
+

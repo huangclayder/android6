@@ -1,0 +1,42 @@
+From 03f54c6f53f4e9983ab16db600670c9eb3929bc2 Mon Sep 17 00:00:00 2001
+From: Ke Qinghua <qinghua.ke@freescale.com>
+Date: Wed, 20 Aug 2014 11:23:48 +0800
+Subject: [PATCH 356/602] ENGR00327785
+ android.hardware.consumerir.cts.ConsumerIrTest
+
+Remove IMX6_CONSUMER_IR_HAL/android.hardware.consumerir for sabresd_6sx board
+
+Signed-off-by: Ke Qinghua <qinghua.ke@freescale.com>
+---
+ imx6/sabresd_6sx.mk        | 1 -
+ sabresd_6sx/BoardConfig.mk | 2 --
+ 2 files changed, 3 deletions(-)
+
+diff --git a/imx6/sabresd_6sx.mk b/imx6/sabresd_6sx.mk
+index c721f1c..74a6864 100644
+--- a/imx6/sabresd_6sx.mk
++++ b/imx6/sabresd_6sx.mk
+@@ -43,7 +43,6 @@ PRODUCT_COPY_FILES += \
+ 	frameworks/native/data/etc/android.hardware.usb.host.xml:system/etc/permissions/android.hardware.usb.host.xml \
+ 	frameworks/native/data/etc/android.hardware.usb.accessory.xml:system/etc/permissions/android.hardware.usb.accessory.xml \
+ 	frameworks/native/data/etc/android.hardware.bluetooth_le.xml:system/etc/permissions/android.hardware.bluetooth_le.xml \
+-	frameworks/native/data/etc/android.hardware.consumerir.xml:system/etc/permissions/android.hardware.consumerir.xml
+ 
+ # for PDK build, include only when the dir exists
+ # too early to use $(TARGET_BUILD_PDK)
+diff --git a/sabresd_6sx/BoardConfig.mk b/sabresd_6sx/BoardConfig.mk
+index 0c6d40f..092d93a 100644
+--- a/sabresd_6sx/BoardConfig.mk
++++ b/sabresd_6sx/BoardConfig.mk
+@@ -103,8 +103,6 @@ IMX_CAMERA_HAL_V2 := false
+ # define frame buffer count
+ NUM_FRAMEBUFFER_SURFACE_BUFFERS := 3
+ 
+-#define consumer IR HAL support
+-IMX6_CONSUMER_IR_HAL := true
+ 
+ TARGET_BOOTLOADER_CONFIG := imx6sx:mx6sxsabresdandroid_config
+ TARGET_BOARD_DTS_CONFIG := imx6sx:imx6sx-sdb.dtb
+-- 
+1.8.0
+

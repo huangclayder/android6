@@ -1,0 +1,51 @@
+From 9ec7743e9cd2227ca1bb57f1581dacaad212cbcd Mon Sep 17 00:00:00 2001
+From: Peng Fan <peng.fan@nxp.com>
+Date: Wed, 23 Dec 2015 12:07:24 +0800
+Subject: [PATCH] common: env: initialize scalar variable
+
+Before calling hsearch_r, initialize callback entry to NULL.
+
+Coverity log:
+"
+Uninitialized scalar variable (UNINIT)
+uninit_use_in_call: Using uninitialized value e.
+Field e.callback is uninitialized when calling hsearch_r.
+"
+
+Reported-by: Coverity
+Signed-off-by: Peng Fan <peng.fan@nxp.com>
+Cc: Tom Rini <trini@konsulko.com>
+Cc: Simon Glass <sjg@chromium.org>
+(cherry picked from commit 5a6894397a657edec5d0cf4e20968cc66a368c51)
+---
+ common/env_callback.c | 1 +
+ common/env_flags.c    | 1 +
+ 2 files changed, 2 insertions(+)
+
+diff --git a/common/env_callback.c b/common/env_callback.c
+index d03fa03..7de88fb 100644
+--- a/common/env_callback.c
++++ b/common/env_callback.c
+@@ -97,6 +97,7 @@ static int set_callback(const char *name, const char *value)
+ 
+ 	e.key	= name;
+ 	e.data	= NULL;
++	e.callback = NULL;
+ 	hsearch_r(e, FIND, &ep, &env_htab, 0);
+ 
+ 	/* does the env variable actually exist? */
+diff --git a/common/env_flags.c b/common/env_flags.c
+index 985f92e..815aff9 100644
+--- a/common/env_flags.c
++++ b/common/env_flags.c
+@@ -441,6 +441,7 @@ static int set_flags(const char *name, const char *value)
+ 
+ 	e.key	= name;
+ 	e.data	= NULL;
++	e.callback = NULL;
+ 	hsearch_r(e, FIND, &ep, &env_htab, 0);
+ 
+ 	/* does the env variable actually exist? */
+-- 
+1.8.0
+

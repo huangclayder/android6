@@ -1,0 +1,28 @@
+From 0fba2ccfa27fa87f30686b4196dd61563f0dd306 Mon Sep 17 00:00:00 2001
+From: "guoyin.chen" <guoyin.chen@freescale.com>
+Date: Mon, 10 Aug 2015 18:07:36 +0800
+Subject: [PATCH 20/25] MA-6974 Fix the build error for libhardware_legacy in
+ m-preview
+
+Add sys/stat.h for build error on stat structure
+
+Signed-off-by: guoyin.chen <guoyin.chen@freescale.com>
+---
+ wifi/wifi_unite.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/wifi/wifi_unite.c b/wifi/wifi_unite.c
+index 8e9f22a..cf9e4c9 100644
+--- a/wifi/wifi_unite.c
++++ b/wifi/wifi_unite.c
+@@ -24,6 +24,7 @@
+ #include <unistd.h>
+ #include <ctype.h>
+ #include <poll.h>
++#include <sys/stat.h>
+ 
+ #include "hardware_legacy/wifi.h"
+ #include "libwpa_client/wpa_ctrl.h"
+-- 
+1.8.0
+

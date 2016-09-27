@@ -1,0 +1,29 @@
+From fb732b79d9b68864af79061c5fcdcd0b5aaa6c9b Mon Sep 17 00:00:00 2001
+From: Haoran Wang <b50027@freescale.com>
+Date: Fri, 30 Oct 2015 10:08:28 +0800
+Subject: [PATCH] MA-7181 fix the bcm4339 BT cannot enable before wifi enabled
+ issue
+
+Import the patch e92b727 from imx_3.14.y branch to fix the SD3
+doesn't powered before BCM4339 wifi enabled issue.
+
+Signed-off-by: Haoran Wang <b50027@freescale.com>
+---
+ arch/arm/boot/dts/imx6sx-sdb.dts | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/arch/arm/boot/dts/imx6sx-sdb.dts b/arch/arm/boot/dts/imx6sx-sdb.dts
+index be2528b..601e47d 100644
+--- a/arch/arm/boot/dts/imx6sx-sdb.dts
++++ b/arch/arm/boot/dts/imx6sx-sdb.dts
+@@ -105,6 +105,7 @@
+ 			regulator-max-microvolt = <3000000>;
+ 			gpio = <&gpio2 11 GPIO_ACTIVE_HIGH>;
+ 			enable-active-high;
++			regulator-always-on;
+ 		};
+ 
+ 		reg_psu_5v: regulator@1 {
+-- 
+1.8.0
+

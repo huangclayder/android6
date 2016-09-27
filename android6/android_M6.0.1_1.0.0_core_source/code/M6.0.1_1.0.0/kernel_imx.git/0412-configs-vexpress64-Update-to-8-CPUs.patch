@@ -1,0 +1,26 @@
+From 6348ad9fe1e040522610d9312665d678ef71c83d Mon Sep 17 00:00:00 2001
+From: Mark Brown <broonie@linaro.org>
+Date: Tue, 17 Dec 2013 20:53:11 +0000
+Subject: [PATCH] configs: vexpress64: Update to 8 CPUs
+
+For the 4x4 fast model.
+
+Signed-off-by: Mark Brown <broonie@linaro.org>
+---
+ linaro/configs/vexpress64.conf | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/linaro/configs/vexpress64.conf b/linaro/configs/vexpress64.conf
+index 7895612..eecc6d5 100644
+--- a/linaro/configs/vexpress64.conf
++++ b/linaro/configs/vexpress64.conf
+@@ -1,5 +1,6 @@
+ CONFIG_ARCH_VEXPRESS=y
+ CONFIG_SMP=y
++CONFIG_NR_CPUS=8
+ CONFIG_CMDLINE="console=ttyAMA0"
+ CONFIG_COMPAT=y
+ CONFIG_SMC91X=y
+-- 
+1.8.0
+

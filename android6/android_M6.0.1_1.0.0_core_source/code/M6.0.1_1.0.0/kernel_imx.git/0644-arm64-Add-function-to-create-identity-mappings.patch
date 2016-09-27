@@ -1,0 +1,43 @@
+From 62c6d33ae50bf1cf8d675836b7a334b9a21b3ce4 Mon Sep 17 00:00:00 2001
+From: Mark Salter <msalter@redhat.com>
+Date: Wed, 12 Mar 2014 12:28:06 -0400
+Subject: [PATCH] arm64: Add function to create identity mappings
+
+At boot time, before switching to a virtual UEFI memory map, firmware
+expects UEFI memory and IO regions to be identity mapped whenever
+kernel makes runtime services calls. The existing early boot code
+creates an identity map of kernel text/data but this is not sufficient
+for UEFI. This patch adds a create_id_mapping() function which reuses
+the core code of the existing create_mapping().
+
+Signed-off-by: Mark Salter <msalter@redhat.com>
+[ Fixed error message formatting (%pa). ]
+Signed-off-by: Mark Rutland <mark.rutland@arm.com>
+Signed-off-by: Leif Lindholm <leif.lindholm@linaro.org>
+Acked-by: Catalin Marinas <catalin.marinas@arm.com>
+Signed-off-by: Matt Fleming <matt.fleming@intel.com>
+
+(cherry picked from commit d7ecbddf4caefbac1b99478dd2b679f83dfc2545)
+Signed-off-by: Mark Brown <broonie@linaro.org>
+
+Conflicts:
+	arch/arm64/mm/mmu.c
+---
+ arch/arm64/include/asm/mmu.h | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/arch/arm64/include/asm/mmu.h b/arch/arm64/include/asm/mmu.h
+index aff0292..c2f006c 100644
+--- a/arch/arm64/include/asm/mmu.h
++++ b/arch/arm64/include/asm/mmu.h
+@@ -31,5 +31,7 @@ extern void paging_init(void);
+ extern void setup_mm_for_reboot(void);
+ extern void __iomem *early_io_map(phys_addr_t phys, unsigned long virt);
+ extern void init_mem_pgprot(void);
++/* create an identity mapping for memory (or io if map_io is true) */
++extern void create_id_mapping(phys_addr_t addr, phys_addr_t size, int map_io);
+ 
+ #endif
+-- 
+1.8.0
+

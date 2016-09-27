@@ -1,0 +1,29 @@
+From 4cf81a821155ed38a9c3fc0b0bee623fbe08b550 Mon Sep 17 00:00:00 2001
+From: Naresh Kamboju <naresh.kamboju@linaro.org>
+Date: Mon, 22 Apr 2013 13:57:38 +0530
+Subject: [PATCH] configs: Add config fragments for big LITTLE IKS
+
+This patch adds config fragments used to enable most of the features used by
+big LITTLE IKS.
+
+Signed-off-by: Naresh Kamboju <naresh.kamboju@linaro.org>
+(cherry picked from commit 34319fb8e6f1e9c13e379383c8d1311f6b7e0cd2)
+Signed-off-by: Mark Brown <broonie@linaro.org>
+---
+ linaro/configs/big-LITTLE-IKS.conf | 5 +++++
+ 1 file changed, 5 insertions(+)
+
+diff --git a/linaro/configs/big-LITTLE-IKS.conf b/linaro/configs/big-LITTLE-IKS.conf
+new file mode 100644
+index 0000000..b067fde
+--- /dev/null
++++ b/linaro/configs/big-LITTLE-IKS.conf
+@@ -0,0 +1,5 @@
++CONFIG_BIG_LITTLE=y
++CONFIG_BL_SWITCHER=y
++CONFIG_ARM_DT_BL_CPUFREQ=y
++CONFIG_ARM_VEXPRESS_BL_CPUFREQ=y
++CONFIG_CPU_FREQ_GOV_USERSPACE=y
+-- 
+1.8.0
+

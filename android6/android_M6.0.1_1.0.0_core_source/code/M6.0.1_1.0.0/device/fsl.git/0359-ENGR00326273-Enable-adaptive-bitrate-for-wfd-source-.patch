@@ -1,0 +1,47 @@
+From 9213609b783e670e9bc3a4518cecaa226d4cb5a4 Mon Sep 17 00:00:00 2001
+From: Wang Haoran <b50027@freescale.com>
+Date: Thu, 28 Aug 2014 08:57:03 +0800
+Subject: [PATCH 359/602] ENGR00326273 Enable adaptive bitrate for wfd source
+ to reduce latency
+
+Set this property to enable the adaptive video bitrate
+feature. If the latency is large the source device
+will automatically lower the video bitrate and will
+raise it when latency is small.
+
+Signed-off-by: Wang Haoran <b50027@freescale.com>
+---
+ sabreauto_6q/init.rc | 2 ++
+ sabresd_6dq/init.rc  | 3 +++
+ 2 files changed, 5 insertions(+)
+
+diff --git a/sabreauto_6q/init.rc b/sabreauto_6q/init.rc
+index c38d11a..5180832 100644
+--- a/sabreauto_6q/init.rc
++++ b/sabreauto_6q/init.rc
+@@ -99,6 +99,8 @@ on boot
+     # No bluetooth hardware present
+     setprop hw.bluetooth 0
+     setprop wlan.interface wlan0
++    # Set WiFi Display Source VideoBitRate Adaptive
++    setprop media.wfd.video-bitrate adaptive
+ 
+ # mount the debugfs
+     mount debugfs none /sys/kernel/debug/
+diff --git a/sabresd_6dq/init.rc b/sabresd_6dq/init.rc
+index a4be33a..3b720ac 100755
+--- a/sabresd_6dq/init.rc
++++ b/sabresd_6dq/init.rc
+@@ -105,6 +105,9 @@ on boot
+     # No bluetooth hardware present
+     setprop wlan.interface wlan0
+ 
++    # Set WiFi Display Source VideoBitRate Adaptive
++    setprop media.wfd.video-bitrate adaptive
++
+ # mount the debugfs
+     mount debugfs none /sys/kernel/debug/
+ 
+-- 
+1.8.0
+

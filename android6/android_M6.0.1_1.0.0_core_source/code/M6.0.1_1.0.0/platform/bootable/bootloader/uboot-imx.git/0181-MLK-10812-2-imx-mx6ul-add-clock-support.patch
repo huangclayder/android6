@@ -1,0 +1,1103 @@
+From fd623964a78194543cfe21e5be031aa4ce9f623e Mon Sep 17 00:00:00 2001
+From: Peng Fan <Peng.Fan@freescale.com>
+Date: Tue, 5 May 2015 14:40:02 +0800
+Subject: [PATCH] MLK-10812-2 imx:mx6ul add clock support
+
+add i.MX6UL clock related settings/macros/apis
+
+When using TFT43AB, its pixel size is 480x272 which needs a
+slow pix clock. Without apply the test_div in PLL video, we can't
+get the pix clock in the rate.
+So change the LCDIF clock calculation to use the test_div.
+
+Signed-off-by: Peng Fan <Peng.Fan@freescale.com>
+Signed-off-by: Ye.Li <B37916@freescale.com>
+---
+ arch/arm/cpu/armv7/mx6/clock.c           | 170 +++++++++++++++--
+ arch/arm/include/asm/arch-mx6/clock.h    |   6 +-
+ arch/arm/include/asm/arch-mx6/crm_regs.h | 306 ++++++++++++++++++++++++++-----
+ 3 files changed, 421 insertions(+), 61 deletions(-)
+
+diff --git a/arch/arm/cpu/armv7/mx6/clock.c b/arch/arm/cpu/armv7/mx6/clock.c
+index e6a2115..bac45e0 100644
+--- a/arch/arm/cpu/armv7/mx6/clock.c
++++ b/arch/arm/cpu/armv7/mx6/clock.c
+@@ -94,16 +94,27 @@ void enable_usboh3_clk(unsigned char enable)
+ #if defined(CONFIG_FEC_MXC) && !defined(CONFIG_MX6SX)
+ void enable_enet_clk(unsigned char enable)
+ {
++#ifdef CONFIG_MX6UL
++	u32 mask = MXC_CCM_CCGR3_ENET_CLK_ENABLE_MASK;
++	/* Set AHB clk, since enet clock is sourced from AHB and IPG */
++	/* ROM has set AHB, just leave here empty */
++	/* Enable enet system clock */
++	if (enable)
++		setbits_le32(&imx_ccm->CCGR3, mask);
++	else
++		clrbits_le32(&imx_ccm->CCGR3, mask);
++#else
+ 	u32 mask = MXC_CCM_CCGR1_ENET_CLK_ENABLE_MASK;
+ 
+ 	if (enable)
+ 		setbits_le32(&imx_ccm->CCGR1, mask);
+ 	else
+ 		clrbits_le32(&imx_ccm->CCGR1, mask);
++#endif
+ }
+ #endif
+ 
+-#ifdef CONFIG_MXC_UART
++#if defined(CONFIG_MXC_UART) && !defined(CONFIG_MX6UL)
+ void enable_uart_clk(unsigned char enable)
+ {
+ 	u32 mask = MXC_CCM_CCGR5_UART_MASK | MXC_CCM_CCGR5_UART_SERIAL_MASK;
+@@ -246,10 +257,12 @@ static u32 mxc_get_pll_pfd(enum pll_clocks pll, int pfd_num)
+ 
+ 	switch (pll) {
+ 	case PLL_BUS:
++#if !defined(CONFIG_MX6UL) && !defined(CONFIG_MX6UL)
+ 		if (pfd_num == 3) {
+ 			/* No PFD3 on PPL2 */
+ 			return 0;
+ 		}
++#endif
+ 		div = __raw_readl(&imx_ccm->analog_pfd_528);
+ 		freq = (u64)decode_pll(PLL_BUS, MXC_HCLK);
+ 		break;
+@@ -281,9 +294,12 @@ static u32 get_mcu_main_clk(void)
+ u32 get_periph_clk(void)
+ {
+ 	u32 reg, freq = 0;
++	u32 div;
+ 
+ 	reg = __raw_readl(&imx_ccm->cbcdr);
+ 	if (reg & MXC_CCM_CBCDR_PERIPH_CLK_SEL) {
++		div = (reg & MXC_CCM_CBCDR_PERIPH_CLK2_PODF_MASK) >>
++		       MXC_CCM_CBCDR_PERIPH_CLK2_PODF_OFFSET;
+ 		reg = __raw_readl(&imx_ccm->cbcmr);
+ 		reg &= MXC_CCM_CBCMR_PERIPH_CLK2_SEL_MASK;
+ 		reg >>= MXC_CCM_CBCMR_PERIPH_CLK2_SEL_OFFSET;
+@@ -321,9 +337,10 @@ u32 get_periph_clk(void)
+ 		default:
+ 			break;
+ 		}
++		div = 0;
+ 	}
+ 
+-	return freq;
++	return freq / (div + 1);
+ }
+ 
+ static u32 get_ipg_clk(void)
+@@ -342,7 +359,8 @@ static u32 get_ipg_per_clk(void)
+ 	u32 reg, perclk_podf;
+ 
+ 	reg = __raw_readl(&imx_ccm->cscmr1);
+-#if (defined(CONFIG_MX6SL) || defined(CONFIG_MX6SX) || defined(CONFIG_MX6QP))
++#if (defined(CONFIG_MX6SL) || defined(CONFIG_MX6SX) || \
++	defined(CONFIG_MX6QP) || defined(CONFIG_MX6UL))
+ 	if (reg & MXC_CCM_CSCMR1_PER_CLK_SEL_MASK)
+ 		return MXC_HCLK; /* OSC 24Mhz */
+ #endif
+@@ -356,7 +374,8 @@ static u32 get_uart_clk(void)
+ 	u32 reg, uart_podf;
+ 	u32 freq = decode_pll(PLL_USBOTG, MXC_HCLK) / 6; /* static divider */
+ 	reg = __raw_readl(&imx_ccm->cscdr1);
+-#if (defined(CONFIG_MX6SL) || defined(CONFIG_MX6SX) || defined(CONFIG_MX6QP))
++#if (defined(CONFIG_MX6SL) || defined(CONFIG_MX6SX) || \
++	defined(CONFIG_MX6QP) || defined(CONFIG_MX6UL))
+ 	if (reg & MXC_CCM_CSCDR1_UART_CLK_SEL)
+ 		freq = MXC_HCLK;
+ #endif
+@@ -374,7 +393,8 @@ static u32 get_cspi_clk(void)
+ 	cspi_podf = (reg & MXC_CCM_CSCDR2_ECSPI_CLK_PODF_MASK)
+ 		>> MXC_CCM_CSCDR2_ECSPI_CLK_PODF_OFFSET;
+ 
+-#if defined(CONFIG_MX6QP)
++#if (defined(CONFIG_MX6SL) || defined(CONFIG_MX6SX) || \
++	defined(CONFIG_MX6QP) || defined(CONFIG_MX6UL))
+ 	if (reg & MXC_CCM_CSCDR2_ECSPI_CLK_SEL_MASK)
+ 		return MXC_HCLK / (cspi_podf + 1);
+ #endif
+@@ -429,7 +449,46 @@ static u32 get_emi_slow_clk(void)
+ 	return root_freq / (emi_slow_podf + 1);
+ }
+ 
+-#if (defined(CONFIG_MX6SL) || defined(CONFIG_MX6SX))
++#if defined(CONFIG_MX6UL) || defined(CONFIG_MX6SX)
++static u32 get_mmdc_ch0_clk(void)
++{
++	u32 cbcmr = __raw_readl(&imx_ccm->cbcmr);
++	u32 cbcdr = __raw_readl(&imx_ccm->cbcdr);
++	u32 freq, mmdc_podf, per2_clk2_podf;
++
++	mmdc_podf = (cbcdr & MXC_CCM_CBCDR_MMDC_CH1_PODF_MASK)
++		     >> MXC_CCM_CBCDR_MMDC_CH1_PODF_OFFSET;
++	if (cbcdr & MXC_CCM_CBCDR_PERIPH2_CLK_SEL) {
++		per2_clk2_podf = (cbcdr & MXC_CCM_CBCDR_PERIPH2_CLK2_PODF_MASK)
++				  >> MXC_CCM_CBCDR_PERIPH2_CLK2_PODF_OFFSET;
++		if (cbcmr & MXC_CCM_CBCMR_PERIPH2_CLK2_SEL)
++			freq = MXC_HCLK;
++		else
++			freq = decode_pll(PLL_USBOTG, MXC_HCLK);
++	} else {
++		per2_clk2_podf = 0;
++		switch ((cbcmr & MXC_CCM_CBCMR_PRE_PERIPH2_CLK_SEL_MASK) >>
++			MXC_CCM_CBCMR_PRE_PERIPH2_CLK_SEL_OFFSET) {
++		case 0:
++			freq = decode_pll(PLL_BUS, MXC_HCLK);
++			break;
++		case 1:
++			freq = mxc_get_pll_pfd(PLL_BUS, 2);
++			break;
++		case 2:
++			freq = mxc_get_pll_pfd(PLL_BUS, 0);
++			break;
++		case 3:
++			/* static / 2 divider */
++			freq =  mxc_get_pll_pfd(PLL_BUS, 2) / 2;
++			break;
++		}
++	}
++
++
++	return freq / (mmdc_podf + 1) / (per2_clk2_podf + 1);
++}
++#elif defined(CONFIG_MX6SL)
+ static u32 get_mmdc_ch0_clk(void)
+ {
+ 	u32 cbcmr = __raw_readl(&imx_ccm->cbcmr);
+@@ -540,7 +599,41 @@ void enable_lcdif_clock(uint32_t base_addr)
+ 	writel(reg, &imx_ccm->CCGR2);
+ }
+ 
+-static int enable_pll_video(u32 pll_div, u32 pll_num, u32 pll_denom)
++void mxs_set_vadcclk(void)
++{
++	u32 reg = 0;
++
++	reg = readl(&imx_ccm->cscmr2);
++	reg &= ~MXC_CCM_CSCMR2_VID_CLK_SEL_MASK;
++	reg |= 0x19 << MXC_CCM_CSCMR2_VID_CLK_SEL_OFFSET;
++	writel(reg, &imx_ccm->cscmr2);
++}
++#endif
++
++#ifdef CONFIG_MX6UL
++void enable_lcdif_clock(uint32_t base_addr)
++{
++	u32 reg = 0;
++
++	/* Set to pre-mux clock at default */
++	reg = readl(&imx_ccm->cscdr2);
++	reg &= ~MXC_CCM_CSCDR2_LCDIF1_CLK_SEL_MASK;
++	writel(reg, &imx_ccm->cscdr2);
++
++	/* Enable the LCDIF pix clock */
++	reg = readl(&imx_ccm->CCGR3);
++	reg |= MXC_CCM_CCGR3_LCDIF1_PIX_MASK;
++	writel(reg, &imx_ccm->CCGR3);
++
++	reg = readl(&imx_ccm->CCGR2);
++	reg |= MXC_CCM_CCGR2_LCD_MASK;
++	writel(reg, &imx_ccm->CCGR2);
++}
++#endif
++
++#if defined(CONFIG_MX6SX) || defined(CONFIG_MX6UL)
++static int enable_pll_video(u32 pll_div, u32 pll_num, u32 pll_denom,
++	u32 test_div)
+ {
+ 	u32 reg = 0;
+ 	ulong start;
+@@ -554,9 +647,23 @@ static int enable_pll_video(u32 pll_div, u32 pll_num, u32 pll_denom)
+ 		&imx_ccm->analog_pll_video_clr);
+ 
+ 	/* Set div, num and denom */
+-	writel(BF_ANADIG_PLL_VIDEO_DIV_SELECT(pll_div) |
+-		BF_ANADIG_PLL_VIDEO_TEST_DIV_SELECT(0x2),
+-		&imx_ccm->analog_pll_video_set);
++	switch (test_div) {
++	case 1:
++		writel(BF_ANADIG_PLL_VIDEO_DIV_SELECT(pll_div) |
++		       BF_ANADIG_PLL_VIDEO_TEST_DIV_SELECT(0x1),
++		       &imx_ccm->analog_pll_video_set);
++		break;
++	case 2:
++		writel(BF_ANADIG_PLL_VIDEO_DIV_SELECT(pll_div) |
++		       BF_ANADIG_PLL_VIDEO_TEST_DIV_SELECT(0x0),
++		       &imx_ccm->analog_pll_video_set);
++		break;
++	default:
++		writel(BF_ANADIG_PLL_VIDEO_DIV_SELECT(pll_div) |
++		       BF_ANADIG_PLL_VIDEO_TEST_DIV_SELECT(0x2),
++		       &imx_ccm->analog_pll_video_set);
++		break;
++	}
+ 
+ 	writel(BF_ANADIG_PLL_VIDEO_NUM_A(pll_num),
+ 		&imx_ccm->analog_pll_video_num);
+@@ -590,7 +697,7 @@ void mxs_set_lcdclk(uint32_t base_addr, uint32_t freq)
+ 	u32 max = hck * 54;
+ 	u32 temp, best = 0;
+ 	u32 i, j, pred = 1, postd = 1;
+-	u32 pll_div, pll_num, pll_denom;
++	u32 pll_div, pll_num, pll_denom, post_div = 0;
+ 
+ 	debug("mxs_set_lcdclk, freq = %d\n", freq);
+ 
+@@ -598,11 +705,30 @@ void mxs_set_lcdclk(uint32_t base_addr, uint32_t freq)
+ 		reg = readl(&imx_ccm->cscdr2);
+ 		if ((reg & MXC_CCM_CSCDR2_LCDIF1_CLK_SEL_MASK) != 0)
+ 			return; /*Can't change clocks when clock not from pre-mux */
+-	} else {
++	}
++#ifdef CONFIG_MX6SX
++	else {
+ 		reg = readl(&imx_ccm->cscdr2);
+ 		if ((reg & MXC_CCM_CSCDR2_LCDIF2_CLK_SEL_MASK) != 0)
+ 			return; /*Can't change clocks when clock not from pre-mux */
+ 	}
++#endif
++
++	temp = (freq * 8 * 8);
++	if (temp < min) {
++		for (i = 1; i <= 2; i++) {
++			if ((temp * (1 << i)) > min) {
++				post_div = i;
++				freq = (freq * (1 << i));
++				break;
++			}
++		}
++
++		if (3 == i) {
++			printf("Fail to set rate to %dkhz", freq);
++			return;
++		}
++	}
+ 
+ 	for (i = 1; i <= 8; i++) {
+ 		for (j = 1; j <= 8; j++) {
+@@ -630,7 +756,7 @@ void mxs_set_lcdclk(uint32_t base_addr, uint32_t freq)
+ 	pll_num = (best - hck * pll_div) * pll_denom / hck;
+ 
+ 	if (base_addr == LCDIF1_BASE_ADDR) {
+-		if (enable_pll_video(pll_div, pll_num, pll_denom))
++		if (enable_pll_video(pll_div, pll_num, pll_denom, post_div))
+ 			return;
+ 
+ 		/* Select pre-lcd clock to PLL5 */
+@@ -647,8 +773,9 @@ void mxs_set_lcdclk(uint32_t base_addr, uint32_t freq)
+ 		reg &= ~MXC_CCM_CBCMR_LCDIF1_PODF_MASK;
+ 		reg |= ((postd - 1) << MXC_CCM_CBCMR_LCDIF1_PODF_OFFSET);
+ 		writel(reg, &imx_ccm->cbcmr);
+-
+-	} else {
++	}
++#ifdef CONFIG_MX6SX
++	else {
+ 		if (enable_pll_video(pll_div, pll_num, pll_denom))
+ 			return;
+ 
+@@ -667,6 +794,7 @@ void mxs_set_lcdclk(uint32_t base_addr, uint32_t freq)
+ 		reg |= ((postd - 1) << MXC_CCM_CSCMR1_LCDIF2_PODF_OFFSET);
+ 		writel(reg, &imx_ccm->cscmr1);
+ 	}
++#endif
+ }
+ 
+ /* qspi_num can be from 0 - 1 */
+@@ -690,6 +818,7 @@ void enable_qspi_clk(int qspi_num)
+ 		/* enable the clock gate */
+ 		setbits_le32(&imx_ccm->CCGR3, MXC_CCM_CCGR3_QSPI1_MASK);
+ 		break;
++#ifdef CONFIG_MX6SX
+ 	case 1:
+ 		/*
+ 		 * disable the clock gate
+@@ -712,12 +841,13 @@ void enable_qspi_clk(int qspi_num)
+ 		setbits_le32(&imx_ccm->CCGR4, MXC_CCM_CCGR4_QSPI2_ENFC_MASK |
+ 			     MXC_CCM_CCGR4_RAWNAND_U_GPMI_BCH_INPUT_GPMI_IO_MASK);
+ 		break;
++#endif
+ 	default:
+ 		break;
+ 	}
+ }
+ 
+-void mxs_set_vadcclk()
++void mxs_set_vadcclk(void)
+ {
+ 	u32 reg = 0;
+ 
+@@ -774,7 +904,7 @@ int enable_fec_anatop_clock(int fec_id, enum enet_freq freq)
+ #endif
+ 	writel(reg, &anatop->pll_enet);
+ 
+-#ifdef CONFIG_MX6SX
++#if defined(CONFIG_MX6SX)
+ 	/*
+ 	 * Set enet ahb clock to 200MHz
+ 	 * pll2_pfd2_396m-> ENET_PODF-> ENET_AHB
+@@ -818,6 +948,7 @@ static u32 get_usdhc_clk(u32 port)
+ 		clk_sel = cscmr1 & MXC_CCM_CSCMR1_USDHC2_CLK_SEL;
+ 
+ 		break;
++#ifndef CONFIG_MX6UL
+ 	case 2:
+ 		usdhc_podf = (cscdr1 & MXC_CCM_CSCDR1_USDHC3_PODF_MASK) >>
+ 					MXC_CCM_CSCDR1_USDHC3_PODF_OFFSET;
+@@ -830,6 +961,7 @@ static u32 get_usdhc_clk(u32 port)
+ 		clk_sel = cscmr1 & MXC_CCM_CSCMR1_USDHC4_CLK_SEL;
+ 
+ 		break;
++#endif
+ 	default:
+ 		break;
+ 	}
+@@ -852,6 +984,7 @@ u32 imx_get_fecclk(void)
+ 	return mxc_get_clock(MXC_IPG_CLK);
+ }
+ 
++#ifndef CONFIG_MX6UL
+ static int enable_enet_pll(uint32_t en)
+ {
+ 	struct mxc_ccm_reg *const imx_ccm
+@@ -980,6 +1113,7 @@ int enable_pcie_clock(void)
+ 	return enable_enet_pll(BM_ANADIG_PLL_ENET_ENABLE_PCIE);
+ #endif
+ }
++#endif
+ 
+ #ifdef CONFIG_SECURE_BOOT
+ void hab_caam_clock_enable(unsigned char enable)
+@@ -1114,7 +1248,7 @@ int do_mx6_showclocks(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
+ 	return 0;
+ }
+ 
+-#ifndef CONFIG_MX6SX
++#if !defined(CONFIG_MX6SX) && !defined(CONFIG_MX6UL)
+ #ifdef CONFIG_MX6QP
+ static void pre_misc_setting(void)
+ {
+diff --git a/arch/arm/include/asm/arch-mx6/clock.h b/arch/arm/include/asm/arch-mx6/clock.h
+index d253e13..9670c25 100644
+--- a/arch/arm/include/asm/arch-mx6/clock.h
++++ b/arch/arm/include/asm/arch-mx6/clock.h
+@@ -71,10 +71,12 @@ void enable_enet_clk(unsigned char enable);
+ void hab_caam_clock_enable(unsigned char enable);
+ #endif
+ 
+-#if (defined(CONFIG_MX6SX))
++#if defined(CONFIG_MX6SX) || defined(CONFIG_MX6UL)
+ void enable_qspi_clk(int qspi_num);
+-void enable_lcdif_clock(uint32_t base_addr);
+ void mxs_set_lcdclk(uint32_t base_addr, uint32_t freq);
++void enable_lcdif_clock(uint32_t base_addr);
++#endif
++#if defined(CONFIG_MX6SX)
+ void enable_lvds(uint32_t lcdif_base);
+ void mxs_set_vadcclk(void);
+ #endif
+diff --git a/arch/arm/include/asm/arch-mx6/crm_regs.h b/arch/arm/include/asm/arch-mx6/crm_regs.h
+index d84f038..0412a11 100644
+--- a/arch/arm/include/asm/arch-mx6/crm_regs.h
++++ b/arch/arm/include/asm/arch-mx6/crm_regs.h
+@@ -204,10 +204,12 @@ struct mxc_ccm_reg {
+ #define MXC_CCM_CCR_RBC_EN				(1 << 27)
+ #define MXC_CCM_CCR_REG_BYPASS_CNT_MASK			(0x3F << 21)
+ #define MXC_CCM_CCR_REG_BYPASS_CNT_OFFSET		21
++#if !defined(CONFIG_MX6SX) && !defined(CONFIG_MX6UL)
+ #define MXC_CCM_CCR_WB_COUNT_MASK			0x7
+ #define MXC_CCM_CCR_WB_COUNT_OFFSET			(1 << 16)
++#endif
+ #define MXC_CCM_CCR_COSC_EN				(1 << 12)
+-#if (defined(CONFIG_MX6SL) || defined(CONFIG_MX6QP))
++#if (defined(CONFIG_MX6SL) || defined(CONFIG_MX6QP) || defined(CONFIG_MX6UL))
+ #define MXC_CCM_CCR_OSCNT_MASK				0x7F
+ #else
+ #define MXC_CCM_CCR_OSCNT_MASK				0xFF
+@@ -238,6 +240,10 @@ struct mxc_ccm_reg {
+ #define MXC_CCM_CCSR_PLL2_SW_CLK_SEL			(1 << 1)
+ #define MXC_CCM_CCSR_PLL3_SW_CLK_SEL			(1 << 0)
+ 
++#ifdef CONFIG_MX6UL
++#define MXC_CCM_CCSR_CA7_SECONDARY_CLK_SEL		(1 << 3)
++#endif
++
+ /* Define the bits in register CACRR */
+ #define MXC_CCM_CACRR_ARM_PODF_OFFSET			0
+ #define MXC_CCM_CACRR_ARM_PODF_MASK			0x7
+@@ -245,12 +251,13 @@ struct mxc_ccm_reg {
+ /* Define the bits in register CBCDR */
+ #define MXC_CCM_CBCDR_PERIPH_CLK2_PODF_MASK		(0x7 << 27)
+ #define MXC_CCM_CBCDR_PERIPH_CLK2_PODF_OFFSET		27
+-#define MXC_CCM_CBCDR_PERIPH2_CLK2_SEL			(1 << 26)
++#define MXC_CCM_CBCDR_PERIPH2_CLK_SEL			(1 << 26)
+ #define MXC_CCM_CBCDR_PERIPH_CLK_SEL			(1 << 25)
+-#ifndef CONFIG_MX6SX
++#if !defined(CONFIG_MX6SX) && !defined(CONFIG_MX6SL) && !defined(CONFIG_MX6UL)
+ #define MXC_CCM_CBCDR_MMDC_CH0_PODF_MASK		(0x7 << 19)
+ #define MXC_CCM_CBCDR_MMDC_CH0_PODF_OFFSET		19
+ #endif
++/* To 6SX, 6UL and 6SL OCRAM_PODF is AXI_PODF */
+ #define MXC_CCM_CBCDR_AXI_PODF_MASK			(0x7 << 16)
+ #define MXC_CCM_CBCDR_AXI_PODF_OFFSET			16
+ #define MXC_CCM_CBCDR_AHB_PODF_MASK			(0x7 << 10)
+@@ -265,25 +272,27 @@ struct mxc_ccm_reg {
+ #define MXC_CCM_CBCDR_PERIPH2_CLK2_PODF_OFFSET		0
+ 
+ /* Define the bits in register CBCMR */
+-#ifdef CONFIG_MX6SX
++#if defined(CONFIG_MX6SX) || defined(CONFIG_MX6UL)
++#ifndef CONFIG_MX6UL
+ #define MXC_CCM_CBCMR_GPU_CORE_PODF_MASK		(0x7 << 29)
+ #define MXC_CCM_CBCMR_GPU_CORE_PODF_OFFSET		29
+ #define MXC_CCM_CBCMR_GPU_AXI_PODF_MASK		(0x7 << 26)
+ #define MXC_CCM_CBCMR_GPU_AXI_PODF_OFFSET		26
++#define MXC_CCM_CBCMR_PCIE_AXI_CLK_SEL			(1 << 10)
++#define MXC_CCM_CBCMR_GPU_AXI_CLK_SEL_MASK		(0x3 << 8)
++#define MXC_CCM_CBCMR_GPU_AXI_CLK_SEL_OFFSET		8
++#define MXC_CCM_CBCMR_GPU_CORE_CLK_SEL_MASK		(0x3 << 4)
++#define MXC_CCM_CBCMR_GPU_CORE_CLK_SEL_OFFSET		4
++#endif
+ #define MXC_CCM_CBCMR_LCDIF1_PODF_MASK		(0x7 << 23)
+ #define MXC_CCM_CBCMR_LCDIF1_PODF_OFFSET		23
+ #define MXC_CCM_CBCMR_PRE_PERIPH2_CLK_SEL_MASK		(0x3 << 21)
+ #define MXC_CCM_CBCMR_PRE_PERIPH2_CLK_SEL_OFFSET	21
+-#define MXC_CCM_CBCMR_PRE_PERIPH2_CLK2_SEL		(1 << 20)
++#define MXC_CCM_CBCMR_PERIPH2_CLK2_SEL			(1 << 20)
+ #define MXC_CCM_CBCMR_PRE_PERIPH_CLK_SEL_MASK		(0x3 << 18)
+ #define MXC_CCM_CBCMR_PRE_PERIPH_CLK_SEL_OFFSET		18
+ #define MXC_CCM_CBCMR_PERIPH_CLK2_SEL_MASK		(0x3 << 12)
+ #define MXC_CCM_CBCMR_PERIPH_CLK2_SEL_OFFSET		12
+-#define MXC_CCM_CBCMR_PCIE_AXI_CLK_SEL			(1 << 10)
+-#define MXC_CCM_CBCMR_GPU_AXI_CLK_SEL_MASK		(0x3 << 8)
+-#define MXC_CCM_CBCMR_GPU_AXI_CLK_SEL_OFFSET	8
+-#define MXC_CCM_CBCMR_GPU_CORE_CLK_SEL_MASK		(0x3 << 4)
+-#define MXC_CCM_CBCMR_GPU_CORE_CLK_SEL_OFFSET		4
+ #else
+ #define MXC_CCM_CBCMR_GPU3D_SHADER_PODF_MASK		(0x7 << 29)
+ #define MXC_CCM_CBCMR_GPU3D_SHADER_PODF_OFFSET		29
+@@ -319,7 +328,7 @@ struct mxc_ccm_reg {
+ /* Define the bits in register CSCMR1 */
+ #define MXC_CCM_CSCMR1_ACLK_EMI_SLOW_MASK		(0x3 << 29)
+ #define MXC_CCM_CSCMR1_ACLK_EMI_SLOW_OFFSET		29
+-#ifdef CONFIG_MX6SX
++#if defined(CONFIG_MX6SX) || defined(CONFIG_MX6UL)
+ #define MXC_CCM_CSCMR1_QSPI1_PODF_MASK			(0x7 << 26)
+ #define MXC_CCM_CSCMR1_QSPI1_PODF_OFFSET		26
+ #else
+@@ -329,15 +338,23 @@ struct mxc_ccm_reg {
+ #define MXC_CCM_CSCMR1_ACLK_EMI_SLOW_PODF_MASK		(0x7 << 23)
+ #define MXC_CCM_CSCMR1_ACLK_EMI_SLOW_PODF_OFFSET	23
+ /* ACLK_EMI_PODF is LCFIF2_PODF on MX6SX */
+-#ifdef CONFIG_MX6SX
++#ifndef CONFIG_MX6UL
++#if defined(CONFIG_MX6SX)
+ #define MXC_CCM_CSCMR1_LCDIF2_PODF_MASK		(0x7 << 20)
+ #define MXC_CCM_CSCMR1_LCDIF2_PODF_OFFSET		20
+-#endif
++#else
+ #define MXC_CCM_CSCMR1_ACLK_EMI_PODF_MASK		(0x7 << 20)
+ #define MXC_CCM_CSCMR1_ACLK_EMI_PODF_OFFSET		20
++#endif
++#endif
+ 
++#ifdef CONFIG_MX6UL
++#define MXC_CCM_CSCMR1_GPMI_CLK_SEL			(1 << 19)
++#define MXC_CCM_CSCMR1_BCH_CLK_SEL			(1 << 18)
++#else
+ #define MXC_CCM_CSCMR1_USDHC4_CLK_SEL			(1 << 19)
+ #define MXC_CCM_CSCMR1_USDHC3_CLK_SEL			(1 << 18)
++#endif
+ #define MXC_CCM_CSCMR1_USDHC2_CLK_SEL			(1 << 17)
+ #define MXC_CCM_CSCMR1_USDHC1_CLK_SEL			(1 << 16)
+ #define MXC_CCM_CSCMR1_SSI3_CLK_SEL_MASK		(0x3 << 14)
+@@ -346,26 +363,33 @@ struct mxc_ccm_reg {
+ #define MXC_CCM_CSCMR1_SSI2_CLK_SEL_OFFSET		12
+ #define MXC_CCM_CSCMR1_SSI1_CLK_SEL_MASK		(0x3 << 10)
+ #define MXC_CCM_CSCMR1_SSI1_CLK_SEL_OFFSET		10
+-#ifdef CONFIG_MX6SX
++#if defined(CONFIG_MX6SX) || defined(CONFIG_MX6UL)
+ #define MXC_CCM_CSCMR1_QSPI1_CLK_SEL_MASK		(0x7 << 7)
+ #define MXC_CCM_CSCMR1_QSPI1_CLK_SEL_OFFSET		7
+ #endif
+-#if (defined(CONFIG_MX6SL) || defined(CONFIG_MX6SX) || defined(CONFIG_MX6QP))
++#if (defined(CONFIG_MX6SL) || defined(CONFIG_MX6SX) || \
++	defined(CONFIG_MX6QP) || defined(CONFIG_MX6UL))
+ #define MXC_CCM_CSCMR1_PER_CLK_SEL_MASK			(1 << 6)
+ #define MXC_CCM_CSCMR1_PER_CLK_SEL_OFFSET		6
+ #endif
+ #define MXC_CCM_CSCMR1_PERCLK_PODF_MASK			0x3F
+ 
+ /* Define the bits in register CSCMR2 */
+-#ifdef CONFIG_MX6SX
++#if defined(CONFIG_MX6SX) || defined(CONFIG_MX6UL)
++#define MXC_CCM_CSCMR2_VID_CLK_PODF_MASK		(0x7 << 26)
++#define MXC_CCM_CSCMR2_VID_CLK_PODF_OFFSET		26
++#define MXC_CCM_CSCMR2_VID_CLK_PRE_PODF_MASK		(0x3 << 24)
++#define MXC_CCM_CSCMR2_VID_CLK_PRE_PODF_OFFSET		24
+ #define MXC_CCM_CSCMR2_VID_CLK_SEL_MASK			(0x7 << 21)
+ #define MXC_CCM_CSCMR2_VID_CLK_SEL_OFFSET		21
+ #endif
++#ifndef CONFIG_MX6UL
+ #define MXC_CCM_CSCMR2_ESAI_PRE_SEL_MASK		(0x3 << 19)
+ #define MXC_CCM_CSCMR2_ESAI_PRE_SEL_OFFSET		19
++#endif
+ #define MXC_CCM_CSCMR2_LDB_DI1_IPU_DIV			(1 << 11)
+ #define MXC_CCM_CSCMR2_LDB_DI0_IPU_DIV			(1 << 10)
+-#if (defined(CONFIG_MX6SX) || defined(CONFIG_MX6QP))
++#if (defined(CONFIG_MX6SX) || defined(CONFIG_MX6QP) || defined(CONFIG_MX6UL))
+ #define MXC_CCM_CSCMR2_CAN_CLK_SEL_MASK			(0x3 << 8)
+ #define MXC_CCM_CSCMR2_CAN_CLK_SEL_OFFSET		8
+ #endif
+@@ -377,10 +401,17 @@ struct mxc_ccm_reg {
+ #define MXC_CCM_CSCDR1_VPU_AXI_PODF_MASK		(0x7 << 25)
+ #define MXC_CCM_CSCDR1_VPU_AXI_PODF_OFFSET		25
+ #endif
++#ifdef CONFIG_MX6UL
++#define MXC_CCM_CSCDR1_GPMI_PODF_MASK			(0x7 << 22)
++#define MXC_CCM_CSCDR1_GPMI_PODF_OFFSET			22
++#define MXC_CCM_CSCDR1_BCH_PODF_MASK			(0x7 << 19)
++#define MXC_CCM_CSCDR1_BCH_PODF_OFFSET			19
++#else
+ #define MXC_CCM_CSCDR1_USDHC4_PODF_MASK			(0x7 << 22)
+ #define MXC_CCM_CSCDR1_USDHC4_PODF_OFFSET		22
+ #define MXC_CCM_CSCDR1_USDHC3_PODF_MASK			(0x7 << 19)
+ #define MXC_CCM_CSCDR1_USDHC3_PODF_OFFSET		19
++#endif
+ #define MXC_CCM_CSCDR1_USDHC2_PODF_MASK			(0x7 << 16)
+ #define MXC_CCM_CSCDR1_USDHC2_PODF_OFFSET		16
+ #define MXC_CCM_CSCDR1_USDHC1_PODF_MASK			(0x7 << 11)
+@@ -391,25 +422,37 @@ struct mxc_ccm_reg {
+ #define MXC_CCM_CSCDR1_USBOH3_CLK_PODF_OFFSET		6
+ #define MXC_CCM_CSCDR1_USBOH3_CLK_PODF_MASK		(0x3 << 6)
+ #endif
+-#if (defined(CONFIG_MX6SL) || defined(CONFIG_MX6SX) || defined(CONFIG_MX6QP))
++#if (defined(CONFIG_MX6SL) || defined(CONFIG_MX6SX) || \
++	defined(CONFIG_MX6QP) || defined(CONFIG_MX6UL))
+ #define MXC_CCM_CSCDR1_UART_CLK_SEL			(1 << 6)
+ #endif
+ #define MXC_CCM_CSCDR1_UART_CLK_PODF_MASK		0x3F
+ #define MXC_CCM_CSCDR1_UART_CLK_PODF_OFFSET		0
+ 
+ /* Define the bits in register CS1CDR */
++#ifndef CONFIG_MX6UL
+ #define MXC_CCM_CS1CDR_ESAI_CLK_PODF_MASK		(0x3F << 25)
+ #define MXC_CCM_CS1CDR_ESAI_CLK_PODF_OFFSET		25
++#define MXC_CCM_CS1CDR_ESAI_CLK_PRED_MASK		(0x3 << 9)
++#define MXC_CCM_CS1CDR_ESAI_CLK_PRED_OFFSET		9
+ #define MXC_CCM_CS1CDR_SSI3_CLK_PRED_MASK		(0x7 << 22)
+ #define MXC_CCM_CS1CDR_SSI3_CLK_PRED_OFFSET		22
+ #define MXC_CCM_CS1CDR_SSI3_CLK_PODF_MASK		(0x3F << 16)
+ #define MXC_CCM_CS1CDR_SSI3_CLK_PODF_OFFSET		16
+-#define MXC_CCM_CS1CDR_ESAI_CLK_PRED_MASK		(0x3 << 9)
+-#define MXC_CCM_CS1CDR_ESAI_CLK_PRED_OFFSET		9
+ #define MXC_CCM_CS1CDR_SSI1_CLK_PRED_MASK		(0x7 << 6)
+ #define MXC_CCM_CS1CDR_SSI1_CLK_PRED_OFFSET		6
+ #define MXC_CCM_CS1CDR_SSI1_CLK_PODF_MASK		0x3F
+ #define MXC_CCM_CS1CDR_SSI1_CLK_PODF_OFFSET		0
++#else
++#define MXC_CCM_CS1CDR_SAI3_CLK_PRED_MASK		(0x7 << 22)
++#define MXC_CCM_CS1CDR_SAI3_CLK_PRED_OFFSET		22
++#define MXC_CCM_CS1CDR_SAI3_CLK_PODF_MASK		(0x3F << 16)
++#define MXC_CCM_CS1CDR_SAI3_CLK_PODF_OFFSET		16
++#define MXC_CCM_CS1CDR_SAI1_CLK_PRED_MASK		(0x7 << 6)
++#define MXC_CCM_CS1CDR_SAI1_CLK_PRED_OFFSET		6
++#define MXC_CCM_CS1CDR_SAI1_CLK_PODF_MASK		0x3F
++#define MXC_CCM_CS1CDR_SAI1_CLK_PODF_OFFSET		0
++#endif
+ 
+ /* Define the bits in register CS2CDR */
+ #ifdef CONFIG_MX6SX
+@@ -430,7 +473,7 @@ struct mxc_ccm_reg {
+ #define MXC_CCM_CS2CDR_ENFC_CLK_PRED_OFFSET		18
+ #define MXC_CCM_CS2CDR_ENFC_CLK_PRED(v)			(((v) & 0x7) << 18)
+ 
+-#ifdef CONFIG_MX6QP
++#if defined(CONFIG_MX6QP) || defined(CONFIG_MX6UL)
+ #define MXC_CCM_CS2CDR_ENFC_CLK_SEL_MASK		(0x7 << 15)
+ #define MXC_CCM_CS2CDR_ENFC_CLK_SEL_OFFSET		15
+ #define MXC_CCM_CS2CDR_ENFC_CLK_SEL(v)			(((v) & 0x7) << 15)
+@@ -444,13 +487,20 @@ struct mxc_ccm_reg {
+ #define MXC_CCM_CS2CDR_LDB_DI1_CLK_SEL_OFFSET		12
+ #define MXC_CCM_CS2CDR_LDB_DI0_CLK_SEL_MASK		(0x7 << 9)
+ #define MXC_CCM_CS2CDR_LDB_DI0_CLK_SEL_OFFSET		9
++#ifdef CONFIG_MX6UL
++#define MXC_CCM_CS2CDR_SAI2_CLK_PRED_MASK		(0x7 << 6)
++#define MXC_CCM_CS2CDR_SAI2_CLK_PRED_OFFSET		6
++#define MXC_CCM_CS2CDR_SAI2_CLK_PODF_MASK		0x3F
++#define MXC_CCM_CS2CDR_SAI2_CLK_PODF_OFFSET		0
++#else
+ #define MXC_CCM_CS2CDR_SSI2_CLK_PRED_MASK		(0x7 << 6)
+ #define MXC_CCM_CS2CDR_SSI2_CLK_PRED_OFFSET		6
+ #define MXC_CCM_CS2CDR_SSI2_CLK_PODF_MASK		0x3F
+ #define MXC_CCM_CS2CDR_SSI2_CLK_PODF_OFFSET		0
++#endif
+ 
+ /* Define the bits in register CDCDR */
+-#ifndef CONFIG_MX6SX
++#if !defined(CONFIG_MX6SX) && !defined(CONFIG_MX6UL)
+ #define MXC_CCM_CDCDR_HSI_TX_PODF_MASK			(0x7 << 29)
+ #define MXC_CCM_CDCDR_HSI_TX_PODF_OFFSET		29
+ #define MXC_CCM_CDCDR_HSI_TX_CLK_SEL			(1 << 28)
+@@ -461,15 +511,33 @@ struct mxc_ccm_reg {
+ #define MXC_CCM_CDCDR_SPDIF0_CLK_PODF_OFFSET		22
+ #define MXC_CCM_CDCDR_SPDIF0_CLK_SEL_MASK		(0x3 << 20)
+ #define MXC_CCM_CDCDR_SPDIF0_CLK_SEL_OFFSET		20
++#ifndef CONFIG_MX6UL
++#ifdef CONFIG_MX6SX
++#define MXC_CCM_CDCDR_AUDIO_CLK_PRED_MASK		(0x7 << 12)
++#define MXC_CCM_CDCDR_AUDIO_CLK_PRED_OFFSET		12
++#define MXC_CCM_CDCDR_AUDIO_CLK_PODF_MASK		(0x7 << 9)
++#define MXC_CCM_CDCDR_AUDIO_CLK_PODF_OFFSET		9
++#define MXC_CCM_CDCDR_AUDIO_CLK_SEL_MASK		(0x3 << 7)
++#define MXC_CCM_CDCDR_AUDIO_CLK_SEL_OFFSET		7
++#else
+ #define MXC_CCM_CDCDR_SPDIF1_CLK_PRED_MASK		(0x7 << 12)
+ #define MXC_CCM_CDCDR_SPDIF1_CLK_PRED_OFFSET		12
+ #define MXC_CCM_CDCDR_SPDIF1_CLK_PODF_MASK		(0x7 << 9)
+ #define MXC_CCM_CDCDR_SPDIF1_CLK_PODF_OFFSET		9
+ #define MXC_CCM_CDCDR_SPDIF1_CLK_SEL_MASK		(0x3 << 7)
+ #define MXC_CCM_CDCDR_SPDIF1_CLK_SEL_OFFSET		7
++#endif
++#endif
+ 
+ /* Define the bits in register CHSCCDR */
+-#ifdef CONFIG_MX6SX
++#ifdef CONFIG_MX6UL
++#define MXC_CCM_CHSCCDR_SIM_PRE_CLK_SEL_MASK		(0x7 << 15)
++#define MXC_CCM_CHSCCDR_SIM_PRE_CLK_SEL_OFFSET		15
++#define MXC_CCM_CHSCCDR_SIM_PODF_MASK			(0x7 << 12)
++#define MXC_CCM_CHSCCDR_SIM_PODF_OFFSET			12
++#define MXC_CCM_CHSCCDR_SIM_CLK_SEL_MASK		(0x7 << 9)
++#define MXC_CCM_CHSCCDR_SIM_CLK_SEL_OFFSET		9
++#elif defined(CONFIG_MX6SX)
+ #define MXC_CCM_CHSCCDR_ENET_PRE_CLK_SEL_MASK		(0x7 << 15)
+ #define MXC_CCM_CHSCCDR_ENET_PRE_CLK_SEL_OFFSET		15
+ #define MXC_CCM_CHSCCDR_ENET_PODF_MASK			(0x7 << 12)
+@@ -504,18 +572,21 @@ struct mxc_ccm_reg {
+ /* Define the bits in register CSCDR2 */
+ #define MXC_CCM_CSCDR2_ECSPI_CLK_PODF_MASK		(0x3F << 19)
+ #define MXC_CCM_CSCDR2_ECSPI_CLK_PODF_OFFSET		19
+-#ifdef CONFIG_MX6QP
++#if defined(CONFIG_MX6QP) || defined(CONFIG_MX6SX) || \
++	defined(CONFIG_MX6SL) || defined(CONFIG_MX6UL)
+ #define MXC_CCM_CSCDR2_ECSPI_CLK_SEL_MASK		(0x1 << 18)
+ #define MXC_CCM_CSCDR2_ECSPI_CLK_SEL_OFFSET		18
+ #endif
+ 
+-#ifdef CONFIG_MX6SX
++#if defined(CONFIG_MX6SX) || defined(CONFIG_MX6UL)
+ #define MXC_CCM_CSCDR2_LCDIF1_PRED_SEL_MASK		(0x7 << 15)
+ #define MXC_CCM_CSCDR2_LCDIF1_PRED_SEL_OFFSET	15
+ #define MXC_CCM_CSCDR2_LCDIF1_PRE_DIV_MASK		(0x7 << 12)
+ #define MXC_CCM_CSCDR2_LCDIF1_PRE_DIV_OFFSET	12
+ #define MXC_CCM_CSCDR2_LCDIF1_CLK_SEL_MASK		(0x7 << 9)
+ #define MXC_CCM_CSCDR2_LCDIF1_CLK_SEL_OFFSET	9
++#endif
++#ifdef CONFIG_MX6SX
+ #define MXC_CCM_CSCDR2_LCDIF2_PRED_SEL_MASK		(0x7 << 6)
+ #define MXC_CCM_CSCDR2_LCDIF2_PRED_SEL_OFFSET	6
+ #define MXC_CCM_CSCDR2_LCDIF2_PRE_DIV_MASK		(0x7 << 3)
+@@ -524,6 +595,12 @@ struct mxc_ccm_reg {
+ #define MXC_CCM_CSCDR2_LCDIF2_CLK_SEL_OFFSET	0
+ #endif
+ 
++#ifdef CONFIG_MX6UL
++#define MXC_CCM_CSCDR3_CSI_PODF_MASK		(0x7 << 11)
++#define MXC_CCM_CSCDR3_CSI_PODF_OFFSET		11
++#define MXC_CCM_CSCDR3_CSI_CLK_SEL_MASK		(0x3 << 9)
++#define MXC_CCM_CSCDR3_CSI_CLK_SEL_OFFSET	9
++#else
+ /* All IPU2_DI1 are LCDIF1 on MX6SX */
+ #define MXC_CCM_CHSCCDR_IPU2_DI1_PRE_CLK_SEL_MASK	(0x7 << 15)
+ #define MXC_CCM_CHSCCDR_IPU2_DI1_PRE_CLK_SEL_OFFSET	15
+@@ -548,33 +625,38 @@ struct mxc_ccm_reg {
+ #define MXC_CCM_CSCDR3_IPU1_HSP_PODF_OFFSET		11
+ #define MXC_CCM_CSCDR3_IPU1_HSP_CLK_SEL_MASK		(0x3 << 9)
+ #define MXC_CCM_CSCDR3_IPU1_HSP_CLK_SEL_OFFSET		9
++#endif
+ 
+ /* Define the bits in register CDHIPR */
+ #define MXC_CCM_CDHIPR_ARM_PODF_BUSY			(1 << 16)
+ #define MXC_CCM_CDHIPR_PERIPH_CLK_SEL_BUSY		(1 << 5)
+-#ifndef CONFIG_MX6SX
++#if !defined(CONFIG_MX6SX) && !defined(CONFIG_MX6UL)
+ #define MXC_CCM_CDHIPR_MMDC_CH0_PODF_BUSY		(1 << 4)
+ #endif
+ #define MXC_CCM_CDHIPR_PERIPH2_CLK_SEL_BUSY		(1 << 3)
++#if defined(CONFIG_MX6UL) || defined(CONFIG_MX6SX)
++#define MXC_CCM_CDHIPR_MMDC_PODF_BUSY			(1 << 2)
++#else
+ #define MXC_CCM_CDHIPR_MMDC_CH1_PODF_BUSY		(1 << 2)
++#endif
+ #define MXC_CCM_CDHIPR_AHB_PODF_BUSY			(1 << 1)
+ #define MXC_CCM_CDHIPR_AXI_PODF_BUSY			1
+ 
+ /* Define the bits in register CLPCR */
+ #define MXC_CCM_CLPCR_MASK_L2CC_IDLE			(1 << 27)
+ #define MXC_CCM_CLPCR_MASK_SCU_IDLE			(1 << 26)
+-#ifndef CONFIG_MX6SX
++#if !defined(CONFIG_MX6SX) || !defined(CONFIG_MX6UL)
+ #define MXC_CCM_CLPCR_MASK_CORE3_WFI			(1 << 25)
+ #define MXC_CCM_CLPCR_MASK_CORE2_WFI			(1 << 24)
+ #define MXC_CCM_CLPCR_MASK_CORE1_WFI			(1 << 23)
+ #endif
+ #define MXC_CCM_CLPCR_MASK_CORE0_WFI			(1 << 22)
+ #define MXC_CCM_CLPCR_BYP_MMDC_CH1_LPM_HS		(1 << 21)
+-#ifndef CONFIG_MX6SX
++#if !defined(CONFIG_MX6SX) && !defined(CONFIG_MX6UL)
+ #define MXC_CCM_CLPCR_BYP_MMDC_CH0_LPM_HS		(1 << 19)
+ #define MXC_CCM_CLPCR_WB_CORE_AT_LPM			(1 << 17)
+-#endif
+ #define MXC_CCM_CLPCR_WB_PER_AT_LPM			(1 << 16)
++#endif
+ #define MXC_CCM_CLPCR_COSC_PWRDOWN			(1 << 11)
+ #define MXC_CCM_CLPCR_STBY_COUNT_MASK			(0x3 << 9)
+ #define MXC_CCM_CLPCR_STBY_COUNT_OFFSET			9
+@@ -582,7 +664,7 @@ struct mxc_ccm_reg {
+ #define MXC_CCM_CLPCR_DIS_REF_OSC			(1 << 7)
+ #define MXC_CCM_CLPCR_SBYOS				(1 << 6)
+ #define MXC_CCM_CLPCR_ARM_CLK_DIS_ON_LPM		(1 << 5)
+-#ifndef CONFIG_MX6SX
++#if !defined(CONFIG_MX6SX) && !defined(CONFIG_MX6UL)
+ #define MXC_CCM_CLPCR_LPSR_CLK_SEL_MASK			(0x3 << 3)
+ #define MXC_CCM_CLPCR_LPSR_CLK_SEL_OFFSET		3
+ #define MXC_CCM_CLPCR_BYPASS_PMIC_VFUNC_READY		(1 << 2)
+@@ -592,7 +674,7 @@ struct mxc_ccm_reg {
+ 
+ /* Define the bits in register CISR */
+ #define MXC_CCM_CISR_ARM_PODF_LOADED			(1 << 26)
+-#ifndef CONFIG_MX6SX
++#if !defined(CONFIG_MX6SX) && !defined(CONFIG_MX6UL)
+ #define MXC_CCM_CISR_MMDC_CH0_PODF_LOADED		(1 << 23)
+ #endif
+ #define MXC_CCM_CISR_PERIPH_CLK_SEL_LOADED		(1 << 22)
+@@ -605,7 +687,7 @@ struct mxc_ccm_reg {
+ 
+ /* Define the bits in register CIMR */
+ #define MXC_CCM_CIMR_MASK_ARM_PODF_LOADED		(1 << 26)
+-#ifndef CONFIG_MX6SX
++#if !defined(CONFIG_MX6SX) && !defined(CONFIG_MX6UL)
+ #define MXC_CCM_CIMR_MASK_MMDC_CH0_PODF_LOADED		(1 << 23)
+ #endif
+ #define MXC_CCM_CIMR_MASK_PERIPH_CLK_SEL_LOADED		(1 << 22)
+@@ -630,6 +712,11 @@ struct mxc_ccm_reg {
+ #define MXC_CCM_CCOSR_CKOL_SEL_OFFSET			0
+ 
+ /* Define the bits in registers CGPR */
++#ifdef CONFIG_MX6UL
++#define MXC_CCM_CGPR_INT_MEM_CLK_LPM			(1 << 17)
++#define MXC_CCM_CGPR_SYS_MEM_DS_CTRL_OFFSET		14
++#define MXC_CCM_CGPR_SYS_MEM_DS_CTRL_MASK		(3 << 14)
++#endif
+ #define MXC_CCM_CGPR_FAST_PLL_EN			(1 << 16)
+ #define MXC_CCM_CGPR_EFUSE_PROG_SUPPLY_GATE		(1 << 4)
+ #define MXC_CCM_CGPR_MMDC_EXT_CLK_DIS			(1 << 2)
+@@ -664,9 +751,16 @@ struct mxc_ccm_reg {
+ #define MXC_CCM_CCGR0_CHEETAH_DBG_CLK_MASK		(3 << MXC_CCM_CCGR0_CHEETAH_DBG_CLK_OFFSET)
+ #define MXC_CCM_CCGR0_DCIC1_OFFSET			24
+ #define MXC_CCM_CCGR0_DCIC1_MASK			(3 << MXC_CCM_CCGR0_DCIC1_OFFSET)
++#ifdef CONFIG_MX6UL
++#define MXC_CCM_CCGR0_GPT2_SERIAL_CLK_OFFSET		26
++#define MXC_CCM_CCGR0_GPT2_SERIAL_CLK_MASK		(3 << MXC_CCM_CCGR0_GPT2_SERIAL_CLK_OFFSET)
++#define MXC_CCM_CCGR0_UART2_CLK_ENABLE_OFFSET		28
++#define MXC_CCM_CCGR0_UART2_CLK_ENABLE_MASK		(3 << MXC_CCM_CCGR0_UART2_CLK_ENABLE_OFFSET)
++#else
+ #define MXC_CCM_CCGR0_DCIC2_OFFSET			26
+ #define MXC_CCM_CCGR0_DCIC2_MASK			(3 << MXC_CCM_CCGR0_DCIC2_OFFSET)
+-#ifdef CONFIG_MX6SX
++#endif
++#if defined(CONFIG_MX6SX) || defined(CONFIG_MX6UL)
+ #define MXC_CCM_CCGR0_AIPS_TZ3_OFFSET			30
+ #define MXC_CCM_CCGR0_AIPS_TZ3_MASK			(3 << MXC_CCM_CCGR0_AIPS_TZ3_OFFSET)
+ #else
+@@ -682,37 +776,67 @@ struct mxc_ccm_reg {
+ #define MXC_CCM_CCGR1_ECSPI3S_MASK			(3 << MXC_CCM_CCGR1_ECSPI3S_OFFSET)
+ #define MXC_CCM_CCGR1_ECSPI4S_OFFSET			6
+ #define MXC_CCM_CCGR1_ECSPI4S_MASK			(3 << MXC_CCM_CCGR1_ECSPI4S_OFFSET)
++#ifdef CONFIG_MX6UL
++#define MXC_CCM_CCGR1_ADC2_OFFSET			8
++#define MXC_CCM_CCGR1_ADC2_MASK				(3 << MXC_CCM_CCGR1_ADC2_OFFSET)
++#else
+ #define MXC_CCM_CCGR1_ECSPI5S_OFFSET			8
+ #define MXC_CCM_CCGR1_ECSPI5S_MASK			(3 << MXC_CCM_CCGR1_ECSPI5S_OFFSET)
++#endif
+ #ifndef CONFIG_MX6SX
++#ifdef CONFIG_MX6UL
++#define MXC_CCM_CCGR1_UART3_CLK_ENABLE_OFFSET		10
++#define MXC_CCM_CCGR1_UART3_CLK_ENABLE_MASK		(3 << MXC_CCM_CCGR1_UART3_CLK_ENABLE_OFFSET)
++#else
+ #define MXC_CCM_CCGR1_ENET_CLK_ENABLE_OFFSET		10
+ #define MXC_CCM_CCGR1_ENET_CLK_ENABLE_MASK		(3 << MXC_CCM_CCGR1_ENET_CLK_ENABLE_OFFSET)
+ #endif
++#endif
+ #define MXC_CCM_CCGR1_EPIT1S_OFFSET			12
+ #define MXC_CCM_CCGR1_EPIT1S_MASK			(3 << MXC_CCM_CCGR1_EPIT1S_OFFSET)
+ #define MXC_CCM_CCGR1_EPIT2S_OFFSET			14
+ #define MXC_CCM_CCGR1_EPIT2S_MASK			(3 << MXC_CCM_CCGR1_EPIT2S_OFFSET)
++#ifndef CONFIG_MX6UL
+ #define MXC_CCM_CCGR1_ESAIS_OFFSET			16
+ #define MXC_CCM_CCGR1_ESAIS_MASK			(3 << MXC_CCM_CCGR1_ESAIS_OFFSET)
++#endif
+ #ifdef CONFIG_MX6SX
+ #define MXC_CCM_CCGR1_WAKEUP_OFFSET			18
+ #define MXC_CCM_CCGR1_WAKEUP_MASK			(3 << MXC_CCM_CCGR1_WAKEUP_OFFSET)
++#elif defined(CONFIG_MX6UL)
++#define MXC_CCM_CCGR1_SIM_S_OFFSET			18
++#define MXC_CCM_CCGR1_SIM_S_MASK			(3 << MXC_CCM_CCGR1_SIM_S_OFFSET)
+ #endif
+ #define MXC_CCM_CCGR1_GPT_BUS_OFFSET			20
+ #define MXC_CCM_CCGR1_GPT_BUS_MASK			(3 << MXC_CCM_CCGR1_GPT_BUS_OFFSET)
+ #define MXC_CCM_CCGR1_GPT_SERIAL_OFFSET			22
+ #define MXC_CCM_CCGR1_GPT_SERIAL_MASK			(3 << MXC_CCM_CCGR1_GPT_SERIAL_OFFSET)
+ #ifndef CONFIG_MX6SX
++#ifdef CONFIG_MX6UL
++#define MXC_CCM_CCGR1_UART4_CLK_ENABLE_OFFSET		24
++#define MXC_CCM_CCGR1_UART4_CLK_ENABLE_MASK		(3 << MXC_CCM_CCGR1_UART4_CLK_ENABLE_OFFSET)
++#else
+ #define MXC_CCM_CCGR1_GPU2D_OFFSET			24
+ #define MXC_CCM_CCGR1_GPU2D_MASK			(3 << MXC_CCM_CCGR1_GPU2D_OFFSET)
+ #endif
++#endif
++#ifdef CONFIG_MX6UL
++#define MXC_CCM_CCGR1_GPIO1_CLK_ENABLE_OFFSET		26
++#define MXC_CCM_CCGR1_GPIO1_CLK_ENABLE_MASK		(3 << MXC_CCM_CCGR1_GPIO1_CLK_ENABLE_OFFSET)
++#else
+ #define MXC_CCM_CCGR1_GPU3D_OFFSET			26
+ #define MXC_CCM_CCGR1_GPU3D_MASK			(3 << MXC_CCM_CCGR1_GPU3D_OFFSET)
++#endif
+ #ifdef CONFIG_MX6SX
+ #define MXC_CCM_CCGR1_OCRAM_S_OFFSET			28
+ #define MXC_CCM_CCGR1_OCRAM_S_MASK			(3 << MXC_CCM_CCGR1_OCRAM_S_OFFSET)
+ #define MXC_CCM_CCGR1_CANFD_OFFSET			30
+ #define MXC_CCM_CCGR1_CANFD_MASK			(3 << MXC_CCM_CCGR1_CANFD_OFFSET)
++#elif defined(CONFIG_MX6UL)
++#define MXC_CCM_CCGR1_CSU_CLK_ENABLE_OFFSET		28
++#define MXC_CCM_CCGR1_CSU_CLK_ENABLE_MASK		3 << (MXC_CCM_CCGR1_CSU_CLK_ENABLE_OFFSET)
++#define MXC_CCM_CCGR1_GPIO5_CLK_ENABLE_OFFSET		30
++#define MXC_CCM_CCGR1_GPIO5_CLK_ENABLE_MASK		3 << (MXC_CCM_CCGR1_GPIO5_CLK_ENABLE_OFFSET)
+ #endif
+ 
+ #ifndef CONFIG_MX6SX
+@@ -722,7 +846,7 @@ struct mxc_ccm_reg {
+ #define MXC_CCM_CCGR2_CSI_OFFSET			2
+ #define MXC_CCM_CCGR2_CSI_MASK				(3 << MXC_CCM_CCGR2_CSI_OFFSET)
+ #endif
+-#ifndef CONFIG_MX6SX
++#if !defined(CONFIG_MX6SX) && !defined(CONFIG_MX6UL)
+ #define MXC_CCM_CCGR2_HDMI_TX_ISFRCLK_OFFSET		4
+ #define MXC_CCM_CCGR2_HDMI_TX_ISFRCLK_MASK		(3 << MXC_CCM_CCGR2_HDMI_TX_ISFRCLK_OFFSET)
+ #endif
+@@ -744,7 +868,11 @@ struct mxc_ccm_reg {
+ #define MXC_CCM_CCGR2_IPMUX3_MASK			(3 << MXC_CCM_CCGR2_IPMUX3_OFFSET)
+ #define MXC_CCM_CCGR2_IPSYNC_IP2APB_TZASC1_IPGS_OFFSET	22
+ #define MXC_CCM_CCGR2_IPSYNC_IP2APB_TZASC1_IPGS_MASK	(3 << MXC_CCM_CCGR2_IPSYNC_IP2APB_TZASC1_IPGS_OFFSET)
+-#ifdef CONFIG_MX6SX
++#ifdef CONFIG_MX6UL
++#define MXC_CCM_CCGR2_GPIO3_CLK_ENABLE_OFFSET		26
++#define MXC_CCM_CCGR2_GPIO3_CLK_ENABLE_MASK		(3 << MXC_CCM_CCGR2_GPIO3_CLK_ENABLE_OFFSET)
++#endif
++#if defined(CONFIG_MX6SX) || defined(CONFIG_MX6UL)
+ #define MXC_CCM_CCGR2_LCD_OFFSET			28
+ #define MXC_CCM_CCGR2_LCD_MASK				(3 << MXC_CCM_CCGR2_LCD_OFFSET)
+ #define MXC_CCM_CCGR2_PXP_OFFSET			30
+@@ -756,7 +884,20 @@ struct mxc_ccm_reg {
+ #define MXC_CCM_CCGR2_IPSYNC_VDOA_IPG_MASTER_CLK_MASK	(3 << MXC_CCM_CCGR2_IPSYNC_VDOA_IPG_MASTER_CLK_OFFSET)
+ #endif
+ 
+-#ifdef CONFIG_MX6SX
++#ifdef CONFIG_MX6UL
++#define MXC_CCM_CCGR3_UART5_CLK_ENABLE_OFFSET			2
++#define MXC_CCM_CCGR3_UART5_CLK_ENABLE_MASK			(3 << MXC_CCM_CCGR3_UART5_CLK_ENABLE_OFFSET)
++#define MXC_CCM_CCGR3_ENET_CLK_ENABLE_OFFSET			4
++#define MXC_CCM_CCGR3_ENET_CLK_ENABLE_MASK			(3 << MXC_CCM_CCGR3_ENET_CLK_ENABLE_OFFSET)
++#define MXC_CCM_CCGR3_UART6_CLK_ENABLE_OFFSET			6
++#define MXC_CCM_CCGR3_UART6_CLK_ENABLE_MASK			(3 << MXC_CCM_CCGR3_UART6_CLK_ENABLE_OFFSET)
++#define MXC_CCM_CCGR3_UART6_CLK_ENABLE_OFFSET			6
++#define MXC_CCM_CCGR3_UART6_CLK_ENABLE_MASK			(3 << MXC_CCM_CCGR3_UART6_CLK_ENABLE_OFFSET)
++#define MXC_CCM_CCGR3_LCDIF2_PIX_OFFSET				8
++#define MXC_CCM_CCGR3_LCDIF2_PIX_MASK				(3 << MXC_CCM_CCGR3_LCDIF2_PIX_OFFSET)
++#define MXC_CCM_CCGR3_LCDIF1_PIX_OFFSET				10
++#define MXC_CCM_CCGR3_LCDIF1_PIX_MASK				(3 << MXC_CCM_CCGR3_LCDIF1_PIX_OFFSET)
++#elif defined(CONFIG_MX6SX)
+ #define MXC_CCM_CCGR3_M4_OFFSET					2
+ #define MXC_CCM_CCGR3_M4_MASK					(3 << MXC_CCM_CCGR3_M4_OFFSET)
+ #define MXC_CCM_CCGR3_ENET_OFFSET				4
+@@ -785,7 +926,7 @@ struct mxc_ccm_reg {
+ #endif
+ #define MXC_CCM_CCGR3_LDB_DI0_OFFSET				12
+ #define MXC_CCM_CCGR3_LDB_DI0_MASK				(3 << MXC_CCM_CCGR3_LDB_DI0_OFFSET)
+-#ifdef CONFIG_MX6SX
++#if defined(CONFIG_MX6SX) || defined(CONFIG_MX6UL)
+ #define MXC_CCM_CCGR3_QSPI1_OFFSET				14
+ #define MXC_CCM_CCGR3_QSPI1_MASK				(3 << MXC_CCM_CCGR3_QSPI1_OFFSET)
+ #else
+@@ -794,11 +935,20 @@ struct mxc_ccm_reg {
+ #define MXC_CCM_CCGR3_MIPI_CORE_CFG_OFFSET			16
+ #define MXC_CCM_CCGR3_MIPI_CORE_CFG_MASK			(3 << MXC_CCM_CCGR3_MIPI_CORE_CFG_OFFSET)
+ #endif
++#ifdef CONFIG_MX6UL
++#define MXC_CCM_CCGR3_WDOG1_CLK_ENABLE_OFFSET			16
++#define MXC_CCM_CCGR3_WDOG1_CLK_ENABLE_MASK			(3 << MXC_CCM_CCGR3_WDOG1_CLK_ENABLE_OFFSET)
++#endif
++#ifdef CONFIG_MX6UL
++#define MXC_CCM_CCGR3_A7_CLKDIV_PATCH_OFFSET			18
++#define MXC_CCM_CCGR3_A7_CLKDIV_PATCH_MASK			(3 << MXC_CCM_CCGR3_A7_CLKDIV_PATCH_OFFSET)
++#else
+ #define MXC_CCM_CCGR3_MLB_OFFSET				18
+ #define MXC_CCM_CCGR3_MLB_MASK					(3 << MXC_CCM_CCGR3_MLB_OFFSET)
++#endif
+ #define MXC_CCM_CCGR3_MMDC_CORE_ACLK_FAST_CORE_P0_OFFSET	20
+ #define MXC_CCM_CCGR3_MMDC_CORE_ACLK_FAST_CORE_P0_MASK		(3 << MXC_CCM_CCGR3_MMDC_CORE_ACLK_FAST_CORE_P0_OFFSET)
+-#ifndef CONFIG_MX6SX
++#if !defined(CONFIG_MX6SX) && !defined(CONFIG_MX6UL)
+ #define MXC_CCM_CCGR3_MMDC_CORE_ACLK_FAST_CORE_P1_OFFSET	22
+ #define MXC_CCM_CCGR3_MMDC_CORE_ACLK_FAST_CORE_P1_MASK		(3 << MXC_CCM_CCGR3_MMDC_CORE_ACLK_FAST_CORE_P1_OFFSET)
+ #endif
+@@ -806,16 +956,35 @@ struct mxc_ccm_reg {
+ #define MXC_CCM_CCGR3_MMDC_CORE_IPG_CLK_P0_MASK			(3 << MXC_CCM_CCGR3_MMDC_CORE_IPG_CLK_P0_OFFSET)
+ #define MXC_CCM_CCGR3_MMDC_CORE_IPG_CLK_P1_OFFSET		26
+ #define MXC_CCM_CCGR3_MMDC_CORE_IPG_CLK_P1_MASK			(3 << MXC_CCM_CCGR3_MMDC_CORE_IPG_CLK_P1_OFFSET)
++#ifdef CONFIG_MX6UL
++#define MXC_CCM_CCGR3_AXI_CLK_OFFSET				28
++#define MXC_CCM_CCGR3_AXI_CLK_MASK				(3 << MXC_CCM_CCGR3_AXI_CLK_OFFSET)
++#else
+ #define MXC_CCM_CCGR3_OCRAM_OFFSET				28
+ #define MXC_CCM_CCGR3_OCRAM_MASK				(3 << MXC_CCM_CCGR3_OCRAM_OFFSET)
++#endif
+ #ifndef CONFIG_MX6SX
++#ifdef CONFIG_MX6UL
++#define MXC_CCM_CCGR3_GPIO4_CLK_OFFSET				30
++#define MXC_CCM_CCGR3_GPIO4_CLK_MASK				(3 << MXC_CCM_CCGR3_GPIO4_CLK_OFFSET)
++#else
+ #define MXC_CCM_CCGR3_OPENVGAXICLK_OFFSET			30
+ #define MXC_CCM_CCGR3_OPENVGAXICLK_MASK				(3 << MXC_CCM_CCGR3_OPENVGAXICLK_OFFSET)
+ #endif
++#endif
+ 
+ #define MXC_CCM_CCGR4_PCIE_OFFSET				0
+ #define MXC_CCM_CCGR4_PCIE_MASK					(3 << MXC_CCM_CCGR4_PCIE_OFFSET)
+-#ifdef CONFIG_MX6SX
++#ifdef CONFIG_MX6UL
++#define MXC_CCM_CCGR4_IOMUX_OFFSET				2
++#define MXC_CCM_CCGR4_IOMUX_MASK				(3 << MXC_CCM_CCGR4_IOMUX_OFFSET)
++#define MXC_CCM_CCGR4_IOMUX_GPR_OFFSET				4
++#define MXC_CCM_CCGR4_IOMUX_GPR_MASK				(3 << MXC_CCM_CCGR4_IOMUX_GPR_OFFSET)
++#define MXC_CCM_CCGR4_SIM_CPU_OFFSET				6
++#define MXC_CCM_CCGR4_SIM_CPU_MASK				(3 << MXC_CCM_CCGR4_SIM_CPU_OFFSET)
++#define MXC_CCM_CCGR4_CXAPBSYNCBRIDGE_OFFSET			8
++#define MXC_CCM_CCGR4_CXAPBSYNCBRIDGE_MASK			(3 << MXC_CCM_CCGR4_CXAPBSYNCBRIDGE_OFFSET)
++#elif defined(CONFIG_MX6SX)
+ #define MXC_CCM_CCGR4_QSPI2_ENFC_OFFSET				10
+ #define MXC_CCM_CCGR4_QSPI2_ENFC_MASK				(3 << MXC_CCM_CCGR4_QSPI2_ENFC_OFFSET)
+ #else
+@@ -845,16 +1014,46 @@ struct mxc_ccm_reg {
+ 
+ #define MXC_CCM_CCGR5_ROM_OFFSET			0
+ #define MXC_CCM_CCGR5_ROM_MASK				(3 << MXC_CCM_CCGR5_ROM_OFFSET)
+-#ifndef CONFIG_MX6SX
++#ifdef CONFIG_MX6UL
++#define MXC_CCM_CCGR5_STCR_OFFSET			2
++#define MXC_CCM_CCGR5_STCR_MASK				(3 << MXC_CCM_CCGR5_STCR_OFFSET)
++#define MXC_CCM_CCGR5_SNVS_OFFSET			4
++#define MXC_CCM_CCGR5_SNVS_MASK				(3 << MXC_CCM_CCGR5_SNVS_OFFSET)
++#endif
++#if !defined(CONFIG_MX6SX) && !defined(CONFIG_MX6UL)
+ #define MXC_CCM_CCGR5_SATA_OFFSET			4
+ #define MXC_CCM_CCGR5_SATA_MASK				(3 << MXC_CCM_CCGR5_SATA_OFFSET)
+ #endif
+ #define MXC_CCM_CCGR5_SDMA_OFFSET			6
+ #define MXC_CCM_CCGR5_SDMA_MASK				(3 << MXC_CCM_CCGR5_SDMA_OFFSET)
++#ifdef CONFIG_MX6UL
++#define MXC_CCM_CCGR5_KPP_OFFSET			8
++#define MXC_CCM_CCGR5_KPP_MASK				(3 << MXC_CCM_CCGR5_KPP_OFFSET)
++#define MXC_CCM_CCGR5_WDOG2_OFFSET			10
++#define MXC_CCM_CCGR5_WDOG2_MASK			(3 << MXC_CCM_CCGR5_WDOG2_OFFSET)
++#endif
+ #define MXC_CCM_CCGR5_SPBA_OFFSET			12
+ #define MXC_CCM_CCGR5_SPBA_MASK				(3 << MXC_CCM_CCGR5_SPBA_OFFSET)
+ #define MXC_CCM_CCGR5_SPDIF_OFFSET			14
+ #define MXC_CCM_CCGR5_SPDIF_MASK			(3 << MXC_CCM_CCGR5_SPDIF_OFFSET)
++#ifdef CONFIG_MX6UL
++#define MXC_CCM_CCGR5_SIM_MAIN_OFFSET			16
++#define MXC_CCM_CCGR5_SIM_MAIN_MASK			(3 << MXC_CCM_CCGR5_SIM_MAIN_OFFSET)
++#define MXC_CCM_CCGR5_SNVS_HP_OFFSET			18
++#define MXC_CCM_CCGR5_SNVS_HP_MASK			(3 << MXC_CCM_CCGR5_SNVS_HP_OFFSET)
++#define MXC_CCM_CCGR5_SNVS_LP_OFFSET			20
++#define MXC_CCM_CCGR5_SNVS_LP_MASK			(3 << MXC_CCM_CCGR5_SNVS_LP_OFFSET)
++#define MXC_CCM_CCGR5_SAI3_OFFSET			22
++#define MXC_CCM_CCGR5_SAI3_MASK				(3 << MXC_CCM_CCGR5_SAI3_OFFSET)
++#define MXC_CCM_CCGR5_UART1_OFFSET			24
++#define MXC_CCM_CCGR5_UART1_MASK			(3 << MXC_CCM_CCGR5_UART1_OFFSET)
++#define MXC_CCM_CCGR5_UART7_OFFSET			26
++#define MXC_CCM_CCGR5_UART7_MASK			(3 << MXC_CCM_CCGR5_UART7_OFFSET)
++#define MXC_CCM_CCGR5_SAI1_OFFSET			28
++#define MXC_CCM_CCGR5_SAI1_MASK				(3 << MXC_CCM_CCGR5_SAI1_OFFSET)
++#define MXC_CCM_CCGR5_SAI2_OFFSET			30
++#define MXC_CCM_CCGR5_SAI2_MASK				(3 << MXC_CCM_CCGR5_SAI2_OFFSET)
++#else
+ #define MXC_CCM_CCGR5_SSI1_OFFSET			18
+ #define MXC_CCM_CCGR5_SSI1_MASK				(3 << MXC_CCM_CCGR5_SSI1_OFFSET)
+ #define MXC_CCM_CCGR5_SSI2_OFFSET			20
+@@ -865,6 +1064,7 @@ struct mxc_ccm_reg {
+ #define MXC_CCM_CCGR5_UART_MASK				(3 << MXC_CCM_CCGR5_UART_OFFSET)
+ #define MXC_CCM_CCGR5_UART_SERIAL_OFFSET		26
+ #define MXC_CCM_CCGR5_UART_SERIAL_MASK			(3 << MXC_CCM_CCGR5_UART_SERIAL_OFFSET)
++#endif
+ #ifdef CONFIG_MX6SX
+ #define MXC_CCM_CCGR5_SAI1_OFFSET			20
+ #define MXC_CCM_CCGR5_SAI1_MASK				(3 << MXC_CCM_CCGR5_SAI1_OFFSET)
+@@ -878,13 +1078,35 @@ struct mxc_ccm_reg {
+ #define MXC_CCM_CCGR6_USDHC1_MASK		(3 << MXC_CCM_CCGR6_USDHC1_OFFSET)
+ #define MXC_CCM_CCGR6_USDHC2_OFFSET		4
+ #define MXC_CCM_CCGR6_USDHC2_MASK		(3 << MXC_CCM_CCGR6_USDHC2_OFFSET)
++#ifdef CONFIG_MX6UL
++#define MXC_CCM_CCGR6_BCH_OFFSET		6
++#define MXC_CCM_CCGR6_BCH_MASK			(3 << MXC_CCM_CCGR6_BCH_OFFSET)
++#define MXC_CCM_CCGR6_GPMI_OFFSET		8
++#define MXC_CCM_CCGR6_GPMI_MASK			(3 << MXC_CCM_CCGR6_GPMI_OFFSET)
++#else
+ #define MXC_CCM_CCGR6_USDHC3_OFFSET		6
+ #define MXC_CCM_CCGR6_USDHC3_MASK		(3 << MXC_CCM_CCGR6_USDHC3_OFFSET)
+ #define MXC_CCM_CCGR6_USDHC4_OFFSET		8
+ #define MXC_CCM_CCGR6_USDHC4_MASK		(3 << MXC_CCM_CCGR6_USDHC4_OFFSET)
++#endif
+ #define MXC_CCM_CCGR6_EMI_SLOW_OFFSET		10
+ #define MXC_CCM_CCGR6_EMI_SLOW_MASK		(3 << MXC_CCM_CCGR6_EMI_SLOW_OFFSET)
+-#ifdef CONFIG_MX6SX
++#ifdef CONFIG_MX6UL
++#define MXC_CCM_CCGR6_PWM8_OFFSET		16
++#define MXC_CCM_CCGR6_PWM8_MASK			(3 << MXC_CCM_CCGR6_PWM8_OFFSET)
++#define MXC_CCM_CCGR6_WDOG3_OFFSET		20
++#define MXC_CCM_CCGR6_WDOG3_MASK		(3 << MXC_CCM_CCGR6_WDOG3_OFFSET)
++#define MXC_CCM_CCGR6_ANADIG_OFFSET		22
++#define MXC_CCM_CCGR6_ANADIG_MASK		(3 << MXC_CCM_CCGR6_ANADIG_OFFSET)
++#define MXC_CCM_CCGR6_I2C4_SERIAL_OFFSET	24
++#define MXC_CCM_CCGR6_I2C4_SERIAL_MASK		(3 << MXC_CCM_CCGR6_I2C4_SERIAL_OFFSET)
++#define MXC_CCM_CCGR6_PWM5_OFFSET		26
++#define MXC_CCM_CCGR6_PWM5_MASK			(3 << MXC_CCM_CCGR6_PWM5_OFFSET)
++#define MXC_CCM_CCGR6_PWM6_OFFSET		28
++#define MXC_CCM_CCGR6_PWM6_MASK			(3 << MXC_CCM_CCGR6_PWM6_OFFSET)
++#define MXC_CCM_CCGR6_PWM7_OFFSET		30
++#define MXC_CCM_CCGR6_PWM7_MASK			(3 << MXC_CCM_CCGR6_PWM7_OFFSET)
++#elif defined(CONFIG_MX6SX)
+ #define MXC_CCM_CCGR6_PWM8_OFFSET		16
+ #define MXC_CCM_CCGR6_PWM8_MASK			(3 << MXC_CCM_CCGR6_PWM8_OFFSET)
+ #define MXC_CCM_CCGR6_VADC_OFFSET		20
+@@ -926,8 +1148,10 @@ struct mxc_ccm_reg {
+ #define BF_ANADIG_PLL_SYS_RSVD0(v)  \
+ 	(((v) << 20) & BM_ANADIG_PLL_SYS_RSVD0)
+ #define BM_ANADIG_PLL_SYS_PLL_SEL 0x00080000
++#ifndef CONFIG_MX6UL
+ #define BM_ANADIG_PLL_SYS_LVDS_24MHZ_SEL 0x00040000
+ #define BM_ANADIG_PLL_SYS_LVDS_SEL 0x00020000
++#endif
+ #define BM_ANADIG_PLL_SYS_BYPASS 0x00010000
+ #define BP_ANADIG_PLL_SYS_BYPASS_CLK_SRC      14
+ #define BM_ANADIG_PLL_SYS_BYPASS_CLK_SRC 0x0000C000
+-- 
+1.8.0
+

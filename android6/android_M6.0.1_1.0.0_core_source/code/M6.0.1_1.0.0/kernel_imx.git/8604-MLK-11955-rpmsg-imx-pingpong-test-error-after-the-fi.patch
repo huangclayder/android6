@@ -1,0 +1,116 @@
+From 6462680a0b3208321a55dd24d3104c50efd909b3 Mon Sep 17 00:00:00 2001
+From: Richard Zhu <Richard.Zhu@freescale.com>
+Date: Mon, 14 Dec 2015 13:49:10 +0800
+Subject: [PATCH] MLK-11955 rpmsg: imx: pingpong test error after the first
+ around
+
+This problem is caused by the incorrect process of the first
+notify message sent from A7/9 Linux side.
+
+Revert "MLK-11498 rpmsg: imx: tell remote process about the channel"
+
+This reverts commit 01ea9fceb13108aaedc0f66233bbe9ffa0d583e1.
+
+Signed-off-by: Richard Zhu <Richard.Zhu@freescale.com>
+---
+ drivers/rpmsg/Kconfig              |  8 ++++----
+ drivers/rpmsg/imx_rpmsg_pingpong.c | 15 ++-------------
+ drivers/rpmsg/imx_rpmsg_tty.c      | 11 -----------
+ 3 files changed, 6 insertions(+), 28 deletions(-)
+
+diff --git a/drivers/rpmsg/Kconfig b/drivers/rpmsg/Kconfig
+index 21f8972..469d279 100644
+--- a/drivers/rpmsg/Kconfig
++++ b/drivers/rpmsg/Kconfig
+@@ -7,11 +7,11 @@ config RPMSG
+ 	select VIRTUALIZATION
+ 
+ config IMX_RPMSG_PINGPONG
+-	tristate "IMX RPMSG pingpong driver -- loadable modules only"
+-	depends on RPMSG && m
++	tristate "IMX RPMSG pingpong driver"
++	depends on RPMSG
+ 
+ config IMX_RPMSG_TTY
+-	tristate "IMX RPMSG tty driver -- loadable modules only"
+-	depends on RPMSG && m
++	tristate "IMX RPMSG tty driver"
++	depends on RPMSG
+ 
+ endmenu
+diff --git a/drivers/rpmsg/imx_rpmsg_pingpong.c b/drivers/rpmsg/imx_rpmsg_pingpong.c
+index 2da4265..e00dc10 100644
+--- a/drivers/rpmsg/imx_rpmsg_pingpong.c
++++ b/drivers/rpmsg/imx_rpmsg_pingpong.c
+@@ -17,7 +17,6 @@
+ #include <linux/virtio.h>
+ #include <linux/rpmsg.h>
+ 
+-#define MSG		"hello world!"
+ #define MSG_LIMIT	100000
+ static unsigned int rpmsg_pingpong;
+ static int rx_count;
+@@ -42,7 +41,7 @@ static void rpmsg_pingpong_cb(struct rpmsg_channel *rpdev, void *data, int len,
+ 	err = rpmsg_sendto(rpdev, (void *)(&rpmsg_pingpong), 4, src);
+ 
+ 	if (err)
+-		dev_err(&rpdev->dev, "rpmsg_send failed: %d\n", err);
++		pr_err("rpmsg_send failed: %d\n", err);
+ }
+ 
+ static int rpmsg_pingpong_probe(struct rpmsg_channel *rpdev)
+@@ -52,21 +51,11 @@ static int rpmsg_pingpong_probe(struct rpmsg_channel *rpdev)
+ 	dev_info(&rpdev->dev, "new channel: 0x%x -> 0x%x!\n",
+ 			rpdev->src, rpdev->dst);
+ 
+-	/*
+-	 * send a message to our remote processor, and tell remote
+-	 * processor about this channel
+-	 */
+-	err = rpmsg_send(rpdev, MSG, strlen(MSG));
+-	if (err) {
+-		dev_err(&rpdev->dev, "rpmsg_send failed: %d\n", err);
+-		return err;
+-	}
+-
+ 	rpmsg_pingpong = 0;
+ 	rx_count = 0;
+ 	err = rpmsg_sendto(rpdev, (void *)(&rpmsg_pingpong), 4, rpdev->dst);
+ 	if (err) {
+-		dev_err(&rpdev->dev, "rpmsg_send failed: %d\n", err);
++		pr_err("rpmsg_send failed: %d\n", err);
+ 		return err;
+ 	}
+ 
+diff --git a/drivers/rpmsg/imx_rpmsg_tty.c b/drivers/rpmsg/imx_rpmsg_tty.c
+index 14904c7..d1321a80 100644
+--- a/drivers/rpmsg/imx_rpmsg_tty.c
++++ b/drivers/rpmsg/imx_rpmsg_tty.c
+@@ -34,7 +34,6 @@ struct rpmsgtty_port {
+ static struct rpmsgtty_port rpmsg_tty_port;
+ 
+ #define RPMSG_MAX_SIZE		(512 - sizeof(struct rpmsg_hdr))
+-#define MSG		"hello world!"
+ 
+ static void rpmsg_tty_cb(struct rpmsg_channel *rpdev, void *data, int len,
+ 						void *priv, u32 src)
+@@ -142,16 +141,6 @@ static int rpmsg_tty_probe(struct rpmsg_channel *rpdev)
+ 	dev_info(&rpdev->dev, "new channel: 0x%x -> 0x%x!\n",
+ 			rpdev->src, rpdev->dst);
+ 
+-	/*
+-	 * send a message to our remote processor, and tell remote
+-	 * processor about this channel
+-	 */
+-	err = rpmsg_send(rpdev, MSG, strlen(MSG));
+-	if (err) {
+-		dev_err(&rpdev->dev, "rpmsg_send failed: %d\n", err);
+-		return err;
+-	}
+-
+ 	rpmsgtty_driver = tty_alloc_driver(1, TTY_DRIVER_UNNUMBERED_NODE);
+ 	if (IS_ERR(rpmsgtty_driver))
+ 		return PTR_ERR(rpmsgtty_driver);
+-- 
+1.8.0
+

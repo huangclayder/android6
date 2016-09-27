@@ -1,0 +1,28 @@
+From 26339b42f209479217f59442509859d46ddf21bc Mon Sep 17 00:00:00 2001
+From: zhang sanshan <b51434@freescale.com>
+Date: Mon, 22 Dec 2014 09:57:42 +0800
+Subject: [PATCH 413/602] MA-6039 set selinux policy for sabreauto_6sx
+
+enable selinux for sabreauto_6sx
+
+Signed-off-by: zhang sanshan <b51434@freescale.com>
+---
+ sabreauto_6sx/BoardConfig.mk | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/sabreauto_6sx/BoardConfig.mk b/sabreauto_6sx/BoardConfig.mk
+index 686ad7e..9257349 100755
+--- a/sabreauto_6sx/BoardConfig.mk
++++ b/sabreauto_6sx/BoardConfig.mk
+@@ -66,7 +66,7 @@ TARGET_SELECT_KEY := 28
+ # we don't support sparse image.
+ TARGET_USERIMAGES_SPARSE_EXT_DISABLED := true
+ 
+-BOARD_KERNEL_CMDLINE := console=ttymxc0,115200 init=/init androidboot.console=ttymxc0 consoleblank=0 androidboot.hardware=freescale vmalloc=400M cma=512M androidboot.selinux=disabled
++BOARD_KERNEL_CMDLINE := console=ttymxc0,115200 init=/init androidboot.console=ttymxc0 consoleblank=0 androidboot.hardware=freescale vmalloc=400M cma=512M 
+ 
+ ifeq ($(TARGET_USERIMAGES_USE_UBIFS),true)
+ #UBI boot command line.
+-- 
+1.8.0
+

@@ -1,0 +1,27 @@
+From b134103a47b46c044570de314f47c6084088d2cb Mon Sep 17 00:00:00 2001
+From: Xiaowen Liu <xiaowen.liu@freescale.com>
+Date: Tue, 13 Oct 2015 13:01:46 -0400
+Subject: [PATCH 14/22] MA-7089 Upgrade android to Mashmallow 6.0 version.
+
+add ro.zygote property to match init.rc import init.${ro.zygote}.rc.
+
+Signed-off-by: Xiaowen Liu <xiaowen.liu@freescale.com>
+---
+ init/init.cpp | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/init/init.cpp b/init/init.cpp
+index 5c6877e..37ef197 100644
+--- a/init/init.cpp
++++ b/init/init.cpp
+@@ -808,6 +808,7 @@ static void export_kernel_boot_props() {
+         { "ro.boot.bootloader", "ro.bootloader", "unknown", },
+         { "ro.boot.hardware",   "ro.hardware",   "unknown", },
+         { "ro.boot.revision",   "ro.revision",   "0", },
++        { "ro.boot.zygote",     "ro.zygote",     "zygote32", },
+     };
+     for (size_t i = 0; i < ARRAY_SIZE(prop_map); i++) {
+         char value[PROP_VALUE_MAX];
+-- 
+1.8.0
+

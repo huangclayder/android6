@@ -1,0 +1,23 @@
+From 04ff589e542c77544b45607f2338bcab8eb9dba0 Mon Sep 17 00:00:00 2001
+From: Mark Brown <broonie@kernel.org>
+Date: Thu, 4 Dec 2014 17:08:03 +0000
+Subject: [PATCH] configs: Enable RCU torture tests as master
+
+Signed-off-by: Mark Brown <broonie@linaro.org>
+---
+ linaro/configs/linaro-base.conf | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/linaro/configs/linaro-base.conf b/linaro/configs/linaro-base.conf
+index bbd0f16..15f6ea7 100644
+--- a/linaro/configs/linaro-base.conf
++++ b/linaro/configs/linaro-base.conf
+@@ -116,3 +116,5 @@ CONFIG_EXT4_FS_SECURITY=y
+ CONFIG_BLK_DEV_LOOP=y
+ CONFIG_DEBUG_INFO=y
+ CONFIG_FANOTIFY=y
++CONFIG_RCU_TORTURE_TEST=m
++CONFIG_RCU_TORTURE_TEST_RUNNABLE=n
+-- 
+1.8.0
+

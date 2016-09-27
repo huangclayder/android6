@@ -1,0 +1,36 @@
+From cdfc40cf44ae98f1cc4102f4cbe263e39a16bbba Mon Sep 17 00:00:00 2001
+From: "guoyin.chen" <guoyin.chen@freescale.com>
+Date: Mon, 10 Aug 2015 16:59:39 +0800
+Subject: [PATCH 28/34] MA-6969 Cannot build recovery.img in m-preview
+
+Add back the MKBOOTIMG for PRODUCT_SUPPORTS_VBOOT, which is deleted in m-preview rebase
+Remove the build error as "unknown token near 'done'" by reformating the commands
+
+Signed-off-by: guoyin.chen <guoyin.chen@freescale.com>
+
+Conflicts:
+	core/Makefile
+---
+ core/Makefile | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/core/Makefile b/core/Makefile
+index 56b1666..f9eee45 100644
+--- a/core/Makefile
++++ b/core/Makefile
+@@ -936,9 +936,9 @@ define build-recoveryimage-target
+ 	DTS_BOARD=`echo $$dtsplat | cut -d':' -f2`; \
+ 	RECOVERY_IMAGE_BOARD=$(patsubst %.img,%-$$DTS_PLATFORM.img,$(1)); \
+ 	$(MKBOOTIMG) $(INTERNAL_RECOVERYIMAGE_ARGS) --second $(PRODUCT_OUT)/$$DTS_BOARD $(BOARD_MKBOOTIMG_ARGS) --output $(1); \
+-	if [ $(PRODUCTS.$(INTERNAL_PRODUCT).PRODUCT_SUPPORTS_VERITY) = true ]; then \
+-	  $(BOOT_SIGNER) /recovery $(1) $(PRODUCTS.$(INTERNAL_PRODUCT).PRODUCT_VERITY_SIGNING_KEY).pk8 $(PRODUCTS.$(INTERNAL_PRODUCT).PRODUCT_VERITY_SIGNING_KEY).x509.pem $(1) \
+-	fi;\
++    if [ $(PRODUCTS.$(INTERNAL_PRODUCT).PRODUCT_SUPPORTS_VERITY) = true ]; then \
++       $(BOOT_SIGNER) /recovery $(1) $(PRODUCTS.$(INTERNAL_PRODUCT).PRODUCT_VERITY_SIGNING_KEY).pk8 $(PRODUCTS.$(INTERNAL_PRODUCT).PRODUCT_VERITY_SIGNING_KEY).x509.pem $(1); \
++    fi;\
+     $(call assert-max-image-size,$(1),$(BOARD_RECOVERYIMAGE_PARTITION_SIZE)); \
+     cp -f $(1) $$RECOVERY_IMAGE_BOARD; \
+   done
+-- 
+1.8.0
+

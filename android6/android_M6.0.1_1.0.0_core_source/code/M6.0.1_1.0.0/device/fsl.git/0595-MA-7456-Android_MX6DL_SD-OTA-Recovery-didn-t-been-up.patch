@@ -1,0 +1,52 @@
+From cf54b6068b285bab48a49e26966c6ea73fd95f8a Mon Sep 17 00:00:00 2001
+From: zhang sanshan <b51434@freescale.com>
+Date: Mon, 25 Jan 2016 15:33:36 +0800
+Subject: [PATCH 595/602] MA-7456 [Android_MX6DL_SD] OTA: Recovery didn't been
+ updated via online OTA of emmc boot.100%
+
+avc: denied { read } comm="applypatch" name="mmcblk3p2" scontext=u:r:install_recovery:s0 tcontext=u:object_r:block_device:s0 tclass=blk_file
+
+The former deny info block recovery partition upgrading. However AOSP do not support below policy.
+allow install_recovery block_device:blk_file read;
+Aosp classify different partition to different block device. So need redefine fsl block partition selinux context.
+
+Signed-off-by: zhang sanshan <b51434@freescale.com>
+---
+ imx6/sepolicy/file_contexts | 7 +++++++
+ imx7/sepolicy/file_contexts | 8 ++++++++
+ 2 files changed, 15 insertions(+)
+
+diff --git a/imx6/sepolicy/file_contexts b/imx6/sepolicy/file_contexts
+index c1cfeb3..bf70cb4 100644
+--- a/imx6/sepolicy/file_contexts
++++ b/imx6/sepolicy/file_contexts
+@@ -19,3 +19,10 @@
+ /dev/galcore                    u:object_r:gpu_device:s0
+ /dev/sda[0-8]*			u:object_r:sdcard_internal:s0
+ /dev/caam_kb                    u:object_r:caam_device:s0
++
++
++/dev/block/mmcblk[0-9]p2 		u:object_r:recovery_block_device:s0
++/dev/block/mmcblk[0-9]p1 		u:object_r:boot_block_device:s0
++/dev/block/mmcblk[0-9]p5 		u:object_r:system_block_device:s0
++/dev/block/mmcblk[0-9]p4 		u:object_r:userdata_block_device:s0
++/dev/block/mmcblk[0-9]p6 		u:object_r:cache_block_device:s0
+diff --git a/imx7/sepolicy/file_contexts b/imx7/sepolicy/file_contexts
+index 7867c6e..72957c7 100644
+--- a/imx7/sepolicy/file_contexts
++++ b/imx7/sepolicy/file_contexts
+@@ -23,3 +23,11 @@
+ /dev/FreescaleAccelerometer     u:object_r:sensors_device:s0
+ /dev/FreescaleMagnetometer      u:object_r:sensors_device:s0
+ /dev/FreescaleGyroscope         u:object_r:sensors_device:s0
++
++
++/dev/block/mmcblk[0-9]p2               u:object_r:recovery_block_device:s0
++/dev/block/mmcblk[0-9]p1               u:object_r:boot_block_device:s0
++/dev/block/mmcblk[0-9]p5               u:object_r:system_block_device:s0
++/dev/block/mmcblk[0-9]p4               u:object_r:userdata_block_device:s0
++/dev/block/mmcblk[0-9]p6               u:object_r:cache_block_device:s0
++
+-- 
+1.8.0
+

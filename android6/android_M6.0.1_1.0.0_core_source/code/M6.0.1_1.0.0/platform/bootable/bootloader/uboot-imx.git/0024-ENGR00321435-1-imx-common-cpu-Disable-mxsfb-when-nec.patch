@@ -1,0 +1,41 @@
+From 07f0c8f5426c39082a6eca65c2178775314c581a Mon Sep 17 00:00:00 2001
+From: Liu Ying <Ying.Liu@freescale.com>
+Date: Thu, 17 Jul 2014 10:35:27 +0800
+Subject: [PATCH] ENGR00321435-1 imx-common: cpu: Disable mxsfb when necessary
+
+The kernel may break the display pipeline at boot stage and
+introduce various display artifacts, so let's disable mxsfb
+in uboot when necessary.
+
+Signed-off-by: Liu Ying <Ying.Liu@freescale.com>
+(cherry picked from commit 539b8416299ec1ae3f57f866dd3f016bdfaa6875)
+Signed-off-by: Peng Fan <Peng.Fan@freescale.com>
+---
+ arch/arm/imx-common/cpu.c | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/arch/arm/imx-common/cpu.c b/arch/arm/imx-common/cpu.c
+index e097a29..7137938 100644
+--- a/arch/arm/imx-common/cpu.c
++++ b/arch/arm/imx-common/cpu.c
+@@ -19,6 +19,7 @@
+ #include <ipu_pixfmt.h>
+ #include <thermal.h>
+ #include <sata.h>
++#include <mxsfb.h>
+ 
+ #ifdef CONFIG_VIDEO_GIS
+ #include <gis.h>
+@@ -245,6 +246,9 @@ void arch_preboot_os(void)
+ 	/* Entry for GIS */
+ 	mxc_disable_gis();
+ #endif
++#ifdef CONFIG_VIDEO_MXS
++	lcdif_power_down();
++#endif
+ }
+ 
+ void set_chipselect_size(int const cs_size)
+-- 
+1.8.0
+

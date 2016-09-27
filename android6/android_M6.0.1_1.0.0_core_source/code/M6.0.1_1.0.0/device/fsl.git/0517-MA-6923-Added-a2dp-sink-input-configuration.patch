@@ -1,0 +1,34 @@
+From db15f9b0a3a2b12204e41ca521ee3753e3ccf8c2 Mon Sep 17 00:00:00 2001
+From: Haoran Wang <b50027@freescale.com>
+Date: Mon, 27 Jul 2015 16:34:55 +0800
+Subject: [PATCH 517/602] MA-6923 Added a2dp sink input configuration
+
+Added a2dp sink input configuration in audio_policy.
+
+Signed-off-by: Haoran Wang <b50027@freescale.com>
+---
+ sabresd_7d/audio_policy.conf | 8 ++++++++
+ 1 file changed, 8 insertions(+)
+
+diff --git a/sabresd_7d/audio_policy.conf b/sabresd_7d/audio_policy.conf
+index 1d93299..4d3d8cd 100644
+--- a/sabresd_7d/audio_policy.conf
++++ b/sabresd_7d/audio_policy.conf
+@@ -55,6 +55,14 @@ audio_hw_modules {
+         devices AUDIO_DEVICE_OUT_ALL_A2DP
+       }
+     }
++    inputs {
++        a2dp {
++        sampling_rates 44100
++        channel_masks AUDIO_CHANNEL_IN_STEREO
++        formats AUDIO_FORMAT_PCM_16_BIT
++        devices AUDIO_DEVICE_IN_BLUETOOTH_A2DP
++        }
++    }
+   }
+   r_submix {
+     outputs {
+-- 
+1.8.0
+

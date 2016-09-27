@@ -1,0 +1,39 @@
+From d348992a1245ff0c6ac0867a45372fa92938f601 Mon Sep 17 00:00:00 2001
+From: Ming Zhou <b42586@freescale.com>
+Date: Wed, 11 Nov 2015 17:20:40 +0800
+Subject: [PATCH 84/95] MA-7137 add new interface for
+ MediaPlayerInterface::setSyncSettings
+
+add new interface for OMXPLAYER
+
+Signed-off-by: Ming Zhou <b42586@freescale.com>
+---
+ include/media/OMXPlayer.h | 5 ++++-
+ 1 file changed, 4 insertions(+), 1 deletion(-)
+
+diff --git a/include/media/OMXPlayer.h b/include/media/OMXPlayer.h
+index bfe0d90..09062af 100644
+--- a/include/media/OMXPlayer.h
++++ b/include/media/OMXPlayer.h
+@@ -14,7 +14,7 @@
+  * limitations under the License.
+  */
+ 
+-/* Copyright 2009-2014 Freescale Semiconductor, Inc. */
++/* Copyright 2009-2015 Freescale Semiconductor, Inc. */
+ 
+ #ifndef ANDROID_OMXPLAYER_H
+ #define ANDROID_OMXPLAYER_H
+@@ -43,6 +43,9 @@ public:
+     virtual status_t    stop();
+     virtual status_t    pause();
+     virtual bool        isPlaying();
++    virtual status_t    setSyncSettings(const AVSyncSettings &sync, float videoFpsHint);
++    virtual status_t    getSyncSettings(AVSyncSettings *sync, float *videoFps);
++
+     virtual status_t    seekTo(int msec);
+     virtual status_t    getCurrentPosition(int *msec);
+     virtual status_t    getDuration(int *msec);
+-- 
+1.8.0
+

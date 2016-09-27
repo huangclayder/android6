@@ -1,0 +1,36 @@
+From 32b5370f6c7d19ed91cb007ba4841aa520ad24fa Mon Sep 17 00:00:00 2001
+From: Zhang Sanshan <b51434@freescale.com>
+Date: Thu, 9 Apr 2015 09:01:10 +0800
+Subject: [PATCH 092/115] MA-6521 add online ota folder for lp5.1
+
+add platform_lollipop_5.1 in 10.192.224.178:/srv/ftp/android_daily_latest/
+
+Signed-off-by: Zhang Sanshan <b51434@freescale.com>
+---
+ FSLOta/src/com/fsl/android/ota/OTAServerConfig.java | 8 +++++---
+ 1 file changed, 5 insertions(+), 3 deletions(-)
+
+diff --git a/FSLOta/src/com/fsl/android/ota/OTAServerConfig.java b/FSLOta/src/com/fsl/android/ota/OTAServerConfig.java
+index fe8a8ba..2415fd0 100644
+--- a/FSLOta/src/com/fsl/android/ota/OTAServerConfig.java
++++ b/FSLOta/src/com/fsl/android/ota/OTAServerConfig.java
+@@ -65,11 +65,13 @@ public class OTAServerConfig {
+ 			String port_str = parser.getProp(port_config_str);
+ 			String android_name = parser.getProp(android_nickname);
+ 			int port = new Long(port_str).intValue();
+-			String fileaddr = new String(product + "_" + android_name + "/" + product + ".ota.zip");
+-			String buildconfigAddr = new String(product + "_" + android_name + "/" + "build.prop");
++			String fileaddr;
++			String buildconfigAddr;
+ 
+ 			readMachine();
+-
++			String version = SystemProperties.get("ro.build.version.release");
++			fileaddr = new String(product + "_" + android_name + "_" + version + "/" + product + ".ota.zip");
++			buildconfigAddr = new String(product + "_" + android_name + "_" + version + "/" + "build.prop");
+                         String boottype = SystemProperties.get("ro.boot.storage_type");
+ 			if (machineString.indexOf("DualLite") != -1) {
+                                if (boottype.equals("sd"))
+-- 
+1.8.0
+

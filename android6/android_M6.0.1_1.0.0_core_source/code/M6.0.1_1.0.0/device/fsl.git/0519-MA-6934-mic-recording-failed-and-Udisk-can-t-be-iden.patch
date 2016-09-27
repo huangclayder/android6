@@ -1,0 +1,32 @@
+From a514e29c2ddaeb4f5b52843121d09e81f5aaaaba Mon Sep 17 00:00:00 2001
+From: Winter Wang <b55847@freescale.com>
+Date: Wed, 5 Aug 2015 11:36:26 +0800
+Subject: [PATCH 519/602] MA-6934 mic recording failed and Udisk can't be
+ identified(auto sx 0727 daily build)
+
+fix by
+1.kernel_imx.git : commit b42d55, change imx6sx-sabreauto DTS pinctrl;
+2.fsl.git : change the usbotg register address in fstab_nand from 0x2184200 to 0x2184000
+            change ci_hdrc.1 to ci_hdrc.0.
+
+Signed-off-by: Winter Wang <b55847@freescale.com>
+---
+ sabreauto_6sx/fstab_nand.freescale | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/sabreauto_6sx/fstab_nand.freescale b/sabreauto_6sx/fstab_nand.freescale
+index 6baf5c4..b9a46f6 100644
+--- a/sabreauto_6sx/fstab_nand.freescale
++++ b/sabreauto_6sx/fstab_nand.freescale
+@@ -6,7 +6,7 @@
+ # below is for ubi support, uncomment to support ubifs(NAND)
+ 
+ /devices/soc0/soc.0/2100000.aips-bus/219c000.usdhc/mmc_host /mnt/media_rw/extsd vfat defaults voldmanaged=extsd:auto
+-/devices/soc0/soc.0/2100000.aips-bus/2184200.usb/ci_hdrc.1 /mnt/media_rw/udisk vfat defaults voldmanaged=udisk:auto
++/devices/soc0/soc.0/2100000.aips-bus/2184000.usb/ci_hdrc.0 /mnt/media_rw/udisk vfat defaults voldmanaged=udisk:auto
+ /dev/ubi0_0     /system		    ubifs 	ro                                      wait
+ /dev/ubi0_3     /data           ubifs   nosuid,nodev,nodiratime,noatime         wait
+ /dev/ubi0_1     /cache          ubifs   nosuid,nodev                            wait
+-- 
+1.8.0
+

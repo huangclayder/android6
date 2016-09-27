@@ -1,0 +1,28 @@
+From 78caf00029e0c1b3b097fa2b433202db1fcce145 Mon Sep 17 00:00:00 2001
+From: Haoran Wang <b50027@freescale.com>
+Date: Wed, 28 Oct 2015 20:16:50 +0800
+Subject: [PATCH 559/602] MA-6450-7 Added BCM4339 wifi support in sabresd_7d
+
+Added missed macro for sabresd_7d platform.
+
+Signed-off-by: Haoran Wang <b50027@freescale.com>
+---
+ sabresd_7d/BoardConfig.mk | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/sabresd_7d/BoardConfig.mk b/sabresd_7d/BoardConfig.mk
+index ddc662f..6c5b5b4 100644
+--- a/sabresd_7d/BoardConfig.mk
++++ b/sabresd_7d/BoardConfig.mk
+@@ -63,6 +63,8 @@ WIFI_DRIVER_MODULE_NAME                  := "iwlagn"
+ WIFI_DRIVER_MODULE_PATH                  ?= auto
+ endif
+ 
++BOARD_SUPPORT_BCM_WIFI := true
++
+ WIFI_DRIVER_FW_PATH_STA 	:= "/system/etc/firmware/bcm/fw_bcmdhd.bin"
+ WIFI_DRIVER_FW_PATH_P2P 	:= "/system/etc/firmware/bcm/fw_bcmdhd.bin"
+ WIFI_DRIVER_FW_PATH_AP  	:= "/system/etc/firmware/bcm/fw_bcmdhd_apsta.bin"
+-- 
+1.8.0
+

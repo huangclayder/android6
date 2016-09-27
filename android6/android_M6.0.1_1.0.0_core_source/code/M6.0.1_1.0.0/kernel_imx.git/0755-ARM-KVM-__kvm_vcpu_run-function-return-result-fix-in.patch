@@ -1,0 +1,40 @@
+From 7941e115242c67e700349a5c50d8db38f650834c Mon Sep 17 00:00:00 2001
+From: Victor Kamensky <victor.kamensky@linaro.org>
+Date: Thu, 12 Jun 2014 09:30:03 -0700
+Subject: [PATCH] ARM: KVM: __kvm_vcpu_run function return result fix in BE
+ case
+
+The __kvm_vcpu_run function returns a 64-bit result in two registers,
+which has to be adjusted for BE case.
+
+Signed-off-by: Victor Kamensky <victor.kamensky@linaro.org>
+Acked-by: Christoffer Dall <christoffer.dall@linaro.org>
+Acked-by: Marc Zyngier <marc.zyngier@arm.com>
+Signed-off-by: Marc Zyngier <marc.zyngier@arm.com>
+(cherry picked from commit 6d7311b520864531c81f0e0237e96146d8057d77)
+Signed-off-by: Christoffer Dall <christoffer.dall@linaro.org>
+---
+ arch/arm/kvm/interrupts.S | 5 +++++
+ 1 file changed, 5 insertions(+)
+
+diff --git a/arch/arm/kvm/interrupts.S b/arch/arm/kvm/interrupts.S
+index 24d4e65..01dcb0e 100644
+--- a/arch/arm/kvm/interrupts.S
++++ b/arch/arm/kvm/interrupts.S
+@@ -199,8 +199,13 @@ after_vfp_restore:
+ 
+ 	restore_host_regs
+ 	clrex				@ Clear exclusive monitor
++#ifndef CONFIG_CPU_ENDIAN_BE8
+ 	mov	r0, r1			@ Return the return code
+ 	mov	r1, #0			@ Clear upper bits in return value
++#else
++	@ r1 already has return code
++	mov	r0, #0			@ Clear upper bits in return value
++#endif /* CONFIG_CPU_ENDIAN_BE8 */
+ 	bx	lr			@ return to IOCTL
+ 
+ /********************************************************************
+-- 
+1.8.0
+

@@ -1,0 +1,30 @@
+From 0a77debeef9ed42744bae9d311cc5e955d9bd63f Mon Sep 17 00:00:00 2001
+From: Ke Qinghua <qinghua.ke@freescale.com>
+Date: Thu, 27 Mar 2014 17:22:38 +0800
+Subject: [PATCH 298/602] ENGR00305254-1 imx6sx sarbesd board bring up
+
+Update SDHC and USB devcie DEVPATH
+
+Signed-off-by: Ke Qinghua <qinghua.ke@freescale.com>
+---
+ sabresd_6sx/fstab.freescale | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/sabresd_6sx/fstab.freescale b/sabresd_6sx/fstab.freescale
+index 8e6981c..f5f65eb 100644
+--- a/sabresd_6sx/fstab.freescale
++++ b/sabresd_6sx/fstab.freescale
+@@ -3,8 +3,8 @@
+ # The filesystem that contains the filesystem checker binary (typically /system) cannot
+ # specify MF_CHECK, and must come before any filesystems that do specify MF_CHECK
+ 
+-/devices/platform/sdhci-esdhc-imx.2/mmc_host/mmc1 /mnt/media_rw/extsd vfat defaults voldmanaged=extsd:auto
+-/devices/platform/fsl-ehci /mnt/media_rw/udisk vfat defaults voldmanaged=udisk:auto
++/devices/soc0/soc.1/2100000.aips-bus/2198000.usdhc/mmc_host/mmc1 /mnt/media_rw/extsd vfat defaults voldmanaged=extsd:auto
++/devices/soc0/soc.1/2100000.aips-bus/2184200.usb/ci_hdrc.1/usb1 /mnt/media_rw/udisk vfat defaults voldmanaged=udisk:auto
+ /dev/block/mmcblk0p5    /system      ext4    ro                                                                               wait
+ /dev/block/mmcblk0p4    /data        ext4    nosuid,nodev,nodiratime,noatime,nomblk_io_submit,noauto_da_alloc,errors=panic    wait,encryptable=footer
+ /dev/block/mmcblk0p6    /cache       ext4    nosuid,nodev,nomblk_io_submit                                                    wait
+-- 
+1.8.0
+

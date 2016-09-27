@@ -1,0 +1,207 @@
+From ca85d5a93886343d6ae435241fd4063d78ecfdeb Mon Sep 17 00:00:00 2001
+From: "xuegang.liu" <xuegang.liu@freescale.com>
+Date: Wed, 3 Jun 2015 11:24:07 +0800
+Subject: [PATCH 497/602] MA-6767 support separate init.rc configure according
+ to hardware soc
+
+Add a mechanism to allow separate init.rc configure according to
+hardware soc. Separate the soc different init configure into each
+soc's init.rc file.
+
+Signed-off-by: Richard Liu <r66033@freescale.com>
+---
+ evk_6sl/init.rc              | 3 +++
+ imx6/etc/init.rc             | 3 ---
+ imx6/sabreauto_6q.mk         | 3 +++
+ imx6/sabresd_6dq.mk          | 2 ++
+ sabreauto_6q/init.i.MX6DL.rc | 7 +++++++
+ sabreauto_6q/init.i.MX6Q.rc  | 7 +++++++
+ sabreauto_6q/init.i.MX6QP.rc | 7 +++++++
+ sabreauto_6q/init.rc         | 4 +---
+ sabreauto_6sx/init.rc        | 3 +++
+ sabresd_6dq/init.i.MX6DL.rc  | 4 ++++
+ sabresd_6dq/init.i.MX6Q.rc   | 4 ++++
+ sabresd_6dq/init.rc          | 1 +
+ sabresd_6sx/init.rc          | 3 +++
+ 13 files changed, 45 insertions(+), 6 deletions(-)
+ create mode 100755 sabreauto_6q/init.i.MX6DL.rc
+ create mode 100755 sabreauto_6q/init.i.MX6Q.rc
+ create mode 100755 sabreauto_6q/init.i.MX6QP.rc
+ create mode 100755 sabresd_6dq/init.i.MX6DL.rc
+ create mode 100755 sabresd_6dq/init.i.MX6Q.rc
+
+diff --git a/evk_6sl/init.rc b/evk_6sl/init.rc
+index 92619a8..6e6d0c6 100644
+--- a/evk_6sl/init.rc
++++ b/evk_6sl/init.rc
+@@ -67,6 +67,9 @@ on boot
+     # Set extsd access permission
+     setprop persist.sampling_profiler 1
+ 
++    # Set GPU 3D minimum clock to 8/64
++    write /sys/bus/platform/drivers/galcore/gpu3DMinClock 8
++
+ # change for FSL specific service
+     chown root system /sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq
+     chmod 0664 /sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq
+diff --git a/imx6/etc/init.rc b/imx6/etc/init.rc
+index 6c915ac..e8fefa1 100755
+--- a/imx6/etc/init.rc
++++ b/imx6/etc/init.rc
+@@ -484,9 +484,6 @@ on boot
+ #  Enable adb security for JB4.2.2
+     setprop ro.adb.secure 1
+ 
+-#  Set GPU 3D minimum clock to 3/64
+-   write /sys/bus/platform/drivers/galcore/gpu3DMinClock 3
+-
+     class_start core
+ 
+ on nonencrypted
+diff --git a/imx6/sabreauto_6q.mk b/imx6/sabreauto_6q.mk
+index 9fdfc2d..97ac8b7 100644
+--- a/imx6/sabreauto_6q.mk
++++ b/imx6/sabreauto_6q.mk
+@@ -18,6 +18,9 @@ PRODUCT_DEVICE := sabreauto_6q
+ 
+ PRODUCT_COPY_FILES += \
+ 	device/fsl/sabreauto_6q/init.rc:root/init.freescale.rc \
++	device/fsl/sabreauto_6q/init.i.MX6Q.rc:root/init.freescale.i.MX6Q.rc \
++	device/fsl/sabreauto_6q/init.i.MX6DL.rc:root/init.freescale.i.MX6DL.rc \
++	device/fsl/sabreauto_6q/init.i.MX6QP.rc:root/init.freescale.i.MX6QP.rc \
+ 	device/fsl/sabreauto_6q/audio_policy.conf:system/etc/audio_policy.conf \
+ 	device/fsl/sabreauto_6q/audio_effects.conf:system/vendor/etc/audio_effects.conf
+ 
+diff --git a/imx6/sabresd_6dq.mk b/imx6/sabresd_6dq.mk
+index 56cef9d..d4af3b4 100644
+--- a/imx6/sabresd_6dq.mk
++++ b/imx6/sabresd_6dq.mk
+@@ -18,6 +18,8 @@ PRODUCT_DEVICE := sabresd_6dq
+ 
+ PRODUCT_COPY_FILES += \
+ 	device/fsl/sabresd_6dq/init.rc:root/init.freescale.rc \
++        device/fsl/sabresd_6dq/init.i.MX6Q.rc:root/init.freescale.i.MX6Q.rc \
++        device/fsl/sabresd_6dq/init.i.MX6DL.rc:root/init.freescale.i.MX6DL.rc \
+ 	device/fsl/sabresd_6dq/audio_policy.conf:system/etc/audio_policy.conf \
+ 	device/fsl/sabresd_6dq/audio_effects.conf:system/vendor/etc/audio_effects.conf
+ 
+diff --git a/sabreauto_6q/init.i.MX6DL.rc b/sabreauto_6q/init.i.MX6DL.rc
+new file mode 100755
+index 0000000..03364ec
+--- /dev/null
++++ b/sabreauto_6q/init.i.MX6DL.rc
+@@ -0,0 +1,7 @@
++on boot
++
++    # Set OpenGLES version
++    setprop ro.opengles.version 131072
++
++    # Set GPU 3D minimum clock to 8/64
++    write /sys/bus/platform/drivers/galcore/gpu3DMinClock 8
+diff --git a/sabreauto_6q/init.i.MX6Q.rc b/sabreauto_6q/init.i.MX6Q.rc
+new file mode 100755
+index 0000000..fed3104
+--- /dev/null
++++ b/sabreauto_6q/init.i.MX6Q.rc
+@@ -0,0 +1,7 @@
++on boot
++
++    # Set OpenGLES version
++    setprop ro.opengles.version 131072
++
++    # Set GPU 3D minimum clock to 3/64
++    write /sys/bus/platform/drivers/galcore/gpu3DMinClock 3
+diff --git a/sabreauto_6q/init.i.MX6QP.rc b/sabreauto_6q/init.i.MX6QP.rc
+new file mode 100755
+index 0000000..f116326
+--- /dev/null
++++ b/sabreauto_6q/init.i.MX6QP.rc
+@@ -0,0 +1,7 @@
++on boot
++
++    # Set OpenGLES version
++    setprop ro.opengles.version 196608
++
++    # Set GPU 3D minimum clock to 3/64
++    write /sys/bus/platform/drivers/galcore/gpu3DMinClock 3
+diff --git a/sabreauto_6q/init.rc b/sabreauto_6q/init.rc
+index 559516a..ceeb256 100644
+--- a/sabreauto_6q/init.rc
++++ b/sabreauto_6q/init.rc
+@@ -1,4 +1,5 @@
+ import init.${ro.hardware}.usb.rc
++import init.${ro.hardware}.${ro.soc}.rc
+ 
+ on init
+     start watchdogd
+@@ -52,9 +53,6 @@ on boot
+     setprop front_camera_name uvc
+     setprop front_camera_orient 0
+ 
+-    # Set OpenGLES version
+-    setprop ro.opengles.version 131072
+-
+     # Set rotation to 270 to cofigure as portrait mode
+     setprop ro.sf.hwrotation 0
+ 
+diff --git a/sabreauto_6sx/init.rc b/sabreauto_6sx/init.rc
+index 6848d43..b335bd0 100755
+--- a/sabreauto_6sx/init.rc
++++ b/sabreauto_6sx/init.rc
+@@ -64,6 +64,9 @@ on boot
+     # Set extsd access permission
+     setprop persist.sampling_profiler 1
+ 
++    # Set GPU 3D minimum clock to 8/64
++    write /sys/bus/platform/drivers/galcore/gpu3DMinClock 8
++
+     # prepare for ril
+     setprop gsm.ril.delay 15
+     setprop ro.ril.wake_lock_timeout 300
+diff --git a/sabresd_6dq/init.i.MX6DL.rc b/sabresd_6dq/init.i.MX6DL.rc
+new file mode 100755
+index 0000000..0113bfb
+--- /dev/null
++++ b/sabresd_6dq/init.i.MX6DL.rc
+@@ -0,0 +1,4 @@
++on boot
++
++    # Set GPU 3D minimum clock to 8/64
++    write /sys/bus/platform/drivers/galcore/gpu3DMinClock 8
+diff --git a/sabresd_6dq/init.i.MX6Q.rc b/sabresd_6dq/init.i.MX6Q.rc
+new file mode 100755
+index 0000000..e463fe5
+--- /dev/null
++++ b/sabresd_6dq/init.i.MX6Q.rc
+@@ -0,0 +1,4 @@
++on boot
++
++    # Set GPU 3D minimum clock to 3/64
++    write /sys/bus/platform/drivers/galcore/gpu3DMinClock 3
+diff --git a/sabresd_6dq/init.rc b/sabresd_6dq/init.rc
+index 3af7bcc..ef5f492 100755
+--- a/sabresd_6dq/init.rc
++++ b/sabresd_6dq/init.rc
+@@ -1,4 +1,5 @@
+ import init.${ro.hardware}.usb.rc
++import init.${ro.hardware}.${ro.soc}.rc
+ 
+ on init
+     start watchdogd
+diff --git a/sabresd_6sx/init.rc b/sabresd_6sx/init.rc
+index 479da0c..53c854c 100755
+--- a/sabresd_6sx/init.rc
++++ b/sabresd_6sx/init.rc
+@@ -63,6 +63,9 @@ on boot
+     # Set extsd access permission
+     setprop persist.sampling_profiler 1
+ 
++    # Set GPU 3D minimum clock to 8/64
++    write /sys/bus/platform/drivers/galcore/gpu3DMinClock 8
++
+ # change for FSL specific service
+     chown root system /sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq
+     chmod 0664 /sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq
+-- 
+1.8.0
+

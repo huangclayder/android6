@@ -1,0 +1,30 @@
+From 7c3fdf869ccdbef14886512660061224b7597244 Mon Sep 17 00:00:00 2001
+From: Robby Cai <r63905@freescale.com>
+Date: Wed, 11 Mar 2015 20:37:25 +0800
+Subject: [PATCH] MLK-10384-2 ARM: dts: add PXP support on i.MX7D SDB
+
+Add PxP support on i.MX7D SabreSD board
+
+Signed-off-by: Robby Cai <r63905@freescale.com>
+---
+ arch/arm/boot/dts/imx7d-sdb.dts | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/arch/arm/boot/dts/imx7d-sdb.dts b/arch/arm/boot/dts/imx7d-sdb.dts
+index 736ebbc..903f04b 100644
+--- a/arch/arm/boot/dts/imx7d-sdb.dts
++++ b/arch/arm/boot/dts/imx7d-sdb.dts
+@@ -106,6 +106,10 @@
+         status = "disabled";
+ };
+ 
++&epxp {
++	status = "okay";
++};
++
+ &fec1 {
+ 	pinctrl-names = "default";
+ 	pinctrl-0 = <&pinctrl_enet1>;
+-- 
+1.8.0
+

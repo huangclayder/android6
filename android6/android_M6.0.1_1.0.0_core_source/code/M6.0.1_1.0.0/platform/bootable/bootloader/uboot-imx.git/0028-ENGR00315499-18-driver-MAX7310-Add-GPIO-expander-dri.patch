@@ -1,0 +1,290 @@
+From 5a5bc7607501aab650ddd3c568d92a026297d1d8 Mon Sep 17 00:00:00 2001
+From: "Ye.Li" <B37916@freescale.com>
+Date: Mon, 13 Jan 2014 16:27:39 +0800
+Subject: [PATCH] ENGR00315499-18 driver:MAX7310: Add GPIO expander driver for
+ MAX7310
+
+Implement simple functionalities for MAX7310 GPIO input and output.
+Because MAX7310 is a off-chip device and need to co-exist with
+on-chip GPIO, new APIs are added specifically for expander device.
+
+CONFIG_MAX7310_IOEXP is used to enable the MAX7310 driver. The I2C
+related configurations also need to set together.
+
+Signed-off-by: Ye.Li <B37916@freescale.com>
+Signed-off-by: Nitin Garg <nitin.garg@freescale.com>
+(cherry picked from commit e3b699dab2c92268799b56c28c6a8fcda4f6110b)
+Signed-off-by: Peng Fan <Peng.Fan@freescale.com>
+
+Conflicts:
+	drivers/gpio/Makefile
+---
+ drivers/gpio/Makefile        |   1 +
+ drivers/gpio/max7310_ioexp.c | 167 +++++++++++++++++++++++++++++++++++++++++++
+ include/gpio_exp.h           |  73 +++++++++++++++++++
+ 3 files changed, 241 insertions(+)
+
+diff --git a/drivers/gpio/Makefile b/drivers/gpio/Makefile
+index 85f71c5..b9da492 100644
+--- a/drivers/gpio/Makefile
++++ b/drivers/gpio/Makefile
+@@ -42,3 +42,4 @@ obj-$(CONFIG_TCA642X)		+= tca642x.o
+ oby-$(CONFIG_SX151X)		+= sx151x.o
+ obj-$(CONFIG_SUNXI_GPIO)	+= sunxi_gpio.o
+ obj-$(CONFIG_LPC32XX_GPIO)	+= lpc32xx_gpio.o
++obj-$(CONFIG_MAX7310_IOEXP)	+= max7310_ioexp.o
+diff --git a/drivers/gpio/max7310_ioexp.c b/drivers/gpio/max7310_ioexp.c
+new file mode 100644
+index 0000000..34c494f
+--- /dev/null
++++ b/drivers/gpio/max7310_ioexp.c
+@@ -0,0 +1,167 @@
++/*
++ * Copyright (C) 2014 Freescale Semiconductor, Inc.
++ *
++ * See file CREDITS for list of people who contributed to this
++ * project.
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ */
++
++#include <common.h>
++#include <asm/gpio.h>
++#include <asm/io.h>
++#include <errno.h>
++#include <i2c.h>
++#include <gpio_exp.h>
++
++#define MAX7310_REG_INPUT_PORT          0x00
++#define MAX7310_REG_OUTPUT_PORT         0x01
++#define MAX7310_REG_POLARITY            0x02
++#define MAX7310_REG_CONFIGURATION       0x03
++#define MAX7310_REG_TIMEOUT             0x04
++
++enum max7310_gpio_direction {
++	MAX7310_GPIO_DIRECTION_IN,
++	MAX7310_GPIO_DIRECTION_OUT,
++};
++
++struct max7310_config_struct {
++	int i2c_slave_addr;
++	int i2c_bus_id;
++};
++
++static struct max7310_config_struct max7310_configs[CONFIG_IOEXP_DEVICES_NUM];
++
++
++static int max7310_gpio_direction(unsigned int gpio,
++	enum max7310_gpio_direction direction)
++{
++	unsigned int dev = IOEXP_GPIO_TO_DEVICE(gpio);
++	unsigned int pin = IOEXP_GPIO_TO_PIN(gpio);
++	unsigned char value, val2, val3;
++	unsigned char chip;
++
++	if (dev >= CONFIG_IOEXP_DEVICES_NUM)
++		return -EPERM;
++
++	chip = max7310_configs[dev].i2c_slave_addr;
++
++	i2c_set_bus_num(max7310_configs[dev].i2c_bus_id);
++	if (i2c_probe(chip))
++		return -ENXIO;
++
++	i2c_read(chip, MAX7310_REG_CONFIGURATION, 1, &value, 1);
++
++	switch (direction) {
++	case MAX7310_GPIO_DIRECTION_OUT:
++		value &= ~(1 << pin);
++		i2c_write(chip, MAX7310_REG_CONFIGURATION, 1, &value, 1);
++		break;
++	case MAX7310_GPIO_DIRECTION_IN:
++
++		i2c_read(chip, MAX7310_REG_POLARITY, 1, &val2, 1);
++		i2c_read(chip, MAX7310_REG_OUTPUT_PORT, 1, &val3, 1);
++
++		value |= (1 << pin);
++		val2 &= ~(1 << pin);
++		val3 &= ~(1 << pin);
++
++		i2c_write(chip, MAX7310_REG_POLARITY, 1, &val2, 1);
++		i2c_write(chip, MAX7310_REG_CONFIGURATION, 1, &value, 1);
++		i2c_write(chip, MAX7310_REG_OUTPUT_PORT, 1, &val3, 1);
++
++		break;
++	}
++
++	return 0;
++}
++
++static int max7310_gpio_set_value(unsigned gpio, int value)
++{
++	unsigned int dev = IOEXP_GPIO_TO_DEVICE(gpio);
++	unsigned int pin = IOEXP_GPIO_TO_PIN(gpio);
++	unsigned char reg_val;
++	unsigned char chip;
++
++	if (dev >= CONFIG_IOEXP_DEVICES_NUM)
++		return -EPERM;
++
++	chip = max7310_configs[dev].i2c_slave_addr;
++
++	i2c_set_bus_num(max7310_configs[dev].i2c_bus_id);
++	if (i2c_probe(chip))
++		return -ENXIO;
++
++	i2c_read(chip, MAX7310_REG_OUTPUT_PORT, 1, &reg_val, 1);
++
++	if (value)
++		reg_val |= 1 << pin;
++	else
++		reg_val &= ~(1 << pin);
++
++	i2c_write(chip, MAX7310_REG_OUTPUT_PORT, 1, &reg_val, 1);
++
++	return 0;
++}
++
++static int max7310_gpio_get_value(unsigned gpio)
++{
++	unsigned int dev = IOEXP_GPIO_TO_DEVICE(gpio);
++	unsigned int pin = IOEXP_GPIO_TO_PIN(gpio);
++	unsigned char reg_val;
++	unsigned char chip;
++
++	if (dev >= CONFIG_IOEXP_DEVICES_NUM)
++		return -EPERM;
++
++	chip = max7310_configs[dev].i2c_slave_addr;
++
++	i2c_set_bus_num(max7310_configs[dev].i2c_bus_id);
++	if (i2c_probe(chip))
++		return -ENXIO;
++
++	i2c_read(chip, MAX7310_REG_INPUT_PORT, 1, &reg_val, 1);
++
++	reg_val = (reg_val >> pin) & 0x01;
++
++	return reg_val;
++}
++
++int gpio_exp_direction_input(unsigned gpio)
++{
++	int ret = max7310_gpio_direction(gpio, MAX7310_GPIO_DIRECTION_IN);
++
++	if (ret < 0)
++		return ret;
++
++	return max7310_gpio_get_value(gpio);
++}
++
++int gpio_exp_direction_output(unsigned gpio, int value)
++{
++	int ret = max7310_gpio_direction(gpio, MAX7310_GPIO_DIRECTION_OUT);
++
++	if (ret < 0)
++		return ret;
++
++	return max7310_gpio_set_value(gpio, value);
++}
++
++int gpio_exp_setup_port(int port, int i2c_bus_id, int i2c_slave_addr)
++{
++	if (port > CONFIG_IOEXP_DEVICES_NUM || port <= 0)
++		return -EPERM;
++
++	max7310_configs[port-1].i2c_bus_id = i2c_bus_id;
++	max7310_configs[port-1].i2c_slave_addr = i2c_slave_addr;
++
++	return 0;
++}
+diff --git a/include/gpio_exp.h b/include/gpio_exp.h
+new file mode 100644
+index 0000000..6dc5eed
+--- /dev/null
++++ b/include/gpio_exp.h
+@@ -0,0 +1,73 @@
++/*
++ * Copyright (C) 2014 Freescale Semiconductor, Inc.
++ *
++ * See file CREDITS for list of people who contributed to this
++ * project.
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ */
++
++#ifndef __GPIO_EXP_H
++#define __GPIO_EXP_H
++
++#ifndef CONFIG_IOEXP_DEV_PINS_NUM
++#define CONFIG_IOEXP_DEV_PINS_NUM 8
++#endif
++
++#ifndef CONFIG_IOEXP_DEVICES_NUM
++#define CONFIG_IOEXP_DEVICES_NUM 1
++#endif
++
++/*Define for building ioexp gpio, port starts from 1, index starts from 0*/
++#define IOEXP_GPIO_NR(port, index) \
++	((((port)-1)*CONFIG_IOEXP_DEV_PINS_NUM)+ \
++	 ((index)&(CONFIG_IOEXP_DEV_PINS_NUM-1)))
++
++/*Get the device number from a ioexp gpio*/
++#define IOEXP_GPIO_TO_DEVICE(gpio_nr) \
++	(gpio_nr / CONFIG_IOEXP_DEV_PINS_NUM)
++
++/*Get the port number from a ioexp gpio*/
++#define IOEXP_GPIO_TO_PORT(gpio_nr) \
++	((gpio_nr / CONFIG_IOEXP_DEV_PINS_NUM) + 1)
++
++/*Get the pin number from a ioexp gpio*/
++#define IOEXP_GPIO_TO_PIN(gpio_nr) \
++	(gpio_nr % CONFIG_IOEXP_DEV_PINS_NUM)
++
++/**
++ * Make a GPIO an input.
++ *
++ * @param gpio	GPIO number
++ * @return 0 if ok, -1 on error
++ */
++int gpio_exp_direction_input(unsigned gpio);
++
++/**
++ * Make a GPIO an output, and set its value.
++ *
++ * @param gpio	GPIO number
++ * @param value	GPIO value (0 for low or 1 for high)
++ * @return 0 if ok, -1 on error
++ */
++int gpio_exp_direction_output(unsigned gpio, int value);
++
++/**
++ * Setup the io expander's port.
++ *
++ * @param port	IO expander port , starts from 1
++ * @param i2c_bus_id	i2c bus index, starts from 0
++ * @param i2c_slave_addr	i2c address of the io expander port
++ * @return 0 if ok, -1 on error
++ */
++int gpio_exp_setup_port(int port, int i2c_bus_id, int i2c_slave_addr);
++
++#endif	/*__GPIO_EXP_H*/
+-- 
+1.8.0
+

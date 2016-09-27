@@ -1,0 +1,32 @@
+From 69e52c4fd8e188af9df034531ef9793ecb215804 Mon Sep 17 00:00:00 2001
+From: "xuegang.liu" <xuegang.liu@freescale.com>
+Date: Wed, 25 Mar 2015 16:53:33 +0800
+Subject: [PATCH 463/602] MA-6456 fix video playback not work on sabresd_7d
+
+There is no GPU on sabresd_7d, android default software opengl es
+does not support YUV format, set ro.kernel.qemu=1 stagefright will
+output RGB format surface instead of YUV format surface, then video
+playback can be supported.
+
+Signed-off-by: Richard Liu <r66033@freescale.com>
+---
+ sabresd_7d/init.rc | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/sabresd_7d/init.rc b/sabresd_7d/init.rc
+index c132ed7..2cf8f31 100644
+--- a/sabresd_7d/init.rc
++++ b/sabresd_7d/init.rc
+@@ -67,6 +67,9 @@ on boot
+     # Set sys.device.type to tablet to enable NavigationBar
+     setprop sys.device.type tablet
+ 
++    # Set ro.kernel.qemu on i.mx7d
++    setprop ro.kernel.qemu 1 
++
+     # Set extsd access permission
+     setprop persist.sampling_profiler 1
+ 
+-- 
+1.8.0
+

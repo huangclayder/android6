@@ -1,0 +1,30 @@
+From 7e055a8dd9b8bb095384627f29fcd499d751da86 Mon Sep 17 00:00:00 2001
+From: Mark Brown <broonie@linaro.org>
+Date: Wed, 12 Feb 2014 20:31:26 +0000
+Subject: [PATCH] spi: Make max_tx and max_rx the same type
+
+Prevents spurious compiler warnings.
+
+Signed-off-by: Mark Brown <broonie@linaro.org>
+(cherry picked from commit 513273538a6c10dba1170ecdee5c2da15acecdb5)
+(cherry picked from commit 928cee996cc435a9eb4b3e15afc2cb8d30dc9dbd)
+---
+ drivers/spi/spi.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/spi/spi.c b/drivers/spi/spi.c
+index 978b550..2db742e 100644
+--- a/drivers/spi/spi.c
++++ b/drivers/spi/spi.c
+@@ -649,7 +649,7 @@ static int spi_map_msg(struct spi_master *master, struct spi_message *msg)
+ 	struct device *tx_dev, *rx_dev;
+ 	struct spi_transfer *xfer;
+ 	void *tmp;
+-	size_t max_tx, max_rx;
++	unsigned int max_tx, max_rx;
+ 	int ret;
+ 
+ 	if (master->flags & (SPI_MASTER_MUST_RX | SPI_MASTER_MUST_TX)) {
+-- 
+1.8.0
+

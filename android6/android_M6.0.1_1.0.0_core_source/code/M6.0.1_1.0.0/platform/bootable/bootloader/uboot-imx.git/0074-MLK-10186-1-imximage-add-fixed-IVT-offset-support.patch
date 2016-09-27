@@ -1,0 +1,53 @@
+From 3d52e221ed444dab96038a2417d1dcb2217ad593 Mon Sep 17 00:00:00 2001
+From: "Ye.Li" <B37916@freescale.com>
+Date: Fri, 30 Jan 2015 16:17:36 +0800
+Subject: [PATCH] MLK-10186-1 imximage: add fixed IVT offset support
+
+Since from mx7, we use fixed IVT offset for all boot devices.
+Introduce a new configuration CONFIG_IMX_FIXED_IVT_OFFSET for this.
+
+Signed-off-by: Peng Fan <Peng.Fan@freescale.com>
+Signed-off-by: Ye.Li <B37916@freescale.com>
+(cherry picked from commit 88e0a3552b08627b18d98380a32dbafacb18854b)
+
+Conflicts:
+	tools/imximage.h
+---
+ tools/imximage.h | 10 ++++++++++
+ 1 file changed, 10 insertions(+)
+
+diff --git a/tools/imximage.h b/tools/imximage.h
+index 9685d8c..d5be43d0 100644
+--- a/tools/imximage.h
++++ b/tools/imximage.h
+@@ -2,6 +2,8 @@
+  * (C) Copyright 2009
+  * Stefano Babic, DENX Software Engineering, sbabic@denx.de.
+  *
++ * Copyright (C) 2014-2015 Freescale Semiconductor, Inc.
++ *
+  * SPDX-License-Identifier:	GPL-2.0+
+  */
+ 
+@@ -28,10 +30,18 @@
+ #define FLASH_OFFSET_NAND	FLASH_OFFSET_STANDARD
+ #define FLASH_OFFSET_SD		FLASH_OFFSET_STANDARD
+ #define FLASH_OFFSET_SPI	FLASH_OFFSET_STANDARD
++#define FLASH_OFFSET_SATA	FLASH_OFFSET_STANDARD
++
++#ifdef CONFIG_IMX_FIXED_IVT_OFFSET
++#define FLASH_OFFSET_ONENAND	FLASH_OFFSET_STANDARD
++#define FLASH_OFFSET_NOR	FLASH_OFFSET_STANDARD
++#define FLASH_OFFSET_QSPI	FLASH_OFFSET_STANDARD
++#else
+ #define FLASH_OFFSET_ONENAND	0x100
+ #define FLASH_OFFSET_NOR	0x1000
+ #define FLASH_OFFSET_SATA	FLASH_OFFSET_STANDARD
+ #define FLASH_OFFSET_QSPI	0x1000
++#endif
+ 
+ /* Initial Load Region Size */
+ #define FLASH_LOADSIZE_UNDEFINED	0xFFFFFFFF
+-- 
+1.8.0
+

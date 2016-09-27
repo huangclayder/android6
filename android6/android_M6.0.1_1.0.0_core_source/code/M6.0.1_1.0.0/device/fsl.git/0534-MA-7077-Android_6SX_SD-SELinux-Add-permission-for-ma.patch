@@ -1,0 +1,36 @@
+From 655ca19b8e82f75361d59189131dd9ef05a7363d Mon Sep 17 00:00:00 2001
+From: Zhang Sanshan <b51434@freescale.com>
+Date: Thu, 8 Oct 2015 16:57:17 +0800
+Subject: [PATCH 534/602] MA-7077 [Android_6SX_SD] SELinux: Add permission for
+ magd, to write fsl_mag.txt which contains the
+ calibration data. 100%
+
+Add permission for magd to change fsl_mag.txt.
+
+Signed-off-by: Zhang Sanshan <b51434@freescale.com>
+---
+ imx6/sepolicy/sensors.te | 1 +
+ imx7/sepolicy/sensors.te | 1 +
+ 2 files changed, 2 insertions(+)
+
+diff --git a/imx6/sepolicy/sensors.te b/imx6/sepolicy/sensors.te
+index 81f097b..aa8713a 100644
+--- a/imx6/sepolicy/sensors.te
++++ b/imx6/sepolicy/sensors.te
+@@ -26,3 +26,4 @@ allow sensors cgroup:dir { create add_name };
+ allow sensors input_device:chr_file rw_file_perms;
+ allow sensors input_device:dir r_dir_perms;
+ allow sensors system_data_file:dir { write add_name };
++allow sensors system_data_file:file { create open write };
+diff --git a/imx7/sepolicy/sensors.te b/imx7/sepolicy/sensors.te
+index e0564ae..3b9f4ec 100644
+--- a/imx7/sepolicy/sensors.te
++++ b/imx7/sepolicy/sensors.te
+@@ -26,3 +26,4 @@ allow sensors cgroup:dir { create add_name };
+ allow sensors input_device:chr_file rw_file_perms;
+ allow sensors input_device:dir r_dir_perms;
+ allow sensors uhid_device:chr_file rw_file_perms;
++allow sensors system_data_file:file { create open write };
+-- 
+1.8.0
+

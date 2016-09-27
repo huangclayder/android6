@@ -1,0 +1,194 @@
+From 38cf99a6c23dc12b88616d4b8505d71054935a1c Mon Sep 17 00:00:00 2001
+From: Peng Fan <peng.fan@nxp.com>
+Date: Fri, 29 Jan 2016 10:06:34 +0800
+Subject: [PATCH] MLK-12346 imx: mx7d: switch to use DRAM_PLL, but not
+ DRAM_ALT_CLK_ROOT
+
+To simplify kernel clock management, we switch to use DRAM_PLL for
+DRAM controller and DDR PHY, but not use DRAM_ALT_CLK_ROOT.
+
+Signed-off-by: Peng Fan <peng.fan@nxp.com>
+---
+ board/freescale/mx7d_12x12_ddr3_arm2/imximage.cfg |  7 ++++--
+ board/freescale/mx7d_12x12_ddr3_arm2/plugin.S     | 27 ++++++++++++++++++-----
+ board/freescale/mx7d_19x19_ddr3_arm2/imximage.cfg |  8 +++++--
+ board/freescale/mx7d_19x19_ddr3_arm2/plugin.S     | 27 ++++++++++++++++++-----
+ board/freescale/mx7dsabresd/imximage.cfg          |  7 ++++--
+ board/freescale/mx7dsabresd/plugin.S              | 27 ++++++++++++++++++-----
+ 6 files changed, 79 insertions(+), 24 deletions(-)
+
+diff --git a/board/freescale/mx7d_12x12_ddr3_arm2/imximage.cfg b/board/freescale/mx7d_12x12_ddr3_arm2/imximage.cfg
+index 2caed20..c6ec80c 100644
+--- a/board/freescale/mx7d_12x12_ddr3_arm2/imximage.cfg
++++ b/board/freescale/mx7d_12x12_ddr3_arm2/imximage.cfg
+@@ -48,8 +48,11 @@ CSF CONFIG_CSF_SIZE
+  *	value	  value to be stored in the register
+  */
+ 
+-DATA 4 0x3038a080 0x15000000
+-DATA 4 0x30389880 0x01000000
++DATA 4 0x30360070 0x00703021
++DATA 4 0x30360090 0x0
++DATA 4 0x30360070 0x00603021
++CHECK_BITS_SET 4 0x30360070 0x80000000
++DATA 4 0x30389880 0x1
+ 
+ DATA 4 0x30340004 0x4F400005
+ 
+diff --git a/board/freescale/mx7d_12x12_ddr3_arm2/plugin.S b/board/freescale/mx7d_12x12_ddr3_arm2/plugin.S
+index 9cbff5e..1bc05dc 100644
+--- a/board/freescale/mx7d_12x12_ddr3_arm2/plugin.S
++++ b/board/freescale/mx7d_12x12_ddr3_arm2/plugin.S
+@@ -45,13 +45,28 @@ TUNE_END:
+ 	bne FREQ_DEFAULT_533
+ 
+ 	/* Change to 400Mhz for TO1.1 */
++	ldr r0, =ANATOP_BASE_ADDR
++	ldr r1, =0x70
++	ldr r2, =0x00703021
++	str r2, [r0, r1]
++	ldr r1, =0x90
++	ldr r2, =0x0
++	str r2, [r0, r1]
++	ldr r1, =0x70
++	ldr r2, =0x00603021
++	str r2, [r0, r1]
++
++	ldr r3, =0x80000000
++wait_lock:
++	ldr r2, [r0, r1]
++	and r2, r3
++	cmp r2, r3
++	bne wait_lock
++
+ 	ldr r0, =CCM_BASE_ADDR
+-	ldr r1, =0x15000000
+-	ldr r2, =0xa080
+-	str r1, [r0, r2]
+-	ldr r1, =0x01000000
+-	ldr r2, =0x9880
+-	str r1, [r0, r2]
++	ldr r1, =0x9880
++	ldr r2, =0x1
++	str r2, [r0, r1]
+ 
+ FREQ_DEFAULT_533:
+ .endm
+diff --git a/board/freescale/mx7d_19x19_ddr3_arm2/imximage.cfg b/board/freescale/mx7d_19x19_ddr3_arm2/imximage.cfg
+index 6317055..29007f5 100644
+--- a/board/freescale/mx7d_19x19_ddr3_arm2/imximage.cfg
++++ b/board/freescale/mx7d_19x19_ddr3_arm2/imximage.cfg
+@@ -49,8 +49,12 @@ CSF CONFIG_CSF_SIZE
+  *	Address	  absolute address of the register
+  *	value	  value to be stored in the register
+  */
+-DATA 4 0x3038a080 0x15000000
+-DATA 4 0x30389880 0x01000000
++
++DATA 4 0x30360070 0x00703021
++DATA 4 0x30360090 0x0
++DATA 4 0x30360070 0x00603021
++CHECK_BITS_SET 4 0x30360070 0x80000000
++DATA 4 0x30389880 0x1
+ 
+ DATA 4 0x30340004 0x4F400005
+ 
+diff --git a/board/freescale/mx7d_19x19_ddr3_arm2/plugin.S b/board/freescale/mx7d_19x19_ddr3_arm2/plugin.S
+index 2e221fe..39d53d6 100644
+--- a/board/freescale/mx7d_19x19_ddr3_arm2/plugin.S
++++ b/board/freescale/mx7d_19x19_ddr3_arm2/plugin.S
+@@ -45,13 +45,28 @@ TUNE_END:
+ 	bne FREQ_DEFAULT_533
+ 
+ 	/* Change to 400Mhz for TO1.1 */
++	ldr r0, =ANATOP_BASE_ADDR
++	ldr r1, =0x70
++	ldr r2, =0x00703021
++	str r2, [r0, r1]
++	ldr r1, =0x90
++	ldr r2, =0x0
++	str r2, [r0, r1]
++	ldr r1, =0x70
++	ldr r2, =0x00603021
++	str r2, [r0, r1]
++
++	ldr r3, =0x80000000
++wait_lock:
++	ldr r2, [r0, r1]
++	and r2, r3
++	cmp r2, r3
++	bne wait_lock
++
+ 	ldr r0, =CCM_BASE_ADDR
+-	ldr r1, =0x15000000
+-	ldr r2, =0xa080
+-	str r1, [r0, r2]
+-	ldr r1, =0x01000000
+-	ldr r2, =0x9880
+-	str r1, [r0, r2]
++	ldr r1, =0x9880
++	ldr r2, =0x1
++	str r2, [r0, r1]
+ 
+ FREQ_DEFAULT_533:
+ .endm
+diff --git a/board/freescale/mx7dsabresd/imximage.cfg b/board/freescale/mx7dsabresd/imximage.cfg
+index 2ffc838..db4c939 100644
+--- a/board/freescale/mx7dsabresd/imximage.cfg
++++ b/board/freescale/mx7dsabresd/imximage.cfg
+@@ -50,8 +50,11 @@ CSF CONFIG_CSF_SIZE
+  *	value	  value to be stored in the register
+  */
+ 
+-DATA 4 0x3038a080 0x15000000
+-DATA 4 0x30389880 0x01000000
++DATA 4 0x30360070 0x00703021
++DATA 4 0x30360090 0x0
++DATA 4 0x30360070 0x00603021
++CHECK_BITS_SET 4 0x30360070 0x80000000
++DATA 4 0x30389880 0x1
+ 
+ DATA 4 0x30340004 0x4F400005
+ 
+diff --git a/board/freescale/mx7dsabresd/plugin.S b/board/freescale/mx7dsabresd/plugin.S
+index 796716f..5c4bc86 100644
+--- a/board/freescale/mx7dsabresd/plugin.S
++++ b/board/freescale/mx7dsabresd/plugin.S
+@@ -45,13 +45,28 @@ TUNE_END:
+ 	bne FREQ_DEFAULT_533
+ 
+ 	/* Change to 400Mhz for TO1.1 */
++	ldr r0, =ANATOP_BASE_ADDR
++	ldr r1, =0x70
++	ldr r2, =0x00703021
++	str r2, [r0, r1]
++	ldr r1, =0x90
++	ldr r2, =0x0
++	str r2, [r0, r1]
++	ldr r1, =0x70
++	ldr r2, =0x00603021
++	str r2, [r0, r1]
++
++	ldr r3, =0x80000000
++wait_lock:
++	ldr r2, [r0, r1]
++	and r2, r3
++	cmp r2, r3
++	bne wait_lock
++
+ 	ldr r0, =CCM_BASE_ADDR
+-	ldr r1, =0x15000000
+-	ldr r2, =0xa080
+-	str r1, [r0, r2]
+-	ldr r1, =0x01000000
+-	ldr r2, =0x9880
+-	str r1, [r0, r2]
++	ldr r1, =0x9880
++	ldr r2, =0x1
++	str r2, [r0, r1]
+ 
+ FREQ_DEFAULT_533:
+ .endm
+-- 
+1.8.0
+

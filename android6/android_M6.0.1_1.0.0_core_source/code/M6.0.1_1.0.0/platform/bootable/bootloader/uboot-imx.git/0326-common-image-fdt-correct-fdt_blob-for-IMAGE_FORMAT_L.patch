@@ -1,0 +1,40 @@
+From ccdd9cdbdf6abf85a14b5a630cb15af2be7c2e72 Mon Sep 17 00:00:00 2001
+From: Peng Fan <Peng.Fan@freescale.com>
+Date: Tue, 24 Nov 2015 16:54:22 +0800
+Subject: [PATCH] common: image-fdt: correct fdt_blob for IMAGE_FORMAT_LEGACY
+
+If condition of "(load == image_start || load == image_data)" is true,
+should use "fdt_addr = load;", but not "fdt_blob = (char *)image_data;",
+or fdt_blob will be overridden by "fdt_blob = map_sysmem(fdt_addr, 0);"
+at the end of the switch case.
+
+Signed-off-by: Peng Fan <Peng.Fan@freescale.com>
+Cc: Simon Glass <sjg@chromium.org>
+Cc: Joe Hershberger <joe.hershberger@ni.com>
+Cc: Max Krummenacher <max.krummenacher@toradex.com>
+Cc: Marek Vasut <marex@denx.de>
+Cc: Suriyan Ramasami <suriyan.r@gmail.com>
+Cc: Paul Kocialkowski <contact@paulk.fr>
+Cc: Tom Rini <trini@konsulko.com>
+Reviewed-by: Simon Glass <sjg@chromium.org>
+(cherry picked from commit 2ea47be02f356ff275fa5c50392ea510ddb4a96c)
+---
+ common/image-fdt.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/common/image-fdt.c b/common/image-fdt.c
+index a52f7a8..c306794 100644
+--- a/common/image-fdt.c
++++ b/common/image-fdt.c
+@@ -325,7 +325,7 @@ int boot_get_fdt(int flag, int argc, char * const argv[], uint8_t arch,
+ 
+ 			if (load == image_start ||
+ 			    load == image_data) {
+-				fdt_blob = (char *)image_data;
++				fdt_addr = load;
+ 				break;
+ 			}
+ 
+-- 
+1.8.0
+

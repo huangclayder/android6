@@ -1,0 +1,1359 @@
+From 66489b256f9092f668e03699182157da215c9cd2 Mon Sep 17 00:00:00 2001
+From: Ye Li <ye.li@nxp.com>
+Date: Thu, 14 Jan 2016 11:31:03 +0800
+Subject: [PATCH] MLK-12329-1 imx7d: Update DDR script for TO1.1
+
+On i.MX7D TO1.1, design team adds a mux cell at the CKE path to fix the suspend
+ mode reset issue, but seems it add extra delay on CKE path, so CKE-CK timing violated.
+When DDR enters self-refresh or retention for long time(> 15seconds per testing on some boards),
+DDR data corruption occured, not able to decrease CKE delay, so we have to add extra
+delay on all other signals to balance it.
+DDR script needs to be fine-tuned according to this hardware change.
+
+For DDR3, since the timing margin is not good, we have to decrease the DDR frequency from
+533Mhz to 400Mhz.
+
+Compass link:
+http://compass.freescale.net/livelink/livelink?func=ll&objid=235010235&objAction=browse&sort=name
+
+Test:
+Overnight tests passed on all changed boards.
+
+Signed-off-by: Ye Li <ye.li@nxp.com>
+---
+ board/freescale/mx7d_12x12_ddr3_arm2/imximage.cfg  |  12 ++-
+ .../mx7d_12x12_ddr3_arm2/imximage_TO_1_0.cfg       | 107 ++++++++++++++++++
+ board/freescale/mx7d_12x12_ddr3_arm2/plugin.S      |  56 +++++++++-
+ .../freescale/mx7d_12x12_lpddr3_arm2/imximage.cfg  |   7 +-
+ .../mx7d_12x12_lpddr3_arm2/imximage_TO_1_0.cfg     | 118 ++++++++++++++++++++
+ board/freescale/mx7d_12x12_lpddr3_arm2/plugin.S    |  53 ++++++++-
+ board/freescale/mx7d_19x19_ddr3_arm2/imximage.cfg  |  11 +-
+ .../mx7d_19x19_ddr3_arm2/imximage_TO_1_0.cfg       | 110 +++++++++++++++++++
+ board/freescale/mx7d_19x19_ddr3_arm2/plugin.S      |  56 +++++++++-
+ .../freescale/mx7d_19x19_lpddr3_arm2/imximage.cfg  |   7 +-
+ .../mx7d_19x19_lpddr3_arm2/imximage_TO_1_0.cfg     | 118 ++++++++++++++++++++
+ .../mx7d_19x19_lpddr3_arm2/imximage_lpddr2.cfg     |   9 +-
+ .../imximage_lpddr2_TO_1_0.cfg                     | 119 +++++++++++++++++++++
+ board/freescale/mx7d_19x19_lpddr3_arm2/plugin.S    |  58 +++++++++-
+ board/freescale/mx7dsabresd/imximage.cfg           |  12 ++-
+ board/freescale/mx7dsabresd/imximage_TO_1_0.cfg    | 113 +++++++++++++++++++
+ board/freescale/mx7dsabresd/plugin.S               |  56 +++++++++-
+ 17 files changed, 998 insertions(+), 24 deletions(-)
+
+diff --git a/board/freescale/mx7d_12x12_ddr3_arm2/imximage.cfg b/board/freescale/mx7d_12x12_ddr3_arm2/imximage.cfg
+index ad7df84..2caed20 100644
+--- a/board/freescale/mx7d_12x12_ddr3_arm2/imximage.cfg
++++ b/board/freescale/mx7d_12x12_ddr3_arm2/imximage.cfg
+@@ -1,5 +1,5 @@
+ /*
+- * Copyright (C) 2015 Freescale Semiconductor, Inc.
++ * Copyright (C) 2015-2016 Freescale Semiconductor, Inc.
+  *
+  * SPDX-License-Identifier:	GPL-2.0+
+  *
+@@ -48,6 +48,9 @@ CSF CONFIG_CSF_SIZE
+  *	value	  value to be stored in the register
+  */
+ 
++DATA 4 0x3038a080 0x15000000
++DATA 4 0x30389880 0x01000000
++
+ DATA 4 0x30340004 0x4F400005
+ 
+ DATA 4 0x30391000 0x00000002
+@@ -83,7 +86,12 @@ DATA 4 0x30391000 0x00000000
+ DATA 4 0x30790000 0x17420f40
+ DATA 4 0x30790004 0x10210100
+ DATA 4 0x30790010 0x00060807
+-DATA 4 0x3079009c 0x00000d6e
++DATA 4 0x3079009c 0x00000dee
++DATA 4 0x3079007c 0x18181818
++DATA 4 0x30790080 0x18181818
++DATA 4 0x30790084 0x40401818
++DATA 4 0x30790088 0x00000040
++DATA 4 0x3079006c 0x40404040
+ DATA 4 0x30790020 0x08080808
+ DATA 4 0x30790030 0x08080808
+ DATA 4 0x30790050 0x01000010
+diff --git a/board/freescale/mx7d_12x12_ddr3_arm2/imximage_TO_1_0.cfg b/board/freescale/mx7d_12x12_ddr3_arm2/imximage_TO_1_0.cfg
+new file mode 100644
+index 0000000..cbb8ce2
+--- /dev/null
++++ b/board/freescale/mx7d_12x12_ddr3_arm2/imximage_TO_1_0.cfg
+@@ -0,0 +1,107 @@
++/*
++ * Copyright (C) 2015-2016 Freescale Semiconductor, Inc.
++ *
++ * SPDX-License-Identifier:	GPL-2.0+
++ *
++ * Refer docs/README.imxmage for more details about how-to configure
++ * and create imximage boot image
++ *
++ * The syntax is taken as close as possible with the kwbimage
++ */
++
++#define __ASSEMBLY__
++#include <config.h>
++
++/* image version */
++
++IMAGE_VERSION 2
++
++/*
++ * Boot Device : one of
++ * sd/onenand, nor
++ */
++
++#ifdef CONFIG_SYS_BOOT_EIMNOR
++BOOT_FROM	nor
++#else
++BOOT_FROM	sd
++#endif
++
++#ifdef CONFIG_USE_PLUGIN
++/*PLUGIN    plugin-binary-file    IRAM_FREE_START_ADDR*/
++PLUGIN	board/freescale/mx7d_12x12_ddr3_arm2/plugin.bin 0x00910000
++#else
++
++#ifdef CONFIG_SECURE_BOOT
++CSF CONFIG_CSF_SIZE
++#endif
++
++/*
++ * Device Configuration Data (DCD)
++ *
++ * Each entry must have the format:
++ * Addr-type           Address        Value
++ *
++ * where:
++ *	Addr-type register length (1,2 or 4 bytes)
++ *	Address	  absolute address of the register
++ *	value	  value to be stored in the register
++ */
++
++DATA 4 0x30340004 0x4F400005
++
++DATA 4 0x30391000 0x00000002
++DATA 4 0x307a0000 0x03040001
++DATA 4 0x307a01a0 0x80400003
++DATA 4 0x307a01a4 0x00100020
++DATA 4 0x307a01a8 0x80100004
++DATA 4 0x307a0064 0x0040005e
++DATA 4 0x307a0490 0x00000001
++DATA 4 0x307a00d0 0x00020001
++DATA 4 0x307a00d4 0x00010000
++DATA 4 0x307a00dc 0x09300004
++DATA 4 0x307a00e0 0x04080000
++DATA 4 0x307a00e4 0x00090004
++DATA 4 0x307a00f4 0x0000033f
++DATA 4 0x307a0100 0x0908120a
++DATA 4 0x307a0104 0x0002020e
++DATA 4 0x307a0108 0x03040407
++DATA 4 0x307a010c 0x00002006
++DATA 4 0x307a0110 0x04020204
++DATA 4 0x307a0114 0x03030202
++DATA 4 0x307a0120 0x03030803
++DATA 4 0x307a0180 0x00800020
++DATA 4 0x307a0190 0x02098204
++DATA 4 0x307a0194 0x00030303
++DATA 4 0x307a0200 0x00000016
++DATA 4 0x307a0204 0x00171717
++DATA 4 0x307a0214 0x04040404
++DATA 4 0x307a0218 0x00040404
++DATA 4 0x307a0240 0x06000601
++DATA 4 0x307a0244 0x00001323
++DATA 4 0x30391000 0x00000000
++DATA 4 0x30790000 0x17420f40
++DATA 4 0x30790004 0x10210100
++DATA 4 0x30790010 0x00060807
++DATA 4 0x3079009c 0x00000d6e
++DATA 4 0x30790020 0x08080808
++DATA 4 0x30790030 0x08080808
++DATA 4 0x30790050 0x01000010
++DATA 4 0x30790050 0x00000010
++
++DATA 4 0x307900c0 0x0e407304
++DATA 4 0x307900c0 0x0e447304
++DATA 4 0x307900c0 0x0e447306
++
++CHECK_BITS_SET 4 0x307900c4 0x1
++
++DATA 4 0x307900c0 0x0e447304
++DATA 4 0x307900c0 0x0e407304
++
++DATA 4 0x30384130 0x00000000
++DATA 4 0x30340020 0x00000178
++DATA 4 0x30384130 0x00000002
++DATA 4 0x30790018 0x0000000f
++
++CHECK_BITS_SET 4 0x307a0004 0x1
++#endif
+diff --git a/board/freescale/mx7d_12x12_ddr3_arm2/plugin.S b/board/freescale/mx7d_12x12_ddr3_arm2/plugin.S
+index d3e6f9e..9cbff5e 100644
+--- a/board/freescale/mx7d_12x12_ddr3_arm2/plugin.S
++++ b/board/freescale/mx7d_12x12_ddr3_arm2/plugin.S
+@@ -1,5 +1,5 @@
+ /*
+- * Copyright (C) 2015 Freescale Semiconductor, Inc.
++ * Copyright (C) 2015-2016 Freescale Semiconductor, Inc.
+  *
+  * SPDX-License-Identifier:	GPL-2.0+
+  */
+@@ -7,7 +7,58 @@
+ #include <config.h>
+ 
+ /* DDR script */
++.macro imx7d_ddrphy_latency_setting
++	ldr r2, =ANATOP_BASE_ADDR
++	ldr r3, [r2, #0x800]
++	and r3, r3, #0xFF
++	cmp r3, #0x11
++	bne NO_DELAY
++
++	/*TO 1.1*/
++	ldr r1, =0x00000dee
++	str r1, [r0, #0x9c]
++	ldr r1, =0x18181818
++	str r1, [r0, #0x7c]
++	ldr r1, =0x18181818
++	str r1, [r0, #0x80]
++	ldr r1, =0x40401818
++	str r1, [r0, #0x84]
++	ldr r1, =0x00000040
++	str r1, [r0, #0x88]
++	ldr r1, =0x40404040
++	str r1, [r0, #0x6c]
++	b TUNE_END
++
++NO_DELAY:
++	/*TO 1.0*/
++	ldr r1, =0x00000d6e
++	str r1, [r0, #0x9c]
++
++TUNE_END:
++.endm
++
++.macro imx7d_ddr_freq_setting
++	ldr r2, =ANATOP_BASE_ADDR
++	ldr r3, [r2, #0x800]
++	and r3, r3, #0xFF
++	cmp r3, #0x11
++	bne FREQ_DEFAULT_533
++
++	/* Change to 400Mhz for TO1.1 */
++	ldr r0, =CCM_BASE_ADDR
++	ldr r1, =0x15000000
++	ldr r2, =0xa080
++	str r1, [r0, r2]
++	ldr r1, =0x01000000
++	ldr r2, =0x9880
++	str r1, [r0, r2]
++
++FREQ_DEFAULT_533:
++.endm
++
+ .macro imx7d_12x12_ddr3_arm2_ddr_setting
++	imx7d_ddr_freq_setting
++
+ 	/* Configure ocram_epdc */
+ 	ldr r0, =IOMUXC_GPR_BASE_ADDR
+ 	ldr r1, =0x4f400005
+@@ -90,8 +141,7 @@
+ 	str r1, [r0, #0x4]
+ 	ldr r1, =0x00060807
+ 	str r1, [r0, #0x10]
+-	ldr r1, =0x00000d6e
+-	str r1, [r0, #0x9c]
++	imx7d_ddrphy_latency_setting
+ 	ldr r1, =0x08080808
+ 	str r1, [r0, #0x20]
+ 	ldr r1, =0x08080808
+diff --git a/board/freescale/mx7d_12x12_lpddr3_arm2/imximage.cfg b/board/freescale/mx7d_12x12_lpddr3_arm2/imximage.cfg
+index 9f8d9eb..00a74f7 100644
+--- a/board/freescale/mx7d_12x12_lpddr3_arm2/imximage.cfg
++++ b/board/freescale/mx7d_12x12_lpddr3_arm2/imximage.cfg
+@@ -1,5 +1,5 @@
+ /*
+- * Copyright (C) 2014-2015 Freescale Semiconductor, Inc.
++ * Copyright (C) 2014-2016 Freescale Semiconductor, Inc.
+  *
+  * SPDX-License-Identifier:	GPL-2.0+
+  *
+@@ -92,6 +92,11 @@ DATA 4 0x30790000 0x17421e40
+ DATA 4 0x30790004 0x10210100
+ DATA 4 0x30790008 0x00010000
+ DATA 4 0x30790010 0x0007080c
++DATA 4 0x3079007c 0x1c1c1c1c
++DATA 4 0x30790080 0x1c1c1c1c
++DATA 4 0x30790084 0x30301c1c
++DATA 4 0x30790088 0x00000030
++DATA 4 0x3079006c 0x30303030
+ DATA 4 0x307900b0 0x1010007e
+ 
+ DATA 4 0x3079001C 0x01010000
+diff --git a/board/freescale/mx7d_12x12_lpddr3_arm2/imximage_TO_1_0.cfg b/board/freescale/mx7d_12x12_lpddr3_arm2/imximage_TO_1_0.cfg
+new file mode 100644
+index 0000000..3c4ace4
+--- /dev/null
++++ b/board/freescale/mx7d_12x12_lpddr3_arm2/imximage_TO_1_0.cfg
+@@ -0,0 +1,118 @@
++/*
++ * Copyright (C) 2014-2016 Freescale Semiconductor, Inc.
++ *
++ * SPDX-License-Identifier:	GPL-2.0+
++ *
++ * Refer docs/README.imxmage for more details about how-to configure
++ * and create imximage boot image
++ *
++ * The syntax is taken as close as possible with the kwbimage
++ */
++
++#define __ASSEMBLY__
++#include <config.h>
++
++/* image version */
++
++IMAGE_VERSION 2
++
++/*
++ * Boot Device : one of
++ * spi/sd/nand/onenand, qspi/nor
++ */
++
++#ifdef CONFIG_SYS_BOOT_QSPI
++BOOT_FROM	qspi
++#elif defined(CONFIG_SYS_BOOT_EIMNOR)
++BOOT_FROM	nor
++#else
++BOOT_FROM	sd
++#endif
++
++#ifdef CONFIG_USE_PLUGIN
++/*PLUGIN    plugin-binary-file    IRAM_FREE_START_ADDR*/
++PLUGIN	board/freescale/mx7d_12x12_lpddr3_arm2/plugin.bin 0x00910000
++#else
++
++#ifdef CONFIG_SECURE_BOOT
++CSF CONFIG_CSF_SIZE
++#endif
++
++/*
++ * Device Configuration Data (DCD)
++ *
++ * Each entry must have the format:
++ * Addr-type           Address        Value
++ *
++ * where:
++ *	Addr-type register length (1,2 or 4 bytes)
++ *	Address	  absolute address of the register
++ *	value	  value to be stored in the register
++ */
++
++DATA 4 0x30340004 0x4F400005
++
++DATA 4 0x30391000 0x00000002
++DATA 4 0x307a0000 0x03040008
++DATA 4 0x307a0064 0x00200038
++DATA 4 0x307a0490 0x00000001
++DATA 4 0x307a00d0 0x00350001
++DATA 4 0x307a00dc 0x00c3000a
++DATA 4 0x307a00e0 0x00010000
++DATA 4 0x307a00e4 0x00110006
++DATA 4 0x307a00f4 0x0000033f
++DATA 4 0x307a0100 0x0a0e110b
++DATA 4 0x307a0104 0x00020211
++DATA 4 0x307a0108 0x03060708
++DATA 4 0x307a010c 0x00a0500c
++DATA 4 0x307a0110 0x05020307
++DATA 4 0x307a0114 0x02020404
++DATA 4 0x307a0118 0x02020003
++DATA 4 0x307a011c 0x00000202
++DATA 4 0x307a0120 0x00000202
++
++DATA 4 0x307a0180 0x00600018
++DATA 4 0x307a0184 0x00e00100
++DATA 4 0x307a0190 0x02098205
++DATA 4 0x307a0194 0x00060303
++DATA 4 0x307a01a0 0x80400003
++DATA 4 0x307a01a4 0x00100020
++DATA 4 0x307a01a8 0x80100004
++
++DATA 4 0x307a0200 0x00000016
++DATA 4 0x307a0204 0x00171717
++DATA 4 0x307a0210 0x00000f00
++DATA 4 0x307a0214 0x05050505
++DATA 4 0x307a0218 0x0f0f0505
++
++DATA 4 0x307a0240 0x06000601
++DATA 4 0x307a0244 0x00000000
++DATA 4 0x30391000 0x00000000
++DATA 4 0x30790000 0x17421e40
++DATA 4 0x30790004 0x10210100
++DATA 4 0x30790008 0x00010000
++DATA 4 0x30790010 0x0007080c
++DATA 4 0x307900b0 0x1010007e
++
++DATA 4 0x3079001C 0x01010000
++DATA 4 0x3079009c 0x0db60d6e
++
++DATA 4 0x30790030 0x06060606
++DATA 4 0x30790020 0x0a0a0a0a
++DATA 4 0x30790050 0x01000008
++DATA 4 0x30790050 0x00000008
++DATA 4 0x30790018 0x0000000f
++DATA 4 0x307900c0 0x1e487304
++DATA 4 0x307900c0 0x1e487304
++DATA 4 0x307900c0 0x1e487306
++DATA 4 0x307900c0 0x1e4c7304
++CHECK_BITS_SET 4 0x307900c4 0x1
++
++DATA 4 0x307900c0 0x1e487304
++
++DATA 4 0x30384130 0x00000000
++DATA 4 0x30340020 0x00000178
++DATA 4 0x30384130 0x00000002
++
++CHECK_BITS_SET 4 0x307a0004 0x1
++#endif
+diff --git a/board/freescale/mx7d_12x12_lpddr3_arm2/plugin.S b/board/freescale/mx7d_12x12_lpddr3_arm2/plugin.S
+index d075b3e..e80d7ed 100644
+--- a/board/freescale/mx7d_12x12_lpddr3_arm2/plugin.S
++++ b/board/freescale/mx7d_12x12_lpddr3_arm2/plugin.S
+@@ -1,5 +1,5 @@
+ /*
+- * Copyright (C) 2014-2015 Freescale Semiconductor, Inc.
++ * Copyright (C) 2014-2016 Freescale Semiconductor, Inc.
+  *
+  * SPDX-License-Identifier:	GPL-2.0+
+  */
+@@ -7,6 +7,28 @@
+ #include <config.h>
+ 
+ /* DDR script */
++.macro imx7d_ddrphy_latency_setting
++	ldr r2, =ANATOP_BASE_ADDR
++	ldr r3, [r2, #0x800]
++	and r3, r3, #0xFF
++	cmp r3, #0x11
++	bne TUNE_END
++
++	/*TO 1.1*/
++	ldr r1, =0x1c1c1c1c
++	str r1, [r0, #0x7c]
++	ldr r1, =0x1c1c1c1c
++	str r1, [r0, #0x80]
++	ldr r1, =0x30301c1c
++	str r1, [r0, #0x84]
++	ldr r1, =0x00000030
++	str r1, [r0, #0x88]
++	ldr r1, =0x30303030
++	str r1, [r0, #0x6c]
++
++TUNE_END:
++.endm
++
+ .macro imx7d_12x12_lpddr3_arm2_setting
+ 
+ 	/* check whether it is a LPSR resume */
+@@ -204,7 +226,7 @@
+ 	str	r7, [r2, r6]
+ 
+ 	ldr	r7, [r1, #0x800]
+-	and	r7, r7, #0x11
++	and	r7, r7, #0xFF
+ 	cmp	r7, #0x10
+ 	beq	2f
+ 
+@@ -242,6 +264,32 @@
+ 	ldr	r7, =0x0007080C
+ 	str	r7, [r4, r6]
+ 
++	ldr     r7, [r1, #0x800]
++	and     r7, r7, #0xFF
++	cmp     r7, #0x10
++	beq     4f
++
++	ldr	r6, =0x7c
++	ldr	r7, =0x1c1c1c1c
++	str	r7, [r4, r6]
++
++	ldr	r6, =0x80
++	ldr	r7, =0x1c1c1c1c
++	str	r7, [r4, r6]
++
++	ldr	r6, =0x84
++	ldr	r7, =0x30301c1c
++	str	r7, [r4, r6]
++
++	ldr	r6, =0x88
++	ldr	r7, =0x00000030
++	str	r7, [r4, r6]
++
++	ldr	r6, =0x6c
++	ldr	r7, =0x30303030
++	str	r7, [r4, r6]
++
++4:
+ 	ldr	r6, =0x1c
+ 	ldr	r7, =0x01010000
+ 	str	r7, [r4, r6]
+@@ -439,6 +487,7 @@
+ 	str r1, [r0, #0x8]
+ 	ldr r1, =0x0007080c
+ 	str r1, [r0, #0x10]
++	imx7d_ddrphy_latency_setting
+ 	ldr r1, =0x1010007e
+ 	str r1, [r0, #0xb0]
+ 	ldr r1, =0x01010000
+diff --git a/board/freescale/mx7d_19x19_ddr3_arm2/imximage.cfg b/board/freescale/mx7d_19x19_ddr3_arm2/imximage.cfg
+index bb5cf95..6317055 100644
+--- a/board/freescale/mx7d_19x19_ddr3_arm2/imximage.cfg
++++ b/board/freescale/mx7d_19x19_ddr3_arm2/imximage.cfg
+@@ -1,5 +1,5 @@
+ /*
+- * Copyright (C) 2014 Freescale Semiconductor, Inc.
++ * Copyright (C) 2014-2016 Freescale Semiconductor, Inc.
+  *
+  * SPDX-License-Identifier:	GPL-2.0+
+  *
+@@ -49,6 +49,8 @@ CSF CONFIG_CSF_SIZE
+  *	Address	  absolute address of the register
+  *	value	  value to be stored in the register
+  */
++DATA 4 0x3038a080 0x15000000
++DATA 4 0x30389880 0x01000000
+ 
+ DATA 4 0x30340004 0x4F400005
+ 
+@@ -85,7 +87,12 @@ DATA 4 0x30391000 0x00000000
+ DATA 4 0x30790000 0x17420f40
+ DATA 4 0x30790004 0x10210100
+ DATA 4 0x30790010 0x00060807
+-DATA 4 0x3079009c 0x00000d6e
++DATA 4 0x3079009c 0x00000dee
++DATA 4 0x3079007c 0x18181818
++DATA 4 0x30790080 0x18181818
++DATA 4 0x30790084 0x40401818
++DATA 4 0x30790088 0x00000040
++DATA 4 0x3079006c 0x40404040
+ DATA 4 0x30790020 0x08080808
+ DATA 4 0x30790030 0x08080808
+ DATA 4 0x30790050 0x01000010
+diff --git a/board/freescale/mx7d_19x19_ddr3_arm2/imximage_TO_1_0.cfg b/board/freescale/mx7d_19x19_ddr3_arm2/imximage_TO_1_0.cfg
+new file mode 100644
+index 0000000..2d6c025
+--- /dev/null
++++ b/board/freescale/mx7d_19x19_ddr3_arm2/imximage_TO_1_0.cfg
+@@ -0,0 +1,110 @@
++/*
++ * Copyright (C) 2014-2016 Freescale Semiconductor, Inc.
++ *
++ * SPDX-License-Identifier:	GPL-2.0+
++ *
++ * Refer docs/README.imxmage for more details about how-to configure
++ * and create imximage boot image
++ *
++ * The syntax is taken as close as possible with the kwbimage
++ */
++
++#define __ASSEMBLY__
++#include <config.h>
++
++/* image version */
++
++IMAGE_VERSION 2
++
++/*
++ * Boot Device : one of
++ * spi/sd/nand/onenand, qspi/nor
++ */
++
++#ifdef CONFIG_SYS_BOOT_QSPI
++BOOT_FROM	qspi
++#elif defined(CONFIG_SYS_BOOT_EIMNOR)
++BOOT_FROM	nor
++#else
++BOOT_FROM	sd
++#endif
++
++#ifdef CONFIG_USE_PLUGIN
++/*PLUGIN    plugin-binary-file    IRAM_FREE_START_ADDR*/
++PLUGIN	board/freescale/mx7d_19x19_ddr3_arm2/plugin.bin 0x00910000
++#else
++
++#ifdef CONFIG_SECURE_BOOT
++CSF CONFIG_CSF_SIZE
++#endif
++
++/*
++ * Device Configuration Data (DCD)
++ *
++ * Each entry must have the format:
++ * Addr-type           Address        Value
++ *
++ * where:
++ *	Addr-type register length (1,2 or 4 bytes)
++ *	Address	  absolute address of the register
++ *	value	  value to be stored in the register
++ */
++
++DATA 4 0x30340004 0x4F400005
++
++DATA 4 0x30391000 0x00000002
++DATA 4 0x307a0000 0x03040001
++DATA 4 0x307a01a0 0x80400003
++DATA 4 0x307a01a4 0x00100020
++DATA 4 0x307a01a8 0x80100004
++DATA 4 0x307a0064 0x0040005e
++DATA 4 0x307a0490 0x00000001
++DATA 4 0x307a00d0 0x00020001
++DATA 4 0x307a00d4 0x00010000
++DATA 4 0x307a00dc 0x09300004
++DATA 4 0x307a00e0 0x04080000
++DATA 4 0x307a00e4 0x00090004
++DATA 4 0x307a00f4 0x0000033f
++DATA 4 0x307a0100 0x0908120a
++DATA 4 0x307a0104 0x0002020e
++DATA 4 0x307a0108 0x03040407
++DATA 4 0x307a010c 0x00002006
++DATA 4 0x307a0110 0x04020204
++DATA 4 0x307a0114 0x03030202
++DATA 4 0x307a0120 0x03030803
++DATA 4 0x307a0180 0x00800020
++DATA 4 0x307a0190 0x02098204
++DATA 4 0x307a0194 0x00030303
++DATA 4 0x307a0200 0x00000016
++DATA 4 0x307a0204 0x00171717
++DATA 4 0x307a0214 0x04040404
++DATA 4 0x307a0218 0x00040404
++DATA 4 0x307a0240 0x06000601
++DATA 4 0x307a0244 0x00001323
++DATA 4 0x30391000 0x00000000
++DATA 4 0x30790000 0x17420f40
++DATA 4 0x30790004 0x10210100
++DATA 4 0x30790010 0x00060807
++DATA 4 0x3079009c 0x00000d6e
++DATA 4 0x30790020 0x08080808
++DATA 4 0x30790030 0x08080808
++DATA 4 0x30790050 0x01000010
++DATA 4 0x30790050 0x00000010
++
++DATA 4 0x307900c0 0x0e407304
++DATA 4 0x307900c0 0x0e447304
++DATA 4 0x307900c0 0x0e447306
++
++CHECK_BITS_SET 4 0x307900c4 0x1
++
++DATA 4 0x307900c0 0x0e447304
++DATA 4 0x307900c0 0x0e407304
++
++
++DATA 4 0x30384130 0x00000000
++DATA 4 0x30340020 0x00000178
++DATA 4 0x30384130 0x00000002
++DATA 4 0x30790018 0x0000000f
++
++CHECK_BITS_SET 4 0x307a0004 0x1
++#endif
+diff --git a/board/freescale/mx7d_19x19_ddr3_arm2/plugin.S b/board/freescale/mx7d_19x19_ddr3_arm2/plugin.S
+index caea322..2e221fe 100644
+--- a/board/freescale/mx7d_19x19_ddr3_arm2/plugin.S
++++ b/board/freescale/mx7d_19x19_ddr3_arm2/plugin.S
+@@ -1,5 +1,5 @@
+ /*
+- * Copyright (C) 2014-2015 Freescale Semiconductor, Inc.
++ * Copyright (C) 2014-2016 Freescale Semiconductor, Inc.
+  *
+  * SPDX-License-Identifier:	GPL-2.0+
+  */
+@@ -7,7 +7,58 @@
+ #include <config.h>
+ 
+ /* DDR script */
++.macro imx7d_ddrphy_latency_setting
++	ldr r2, =ANATOP_BASE_ADDR
++	ldr r3, [r2, #0x800]
++	and r3, r3, #0xFF
++	cmp r3, #0x11
++	bne NO_DELAY
++
++	/*TO 1.1*/
++	ldr r1, =0x00000dee
++	str r1, [r0, #0x9c]
++	ldr r1, =0x18181818
++	str r1, [r0, #0x7c]
++	ldr r1, =0x18181818
++	str r1, [r0, #0x80]
++	ldr r1, =0x40401818
++	str r1, [r0, #0x84]
++	ldr r1, =0x00000040
++	str r1, [r0, #0x88]
++	ldr r1, =0x40404040
++	str r1, [r0, #0x6c]
++	b TUNE_END
++
++NO_DELAY:
++	/*TO 1.0*/
++	ldr r1, =0x00000d6e
++	str r1, [r0, #0x9c]
++
++TUNE_END:
++.endm
++
++.macro imx7d_ddr_freq_setting
++	ldr r2, =ANATOP_BASE_ADDR
++	ldr r3, [r2, #0x800]
++	and r3, r3, #0xFF
++	cmp r3, #0x11
++	bne FREQ_DEFAULT_533
++
++	/* Change to 400Mhz for TO1.1 */
++	ldr r0, =CCM_BASE_ADDR
++	ldr r1, =0x15000000
++	ldr r2, =0xa080
++	str r1, [r0, r2]
++	ldr r1, =0x01000000
++	ldr r2, =0x9880
++	str r1, [r0, r2]
++
++FREQ_DEFAULT_533:
++.endm
++
+ .macro imx7d_19x19_ddr3_arm2_ddr_setting
++	imx7d_ddr_freq_setting
++
+ 	/* Configure ocram_epdc */
+ 	ldr r0, =IOMUXC_GPR_BASE_ADDR
+ 	ldr r1, =0x4f400005
+@@ -90,8 +141,7 @@
+ 	str r1, [r0, #0x4]
+ 	ldr r1, =0x00060807
+ 	str r1, [r0, #0x10]
+-	ldr r1, =0x00000d6e
+-	str r1, [r0, #0x9c]
++	imx7d_ddrphy_latency_setting
+ 	ldr r1, =0x08080808
+ 	str r1, [r0, #0x20]
+ 	ldr r1, =0x08080808
+diff --git a/board/freescale/mx7d_19x19_lpddr3_arm2/imximage.cfg b/board/freescale/mx7d_19x19_lpddr3_arm2/imximage.cfg
+index ea8b446..253b7cd 100644
+--- a/board/freescale/mx7d_19x19_lpddr3_arm2/imximage.cfg
++++ b/board/freescale/mx7d_19x19_lpddr3_arm2/imximage.cfg
+@@ -1,5 +1,5 @@
+ /*
+- * Copyright (C) 2015 Freescale Semiconductor, Inc.
++ * Copyright (C) 2015-2016 Freescale Semiconductor, Inc.
+  *
+  * SPDX-License-Identifier:	GPL-2.0+
+  *
+@@ -92,6 +92,11 @@ DATA 4 0x30790000 0x17421e40
+ DATA 4 0x30790004 0x10210100
+ DATA 4 0x30790008 0x00010000
+ DATA 4 0x30790010 0x0007080c
++DATA 4 0x3079007c 0x1c1c1c1c
++DATA 4 0x30790080 0x1c1c1c1c
++DATA 4 0x30790084 0x30301c1c
++DATA 4 0x30790088 0x00000030
++DATA 4 0x3079006c 0x30303030
+ DATA 4 0x307900b0 0x1010007e
+ 
+ DATA 4 0x3079001C 0x01010000
+diff --git a/board/freescale/mx7d_19x19_lpddr3_arm2/imximage_TO_1_0.cfg b/board/freescale/mx7d_19x19_lpddr3_arm2/imximage_TO_1_0.cfg
+new file mode 100644
+index 0000000..dd16856
+--- /dev/null
++++ b/board/freescale/mx7d_19x19_lpddr3_arm2/imximage_TO_1_0.cfg
+@@ -0,0 +1,118 @@
++/*
++ * Copyright (C) 2015-2016 Freescale Semiconductor, Inc.
++ *
++ * SPDX-License-Identifier:	GPL-2.0+
++ *
++ * Refer docs/README.imxmage for more details about how-to configure
++ * and create imximage boot image
++ *
++ * The syntax is taken as close as possible with the kwbimage
++ */
++
++#define __ASSEMBLY__
++#include <config.h>
++
++/* image version */
++
++IMAGE_VERSION 2
++
++/*
++ * Boot Device : one of
++ * spi/sd/nand/onenand, qspi/nor
++ */
++
++#ifdef CONFIG_SYS_BOOT_QSPI
++BOOT_FROM	qspi
++#elif defined(CONFIG_SYS_BOOT_EIMNOR)
++BOOT_FROM	nor
++#else
++BOOT_FROM	sd
++#endif
++
++#ifdef CONFIG_USE_PLUGIN
++/*PLUGIN    plugin-binary-file    IRAM_FREE_START_ADDR*/
++PLUGIN	board/freescale/mx7d_19x19_lpddr3_arm2/plugin.bin 0x00910000
++#else
++
++#ifdef CONFIG_SECURE_BOOT
++CSF CONFIG_CSF_SIZE
++#endif
++
++/*
++ * Device Configuration Data (DCD)
++ *
++ * Each entry must have the format:
++ * Addr-type           Address        Value
++ *
++ * where:
++ *	Addr-type register length (1,2 or 4 bytes)
++ *	Address	  absolute address of the register
++ *	value	  value to be stored in the register
++ */
++
++DATA 4 0x30340004 0x4F400005
++
++DATA 4 0x30391000 0x00000002
++DATA 4 0x307a0000 0x03040008
++DATA 4 0x307a0064 0x00200038
++DATA 4 0x307a0490 0x00000001
++DATA 4 0x307a00d0 0x00350001
++DATA 4 0x307a00dc 0x00c3000a
++DATA 4 0x307a00e0 0x00010000
++DATA 4 0x307a00e4 0x00110006
++DATA 4 0x307a00f4 0x0000033f
++DATA 4 0x307a0100 0x0a0e110b
++DATA 4 0x307a0104 0x00020211
++DATA 4 0x307a0108 0x03060708
++DATA 4 0x307a010c 0x00a0500c
++DATA 4 0x307a0110 0x05020307
++DATA 4 0x307a0114 0x02020404
++DATA 4 0x307a0118 0x02020003
++DATA 4 0x307a011c 0x00000202
++DATA 4 0x307a0120 0x00000202
++
++DATA 4 0x307a0180 0x00600018
++DATA 4 0x307a0184 0x00e00100
++DATA 4 0x307a0190 0x02098205
++DATA 4 0x307a0194 0x00060303
++DATA 4 0x307a01a0 0x80400003
++DATA 4 0x307a01a4 0x00100020
++DATA 4 0x307a01a8 0x80100004
++
++DATA 4 0x307a0200 0x00000016
++DATA 4 0x307a0204 0x00171717
++DATA 4 0x307a0210 0x00000f00
++DATA 4 0x307a0214 0x05050505
++DATA 4 0x307a0218 0x0f0f0505
++
++DATA 4 0x307a0240 0x06000601
++DATA 4 0x307a0244 0x00000000
++DATA 4 0x30391000 0x00000000
++DATA 4 0x30790000 0x17421e40
++DATA 4 0x30790004 0x10210100
++DATA 4 0x30790008 0x00010000
++DATA 4 0x30790010 0x0007080c
++DATA 4 0x307900b0 0x1010007e
++
++DATA 4 0x3079001C 0x01010000
++DATA 4 0x3079009c 0x0db60d6e
++
++DATA 4 0x30790030 0x06060606
++DATA 4 0x30790020 0x0a0a0a0a
++DATA 4 0x30790050 0x01000008
++DATA 4 0x30790050 0x00000008
++DATA 4 0x30790018 0x0000000f
++DATA 4 0x307900c0 0x1e487304
++DATA 4 0x307900c0 0x1e487304
++DATA 4 0x307900c0 0x1e487306
++DATA 4 0x307900c0 0x1e4c7304
++CHECK_BITS_SET 4 0x307900c4 0x1
++
++DATA 4 0x307900c0 0x1e487304
++
++DATA 4 0x30384130 0x00000000
++DATA 4 0x30340020 0x00000178
++DATA 4 0x30384130 0x00000002
++
++CHECK_BITS_SET 4 0x307a0004 0x1
++#endif
+diff --git a/board/freescale/mx7d_19x19_lpddr3_arm2/imximage_lpddr2.cfg b/board/freescale/mx7d_19x19_lpddr3_arm2/imximage_lpddr2.cfg
+index 85e935c..ab49d57 100644
+--- a/board/freescale/mx7d_19x19_lpddr3_arm2/imximage_lpddr2.cfg
++++ b/board/freescale/mx7d_19x19_lpddr3_arm2/imximage_lpddr2.cfg
+@@ -1,5 +1,5 @@
+ /*
+- * Copyright (C) 2015 Freescale Semiconductor, Inc.
++ * Copyright (C) 2015-2016 Freescale Semiconductor, Inc.
+  *
+  * SPDX-License-Identifier:	GPL-2.0+
+  *
+@@ -96,7 +96,12 @@ DATA 4 0x30790010 0x00050408
+ DATA 4 0x307900b0 0x1010007e
+ 
+ DATA 4 0x3079001C 0x01010000
+-DATA 4 0x3079009C 0x00000d6e
++DATA 4 0x3079009C 0x00000dee
++DATA 4 0x3079007c 0x08080808
++DATA 4 0x30790080 0x08080808
++DATA 4 0x30790084 0x0a0a0808
++DATA 4 0x30790088 0x0000000a
++DATA 4 0x3079006c 0x0a0a0a0a
+ DATA 4 0x30790018 0x0000000f
+ 
+ DATA 4 0x30790030 0x06060606
+diff --git a/board/freescale/mx7d_19x19_lpddr3_arm2/imximage_lpddr2_TO_1_0.cfg b/board/freescale/mx7d_19x19_lpddr3_arm2/imximage_lpddr2_TO_1_0.cfg
+new file mode 100644
+index 0000000..171d2ad
+--- /dev/null
++++ b/board/freescale/mx7d_19x19_lpddr3_arm2/imximage_lpddr2_TO_1_0.cfg
+@@ -0,0 +1,119 @@
++/*
++ * Copyright (C) 2015-2016 Freescale Semiconductor, Inc.
++ *
++ * SPDX-License-Identifier:	GPL-2.0+
++ *
++ * Refer docs/README.imxmage for more details about how-to configure
++ * and create imximage boot image
++ *
++ * The syntax is taken as close as possible with the kwbimage
++ */
++
++#define __ASSEMBLY__
++#include <config.h>
++
++/* image version */
++
++IMAGE_VERSION 2
++
++/*
++ * Boot Device : one of
++ * spi/sd/nand/onenand, qspi/nor
++ */
++
++#ifdef CONFIG_SYS_BOOT_QSPI
++BOOT_FROM	qspi
++#elif defined(CONFIG_SYS_BOOT_EIMNOR)
++BOOT_FROM	nor
++#else
++BOOT_FROM	sd
++#endif
++
++#ifdef CONFIG_USE_PLUGIN
++/*PLUGIN    plugin-binary-file    IRAM_FREE_START_ADDR*/
++PLUGIN	board/freescale/mx7d_19x19_lpddr3_arm2/plugin.bin 0x00910000
++#else
++
++#ifdef CONFIG_SECURE_BOOT
++CSF CONFIG_CSF_SIZE
++#endif
++
++/*
++ * Device Configuration Data (DCD)
++ *
++ * Each entry must have the format:
++ * Addr-type           Address        Value
++ *
++ * where:
++ *	Addr-type register length (1,2 or 4 bytes)
++ *	Address	  absolute address of the register
++ *	value	  value to be stored in the register
++ */
++
++DATA 4 0x30340004 0x4F400005
++
++DATA 4 0x30391000 0x00000002
++DATA 4 0x307a0000 0x03020004
++DATA 4 0x307a01a0 0x80400003
++DATA 4 0x307a01a4 0x00100020
++DATA 4 0x307a01a8 0x80100004
++DATA 4 0x307a0064 0x00200023
++DATA 4 0x307a0490 0x00000001
++DATA 4 0x307a00d0 0x00350001
++DATA 4 0x307a00d8 0x00001105
++DATA 4 0x307a00dc 0x00c20006
++DATA 4 0x307a00e0 0x00020000
++DATA 4 0x307a00e4 0x00110006
++DATA 4 0x307a00f4 0x0000033f
++DATA 4 0x307a0100 0x080e110b
++DATA 4 0x307a0104 0x00020211
++DATA 4 0x307a0108 0x02040706
++DATA 4 0x307a010c 0x00504000
++DATA 4 0x307a0110 0x05010307
++DATA 4 0x307a0114 0x02020404
++DATA 4 0x307a0118 0x02020003
++DATA 4 0x307a011c 0x00000202
++DATA 4 0x307a0120 0x00000202
++
++DATA 4 0x307a0180 0x00600018
++DATA 4 0x307a0184 0x00e00100
++DATA 4 0x307a0190 0x02098203
++DATA 4 0x307a0194 0x00060303
++
++DATA 4 0x307a0200 0x00000015
++DATA 4 0x307a0204 0x00161616
++DATA 4 0x307a0210 0x00000f0f
++DATA 4 0x307a0214 0x04040404
++DATA 4 0x307a0218 0x0f0f0404
++
++DATA 4 0x307a0240 0x06000600
++DATA 4 0x307a0244 0x00000000
++DATA 4 0x30391000 0x00000000
++DATA 4 0x30790000 0x17421640
++DATA 4 0x30790004 0x10210100
++DATA 4 0x30790008 0x00010000
++DATA 4 0x30790010 0x00050408
++DATA 4 0x307900b0 0x1010007e
++
++DATA 4 0x3079001C 0x01010000
++DATA 4 0x3079009C 0x00000d6e
++DATA 4 0x30790018 0x0000000f
++
++DATA 4 0x30790030 0x06060606
++DATA 4 0x30790020 0x0a0a0a0a
++DATA 4 0x30790050 0x01000008
++DATA 4 0x30790050 0x00000008
++DATA 4 0x307900c0 0x0e487304
++DATA 4 0x307900c0 0x0e4c7304
++DATA 4 0x307900c0 0x0e4c7306
++CHECK_BITS_SET 4 0x307900c4 0x1
++
++DATA 4 0x307900c0 0x0e4c7304
++DATA 4 0x307900c0 0x0e487304
++
++DATA 4 0x30384130 0x00000000
++DATA 4 0x30340020 0x000001f8
++DATA 4 0x30384130 0x00000002
++
++CHECK_BITS_SET 4 0x307a0004 0x1
++#endif
+diff --git a/board/freescale/mx7d_19x19_lpddr3_arm2/plugin.S b/board/freescale/mx7d_19x19_lpddr3_arm2/plugin.S
+index f60315d..bca81d2 100644
+--- a/board/freescale/mx7d_19x19_lpddr3_arm2/plugin.S
++++ b/board/freescale/mx7d_19x19_lpddr3_arm2/plugin.S
+@@ -1,5 +1,5 @@
+ /*
+- * Copyright (C) 2015 Freescale Semiconductor, Inc.
++ * Copyright (C) 2015-2016 Freescale Semiconductor, Inc.
+  *
+  * SPDX-License-Identifier:	GPL-2.0+
+  */
+@@ -7,6 +7,58 @@
+ #include <config.h>
+ 
+ /* DDR script */
++.macro imx7d_ddrphy_lpddr3_latency_setting
++	ldr r2, =ANATOP_BASE_ADDR
++	ldr r3, [r2, #0x800]
++	and r3, r3, #0xFF
++	cmp r3, #0x11
++	bne TUNE_END
++
++	/*TO 1.1*/
++	ldr r1, =0x1c1c1c1c
++	str r1, [r0, #0x7c]
++	ldr r1, =0x1c1c1c1c
++	str r1, [r0, #0x80]
++	ldr r1, =0x30301c1c
++	str r1, [r0, #0x84]
++	ldr r1, =0x00000030
++	str r1, [r0, #0x88]
++	ldr r1, =0x30303030
++	str r1, [r0, #0x6c]
++
++TUNE_END:
++.endm
++
++.macro imx7d_ddrphy_lpddr2_latency_setting
++	ldr r2, =ANATOP_BASE_ADDR
++	ldr r3, [r2, #0x800]
++	and r3, r3, #0xFF
++	cmp r3, #0x11
++	bne NO_DELAY
++
++	/*TO 1.1*/
++	ldr r1, =0x00000dee
++	str r1, [r0, #0x9c]
++	ldr r1, =0x08080808
++	str r1, [r0, #0x7c]
++	ldr r1, =0x08080808
++	str r1, [r0, #0x80]
++	ldr r1, =0x0a0a0808
++	str r1, [r0, #0x84]
++	ldr r1, =0x0000000a
++	str r1, [r0, #0x88]
++	ldr r1, =0x0a0a0a0a
++	str r1, [r0, #0x6c]
++	b TUNE_END
++
++NO_DELAY:
++	/*TO 1.0*/
++	ldr r1, =0x00000d6e
++	str r1, [r0, #0x9c]
++
++TUNE_END:
++.endm
++
+ .macro imx7d_19x19_lpddr3_arm2_setting
+ 	/* Configure ocram_epdc */
+ 	ldr r0, =IOMUXC_GPR_BASE_ADDR
+@@ -98,6 +150,7 @@
+ 	str r1, [r0, #0x8]
+ 	ldr r1, =0x0007080c
+ 	str r1, [r0, #0x10]
++	imx7d_ddrphy_lpddr3_latency_setting
+ 	ldr r1, =0x1010007e
+ 	str r1, [r0, #0xb0]
+ 	ldr r1, =0x01010000
+@@ -249,8 +302,7 @@ wait_stat:
+ 	str r1, [r0, #0xb0]
+ 	ldr r1, =0x01010000
+ 	str r1, [r0, #0x1c]
+-	ldr r1, =0x00000d6e
+-	str r1, [r0, #0x9c]
++	imx7d_ddrphy_lpddr2_latency_setting
+ 	ldr r1, =0x0000000f
+ 	str r1, [r0, #0x18]
+ 
+diff --git a/board/freescale/mx7dsabresd/imximage.cfg b/board/freescale/mx7dsabresd/imximage.cfg
+index 3de45bb..2ffc838 100644
+--- a/board/freescale/mx7dsabresd/imximage.cfg
++++ b/board/freescale/mx7dsabresd/imximage.cfg
+@@ -1,5 +1,5 @@
+ /*
+- * Copyright (C) 2014 Freescale Semiconductor, Inc.
++ * Copyright (C) 2014-2016 Freescale Semiconductor, Inc.
+  *
+  * SPDX-License-Identifier:	GPL-2.0+
+  *
+@@ -50,6 +50,9 @@ CSF CONFIG_CSF_SIZE
+  *	value	  value to be stored in the register
+  */
+ 
++DATA 4 0x3038a080 0x15000000
++DATA 4 0x30389880 0x01000000
++
+ DATA 4 0x30340004 0x4F400005
+ 
+ DATA 4 0x30391000 0x00000002
+@@ -87,7 +90,12 @@ DATA 4 0x30790000 0x17420f40
+ DATA 4 0x30790004 0x10210100
+ DATA 4 0x30790010 0x00060807
+ DATA 4 0x307900b0 0x1010007e
+-DATA 4 0x3079009c 0x00000d6e
++DATA 4 0x3079009c 0x00000dee
++DATA 4 0x3079007c 0x18181818
++DATA 4 0x30790080 0x18181818
++DATA 4 0x30790084 0x40401818
++DATA 4 0x30790088 0x00000040
++DATA 4 0x3079006c 0x40404040
+ DATA 4 0x30790020 0x08080808
+ DATA 4 0x30790030 0x08080808
+ DATA 4 0x30790050 0x01000010
+diff --git a/board/freescale/mx7dsabresd/imximage_TO_1_0.cfg b/board/freescale/mx7dsabresd/imximage_TO_1_0.cfg
+new file mode 100644
+index 0000000..11f113a
+--- /dev/null
++++ b/board/freescale/mx7dsabresd/imximage_TO_1_0.cfg
+@@ -0,0 +1,113 @@
++/*
++ * Copyright (C) 2014-2016 Freescale Semiconductor, Inc.
++ *
++ * SPDX-License-Identifier:	GPL-2.0+
++ *
++ * Refer docs/README.imxmage for more details about how-to configure
++ * and create imximage boot image
++ *
++ * The syntax is taken as close as possible with the kwbimage
++ */
++
++#define __ASSEMBLY__
++#include <config.h>
++
++/* image version */
++
++IMAGE_VERSION 2
++
++/*
++ * Boot Device : one of
++ * spi/sd/nand/onenand, qspi/nor
++ */
++
++#ifdef CONFIG_SYS_BOOT_QSPI
++BOOT_FROM	qspi
++#elif defined(CONFIG_SYS_BOOT_EIMNOR)
++BOOT_FROM	nor
++#else
++BOOT_FROM	sd
++#endif
++
++#ifdef CONFIG_USE_PLUGIN
++/*PLUGIN    plugin-binary-file    IRAM_FREE_START_ADDR*/
++PLUGIN	board/freescale/mx7dsabresd/plugin.bin 0x00910000
++#else
++
++#ifdef CONFIG_SECURE_BOOT
++CSF CONFIG_CSF_SIZE
++#endif
++
++/*
++ * Device Configuration Data (DCD)
++ *
++ * Each entry must have the format:
++ * Addr-type           Address        Value
++ *
++ * where:
++ *	Addr-type register length (1,2 or 4 bytes)
++ *	Address	  absolute address of the register
++ *	value	  value to be stored in the register
++ */
++
++DATA 4 0x30340004 0x4F400005
++
++DATA 4 0x30391000 0x00000002
++DATA 4 0x307a0000 0x01040001
++DATA 4 0x307a01a0 0x80400003
++DATA 4 0x307a01a4 0x00100020
++DATA 4 0x307a01a8 0x80100004
++DATA 4 0x307a0064 0x00400046
++DATA 4 0x307a0490 0x00000001
++DATA 4 0x307a00d0 0x00020083
++DATA 4 0x307a00d4 0x00690000
++DATA 4 0x307a00dc 0x09300004
++DATA 4 0x307a00e0 0x04080000
++DATA 4 0x307a00e4 0x00100004
++DATA 4 0x307a00f4 0x0000033f
++DATA 4 0x307a0100 0x09081109
++DATA 4 0x307a0104 0x0007020d
++DATA 4 0x307a0108 0x03040407
++DATA 4 0x307a010c 0x00002006
++DATA 4 0x307a0110 0x04020205
++DATA 4 0x307a0114 0x03030202
++DATA 4 0x307a0120 0x00000803
++DATA 4 0x307a0180 0x00800020
++DATA 4 0x307a0184 0x02000100
++DATA 4 0x307a0190 0x02098204
++DATA 4 0x307a0194 0x00030303
++DATA 4 0x307a0200 0x00000016
++DATA 4 0x307a0204 0x00171717
++DATA 4 0x307a0214 0x04040404
++DATA 4 0x307a0218 0x0f040404
++DATA 4 0x307a0240 0x06000604
++DATA 4 0x307a0244 0x00000001
++DATA 4 0x30391000 0x00000000
++DATA 4 0x30790000 0x17420f40
++DATA 4 0x30790004 0x10210100
++DATA 4 0x30790010 0x00060807
++DATA 4 0x307900b0 0x1010007e
++DATA 4 0x3079009c 0x00000d6e
++DATA 4 0x30790020 0x08080808
++DATA 4 0x30790030 0x08080808
++DATA 4 0x30790050 0x01000010
++DATA 4 0x30790050 0x00000010
++
++DATA 4 0x307900c0 0x0e407304
++DATA 4 0x307900c0 0x0e447304
++DATA 4 0x307900c0 0x0e447306
++
++CHECK_BITS_SET 4 0x307900c4 0x1
++
++DATA 4 0x307900c0 0x0e447304
++DATA 4 0x307900c0 0x0e407304
++
++
++DATA 4 0x30384130 0x00000000
++DATA 4 0x30340020 0x00000178
++DATA 4 0x30384130 0x00000002
++DATA 4 0x30790018 0x0000000f
++
++CHECK_BITS_SET 4 0x307a0004 0x1
++
++#endif
+diff --git a/board/freescale/mx7dsabresd/plugin.S b/board/freescale/mx7dsabresd/plugin.S
+index 77e098b..796716f 100644
+--- a/board/freescale/mx7dsabresd/plugin.S
++++ b/board/freescale/mx7dsabresd/plugin.S
+@@ -1,5 +1,5 @@
+ /*
+- * Copyright (C) 2014-2015 Freescale Semiconductor, Inc.
++ * Copyright (C) 2014-2016 Freescale Semiconductor, Inc.
+  *
+  * SPDX-License-Identifier:	GPL-2.0+
+  */
+@@ -7,7 +7,58 @@
+ #include <config.h>
+ 
+ /* DDR script */
++.macro imx7d_ddrphy_latency_setting
++	ldr r2, =ANATOP_BASE_ADDR
++	ldr r3, [r2, #0x800]
++	and r3, r3, #0xFF
++	cmp r3, #0x11
++	bne NO_DELAY
++
++	/*TO 1.1*/
++	ldr r1, =0x00000dee
++	str r1, [r0, #0x9c]
++	ldr r1, =0x18181818
++	str r1, [r0, #0x7c]
++	ldr r1, =0x18181818
++	str r1, [r0, #0x80]
++	ldr r1, =0x40401818
++	str r1, [r0, #0x84]
++	ldr r1, =0x00000040
++	str r1, [r0, #0x88]
++	ldr r1, =0x40404040
++	str r1, [r0, #0x6c]
++	b TUNE_END
++
++NO_DELAY:
++	/*TO 1.0*/
++	ldr r1, =0x00000d6e
++	str r1, [r0, #0x9c]
++
++TUNE_END:
++.endm
++
++.macro imx7d_ddr_freq_setting
++	ldr r2, =ANATOP_BASE_ADDR
++	ldr r3, [r2, #0x800]
++	and r3, r3, #0xFF
++	cmp r3, #0x11
++	bne FREQ_DEFAULT_533
++
++	/* Change to 400Mhz for TO1.1 */
++	ldr r0, =CCM_BASE_ADDR
++	ldr r1, =0x15000000
++	ldr r2, =0xa080
++	str r1, [r0, r2]
++	ldr r1, =0x01000000
++	ldr r2, =0x9880
++	str r1, [r0, r2]
++
++FREQ_DEFAULT_533:
++.endm
++
+ .macro imx7d_sabresd_ddr_setting
++	imx7d_ddr_freq_setting
++
+ 	/* Configure ocram_epdc */
+ 	ldr r0, =IOMUXC_GPR_BASE_ADDR
+ 	ldr r1, =0x4f400005
+@@ -94,8 +145,7 @@
+ 	str r1, [r0, #0x10]
+ 	ldr r1, =0x1010007e
+ 	str r1, [r0, #0xb0]
+-	ldr r1, =0x00000d6e
+-	str r1, [r0, #0x9c]
++	imx7d_ddrphy_latency_setting
+ 	ldr r1, =0x08080808
+ 	str r1, [r0, #0x20]
+ 	ldr r1, =0x08080808
+-- 
+1.8.0
+

@@ -1,0 +1,255 @@
+From 3b548a3ddf03dcbb646912ef7bbdd3cdb2daf81a Mon Sep 17 00:00:00 2001
+From: "Ye.Li" <B37916@freescale.com>
+Date: Tue, 25 Aug 2015 15:05:38 +0800
+Subject: [PATCH] MLK-11408-1 imx: mx7d: Add mx7d RDC driver support
+
+Add the peripherals/masters definitions and registers base addresses
+for mx7d RDC. Enable the RDC driver by setting CONFIG_MXC_RDC.
+
+Signed-off-by: Ye.Li <B37916@freescale.com>
+---
+ arch/arm/cpu/armv7/mx7/clock.c           |   6 ++
+ arch/arm/imx-common/Makefile             |   1 +
+ arch/arm/include/asm/arch-mx7/imx-rdc.h  |  16 +++
+ arch/arm/include/asm/arch-mx7/imx-regs.h |   4 +
+ arch/arm/include/asm/arch-mx7/mx7d_rdc.h | 163 +++++++++++++++++++++++++++++++
+ 5 files changed, 190 insertions(+)
+
+diff --git a/arch/arm/cpu/armv7/mx7/clock.c b/arch/arm/cpu/armv7/mx7/clock.c
+index 0bfa2e3..b75a626 100644
+--- a/arch/arm/cpu/armv7/mx7/clock.c
++++ b/arch/arm/cpu/armv7/mx7/clock.c
+@@ -1070,6 +1070,12 @@ void clock_init(void)
+ #ifdef CONFIG_NAND_MXS
+ 	clock_enable(CCGR_RAWNAND, 1);
+ #endif
++
++#ifdef CONFIG_MXC_RDC
++    clock_enable(CCGR_RDC, 1);
++    clock_enable(CCGR_SEMA1, 1);
++    clock_enable(CCGR_SEMA2, 1);
++#endif
+ }
+ 
+ #ifdef CONFIG_SECURE_BOOT
+diff --git a/arch/arm/imx-common/Makefile b/arch/arm/imx-common/Makefile
+index 70f22b2..79f6a2b 100644
+--- a/arch/arm/imx-common/Makefile
++++ b/arch/arm/imx-common/Makefile
+@@ -21,6 +21,7 @@ ifeq ($(SOC),$(filter $(SOC),mx7))
+ obj-y	+= cpu.o
+ obj-$(CONFIG_SYS_I2C_MXC) += i2c-mxv7.o
+ obj-$(CONFIG_GPT_TIMER) += timer.o
++obj-$(CONFIG_MXC_RDC) += rdc-sema.o
+ obj-$(CONFIG_SYSCOUNTER_TIMER) += syscounter.o
+ endif
+ ifeq ($(SOC),$(filter $(SOC),mx7 mx6 mxs))
+diff --git a/arch/arm/include/asm/arch-mx7/imx-rdc.h b/arch/arm/include/asm/arch-mx7/imx-rdc.h
+new file mode 100644
+index 0000000..0de4bbf
+--- /dev/null
++++ b/arch/arm/include/asm/arch-mx7/imx-rdc.h
+@@ -0,0 +1,16 @@
++/*
++ * Copyright (C) 2015 Freescale Semiconductor, Inc.
++ *
++ * SPDX-License-Identifier:  GPL-2.0+
++ */
++
++#ifndef __IMX_RDC_H__
++#define __IMX_RDC_H__
++
++#if defined(CONFIG_MX7D)
++#include "mx7d_rdc.h"
++#else
++#error "Please select cpu"
++#endif	/* CONFIG_MX7D */
++
++#endif	/* __IMX_RDC_H__*/
+diff --git a/arch/arm/include/asm/arch-mx7/imx-regs.h b/arch/arm/include/asm/arch-mx7/imx-regs.h
+index 9f800ae..ee56426 100644
+--- a/arch/arm/include/asm/arch-mx7/imx-regs.h
++++ b/arch/arm/include/asm/arch-mx7/imx-regs.h
+@@ -209,6 +209,10 @@
+ 
+ #define USB_BASE_ADDR USBOTG1_IPS_BASE_ADDR
+ 
++#define SEMAPHORE1_BASE_ADDR SEMA41_IPS_BASE_ADDR
++#define SEMAPHORE2_BASE_ADDR SEMA42_IPS_BASE_ADDR
++#define RDC_BASE_ADDR RDC_IPS_BASE_ADDR
++
+ #define FEC_QUIRK_ENET_MAC
+ #define SNVS_LPGPR	0x68
+ 
+diff --git a/arch/arm/include/asm/arch-mx7/mx7d_rdc.h b/arch/arm/include/asm/arch-mx7/mx7d_rdc.h
+new file mode 100644
+index 0000000..543c142
+--- /dev/null
++++ b/arch/arm/include/asm/arch-mx7/mx7d_rdc.h
+@@ -0,0 +1,163 @@
++/*
++ * Copyright (C) 2015 Freescale Semiconductor, Inc.
++ *
++ * SPDX-License-Identifier:  GPL-2.0+
++ */
++
++#ifndef __MX7D_RDC_H__
++#define __MX7D_RDC_H__
++
++#define RDC_SEMA_PROC_ID 2  /* The processor ID for main CPU */
++
++enum {
++	RDC_PER_GPIO1 = 0,
++	RDC_PER_GPIO2,
++	RDC_PER_GPIO3,
++	RDC_PER_GPIO4,
++	RDC_PER_GPIO5,
++	RDC_PER_GPIO6,
++	RDC_PER_GPIO7,
++	RDC_PER_IOMUXC_LPSR_GPR,
++	RDC_PER_WDOG1,
++	RDC_PER_WDOG2,
++	RDC_PER_WDOG3,
++	RDC_PER_WDOG4,
++	RDC_PER_IOMUXC_LPSR,
++	RDC_PER_GPT1,
++	RDC_PER_GPT2,
++	RDC_PER_GPT3,
++	RDC_PER_GPT4,
++	RDC_PER_ROMCP,
++	RDC_PER_KPP,
++	RDC_PER_IOMUXC,
++	RDC_PER_IOMUXCGPR,
++	RDC_PER_OCOTP,
++	RDC_PER_ANATOP_DIG,
++	RDC_PER_SNVS_HP,
++	RDC_PER_CCM,
++	RDC_PER_SRC,
++	RDC_PER_GPC,
++	RDC_PER_SEMA1,
++	RDC_PER_SEMA2,
++	RDC_PER_RDC,
++	RDC_PER_CSU,
++	RDC_PER_RESERVED1,
++	RDC_PER_RESERVED2,
++	RDC_PER_ADC1,
++	RDC_PER_ADC2,
++	RDC_PER_ECSPI4,
++	RDC_PER_FLEX_TIMER1,
++	RDC_PER_FLEX_TIMER2,
++	RDC_PER_PWM1,
++	RDC_PER_PWM2,
++	RDC_PER_PWM3,
++	RDC_PER_PWM4,
++	RDC_PER_SYSTEM_COUNTER_READ,
++	RDC_PER_SYSTEM_COUNTER_COMPARE,
++	RDC_PER_SYSTEM_COUNTER_CONTROL,
++	RDC_PER_PCIE_PHY,
++	RDC_PER_RESERVED3,
++	RDC_PER_EPDC,
++	RDC_PER_PXP,
++	RDC_PER_CSI,
++	RDC_PER_RESERVED4,
++	RDC_PER_LCDIF,
++	RDC_PER_RESERVED5,
++	RDC_PER_MIPI_CSI,
++	RDC_PER_MIPI_DSI,
++	RDC_PER_RESERVED6,
++	RDC_PER_TZASC,
++	RDC_PER_DDR_PHY,
++	RDC_PER_DDRC,
++	RDC_PER_RESERVED7,
++	RDC_PER_PERFMON1,
++	RDC_PER_PERFMON2,
++	RDC_PER_AXI_DEBUG_MON,
++	RDC_PER_QOSC,
++	RDC_PER_FLEXCAN1,
++	RDC_PER_FLEXCAN2,
++	RDC_PER_I2C1,
++	RDC_PER_I2C2,
++	RDC_PER_I2C3,
++	RDC_PER_I2C4,
++	RDC_PER_UART4,
++	RDC_PER_UART5,
++	RDC_PER_UART6,
++	RDC_PER_UART7,
++	RDC_PER_MU_A,
++	RDC_PER_MU_B,
++	RDC_PER_SEMAPHORE_HS,
++	RDC_PER_USB_PL301,
++	RDC_PER_RESERVED8,
++	RDC_PER_RESERVED9,
++	RDC_PER_RESERVED10,
++	RDC_PER_USB1,
++	RDC_PER_USB2,
++	RDC_PER_USB3,
++	RDC_PER_USDHC1,
++	RDC_PER_USDHC2,
++	RDC_PER_USDHC3,
++	RDC_PER_RESERVED11,
++	RDC_PER_RESERVED12,
++	RDC_PER_SIM1,
++	RDC_PER_SIM2,
++	RDC_PER_QSPI,
++	RDC_PER_WEIM,
++	RDC_PER_SDMA,
++	RDC_PER_ENET1,
++	RDC_PER_ENET2,
++	RDC_PER_RESERVED13,
++	RDC_PER_RESERVED14,
++	RDC_PER_ECSPI1,
++	RDC_PER_ECSPI2,
++	RDC_PER_ECSPI3,
++	RDC_PER_RESERVED15,
++	RDC_PER_UART1,
++	RDC_PER_UART2,
++	RDC_PER_UART3,
++	RDC_PER_RESERVED16,
++	RDC_PER_SAI1,
++	RDC_PER_SAI2,
++	RDC_PER_SAI3,
++	RDC_PER_RESERVED17,
++	RDC_PER_RESERVED18,
++	RDC_PER_SPBA,
++	RDC_PER_DAP,
++	RDC_PER_RESERVED19,
++	RDC_PER_RESERVED20,
++	RDC_PER_RESERVED21,
++	RDC_PER_CAAM,
++	RDC_PER_RESERVED22,
++};
++
++enum {
++	RDC_MA_A7 = 0,
++	RDC_MA_M4,
++	RDC_MA_PCIE,
++	RDC_MA_CSI,
++	RDC_MA_EPDC,
++	RDC_MA_LCDIF,
++	RDC_MA_DISPLAY_PORT,
++	RDC_MA_PXP,
++	RDC_MA_CORESIGHT,
++	RDC_MA_DAP,
++	RDC_MA_CAAM,
++	RDC_MA_SDMA_PERI,
++	RDC_MA_SDMA_BURST,
++	RDC_MA_APBHDMA,
++	RDC_MA_RAWNAND,
++	RDC_MA_USDHC1,
++	RDC_MA_USDHC2,
++	RDC_MA_USDHC3,
++	RDC_MA_NC1,
++	RDC_MA_USB,
++	RDC_MA_NC2,
++	RDC_MA_TEST,
++	RDC_MA_ENET1_TX,
++	RDC_MA_ENET1_RX,
++	RDC_MA_ENET2_TX,
++	RDC_MA_ENET2_RX,
++	RDC_MA_SDMA,
++};
++
++#endif	/* __MX7D_RDC_H__*/
+-- 
+1.8.0
+

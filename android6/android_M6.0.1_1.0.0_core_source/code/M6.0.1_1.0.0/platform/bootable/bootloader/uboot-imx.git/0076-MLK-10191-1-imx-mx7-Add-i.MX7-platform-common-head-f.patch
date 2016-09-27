@@ -1,0 +1,43 @@
+From 3df5d604ff12ed45897f14cf018cbbcdc66b532a Mon Sep 17 00:00:00 2001
+From: "Ye.Li" <B37916@freescale.com>
+Date: Mon, 2 Feb 2015 12:51:30 +0800
+Subject: [PATCH] MLK-10191-1 imx: mx7: Add i.MX7 platform common head file
+
+Add common head file mx7_common.h for all i.MX7 platform
+
+Signed-off-by: Ye.Li <B37916@freescale.com>
+(cherry picked from commit e38c9a7a543890e0879f89627a3f404d8068d602)
+Signed-off-by: Peng Fan <Peng.Fan@freescale.com>
+---
+ include/configs/mx7_common.h | 20 ++++++++++++++++++++
+ 1 file changed, 20 insertions(+)
+
+diff --git a/include/configs/mx7_common.h b/include/configs/mx7_common.h
+new file mode 100644
+index 0000000..9352164
+--- /dev/null
++++ b/include/configs/mx7_common.h
+@@ -0,0 +1,20 @@
++/*
++ * Copyright (C) 2014-2015 Freescale Semiconductor, Inc.
++ *
++ * Configuration settings for the Freescale i.MX7.
++ *
++ * SPDX-License-Identifier:	GPL-2.0+
++ */
++
++
++#ifndef __MX7_COMMON_H
++#define __MX7_COMMON_H
++
++#define CONFIG_BOARD_POSTCLK_INIT
++#define CONFIG_MXC_GPT_HCLK
++
++#define CONFIG_SC_TIMER_CLK 8000000 /* 8Mhz */
++
++#define CONFIG_IOMUX_LPSR
++#define CONFIG_IMX_FIXED_IVT_OFFSET
++#endif
+-- 
+1.8.0
+

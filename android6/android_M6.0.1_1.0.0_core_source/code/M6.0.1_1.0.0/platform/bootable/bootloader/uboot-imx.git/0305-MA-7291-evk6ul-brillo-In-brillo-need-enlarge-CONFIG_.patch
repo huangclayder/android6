@@ -1,0 +1,50 @@
+From f96f3aa4e3d276ad3d7a0dc12356b680329db5ec Mon Sep 17 00:00:00 2001
+From: "guoyin.chen" <guoyin.chen@freescale.com>
+Date: Fri, 4 Mar 2016 15:35:43 +0800
+Subject: [PATCH] MA-7291 - [evk6ul-brillo] - In brillo, need enlarge
+ CONFIG_SYS_BOOTM_LEN
+
+birllo use gcc-4.9 to compile kernel, zImage is large then 8M.
+set CONFIG_SYS_BOOTM_LEN to 16M
+
+Signed-off-by: fang hui <b31070@freescale.com>
+
+Conflicts:
+	include/configs/mx6ul_14x14_evk_brillo.h
+---
+ include/configs/mx6ul_14x14_evk_brillo.h | 24 ++++++++++++++++++++++++
+ 1 file changed, 24 insertions(+)
+
+diff --git a/include/configs/mx6ul_14x14_evk_brillo.h b/include/configs/mx6ul_14x14_evk_brillo.h
+new file mode 100644
+index 0000000..9b2f9e1
+--- /dev/null
++++ b/include/configs/mx6ul_14x14_evk_brillo.h
+@@ -0,0 +1,24 @@
++
++/*
++ * Copyright (C) 2015 Freescale Semiconductor, Inc.
++ *
++ * SPDX-License-Identifier:	GPL-2.0+
++ */
++
++#ifndef __MX6UL_EVK_BRILLO_H
++#define __MX6UL_EVK_BRILLO_H
++
++#define CONFIG_ANDROID_BOOT_B_PARTITION_MMC 7
++#define CONFIG_ANDROID_SYSTEM_B_PARTITION_MMC 8
++#define CONFIG_ANDROID_SLOTMETA_PARTITION_MMC 9
++
++
++#define CONFIG_CMD_EXT2
++#define CONFIG_CMD_EXT4
++#define CONFIG_CMD_EXT4_WRITE
++#define CONFIG_CMD_FAT
++#define CONFIG_DOS_PARTITION
++
++#define CONFIG_SYS_BOOTM_LEN 0x1000000
++
++#endif
+-- 
+1.8.0
+

@@ -1,0 +1,80 @@
+From 44e5776fc97bcb560302eeb98eeaf3a995ad845a Mon Sep 17 00:00:00 2001
+From: "guoyin.chen" <guoyin.chen@freescale.com>
+Date: Fri, 4 Mar 2016 15:35:18 +0800
+Subject: [PATCH] Revert "MA-7053 when I add selinux=disable in the cmdline,
+ the board do OTA update will fail"
+
+This reverts commit 24356fe059abbc9eae1b192f7af8a46f204a36f4.
+
+Conflicts:
+	common/image-android.c
+
+Conflicts:
+	common/image-android.c
+---
+ common/image-android.c  | 32 +-------------------------------
+ include/android_image.h |  3 ---
+ 2 files changed, 1 insertion(+), 34 deletions(-)
+
+diff --git a/common/image-android.c b/common/image-android.c
+index 78a1f32..429bf1c 100644
+--- a/common/image-android.c
++++ b/common/image-android.c
+@@ -78,14 +78,7 @@ int android_image_get_kernel(const struct andr_img_hdr *hdr, int verify,
+ 					serialnr.high,
+ 					serialnr.low);
+ #endif
+-	if (getenv("bootcmd_android_recovery")) {
+-		char new_commandline[ANDR_BOOT_ARGS_SIZE];
+-		char cmd_selinux[30] = "androidboot.selinux=disabled";
+-		del_sub_str(commandline, cmd_selinux, new_commandline);
+-		setenv("bootargs", new_commandline);
+-	} else {
+-		setenv("bootargs", commandline);
+-	}
++	setenv("bootargs", commandline);
+ 	if (os_data) {
+ 		*os_data = (ulong)hdr;
+ 		*os_data += hdr->page_size;
+@@ -156,26 +149,3 @@ int android_image_get_fdt(const struct andr_img_hdr *hdr,
+ 	return 0;
+ }
+ 
+-void del_sub_str(const char *str, const char *sub_str, char *cmdline)
+-{
+-	int str_len = strlen(str);
+-	int sub_str_len = strlen(sub_str);
+-
+-	while (*str != '\0') {
+-		while (*str != *sub_str && *str != '\0') {
+-			*cmdline = *str;
+-			str++;
+-			cmdline++;
+-		}
+-		if (strncmp(str, sub_str, sub_str_len) != 0) {
+-			*cmdline = *str;
+-			str++;
+-			cmdline++;
+-			continue;
+-		}  else {
+-			str += sub_str_len;
+-		}
+-
+-	}
+-	*cmdline = '\0';
+-}
+diff --git a/include/android_image.h b/include/android_image.h
+index 07dfd94..094d60a 100644
+--- a/include/android_image.h
++++ b/include/android_image.h
+@@ -66,7 +66,4 @@ struct andr_img_hdr {
+  * 6. if second_size != 0: jump to second_addr
+  *    else: jump to kernel_addr
+  */
+-
+-void del_sub_str(const char *str, const char *sub_str, char *cmdline);
+-
+ #endif
+-- 
+1.8.0
+

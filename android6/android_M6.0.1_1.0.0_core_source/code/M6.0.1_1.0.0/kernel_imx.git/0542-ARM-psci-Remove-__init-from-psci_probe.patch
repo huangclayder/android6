@@ -1,0 +1,54 @@
+From c365258834d34f5b6a74a78cce1a6d3629e82899 Mon Sep 17 00:00:00 2001
+From: Jon Medhurst <tixy@linaro.org>
+Date: Tue, 17 Sep 2013 16:13:36 +0100
+Subject: [PATCH] ARM: psci: Remove __init from psci_probe()
+
+To allow it to be used without section mismatch warnings from
+non __init functions.
+
+Signed-off-by: Jon Medhurst <tixy@linaro.org>
+(cherry picked from commit 9d49e12b6a8465e918ca8798d29fd3a62074d1ca)
+Signed-off-by: Alex Shi <alex.shi@linaro.org>
+---
+ arch/arm/include/asm/psci.h | 2 +-
+ arch/arm/kernel/psci.c      | 4 ++--
+ 2 files changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/arch/arm/include/asm/psci.h b/arch/arm/include/asm/psci.h
+index f0a8627..eb628a6 100644
+--- a/arch/arm/include/asm/psci.h
++++ b/arch/arm/include/asm/psci.h
+@@ -47,7 +47,7 @@ static inline bool psci_smp_available(void) { return false; }
+ #endif
+ 
+ #ifdef CONFIG_ARM_PSCI
+-extern int __init psci_probe(void);
++extern int psci_probe(void);
+ #else
+ static inline int psci_probe(void)
+ {
+diff --git a/arch/arm/kernel/psci.c b/arch/arm/kernel/psci.c
+index 1984d7b..e2c3fa8 100644
+--- a/arch/arm/kernel/psci.c
++++ b/arch/arm/kernel/psci.c
+@@ -156,7 +156,7 @@ static int psci_migrate(unsigned long cpuid)
+ 	return psci_to_linux_errno(err);
+ }
+ 
+-static const struct of_device_id psci_of_match[] __initconst = {
++static const struct of_device_id psci_of_match[] = {
+ 	{ .compatible = "arm,psci",	},
+ 	{},
+ };
+@@ -212,7 +212,7 @@ out_put_node:
+ 	return;
+ }
+ 
+-int __init psci_probe(void)
++int psci_probe(void)
+ {
+ 	struct device_node *np;
+ 	int ret = -ENODEV;
+-- 
+1.8.0
+

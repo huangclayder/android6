@@ -1,0 +1,61 @@
+From 7dc14337599ca40dc8c7cbfc904f8913684e5032 Mon Sep 17 00:00:00 2001
+From: Haoran Wang <b50027@freescale.com>
+Date: Tue, 20 Oct 2015 10:25:11 +0800
+Subject: [PATCH 1/4] MA-5957 Hack to enable BLE host mode.
+
+As our firmware in AR3k doesn't support BLE
+capability read. But the firmware support BLE
+host mode. So hack to enable it when checking
+the capability.
+
+Signed-off-by: Haoran Wang <b50027@freescale.com>
+---
+ stack/Android.mk        | 5 +++++
+ stack/btm/btm_ble_gap.c | 8 ++++++++
+ 2 files changed, 13 insertions(+)
+
+diff --git a/stack/Android.mk b/stack/Android.mk
+index ccb5dc6..e3ccbc9 100644
+--- a/stack/Android.mk
++++ b/stack/Android.mk
+@@ -43,6 +43,11 @@ LOCAL_CFLAGS += \
+ 	-DBOARD_HAVE_BLUETOOTH_BCM
+ endif
+ 
++ifeq ($(BOARD_USE_AR3K_BLUETOOTH),true)
++LOCAL_CFLAGS += \
++	-DBOARD_USE_AR3K_BLUETOOTH
++endif
++
+ LOCAL_SRC_FILES:= \
+     ./a2dp/a2d_api.c \
+     ./a2dp/a2d_sbc.c \
+diff --git a/stack/btm/btm_ble_gap.c b/stack/btm/btm_ble_gap.c
+index 3b85fbb..76d3a87 100644
+--- a/stack/btm/btm_ble_gap.c
++++ b/stack/btm/btm_ble_gap.c
+@@ -1,6 +1,7 @@
+ /******************************************************************************
+  *
+  *  Copyright (C) 2008-2014 Broadcom Corporation
++ *  Copyright (C) 2015 Freescale Semiconductor, Inc.
+  *
+  *  Licensed under the Apache License, Version 2.0 (the "License");
+  *  you may not use this file except in compliance with the License.
+@@ -3421,6 +3422,13 @@ BOOLEAN btm_ble_topology_check(tBTM_BLE_STATE_MASK request_state_mask)
+     UINT8   mask, offset;
+     UINT8   request_state = 0;
+ 
++#ifdef BOARD_USE_AR3K_BLUETOOTH
++    /*AR3k doesn't support BLE capibility read command so we hack it to support BLE*/
++    BTM_TRACE_WARNING("We will force enable BLE for AR3K");
++    if (request_state_mask == BTM_BLE_STATE_INIT)
++        return (TRUE);
++#endif
++
+     /* check only one bit is set and within valid range */
+     if (request_state_mask == BTM_BLE_STATE_INVALID ||
+         request_state_mask > BTM_BLE_STATE_SCAN_ADV_BIT ||
+-- 
+1.8.0
+

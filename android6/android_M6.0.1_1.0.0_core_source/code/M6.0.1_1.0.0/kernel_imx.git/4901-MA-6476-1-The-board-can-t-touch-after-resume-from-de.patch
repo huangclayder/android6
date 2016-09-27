@@ -1,0 +1,35 @@
+From 6e0a91dbc1782d996d38877a7840eadc3ac982e1 Mon Sep 17 00:00:00 2001
+From: Ke Qinghua <qinghua.ke@freescale.com>
+Date: Mon, 28 Apr 2014 10:50:26 +0800
+Subject: [PATCH] MA-6476-1 The board can't touch after resume from deep
+ suspend
+
+Cherry-pick below commit:
+commit 13ab3417f798857d404ee3077216eebafdfbea94
+Author: Ke Qinghua <qinghua.ke@freescale.com>
+Date:   Mon Apr 28 10:50:26 2014 +0800
+
+ENGR00309743 [Android_MX6Q/DL_ARD] Suspend: Touch cannot work after suspend->resume. 100%
+
+Disable touchscreen suspend/resume in dts because wakeup gpio conflict issue
+
+Signed-off-by: guoyin.chen <guoyin.chen@freescale.com>
+---
+ arch/arm/boot/dts/imx6qdl-sabreauto.dtsi | 1 -
+ 1 file changed, 1 deletion(-)
+
+diff --git a/arch/arm/boot/dts/imx6qdl-sabreauto.dtsi b/arch/arm/boot/dts/imx6qdl-sabreauto.dtsi
+index 72d9ba3..cd1ccdf 100644
+--- a/arch/arm/boot/dts/imx6qdl-sabreauto.dtsi
++++ b/arch/arm/boot/dts/imx6qdl-sabreauto.dtsi
+@@ -364,7 +364,6 @@
+ 		pinctrl-0 = <&pinctrl_egalax_int>;
+ 		interrupt-parent = <&gpio2>;
+ 		interrupts = <28 2>;
+-		wakeup-gpios = <&gpio2 28 GPIO_ACTIVE_HIGH>;
+ 	};
+ 
+ 	pmic: pfuze100@08 {
+-- 
+1.8.0
+

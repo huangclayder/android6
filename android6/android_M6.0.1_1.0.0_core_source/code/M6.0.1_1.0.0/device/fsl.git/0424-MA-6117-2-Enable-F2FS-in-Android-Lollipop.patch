@@ -1,0 +1,451 @@
+From feb1687e07989f1bf25ca4b14d858c8dd7095d5e Mon Sep 17 00:00:00 2001
+From: "guoyin.chen" <guoyin.chen@freescale.com>
+Date: Thu, 15 Jan 2015 13:31:14 +0800
+Subject: [PATCH 424/602] MA-6117-2 Enable F2FS in Android Lollipop
+
+Add fstab.freescale to make data partition as f2fs, which
+is also compatiable with ext4 data partition
+Add BUILD_TARGET_FS=f2fs to build the f2fs image which fstab.freescale
+based this env setting
+Use a standalone parition to store data encryption meta data, due to no
+tools can be used to adjust the f2fs data partion on the fly.
+So align ext4 fstab with f2fs fstab.
+
+Signed-off-by: guoyin.chen <guoyin.chen@freescale.com>
+
+Signed-off-by: guoyin.chen <guoyin.chen@freescale.com>
+---
+ evk_6sl/BoardConfig.mk              |  7 +++++++
+ evk_6sl/fstab-f2fs.freescale        | 16 ++++++++++++++++
+ evk_6sl/fstab.freescale             |  2 +-
+ hdmidongle_6dq/BoardConfig.mk       |  7 +++++++
+ hdmidongle_6dq/fstab-f2fs.freescale | 16 ++++++++++++++++
+ hdmidongle_6dq/fstab.freescale      |  2 +-
+ imx6/imx6_target_fs.mk              |  3 +++
+ sabreauto_6q/BoardConfig.mk         |  7 +++++++
+ sabreauto_6q/fstab-f2fs.freescale   | 16 ++++++++++++++++
+ sabreauto_6q/fstab.freescale        |  2 +-
+ sabreauto_6sx/BoardConfig.mk        |  7 +++++++
+ sabreauto_6sx/fstab-f2fs.freescale  | 16 ++++++++++++++++
+ sabreauto_6sx/fstab.freescale       |  2 +-
+ sabresd_6dq/BoardConfig.mk          | 16 +++++++++++++++-
+ sabresd_6dq/fstab-f2fs.freescale    | 15 +++++++++++++++
+ sabresd_6dq/fstab.freescale         |  2 +-
+ sabresd_6dq/fstab_sd-f2fs.freescale | 15 +++++++++++++++
+ sabresd_6dq/fstab_sd.freescale      |  2 +-
+ sabresd_6sx/BoardConfig.mk          |  7 +++++++
+ sabresd_6sx/fstab-f2fs.freescale    | 15 +++++++++++++++
+ sabresd_6sx/fstab.freescale         |  2 +-
+ 21 files changed, 169 insertions(+), 8 deletions(-)
+ create mode 100644 evk_6sl/fstab-f2fs.freescale
+ create mode 100644 hdmidongle_6dq/fstab-f2fs.freescale
+ create mode 100644 sabreauto_6q/fstab-f2fs.freescale
+ create mode 100644 sabreauto_6sx/fstab-f2fs.freescale
+ create mode 100644 sabresd_6dq/fstab-f2fs.freescale
+ create mode 100644 sabresd_6dq/fstab_sd-f2fs.freescale
+ create mode 100644 sabresd_6sx/fstab-f2fs.freescale
+
+diff --git a/evk_6sl/BoardConfig.mk b/evk_6sl/BoardConfig.mk
+index 39275fb..13fd54d 100644
+--- a/evk_6sl/BoardConfig.mk
++++ b/evk_6sl/BoardConfig.mk
+@@ -16,10 +16,17 @@ TARGET_RECOVERY_FSTAB = device/fsl/evk_6sl/fstab_nand.freescale
+ PRODUCT_COPY_FILES +=	\
+ 	device/fsl/evk_6sl/fstab_nand.freescale:root/fstab.freescale
+ else
++ifneq ($(BUILD_TARGET_FS),f2fs)
+ TARGET_RECOVERY_FSTAB = device/fsl/evk_6sl/fstab.freescale
+ # build for ext4
+ PRODUCT_COPY_FILES +=	\
+ 	device/fsl/evk_6sl/fstab.freescale:root/fstab.freescale
++else
++TARGET_RECOVERY_FSTAB = device/fsl/evk_6sl/fstab-f2fs.freescale
++# build for f2fs
++PRODUCT_COPY_FILES +=	\
++	device/fsl/evk_6sl/fstab-f2fs.freescale:root/fstab.freescale
++endif # BUILD_TARGET_FS
+ endif # BUILD_TARGET_FS
+ 
+ TARGET_BOOTLOADER_BOARD_NAME := EVK
+diff --git a/evk_6sl/fstab-f2fs.freescale b/evk_6sl/fstab-f2fs.freescale
+new file mode 100644
+index 0000000..fc0ff78
+--- /dev/null
++++ b/evk_6sl/fstab-f2fs.freescale
+@@ -0,0 +1,16 @@
++# Android fstab file.
++#<src>                                                  <mnt_point>         <type>    <mnt_flags and options>                       <fs_mgr_flags>
++# The filesystem that contains the filesystem checker binary (typically /system) cannot
++# specify MF_CHECK, and must come before any filesystems that do specify MF_CHECK
++
++/devices/soc0/soc.2/2100000.aips-bus/2190000.usdhc/mmc_host /mnt/media_rw/extsd vfat defaults voldmanaged=extsd:auto
++/devices/soc0/soc.2/2100000.aips-bus/2184200.usb/ci_hdrc.1 /mnt/media_rw/udisk vfat defaults voldmanaged=udisk:auto
++/dev/block/mmcblk1p5    /system      ext4    ro                                                                               wait
++/dev/block/mmcblk1p4    /data        f2fs    nosuid,nodev,noatime    wait,encryptable=/dev/block/mmcblk1p9
++/dev/block/mmcblk1p4    /data        ext4    nosuid,nodev,nodiratime,noatime,nomblk_io_submit,noauto_da_alloc,errors=panic    wait,encryptable=/dev/block/mmcblk1p9
++/dev/block/mmcblk1p6    /cache       ext4    nosuid,nodev,nomblk_io_submit                                                    wait
++/dev/block/mmcblk1p7    /device      ext4    ro,nosuid,nodev                                                                  wait
++/dev/block/mmcblk1p1    /boot        emmc    defaults                                                                         defaults
++/dev/block/mmcblk1p2    /recovery    emmc    defaults                                                                         defaults
++/dev/block/mmcblk1p8    /misc        emmc    defaults                                                                         defaults
++
+diff --git a/evk_6sl/fstab.freescale b/evk_6sl/fstab.freescale
+index d2a3d4a..3f16946 100644
+--- a/evk_6sl/fstab.freescale
++++ b/evk_6sl/fstab.freescale
+@@ -6,7 +6,7 @@
+ /devices/soc0/soc.2/2100000.aips-bus/2190000.usdhc/mmc_host /mnt/media_rw/extsd vfat defaults voldmanaged=extsd:auto
+ /devices/soc0/soc.2/2100000.aips-bus/2184200.usb/ci_hdrc.1 /mnt/media_rw/udisk vfat defaults voldmanaged=udisk:auto
+ /dev/block/mmcblk1p5    /system      ext4    ro                                                                               wait
+-/dev/block/mmcblk1p4    /data        ext4    nosuid,nodev,nodiratime,noatime,nomblk_io_submit,noauto_da_alloc,errors=panic    wait,encryptable=footer
++/dev/block/mmcblk1p4    /data        ext4    nosuid,nodev,nodiratime,noatime,nomblk_io_submit,noauto_da_alloc,errors=panic    wait,encryptable=/dev/block/mmcblk1p9
+ /dev/block/mmcblk1p6    /cache       ext4    nosuid,nodev,nomblk_io_submit                                                    wait
+ /dev/block/mmcblk1p7    /device      ext4    ro,nosuid,nodev                                                                  wait
+ /dev/block/mmcblk1p1    /boot        emmc    defaults                                                                         defaults
+diff --git a/hdmidongle_6dq/BoardConfig.mk b/hdmidongle_6dq/BoardConfig.mk
+index 96ceeb1..98625c9 100755
+--- a/hdmidongle_6dq/BoardConfig.mk
++++ b/hdmidongle_6dq/BoardConfig.mk
+@@ -16,10 +16,17 @@ TARGET_RECOVERY_FSTAB = device/fsl/hdmidongle_6dq/fstab_nand.freescale
+ PRODUCT_COPY_FILES +=	\
+ 	device/fsl/hdmidongle_6dq/fstab_nand.freescale:root/fstab.freescale
+ else
++ifneq ($(BUILD_TARGET_FS),f2fs)
+ TARGET_RECOVERY_FSTAB = device/fsl/hdmidongle_6dq/fstab.freescale
+ # build for ext4
+ PRODUCT_COPY_FILES +=	\
+ 	device/fsl/hdmidongle_6dq/fstab.freescale:root/fstab.freescale
++else
++TARGET_RECOVERY_FSTAB = device/fsl/hdmidongle_6dq/fstab-f2fs.freescale
++# build for f2fs
++PRODUCT_COPY_FILES +=	\
++	device/fsl/hdmidongle_6dq/fstab-f2fs.freescale:root/fstab.freescale
++endif # BUILD_TARGET_FS
+ endif # BUILD_TARGET_FS
+ 
+ TARGET_BOOTLOADER_BOARD_NAME := HDMIDONGLE
+diff --git a/hdmidongle_6dq/fstab-f2fs.freescale b/hdmidongle_6dq/fstab-f2fs.freescale
+new file mode 100644
+index 0000000..56b5b94
+--- /dev/null
++++ b/hdmidongle_6dq/fstab-f2fs.freescale
+@@ -0,0 +1,16 @@
++# Android fstab file.
++#<src>                                                  <mnt_point>         <type>    <mnt_flags and options>                       <fs_mgr_flags>
++# The filesystem that contains the filesystem checker binary (typically /system) cannot
++# specify MF_CHECK, and must come before any filesystems that do specify MF_CHECK
++
++/devices/platform/sdhci-esdhc-imx.1/mmc_host/mmc1 /mnt/media_rw/extsd vfat defaults voldmanaged=extsd:auto
++/devices/platform/fsl-ehci /mnt/media_rw/udisk vfat defaults voldmanaged=udisk:auto
++/dev/block/mmcblk0p5    /system      ext4    ro                                                                               wait
++/dev/block/mmcblk0p4    /data        f2fs    nosuid,nodev,noatime    wait,encryptable=/dev/block/mmcblk0p9
++/dev/block/mmcblk0p4    /data        ext4    nosuid,nodev,nodiratime,noatime,nomblk_io_submit,noauto_da_alloc,errors=panic    wait,encryptable=/dev/block/mmcblk0p9
++/dev/block/mmcblk0p6    /cache       ext4    nosuid,nodev,nomblk_io_submit                                                    wait
++/dev/block/mmcblk0p7    /device      ext4    ro,nosuid,nodev                                                                  wait
++/dev/block/mmcblk0p1    /boot        emmc    defaults                                                                         defaults
++/dev/block/mmcblk0p2    /recovery    emmc    defaults                                                                         defaults
++/dev/block/mmcblk0p8    /misc        emmc    defaults                                                                         defaults
++
+diff --git a/hdmidongle_6dq/fstab.freescale b/hdmidongle_6dq/fstab.freescale
+index de4661b..8defecd 100644
+--- a/hdmidongle_6dq/fstab.freescale
++++ b/hdmidongle_6dq/fstab.freescale
+@@ -6,7 +6,7 @@
+ /devices/platform/sdhci-esdhc-imx.1/mmc_host/mmc1 /mnt/media_rw/extsd vfat defaults voldmanaged=extsd:auto
+ /devices/platform/fsl-ehci /mnt/media_rw/udisk vfat defaults voldmanaged=udisk:auto
+ /dev/block/mmcblk0p5    /system      ext4    ro                                                                               wait
+-/dev/block/mmcblk0p4    /data        ext4    nosuid,nodev,nodiratime,noatime,nomblk_io_submit,noauto_da_alloc,errors=panic    wait,encryptable=footer
++/dev/block/mmcblk0p4    /data        ext4    nosuid,nodev,nodiratime,noatime,nomblk_io_submit,noauto_da_alloc,errors=panic    wait,encryptable=/dev/block/mmcblk0p9
+ /dev/block/mmcblk0p6    /cache       ext4    nosuid,nodev,nomblk_io_submit                                                    wait
+ /dev/block/mmcblk0p7    /device      ext4    ro,nosuid,nodev                                                                  wait
+ /dev/block/mmcblk0p1    /boot        emmc    defaults                                                                         defaults
+diff --git a/imx6/imx6_target_fs.mk b/imx6/imx6_target_fs.mk
+index 13018ce..ba2de4f 100644
+--- a/imx6/imx6_target_fs.mk
++++ b/imx6/imx6_target_fs.mk
+@@ -10,6 +10,9 @@ TARGET_USERIMAGES_USE_EXT4 := false
+ else
+ # build for ext4
+ TARGET_USERIMAGES_USE_EXT4 := true
++ifeq ($(BUILD_TARGET_FS),f2fs)
++TARGET_USERIMAGES_USE_F2FS := true
++endif
+ TARGET_USERIMAGES_USE_UBIFS := false
+ endif # BUILD_TARGET_FS
+ 
+diff --git a/sabreauto_6q/BoardConfig.mk b/sabreauto_6q/BoardConfig.mk
+index f73173c..3529302 100644
+--- a/sabreauto_6q/BoardConfig.mk
++++ b/sabreauto_6q/BoardConfig.mk
+@@ -16,10 +16,17 @@ TARGET_RECOVERY_FSTAB = device/fsl/sabreauto_6q/fstab_nand.freescale
+ PRODUCT_COPY_FILES +=	\
+ 	device/fsl/sabreauto_6q/fstab_nand.freescale:root/fstab.freescale
+ else
++ifneq ($(BUILD_TARGET_FS),f2fs)
+ TARGET_RECOVERY_FSTAB = device/fsl/sabreauto_6q/fstab.freescale
+ # build for ext4
+ PRODUCT_COPY_FILES +=	\
+ 	device/fsl/sabreauto_6q/fstab.freescale:root/fstab.freescale
++else
++TARGET_RECOVERY_FSTAB = device/fsl/sabreauto_6q/fstab-f2fs.freescale
++# build for f2fs
++PRODUCT_COPY_FILES +=	\
++	device/fsl/sabreauto_6q/fstab-f2fs.freescale:root/fstab.freescale
++endif # BUILD_TARGET_FS
+ endif # BUILD_TARGET_FS
+ 
+ TARGET_BOOTLOADER_BOARD_NAME := SABREAUTO
+diff --git a/sabreauto_6q/fstab-f2fs.freescale b/sabreauto_6q/fstab-f2fs.freescale
+new file mode 100644
+index 0000000..fbcb9a6
+--- /dev/null
++++ b/sabreauto_6q/fstab-f2fs.freescale
+@@ -0,0 +1,16 @@
++# Android fstab file.
++#<src>                                                  <mnt_point>         <type>    <mnt_flags and options>                       <fs_mgr_flags>
++# The filesystem that contains the filesystem checker binary (typically /system) cannot
++# specify MF_CHECK, and must come before any filesystems that do specify MF_CHECK
++
++/devices/soc0/soc.1/2100000.aips-bus/2190000.usdhc/mmc_host /mnt/media_rw/extsd vfat defaults voldmanaged=extsd:auto
++/devices/soc0/soc.1/2100000.aips-bus/2184000.usb/ci_hdrc.0  /mnt/media_rw/udisk vfat defaults voldmanaged=udisk:auto
++/dev/block/mmcblk2p5    /system      ext4    ro                                                                               wait
++/dev/block/mmcblk2p4    /data        f2fs    nosuid,nodev,noatime    wait,encryptable=/dev/block/mmcblk2p9
++/dev/block/mmcblk2p4    /data        ext4    nosuid,nodev,nodiratime,noatime,nomblk_io_submit,noauto_da_alloc,errors=panic    wait,encryptable=/dev/block/mmcblk2p9
++/dev/block/mmcblk2p6    /cache       ext4    nosuid,nodev,nomblk_io_submit                                                    wait
++/dev/block/mmcblk2p7    /device      ext4    ro,nosuid,nodev                                                                  wait
++/dev/block/mmcblk2p1    /boot        emmc    defaults                                                                         defaults
++/dev/block/mmcblk2p2    /recovery    emmc    defaults                                                                         defaults
++/dev/block/mmcblk2p8    /misc        emmc    defaults                                                                         defaults
++
+diff --git a/sabreauto_6q/fstab.freescale b/sabreauto_6q/fstab.freescale
+index bcbe1c1..039f992 100644
+--- a/sabreauto_6q/fstab.freescale
++++ b/sabreauto_6q/fstab.freescale
+@@ -6,7 +6,7 @@
+ /devices/soc0/soc.1/2100000.aips-bus/2190000.usdhc/mmc_host /mnt/media_rw/extsd vfat defaults voldmanaged=extsd:auto
+ /devices/soc0/soc.1/2100000.aips-bus/2184000.usb/ci_hdrc.0  /mnt/media_rw/udisk vfat defaults voldmanaged=udisk:auto
+ /dev/block/mmcblk2p5    /system      ext4    ro                                                                               wait
+-/dev/block/mmcblk2p4    /data        ext4    nosuid,nodev,nodiratime,noatime,nomblk_io_submit,noauto_da_alloc,errors=panic    wait,encryptable=footer
++/dev/block/mmcblk2p4    /data        ext4    nosuid,nodev,nodiratime,noatime,nomblk_io_submit,noauto_da_alloc,errors=panic    wait,encryptable=/dev/block/mmcblk2p9
+ /dev/block/mmcblk2p6    /cache       ext4    nosuid,nodev,nomblk_io_submit                                                    wait
+ /dev/block/mmcblk2p7    /device      ext4    ro,nosuid,nodev                                                                  wait
+ /dev/block/mmcblk2p1    /boot        emmc    defaults                                                                         defaults
+diff --git a/sabreauto_6sx/BoardConfig.mk b/sabreauto_6sx/BoardConfig.mk
+index d478085..fc004cc 100755
+--- a/sabreauto_6sx/BoardConfig.mk
++++ b/sabreauto_6sx/BoardConfig.mk
+@@ -16,10 +16,17 @@ TARGET_RECOVERY_FSTAB = device/fsl/sabreauto_6sx/fstab_nand.freescale
+ PRODUCT_COPY_FILES +=	\
+ 	device/fsl/sabreauto_6sx/fstab_nand.freescale:root/fstab.freescale
+ else
++ifneq ($(BUILD_TARGET_FS),f2fs)
+ TARGET_RECOVERY_FSTAB = device/fsl/sabreauto_6sx/fstab.freescale
+ # build for ext4
+ PRODUCT_COPY_FILES +=	\
+ 	device/fsl/sabreauto_6sx/fstab.freescale:root/fstab.freescale
++else
++TARGET_RECOVERY_FSTAB = device/fsl/sabreauto_6sx/fstab-f2fs.freescale
++# build for f2fs
++PRODUCT_COPY_FILES +=	\
++	device/fsl/sabreauto_6sx/fstab-f2fs.freescale:root/fstab.freescale
++endif # BUILD_TARGET_FS
+ endif # BUILD_TARGET_FS
+ 
+ TARGET_BOOTLOADER_BOARD_NAME := SABREAUTO
+diff --git a/sabreauto_6sx/fstab-f2fs.freescale b/sabreauto_6sx/fstab-f2fs.freescale
+new file mode 100644
+index 0000000..08a0b1b
+--- /dev/null
++++ b/sabreauto_6sx/fstab-f2fs.freescale
+@@ -0,0 +1,16 @@
++# Android fstab file.
++#<src>                                                  <mnt_point>         <type>    <mnt_flags and options>                       <fs_mgr_flags>
++# The filesystem that contains the filesystem checker binary (typically /system) cannot
++# specify MF_CHECK, and must come before any filesystems that do specify MF_CHECK
++
++/devices/soc0/soc.1/2100000.aips-bus/219c000.usdhc/mmc_host /mnt/media_rw/extsd vfat defaults voldmanaged=extsd:auto
++/devices/soc0/soc.1/2100000.aips-bus/2184000.usb/ci_hdrc.0  /mnt/media_rw/udisk vfat defaults voldmanaged=udisk:auto
++/dev/block/mmcblk2p5    /system      ext4    ro                                                                               wait
++/dev/block/mmcblk2p4    /data        f2fs    nosuid,nodev,noatime    wait,encryptable=/dev/block/mmcblk2p9
++/dev/block/mmcblk2p4    /data        ext4    nosuid,nodev,nodiratime,noatime,nomblk_io_submit,noauto_da_alloc,errors=panic    wait,encryptable=/dev/block/mmcblk2p9
++/dev/block/mmcblk2p6    /cache       ext4    nosuid,nodev,nomblk_io_submit                                                    wait
++/dev/block/mmcblk2p7    /device      ext4    ro,nosuid,nodev                                                                  wait
++/dev/block/mmcblk2p1    /boot        emmc    defaults                                                                         defaults
++/dev/block/mmcblk2p2    /recovery    emmc    defaults                                                                         defaults
++/dev/block/mmcblk2p8    /misc        emmc    defaults                                                                         defaults
++
+diff --git a/sabreauto_6sx/fstab.freescale b/sabreauto_6sx/fstab.freescale
+index 500a577..719f2b8 100644
+--- a/sabreauto_6sx/fstab.freescale
++++ b/sabreauto_6sx/fstab.freescale
+@@ -6,7 +6,7 @@
+ /devices/soc0/soc.1/2100000.aips-bus/219c000.usdhc/mmc_host /mnt/media_rw/extsd vfat defaults voldmanaged=extsd:auto
+ /devices/soc0/soc.1/2100000.aips-bus/2184000.usb/ci_hdrc.0  /mnt/media_rw/udisk vfat defaults voldmanaged=udisk:auto
+ /dev/block/mmcblk2p5    /system      ext4    ro                                                                               wait
+-/dev/block/mmcblk2p4    /data        ext4    nosuid,nodev,nodiratime,noatime,nomblk_io_submit,noauto_da_alloc,errors=panic    wait,encryptable=footer
++/dev/block/mmcblk2p4    /data        ext4    nosuid,nodev,nodiratime,noatime,nomblk_io_submit,noauto_da_alloc,errors=panic    wait,encryptable=/dev/block/mmcblk2p9
+ /dev/block/mmcblk2p6    /cache       ext4    nosuid,nodev,nomblk_io_submit                                                    wait
+ /dev/block/mmcblk2p7    /device      ext4    ro,nosuid,nodev                                                                  wait
+ /dev/block/mmcblk2p1    /boot        emmc    defaults                                                                         defaults
+diff --git a/sabresd_6dq/BoardConfig.mk b/sabresd_6dq/BoardConfig.mk
+index 20ae14a..6dbeca2 100644
+--- a/sabresd_6dq/BoardConfig.mk
++++ b/sabresd_6dq/BoardConfig.mk
+@@ -11,15 +11,29 @@ BUILD_TARGET_FS ?= ext4
+ include device/fsl/imx6/imx6_target_fs.mk
+ 
+ ifeq ($(BUILD_TARGET_DEVICE),sd)
++ifneq ($(BUILD_TARGET_FS),f2fs)
+ TARGET_RECOVERY_FSTAB = device/fsl/sabresd_6dq/fstab_sd.freescale
+-# build ubifs for nand devices
++# build for ext4
+ PRODUCT_COPY_FILES +=	\
+ 	device/fsl/sabresd_6dq/fstab_sd.freescale:root/fstab.freescale
+ else
++TARGET_RECOVERY_FSTAB = device/fsl/sabresd_6dq/fstab_sd-f2fs.freescale
++# build for f2fs
++PRODUCT_COPY_FILES +=	\
++	device/fsl/sabresd_6dq/fstab_sd-f2fs.freescale:root/fstab.freescale
++endif # BUILD_TARGET_FS
++else
++ifneq ($(BUILD_TARGET_FS),f2fs)
+ TARGET_RECOVERY_FSTAB = device/fsl/sabresd_6dq/fstab.freescale
+ # build for ext4
+ PRODUCT_COPY_FILES +=	\
+ 	device/fsl/sabresd_6dq/fstab.freescale:root/fstab.freescale
++else
++TARGET_RECOVERY_FSTAB = device/fsl/sabresd_6dq/fstab-f2fs.freescale
++# build for f2fs
++PRODUCT_COPY_FILES +=	\
++	device/fsl/sabresd_6dq/fstab-f2fs.freescale:root/fstab.freescale
++endif # BUILD_TARGET_FS
+ endif # BUILD_TARGET_DEVICE
+ 
+ 
+diff --git a/sabresd_6dq/fstab-f2fs.freescale b/sabresd_6dq/fstab-f2fs.freescale
+new file mode 100644
+index 0000000..b70fee4
+--- /dev/null
++++ b/sabresd_6dq/fstab-f2fs.freescale
+@@ -0,0 +1,15 @@
++# Android fstab file.
++#<src>                                                  <mnt_point>         <type>    <mnt_flags and options>                       <fs_mgr_flags>
++# The filesystem that contains the filesystem checker binary (typically /system) cannot
++# specify MF_CHECK, and must come before any filesystems that do specify MF_CHECK
++
++/devices/soc0/soc.1/2100000.aips-bus/2198000.usdhc/mmc_host /mnt/media_rw/extsd vfat defaults voldmanaged=extsd:auto
++/devices/soc0/soc.1/2100000.aips-bus/2184000.usb/ci_hdrc.0  /mnt/media_rw/udisk vfat defaults voldmanaged=udisk:auto
++/dev/block/mmcblk3p5    /system      ext4    ro                                                                               wait
++/dev/block/mmcblk3p4    /data        f2fs    nosuid,nodev,noatime    wait,encryptable=/dev/block/mmcblk3p9
++/dev/block/mmcblk3p4    /data        ext4    nosuid,nodev,nodiratime,noatime,nomblk_io_submit,noauto_da_alloc,errors=panic    wait,encryptable=/dev/block/mmcblk3p9
++/dev/block/mmcblk3p6    /cache       ext4    nosuid,nodev,nomblk_io_submit                                                    wait
++/dev/block/mmcblk3p7    /device      ext4    ro,nosuid,nodev                                                                  wait
++/dev/block/mmcblk3p1    /boot        emmc    defaults                                                                         defaults
++/dev/block/mmcblk3p2    /recovery    emmc    defaults                                                                         defaults
++/dev/block/mmcblk3p8    /misc        emmc    defaults                                                                         defaults
+diff --git a/sabresd_6dq/fstab.freescale b/sabresd_6dq/fstab.freescale
+index 3b8cfb2..12c6456 100644
+--- a/sabresd_6dq/fstab.freescale
++++ b/sabresd_6dq/fstab.freescale
+@@ -6,7 +6,7 @@
+ /devices/soc0/soc.1/2100000.aips-bus/2198000.usdhc/mmc_host /mnt/media_rw/extsd vfat defaults voldmanaged=extsd:auto
+ /devices/soc0/soc.1/2100000.aips-bus/2184000.usb/ci_hdrc.0  /mnt/media_rw/udisk vfat defaults voldmanaged=udisk:auto
+ /dev/block/mmcblk3p5    /system      ext4    ro                                                                               wait
+-/dev/block/mmcblk3p4    /data        ext4    nosuid,nodev,nodiratime,noatime,nomblk_io_submit,noauto_da_alloc,errors=panic    wait,encryptable=footer
++/dev/block/mmcblk3p4    /data        ext4    nosuid,nodev,nodiratime,noatime,nomblk_io_submit,noauto_da_alloc,errors=panic    wait,encryptable=/dev/block/mmcblk3p9
+ /dev/block/mmcblk3p6    /cache       ext4    nosuid,nodev,nomblk_io_submit                                                    wait
+ /dev/block/mmcblk3p7    /device      ext4    ro,nosuid,nodev                                                                  wait
+ /dev/block/mmcblk3p1    /boot        emmc    defaults                                                                         defaults
+diff --git a/sabresd_6dq/fstab_sd-f2fs.freescale b/sabresd_6dq/fstab_sd-f2fs.freescale
+new file mode 100644
+index 0000000..23532d9
+--- /dev/null
++++ b/sabresd_6dq/fstab_sd-f2fs.freescale
+@@ -0,0 +1,15 @@
++# Android fstab file.
++#<src>                                                  <mnt_point>         <type>    <mnt_flags and options>                       <fs_mgr_flags>
++# The filesystem that contains the filesystem checker binary (typically /system) cannot
++# specify MF_CHECK, and must come before any filesystems that do specify MF_CHECK
++
++/devices/soc0/soc.1/2100000.aips-bus/2194000.usdhc/mmc_host /mnt/media_rw/extsd vfat defaults voldmanaged=extsd:auto
++/devices/soc0/soc.1/2100000.aips-bus/2184000.usb/ci_hdrc.0  /mnt/media_rw/udisk vfat defaults voldmanaged=udisk:auto
++/dev/block/mmcblk2p5    /system      ext4    ro                                                                               wait
++/dev/block/mmcblk2p4    /data        f2fs    nosuid,nodev,noatime    wait,encryptable=/dev/block/mmcblk2p9
++/dev/block/mmcblk2p4    /data        ext4    nosuid,nodev,nodiratime,noatime,nomblk_io_submit,noauto_da_alloc,errors=panic    wait,encryptable=/dev/block/mmcblk2p9
++/dev/block/mmcblk2p6    /cache       ext4    nosuid,nodev,nomblk_io_submit                                                    wait
++/dev/block/mmcblk2p7    /device      ext4    ro,nosuid,nodev                                                                  wait
++/dev/block/mmcblk2p1    /boot        emmc    defaults                                                                         defaults
++/dev/block/mmcblk2p2    /recovery    emmc    defaults                                                                         defaults
++/dev/block/mmcblk2p8    /misc        emmc    defaults                                                                         defaults
+diff --git a/sabresd_6dq/fstab_sd.freescale b/sabresd_6dq/fstab_sd.freescale
+index d169973..7e91adf 100644
+--- a/sabresd_6dq/fstab_sd.freescale
++++ b/sabresd_6dq/fstab_sd.freescale
+@@ -6,7 +6,7 @@
+ /devices/soc0/soc.1/2100000.aips-bus/2194000.usdhc/mmc_host /mnt/media_rw/extsd vfat defaults voldmanaged=extsd:auto
+ /devices/soc0/soc.1/2100000.aips-bus/2184000.usb/ci_hdrc.0  /mnt/media_rw/udisk vfat defaults voldmanaged=udisk:auto
+ /dev/block/mmcblk2p5    /system      ext4    ro                                                                               wait
+-/dev/block/mmcblk2p4    /data        ext4    nosuid,nodev,nodiratime,noatime,nomblk_io_submit,noauto_da_alloc,errors=panic    wait,encryptable=footer
++/dev/block/mmcblk2p4    /data        ext4    nosuid,nodev,nodiratime,noatime,nomblk_io_submit,noauto_da_alloc,errors=panic    wait,encryptable=/dev/block/mmcblk2p9
+ /dev/block/mmcblk2p6    /cache       ext4    nosuid,nodev,nomblk_io_submit                                                    wait
+ /dev/block/mmcblk2p7    /device      ext4    ro,nosuid,nodev                                                                  wait
+ /dev/block/mmcblk2p1    /boot        emmc    defaults                                                                         defaults
+diff --git a/sabresd_6sx/BoardConfig.mk b/sabresd_6sx/BoardConfig.mk
+index 2cbe642..fb783cd 100644
+--- a/sabresd_6sx/BoardConfig.mk
++++ b/sabresd_6sx/BoardConfig.mk
+@@ -16,10 +16,17 @@ TARGET_RECOVERY_FSTAB = device/fsl/sabresd_6sx/fstab_nand.freescale
+ PRODUCT_COPY_FILES +=	\
+ 	device/fsl/sabresd_6sx/fstab_nand.freescale:root/fstab.freescale
+ else
++ifneq ($(BUILD_TARGET_FS),f2fs)
+ TARGET_RECOVERY_FSTAB = device/fsl/sabresd_6sx/fstab.freescale
+ # build for ext4
+ PRODUCT_COPY_FILES +=	\
+ 	device/fsl/sabresd_6sx/fstab.freescale:root/fstab.freescale
++else
++TARGET_RECOVERY_FSTAB = device/fsl/sabresd_6sx/fstab-f2fs.freescale
++# build for f2fs
++PRODUCT_COPY_FILES +=	\
++	device/fsl/sabresd_6sx/fstab-f2fs.freescale:root/fstab.freescale
++endif # BUILD_TARGET_FS
+ endif # BUILD_TARGET_FS
+ 
+ 
+diff --git a/sabresd_6sx/fstab-f2fs.freescale b/sabresd_6sx/fstab-f2fs.freescale
+new file mode 100644
+index 0000000..4ee688d
+--- /dev/null
++++ b/sabresd_6sx/fstab-f2fs.freescale
+@@ -0,0 +1,15 @@
++# Android fstab file.
++#<src>                                                  <mnt_point>         <type>    <mnt_flags and options>                       <fs_mgr_flags>
++# The filesystem that contains the filesystem checker binary (typically /system) cannot
++# specify MF_CHECK, and must come before any filesystems that do specify MF_CHECK
++
++/devices/soc0/soc.1/2100000.aips-bus/2198000.usdhc/mmc_host /mnt/media_rw/extsd vfat defaults voldmanaged=extsd:auto
++/devices/soc0/soc.1/2100000.aips-bus/2184200.usb/ci_hdrc.1  /mnt/media_rw/udisk vfat defaults voldmanaged=udisk:auto
++/dev/block/mmcblk3p5    /system      ext4    ro                                                                               wait
++/dev/block/mmcblk3p4    /data        f2fs    nosuid,nodev,noatime    wait,encryptable=/dev/block/mmcblk3p9
++/dev/block/mmcblk3p4    /data        ext4    nosuid,nodev,nodiratime,noatime,nomblk_io_submit,noauto_da_alloc,errors=panic    wait,encryptable=/dev/block/mmcblk3p9
++/dev/block/mmcblk3p6    /cache       ext4    nosuid,nodev,nomblk_io_submit                                                    wait
++/dev/block/mmcblk3p7    /device      ext4    ro,nosuid,nodev                                                                  wait
++/dev/block/mmcblk3p1    /boot        emmc    defaults                                                                         defaults
++/dev/block/mmcblk3p2    /recovery    emmc    defaults                                                                         defaults
++/dev/block/mmcblk3p8    /misc        emmc    defaults                                                                         defaults
+diff --git a/sabresd_6sx/fstab.freescale b/sabresd_6sx/fstab.freescale
+index b3c3fbd..03289e8 100644
+--- a/sabresd_6sx/fstab.freescale
++++ b/sabresd_6sx/fstab.freescale
+@@ -6,7 +6,7 @@
+ /devices/soc0/soc.1/2100000.aips-bus/2198000.usdhc/mmc_host /mnt/media_rw/extsd vfat defaults voldmanaged=extsd:auto
+ /devices/soc0/soc.1/2100000.aips-bus/2184200.usb/ci_hdrc.1  /mnt/media_rw/udisk vfat defaults voldmanaged=udisk:auto
+ /dev/block/mmcblk3p5    /system      ext4    ro                                                                               wait
+-/dev/block/mmcblk3p4    /data        ext4    nosuid,nodev,nodiratime,noatime,nomblk_io_submit,noauto_da_alloc,errors=panic    wait,encryptable=footer
++/dev/block/mmcblk3p4    /data        ext4    nosuid,nodev,nodiratime,noatime,nomblk_io_submit,noauto_da_alloc,errors=panic    wait,encryptable=/dev/block/mmcblk3p9
+ /dev/block/mmcblk3p6    /cache       ext4    nosuid,nodev,nomblk_io_submit                                                    wait
+ /dev/block/mmcblk3p7    /device      ext4    ro,nosuid,nodev                                                                  wait
+ /dev/block/mmcblk3p1    /boot        emmc    defaults                                                                         defaults
+-- 
+1.8.0
+

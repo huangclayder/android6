@@ -1,0 +1,28 @@
+From a6b4f9c05a06bd5a6b0684f617e43c55da44b0ca Mon Sep 17 00:00:00 2001
+From: "guoyin.chen" <guoyin.chen@freescale.com>
+Date: Thu, 9 Apr 2015 17:28:42 +0800
+Subject: [PATCH] MA-6524 Update android config to align the config in
+ imx_3.14.28_7d_alpha
+
+Add CONFIG_SND_SOC_IMX_SII902X as it updated in bsp branch
+
+Signed-off-by: guoyin.chen <guoyin.chen@freescale.com>
+---
+ arch/arm/configs/imx_v7_android_defconfig | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/arch/arm/configs/imx_v7_android_defconfig b/arch/arm/configs/imx_v7_android_defconfig
+index acd8f6f..1b9d37f 100644
+--- a/arch/arm/configs/imx_v7_android_defconfig
++++ b/arch/arm/configs/imx_v7_android_defconfig
+@@ -398,6 +398,7 @@ CONFIG_SND_SOC=y
+ CONFIG_SND_IMX_SOC=y
+ CONFIG_SND_SOC_EUKREA_TLV320=y
+ CONFIG_SND_SOC_IMX_CS42888=y
++CONFIG_SND_SOC_IMX_SII902X=y
+ CONFIG_SND_SOC_IMX_WM8958=y
+ CONFIG_SND_SOC_IMX_WM8960=y
+ CONFIG_SND_SOC_IMX_WM8962=y
+-- 
+1.8.0
+

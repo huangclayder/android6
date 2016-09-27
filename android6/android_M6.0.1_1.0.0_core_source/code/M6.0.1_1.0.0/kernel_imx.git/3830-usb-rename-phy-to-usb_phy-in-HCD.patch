@@ -1,0 +1,802 @@
+From 6168345d3c49e8bbaa4ecc42186bccf2baa6d034 Mon Sep 17 00:00:00 2001
+From: Antoine Tenart <antoine.tenart@free-electrons.com>
+Date: Wed, 24 Sep 2014 23:05:50 +0400
+Subject: [PATCH] usb: rename phy to usb_phy in HCD
+
+The USB PHY member of the HCD structure is renamed to 'usb_phy' and
+modifications are done in all drivers accessing it.
+This is in preparation to adding the generic PHY support.
+
+Signed-off-by: Antoine Tenart <antoine.tenart@free-electrons.com>
+[Sergei: added missing 'drivers/usb/misc/lvstest.c' file, resolved rejects,
+updated changelog.]
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Acked-by: Alan Stern <stern@rowland.harvard.edu>
+Acked-by: Felipe Balbi <balbi@ti.com>
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+(cherry picked from commit 3d46e73dfdb840f460e5b06416965d132570ec33)
+
+Conflicts:
+
+	drivers/usb/core/hub.c
+	drivers/usb/misc/lvstest.c
+---
+ drivers/usb/chipidea/host.c   |   2 +-
+ drivers/usb/core/hcd.c        |  20 +-
+ drivers/usb/core/hub.c        |   8 +-
+ drivers/usb/host/ehci-fsl.c   |  16 +-
+ drivers/usb/host/ehci-hub.c   |   2 +-
+ drivers/usb/host/ehci-msm.c   |   4 +-
+ drivers/usb/host/ehci-tegra.c |  16 +-
+ drivers/usb/host/ohci-omap.c  |  20 +-
+ drivers/usb/misc/lvstest.c    | 460 ++++++++++++++++++++++++++++++++++++++++++
+ include/linux/usb/hcd.h       |   2 +-
+ 10 files changed, 505 insertions(+), 45 deletions(-)
+
+diff --git a/drivers/usb/chipidea/host.c b/drivers/usb/chipidea/host.c
+index 0d6b24c..ebde7b6 100644
+--- a/drivers/usb/chipidea/host.c
++++ b/drivers/usb/chipidea/host.c
+@@ -59,7 +59,7 @@ static int host_start(struct ci_hdrc *ci)
+ 	hcd->has_tt = 1;
+ 
+ 	hcd->power_budget = ci->platdata->power_budget;
+-	hcd->phy = ci->transceiver;
++	hcd->usb_phy = ci->transceiver;
+ 	hcd->tpl_support = ci->platdata->tpl_support;
+ 
+ 	ehci = hcd_to_ehci(hcd);
+diff --git a/drivers/usb/core/hcd.c b/drivers/usb/core/hcd.c
+index ee6c556..8ee299e 100644
+--- a/drivers/usb/core/hcd.c
++++ b/drivers/usb/core/hcd.c
+@@ -2590,7 +2590,7 @@ int usb_add_hcd(struct usb_hcd *hcd,
+ 	int retval;
+ 	struct usb_device *rhdev;
+ 
+-	if (IS_ENABLED(CONFIG_USB_PHY) && !hcd->phy) {
++	if (IS_ENABLED(CONFIG_USB_PHY) && !hcd->usb_phy) {
+ 		struct usb_phy *phy = usb_get_phy_dev(hcd->self.controller, 0);
+ 
+ 		if (IS_ERR(phy)) {
+@@ -2603,7 +2603,7 @@ int usb_add_hcd(struct usb_hcd *hcd,
+ 				usb_put_phy(phy);
+ 				return retval;
+ 			}
+-			hcd->phy = phy;
++			hcd->usb_phy = phy;
+ 			hcd->remove_phy = 1;
+ 		}
+ 	}
+@@ -2749,10 +2749,10 @@ err_allocate_root_hub:
+ err_register_bus:
+ 	hcd_buffer_destroy(hcd);
+ err_remove_phy:
+-	if (hcd->remove_phy && hcd->phy) {
+-		usb_phy_shutdown(hcd->phy);
+-		usb_put_phy(hcd->phy);
+-		hcd->phy = NULL;
++	if (hcd->remove_phy && hcd->usb_phy) {
++		usb_phy_shutdown(hcd->usb_phy);
++		usb_put_phy(hcd->usb_phy);
++		hcd->usb_phy = NULL;
+ 	}
+ 	return retval;
+ }
+@@ -2826,10 +2826,10 @@ void usb_remove_hcd(struct usb_hcd *hcd)
+ 	usb_put_dev(hcd->self.root_hub);
+ 	usb_deregister_bus(&hcd->self);
+ 	hcd_buffer_destroy(hcd);
+-	if (hcd->remove_phy && hcd->phy) {
+-		usb_phy_shutdown(hcd->phy);
+-		usb_put_phy(hcd->phy);
+-		hcd->phy = NULL;
++	if (hcd->remove_phy && hcd->usb_phy) {
++		usb_phy_shutdown(hcd->usb_phy);
++		usb_put_phy(hcd->usb_phy);
++		hcd->usb_phy = NULL;
+ 	}
+ }
+ EXPORT_SYMBOL_GPL(usb_remove_hcd);
+diff --git a/drivers/usb/core/hub.c b/drivers/usb/core/hub.c
+index 757c967..d4c7df9 100644
+--- a/drivers/usb/core/hub.c
++++ b/drivers/usb/core/hub.c
+@@ -4299,8 +4299,8 @@ hub_port_init (struct usb_hub *hub, struct usb_device *udev, int port1,
+ 	if (retval)
+ 		goto fail;
+ 
+-	if (hcd->phy && !hdev->parent)
+-		usb_phy_notify_connect(hcd->phy, udev->speed);
++	if (hcd->usb_phy && !hdev->parent)
++		usb_phy_notify_connect(hcd->usb_phy, udev->speed);
+ 
+ 	/*
+ 	 * Some superspeed devices have finished the link training process
+@@ -4510,9 +4510,9 @@ static void hub_port_connect_change(struct usb_hub *hub, int port1,
+ 
+ 	/* Disconnect any existing devices under this port */
+ 	if (udev) {
+-		if (hcd->phy && !hdev->parent &&
++		if (hcd->usb_phy && !hdev->parent &&
+ 				!(portstatus & USB_PORT_STAT_CONNECTION))
+-			usb_phy_notify_disconnect(hcd->phy, udev->speed);
++			usb_phy_notify_disconnect(hcd->usb_phy, udev->speed);
+ 		usb_disconnect(&hub->ports[port1 - 1]->child);
+ 	}
+ 	clear_bit(port1, hub->change_bits);
+diff --git a/drivers/usb/host/ehci-fsl.c b/drivers/usb/host/ehci-fsl.c
+index cf2734b..4bdcd34 100644
+--- a/drivers/usb/host/ehci-fsl.c
++++ b/drivers/usb/host/ehci-fsl.c
+@@ -136,15 +136,15 @@ static int usb_hcd_fsl_probe(const struct hc_driver *driver,
+ 	if (pdata->operating_mode == FSL_USB2_DR_OTG) {
+ 		struct ehci_hcd *ehci = hcd_to_ehci(hcd);
+ 
+-		hcd->phy = usb_get_phy(USB_PHY_TYPE_USB2);
++		hcd->usb_phy = usb_get_phy(USB_PHY_TYPE_USB2);
+ 		dev_dbg(&pdev->dev, "hcd=0x%p  ehci=0x%p, phy=0x%p\n",
+-			hcd, ehci, hcd->phy);
++			hcd, ehci, hcd->usb_phy);
+ 
+-		if (!IS_ERR_OR_NULL(hcd->phy)) {
+-			retval = otg_set_host(hcd->phy->otg,
++		if (!IS_ERR_OR_NULL(hcd->usb_phy)) {
++			retval = otg_set_host(hcd->usb_phy->otg,
+ 					      &ehci_to_hcd(ehci)->self);
+ 			if (retval) {
+-				usb_put_phy(hcd->phy);
++				usb_put_phy(hcd->usb_phy);
+ 				goto err2;
+ 			}
+ 		} else {
+@@ -181,9 +181,9 @@ static void usb_hcd_fsl_remove(struct usb_hcd *hcd,
+ {
+ 	struct fsl_usb2_platform_data *pdata = dev_get_platdata(&pdev->dev);
+ 
+-	if (!IS_ERR_OR_NULL(hcd->phy)) {
+-		otg_set_host(hcd->phy->otg, NULL);
+-		usb_put_phy(hcd->phy);
++	if (!IS_ERR_OR_NULL(hcd->usb_phy)) {
++		otg_set_host(hcd->usb_phy->otg, NULL);
++		usb_put_phy(hcd->usb_phy);
+ 	}
+ 
+ 	usb_remove_hcd(hcd);
+diff --git a/drivers/usb/host/ehci-hub.c b/drivers/usb/host/ehci-hub.c
+index 7d6f64c..28a5b48 100644
+--- a/drivers/usb/host/ehci-hub.c
++++ b/drivers/usb/host/ehci-hub.c
+@@ -931,7 +931,7 @@ static int ehci_hub_control (
+ #ifdef CONFIG_USB_OTG
+ 			if ((hcd->self.otg_port == (wIndex + 1))
+ 			    && hcd->self.b_hnp_enable) {
+-				otg_start_hnp(hcd->phy->otg);
++				otg_start_hnp(hcd->usb_phy->otg);
+ 				break;
+ 			}
+ #endif
+diff --git a/drivers/usb/host/ehci-msm.c b/drivers/usb/host/ehci-msm.c
+index f341651..fea9b15 100644
+--- a/drivers/usb/host/ehci-msm.c
++++ b/drivers/usb/host/ehci-msm.c
+@@ -125,7 +125,7 @@ static int ehci_msm_probe(struct platform_device *pdev)
+ 		goto put_hcd;
+ 	}
+ 
+-	hcd->phy = phy;
++	hcd->usb_phy = phy;
+ 	device_init_wakeup(&pdev->dev, 1);
+ 	/*
+ 	 * OTG device parent of HCD takes care of putting
+@@ -152,7 +152,7 @@ static int ehci_msm_remove(struct platform_device *pdev)
+ 	pm_runtime_disable(&pdev->dev);
+ 	pm_runtime_set_suspended(&pdev->dev);
+ 
+-	otg_set_host(hcd->phy->otg, NULL);
++	otg_set_host(hcd->usb_phy->otg, NULL);
+ 
+ 	/* FIXME: need to call usb_remove_hcd() here? */
+ 
+diff --git a/drivers/usb/host/ehci-tegra.c b/drivers/usb/host/ehci-tegra.c
+index 633dbea..7cc7357c 100644
+--- a/drivers/usb/host/ehci-tegra.c
++++ b/drivers/usb/host/ehci-tegra.c
+@@ -158,7 +158,7 @@ static int tegra_ehci_hub_control(
+ 		if (tegra->port_resuming && !(temp & PORT_SUSPEND)) {
+ 			/* Resume completed, re-enable disconnect detection */
+ 			tegra->port_resuming = 0;
+-			tegra_usb_phy_postresume(hcd->phy);
++			tegra_usb_phy_postresume(hcd->usb_phy);
+ 		}
+ 	}
+ 
+@@ -211,7 +211,7 @@ static int tegra_ehci_hub_control(
+ 			goto done;
+ 
+ 		/* Disable disconnect detection during port resume */
+-		tegra_usb_phy_preresume(hcd->phy);
++		tegra_usb_phy_preresume(hcd->usb_phy);
+ 
+ 		ehci->reset_done[wIndex-1] = jiffies + msecs_to_jiffies(25);
+ 
+@@ -406,7 +406,7 @@ static int tegra_ehci_probe(struct platform_device *pdev)
+ 		err = PTR_ERR(u_phy);
+ 		goto cleanup_clk_en;
+ 	}
+-	hcd->phy = u_phy;
++	hcd->usb_phy = u_phy;
+ 
+ 	tegra->needs_double_reset = of_property_read_bool(pdev->dev.of_node,
+ 		"nvidia,needs-double-reset");
+@@ -428,7 +428,7 @@ static int tegra_ehci_probe(struct platform_device *pdev)
+ 	ehci->caps = hcd->regs + 0x100;
+ 	ehci->has_hostpc = soc_config->has_hostpc;
+ 
+-	err = usb_phy_init(hcd->phy);
++	err = usb_phy_init(hcd->usb_phy);
+ 	if (err) {
+ 		dev_err(&pdev->dev, "Failed to initialize phy\n");
+ 		goto cleanup_clk_en;
+@@ -443,7 +443,7 @@ static int tegra_ehci_probe(struct platform_device *pdev)
+ 	}
+ 	u_phy->otg->host = hcd_to_bus(hcd);
+ 
+-	err = usb_phy_set_suspend(hcd->phy, 0);
++	err = usb_phy_set_suspend(hcd->usb_phy, 0);
+ 	if (err) {
+ 		dev_err(&pdev->dev, "Failed to power on the phy\n");
+ 		goto cleanup_phy;
+@@ -470,7 +470,7 @@ static int tegra_ehci_probe(struct platform_device *pdev)
+ cleanup_otg_set_host:
+ 	otg_set_host(u_phy->otg, NULL);
+ cleanup_phy:
+-	usb_phy_shutdown(hcd->phy);
++	usb_phy_shutdown(hcd->usb_phy);
+ cleanup_clk_en:
+ 	clk_disable_unprepare(tegra->clk);
+ cleanup_hcd_create:
+@@ -484,9 +484,9 @@ static int tegra_ehci_remove(struct platform_device *pdev)
+ 	struct tegra_ehci_hcd *tegra =
+ 		(struct tegra_ehci_hcd *)hcd_to_ehci(hcd)->priv;
+ 
+-	otg_set_host(hcd->phy->otg, NULL);
++	otg_set_host(hcd->usb_phy->otg, NULL);
+ 
+-	usb_phy_shutdown(hcd->phy);
++	usb_phy_shutdown(hcd->usb_phy);
+ 	usb_remove_hcd(hcd);
+ 	usb_put_hcd(hcd);
+ 
+diff --git a/drivers/usb/host/ohci-omap.c b/drivers/usb/host/ohci-omap.c
+index c923caf..bf8e3e9 100644
+--- a/drivers/usb/host/ohci-omap.c
++++ b/drivers/usb/host/ohci-omap.c
+@@ -180,10 +180,10 @@ static void start_hnp(struct ohci_hcd *ohci)
+ 	unsigned long	flags;
+ 	u32 l;
+ 
+-	otg_start_hnp(hcd->phy->otg);
++	otg_start_hnp(hcd->usb_phy->otg);
+ 
+ 	local_irq_save(flags);
+-	hcd->phy->state = OTG_STATE_A_SUSPEND;
++	hcd->usb_phy->state = OTG_STATE_A_SUSPEND;
+ 	writel (RH_PS_PSS, &ohci->regs->roothub.portstatus [port]);
+ 	l = omap_readl(OTG_CTRL);
+ 	l &= ~OTG_A_BUSREQ;
+@@ -220,14 +220,14 @@ static int ohci_omap_reset(struct usb_hcd *hcd)
+ 
+ #ifdef	CONFIG_USB_OTG
+ 	if (need_transceiver) {
+-		hcd->phy = usb_get_phy(USB_PHY_TYPE_USB2);
+-		if (!IS_ERR_OR_NULL(hcd->phy)) {
+-			int	status = otg_set_host(hcd->phy->otg,
++		hcd->usb_phy = usb_get_phy(USB_PHY_TYPE_USB2);
++		if (!IS_ERR_OR_NULL(hcd->usb_phy)) {
++			int	status = otg_set_host(hcd->usb_phy->otg,
+ 						&ohci_to_hcd(ohci)->self);
+ 			dev_dbg(hcd->self.controller, "init %s phy, status %d\n",
+-					hcd->phy->label, status);
++					hcd->usb_phy->label, status);
+ 			if (status) {
+-				usb_put_phy(hcd->phy);
++				usb_put_phy(hcd->usb_phy);
+ 				return status;
+ 			}
+ 		} else {
+@@ -399,9 +399,9 @@ usb_hcd_omap_remove (struct usb_hcd *hcd, struct platform_device *pdev)
+ 	dev_dbg(hcd->self.controller, "stopping USB Controller\n");
+ 	usb_remove_hcd(hcd);
+ 	omap_ohci_clock_power(0);
+-	if (!IS_ERR_OR_NULL(hcd->phy)) {
+-		(void) otg_set_host(hcd->phy->otg, 0);
+-		usb_put_phy(hcd->phy);
++	if (!IS_ERR_OR_NULL(hcd->usb_phy)) {
++		(void) otg_set_host(hcd->usb_phy->otg, 0);
++		usb_put_phy(hcd->usb_phy);
+ 	}
+ 	if (machine_is_omap_osk())
+ 		gpio_free(9);
+diff --git a/drivers/usb/misc/lvstest.c b/drivers/usb/misc/lvstest.c
+new file mode 100644
+index 0000000..62cb8cd
+--- /dev/null
++++ b/drivers/usb/misc/lvstest.c
+@@ -0,0 +1,460 @@
++/*
++ * drivers/usb/misc/lvstest.c
++ *
++ * Test pattern generation for Link Layer Validation System Tests
++ *
++ * Copyright (C) 2014 ST Microelectronics
++ * Pratyush Anand <pratyush.anand@st.com>
++ *
++ * This file is licensed under the terms of the GNU General Public
++ * License version 2. This program is licensed "as is" without any
++ * warranty of any kind, whether express or implied.
++ */
++
++#include <linux/init.h>
++#include <linux/kernel.h>
++#include <linux/module.h>
++#include <linux/platform_device.h>
++#include <linux/slab.h>
++#include <linux/usb.h>
++#include <linux/usb/ch11.h>
++#include <linux/usb/hcd.h>
++#include <linux/usb/phy.h>
++
++struct lvs_rh {
++	/* root hub interface */
++	struct usb_interface *intf;
++	/* if lvs device connected */
++	bool present;
++	/* port no at which lvs device is present */
++	int portnum;
++	/* urb buffer */
++	u8 buffer[8];
++	/* class descriptor */
++	struct usb_hub_descriptor descriptor;
++	/* urb for polling interrupt pipe */
++	struct urb *urb;
++	/* LVS RH work queue */
++	struct workqueue_struct *rh_queue;
++	/* LVH RH work */
++	struct work_struct	rh_work;
++	/* RH port status */
++	struct usb_port_status port_status;
++};
++
++static struct usb_device *create_lvs_device(struct usb_interface *intf)
++{
++	struct usb_device *udev, *hdev;
++	struct usb_hcd *hcd;
++	struct lvs_rh *lvs = usb_get_intfdata(intf);
++
++	if (!lvs->present) {
++		dev_err(&intf->dev, "No LVS device is present\n");
++		return NULL;
++	}
++
++	hdev = interface_to_usbdev(intf);
++	hcd = bus_to_hcd(hdev->bus);
++
++	udev = usb_alloc_dev(hdev, hdev->bus, lvs->portnum);
++	if (!udev) {
++		dev_err(&intf->dev, "Could not allocate lvs udev\n");
++		return NULL;
++	}
++	udev->speed = USB_SPEED_SUPER;
++	udev->ep0.desc.wMaxPacketSize = cpu_to_le16(512);
++	usb_set_device_state(udev, USB_STATE_DEFAULT);
++
++	if (hcd->driver->enable_device) {
++		if (hcd->driver->enable_device(hcd, udev) < 0) {
++			dev_err(&intf->dev, "Failed to enable\n");
++			usb_put_dev(udev);
++			return NULL;
++		}
++	}
++
++	return udev;
++}
++
++static void destroy_lvs_device(struct usb_device *udev)
++{
++	struct usb_device *hdev = udev->parent;
++	struct usb_hcd *hcd = bus_to_hcd(hdev->bus);
++
++	if (hcd->driver->free_dev)
++		hcd->driver->free_dev(hcd, udev);
++
++	usb_put_dev(udev);
++}
++
++static int lvs_rh_clear_port_feature(struct usb_device *hdev,
++		int port1, int feature)
++{
++	return usb_control_msg(hdev, usb_sndctrlpipe(hdev, 0),
++		USB_REQ_CLEAR_FEATURE, USB_RT_PORT, feature, port1,
++		NULL, 0, 1000);
++}
++
++static int lvs_rh_set_port_feature(struct usb_device *hdev,
++		int port1, int feature)
++{
++	return usb_control_msg(hdev, usb_sndctrlpipe(hdev, 0),
++		USB_REQ_SET_FEATURE, USB_RT_PORT, feature, port1,
++		NULL, 0, 1000);
++}
++
++static ssize_t u3_entry_store(struct device *dev,
++		struct device_attribute *attr, const char *buf, size_t count)
++{
++	struct usb_interface *intf = to_usb_interface(dev);
++	struct usb_device *hdev = interface_to_usbdev(intf);
++	struct lvs_rh *lvs = usb_get_intfdata(intf);
++	struct usb_device *udev;
++	int ret;
++
++	udev = create_lvs_device(intf);
++	if (!udev) {
++		dev_err(dev, "failed to create lvs device\n");
++		return -ENOMEM;
++	}
++
++	ret = lvs_rh_set_port_feature(hdev, lvs->portnum,
++			USB_PORT_FEAT_SUSPEND);
++	if (ret < 0)
++		dev_err(dev, "can't issue U3 entry %d\n", ret);
++
++	destroy_lvs_device(udev);
++
++	if (ret < 0)
++		return ret;
++
++	return count;
++}
++static DEVICE_ATTR_WO(u3_entry);
++
++static ssize_t u3_exit_store(struct device *dev,
++		struct device_attribute *attr, const char *buf, size_t count)
++{
++	struct usb_interface *intf = to_usb_interface(dev);
++	struct usb_device *hdev = interface_to_usbdev(intf);
++	struct lvs_rh *lvs = usb_get_intfdata(intf);
++	struct usb_device *udev;
++	int ret;
++
++	udev = create_lvs_device(intf);
++	if (!udev) {
++		dev_err(dev, "failed to create lvs device\n");
++		return -ENOMEM;
++	}
++
++	ret = lvs_rh_clear_port_feature(hdev, lvs->portnum,
++			USB_PORT_FEAT_SUSPEND);
++	if (ret < 0)
++		dev_err(dev, "can't issue U3 exit %d\n", ret);
++
++	destroy_lvs_device(udev);
++
++	if (ret < 0)
++		return ret;
++
++	return count;
++}
++static DEVICE_ATTR_WO(u3_exit);
++
++static ssize_t hot_reset_store(struct device *dev,
++		struct device_attribute *attr, const char *buf, size_t count)
++{
++	struct usb_interface *intf = to_usb_interface(dev);
++	struct usb_device *hdev = interface_to_usbdev(intf);
++	struct lvs_rh *lvs = usb_get_intfdata(intf);
++	int ret;
++
++	ret = lvs_rh_set_port_feature(hdev, lvs->portnum,
++			USB_PORT_FEAT_RESET);
++	if (ret < 0) {
++		dev_err(dev, "can't issue hot reset %d\n", ret);
++		return ret;
++	}
++
++	return count;
++}
++static DEVICE_ATTR_WO(hot_reset);
++
++static ssize_t u2_timeout_store(struct device *dev,
++		struct device_attribute *attr, const char *buf, size_t count)
++{
++	struct usb_interface *intf = to_usb_interface(dev);
++	struct usb_device *hdev = interface_to_usbdev(intf);
++	struct lvs_rh *lvs = usb_get_intfdata(intf);
++	unsigned long val;
++	int ret;
++
++	ret = kstrtoul(buf, 10, &val);
++	if (ret < 0) {
++		dev_err(dev, "couldn't parse string %d\n", ret);
++		return ret;
++	}
++
++	if (val < 0 || val > 127)
++		return -EINVAL;
++
++	ret = lvs_rh_set_port_feature(hdev, lvs->portnum | (val << 8),
++			USB_PORT_FEAT_U2_TIMEOUT);
++	if (ret < 0) {
++		dev_err(dev, "Error %d while setting U2 timeout %ld\n", ret, val);
++		return ret;
++	}
++
++	return count;
++}
++static DEVICE_ATTR_WO(u2_timeout);
++
++static ssize_t u1_timeout_store(struct device *dev,
++		struct device_attribute *attr, const char *buf, size_t count)
++{
++	struct usb_interface *intf = to_usb_interface(dev);
++	struct usb_device *hdev = interface_to_usbdev(intf);
++	struct lvs_rh *lvs = usb_get_intfdata(intf);
++	unsigned long val;
++	int ret;
++
++	ret = kstrtoul(buf, 10, &val);
++	if (ret < 0) {
++		dev_err(dev, "couldn't parse string %d\n", ret);
++		return ret;
++	}
++
++	if (val < 0 || val > 127)
++		return -EINVAL;
++
++	ret = lvs_rh_set_port_feature(hdev, lvs->portnum | (val << 8),
++			USB_PORT_FEAT_U1_TIMEOUT);
++	if (ret < 0) {
++		dev_err(dev, "Error %d while setting U1 timeout %ld\n", ret, val);
++		return ret;
++	}
++
++	return count;
++}
++static DEVICE_ATTR_WO(u1_timeout);
++
++static ssize_t get_dev_desc_store(struct device *dev,
++		struct device_attribute *attr, const char *buf, size_t count)
++{
++	struct usb_interface *intf = to_usb_interface(dev);
++	struct usb_device *udev;
++	struct usb_device_descriptor *descriptor;
++	int ret;
++
++	descriptor = kmalloc(sizeof(*descriptor), GFP_KERNEL);
++	if (!descriptor) {
++		dev_err(dev, "failed to allocate descriptor memory\n");
++		return -ENOMEM;
++	}
++
++	udev = create_lvs_device(intf);
++	if (!udev) {
++		dev_err(dev, "failed to create lvs device\n");
++		ret = -ENOMEM;
++		goto free_desc;
++	}
++
++	ret = usb_control_msg(udev, (PIPE_CONTROL << 30) | USB_DIR_IN,
++			USB_REQ_GET_DESCRIPTOR, USB_DIR_IN, USB_DT_DEVICE << 8,
++			0, descriptor, sizeof(*descriptor),
++			USB_CTRL_GET_TIMEOUT);
++	if (ret < 0)
++		dev_err(dev, "can't read device descriptor %d\n", ret);
++
++	destroy_lvs_device(udev);
++
++free_desc:
++	kfree(descriptor);
++
++	if (ret < 0)
++		return ret;
++
++	return count;
++}
++static DEVICE_ATTR_WO(get_dev_desc);
++
++static struct attribute *lvs_attributes[] = {
++	&dev_attr_get_dev_desc.attr,
++	&dev_attr_u1_timeout.attr,
++	&dev_attr_u2_timeout.attr,
++	&dev_attr_hot_reset.attr,
++	&dev_attr_u3_entry.attr,
++	&dev_attr_u3_exit.attr,
++	NULL
++};
++
++static const struct attribute_group lvs_attr_group = {
++	.attrs = lvs_attributes,
++};
++
++static void lvs_rh_work(struct work_struct *work)
++{
++	struct lvs_rh *lvs = container_of(work, struct lvs_rh, rh_work);
++	struct usb_interface *intf = lvs->intf;
++	struct usb_device *hdev = interface_to_usbdev(intf);
++	struct usb_hcd *hcd = bus_to_hcd(hdev->bus);
++	struct usb_hub_descriptor *descriptor = &lvs->descriptor;
++	struct usb_port_status *port_status = &lvs->port_status;
++	int i, ret = 0;
++	u16 portchange;
++
++	/* Examine each root port */
++	for (i = 1; i <= descriptor->bNbrPorts; i++) {
++		ret = usb_control_msg(hdev, usb_rcvctrlpipe(hdev, 0),
++			USB_REQ_GET_STATUS, USB_DIR_IN | USB_RT_PORT, 0, i,
++			port_status, sizeof(*port_status), 1000);
++		if (ret < 4)
++			continue;
++
++		portchange = le16_to_cpu(port_status->wPortChange);
++
++		if (portchange & USB_PORT_STAT_C_LINK_STATE)
++			lvs_rh_clear_port_feature(hdev, i,
++					USB_PORT_FEAT_C_PORT_LINK_STATE);
++		if (portchange & USB_PORT_STAT_C_ENABLE)
++			lvs_rh_clear_port_feature(hdev, i,
++					USB_PORT_FEAT_C_ENABLE);
++		if (portchange & USB_PORT_STAT_C_RESET)
++			lvs_rh_clear_port_feature(hdev, i,
++					USB_PORT_FEAT_C_RESET);
++		if (portchange & USB_PORT_STAT_C_BH_RESET)
++			lvs_rh_clear_port_feature(hdev, i,
++					USB_PORT_FEAT_C_BH_PORT_RESET);
++		if (portchange & USB_PORT_STAT_C_CONNECTION) {
++			lvs_rh_clear_port_feature(hdev, i,
++					USB_PORT_FEAT_C_CONNECTION);
++
++			if (le16_to_cpu(port_status->wPortStatus) &
++					USB_PORT_STAT_CONNECTION) {
++				lvs->present = true;
++				lvs->portnum = i;
++				if (hcd->usb_phy)
++					usb_phy_notify_connect(hcd->usb_phy,
++							USB_SPEED_SUPER);
++			} else {
++				lvs->present = false;
++				if (hcd->usb_phy)
++					usb_phy_notify_disconnect(hcd->usb_phy,
++							USB_SPEED_SUPER);
++			}
++			break;
++		}
++	}
++
++	ret = usb_submit_urb(lvs->urb, GFP_KERNEL);
++	if (ret != 0 && ret != -ENODEV && ret != -EPERM)
++		dev_err(&intf->dev, "urb resubmit error %d\n", ret);
++}
++
++static void lvs_rh_irq(struct urb *urb)
++{
++	struct lvs_rh *lvs = urb->context;
++
++	queue_work(lvs->rh_queue, &lvs->rh_work);
++}
++
++static int lvs_rh_probe(struct usb_interface *intf,
++		const struct usb_device_id *id)
++{
++	struct usb_device *hdev;
++	struct usb_host_interface *desc;
++	struct usb_endpoint_descriptor *endpoint;
++	struct lvs_rh *lvs;
++	unsigned int pipe;
++	int ret, maxp;
++
++	hdev = interface_to_usbdev(intf);
++	desc = intf->cur_altsetting;
++	endpoint = &desc->endpoint[0].desc;
++
++	/* valid only for SS root hub */
++	if (hdev->descriptor.bDeviceProtocol != USB_HUB_PR_SS || hdev->parent) {
++		dev_err(&intf->dev, "Bind LVS driver with SS root Hub only\n");
++		return -EINVAL;
++	}
++
++	lvs = devm_kzalloc(&intf->dev, sizeof(*lvs), GFP_KERNEL);
++	if (!lvs)
++		return -ENOMEM;
++
++	lvs->intf = intf;
++	usb_set_intfdata(intf, lvs);
++
++	/* how many number of ports this root hub has */
++	ret = usb_control_msg(hdev, usb_rcvctrlpipe(hdev, 0),
++			USB_REQ_GET_DESCRIPTOR, USB_DIR_IN | USB_RT_HUB,
++			USB_DT_SS_HUB << 8, 0, &lvs->descriptor,
++			USB_DT_SS_HUB_SIZE, USB_CTRL_GET_TIMEOUT);
++	if (ret < (USB_DT_HUB_NONVAR_SIZE + 2)) {
++		dev_err(&hdev->dev, "wrong root hub descriptor read %d\n", ret);
++		return ret;
++	}
++
++	/* submit urb to poll interrupt endpoint */
++	lvs->urb = usb_alloc_urb(0, GFP_KERNEL);
++	if (!lvs->urb) {
++		dev_err(&intf->dev, "couldn't allocate lvs urb\n");
++		return -ENOMEM;
++	}
++
++	lvs->rh_queue = create_singlethread_workqueue("lvs_rh_queue");
++	if (!lvs->rh_queue) {
++		dev_err(&intf->dev, "couldn't create workqueue\n");
++		ret = -ENOMEM;
++		goto free_urb;
++	}
++
++	INIT_WORK(&lvs->rh_work, lvs_rh_work);
++
++	ret = sysfs_create_group(&intf->dev.kobj, &lvs_attr_group);
++	if (ret < 0) {
++		dev_err(&intf->dev, "Failed to create sysfs node %d\n", ret);
++		goto destroy_queue;
++	}
++
++	pipe = usb_rcvintpipe(hdev, endpoint->bEndpointAddress);
++	maxp = usb_maxpacket(hdev, pipe, usb_pipeout(pipe));
++	usb_fill_int_urb(lvs->urb, hdev, pipe, &lvs->buffer[0], maxp,
++			lvs_rh_irq, lvs, endpoint->bInterval);
++
++	ret = usb_submit_urb(lvs->urb, GFP_KERNEL);
++	if (ret < 0) {
++		dev_err(&intf->dev, "couldn't submit lvs urb %d\n", ret);
++		goto sysfs_remove;
++	}
++
++	return ret;
++
++sysfs_remove:
++	sysfs_remove_group(&intf->dev.kobj, &lvs_attr_group);
++destroy_queue:
++	destroy_workqueue(lvs->rh_queue);
++free_urb:
++	usb_free_urb(lvs->urb);
++	return ret;
++}
++
++static void lvs_rh_disconnect(struct usb_interface *intf)
++{
++	struct lvs_rh *lvs = usb_get_intfdata(intf);
++
++	sysfs_remove_group(&intf->dev.kobj, &lvs_attr_group);
++	destroy_workqueue(lvs->rh_queue);
++	usb_free_urb(lvs->urb);
++}
++
++static struct usb_driver lvs_driver = {
++	.name =		"lvs",
++	.probe =	lvs_rh_probe,
++	.disconnect =	lvs_rh_disconnect,
++};
++
++module_usb_driver(lvs_driver);
++
++MODULE_DESCRIPTION("Link Layer Validation System Driver");
++MODULE_LICENSE("GPL");
+diff --git a/include/linux/usb/hcd.h b/include/linux/usb/hcd.h
+index 4bf23a2..fd9e204 100644
+--- a/include/linux/usb/hcd.h
++++ b/include/linux/usb/hcd.h
+@@ -106,7 +106,7 @@ struct usb_hcd {
+ 	 * OTG and some Host controllers need software interaction with phys;
+ 	 * other external phys should be software-transparent
+ 	 */
+-	struct usb_phy	*phy;
++	struct usb_phy		*usb_phy;
+ 
+ 	/* Flags that need to be manipulated atomically because they can
+ 	 * change while the host controller is running.  Always use
+-- 
+1.8.0
+

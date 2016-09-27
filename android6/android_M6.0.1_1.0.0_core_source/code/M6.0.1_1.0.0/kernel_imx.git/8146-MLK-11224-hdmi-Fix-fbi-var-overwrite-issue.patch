@@ -1,0 +1,30 @@
+From 9abcf322e5cd168cd9569d443a1c51d6cf3740f0 Mon Sep 17 00:00:00 2001
+From: Sandor Yu <R01008@freescale.com>
+Date: Tue, 7 Jul 2015 18:41:17 +0800
+Subject: [PATCH] MLK-11224 hdmi: Fix fbi var overwrite issue
+
+When hdmi driver rebuild a new modelist, the fbi var may
+overwrited by fbcon.
+Reinitialize fbi var when video mode same as previous to
+fix this issue.
+
+Signed-off-by: Sandor Yu <R01008@freescale.com>
+---
+ drivers/video/mxc/mxc_hdmi.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/drivers/video/mxc/mxc_hdmi.c b/drivers/video/mxc/mxc_hdmi.c
+index 2706df1..7c636b7 100644
+--- a/drivers/video/mxc/mxc_hdmi.c
++++ b/drivers/video/mxc/mxc_hdmi.c
+@@ -1902,6 +1902,7 @@ static void mxc_hdmi_set_mode(struct mxc_hdmi *hdmi)
+ 				"%s: Video mode same as previous\n", __func__);
+ 		/* update fbi mode in case modelist is updated */
+ 		hdmi->fbi->mode = (struct fb_videomode *)mode;
++		fb_videomode_to_var(&hdmi->fbi->var, mode);
+ 		/* update hdmi setting in case EDID data updated  */
+ 		mxc_hdmi_setup(hdmi, 0);
+ 	} else {
+-- 
+1.8.0
+

@@ -1,0 +1,32 @@
+From acbc0ca04f77945330183c12bcd2e8cc1476df4c Mon Sep 17 00:00:00 2001
+From: Zhang Sanshan <b51434@freescale.com>
+Date: Fri, 16 Oct 2015 15:08:27 +0800
+Subject: [PATCH 17/22] MA-7098 Upgrade android to Mashmallow
+
+There are two ways to lable android server in init.rc.
+1 define the policy when in process of automatic
+2 use seclabel to lable directly.
+
+Android-M define policy, so Item 1 is not accepted.
+neverallow init { file_type fs_type }:file execute_no_trans;
+
+Signed-off-by: Zhang Sanshan <b51434@freescale.com>
+---
+ rootdir/init.rc | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/rootdir/init.rc b/rootdir/init.rc
+index a4bdf7c..eb903fd 100644
+--- a/rootdir/init.rc
++++ b/rootdir/init.rc
+@@ -591,6 +591,7 @@ service console /system/bin/sh
+     console
+     user root
+     group root
++    seclabel u:r:shell:s0
+ 
+ #on property:ro.debuggable=1
+ #    start console
+-- 
+1.8.0
+

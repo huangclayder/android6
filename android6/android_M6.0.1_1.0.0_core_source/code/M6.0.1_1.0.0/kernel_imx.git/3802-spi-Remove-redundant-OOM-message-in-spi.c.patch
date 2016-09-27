@@ -1,0 +1,31 @@
+From 58daee1ddf0a4531f5e63417e4cec6d8eb10d62b Mon Sep 17 00:00:00 2001
+From: Sachin Kamat <sachin.kamat@samsung.com>
+Date: Fri, 13 Jun 2014 10:17:42 +0530
+Subject: [PATCH] spi: Remove redundant OOM message in spi.c
+
+Let memory subsystem handle the error logging.
+
+Signed-off-by: Sachin Kamat <sachin.kamat@samsung.com>
+Reviewed-by: Naveen Krishna Chatradhi <ch.naveen@samsung.com>
+Signed-off-by: Mark Brown <broonie@linaro.org>
+(cherry picked from commit 8331acb3a5515c01a1b73424a56f44c50ad7f1b4)
+(cherry picked from commit 6cd6a0353c0f8e294f1372d436faba5d229a3aa0)
+---
+ drivers/spi/spi.c | 1 -
+ 1 file changed, 1 deletion(-)
+
+diff --git a/drivers/spi/spi.c b/drivers/spi/spi.c
+index c7ff616..66b61a4 100644
+--- a/drivers/spi/spi.c
++++ b/drivers/spi/spi.c
+@@ -357,7 +357,6 @@ struct spi_device *spi_alloc_device(struct spi_master *master)
+ 
+ 	spi = kzalloc(sizeof(*spi), GFP_KERNEL);
+ 	if (!spi) {
+-		dev_err(dev, "cannot alloc spi_device\n");
+ 		spi_master_put(master);
+ 		return NULL;
+ 	}
+-- 
+1.8.0
+

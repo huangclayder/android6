@@ -1,0 +1,152 @@
+From c938ea46c432e632b0c5c040ed25b78a5ad6c836 Mon Sep 17 00:00:00 2001
+From: Fang Hui <b31070@freescale.com>
+Date: Thu, 25 Dec 2014 17:15:32 +0800
+Subject: [PATCH 557/635] MA-6061 - [Android_MX6SoloX-SabreSD]Recording
+ videos:press the confirm keys
+
+frequently,the camera will stop working
+
+It's caused by still release record frame after stop recorder.
+Since the mMetaDataBufsMap is cleared when stop recorder.
+
+Tag the buf status, when stop recorder, release those buf hold in recorder.
+In releaseRecordingFrame, if record stopped, just return.
+
+Signed-off-by: Fang Hui <b31070@freescale.com>
+---
+ mx6/libcamera/CameraBridge.cpp | 29 ++++++++++++++++++++++++-----
+ mx6/libcamera/CameraUtil.cpp   | 10 +++++++++-
+ mx6/libcamera/CameraUtil.h     |  2 ++
+ 3 files changed, 35 insertions(+), 6 deletions(-)
+
+diff --git a/mx6/libcamera/CameraBridge.cpp b/mx6/libcamera/CameraBridge.cpp
+index 42c5e92..dc52c5f 100644
+--- a/mx6/libcamera/CameraBridge.cpp
++++ b/mx6/libcamera/CameraBridge.cpp
+@@ -824,13 +824,14 @@ void CameraBridge::sendPreviewFrame(CameraFrame *frame)
+ 
+ void CameraBridge::sendVideoFrame(CameraFrame *frame)
+ {
+-    FSL_ASSERT(frame);
++    Mutex::Autolock lock(mRecordingLock);
++
+     if (!mRecording) {
+-        FLOGE("CameraBridge: sendVideoFrame but mRecording not enable");
++        FLOGW("CameraBridge: sendVideoFrame but mRecording not enable");
+         return;
+     }
+ 
+-    mRecordingLock.lock();
++    FSL_ASSERT(frame);
+     nsecs_t timeStamp = systemTime(SYSTEM_TIME_MONOTONIC);
+     int     bufIdx    = frame->mIndex;
+     FSL_ASSERT(bufIdx >= 0);
+@@ -861,20 +862,28 @@ void CameraBridge::sendVideoFrame(CameraFrame *frame)
+ 
+     // the frame held in mediaRecorder.
+     frame->addReference();
++    frame->addState(CameraFrame::BUFS_IN_RECORDER);
++
+     mDataCbTimestamp(timeStamp,
+                      CAMERA_MSG_VIDEO_FRAME,
+                      mVideoMemory,
+                      bufIdx,
+                      mCallbackCookie);
+-    mRecordingLock.unlock();
+ }
+ 
+ void CameraBridge::releaseRecordingFrame(const void *mem)
+ {
++    if (!mRecording) {
++        FLOGE("CameraBridge: releaseRecordingFrame but mRecording not enable");
++        return;
++    }
+     CameraFrame *pFrame = (CameraFrame *)mMetaDataBufsMap.valueFor((int)mem);
+ 
+     // the frame release from mediaRecorder.
+-    pFrame->release();
++    if(pFrame) {
++        pFrame->removeState(CameraFrame::BUFS_IN_RECORDER);
++        pFrame->release();
++    }
+ }
+ 
+ void CameraBridge::handleCameraFrame(CameraFrame *frame)
+@@ -927,6 +936,16 @@ void CameraBridge::releaseVideoBufs()
+         mVideoMemory = NULL;
+     }
+ 
++    int size = mMetaDataBufsMap.size();
++    for(int i = 0; i < size; i++) {
++        CameraFrame *pFrame = (CameraFrame *)mMetaDataBufsMap.valueAt(i);
++        if(pFrame) {
++            if(pFrame->getState() & CameraFrame::BUFS_IN_RECORDER) {
++                pFrame->removeState(CameraFrame::BUFS_IN_RECORDER);
++                pFrame->release();
++            }
++        }
++    }
+     mMetaDataBufsMap.clear();
+ }
+ 
+diff --git a/mx6/libcamera/CameraUtil.cpp b/mx6/libcamera/CameraUtil.cpp
+index 3df5af5..e8afbb3 100644
+--- a/mx6/libcamera/CameraUtil.cpp
++++ b/mx6/libcamera/CameraUtil.cpp
+@@ -136,14 +136,21 @@ void CameraFrame::initialize(buffer_handle_t *buf_h,
+ 
+ void CameraFrame::addState(CAMERA_BUFS_STATE state)
+ {
++    Mutex::Autolock lock(mCFLock);
+     mBufState |= state;
+ }
+ 
+ void CameraFrame::removeState(CAMERA_BUFS_STATE state)
+ {
++    Mutex::Autolock lock(mCFLock);
+     mBufState &= ~state;
+ }
+ 
++CameraFrame::CAMERA_BUFS_STATE CameraFrame::getState()
++{
++    Mutex::Autolock lock(mCFLock);
++    return (CameraFrame::CAMERA_BUFS_STATE)mBufState;
++}
+ void CameraFrame::addReference()
+ {
+     atomic_fetch_add(&mRefCount, 1);
+@@ -151,9 +158,10 @@ void CameraFrame::addReference()
+ 
+ void CameraFrame::release()
+ {
+-    FSL_ASSERT(mRefCount > 0, "mRefCount=%d invalid value", mRefCount);
++
+ 
+     int prevCount = atomic_fetch_sub(&mRefCount, 1);
++    FSL_ASSERT(prevCount > 0, "mRefCount=%d invalid value", prevCount);
+     if ((prevCount == 1) && (mObserver != NULL)) {
+         mObserver->handleFrameRelease(this);
+     }
+diff --git a/mx6/libcamera/CameraUtil.h b/mx6/libcamera/CameraUtil.h
+index 2daaac4..6f28556 100644
+--- a/mx6/libcamera/CameraUtil.h
++++ b/mx6/libcamera/CameraUtil.h
+@@ -178,6 +178,7 @@ public:
+                     int              index);
+     void addState(CAMERA_BUFS_STATE state);
+     void removeState(CAMERA_BUFS_STATE state);
++    CAMERA_BUFS_STATE getState();
+     void release();
+     void addReference();
+     void setObserver(CameraFrameObserver *observer);
+@@ -202,6 +203,7 @@ private:
+     CameraFrameObserver *mObserver;
+     atomic_int mRefCount;
+     int                  mBufState;
++    mutable Mutex mCFLock;
+ };
+ 
+ enum CAMERA_ERROR {
+-- 
+1.8.0
+

@@ -1,0 +1,30 @@
+From 1ba460093a7e43e87c37f09d5ea68796892f66a6 Mon Sep 17 00:00:00 2001
+From: Haoran Wang <Haoran.Wang@freescale.com>
+Date: Mon, 4 Jan 2016 23:16:14 +0800
+Subject: [PATCH] MA-7455-2 Workaround to pass compile for pico
+
+We have some vendor specific codes in board/freescale/common
+which the picoimx configs also need them when Android or
+Brillo configs is enabled.
+So added the folder in Makefile to pass the compile.
+
+Signed-off-by: Haoran Wang <Haoran.Wang@freescale.com>
+---
+ Makefile | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/Makefile b/Makefile
+index 950c960..5b8c01d 100644
+--- a/Makefile
++++ b/Makefile
+@@ -624,6 +624,7 @@ HAVE_VENDOR_COMMON_LIB = $(if $(wildcard $(srctree)/board/$(VENDOR)/common/Makef
+ 
+ libs-y += lib/
+ libs-$(HAVE_VENDOR_COMMON_LIB) += board/$(VENDOR)/common/
++libs-$(CONFIG_FSL_FASTBOOT) += board/freescale/common/
+ libs-$(CONFIG_OF_EMBED) += dts/
+ libs-y += fs/
+ libs-y += net/
+-- 
+1.8.0
+

@@ -1,0 +1,31 @@
+From ebf7a89d7e0867ddce9b21d80fcf73f452d5b12b Mon Sep 17 00:00:00 2001
+From: Fancy Fang <chen.fang@freescale.com>
+Date: Tue, 3 Mar 2015 13:05:18 +0800
+Subject: [PATCH] MLK-10357 IMX7D: EPXP: add pxp support on 19x19 arm2 board
+
+Enable epxp module on 19x19 arm2 board by default
+in the dts file.
+
+Signed-off-by: Fancy Fang <chen.fang@freescale.com>
+---
+ arch/arm/boot/dts/imx7d-19x19-arm2.dts | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/arch/arm/boot/dts/imx7d-19x19-arm2.dts b/arch/arm/boot/dts/imx7d-19x19-arm2.dts
+index 5b90528..4d3fb1d 100644
+--- a/arch/arm/boot/dts/imx7d-19x19-arm2.dts
++++ b/arch/arm/boot/dts/imx7d-19x19-arm2.dts
+@@ -477,6 +477,10 @@
+ 	status = "okay";
+ };
+ 
++&epxp {
++        status = "okay";
++};
++
+ &i2c1 {
+ 	clock-frequency = <100000>;
+ 	pinctrl-names = "default";
+-- 
+1.8.0
+

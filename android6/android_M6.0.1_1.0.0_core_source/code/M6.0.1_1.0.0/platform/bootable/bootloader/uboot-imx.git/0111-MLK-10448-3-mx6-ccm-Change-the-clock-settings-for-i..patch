@@ -1,0 +1,238 @@
+From 103094fd6547ec8de13e286327642f2a3285799e Mon Sep 17 00:00:00 2001
+From: "Ye.Li" <B37916@freescale.com>
+Date: Mon, 23 Mar 2015 15:52:14 +0800
+Subject: [PATCH] MLK-10448-3 mx6: ccm: Change the clock settings for i.MX6QP
+
+Since i.MX6QP changes some CCM registers, so modify the clocks settings to
+follow the hardware changes.
+
+A new CONFIG_MX6QP is introduced here and is used for the CCM difference.
+At default CONFIG_MX6Q is enabled along with the CONFIG_MX6QP.
+
+Signed-off-by: Ye.Li <B37916@freescale.com>
+(cherry picked from commit 5e4d1537ce9a476c8404126350f05d8976c5aa35)
+
+Conflicts:
+	arch/arm/cpu/armv7/mx6/clock.c
+	arch/arm/include/asm/arch-mx6/crm_regs.h
+	include/configs/mx6_common.h
+---
+ arch/arm/cpu/armv7/mx6/clock.c           | 13 +++++---
+ arch/arm/cpu/armv7/mx6/soc.c             |  7 +++--
+ arch/arm/include/asm/arch-mx6/crm_regs.h | 54 +++++++++++++++++++++++---------
+ include/configs/mx6_common.h             |  3 ++
+ 4 files changed, 57 insertions(+), 20 deletions(-)
+
+diff --git a/arch/arm/cpu/armv7/mx6/clock.c b/arch/arm/cpu/armv7/mx6/clock.c
+index 8cd4f14..fadb73b 100644
+--- a/arch/arm/cpu/armv7/mx6/clock.c
++++ b/arch/arm/cpu/armv7/mx6/clock.c
+@@ -325,7 +325,7 @@ static u32 get_ipg_per_clk(void)
+ 	u32 reg, perclk_podf;
+ 
+ 	reg = __raw_readl(&imx_ccm->cscmr1);
+-#if (defined(CONFIG_MX6SL) || defined(CONFIG_MX6SX))
++#if (defined(CONFIG_MX6SL) || defined(CONFIG_MX6SX) || defined(CONFIG_MX6QP))
+ 	if (reg & MXC_CCM_CSCMR1_PER_CLK_SEL_MASK)
+ 		return MXC_HCLK; /* OSC 24Mhz */
+ #endif
+@@ -339,7 +339,7 @@ static u32 get_uart_clk(void)
+ 	u32 reg, uart_podf;
+ 	u32 freq = decode_pll(PLL_USBOTG, MXC_HCLK) / 6; /* static divider */
+ 	reg = __raw_readl(&imx_ccm->cscdr1);
+-#if (defined(CONFIG_MX6SL) || defined(CONFIG_MX6SX))
++#if (defined(CONFIG_MX6SL) || defined(CONFIG_MX6SX) || defined(CONFIG_MX6QP))
+ 	if (reg & MXC_CCM_CSCDR1_UART_CLK_SEL)
+ 		freq = MXC_HCLK;
+ #endif
+@@ -354,8 +354,13 @@ static u32 get_cspi_clk(void)
+ 	u32 reg, cspi_podf;
+ 
+ 	reg = __raw_readl(&imx_ccm->cscdr2);
+-	reg &= MXC_CCM_CSCDR2_ECSPI_CLK_PODF_MASK;
+-	cspi_podf = reg >> MXC_CCM_CSCDR2_ECSPI_CLK_PODF_OFFSET;
++	cspi_podf = (reg & MXC_CCM_CSCDR2_ECSPI_CLK_PODF_MASK)
++		>> MXC_CCM_CSCDR2_ECSPI_CLK_PODF_OFFSET;
++
++#if defined(CONFIG_MX6QP)
++	if (reg & MXC_CCM_CSCDR2_ECSPI_CLK_SEL_MASK)
++		return MXC_HCLK / (cspi_podf + 1);
++#endif
+ 
+ 	return	decode_pll(PLL_USBOTG, MXC_HCLK) / (8 * (cspi_podf + 1));
+ }
+diff --git a/arch/arm/cpu/armv7/mx6/soc.c b/arch/arm/cpu/armv7/mx6/soc.c
+index 507f152..5773caa 100644
+--- a/arch/arm/cpu/armv7/mx6/soc.c
++++ b/arch/arm/cpu/armv7/mx6/soc.c
+@@ -266,9 +266,12 @@ static void set_ahb_rate(u32 val)
+ static void clear_mmdc_ch_mask(void)
+ {
+ 	struct mxc_ccm_reg *mxc_ccm = (struct mxc_ccm_reg *)CCM_BASE_ADDR;
++	u32 reg;
++	reg = readl(&mxc_ccm->ccdr);
+ 
+ 	/* Clear MMDC channel mask */
+-	writel(0, &mxc_ccm->ccdr);
++	reg &= ~(MXC_CCM_CCDR_MMDC_CH1_HS_MASK | MXC_CCM_CCDR_MMDC_CH0_HS_MASK);
++	writel(reg, &mxc_ccm->ccdr);
+ }
+ 
+ static void init_bandgap(void)
+@@ -467,7 +470,7 @@ int arch_cpu_init(void)
+ 
+ 	/* set uart clk to OSC */
+ 	reg = readl(CCM_BASE_ADDR + 0x24);
+-	reg |= 0x40;
++	reg |= MXC_CCM_CSCDR1_UART_CLK_SEL;
+ 	writel(reg, CCM_BASE_ADDR + 0x24);
+ #endif
+ 
+diff --git a/arch/arm/include/asm/arch-mx6/crm_regs.h b/arch/arm/include/asm/arch-mx6/crm_regs.h
+index 6219208..d84f038 100644
+--- a/arch/arm/include/asm/arch-mx6/crm_regs.h
++++ b/arch/arm/include/asm/arch-mx6/crm_regs.h
+@@ -207,7 +207,7 @@ struct mxc_ccm_reg {
+ #define MXC_CCM_CCR_WB_COUNT_MASK			0x7
+ #define MXC_CCM_CCR_WB_COUNT_OFFSET			(1 << 16)
+ #define MXC_CCM_CCR_COSC_EN				(1 << 12)
+-#ifdef CONFIG_MX6SX
++#if (defined(CONFIG_MX6SL) || defined(CONFIG_MX6QP))
+ #define MXC_CCM_CCR_OSCNT_MASK				0x7F
+ #else
+ #define MXC_CCM_CCR_OSCNT_MASK				0xFF
+@@ -217,6 +217,9 @@ struct mxc_ccm_reg {
+ /* Define the bits in register CCDR */
+ #define MXC_CCM_CCDR_MMDC_CH1_HS_MASK			(1 << 16)
+ #define MXC_CCM_CCDR_MMDC_CH0_HS_MASK			(1 << 17)
++#ifdef CONFIG_MX6QP
++#define MXC_CCM_CCDR_MMDC_CH1_AXI_ROOT_CG	(1 << 18)
++#endif
+ 
+ /* Define the bits in register CSR */
+ #define MXC_CCM_CSR_COSC_READY				(1 << 5)
+@@ -305,7 +308,11 @@ struct mxc_ccm_reg {
+ #define MXC_CCM_CBCMR_GPU3D_SHADER_CLK_SEL_OFFSET	8
+ #define MXC_CCM_CBCMR_GPU3D_CORE_CLK_SEL_MASK		(0x3 << 4)
+ #define MXC_CCM_CBCMR_GPU3D_CORE_CLK_SEL_OFFSET		4
++#ifdef CONFIG_MX6QP
++#define MXC_CCM_CBCMR_PRE_CLK_SEL			(1 << 1)
++#else
+ #define MXC_CCM_CBCMR_GPU3D_AXI_CLK_SEL			(1 << 1)
++#endif
+ #define MXC_CCM_CBCMR_GPU2D_AXI_CLK_SEL			(1 << 0)
+ #endif
+ 
+@@ -343,7 +350,7 @@ struct mxc_ccm_reg {
+ #define MXC_CCM_CSCMR1_QSPI1_CLK_SEL_MASK		(0x7 << 7)
+ #define MXC_CCM_CSCMR1_QSPI1_CLK_SEL_OFFSET		7
+ #endif
+-#if (defined(CONFIG_MX6SL) || defined(CONFIG_MX6SX))
++#if (defined(CONFIG_MX6SL) || defined(CONFIG_MX6SX) || defined(CONFIG_MX6QP))
+ #define MXC_CCM_CSCMR1_PER_CLK_SEL_MASK			(1 << 6)
+ #define MXC_CCM_CSCMR1_PER_CLK_SEL_OFFSET		6
+ #endif
+@@ -358,15 +365,12 @@ struct mxc_ccm_reg {
+ #define MXC_CCM_CSCMR2_ESAI_PRE_SEL_OFFSET		19
+ #define MXC_CCM_CSCMR2_LDB_DI1_IPU_DIV			(1 << 11)
+ #define MXC_CCM_CSCMR2_LDB_DI0_IPU_DIV			(1 << 10)
+-#ifdef CONFIG_MX6SX
++#if (defined(CONFIG_MX6SX) || defined(CONFIG_MX6QP))
+ #define MXC_CCM_CSCMR2_CAN_CLK_SEL_MASK			(0x3 << 8)
+ #define MXC_CCM_CSCMR2_CAN_CLK_SEL_OFFSET		8
++#endif
+ #define MXC_CCM_CSCMR2_CAN_CLK_PODF_MASK		(0x3F << 2)
+ #define MXC_CCM_CSCMR2_CAN_CLK_PODF_OFFSET		2
+-#else
+-#define MXC_CCM_CSCMR2_CAN_CLK_SEL_MASK			(0x3F << 2)
+-#define MXC_CCM_CSCMR2_CAN_CLK_SEL_OFFSET		2
+-#endif
+ 
+ /* Define the bits in register CSCDR1 */
+ #ifndef CONFIG_MX6SX
+@@ -387,15 +391,10 @@ struct mxc_ccm_reg {
+ #define MXC_CCM_CSCDR1_USBOH3_CLK_PODF_OFFSET		6
+ #define MXC_CCM_CSCDR1_USBOH3_CLK_PODF_MASK		(0x3 << 6)
+ #endif
+-#ifdef CONFIG_MX6SL
+-#define MXC_CCM_CSCDR1_UART_CLK_PODF_MASK		0x1F
++#if (defined(CONFIG_MX6SL) || defined(CONFIG_MX6SX) || defined(CONFIG_MX6QP))
+ #define MXC_CCM_CSCDR1_UART_CLK_SEL			(1 << 6)
+-#else
+-#define MXC_CCM_CSCDR1_UART_CLK_PODF_MASK		0x3F
+-#ifdef CONFIG_MX6SX
+-#define MXC_CCM_CSCDR1_UART_CLK_SEL			(1 << 6)
+-#endif
+ #endif
++#define MXC_CCM_CSCDR1_UART_CLK_PODF_MASK		0x3F
+ #define MXC_CCM_CSCDR1_UART_CLK_PODF_OFFSET		0
+ 
+ /* Define the bits in register CS1CDR */
+@@ -430,10 +429,17 @@ struct mxc_ccm_reg {
+ #define MXC_CCM_CS2CDR_ENFC_CLK_PRED_MASK		(0x7 << 18)
+ #define MXC_CCM_CS2CDR_ENFC_CLK_PRED_OFFSET		18
+ #define MXC_CCM_CS2CDR_ENFC_CLK_PRED(v)			(((v) & 0x7) << 18)
++
++#ifdef CONFIG_MX6QP
++#define MXC_CCM_CS2CDR_ENFC_CLK_SEL_MASK		(0x7 << 15)
++#define MXC_CCM_CS2CDR_ENFC_CLK_SEL_OFFSET		15
++#define MXC_CCM_CS2CDR_ENFC_CLK_SEL(v)			(((v) & 0x7) << 15)
++#else
+ #define MXC_CCM_CS2CDR_ENFC_CLK_SEL_MASK		(0x3 << 16)
+ #define MXC_CCM_CS2CDR_ENFC_CLK_SEL_OFFSET		16
+ #define MXC_CCM_CS2CDR_ENFC_CLK_SEL(v)			(((v) & 0x3) << 16)
+ #endif
++#endif
+ #define MXC_CCM_CS2CDR_LDB_DI1_CLK_SEL_MASK		(0x7 << 12)
+ #define MXC_CCM_CS2CDR_LDB_DI1_CLK_SEL_OFFSET		12
+ #define MXC_CCM_CS2CDR_LDB_DI0_CLK_SEL_MASK		(0x7 << 9)
+@@ -498,6 +504,10 @@ struct mxc_ccm_reg {
+ /* Define the bits in register CSCDR2 */
+ #define MXC_CCM_CSCDR2_ECSPI_CLK_PODF_MASK		(0x3F << 19)
+ #define MXC_CCM_CSCDR2_ECSPI_CLK_PODF_OFFSET		19
++#ifdef CONFIG_MX6QP
++#define MXC_CCM_CSCDR2_ECSPI_CLK_SEL_MASK		(0x1 << 18)
++#define MXC_CCM_CSCDR2_ECSPI_CLK_SEL_OFFSET		18
++#endif
+ 
+ #ifdef CONFIG_MX6SX
+ #define MXC_CCM_CSCDR2_LCDIF1_PRED_SEL_MASK		(0x7 << 15)
+@@ -892,6 +902,22 @@ struct mxc_ccm_reg {
+ #else
+ #define MXC_CCM_CCGR6_VDOAXICLK_OFFSET		12
+ #define MXC_CCM_CCGR6_VDOAXICLK_MASK		(3 << MXC_CCM_CCGR6_VDOAXICLK_OFFSET)
++#ifdef CONFIG_MX6QP
++#define MXC_CCM_CCGR6_VPUCLK_OFFSET		14
++#define MXC_CCM_CCGR6_VPUCLK_MASK		(3 << MXC_CCM_CCGR6_VPUCLK_OFFSET)
++#define MXC_CCM_CCGR6_PRE_CLK0_OFFSET		16
++#define MXC_CCM_CCGR6_PRE_CLK0_MASK		(3 << MXC_CCM_CCGR6_PRE_CLK0_OFFSET)
++#define MXC_CCM_CCGR6_PRE_CLK1_OFFSET		18
++#define MXC_CCM_CCGR6_PRE_CLK1_MASK		(3 << MXC_CCM_CCGR6_PRE_CLK1_OFFSET)
++#define MXC_CCM_CCGR6_PRE_CLK2_OFFSET		20
++#define MXC_CCM_CCGR6_PRE_CLK2_MASK		(3 << MXC_CCM_CCGR6_PRE_CLK2_OFFSET)
++#define MXC_CCM_CCGR6_PRE_CLK3_OFFSET		22
++#define MXC_CCM_CCGR6_PRE_CLK3_MASK		(3 << MXC_CCM_CCGR6_PRE_CLK3_OFFSET)
++#define MXC_CCM_CCGR6_PRG_CLK0_OFFSET		24
++#define MXC_CCM_CCGR6_PRG_CLK0_MASK		(3 << MXC_CCM_CCGR6_PRG_CLK0_OFFSET)
++#define MXC_CCM_CCGR6_PRG_CLK1_OFFSET		26
++#define MXC_CCM_CCGR6_PRG_CLK1_MASK		(3 << MXC_CCM_CCGR6_PRG_CLK1_OFFSET)
++#endif
+ #endif
+ 
+ #define BM_ANADIG_PLL_SYS_LOCK 0x80000000
+diff --git a/include/configs/mx6_common.h b/include/configs/mx6_common.h
+index b80a93d..607fe25 100644
+--- a/include/configs/mx6_common.h
++++ b/include/configs/mx6_common.h
+@@ -31,5 +31,8 @@
+ 
+ #define CONFIG_MP
+ #define CONFIG_MXC_GPT_HCLK
++#ifdef CONFIG_MX6QP
++#define CONFIG_MX6Q
++#endif
+ 
+ #endif
+-- 
+1.8.0
+

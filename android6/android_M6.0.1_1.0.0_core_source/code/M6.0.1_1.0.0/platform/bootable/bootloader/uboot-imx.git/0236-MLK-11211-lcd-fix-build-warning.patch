@@ -1,0 +1,57 @@
+From a6fe3f84dbc5fa2ced362bbaa32bae1ac9934207 Mon Sep 17 00:00:00 2001
+From: Peng Fan <Peng.Fan@freescale.com>
+Date: Wed, 1 Jul 2015 12:51:41 +0800
+Subject: [PATCH] MLK-11211 lcd: fix build warning
+
+Fix build warning:
+common/lcd.c: In function 'lcd_clear':
+common/lcd.c:166:6: warning: variable 'bg_color' set but not used [-Wunused-but-set-variable]
+int bg_color;
+      ^
+common/lcd.c: In function 'lcd_setmem':
+common/lcd.c:296:2: warning: format '%d' expects argument of type 'int', but argument 2 has type 'u_long' [-Wformat=]
+debug("LCD panel info: %d x %d, %d bit/pix\n", panel_info.vl_col,
+  ^
+common/lcd.c:296:2: warning: format '%d' expects argument of type 'int', but argument 3 has type 'u_long' [-Wformat=]
+
+Signed-off-by: Peng Fan <Peng.Fan@freescale.com>
+---
+ common/lcd.c | 5 +----
+ 1 file changed, 1 insertion(+), 4 deletions(-)
+
+diff --git a/common/lcd.c b/common/lcd.c
+index 408937d..4950a4e 100644
+--- a/common/lcd.c
++++ b/common/lcd.c
+@@ -163,7 +163,6 @@ int drv_lcd_init(void)
+ void lcd_clear(void)
+ {
+ 	short console_rows, console_cols;
+-	int bg_color;
+ 	char *s;
+ 	ulong addr;
+ 	static int do_splash = 1;
+@@ -187,11 +186,9 @@ void lcd_clear(void)
+ #ifndef CONFIG_SYS_WHITE_ON_BLACK
+ 	lcd_setfgcolor(CONSOLE_COLOR_BLACK);
+ 	lcd_setbgcolor(CONSOLE_COLOR_WHITE);
+-	bg_color = CONSOLE_COLOR_WHITE;
+ #else
+ 	lcd_setfgcolor(CONSOLE_COLOR_WHITE);
+ 	lcd_setbgcolor(CONSOLE_COLOR_BLACK);
+-	bg_color = CONSOLE_COLOR_BLACK;
+ #endif	/* CONFIG_SYS_WHITE_ON_BLACK */
+ 
+ #ifdef	LCD_TEST_PATTERN
+@@ -293,7 +290,7 @@ ulong lcd_setmem(ulong addr)
+ 	ulong size;
+ 	int line_length;
+ 
+-	debug("LCD panel info: %d x %d, %d bit/pix\n", panel_info.vl_col,
++	debug("LCD panel info: %lu x %lu, %d bit/pix\n", panel_info.vl_col,
+ 		panel_info.vl_row, NBITS(panel_info.vl_bpix));
+ 
+ 	size = lcd_get_size(&line_length);
+-- 
+1.8.0
+

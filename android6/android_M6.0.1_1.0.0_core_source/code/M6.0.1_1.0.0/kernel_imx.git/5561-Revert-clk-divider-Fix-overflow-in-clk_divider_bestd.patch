@@ -1,0 +1,26 @@
+From 428d3e9dd8f6034f419829aca1ae770a629ccd8c Mon Sep 17 00:00:00 2001
+From: Liu Xiaowen <xiaowen.liu@freescale.com>
+Date: Tue, 21 Jul 2015 17:26:37 +0800
+Subject: [PATCH] Revert "clk: divider: Fix overflow in clk_divider_bestdiv"
+
+This reverts commit d9a7c7c743772b1205de554aa92fe5e5afe49d58.
+---
+ drivers/clk/clk-divider.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/clk/clk-divider.c b/drivers/clk/clk-divider.c
+index d95f120..6226e5c 100644
+--- a/drivers/clk/clk-divider.c
++++ b/drivers/clk/clk-divider.c
+@@ -232,7 +232,7 @@ static int _div_round(struct clk_divider *divider, unsigned long parent_rate,
+ }
+ 
+ static bool _is_best_div(struct clk_divider *divider,
+-		unsigned long rate, unsigned long now, unsigned long best)
++		int rate, int now, int best)
+ {
+ 	if (divider->flags & CLK_DIVIDER_ROUND_CLOSEST)
+ 		return abs(rate - now) < abs(rate - best);
+-- 
+1.8.0
+

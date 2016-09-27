@@ -1,0 +1,48 @@
+From f7b549832a857a03d672de323e4c3538127bc6a5 Mon Sep 17 00:00:00 2001
+From: Anson Huang <b20788@freescale.com>
+Date: Wed, 9 Sep 2015 21:44:04 +0800
+Subject: [PATCH] MLK-11526-1 ARM: dts: add imx6qp sabresd board support
+
+Add i.MX6QP SabreSD board support.
+
+Signed-off-by: Anson Huang <b20788@freescale.com>
+---
+ arch/arm/boot/dts/Makefile           |  1 +
+ arch/arm/boot/dts/imx6qp-sabresd.dts | 14 ++++++++++++++
+ 2 files changed, 15 insertions(+)
+
+diff --git a/arch/arm/boot/dts/Makefile b/arch/arm/boot/dts/Makefile
+index bc62ce0..16347ef 100644
+--- a/arch/arm/boot/dts/Makefile
++++ b/arch/arm/boot/dts/Makefile
+@@ -176,6 +176,7 @@ dtb-$(CONFIG_ARCH_MXC) += \
+ 	imx6qp-sabreauto-ecspi.dtb \
+ 	imx6qp-sabreauto-flexcan1.dtb \
+ 	imx6qp-sabreauto-gpmi-weim.dtb \
++	imx6qp-sabresd.dtb \
+ 	imx6q-sabrelite.dtb \
+ 	imx6q-sabresd.dtb \
+ 	imx6q-sabresd-ldo.dtb \
+diff --git a/arch/arm/boot/dts/imx6qp-sabresd.dts b/arch/arm/boot/dts/imx6qp-sabresd.dts
+new file mode 100644
+index 0000000..87bee6a
+--- /dev/null
++++ b/arch/arm/boot/dts/imx6qp-sabresd.dts
+@@ -0,0 +1,14 @@
++/*
++ * Copyright (C) 2015 Freescale Semiconductor, Inc.
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License version 2 as
++ * published by the Free Software Foundation.
++ */
++
++#include "imx6q-sabresd.dts"
++#include "imx6qp.dtsi"
++
++/ {
++	model = "Freescale i.MX6 Quad Plus SABRE Smart Device Board";
++};
+-- 
+1.8.0
+

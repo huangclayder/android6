@@ -1,0 +1,30 @@
+From 408a7215223d9facd3223921ce1fc1827cc7ab08 Mon Sep 17 00:00:00 2001
+From: Bao Xiahong <b50906@freescale.com>
+Date: Wed, 18 Nov 2015 16:18:52 +0800
+Subject: [PATCH 86/95] MA-7136 add mm6.0 new interface
+ set/getPlaybackSettings
+
+Add new interface setPlaybackSettings and getPlaybackSettings
+in OMXPlayer.
+
+Signed-off-by: Bao Xiahong <b50906@freescale.com>
+---
+ include/media/OMXPlayer.h | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/include/media/OMXPlayer.h b/include/media/OMXPlayer.h
+index 09062af..eb413c6 100644
+--- a/include/media/OMXPlayer.h
++++ b/include/media/OMXPlayer.h
+@@ -45,6 +45,8 @@ public:
+     virtual bool        isPlaying();
+     virtual status_t    setSyncSettings(const AVSyncSettings &sync, float videoFpsHint);
+     virtual status_t    getSyncSettings(AVSyncSettings *sync, float *videoFps);
++    virtual status_t    setPlaybackSettings(const AudioPlaybackRate &rate);
++    virtual status_t    getPlaybackSettings(AudioPlaybackRate *rate);
+ 
+     virtual status_t    seekTo(int msec);
+     virtual status_t    getCurrentPosition(int *msec);
+-- 
+1.8.0
+

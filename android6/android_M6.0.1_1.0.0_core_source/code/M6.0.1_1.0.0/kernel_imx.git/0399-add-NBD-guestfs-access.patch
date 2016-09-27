@@ -1,0 +1,22 @@
+From dd24197f936fcc8353fd41e39e6fbf7b0124ce58 Mon Sep 17 00:00:00 2001
+From: Riku Voipio <riku.voipio@linaro.org>
+Date: Tue, 16 Apr 2013 11:45:56 +0300
+Subject: [PATCH] add NBD guestfs access
+
+---
+ linaro/configs/kvm-host.conf | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/linaro/configs/kvm-host.conf b/linaro/configs/kvm-host.conf
+index f47a2b0..54b272e 100644
+--- a/linaro/configs/kvm-host.conf
++++ b/linaro/configs/kvm-host.conf
+@@ -22,4 +22,5 @@ CONFIG_NFSD_V3_ACL=y
+ CONFIG_NFSD_V4=y
+ CONFIG_NFS_ACL_SUPPORT=m
+ CONFIG_NFS_COMMON=y
++CONFIG_BLK_DEV_NBD=m
+ 
+-- 
+1.8.0
+

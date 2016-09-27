@@ -1,0 +1,27 @@
+From a0d9c13b3785082684af323cb2043269c1bf0c3d Mon Sep 17 00:00:00 2001
+From: Peter Chen <peter.chen@freescale.com>
+Date: Fri, 6 Feb 2015 13:09:46 +0800
+Subject: [PATCH] MLK-10218-2 ARM: imx_v7_defconfig: enable imx6 usb charger
+
+Enable imx6 usb charger.
+
+Signed-off-by: Peter Chen <peter.chen@freescale.com>
+---
+ arch/arm/configs/imx_v7_defconfig | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/arch/arm/configs/imx_v7_defconfig b/arch/arm/configs/imx_v7_defconfig
+index d3d9316..f9940f0 100644
+--- a/arch/arm/configs/imx_v7_defconfig
++++ b/arch/arm/configs/imx_v7_defconfig
+@@ -190,6 +190,7 @@ CONFIG_GPIO_SYSFS=y
+ CONFIG_POWER_SUPPLY=y
+ CONFIG_SABRESD_MAX8903=y
+ CONFIG_SENSORS_MAX17135=y
++CONFIG_IMX6_USB_CHARGER=y
+ CONFIG_SENSORS_MAG3110=y
+ CONFIG_THERMAL=y
+ CONFIG_CPU_THERMAL=y
+-- 
+1.8.0
+

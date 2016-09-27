@@ -1,0 +1,2871 @@
+From f6c549e4487fe06f35bd093740ec61afc9434557 Mon Sep 17 00:00:00 2001
+From: Ma Jiamin <b55507@freescale.com>
+Date: Tue, 19 Jan 2016 15:53:40 +0800
+Subject: [PATCH 112/115] MA-7538 Modify Ble Demo, Add a BleManager and
+ BleServerManager to operate the bluetooth
+
+Add a BleManager to encapsulate the operation of ble, delete the code related to bluetooth in activity and service in BleClient
+Add a BleServerManager to encapsulate the operation of ble, delete the code related to bluetooth in activity in BleServer
+Change the mode of bleClient get the characteristic value of server by replacing readCharacteristic with notify.
+
+Signed-off-by: Ma Jiamin<b55507@freescale.com>
+---
+ BleClient/Android.mk                               |   2 -
+ BleClient/res/layout/permissions.xml               |  14 +
+ .../freescale/bleclient/DeviceControlActivity.java | 231 +++-----------
+ .../freescale/bleclient/PermissionActivity.java    |   3 +-
+ .../src/com/freescale/bleclient/ScanActivity.java  | 117 +++----
+ .../com/freescale/bleclient/ble/BleManager.java    | 253 +++++++++++++++
+ .../bleclient/service/BluetoothLeInterface.java    |   6 +-
+ .../bleclient/service/BluetoothLeService.java      | 139 ++++----
+ BleServerEmulator/Android.mk                       |   3 -
+ .../res/drawable-hdpi/btn_switch_off.png           | Bin 0 -> 2243 bytes
+ .../res/drawable-hdpi/btn_switch_on.png            | Bin 0 -> 4502 bytes
+ BleServerEmulator/res/drawable/btn_switch.xml      |   6 +
+ BleServerEmulator/res/layout/pager_setting.xml     |   2 +-
+ BleServerEmulator/res/layout/permissions.xml       |  14 +
+ .../com/freescale/bleserver/CpuInfoActivity.java   |   5 +-
+ .../src/com/freescale/bleserver/EditActivity.java  |   5 +-
+ .../com/freescale/bleserver/GuideAcitivity.java    |   2 -
+ .../freescale/bleserver/HeartRateAcitivity.java    |   5 +-
+ .../src/com/freescale/bleserver/HomeActivity.java  | 112 ++-----
+ .../freescale/bleserver/ImmediateAlertService.java | 249 ---------------
+ .../com/freescale/bleserver/MessageAcitivity.java  |  18 +-
+ .../freescale/bleserver/MockServerCallBack.java    | 349 +++++++++++++++++++++
+ .../freescale/bleserver/ble/BleServerManager.java  | 172 ++++++++++
+ .../com/freescale/bleserver/global/IMXUuid.java    |   1 +
+ .../com/freescale/bleserver/pager/HomePager.java   |  67 ++--
+ .../freescale/bleserver/pager/SettingPager.java    |   6 +-
+ .../src/com/freescale/bleserver/utils/BleUtil.java |  52 ---
+ 27 files changed, 1051 insertions(+), 782 deletions(-)
+ create mode 100755 BleClient/src/com/freescale/bleclient/ble/BleManager.java
+ create mode 100755 BleServerEmulator/res/drawable-hdpi/btn_switch_off.png
+ create mode 100755 BleServerEmulator/res/drawable-hdpi/btn_switch_on.png
+ create mode 100755 BleServerEmulator/res/drawable/btn_switch.xml
+ delete mode 100755 BleServerEmulator/src/com/freescale/bleserver/ImmediateAlertService.java
+ create mode 100755 BleServerEmulator/src/com/freescale/bleserver/MockServerCallBack.java
+ create mode 100755 BleServerEmulator/src/com/freescale/bleserver/ble/BleServerManager.java
+ delete mode 100755 BleServerEmulator/src/com/freescale/bleserver/utils/BleUtil.java
+
+diff --git a/BleClient/Android.mk b/BleClient/Android.mk
+index 88e80ec..e47bb0d 100644
+--- a/BleClient/Android.mk
++++ b/BleClient/Android.mk
+@@ -13,8 +13,6 @@ LOCAL_PACKAGE_NAME := BleClient
+ LOCAL_CERTIFICATE := platform
+ LOCAL_PRIVILEGED_MODULE := true
+ 
+-#LOCAL_PROGUARD_FLAG_FILES := proguard.flags
+-#include frameworks/opt/setupwizard/navigationbar/common.mk
+ 
+ include $(BUILD_PACKAGE)
+ 
+diff --git a/BleClient/res/layout/permissions.xml b/BleClient/res/layout/permissions.xml
+index a7776a1..389b1e1 100755
+--- a/BleClient/res/layout/permissions.xml
++++ b/BleClient/res/layout/permissions.xml
+@@ -1,4 +1,18 @@
+ <?xml version="1.0" encoding="utf-8"?>
++<!-- Copyright (C) 2015 The Android Open Source Project
++
++     Licensed under the Apache License, Version 2.0 (the "License");
++     you may not use this file except in compliance with the License.
++     You may obtain a copy of the License at
++
++          http://www.apache.org/licenses/LICENSE-2.0
++
++     Unless required by applicable law or agreed to in writing, software
++     distributed under the License is distributed on an "AS IS" BASIS,
++     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++     See the License for the specific language governing permissions and
++     limitations under the License.
++-->
+ <FrameLayout
+     xmlns:android="http://schemas.android.com/apk/res/android"
+     android:id="@+id/permissions"
+diff --git a/BleClient/src/com/freescale/bleclient/DeviceControlActivity.java b/BleClient/src/com/freescale/bleclient/DeviceControlActivity.java
+index cb8f4e4..4220b01 100755
+--- a/BleClient/src/com/freescale/bleclient/DeviceControlActivity.java
++++ b/BleClient/src/com/freescale/bleclient/DeviceControlActivity.java
+@@ -20,7 +20,13 @@ import java.util.HashMap;
+ import java.util.List;
+ import java.util.UUID;
+ 
+-import android.Manifest;
++import com.freescale.bleclient.global.GlobalContacts;
++import com.freescale.bleclient.global.IMXUuid;
++import com.freescale.bleclient.global.SampleGattAttributes;
++import com.freescale.bleclient.service.BluetoothLeInterface;
++import com.freescale.bleclient.service.BluetoothLeService;
++import com.freescale.bleclient.utils.ListViewUtil;
++
+ import android.app.Activity;
+ import android.bluetooth.BluetoothGatt;
+ import android.bluetooth.BluetoothGattCharacteristic;
+@@ -48,21 +54,12 @@ import android.widget.ScrollView;
+ import android.widget.TextView;
+ import android.widget.Toast;
+ 
+-import com.freescale.bleclient.global.GlobalContacts;
+-import com.freescale.bleclient.global.IMXUuid;
+-import com.freescale.bleclient.global.SampleGattAttributes;
+-import com.freescale.bleclient.service.BluetoothLeInterface;
+-import com.freescale.bleclient.service.BluetoothLeService;
+-import com.freescale.bleclient.utils.ListViewUtil;
+-import com.freescale.bleclient.R;
+-
+ public class DeviceControlActivity extends Activity implements OnClickListener{
+ 
+-	private static final String TAG = "BLE";
++	private static final String TAG = "BleClient";
+ 	private final String LIST_NAME = "NAME";
+ 	private final String LIST_UUID = "UUID";
+ 	private final String LIST_VALUE = "VALUE";
+-
+ 	private String mDeviceName;
+ 	private String mDeviceAddress;
+ 
+@@ -71,19 +68,23 @@ public class DeviceControlActivity extends Activity implements OnClickListener{
+ 	private TextView mTvState;
+ 	private ExpandableListView mLvService;
+ 	private TextView mTvConnect;
++	private EditText mEtMessage;
++	private Button mBtnSend;
++	private ScrollView mSvController;
+ 
+ 	private DeviceInfoAdapter mDevAdapter;   
+ 
+-	//Reference related to BluetoothLeService
+-	private BluetoothLeInterface mBluetoothLeInterface;
++	private BluetoothLeInterface mBleController;
+ 	private BleServiceConn mConn;
+-
+-	//Reference related to updateReceiver
++		
+ 	private boolean mIsConnected = false;
+ 
+ 	private ArrayList<ArrayList<BluetoothGattCharacteristic>> mGattCharacteristics =
+ 			new ArrayList<ArrayList<BluetoothGattCharacteristic>>();
+-
++	private ArrayList<HashMap<String, String>> mGattServiceData;
++	private ArrayList<ArrayList<HashMap<String, String>>> mGattCharacteristicData;
++	private HashMap<String, BluetoothGattCharacteristic> mCharToRead;
++	
+ 	@Override
+ 	protected void onCreate(Bundle savedInstanceState) {
+ 		super.onCreate(savedInstanceState);
+@@ -100,51 +101,34 @@ public class DeviceControlActivity extends Activity implements OnClickListener{
+ 	@Override
+ 	protected void onDestroy() {
+ 		super.onDestroy();
++		mBleController.disconnect(mDeviceAddress);
+ 		if(mConn != null){
+ 			unbindService(mConn);
+ 		}
+-		mBluetoothLeInterface = null;
+-		stopThread();
+-	}
+-
+-	private void stopThread() {
+-		mIsRead = false;
+-		mIsBatteryRead = false;
+-		mIsHeartRead = false;
+-		mIsTempRead = false;
+-		mIsDateRead = false;
+-	}
+-	
+-	private void startThread() {
+-		mIsRead = true;
+-		mIsBatteryRead = true;
+-		mIsHeartRead = true;
+-		mIsTempRead = true;
+-		mIsDateRead = true;
++		mBleController = null;
+ 	}
+ 
+ 	@Override
+ 	protected void onResume() {
+ 		super.onResume();
+ 		registerReceiver(mGattUpdateReceiver, makeGattUpdateIntentFilter());
+-		if (mBluetoothLeInterface != null) {
+-			final boolean result = mBluetoothLeInterface.connect(mDeviceAddress);
++		if (mBleController != null) {
++			final boolean result = mBleController.connect(mDeviceAddress);
+ 			Log.d(TAG, "Connect request result=" + result);
+ 		}
+ 	}
+ 
+-	//Initial the UI Compoments
+ 	private void initViews() {
+ 
+ 		requestWindowFeature(Window.FEATURE_NO_TITLE);
+ 		getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+ 		setContentView(R.layout.activity_controller);
+-		//Get the device name and address
++		
+ 		final Intent intent = getIntent();
+ 
+ 		mDeviceName = intent.getStringExtra(GlobalContacts.EXTRAS_DEVICE_NAME);
+ 		mDeviceAddress = intent.getStringExtra(GlobalContacts.EXTRAS_DEVICE_ADDRESS);
+-		//Initial the UI compoments
++
+ 		mTvDevName = (TextView) findViewById(R.id.tv_device_name);
+ 		mTvAddress = (TextView) findViewById(R.id.tv_device_address);
+ 		mTvState = (TextView) findViewById(R.id.tv_connection_state);
+@@ -170,33 +154,30 @@ public class DeviceControlActivity extends Activity implements OnClickListener{
+ 		
+ 		if(mDeviceName.equals("i.MX Device")){
+ 			mTvConnect.setOnClickListener(this);
+-			//bind service
+ 			mConn = new BleServiceConn();
+ 			Intent gattServiceIntent = new Intent(this, BluetoothLeService.class);
+ 			startService(gattServiceIntent);
+-			boolean isSuccess = bindService(gattServiceIntent, mConn, BIND_AUTO_CREATE);
++			bindService(gattServiceIntent, mConn, BIND_AUTO_CREATE);
+ 		}
+ 	}
+ 
+-	//This class is implemented to get service IBinder
+ 	class BleServiceConn implements ServiceConnection{
+ 		@Override
+ 		public void onServiceConnected(ComponentName name, IBinder service) {
+-			Log.e(TAG, "connect it");
+-			mBluetoothLeInterface = (BluetoothLeInterface) service;
++			Log.d(TAG, "DeviceControlActivity onServiceConnected");
+ 			
+-			if (!mBluetoothLeInterface.initialize()) {
+-				Log.e(TAG, "Unable to initialize Bluetooth");
++			mBleController = (BluetoothLeInterface) service;
++			if (!mBleController.initialize(DeviceControlActivity.this)) {
++				Log.d(TAG, "Unable to initialize Bluetooth");
+ 				finish();
+ 			}
+-			// Automatically connects to the device upon successful start-up initialization.
+-			mBluetoothLeInterface.connect(mDeviceAddress);
+-			mGatt = mBluetoothLeInterface.getGatt();
+ 			
++			mBleController.connect(mDeviceAddress);
+ 		}
++		
+ 		@Override
+ 		public void onServiceDisconnected(ComponentName name) {
+-
++			Log.d(TAG, "DeviceControlActivity onServiceDisconnected");
+ 		}
+ 	}
+ 
+@@ -221,20 +202,20 @@ public class DeviceControlActivity extends Activity implements OnClickListener{
+ 		public void onReceive(Context context, Intent intent) {
+ 			final String action = intent.getAction();
+ 			if (BluetoothLeService.ACTION_GATT_CONNECTED.equals(action)) {
+-				Log.e(TAG, "BluetoothLeService connect");
++				Log.d(TAG, "BluetoothLeService connect");
+ 				mIsConnected = true;
+ 				updateConnectionState(R.string.connected);
+ 				mTvConnect.setText(R.string.disconnected);
+ 			} else if (BluetoothLeService.ACTION_GATT_DISCONNECTED.equals(action)) {
+-				Log.e(TAG, "BluetoothLeService disconnected");
++				Log.d(TAG, "BluetoothLeService disconnected");
+ 				mIsConnected = false;
+ 				updateConnectionState(R.string.disconnected);
+ 				mTvConnect.setText(R.string.connected);
+ 				clearUI();
+ 			} else if (BluetoothLeService.ACTION_GATT_SERVICES_DISCOVERED.equals(action)) {
+ 				// Show all the supported services and characteristics on the user interface.
+-				Log.e(TAG, "BluetoothLeService discovered");
+-				displayGattServices(mBluetoothLeInterface.getSupportedGattServices());
++				Log.d(TAG, "BluetoothLeService discovered");
++				displayGattServices(mBleController.getSupportedGattServices());
+ 			} else if (BluetoothLeService.ACTION_DATA_AVAILABLE.equals(action)) {
+ 				String value = intent.getStringExtra(BluetoothLeService.EXTRA_DATA);
+ 				String charName = intent.getStringExtra(BluetoothLeService.EXTRA_NAME);
+@@ -257,16 +238,13 @@ public class DeviceControlActivity extends Activity implements OnClickListener{
+ 			}
+ 		}
+ 	};
+-	private ArrayList<HashMap<String, String>> mGattServiceData;
+-	private ArrayList<ArrayList<HashMap<String, String>>> mGattCharacteristicData;
+-	private HashMap<String, BluetoothGattCharacteristic> mCharToRead;
++	
+ 
+ 	// Demonstrates how to iterate through the supported GATT Services/Characteristics.
+ 	// In this sample, we populate the data structure that is bound to the ExpandableListView
+ 	// on the UI.
+ 	protected static final UUID CHARACTERISTIC_UPDATE_NOTIFICATION_DESCRIPTOR_UUID = UUID.fromString("00002902-0000-1000-8000-00805f9b34fb");
+ 	private void displayGattServices(List<BluetoothGattService> gattServices) {
+-		mGatt = mBluetoothLeInterface.getGatt();
+ 		if (gattServices == null) return;
+ 		String uuid = null;
+ 		String unknownServiceString = getResources().getString(R.string.unknown_service);
+@@ -277,7 +255,6 @@ public class DeviceControlActivity extends Activity implements OnClickListener{
+ 		mGattCharacteristics = new ArrayList<ArrayList<BluetoothGattCharacteristic>>();
+ 		mCharToRead = new HashMap<String, BluetoothGattCharacteristic>();
+ 
+-		// Loops through available GATT Services.
+ 		for (BluetoothGattService gattService : gattServices) {
+ 			//Get GattService
+ 			HashMap<String, String> currentServiceData = new HashMap<String, String>();
+@@ -293,22 +270,31 @@ public class DeviceControlActivity extends Activity implements OnClickListener{
+ 
+ 			// Loops through available Characteristics.
+ 			for (BluetoothGattCharacteristic gattCharacteristic : gattCharacteristics) {
++				Log.e(TAG, gattCharacteristic.getUuid().toString());
+ 				if(gattCharacteristic.getUuid().toString().equals(IMXUuid.CHAR_MANUFACTURER_NAME_STRING)){
+ 					mCharToRead.put(GlobalContacts.MANFACTURER_NAME, gattCharacteristic);
++					mBleController.setCharacteristicNotification(gattCharacteristic, true);
+ 				}else if(gattCharacteristic.getUuid().toString().equals(IMXUuid.CHAR_MODEL_NUMBER_STRING)){
+ 					mCharToRead.put(GlobalContacts.MODEL_NAME, gattCharacteristic);
++					mBleController.setCharacteristicNotification(gattCharacteristic, true);
+ 				}else if(gattCharacteristic.getUuid().toString().equals(IMXUuid.CHAR_SERIAL_NUMBER_STRING)){
+ 					mCharToRead.put(GlobalContacts.SERIAL_NUMBER, gattCharacteristic);
++					mBleController.setCharacteristicNotification(gattCharacteristic, true);
+ 				}else if(gattCharacteristic.getUuid().toString().equals(IMXUuid.CHAR_ALERT_LEVEL)){
+ 					mCharToRead.put(GlobalContacts.ALERT_LEVEL, gattCharacteristic);
++					mBleController.setCharacteristicNotification(gattCharacteristic, true);
+ 				}else if(gattCharacteristic.getUuid().toString().equals(IMXUuid.CHAR_BATTERY_LEVEL)){
+ 					mCharToRead.put(GlobalContacts.BATTERY_LEVEL, gattCharacteristic);
++					mBleController.setCharacteristicNotification(gattCharacteristic, true);
+ 				}else if(gattCharacteristic.getUuid().toString().equals(IMXUuid.CHAR_BATTER)){
+ 					mCharToRead.put(GlobalContacts.HEART_RATE, gattCharacteristic);
++					mBleController.setCharacteristicNotification(gattCharacteristic, true);
+ 				}else if(gattCharacteristic.getUuid().toString().equals(IMXUuid.CHAR_CPU_TEMP)){
+ 					mCharToRead.put(GlobalContacts.CPU_TEMPERATURE, gattCharacteristic);
++					mBleController.setCharacteristicNotification(gattCharacteristic, true);
+ 				}else if(gattCharacteristic.getUuid().toString().equals(IMXUuid.CHAR_DATE)){
+ 					mCharToRead.put(GlobalContacts.REMOTE_DATE, gattCharacteristic);
++					mBleController.setCharacteristicNotification(gattCharacteristic, true);
+ 				}else if(gattCharacteristic.getUuid().toString().equals(IMXUuid.CHAR_MESSAGE)){
+ 					mCharToRead.put(GlobalContacts.CUSTOM_MESSAGE, gattCharacteristic);
+ 				}else{
+@@ -325,7 +311,6 @@ public class DeviceControlActivity extends Activity implements OnClickListener{
+ 				}else{
+ 					currentCharaData.put(LIST_VALUE, "");
+ 				}
+-
+ 				gattCharacteristicGroupData.add(currentCharaData);
+ 			}
+ 			mGattCharacteristics.add(charas);
+@@ -334,12 +319,8 @@ public class DeviceControlActivity extends Activity implements OnClickListener{
+ 		mDevAdapter = new DeviceInfoAdapter();
+ 		mLvService.setAdapter(mDevAdapter);
+ 		ListViewUtil.setListViewHeight(mLvService);
+-		//After update the UI, start the read thread
+ 		mEtMessage.setVisibility(View.VISIBLE);
+ 		mBtnSend.setVisibility(View.VISIBLE);
+-		if(mCharToRead.size() > 0){
+-			new ReadThread().start();
+-		}
+ 	}
+ 
+ 	private void updateConnectionState(final int resourceId) {
+@@ -351,11 +332,6 @@ public class DeviceControlActivity extends Activity implements OnClickListener{
+ 		});
+ 	}
+ 
+-	private void displayData(String data) {
+-		if (data != null) {
+-		}
+-	}
+-
+ 	private void clearUI() {
+ 		if(mGattServiceData != null){
+ 			mGattServiceData.clear();
+@@ -368,7 +344,6 @@ public class DeviceControlActivity extends Activity implements OnClickListener{
+ 		}
+ 	}
+ 
+-	//ExpandedListViewAdapter
+ 	class DeviceInfoAdapter extends BaseExpandableListAdapter{
+ 
+ 		@Override
+@@ -441,10 +416,6 @@ public class DeviceControlActivity extends Activity implements OnClickListener{
+ 			ArrayList<HashMap<String, String>> gattCharGroup = new ArrayList<HashMap<String,String>>();
+ 			gattCharGroup = mGattCharacteristicData.get(groupPosition);
+ 			HashMap<String, String> gattChar = gattCharGroup.get(childPosition);
+-			//			private ArrayList<ArrayList<BluetoothGattCharacteristic>> mGattCharacteristics =
+-			//			new ArrayList<ArrayList<BluetoothGattCharacteristic>>();
+-			//			BluetoothGattCharacteristic characteristic = mGattCharacteristics.get(groupPosition).get(childPosition);
+-			//			mGatt.readCharacteristic(characteristic);
+ 			String charName = gattChar.get(LIST_NAME);
+ 			String uuid = gattChar.get(LIST_UUID);
+ 			String value = gattChar.get(LIST_VALUE);
+@@ -469,11 +440,9 @@ public class DeviceControlActivity extends Activity implements OnClickListener{
+ 		switch (v.getId()) {
+ 		case R.id.tv_connect_state:
+ 			if(!mIsConnected){
+-				mBluetoothLeInterface.connect(mDeviceAddress);
+-				startThread();
++				mBleController.connect(mDeviceAddress);
+ 			}else{
+-				mBluetoothLeInterface.disconnect(mDeviceAddress);
+-				stopThread();
++				mBleController.disconnect(mDeviceAddress);
+ 				clearUI();
+ 			}
+ 			break;
+@@ -481,103 +450,6 @@ public class DeviceControlActivity extends Activity implements OnClickListener{
+ 			break;
+ 		}
+ 	}
+-
+-	private BluetoothGatt mGatt;
+-	private boolean mIsRead = true;
+-	private boolean mIsBatteryRead = true;
+-	private boolean mIsHeartRead = true;
+-	private boolean mIsTempRead = true;
+-	private boolean mIsDateRead = true;
+-	private EditText mEtMessage;
+-	private Button mBtnSend;
+-	private ScrollView mSvController;
+-
+-	class ReadThread extends Thread{
+-		@Override
+-		public void run() {
+-			try {
+-				if(mCharToRead.get(GlobalContacts.MANFACTURER_NAME) != null)
+-					while((!mGatt.readCharacteristic(mCharToRead.get(GlobalContacts.MANFACTURER_NAME))) && mIsRead);
+-				if(mCharToRead.get(GlobalContacts.MODEL_NAME) != null)
+-					while((!mGatt.readCharacteristic(mCharToRead.get(GlobalContacts.MODEL_NAME))) && mIsRead);
+-				if(mCharToRead.get(GlobalContacts.SERIAL_NUMBER) != null)
+-					while((!mGatt.readCharacteristic(mCharToRead.get(GlobalContacts.SERIAL_NUMBER))) && mIsRead);
+-				if(mCharToRead.get(GlobalContacts.BATTERY_LEVEL) != null)
+-					new BatteryReadThread().start();
+-				sleep(2000);
+-				if(mCharToRead.get(GlobalContacts.HEART_RATE) != null)
+-					new HeartRateThread().start();
+-				sleep(2000);
+-				if(mCharToRead.get(GlobalContacts.CPU_TEMPERATURE) != null)
+-					new TemperatureThread().start();
+-				sleep(2000);
+-				if(mCharToRead.get(GlobalContacts.REMOTE_DATE) != null)
+-					new DateThread().start();
+-			} catch (InterruptedException e1) {
+-				e1.printStackTrace();
+-			}
+-		}
+-	}
+-
+-	class BatteryReadThread extends Thread{
+-		@Override
+-		public void run() {
+-			while(mIsBatteryRead){
+-				try {
+-					sleep(30000);
+-				} catch (InterruptedException e) {
+-					e.printStackTrace();
+-				}
+-			}
+-		}
+-	}
+-
+-	class HeartRateThread extends Thread{
+-		@Override
+-		public void run() {
+-			while(mIsHeartRead){
+-				try {
+-					while(!mGatt.readCharacteristic(mCharToRead.get(GlobalContacts.HEART_RATE)));
+-					sleep(10000);
+-				} catch (InterruptedException e) {
+-					e.printStackTrace();
+-				}
+-			}
+-		}
+-	}
+-
+-	class TemperatureThread extends Thread{
+-		@Override
+-		public void run() {
+-			while(mIsTempRead){
+-				try {
+-					while(!mGatt.readCharacteristic(mCharToRead.get(GlobalContacts.CPU_TEMPERATURE)));
+-					sleep(5000);
+-				} catch (InterruptedException e) {
+-					e.printStackTrace();
+-				}
+-			}
+-		}
+-	}
+-
+-	class DateThread extends Thread{
+-		@Override
+-		public void run() {
+-			while(mIsDateRead){
+-				try {
+-					boolean isSuccess = false;
+-					do{
+-						isSuccess = mGatt.readCharacteristic(mCharToRead.get(GlobalContacts.REMOTE_DATE));
+-						Log.e(TAG,"dateRead:" + isSuccess);
+-					}
+-					while(!isSuccess);
+-					sleep(1000);
+-				} catch (InterruptedException e) {
+-					e.printStackTrace();
+-				}
+-			}
+-		}
+-	}
+ 	
+ 	public void AlarmTheServer(View view){
+ 		BluetoothGattCharacteristic charMessage = mCharToRead.get(GlobalContacts.CUSTOM_MESSAGE);
+@@ -588,13 +460,10 @@ public class DeviceControlActivity extends Activity implements OnClickListener{
+ 		if(message.length() > 20){
+ 			Toast.makeText(this, "no more than 20 letters", Toast.LENGTH_SHORT).show();
+ 		}else{
+-			charMessage.setValue( message);
+-			boolean isSuccess = false;
+-			isSuccess = mGatt.writeCharacteristic(charMessage);
+-			if(isSuccess){
+-				Toast.makeText(this, "Send Successfully", Toast.LENGTH_SHORT).show();
++			if(mBleController.writeCharacteristic(charMessage, message) == true){
++				Toast.makeText(this, "Send Message Successfully", Toast.LENGTH_SHORT).show();
+ 			}else{
+-				Toast.makeText(this, "Send Unsuccessfully", Toast.LENGTH_SHORT).show();	
++				Toast.makeText(this, "Send Message Unsuccessfully", Toast.LENGTH_SHORT).show();
+ 			}
+ 		}
+ 	}
+diff --git a/BleClient/src/com/freescale/bleclient/PermissionActivity.java b/BleClient/src/com/freescale/bleclient/PermissionActivity.java
+index 8ecbe9f..4970145 100755
+--- a/BleClient/src/com/freescale/bleclient/PermissionActivity.java
++++ b/BleClient/src/com/freescale/bleclient/PermissionActivity.java
+@@ -22,9 +22,8 @@ import android.content.pm.PackageManager;
+ import android.os.Bundle;
+ import android.widget.Toast;
+ import android.content.Intent;
+-import android.content.DialogInterface;
+-import com.freescale.bleclient.R;
+ import android.util.Log;
++import com.freescale.bleclient.R;
+ 
+ public class PermissionActivity extends Activity {
+ 
+diff --git a/BleClient/src/com/freescale/bleclient/ScanActivity.java b/BleClient/src/com/freescale/bleclient/ScanActivity.java
+index c70f5f5..e689fb4 100755
+--- a/BleClient/src/com/freescale/bleclient/ScanActivity.java
++++ b/BleClient/src/com/freescale/bleclient/ScanActivity.java
+@@ -18,13 +18,13 @@ package com.freescale.bleclient;
+ 
+ import java.util.ArrayList;
+ 
++import com.freescale.bleclient.ble.BleManager;
++import com.freescale.bleclient.ble.BleManager.OnScanListener;
++import com.freescale.bleclient.global.GlobalContacts;
++
+ import android.app.Activity;
+-import android.bluetooth.BluetoothAdapter;
+ import android.bluetooth.BluetoothDevice;
+-import android.bluetooth.BluetoothManager;
+-import android.content.Context;
+ import android.content.Intent;
+-import android.content.pm.PackageManager;
+ import android.os.Bundle;
+ import android.os.Handler;
+ import android.view.View;
+@@ -38,15 +38,11 @@ import android.widget.BaseAdapter;
+ import android.widget.ListView;
+ import android.widget.ProgressBar;
+ import android.widget.TextView;
+-import android.widget.Toast;
+-
+-import com.freescale.bleclient.global.GlobalContacts;
+-import com.freescale.bleclient.R;
++import android.util.Log;
+ 
+-public class ScanActivity extends Activity implements OnClickListener{
++public class ScanActivity extends Activity implements OnClickListener, OnScanListener{
+ 
+-	private static final String TAG = "BLE";
+-	private static final int REQUEST_ENABLE_BT = 1;
++	private static final String TAG = "BleClient";
+ 
+ 	private ProgressBar mPbScan;
+ 	private TextView mTvScan;
+@@ -54,11 +50,12 @@ public class ScanActivity extends Activity implements OnClickListener{
+ 	private ListView mLvScan;
+ 	private ArrayList<BluetoothDevice> mLeDevices;
+ 
+-	private BluetoothAdapter mBluetoothAdapter;
+ 	private boolean mIsScanning;
+ 	private Handler mHandler;
+ 	private static final long SCAN_PERIOD = 10000;
+ 
++	private BleManager mBleManager;
++
+ 	@Override
+ 	protected void onCreate(Bundle savedInstanceState) {
+ 		super.onCreate(savedInstanceState);
+@@ -82,13 +79,7 @@ public class ScanActivity extends Activity implements OnClickListener{
+ 	}
+ 
+ 	private void ensureBleDevice(){
+-		// Ensure that the bluetooth device can be used
+-		if (!mBluetoothAdapter.isEnabled()) {
+-			if (!mBluetoothAdapter.isEnabled()) {
+-				Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
+-				startActivityForResult(enableBtIntent, REQUEST_ENABLE_BT);
+-			}
+-		}
++		mBleManager.enSureBleOpen();
+ 		mScanAdapter = new ScanAdapter();
+ 		mLvScan.setAdapter(mScanAdapter);
+ 		scanLeDevice(true);
+@@ -102,40 +93,27 @@ public class ScanActivity extends Activity implements OnClickListener{
+ 				@Override
+ 				public void run() {
+ 					mIsScanning = false;
+-					mBluetoothAdapter.stopLeScan(mLeScanCallback);
++					mBleManager.startScan();
+ 					mPbScan.setVisibility(View.INVISIBLE);
+ 					mTvScan.setText("SCAN");
+ 				}
+ 			}, SCAN_PERIOD);
+ 			mIsScanning = true;
+-			mBluetoothAdapter.startLeScan(mLeScanCallback);
++			mBleManager.startScan();
+ 		} else {
+ 			mIsScanning = false;
+-			mBluetoothAdapter.stopLeScan(mLeScanCallback);
++			mBleManager.stopScan();
+ 		}
+ 		mPbScan.setVisibility(View.VISIBLE);
+ 		mTvScan.setText("STOP");
+ 	}
+ 
+ 	private void initBle() {
+-		//1.check whether the system support the ble
+-		if (!getPackageManager().hasSystemFeature(PackageManager.FEATURE_BLUETOOTH_LE)) {
+-			Toast.makeText(this, R.string.ble_not_supported, Toast.LENGTH_SHORT).show();
+-			finish();
+-		}
+-		//2.initial the bluetooth adapter, get a bluetooth adapter from bluetooth management
+-		final BluetoothManager bluetoothManager = (BluetoothManager) getSystemService(Context.BLUETOOTH_SERVICE);
+-		mBluetoothAdapter = bluetoothManager.getAdapter();
+-
+-		//3.check the device if can support the bluetooth
+-		if (mBluetoothAdapter == null) {
+-			Toast.makeText(this, R.string.error_bluetooth_not_supported, Toast.LENGTH_SHORT).show();
+-			finish();
+-			return;
+-		}
++		mBleManager = BleManager.getInstance(this);
++		mBleManager.setOnScanListener(this);
+ 		mHandler = new Handler();
+ 		mLeDevices = new ArrayList<BluetoothDevice>();
+-	}
++	}	
+ 
+ 	private void initView() {
+ 		requestWindowFeature(Window.FEATURE_NO_TITLE);
+@@ -149,24 +127,6 @@ public class ScanActivity extends Activity implements OnClickListener{
+ 		mLvScan.setOnItemClickListener(new ScanListItemClick());
+ 	}
+ 
+-	// Device scan callback.
+-	private BluetoothAdapter.LeScanCallback mLeScanCallback = new BluetoothAdapter.LeScanCallback() {
+-		@Override
+-		public void onLeScan(final BluetoothDevice device, int rssi, byte[] scanRecord) {
+-			runOnUiThread(new Runnable() {
+-				@Override
+-				public void run() {
+-					if(!mLeDevices.contains(device)){
+-						mLeDevices.add(device);
+-					}
+-					mScanAdapter.notifyDataSetChanged();
+-				}
+-			});
+-		}
+-	};
+-
+-	//ListView Adapter
+-	
+ 	class ScanAdapter extends BaseAdapter{
+ 
+ 		@Override
+@@ -225,28 +185,39 @@ public class ScanActivity extends Activity implements OnClickListener{
+ 			break;
+ 		}
+ 	}
+-	
++
+ 	class ScanListItemClick implements OnItemClickListener{
+-		
++
+ 		@Override
+ 		public void onItemClick(AdapterView<?> parent, View view, int position,
+ 				long id) {
+-			//get the device from listview
+-	        final BluetoothDevice device = mLeDevices.get(position);
+-	        if (device == null)
+-	        	return;
+-	        //start deviceControlActivity
+-	        final Intent intent = new Intent(ScanActivity.this, DeviceControlActivity.class);
+-	        intent.putExtra(GlobalContacts.EXTRAS_DEVICE_NAME, device.getName());
+-	        intent.putExtra(GlobalContacts.EXTRAS_DEVICE_ADDRESS, device.getAddress());
+-	        if (mIsScanning) {
+-	            mBluetoothAdapter.stopLeScan(mLeScanCallback);
+-	            mIsScanning = false;
+-	        }
+-	        startActivity(intent);
++			final BluetoothDevice device = mLeDevices.get(position);
++			if (device == null)
++				return;
++			Log.d(TAG, "device name is " + device.getName() + ", device address is " + device.getAddress() );
++			final Intent intent = new Intent(ScanActivity.this, DeviceControlActivity.class);
++			intent.putExtra(GlobalContacts.EXTRAS_DEVICE_NAME, device.getName());
++			intent.putExtra(GlobalContacts.EXTRAS_DEVICE_ADDRESS, device.getAddress());
++			if (mIsScanning) {
++				mBleManager.stopScan();
++				mIsScanning = false;
++			}
++			startActivity(intent);
+ 		}
+ 	}
+ 
+-		
+-	
++	@Override
++	public void onLeScan(final BluetoothDevice device, int rssi, byte[] scanRecord) {	
++		Log.d(TAG, "onLeScane in ScanActivity");
++		runOnUiThread(new Runnable() {
++			@Override
++			public void run() {
++				if(!mLeDevices.contains(device)){
++					mLeDevices.add(device);
++				}
++				mScanAdapter.notifyDataSetChanged();
++			}
++		});		
++	}
++
+ }
+diff --git a/BleClient/src/com/freescale/bleclient/ble/BleManager.java b/BleClient/src/com/freescale/bleclient/ble/BleManager.java
+new file mode 100755
+index 0000000..bc3cb49
+--- /dev/null
++++ b/BleClient/src/com/freescale/bleclient/ble/BleManager.java
+@@ -0,0 +1,253 @@
++/*
++ * Copyright (C) 2016 Freescale Semiconductor, Inc.
++ *
++ * Licensed under the Apache License, Version 2.0 (the "License");
++ * you may not use this file except in compliance with the License.
++ * You may obtain a copy of the License at
++ *
++ *      http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++package com.freescale.bleclient.ble;
++
++import java.util.List;
++import java.util.UUID;
++
++import com.freescale.bleclient.R;
++import com.freescale.bleclient.global.SampleGattAttributes;
++
++import android.app.Activity;
++import android.bluetooth.BluetoothAdapter;
++import android.bluetooth.BluetoothDevice;
++import android.bluetooth.BluetoothGatt;
++import android.bluetooth.BluetoothGattCallback;
++import android.bluetooth.BluetoothGattCharacteristic;
++import android.bluetooth.BluetoothGattDescriptor;
++import android.bluetooth.BluetoothGattService;
++import android.bluetooth.BluetoothManager;
++import android.content.Context;
++import android.content.Intent;
++import android.content.pm.PackageManager;
++import android.util.Log;
++import android.widget.Toast;
++
++public class BleManager {
++
++	private static BleManager bleManager;
++	private BluetoothManager mBluetoothManager;
++	private BluetoothAdapter mBluetoothAdapter;
++	private BluetoothDevice mRemoteBluetoothDevices;
++	private BluetoothGatt mBluetoothGatt;
++
++	private static Activity mActivity;
++
++	private static final int REQUEST_ENABLE_BT = 1;
++	private static final String TAG = "BleManager";
++
++	private BleManager(){
++		initBle();
++	}
++
++	private boolean initBle() {
++		//1.check whether the system support the ble
++		if (!mActivity.getPackageManager().hasSystemFeature(PackageManager.FEATURE_BLUETOOTH_LE)) {
++			Toast.makeText(mActivity, R.string.ble_not_supported, Toast.LENGTH_SHORT).show();
++			Log.e(TAG, "system cannot support the ble");
++			mActivity.finish();
++			return false;
++		}
++
++		//2.initial the bluetooth adapter, get a bluetooth adapter from bluetooth management
++		Log.e(TAG, "initial the bluetooth adapter, get a bluetooth adapter from bluetooth managemen");
++		mBluetoothManager = (BluetoothManager) mActivity.getSystemService(Context.BLUETOOTH_SERVICE);
++		if (mBluetoothManager == null) {
++			Log.e(TAG, "Unable to initialize BluetoothManager.");
++			return false;
++		}
++
++		mBluetoothAdapter = mBluetoothManager.getAdapter();
++		if (mBluetoothAdapter == null) {
++			Log.e(TAG, "Unable to obtain a BluetoothAdapter.");
++			return false;
++		}
++
++		//3.check the device if can support the bluetooth
++		if (mBluetoothAdapter == null) {
++			Log.e(TAG, "device cannot support the bluetooth");
++			Toast.makeText(mActivity, R.string.error_bluetooth_not_supported, Toast.LENGTH_SHORT).show();
++			mActivity.finish();
++			return false;
++		}
++
++		return true;
++	}
++
++	public static BleManager getInstance(Activity activity){
++		mActivity = activity;
++		if(bleManager == null){
++			bleManager = new BleManager();
++		}
++		return bleManager;
++	}
++
++	public void enSureBleOpen(){
++		if(mBluetoothAdapter == null){
++			Log.d(TAG, "BluetoothAdapter is null");
++			return;
++		}			
++		if (!mBluetoothAdapter.isEnabled()) {
++			Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
++			mActivity.startActivityForResult(enableBtIntent, REQUEST_ENABLE_BT);
++		}
++	}
++
++	// Device scan callback.
++	public void setOnScanListener(OnScanListener onScanListener){
++		this.onScanListener = onScanListener;
++	}
++
++	private OnScanListener onScanListener;
++
++	public interface OnScanListener{
++		void onLeScan(final BluetoothDevice device, int rssi, byte[] scanRecord);
++	}
++
++	private BluetoothAdapter.LeScanCallback mLeScanCallback = new BluetoothAdapter.LeScanCallback() {
++		@Override
++		public void onLeScan(final BluetoothDevice device, int rssi, byte[] scanRecord) {
++			onScanListener.onLeScan(device, rssi, scanRecord);
++		}
++	};
++
++	//Start and stop Scan.
++	public void startScan(){
++		if(mBluetoothAdapter == null){
++			Log.d(TAG, "BluetoothAdapter is null");
++			return;
++		}			
++		mBluetoothAdapter.startLeScan(mLeScanCallback);
++	}
++
++	public void stopScan(){
++		if(mBluetoothAdapter == null){
++			Log.d(TAG, "BluetoothAdapter is null");
++			return;
++		}			
++		mBluetoothAdapter.stopLeScan(mLeScanCallback);
++	}
++
++	public boolean isInit(String address){
++		return mBluetoothAdapter == null || address == null;
++	}
++
++	public BluetoothDevice getRemoteDevices(String address){
++		mRemoteBluetoothDevices = mBluetoothAdapter.getRemoteDevice(address);
++		if (mRemoteBluetoothDevices == null) {
++			Log.d(TAG, "Device not found.  Unable to connect.");
++		}
++		return mRemoteBluetoothDevices;
++	}
++
++	public boolean connectGatt(Context context, boolean autoConnect, BluetoothGattCallback callback){
++
++		mBluetoothGatt = mRemoteBluetoothDevices.connectGatt(context, autoConnect, callback);
++		if(mBluetoothGatt == null){
++			Log.d(TAG, "bluetoothGatt is null");
++			return false;
++		}else{
++			return true;
++		}
++	}
++
++	public void disconnect() {
++
++		if (mBluetoothAdapter == null || mBluetoothGatt == null) {
++			Log.d(TAG, "BluetoothAdapter not initialized");
++			return;
++		}
++		mBluetoothGatt.disconnect();
++	}
++
++	public void closeGatt() {
++
++		if (mBluetoothGatt == null) {
++			Log.d(TAG, "BluetoothGatt not initialized");
++			return;
++		}
++		mBluetoothGatt.close();
++		mBluetoothGatt = null;		
++	}
++
++	public boolean readCharacteristic(BluetoothGattCharacteristic characteristic){
++
++		if (mBluetoothAdapter == null || mBluetoothGatt == null) {
++			Log.d(TAG, "BluetoothAdapter not initialized");
++			return false;
++		}
++		return mBluetoothGatt.readCharacteristic(characteristic);
++	}
++	
++	public boolean writeCharacteristic(BluetoothGattCharacteristic characteristic, String value){
++		characteristic.setValue(value);
++		if(mBluetoothGatt.writeCharacteristic(characteristic) == true){
++			return true;
++		}else{
++			return false;
++		}
++	}
++
++	public boolean setCharacteristicNotification(BluetoothGattCharacteristic characteristic, boolean enabled){
++		
++		if (mBluetoothAdapter == null || mBluetoothGatt == null) {
++			Log.d(TAG, "BluetoothAdapter not initialized");
++			return false;
++		}
++		
++		if(mBluetoothGatt.setCharacteristicNotification(characteristic, enabled) == false){
++			Log.e(TAG, "setCharacteristicNotification failed");
++			return false;
++		}
++		
++		BluetoothGattDescriptor descriptor = characteristic.getDescriptor(
++				UUID.fromString(SampleGattAttributes.CLIENT_CHARACTERISTIC_CONFIG));
++		if(descriptor == null){
++			Log.e(TAG, "descriptor is null");
++			return false;
++		}
++		
++		if(descriptor.setValue(BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE) == false){
++			Log.e(TAG, "set Descriptor value fail");
++			return false;
++		}
++		
++		return mBluetoothGatt.writeDescriptor(descriptor);
++	}
++	
++	public List<BluetoothGattService> getSupportServices(){
++		if (mBluetoothGatt == null) 
++			return null;
++		return mBluetoothGatt.getServices();
++	}
++	
++	//Getters and Settters
++	public BluetoothAdapter getBtAdapter(){
++		return mBluetoothAdapter;
++	}
++
++	public BluetoothManager getBluetoothManager(){
++		return mBluetoothManager;
++	}
++
++	public BluetoothGatt getBluetoothGatt(){
++		return mBluetoothGatt;
++	}
++
++	public boolean discoveryService(){
++		return mBluetoothGatt.discoverServices();
++	}
++}
+diff --git a/BleClient/src/com/freescale/bleclient/service/BluetoothLeInterface.java b/BleClient/src/com/freescale/bleclient/service/BluetoothLeInterface.java
+index 0c9c518..3ffb39d 100755
+--- a/BleClient/src/com/freescale/bleclient/service/BluetoothLeInterface.java
++++ b/BleClient/src/com/freescale/bleclient/service/BluetoothLeInterface.java
+@@ -17,13 +17,17 @@ package com.freescale.bleclient.service;
+ 
+ import java.util.List;
+ 
++import android.app.Activity;
+ import android.bluetooth.BluetoothGatt;
++import android.bluetooth.BluetoothGattCharacteristic;
+ import android.bluetooth.BluetoothGattService;
+ 
+ public interface BluetoothLeInterface {
+ 	boolean connect(String deviceAddress);
+-	boolean initialize();
++	boolean initialize(Activity activity);
+ 	List<BluetoothGattService> getSupportedGattServices();
+ 	void disconnect(String mDeviceAddress);
+ 	BluetoothGatt getGatt();
++	boolean setCharacteristicNotification(BluetoothGattCharacteristic characteristic, boolean enabled);
++	boolean writeCharacteristic(BluetoothGattCharacteristic characteristic, String value);
+ }
+diff --git a/BleClient/src/com/freescale/bleclient/service/BluetoothLeService.java b/BleClient/src/com/freescale/bleclient/service/BluetoothLeService.java
+index a8fe53b..ce0d9bc 100755
+--- a/BleClient/src/com/freescale/bleclient/service/BluetoothLeService.java
++++ b/BleClient/src/com/freescale/bleclient/service/BluetoothLeService.java
+@@ -19,6 +19,7 @@ import java.util.List;
+ import java.util.UUID;
+ 
+ import android.annotation.SuppressLint;
++import android.app.Activity;
+ import android.app.Service;
+ import android.bluetooth.BluetoothAdapter;
+ import android.bluetooth.BluetoothDevice;
+@@ -35,35 +36,33 @@ import android.os.Binder;
+ import android.os.IBinder;
+ import android.util.Log;
+ 
++import com.freescale.bleclient.ble.BleManager;
+ import com.freescale.bleclient.global.GlobalContacts;
+ import com.freescale.bleclient.global.IMXUuid;
+ import com.freescale.bleclient.global.SampleGattAttributes;
+ 
+ public class BluetoothLeService extends Service {
+-	private final static String TAG = "BLE";
++	private final static String TAG = "BleClient";
++
++	private BleManager mBleManager;
+ 
+-	private BluetoothManager mBluetoothManager;
+-	private BluetoothAdapter mBluetoothAdapter;
+ 	private String mBluetoothDeviceAddress;
+-	private BluetoothGatt mBluetoothGatt;
+ 	private int mConnectionState = STATE_DISCONNECTED;
+ 
+ 	private static final int STATE_DISCONNECTED = 0;
+ 	private static final int STATE_CONNECTING = 1;
+ 	private static final int STATE_CONNECTED = 2;
+ 
+-	public final static String ACTION_GATT_CONNECTED           = "com.example.bluetooth.le.ACTION_GATT_CONNECTED";
+-	public final static String ACTION_GATT_DISCONNECTED        = "com.example.bluetooth.le.ACTION_GATT_DISCONNECTED";
+-	public final static String ACTION_GATT_SERVICES_DISCOVERED = "com.example.bluetooth.le.ACTION_GATT_SERVICES_DISCOVERED";
+-	public final static String ACTION_DATA_AVAILABLE           = "com.example.bluetooth.le.ACTION_DATA_AVAILABLE";
+-	public final static String EXTRA_DATA                      = "com.example.bluetooth.le.EXTRA_DATA";
++	public final static String ACTION_GATT_CONNECTED           = "com.freescale.bleclient.ACTION_GATT_CONNECTED";
++	public final static String ACTION_GATT_DISCONNECTED        = "com.freescale.bleclient.ACTION_GATT_DISCONNECTED";
++	public final static String ACTION_GATT_SERVICES_DISCOVERED = "com.freescale.bleclient.ACTION_GATT_SERVICES_DISCOVERED";
++	public final static String ACTION_DATA_AVAILABLE           = "com.freescale.bleclient.ACTION_DATA_AVAILABLE";
++	public final static String EXTRA_DATA                      = "com.freescale.bleclient.EXTRA_DATA";
+ 
+ 	public final static UUID UUID_HEART_RATE_MEASUREMENT       = UUID.fromString(SampleGattAttributes.HEART_RATE_MEASUREMENT);
+ 
+ 	public static final String EXTRA_NAME = "extra_name";
+ 
+-	// Implements callback methods for GATT events that the app cares about. For example,
+-	// connection change and services discovered.
+ 	private final BluetoothGattCallback mGattCallback = new BluetoothGattCallback() {
+ 		@Override
+ 		public void onConnectionStateChange(BluetoothGatt gatt, int status, int newState) {
+@@ -72,15 +71,15 @@ public class BluetoothLeService extends Service {
+ 				intentAction = ACTION_GATT_CONNECTED;
+ 				mConnectionState = STATE_CONNECTED;
+ 				broadcastUpdate(intentAction);
+-				Log.i(TAG, "Connected to GATT server.");
++				Log.d(TAG, "Connected to GATT server.");
+ 				// Attempts to discover services after successful connection.
+-				Log.i(TAG, "Attempting to start service discovery:" +
+-						mBluetoothGatt.discoverServices());
++				mBleManager.discoveryService();
++				Log.d(TAG, "Attempting to start service discovery:");
+ 
+ 			} else if (newState == BluetoothProfile.STATE_DISCONNECTED) {
+ 				intentAction = ACTION_GATT_DISCONNECTED;
+ 				mConnectionState = STATE_DISCONNECTED;
+-				Log.i(TAG, "Disconnected from GATT server.");
++				Log.d(TAG, "Disconnected from GATT server.");
+ 				broadcastUpdate(intentAction);
+ 			}
+ 		}
+@@ -90,7 +89,7 @@ public class BluetoothLeService extends Service {
+ 			if (status == BluetoothGatt.GATT_SUCCESS) {
+ 				broadcastUpdate(ACTION_GATT_SERVICES_DISCOVERED);
+ 			} else {
+-				Log.w(TAG, "onServicesDiscovered received: " + status);
++				Log.d(TAG, "onServicesDiscovered received: " + status);
+ 			}
+ 		}
+ 
+@@ -106,7 +105,7 @@ public class BluetoothLeService extends Service {
+ 		@Override
+ 		public void onCharacteristicChanged(BluetoothGatt gatt,
+ 				BluetoothGattCharacteristic characteristic) {
+-			Log.e(TAG, "onCharacteristicChanged");
++			Log.d(TAG, "onCharacteristicChanged");
+ 			broadcastUpdate(ACTION_DATA_AVAILABLE, characteristic);
+ 		}
+ 	};
+@@ -119,10 +118,6 @@ public class BluetoothLeService extends Service {
+ 	private void broadcastUpdate(final String action,
+ 			final BluetoothGattCharacteristic characteristic) {
+ 		final Intent intent = new Intent(action);
+-		// This is special handling for the Heart Rate Measurement profile.  Data parsing is
+-		// carried out as per profile specifications:
+-		// http://developer.bluetooth.org/gatt/characteristics/Pages/CharacteristicViewer.aspx?u=org.bluetooth.characteristic.heart_rate_measurement.xml
+-		// For all other profiles, writes the data formatted in HEX.
+ 		final byte[] data = characteristic.getValue();
+ 		String charUuid = characteristic.getUuid().toString();
+ 		String charId = null;
+@@ -163,8 +158,8 @@ public class BluetoothLeService extends Service {
+ 		}
+ 
+ 		@Override
+-		public boolean initialize() {
+-			return BluetoothLeService.this.initialize();
++		public boolean initialize(Activity activity) {
++			return BluetoothLeService.this.initialize(activity);
+ 		}
+ 
+ 		@Override
+@@ -181,6 +176,16 @@ public class BluetoothLeService extends Service {
+ 		public BluetoothGatt getGatt() {
+ 			return BluetoothLeService.this.getGatt();
+ 		}
++
++		@Override
++		public boolean setCharacteristicNotification(BluetoothGattCharacteristic characteristic, boolean enabled) {
++			return BluetoothLeService.this.setCharacteristicNotification(characteristic, enabled);
++		}
++
++		@Override
++		public boolean writeCharacteristic(BluetoothGattCharacteristic characteristic, String value) {
++			return BluetoothLeService.this.writeCharacteristic(characteristic, value);
++		}
+ 	}
+ 
+ 	@Override
+@@ -192,96 +197,60 @@ public class BluetoothLeService extends Service {
+ 		return super.onUnbind(intent);
+ 	}
+ 
+-
+-	public boolean initialize() {
+-		// For API level 18 and above, get a reference to BluetoothAdapter through
+-		// BluetoothManager.
+-		if (mBluetoothManager == null) {
+-			mBluetoothManager = (BluetoothManager) getSystemService(Context.BLUETOOTH_SERVICE);
+-			if (mBluetoothManager == null) {
+-				Log.e(TAG, "Unable to initialize BluetoothManager.");
+-				return false;
+-			}
+-		}
+-
+-		mBluetoothAdapter = mBluetoothManager.getAdapter();
+-		if (mBluetoothAdapter == null) {
+-			Log.e(TAG, "Unable to obtain a BluetoothAdapter.");
+-			return false;
+-		}
+-
+-		return true;
++	public boolean initialize(Activity activity) {
++		boolean ret = true;
++		mBleManager = BleManager.getInstance(activity);
++		if(mBleManager == null)
++			ret = false;
++		return ret;
++	
+ 	}
+ 
+ 	public boolean connect(final String address) {
+-		Log.e(TAG, "connect");
+-		if (mBluetoothAdapter == null || address == null) {
+-			Log.w(TAG, "BluetoothAdapter not initialized or unspecified address.");
++		Log.d(TAG, "BluetoothLeService connect");
++		if (mBleManager.isInit(address)) {
++			Log.d(TAG, "BluetoothAdapter not initialized or unspecified address.");
+ 			return false;
+ 		}
+ 
+-		final BluetoothDevice device = mBluetoothAdapter.getRemoteDevice(address);
+-		if (device == null) {
+-			Log.w(TAG, "Device not found.  Unable to connect.");
++		if (mBleManager.getRemoteDevices(address) == null) {
++			Log.d(TAG, "Device not found.  Unable to connect.");
+ 			return false;
+ 		}
+-		// We want to directly connect to the device, so we are setting the autoConnect
+-		// parameter to false.
+-		mBluetoothGatt = device.connectGatt(this, false, mGattCallback);
+-		Log.d(TAG, "Trying to create a new connection.");
++
++		mBleManager.connectGatt(this, false, mGattCallback);
+ 		mBluetoothDeviceAddress = address;
+ 		mConnectionState = STATE_CONNECTING;
+ 		return true;
+ 	}
+ 
+ 	public void disconnect() {
+-		if (mBluetoothAdapter == null || mBluetoothGatt == null) {
+-			Log.w(TAG, "BluetoothAdapter not initialized");
+-			return;
+-		}
+-		mBluetoothGatt.disconnect();
++		mBleManager.disconnect();
+ 	}
+ 
+ 	public void close() {
+-		if (mBluetoothGatt == null) {
+-			return;
+-		}
+-		mBluetoothGatt.close();
+-		mBluetoothGatt = null;
++		mBleManager.closeGatt();
+ 	}
+ 
+ 	public void readCharacteristic(BluetoothGattCharacteristic characteristic) {
+-		if (mBluetoothAdapter == null || mBluetoothGatt == null) {
+-			Log.w(TAG, "BluetoothAdapter not initialized");
+-			return;
+-		}
+-		mBluetoothGatt.readCharacteristic(characteristic);
++		mBleManager.readCharacteristic(characteristic);
++	}
++	
++	public boolean writeCharacteristic(BluetoothGattCharacteristic characteristic, String value) {
++		return mBleManager.writeCharacteristic(characteristic, value);
+ 	}
+ 
+-	public void setCharacteristicNotification(BluetoothGattCharacteristic characteristic,
++	public boolean setCharacteristicNotification(BluetoothGattCharacteristic characteristic,
+ 			boolean enabled) {
+-		if (mBluetoothAdapter == null || mBluetoothGatt == null) {
+-			Log.w(TAG, "BluetoothAdapter not initialized");
+-			return;
+-		}
+-		mBluetoothGatt.setCharacteristicNotification(characteristic, enabled);
+-
+-		// This is specific to Heart Rate Measurement.
+-		if (UUID_HEART_RATE_MEASUREMENT.equals(characteristic.getUuid())) {
+-			BluetoothGattDescriptor descriptor = characteristic.getDescriptor(
+-					UUID.fromString(SampleGattAttributes.CLIENT_CHARACTERISTIC_CONFIG));
+-			descriptor.setValue(BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE);
+-			mBluetoothGatt.writeDescriptor(descriptor);
+-		}
++		return mBleManager.setCharacteristicNotification(characteristic, enabled);
+ 	}
+ 
+ 	public List<BluetoothGattService> getSupportedGattServices() {
+-		if (mBluetoothGatt == null) 
+-			return null;
+-		return mBluetoothGatt.getServices();
++		return mBleManager.getSupportServices();
+ 	}
+ 
+ 	public BluetoothGatt getGatt(){
+-		return  mBluetoothGatt;
++		return  mBleManager.getBluetoothGatt();
+ 	}
++	
+ }
+diff --git a/BleServerEmulator/Android.mk b/BleServerEmulator/Android.mk
+index af4f7e8..72f5261 100644
+--- a/BleServerEmulator/Android.mk
++++ b/BleServerEmulator/Android.mk
+@@ -13,9 +13,6 @@ LOCAL_PACKAGE_NAME := BleServerEmulator
+ LOCAL_CERTIFICATE := platform
+ LOCAL_PRIVILEGED_MODULE := true
+ 
+-#LOCAL_PROGUARD_FLAG_FILES := proguard.flags
+-#include frameworks/opt/setupwizard/navigationbar/common.mk
+-
+ include $(BUILD_PACKAGE)
+ 
+ # Use the following include to make our test apk.
+diff --git a/BleServerEmulator/res/drawable-hdpi/btn_switch_off.png b/BleServerEmulator/res/drawable-hdpi/btn_switch_off.png
+new file mode 100755
+index 0000000000000000000000000000000000000000..39bccc06c8a96f8a89f651527ccea553bfe939b8
+GIT binary patch
+literal 2243
+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
+RXEOi*002ovPDHLkV1n^SNRa>l
+
+literal 0
+HcmV?d00001
+
+diff --git a/BleServerEmulator/res/drawable-hdpi/btn_switch_on.png b/BleServerEmulator/res/drawable-hdpi/btn_switch_on.png
+new file mode 100755
+index 0000000000000000000000000000000000000000..323435b8b8765b0cf7fcdcabcb05a75ba2a199f3
+GIT binary patch
+literal 4502
+zcmV;H5ozv;P)<h;3K|Lk000e1NJLTq003A3001@!1^@s6Lu+0h000qPNkl<Zc-qxm
+zd3aUjng6}tId{#yHwjrGgs=zM)Ilq_6hX&owXIgs`m~D6Fym9IwX{>M_R-O5@fjUg
+zn7UUTrYdT2nOYGmAVpcFvKW@c1QN(X*1Mj2@A<xW{<wP*NXP=o$HS9zlY7oR-|zdK
+z-@AP8dkOs*pR{kp#X09CU;njzy?s|;pF<Gkdo=f%Ug@6_Qbu`Dg|fmNDI<{R)rGlt
+zpU=#_xCY1maqKAmCuJvVty4IBZp~Tg5$?UMvST|#HJ{<09=tU70wZzu#*S?`FZ--M
+zV?-E$@lMO?GqwkIo!=pS^8zw-Rus`Oh6=+_VVE#svI4W}EpEL4I1UweoeTqDR!~aC
+z7C-^S1mgHl5D0(<0YL(~u)rp)uxU0}g<k8_oLjRk?hUg&XKuKv;F9hA#pZ+oUfsR{
+z-^sZE0I;(8FSFNlY<Q$T+EUJ>iWRHmWeH#c#by(q)Icz|Th_*ZrIdtJ3M3ht)Zi9Q
+z6zK)X({qt)^}wyU;L@D1>vj+UVHt*B8t|DuZjbt?#cV~R*$S`pfpo2Dw7uxSrFj?r
+z<_Gx~ZvcS5wQR&idFKr-z{?x{7a9rIp3uHO><fMK69PdOdJN1Iw|a(@(<zsEN6ZY0
+zT`qad%&FtVjjPy^QVL2+=u(3dc9dF1Vw}Ac6SK-N);St(iyJOI3t74yx@O6^4W%SP
+z(m)^@g3k<~KHP`{{u)#n2YJ6yO+hj+%{6J|w5;-fi->6ZqT(M7JiyP?zlPgK-iT)!
+zUM;LP>K4^R4nOFXK4BNO1g6Bqz2#|F#&Xv?Nia2?u}N?_B@xP$5GKK+T$th*k7@35
+z%<xP`v7->#R?l%~n7)wdBWQ-uVzgnezmj))_u)(bZepEL>KOGO)7<6HFC6*9`q%2;
+z!HpxY?mxiy9eNTEj=2*rH@!V)o$rh1+Dz{Z$r6GDGc$qEH(=A*+XJ{ngp}w~Tw598
+zNCZyPhG~vTI5%e&X68;sp*;@{-QFXJy%|v%MMu<&z1}L`*t(5&h4w<z^@{HoU;MLc
+z3NQck-pWUDUH%oAnR8m-0RG<oTkyf;m$9_&*`MwR?S9%XLmI^<%nT;#i;YYNw-bB2
+z$U$uN5OV<tOaPREk_s|n!fm>6$%ykXukc)yxkkgPS!3cv{R0+=eI6)wb0$k14K?%D
+zww?5T(<ktYkotDsS$8ikUHE997`)c|1?Js62mChEuWOgyS!L8d9+CzNp%EoCp|9Zf
+z!hj{gP0SS>15E)+N~n-TnJB@f1>eT};`5PX_w<{sy^)cKj9`1qPQ2UrG1tmQn&c|G
+z_m>kEJ(4XvYE$cW%pNhT%lTS&7j-NeiEX!i2Jg+5B~`|u$HN?fCbTr(_G1#9xwM@@
+z$#~72Vx(f2Q4<tm%&<(xf|AQ|;mA2~S+fQW+@w4uz!DltoW&Sp8%18jhkb#ni+1_<
+zM>jmPW`p~t5^P$&u4jOMSGNq0mfej9YM;JyXK3$#nJ`I%#!O5^G%$`cWlo^8>qY6$
+z2{Bj#W>f+p#u=8=aDCa8n3X>RHr<w~(}OwUhE<S2o-G$;j?wHjeDn|h-uXA&brU}{
+z`QO(+_RaJ7_^A(imWcm6{KEXte4ExpA<05I4H!Gpj9O<`EW_9(-D!qW3}s4iP+_`0
+z5jTvz2B+sw9ehB0k}@LH2OF`X=Fhw-xP#{xp8x&Z%NG8n^Lx95t`F5ME7}_T>X|5{
+z7!Yu|8(%k#xrzU2VOY$Vfx!wO2}FYtjOHR-U2-{2FPPRX>rduLJjtV+MYy))3Yuaa
+zFaF-V<%!2@UL1W)fS+r89RN@pY5Yx48dEK#W5Ai)$z#aSPEJ|xn4cSS#UkMd9EKH_
+z6<&y0g)`z#1)ov|r{DirPbsb|`5v5XpH$<oy$=B1tpA{UiFm61l_~4Jn=1?sL-aB)
+zb0V_Pt+$W_H&g3aG1!y{wgoWHeJ&PHU5El_Uf(^KK^##P#ajnI#QQC4aQUeDXWv+I
+z^|o#$VvGMDZ-qDvB4Y61Gav~rccM8nNHIcz5Q;b-myVi?0%u<DLhw_-WQ(w1UeO#b
+z7Wr7;ylG{IL_FQ_DgfZN>U*#CO8<00!~`NH9ykUQx($0fJI9=e)D*)sB~(yiZvHtq
+zqi}l9>B&>5#{f`d&!@`@FXSeF%eZ^?J^C*Iu%dPq#2v*8!OWsA+^{4bo6&$ghTQ$l
+zB#l~<w3LV@QbC(!L_%SdYQ>maJR5f1c5+;?eheW5&dQrfQ*Gn1tF7Xv%xwEf=~Xd_
+zxS?{%Y$7octQeqydkj_g+MB7(ab$_XOtB1^1Yj`!DQ5=8=ZwX08F}^*m|HLhDyqia
+zvG4wK0YES_yec@)WSPe&LEuu_%PH{Vxdtc(D~2>BvZNie@@K$lbqq;q=-xL5X5^lR
+zQF>ucW3c5SW+tuu7CkE@Lw7~loFE3_5sc*#s8e)9sf<rjpJN9~GE^vvBF@KE<1RzC
+z%`>E>p|ciSGz)6|M{vkEBK8=SE5+VWrPHVUv&A4yBB8s9Eu2Ic90Ql*PD4C2RtzWw
+zM1k>+F(}R|7;;`iPj<(y+b}(+93j(~z0+HfB_`O)CPdkE0|Vrk@v-x~DW8`zQkKl|
+zybc30sz4?%!7~<C-G*U>Z+z3C#8J!+vgxNgrpy!?#5n?Dz*q9Pz;IGL;=rfbMJXX7
+zgfZ@t;e>65kM6d(C|7t8l%aD(yY$Y`VgL`ye7d@2nVF_Uo+l<143-LrGDc<<4Lg7n
+z!=*csqj}I2Zk{RHrEd}qWLVsbylP5&Qzuf~tz#1qOvrbR$fWi#8V-vCZi@@e(e}y0
+z;Bd}>8j@o~ZW$}U30>f%x5jZ1W>z2wcx<ko)@;bSYZhUFU9%$~gV`b|ja<<=;nE-G
+zQa7wk8Z^rA9+I!q_UD)xkPJ=J;$$CQ5EI3AV63DgU<PwVY!j&8>fS|PyWL+yCc9Iy
+z2B&c5&X#%jF*rFtVhE?Occ}EJYJmOUo>!&wd4M8?KsYcYvuC}Tw^R~A8HSS_USSi~
+zj={`Lc8S8cYowP>QxX~!Gg<;|7_K7}H4umf;M5#G;SsJXmD~jDXK+D1{Jk6E5~njg
+zR)47kqruk%9(E=!HUg0lIwD@=S+n<xTrGRIWOcF>3aRRxuIoVr2u*-BMs0f?hAF=A
+zMSW<Aw4u<Fzei{!wsc<%+DAjzM?X0MJ_&--7?rIxkV+0q1J@jC<<@8i+*;OFQDIb8
+z2vE3RksJ-gBE&LmqzNbuIMDVDTKuiUB2}4gZ=z-tUmx8^2Ey1L+_OcDv5pG3MAo*G
+zKaq@3E{QSe0%Rf7hmPV<Tir1NmZ8gDui?d4N56*0>iTk=b96x5IdWl8LakHrQu~t(
+zahDeag0Kp-D=&5&*$t`Wu*wHlwp62{;{fay`?^J=e-sciozs*~+B%Jdmrk-*Pf0f|
+zsSqF{Xu1y5rttZpEjZj(Kjc}QxVJz!h_y8v;YA?ecDO#BnKM-i0Qm0-_iq$T)gYV#
+z9(OY|z~-`JUq=-_uil(d);g5gThX*1pVe>1h^*Y2d#2sK5dg%)hnJy9D+-O!vtNks
+z)H9tZ#N2m@piaqm5I~xM#c73Mi(vJEwK&jN)qT)16xbWT@s6MuA6Kp87H-FcoN+5A
+z+RECW+WS(b{a>(uaeY9AiUo-itDreXD?pb#FmbXZRjGK2l2gThiTnhlf(%Q9ngfV5
+zgm6Ro0^EA;kKwdBhO9iSuiA)5wl9a%lhyI(%U;Y$kRc-xJk>GzdYyDAKEb*OLLc6H
+zoUo4wqzhObHjq<b&B68fs&-dq@_vYbOGIe)w_w$Qj}R0F&di;@F#SnO0{md@GCWZF
+z^L5#p`%ekVoy^H3ZkCeUNCaUMuzMUhVm9K9ovTpOd?>TzbqHv$-|*wj-S6?2?YmHv
+zRq)<@bAIvO?>9Z&72x|ye+B>;V;y;)RaomJt3fp^sT6c4vzqiKVm`5OXt26%__A#e
+zUf;0_hua!XxgIAl@f!iWU$Gh=9{H54c5A}~SJ^!PaL?>J((QHT*zm;1Z9n|=bxrlr
+zrYji?LE^+}gsBHqk*YyUv<D=TKIn9u=*u7`L{$W}?MDy}87R#zfyeGXB|s;z@ELxr
+zu3U?iRUdFOxANH|PG9oay!%&o;}B(z1qT-6xp5Egy5d*Y6t$S`-$D%Jcun_-gPSy#
+zU2^V}PS^~KoOoy`-X#iV2q6$=0|(n`5ega@=_*7{R(57T$Do0ovff05mOv|3A6Uz8
+zee-|RsG4bpXUZ$f{`vR!d;aG%gjY3ZoY`f!^X9w-ux_4$C&&JFahY}0lR9Z&?qS#C
+z7`<-EItV)cd((eMlxUxd-=IbiRt>@`V9l~4WQ*XVx=-=PFJH%w+FdZEnOu#*kTd2~
+zc>y!yP+J||*!?cvsCti@xeXINW1oHQJCEK10548m+U5K%0DpJHg?MA)lK_CrbLQSv
+zY$<pm=C&Qj+fCmxVjTO?O#(@oI-C~8WvB@eNDzcBKo$YgWBzg2VdAsq%~-zqC491P
+z9om8&$<G`}kW+>i2t`8ps{U)duww<@ul<<YH6O;i$2@yU!3DnnfLFG>j%#OK**6F4
+zj+zITSBDSXrkDi)j!%SAk7venp3&&ih0RHSIK>Xi@Pkvwq~fPY1sPFb!-O;yII6&=
+zg5e8cw51sHO3%mq3Fl*c{#e*`+p*ii`T($GiTaL4e12#fe|q@u*zMm(R;yJ_%bxu5
+z^7%^_^&%)e_IRh|Bdn}nfz7w9{qV<kFFe?4wx1PYGaFzMB;swu$CyADMp8GdrzH8Q
+zQxkdY{W1MbxNnIKR3-p|pj&i!l@C>I)i}`f4LU-8uvBnb?9hb{Aw-wY%?O~5u?wS=
+zLMUqBV0$e-Kez?&?*A*VIr14Dj2<SB!(IQaoHKs;_`C-m0D#xFzKK;YyxsQ@;gj}_
+zxW4KR9G$ftOAr5H@}cmNdk#g8EHqREc43Xtm{WCG-8H*(>BWdQxlnv(BiZYgI974z
+zEse!shKee1L_$U-lo@-UGUKnqCbG$mVtXNG<dvg5ZxSZvk3*rW01n*-t8Pt}0(8gJ
+zh#5h|jG)zMM|JB#9B8e^u9gZM^dII1d6aB6J4&6S{xr@$=Ann@-c^C`0&oBBJzO*E
+z2Ll#^CC9RcSEp<b?0M~Qq~UCWfG)HoE8?y9#{oIf2dt9S?aY)`0T}yw0*bd1utKua
+z6U<Pif{IA6sUXc5`Xo8lzZ{Js8ZlvK8$2QlMUFy@^Nc}JRsr&}@{nuyz+?Boq1!=%
+z5H=(5hyCaX`_K|>#nC`BYJ7F53)Q1TdeJWZ(5*VgWsTlB-Bo_WZ_i({bFlUzlH;YO
+zH*ss>b+PELZrM$hM)i_5=`B^Pa#8_9{M!w>+r{Xl!%4R+EpNdpRvMo)SSk*1;;Ugy
+z6=Sohz*40af*DEyQkjSv5hzo^3JYwo!lqeaB?~N?1sViE1jz~}M-gQc5fx>FBV-^9
+z=me+D*->O0Q9Hpg_L)b%eed%C@Yom2@vAwD2N&SZqt$G4FKbvat3J|nc8HC+0U4SX
+zWz#8@1e1bFv}JW}A4sB!jEX8KPUVObRhSB?CdI^eMVPS;P{<goq2hm2DXC!wSV@>t
+zfmP~jW@1kh020tiKxjHFLWfneL_E6dZ%&JIeUY_b>#ao#woNTR&D-Cccb~@}kG_SQ
+z3l=0_FFpLMvnE{Yn(ml9E1-<?nxf590y0?cQ$edC!{Y(gyW7f0VxN$T1XGntrR6ye
+zeuC{BFW8nbFGD4mEYns@B^H*F*NR_FI)uI2DeQ(@%c?A}=I^x$%f^a8)z&h5iSLmM
+o?hPi4<5QcS$IoZ~Yo9Utf7C^f*AxnDH2?qr07*qoM6N<$g1S?CwEzGB
+
+literal 0
+HcmV?d00001
+
+diff --git a/BleServerEmulator/res/drawable/btn_switch.xml b/BleServerEmulator/res/drawable/btn_switch.xml
+new file mode 100755
+index 0000000..3032ac4
+--- /dev/null
++++ b/BleServerEmulator/res/drawable/btn_switch.xml
+@@ -0,0 +1,6 @@
++<?xml version="1.0" encoding="utf-8"?>
++<selector
++  xmlns:android="http://schemas.android.com/apk/res/android">
++    <item android:state_checked="true" android:drawable="@drawable/btn_switch_on" />
++    <item android:drawable="@drawable/btn_switch_off" />
++</selector>
+diff --git a/BleServerEmulator/res/layout/pager_setting.xml b/BleServerEmulator/res/layout/pager_setting.xml
+index a2439c9..7ca62c4 100755
+--- a/BleServerEmulator/res/layout/pager_setting.xml
++++ b/BleServerEmulator/res/layout/pager_setting.xml
+@@ -63,7 +63,7 @@
+             android:layout_height="wrap_content"
+             android:layout_gravity="center_vertical"
+             android:background="@android:color/transparent"
+-            android:button="@drawable/ios7_btn"
++            android:button="@drawable/btn_switch"
+             android:checked="false"
+             android:scaleX="0.7"
+             android:scaleY="0.7"
+diff --git a/BleServerEmulator/res/layout/permissions.xml b/BleServerEmulator/res/layout/permissions.xml
+index a7776a1..389b1e1 100755
+--- a/BleServerEmulator/res/layout/permissions.xml
++++ b/BleServerEmulator/res/layout/permissions.xml
+@@ -1,4 +1,18 @@
+ <?xml version="1.0" encoding="utf-8"?>
++<!-- Copyright (C) 2015 The Android Open Source Project
++
++     Licensed under the Apache License, Version 2.0 (the "License");
++     you may not use this file except in compliance with the License.
++     You may obtain a copy of the License at
++
++          http://www.apache.org/licenses/LICENSE-2.0
++
++     Unless required by applicable law or agreed to in writing, software
++     distributed under the License is distributed on an "AS IS" BASIS,
++     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++     See the License for the specific language governing permissions and
++     limitations under the License.
++-->
+ <FrameLayout
+     xmlns:android="http://schemas.android.com/apk/res/android"
+     android:id="@+id/permissions"
+diff --git a/BleServerEmulator/src/com/freescale/bleserver/CpuInfoActivity.java b/BleServerEmulator/src/com/freescale/bleserver/CpuInfoActivity.java
+index 8023b29..0b24a72 100755
+--- a/BleServerEmulator/src/com/freescale/bleserver/CpuInfoActivity.java
++++ b/BleServerEmulator/src/com/freescale/bleserver/CpuInfoActivity.java
+@@ -15,6 +15,8 @@
+  */
+ package com.freescale.bleserver;
+ 
++import com.freescale.bleserver.global.Attributes;
++
+ import android.app.Activity;
+ import android.os.Bundle;
+ import android.os.Handler;
+@@ -22,9 +24,6 @@ import android.view.Window;
+ import android.view.WindowManager;
+ import android.widget.TextView;
+ 
+-import com.freescale.bleserver.R;
+-import com.freescale.bleserver.global.Attributes;
+-
+ public class CpuInfoActivity extends Activity{
+ 
+ 	private TextView mTvCpuTemp;
+diff --git a/BleServerEmulator/src/com/freescale/bleserver/EditActivity.java b/BleServerEmulator/src/com/freescale/bleserver/EditActivity.java
+index 019b0d7..ba280b7 100755
+--- a/BleServerEmulator/src/com/freescale/bleserver/EditActivity.java
++++ b/BleServerEmulator/src/com/freescale/bleserver/EditActivity.java
+@@ -15,15 +15,14 @@
+  */
+ package com.freescale.bleserver;
+ 
++import com.freescale.bleserver.global.Attributes;
++
+ import android.app.Activity;
+ import android.os.Bundle;
+ import android.os.Handler;
+ import android.view.Window;
+ import android.widget.TextView;
+ 
+-import com.freescale.bleserver.R;
+-import com.freescale.bleserver.global.Attributes;
+-
+ public class EditActivity extends Activity{
+ 
+ 	private TextView mTvCpuTemp;
+diff --git a/BleServerEmulator/src/com/freescale/bleserver/GuideAcitivity.java b/BleServerEmulator/src/com/freescale/bleserver/GuideAcitivity.java
+index 192715e..be57950 100755
+--- a/BleServerEmulator/src/com/freescale/bleserver/GuideAcitivity.java
++++ b/BleServerEmulator/src/com/freescale/bleserver/GuideAcitivity.java
+@@ -15,8 +15,6 @@
+  */
+ package com.freescale.bleserver;
+ 
+-import com.freescale.bleserver.R;
+-
+ import android.app.Activity;
+ import android.os.Bundle;
+ import android.view.Window;
+diff --git a/BleServerEmulator/src/com/freescale/bleserver/HeartRateAcitivity.java b/BleServerEmulator/src/com/freescale/bleserver/HeartRateAcitivity.java
+index fbaa0c3..a56392a 100755
+--- a/BleServerEmulator/src/com/freescale/bleserver/HeartRateAcitivity.java
++++ b/BleServerEmulator/src/com/freescale/bleserver/HeartRateAcitivity.java
+@@ -15,6 +15,8 @@
+  */
+ package com.freescale.bleserver;
+ 
++import com.freescale.bleserver.global.Attributes;
++
+ import android.app.Activity;
+ import android.os.Bundle;
+ import android.util.Log;
+@@ -26,9 +28,6 @@ import android.widget.Button;
+ import android.widget.EditText;
+ import android.widget.TextView;
+ 
+-import com.freescale.bleserver.R;
+-import com.freescale.bleserver.global.Attributes;
+-
+ public class HeartRateAcitivity extends Activity implements OnClickListener{
+ 
+ 	private EditText mEtHeartRate;
+diff --git a/BleServerEmulator/src/com/freescale/bleserver/HomeActivity.java b/BleServerEmulator/src/com/freescale/bleserver/HomeActivity.java
+index f1c3d77..8113fc3 100755
+--- a/BleServerEmulator/src/com/freescale/bleserver/HomeActivity.java
++++ b/BleServerEmulator/src/com/freescale/bleserver/HomeActivity.java
+@@ -16,6 +16,7 @@
+ package com.freescale.bleserver;
+ import java.util.ArrayList;
+ 
++import android.R.interpolator;
+ import android.bluetooth.BluetoothAdapter;
+ import android.bluetooth.BluetoothGattServer;
+ import android.bluetooth.BluetoothManager;
+@@ -40,35 +41,31 @@ import android.widget.TextView;
+ import android.widget.Toast;
+ 
+ import com.freescale.bleserver.R;
++import com.freescale.bleserver.ble.BleServerManager;
+ import com.freescale.bleserver.global.Attributes;
+ import com.freescale.bleserver.pager.BasePager;
+ import com.freescale.bleserver.pager.HomePager;
+ import com.freescale.bleserver.pager.SettingPager;
+-import com.freescale.bleserver.utils.BleUtil;
+ import com.freescale.bleserver.utils.PrefUtils;
+ 
+ public class HomeActivity extends FragmentActivity{
+ 
+-	//Fragment Tag
+ 	private static final String FRAG_HOME = "homeFragment";
+ 	private static final String FRAG_EDIT = "editFragment";
+-	private static final String TAG = "BLE";
+-	//UI Compoments
++	private static final String TAG = "BleServer";
++	
+ 	private RadioGroup mRgHome;
+ 	private BatteryReceiver mBatReceiver = null;
+ 	private TextView mTitle;
+ 	public ViewPager mVpHome;
+ 	private HomePagerAdapter mHomePagerAdapter;
+ 	public ArrayList<BasePager> mPagerList;
+-	//2 child pager of ViewPager
+-	private HomePager mHomePager;
++	
++	public HomePager mHomePager;
+ 	private SettingPager mSettingPager;
+ 
+-	private static final int REQUEST_ENABLE_BT = 1;
+-	// BT
+-	private BluetoothAdapter mBTAdapter;
+-	private BluetoothLeAdvertiser mBTAdvertiser;
+ 	public BluetoothGattServer mGattServer;
++	public BleServerManager mBleServerManager;
+ 
+ 	@Override
+ 	protected void onCreate(Bundle savedInstanceState) {
+@@ -76,7 +73,6 @@ public class HomeActivity extends FragmentActivity{
+ 		initView();
+ 		initBle();
+ 		initData();
+-
+ 	}
+ 	
+ 	@Override
+@@ -90,47 +86,36 @@ public class HomeActivity extends FragmentActivity{
+ 		super.onDestroy();
+ 		mHomePager.stopThread();
+ 		unregisterReceiver(mBatReceiver);
+-		stopAdvertise();
++		mBleServerManager.stopAdvertise();
+ 		PrefUtils.setBoolean(this, PrefUtils.BLE_STATE, false);
+ 	}
+ 
+ 	private void initView() {
+-		//find view
++		
+ 		requestWindowFeature(Window.FEATURE_NO_TITLE);
+ 		getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+ 		setContentView(R.layout.activity_home);
++		
+ 		mRgHome = (RadioGroup) findViewById(R.id.rg_group);
+ 		mTitle = (TextView)findViewById(R.id.tv_home_title);
+ 		mVpHome = (ViewPager) findViewById(R.id.vp_home);
+-		//set listener
++
+ 		mRgHome.setOnCheckedChangeListener(new MyRgCheckListener());
+ 	}
+ 
+ 	private void initBle() {
+-		//1.BLE check
+-		if (!BleUtil.isBLESupported(this)) {
++		
++		mBleServerManager = BleServerManager.getBleServerManager(this);
++		if (!mBleServerManager.isBLESupported(this)) {
+ 			Toast.makeText(this, R.string.ble_not_supported, Toast.LENGTH_SHORT).show();
+ 			finish();
+ 			return;
+ 		}
+-		//2. BT check, get BTAdapter
+-		BluetoothManager manager = BleUtil.getManager(this);
+-		if (manager != null) {
+-			mBTAdapter = manager.getAdapter();
+-		}
+-		//3.if the bluetooth has not been enabled, enable it!
+-		if ((mBTAdapter == null) || (!mBTAdapter.isEnabled())) {
+-			Toast.makeText(this, R.string.bt_unavailable, Toast.LENGTH_SHORT).show();
+-			Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
+-			startActivityForResult(enableBtIntent, REQUEST_ENABLE_BT);
+-		}
+-		//4.set device name
+-		mBTAdapter.setName("i.MX Device");
+-		//5.set the related UI listener, set it in the HomePager
++		mBleServerManager.setName("i.MX Device");
+ 	}
+ 
+ 	private void initData() {
+-		//view pager
++		
+ 		mPagerList = new ArrayList<BasePager>();
+ 		mHomePager = new HomePager(this);
+ 		mSettingPager = new SettingPager(this);
+@@ -139,7 +124,6 @@ public class HomeActivity extends FragmentActivity{
+ 		mHomePagerAdapter = new HomePagerAdapter();
+ 		mVpHome.setAdapter(mHomePagerAdapter);	
+ 
+-		//batteryInfo Receiver
+ 		mBatReceiver = new BatteryReceiver();
+ 		IntentFilter filter=new IntentFilter(Intent.ACTION_BATTERY_CHANGED);
+ 		registerReceiver(mBatReceiver, filter);
+@@ -168,15 +152,27 @@ public class HomeActivity extends FragmentActivity{
+ 	private class BatteryReceiver extends BroadcastReceiver{
+ 		@Override
+ 		public void onReceive(Context context, Intent intent) {
+-			int rawlevel = intent.getIntExtra("level", -1);
+-			int scale = intent.getIntExtra("scale", -1); 
++			int rawlevel = intent.getIntExtra("level", -1); 
++			int scale = intent.getIntExtra("scale", -1);  
+ 			int level = -1;  
+ 			if (rawlevel >= 0 && scale > 0) {  
+ 				level = (rawlevel * 100) / scale;  
+ 			}  
+ 			Attributes.battery = level;
++			if(listener != null)
++				listener.onBatteryChanged();
+ 		}
+ 	}
++	
++	private onBatteryChangedListener listener;
++	
++	public void setonBatteryChangedListener(onBatteryChangedListener listener){
++		this.listener = listener;
++	}
++	
++	public interface onBatteryChangedListener{
++		public void onBatteryChanged();
++	}
+ 
+ 	//ViewPagerAdapter
+ 	class HomePagerAdapter extends PagerAdapter{
+@@ -205,52 +201,4 @@ public class HomeActivity extends FragmentActivity{
+ 		}
+ 	}
+ 
+-	//start and stop Advertise as Immediate Alert Service
+-	public void startIASAdvertise() {
+-		if (mBTAdapter == null) {
+-			return;
+-		}
+-		if (mBTAdvertiser == null) {
+-			mBTAdvertiser = mBTAdapter.getBluetoothLeAdvertiser();
+-		}
+-		if (mBTAdvertiser != null) {
+-			ImmediateAlertService ias = new ImmediateAlertService(this);
+-			mGattServer = BleUtil.getManager(this).openGattServer(this, ias);
+-			if(mGattServer == null){
+-				Log.e("aa" , "gatt is null");
+-			}
+-			ias.setupServices(mGattServer);
+-			mBTAdvertiser.startAdvertising(BleUtil.createAdvSettings(true, 0),BleUtil.createFMPAdvertiseData(),mAdvCallback);
+-		}
+-	}
+-
+-	public void stopAdvertise() {
+-		//close the gatt server
+-		if (mGattServer != null) {
+-			mGattServer.clearServices();
+-			mGattServer.close();
+-			mGattServer = null;
+-		}
+-		//close the btadvertiser
+-		if (mBTAdvertiser != null) {
+-			mBTAdvertiser.stopAdvertising(mAdvCallback);
+-			mBTAdvertiser = null;
+-		}
+-	}
+-
+-	private AdvertiseCallback mAdvCallback = new AdvertiseCallback() {
+-		public void onStartSuccess(android.bluetooth.le.AdvertiseSettings settingsInEffect) {
+-			Log.i(TAG, "callback 0");
+-			if (settingsInEffect != null) {
+-				Log.d(TAG, "onStartSuccess TxPowerLv="+ settingsInEffect.getTxPowerLevel()+ " mode=" + settingsInEffect.getMode()+ " timeout=" + settingsInEffect.getTimeout());
+-			} else {
+-				Log.d(TAG, "onStartSuccess, settingInEffect is null");
+-			}
+-		}
+-
+-		public void onStartFailure(int errorCode) {
+-			Log.d(TAG, "onStartFailure errorCode=" + errorCode);
+-		};
+-	};
+-	
+ }
+diff --git a/BleServerEmulator/src/com/freescale/bleserver/ImmediateAlertService.java b/BleServerEmulator/src/com/freescale/bleserver/ImmediateAlertService.java
+deleted file mode 100755
+index 0b65658..0000000
+--- a/BleServerEmulator/src/com/freescale/bleserver/ImmediateAlertService.java
++++ /dev/null
+@@ -1,249 +0,0 @@
+-/*
+- * Copyright (C) 2016 Freescale Semiconductor, Inc.
+- *
+- * Licensed under the Apache License, Version 2.0 (the "License");
+- * you may not use this file except in compliance with the License.
+- * You may obtain a copy of the License at
+- *
+- *      http://www.apache.org/licenses/LICENSE-2.0
+- *
+- * Unless required by applicable law or agreed to in writing, software
+- * distributed under the License is distributed on an "AS IS" BASIS,
+- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+- * See the License for the specific language governing permissions and
+- * limitations under the License.
+- */
+-package com.freescale.bleserver;
+-
+-import java.util.UUID;
+-
+-import android.app.Activity;
+-import android.bluetooth.BluetoothGatt;
+-import android.bluetooth.BluetoothGattCharacteristic;
+-import android.bluetooth.BluetoothGattServer;
+-import android.bluetooth.BluetoothGattServerCallback;
+-import android.bluetooth.BluetoothGattService;
+-import android.util.Log;
+-import android.widget.Toast;
+-
+-import com.freescale.bleserver.global.Attributes;
+-import com.freescale.bleserver.global.IMXUuid;
+-
+-public class ImmediateAlertService extends BluetoothGattServerCallback {
+-	private static final String TAG = "BLE";
+-	private byte[] mAlertLevel = new byte[] {(byte) 0x00};
+-	private Activity mActivity;
+-	
+-	public ImmediateAlertService(Activity activity) {
+-		this.mActivity = activity;
+-	}
+-	
+-	private BluetoothGattServer mGattServer;
+-	
+-	public void setupServices(BluetoothGattServer gattServer) {
+-		if (gattServer == null) {
+-			throw new IllegalArgumentException("gattServer is null");
+-		}
+-		mGattServer = gattServer;
+-		
+-		// setup services
+-		{ 
+-			//immediate alert
+-			BluetoothGattService ias = new BluetoothGattService( UUID.fromString(IMXUuid.SERVICE_IMMEDIATE_ALERT),
+-					BluetoothGattService.SERVICE_TYPE_PRIMARY);
+-			//alert level char.
+-			BluetoothGattCharacteristic alc = new BluetoothGattCharacteristic(
+-					UUID.fromString(IMXUuid.CHAR_ALERT_LEVEL),
+-					BluetoothGattCharacteristic.PROPERTY_READ |BluetoothGattCharacteristic.PROPERTY_WRITE | BluetoothGattCharacteristic.PROPERTY_NOTIFY ,
+-					BluetoothGattCharacteristic.PERMISSION_READ |BluetoothGattCharacteristic.PERMISSION_WRITE);
+-			alc.setValue("");
+-			ias.addCharacteristic(alc);
+-			if(mGattServer!=null && ias!=null)
+-				mGattServer.addService(ias);
+-		}
+-
+-		{ 
+-			//device information
+-			BluetoothGattService dis = new BluetoothGattService(
+-					UUID.fromString(IMXUuid.SERVICE_DEVICE_INFORMATION),
+-					BluetoothGattService.SERVICE_TYPE_PRIMARY);
+-			//manufacturer name string char.
+-			BluetoothGattCharacteristic mansc = new BluetoothGattCharacteristic(
+-					UUID.fromString(IMXUuid.CHAR_MANUFACTURER_NAME_STRING),
+-					BluetoothGattCharacteristic.PROPERTY_READ | BluetoothGattCharacteristic.PROPERTY_NOTIFY,
+-					BluetoothGattCharacteristic.PERMISSION_READ);
+-			mansc.setValue("Freescale");
+-			//model number string char.
+-			BluetoothGattCharacteristic monsc = new BluetoothGattCharacteristic(
+-					UUID.fromString(IMXUuid.CHAR_MODEL_NUMBER_STRING),
+-					BluetoothGattCharacteristic.PROPERTY_READ | BluetoothGattCharacteristic.PROPERTY_NOTIFY,
+-					BluetoothGattCharacteristic.PERMISSION_READ);
+-			monsc.setValue("i.MX");
+-			//serial number string char.
+-			BluetoothGattCharacteristic snsc = new BluetoothGattCharacteristic(
+-					UUID.fromString(IMXUuid.CHAR_SERIAL_NUMBER_STRING),
+-					BluetoothGattCharacteristic.PROPERTY_READ | BluetoothGattCharacteristic.PROPERTY_NOTIFY,
+-					BluetoothGattCharacteristic.PERMISSION_READ);
+-			snsc.setValue("000-000-000");
+-			dis.addCharacteristic(mansc);
+-			dis.addCharacteristic(monsc);
+-			dis.addCharacteristic(snsc);
+-			if(mGattServer!=null && dis!=null)
+-				mGattServer.addService(dis);
+-		}
+-
+-		{
+-			//batery information
+-			BluetoothGattService bis = new BluetoothGattService(
+-					UUID.fromString(IMXUuid.SERVICE_BATTERY_SERVICE),
+-					BluetoothGattService.SERVICE_TYPE_PRIMARY);
+-			//batery level
+-			BluetoothGattCharacteristic blChar = new BluetoothGattCharacteristic(
+-					UUID.fromString(IMXUuid.CHAR_BATTERY_LEVEL),
+-					BluetoothGattCharacteristic.PROPERTY_READ | BluetoothGattCharacteristic.PROPERTY_NOTIFY,
+-					BluetoothGattCharacteristic.PERMISSION_READ);
+-			blChar.setValue(Attributes.battery+"");
+-			bis.addCharacteristic(blChar);
+-			if(mGattServer!=null && bis!=null)
+-				mGattServer.addService(bis);
+-		}
+-
+-		{
+-			//heart rate information
+-			BluetoothGattService hris = new BluetoothGattService(
+-					UUID.fromString(IMXUuid.SERVICE_HEART_RATE),
+-					BluetoothGattService.SERVICE_TYPE_PRIMARY);
+-			//heart rate level
+-			BluetoothGattCharacteristic batc = new BluetoothGattCharacteristic(
+-					UUID.fromString(IMXUuid.CHAR_BATTER),
+-					BluetoothGattCharacteristic.PROPERTY_READ | BluetoothGattCharacteristic.PROPERTY_NOTIFY,
+-					BluetoothGattCharacteristic.PERMISSION_READ);
+-			batc.setValue(Attributes.heartRate+"");
+-			hris.addCharacteristic(batc);
+-			if(mGattServer!=null && hris!=null)
+-				mGattServer.addService(hris);
+-		}
+-
+-		{
+-			//cpu temperature
+-			BluetoothGattService cts = new BluetoothGattService(
+-					UUID.fromString(IMXUuid.SERVICE_CPU_TEMP),
+-					BluetoothGattService.SERVICE_TYPE_PRIMARY);
+-			BluetoothGattCharacteristic TemperatureChar = new BluetoothGattCharacteristic(
+-					UUID.fromString(IMXUuid.CHAR_CPU_TEMP),
+-					BluetoothGattCharacteristic.PROPERTY_READ | BluetoothGattCharacteristic.PROPERTY_NOTIFY ,
+-					BluetoothGattCharacteristic.PERMISSION_READ);
+-			TemperatureChar.setValue(Attributes.cpuTemp+"");
+-			cts.addCharacteristic(TemperatureChar);
+-			if(mGattServer!=null && cts!=null)
+-				mGattServer.addService(cts);
+-		}
+-
+-		{
+-			//Date Information
+-			BluetoothGattService dates = new BluetoothGattService(
+-					UUID.fromString(IMXUuid.SERVICE_DATE),
+-					BluetoothGattService.SERVICE_TYPE_PRIMARY);
+-			//Date char
+-			BluetoothGattCharacteristic dateChar = new BluetoothGattCharacteristic(
+-					UUID.fromString(IMXUuid.CHAR_DATE),
+-					BluetoothGattCharacteristic.PROPERTY_READ,
+-					BluetoothGattCharacteristic.PERMISSION_READ);
+-			if(Attributes.Date != null){
+-				dateChar.setValue(Attributes.Date);
+-			}
+-			dates.addCharacteristic(dateChar);
+-			if(mGattServer!=null && dates!=null)
+-				mGattServer.addService(dates);
+-		}
+-
+-		{
+-			//Message Information
+-			BluetoothGattService mis = new BluetoothGattService(
+-					UUID.fromString(IMXUuid.SERVICE_MESSAGE),
+-					BluetoothGattService.SERVICE_TYPE_PRIMARY);
+-			//Message char
+-			BluetoothGattCharacteristic messageChar = new BluetoothGattCharacteristic(
+-					UUID.fromString(IMXUuid.CHAR_MESSAGE),
+-					BluetoothGattCharacteristic.PROPERTY_READ | BluetoothGattCharacteristic.PROPERTY_WRITE | BluetoothGattCharacteristic.PROPERTY_WRITE_NO_RESPONSE,
+-					BluetoothGattCharacteristic.PERMISSION_READ | BluetoothGattCharacteristic.PERMISSION_WRITE);
+-			if(Attributes.Message != null){
+-				messageChar.setValue(Attributes.Message);
+-			}
+-			mis.addCharacteristic(messageChar);
+-			if(mGattServer!=null && mis!=null)
+-				mGattServer.addService(mis);
+-		}
+-	}
+-
+-	public void onServiceAdded(int status, BluetoothGattService service) {
+-		if (status == BluetoothGatt.GATT_SUCCESS) {
+-			Log.d(TAG, "onServiceAdded status=GATT_SUCCESS service=" + service.getUuid().toString());
+-		} else {
+-			Log.d(TAG, "onServiceAdded status!=GATT_SUCCESS");
+-		}
+-	}
+-
+-	public void onConnectionStateChange(android.bluetooth.BluetoothDevice device, int status,
+-			int newState) {
+-		 Log.d(TAG, "onConnectionStateChange status=" + status + "->" + newState);
+-	}
+-
+-	public void onCharacteristicReadRequest(android.bluetooth.BluetoothDevice device,
+-			int requestId, int offset, BluetoothGattCharacteristic characteristic) {
+-		Log.d(TAG, "onCharacteristicReadRequest requestId=" + requestId + " offset=" + offset);
+-		if (characteristic.getUuid().equals(UUID.fromString(IMXUuid.CHAR_MANUFACTURER_NAME_STRING))) {
+-			Log.d(TAG, "CHAR_MANUFACTURER_NAME_STRING");
+-			characteristic.setValue("Freescale");
+-			mGattServer.sendResponse(device, requestId, BluetoothGatt.GATT_SUCCESS, offset,characteristic.getValue());
+-		} else if (characteristic.getUuid().equals(UUID.fromString(IMXUuid.CHAR_MODEL_NUMBER_STRING))) {
+-			Log.d(TAG, "CHAR_MODEL_NUMBER_STRING");
+-			characteristic.setValue("i.Mx");
+-			mGattServer.sendResponse(device, requestId, BluetoothGatt.GATT_SUCCESS, offset,characteristic.getValue());
+-		} else if (characteristic.getUuid().equals(UUID.fromString(IMXUuid.CHAR_SERIAL_NUMBER_STRING))) {
+-			Log.d(TAG, "CHAR_SERIAL_NUMBER_STRING");
+-			characteristic.setValue("000-000-000");
+-			mGattServer.sendResponse(device, requestId, BluetoothGatt.GATT_SUCCESS, offset,characteristic.getValue());
+-		} else if (characteristic.getUuid().equals(UUID.fromString(IMXUuid.CHAR_ALERT_LEVEL))) {
+-			Log.d(TAG, "CHAR_ALERT_LEVEL");
+-			characteristic.setValue(mAlertLevel);
+-			mGattServer.sendResponse(device, requestId, BluetoothGatt.GATT_SUCCESS, offset,characteristic.getValue());
+-		} else if (characteristic.getUuid().equals(UUID.fromString(IMXUuid.CHAR_BATTERY_LEVEL))) {
+-			Log.d(TAG, "CHAR_BATTERY_LEVEL");
+-			characteristic.setValue(Attributes.battery+"");
+-			mGattServer.sendResponse(device, requestId, BluetoothGatt.GATT_SUCCESS, offset,characteristic.getValue());
+-		} else if (characteristic.getUuid().equals(UUID.fromString(IMXUuid.CHAR_BATTER))){
+-			Log.d(TAG, "CHAR_BATTER");
+-			characteristic.setValue(Attributes.heartRate+"");
+-			mGattServer.sendResponse(device, requestId, BluetoothGatt.GATT_SUCCESS, offset,characteristic.getValue());
+-		} else if (characteristic.getUuid().equals(UUID.fromString(IMXUuid.CHAR_CPU_TEMP))){
+-			Log.d(TAG, "CHAR_CPU_TEMP");
+-			characteristic.setValue(Attributes.cpuTemp+"");
+-			mGattServer.sendResponse(device, requestId, BluetoothGatt.GATT_SUCCESS, offset,characteristic.getValue());
+-		} else if (characteristic.getUuid().equals(UUID.fromString(IMXUuid.CHAR_DATE))){
+-			Log.d(TAG, "CHAR_DATE");
+-			characteristic.setValue(Attributes.Date+"");
+-			mGattServer.sendResponse(device, requestId, BluetoothGatt.GATT_SUCCESS, offset,characteristic.getValue());
+-		} else if (characteristic.getUuid().equals(UUID.fromString(IMXUuid.CHAR_MESSAGE))){
+-			Log.d(TAG, "CHAR_MESSAGE");
+-			characteristic.setValue(Attributes.Message+"");
+-			mGattServer.sendResponse(device, requestId, BluetoothGatt.GATT_SUCCESS, offset,characteristic.getValue());
+-		}
+-	}
+-
+-	public void onCharacteristicWriteRequest(android.bluetooth.BluetoothDevice device,
+-			int requestId, BluetoothGattCharacteristic characteristic, boolean preparedWrite,
+-			boolean responseNeeded, int offset, byte[] value) {
+-		if (characteristic.getUuid().equals(UUID.fromString(IMXUuid.CHAR_ALERT_LEVEL))) {
+-			if (value != null && value.length > 0) {
+-				mAlertLevel[0] = value[0];
+-			} else {
+-			}
+-			mGattServer.sendResponse(device, requestId, BluetoothGatt.GATT_SUCCESS, offset, null);
+-		}if(characteristic.getUuid().equals(UUID.fromString(IMXUuid.CHAR_MESSAGE))){
+-			String messageValue = new String(value);
+-			Attributes.Message = messageValue;
+-			MessageAcitivity.mMessageHandler.sendEmptyMessage(0);
+-		}
+-	}
+-}
+diff --git a/BleServerEmulator/src/com/freescale/bleserver/MessageAcitivity.java b/BleServerEmulator/src/com/freescale/bleserver/MessageAcitivity.java
+index 3f73820..0d37369 100755
+--- a/BleServerEmulator/src/com/freescale/bleserver/MessageAcitivity.java
++++ b/BleServerEmulator/src/com/freescale/bleserver/MessageAcitivity.java
+@@ -15,7 +15,6 @@
+  */
+ package com.freescale.bleserver;
+ 
+-import com.freescale.bleserver.R;
+ import com.freescale.bleserver.global.Attributes;
+ 
+ import android.app.Activity;
+@@ -28,14 +27,7 @@ import android.widget.TextView;
+ public class MessageAcitivity extends Activity {
+ 
+ 	private static TextView mTvMesCon;
+-	public static Handler mMessageHandler = new Handler(){
+-		
+-		public void handleMessage(android.os.Message msg) {
+-			if(mTvMesCon != null){
+-				mTvMesCon.setText(Attributes.Message);
+-			}
+-		};
+-	};
++	public static Handler mMessageHandler;
+ 
+ 	@Override
+ 	protected void onCreate(Bundle savedInstanceState) {
+@@ -46,6 +38,14 @@ public class MessageAcitivity extends Activity {
+ 		
+ 		mTvMesCon = (TextView) findViewById(R.id.tv_message_content);
+ 		mTvMesCon.setText(Attributes.Message);
++		mMessageHandler = new Handler(){
++			
++			public void handleMessage(android.os.Message msg) {
++				if(mTvMesCon != null){
++					mTvMesCon.setText(Attributes.Message);
++				}
++			};
++		};
+ 	}
+ 	
+ 	@Override
+diff --git a/BleServerEmulator/src/com/freescale/bleserver/MockServerCallBack.java b/BleServerEmulator/src/com/freescale/bleserver/MockServerCallBack.java
+new file mode 100755
+index 0000000..7cce360
+--- /dev/null
++++ b/BleServerEmulator/src/com/freescale/bleserver/MockServerCallBack.java
+@@ -0,0 +1,349 @@
++/*
++ * Copyright (C) 2016 Freescale Semiconductor, Inc.
++ *
++ * Licensed under the Apache License, Version 2.0 (the "License");
++ * you may not use this file except in compliance with the License.
++ * You may obtain a copy of the License at
++ *
++ *      http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++package com.freescale.bleserver;
++
++import java.util.UUID;
++
++import com.freescale.bleserver.HomeActivity.onBatteryChangedListener;
++import com.freescale.bleserver.global.Attributes;
++import com.freescale.bleserver.global.IMXUuid;
++import com.freescale.bleserver.pager.HomePager;
++import com.freescale.bleserver.pager.HomePager.onDataChangedListener;
++
++import android.app.Activity;
++import android.bluetooth.BluetoothDevice;
++import android.bluetooth.BluetoothGatt;
++import android.bluetooth.BluetoothGattCharacteristic;
++import android.bluetooth.BluetoothGattDescriptor;
++import android.bluetooth.BluetoothGattServer;
++import android.bluetooth.BluetoothGattServerCallback;
++import android.bluetooth.BluetoothGattService;
++import android.util.Log;
++
++public class MockServerCallBack extends BluetoothGattServerCallback {
++	private static final String TAG = "BleServer";
++	private byte[] mAlertLevel = new byte[] {(byte) 0x00};
++	private Activity mActivity;
++	private HomePager mHomepager;
++	private boolean mIsPushStatic = false;
++
++	public MockServerCallBack(Activity activity) {
++		this.mActivity = activity;
++		this.mHomepager = ((HomeActivity)mActivity).mHomePager;
++		mHomepager.setOnDataChangedListener(new onDataChangedListener() {
++
++			@Override
++			public void onDateChanged() {
++				if(mDateChar !=null && btClient != null){
++					mDateChar.setValue(Attributes.Date+"");
++					if(btClient != null){
++						mGattServer.notifyCharacteristicChanged(btClient, mDateChar, false);
++					}
++					if(!mIsPushStatic){
++						try {
++							mGattServer.notifyCharacteristicChanged(btClient, mManufacturerNameChar, false);
++							Thread.sleep(10);
++							mGattServer.notifyCharacteristicChanged(btClient, mModuleNumberChar, false);
++							Thread.sleep(10);
++							mGattServer.notifyCharacteristicChanged(btClient, mSerialNumberChar, false);
++							Thread.sleep(10);
++							mGattServer.notifyCharacteristicChanged(btClient, mBatteryChar, false);
++							mIsPushStatic = true;
++						} catch (InterruptedException e) {
++						}
++					}
++				}
++			}
++
++			@Override
++			public void onTemperatureChanged() {
++				if(mTemperatureChar !=null && btClient != null){
++					mTemperatureChar.setValue(Attributes.cpuTemp+"");
++					if(btClient != null)
++						mGattServer.notifyCharacteristicChanged(btClient, mTemperatureChar, false);
++				}
++			}
++
++			@Override
++			public void onHeartRateChanged() {
++				if(mHeartRateChar !=null && btClient != null){
++					mHeartRateChar.setValue(Attributes.heartRate+"");
++					if(btClient != null)
++						mGattServer.notifyCharacteristicChanged(btClient, mHeartRateChar, false);
++				}
++			}
++
++		});
++
++		HomeActivity homeUI = (HomeActivity) mActivity;
++		homeUI.setonBatteryChangedListener(new onBatteryChangedListener() {
++
++			@Override
++			public void onBatteryChanged() {
++				if(mBatteryChar !=null && btClient != null){
++					mBatteryChar.setValue(Attributes.battery+"");
++					if(btClient != null)
++						mGattServer.notifyCharacteristicChanged(btClient, mBatteryChar, false);
++				}
++			}
++		});
++	}
++
++	private BluetoothGattServer mGattServer;
++	private BluetoothGattCharacteristic mDateChar;
++	private BluetoothDevice btClient;
++	private BluetoothGattCharacteristic mHeartRateChar;
++	private BluetoothGattCharacteristic mTemperatureChar;
++	private BluetoothGattCharacteristic mBatteryChar;
++	private BluetoothGattCharacteristic mManufacturerNameChar;
++	private BluetoothGattCharacteristic mModuleNumberChar;
++	private BluetoothGattCharacteristic mSerialNumberChar;
++
++	public void setupServices(BluetoothGattServer gattServer) {
++		if (gattServer == null) {
++			throw new IllegalArgumentException("gattServer is null");
++		}
++		mGattServer = gattServer;
++		// setup services
++		{ 
++			//immediate alert
++			BluetoothGattService ias = new BluetoothGattService( UUID.fromString(IMXUuid.SERVICE_IMMEDIATE_ALERT),
++					BluetoothGattService.SERVICE_TYPE_PRIMARY);
++			//alert level char.
++			BluetoothGattCharacteristic alc = new BluetoothGattCharacteristic(
++					UUID.fromString(IMXUuid.CHAR_ALERT_LEVEL),
++					BluetoothGattCharacteristic.PROPERTY_READ |BluetoothGattCharacteristic.PROPERTY_WRITE | BluetoothGattCharacteristic.PROPERTY_NOTIFY ,
++					BluetoothGattCharacteristic.PERMISSION_READ |BluetoothGattCharacteristic.PERMISSION_WRITE);
++			alc.setValue("");
++			ias.addCharacteristic(alc);
++			if(mGattServer!=null && ias!=null)
++				mGattServer.addService(ias);
++		}
++
++		{ 
++			BluetoothGattDescriptor descriptor = new BluetoothGattDescriptor(
++					UUID.fromString(IMXUuid.CLIENT_CHARACTERISTIC_CONFIG), 
++					BluetoothGattDescriptor.PERMISSION_WRITE | BluetoothGattDescriptor.PERMISSION_READ);
++			//device information
++			BluetoothGattService dis = new BluetoothGattService(
++					UUID.fromString(IMXUuid.SERVICE_DEVICE_INFORMATION),
++					BluetoothGattService.SERVICE_TYPE_PRIMARY);
++			mManufacturerNameChar = new BluetoothGattCharacteristic(
++					UUID.fromString(IMXUuid.CHAR_MANUFACTURER_NAME_STRING),
++					BluetoothGattCharacteristic.PROPERTY_READ | BluetoothGattCharacteristic.PROPERTY_NOTIFY,
++					BluetoothGattCharacteristic.PERMISSION_READ);
++			mManufacturerNameChar.addDescriptor(descriptor);
++			mManufacturerNameChar.setValue("Freescale");
++			mModuleNumberChar = new BluetoothGattCharacteristic(
++					UUID.fromString(IMXUuid.CHAR_MODEL_NUMBER_STRING),
++					BluetoothGattCharacteristic.PROPERTY_READ | BluetoothGattCharacteristic.PROPERTY_NOTIFY,
++					BluetoothGattCharacteristic.PERMISSION_READ);
++			mModuleNumberChar.addDescriptor(descriptor);
++			mModuleNumberChar.setValue("i.MX");
++			mSerialNumberChar = new BluetoothGattCharacteristic(
++					UUID.fromString(IMXUuid.CHAR_SERIAL_NUMBER_STRING),
++					BluetoothGattCharacteristic.PROPERTY_READ | BluetoothGattCharacteristic.PROPERTY_NOTIFY,
++					BluetoothGattCharacteristic.PERMISSION_READ);
++			mSerialNumberChar.addDescriptor(descriptor);
++			mSerialNumberChar.setValue("000-000-000");
++
++			dis.addCharacteristic(mManufacturerNameChar);
++			dis.addCharacteristic(mModuleNumberChar);
++			dis.addCharacteristic(mSerialNumberChar);
++			if(mGattServer!=null && dis!=null)
++				mGattServer.addService(dis);
++		}
++
++		{
++			//batery information
++			BluetoothGattService bis = new BluetoothGattService(
++					UUID.fromString(IMXUuid.SERVICE_BATTERY_SERVICE),
++					BluetoothGattService.SERVICE_TYPE_PRIMARY);
++			mBatteryChar = new BluetoothGattCharacteristic(
++					UUID.fromString(IMXUuid.CHAR_BATTERY_LEVEL),
++					BluetoothGattCharacteristic.PROPERTY_READ | BluetoothGattCharacteristic.PROPERTY_NOTIFY,
++					BluetoothGattCharacteristic.PERMISSION_READ);
++
++			BluetoothGattDescriptor descriptor = new BluetoothGattDescriptor(
++					UUID.fromString(IMXUuid.CLIENT_CHARACTERISTIC_CONFIG), 
++					BluetoothGattDescriptor.PERMISSION_WRITE | BluetoothGattDescriptor.PERMISSION_READ);
++			mBatteryChar.addDescriptor(descriptor);
++
++			mBatteryChar.setValue(Attributes.battery+"");
++			bis.addCharacteristic(mBatteryChar);
++			if(mGattServer!=null && bis!=null)
++				mGattServer.addService(bis);
++		}
++
++		{
++			//heart rate information
++			BluetoothGattService hris = new BluetoothGattService(
++					UUID.fromString(IMXUuid.SERVICE_HEART_RATE),
++					BluetoothGattService.SERVICE_TYPE_PRIMARY);
++			mHeartRateChar = new BluetoothGattCharacteristic(
++					UUID.fromString(IMXUuid.CHAR_BATTER),
++					BluetoothGattCharacteristic.PROPERTY_READ | BluetoothGattCharacteristic.PROPERTY_NOTIFY,
++					BluetoothGattCharacteristic.PERMISSION_READ);
++
++			BluetoothGattDescriptor descriptor = new BluetoothGattDescriptor(
++					UUID.fromString(IMXUuid.CLIENT_CHARACTERISTIC_CONFIG), 
++					BluetoothGattDescriptor.PERMISSION_WRITE | BluetoothGattDescriptor.PERMISSION_READ);
++			mHeartRateChar.addDescriptor(descriptor);
++
++			mHeartRateChar.setValue(Attributes.heartRate+"");
++			hris.addCharacteristic(mHeartRateChar);
++			if(mGattServer!=null && hris!=null)
++				mGattServer.addService(hris);
++		}
++
++		{
++			//cpu temperature
++			BluetoothGattService cts = new BluetoothGattService(
++					UUID.fromString(IMXUuid.SERVICE_CPU_TEMP),
++					BluetoothGattService.SERVICE_TYPE_PRIMARY);
++			mTemperatureChar = new BluetoothGattCharacteristic(
++					UUID.fromString(IMXUuid.CHAR_CPU_TEMP),
++					BluetoothGattCharacteristic.PROPERTY_READ | BluetoothGattCharacteristic.PROPERTY_NOTIFY ,
++					BluetoothGattCharacteristic.PERMISSION_READ);
++
++			BluetoothGattDescriptor descriptor = new BluetoothGattDescriptor(
++					UUID.fromString(IMXUuid.CLIENT_CHARACTERISTIC_CONFIG), 
++					BluetoothGattDescriptor.PERMISSION_WRITE | BluetoothGattDescriptor.PERMISSION_READ);
++			mTemperatureChar.addDescriptor(descriptor);
++
++			mTemperatureChar.setValue(Attributes.cpuTemp+"");
++			cts.addCharacteristic(mTemperatureChar);
++			if(mGattServer!=null && cts!=null)
++				mGattServer.addService(cts);
++		}
++
++		{
++			//Date Information
++			BluetoothGattService dates = new BluetoothGattService(
++					UUID.fromString(IMXUuid.SERVICE_DATE),
++					BluetoothGattService.SERVICE_TYPE_PRIMARY);
++			mDateChar = new BluetoothGattCharacteristic(
++					UUID.fromString(IMXUuid.CHAR_DATE),
++					BluetoothGattCharacteristic.PROPERTY_NOTIFY,
++					BluetoothGattCharacteristic.PERMISSION_READ);
++			BluetoothGattDescriptor descriptor = new BluetoothGattDescriptor(
++					UUID.fromString(IMXUuid.CLIENT_CHARACTERISTIC_CONFIG), 
++					BluetoothGattDescriptor.PERMISSION_WRITE | BluetoothGattDescriptor.PERMISSION_READ);
++			mDateChar.addDescriptor(descriptor);
++
++			if(Attributes.Date != null){
++				mDateChar.setValue(Attributes.Date);
++			}
++			dates.addCharacteristic(mDateChar);
++			if(mGattServer!=null && dates!=null)
++				mGattServer.addService(dates);
++		}
++
++		{
++			//Message Information
++			BluetoothGattService mis = new BluetoothGattService(
++					UUID.fromString(IMXUuid.SERVICE_MESSAGE),
++					BluetoothGattService.SERVICE_TYPE_PRIMARY);
++			//Message char
++			BluetoothGattCharacteristic messageChar = new BluetoothGattCharacteristic(
++					UUID.fromString(IMXUuid.CHAR_MESSAGE),
++					BluetoothGattCharacteristic.PROPERTY_READ | BluetoothGattCharacteristic.PROPERTY_WRITE | BluetoothGattCharacteristic.PROPERTY_WRITE_NO_RESPONSE,
++					BluetoothGattCharacteristic.PERMISSION_READ | BluetoothGattCharacteristic.PERMISSION_WRITE);
++			if(Attributes.Message != null){
++				messageChar.setValue(Attributes.Message);
++			}
++			mis.addCharacteristic(messageChar);
++			if(mGattServer!=null && mis!=null)
++				mGattServer.addService(mis);
++		}
++	}
++
++	public void onServiceAdded(int status, BluetoothGattService service) {
++		if (status == BluetoothGatt.GATT_SUCCESS) {
++			Log.d(TAG, "onServiceAdded status=GATT_SUCCESS service=" + service.getUuid().toString());
++		} else {
++			Log.d(TAG, "onServiceAdded status!=GATT_SUCCESS");
++		}
++	}
++
++	public void onConnectionStateChange(android.bluetooth.BluetoothDevice device, int status,
++			int newState) {
++		Log.d(TAG, "onConnectionStateChange status=" + status + "->" + newState);
++		if(status ==0 && newState == 0){
++			btClient = null;
++		}
++
++	}
++
++	public void onCharacteristicReadRequest(android.bluetooth.BluetoothDevice device,
++			int requestId, int offset, BluetoothGattCharacteristic characteristic) {
++		Log.d(TAG, "onCharacteristicReadRequest requestId=" + requestId + " offset=" + offset);
++		if (characteristic.getUuid().equals(UUID.fromString(IMXUuid.CHAR_MANUFACTURER_NAME_STRING))) {
++			characteristic.setValue("Freescale");
++			mGattServer.sendResponse(device, requestId, BluetoothGatt.GATT_SUCCESS, offset,characteristic.getValue());
++		} else if (characteristic.getUuid().equals(UUID.fromString(IMXUuid.CHAR_MODEL_NUMBER_STRING))) {
++			characteristic.setValue("i.Mx");
++			mGattServer.sendResponse(device, requestId, BluetoothGatt.GATT_SUCCESS, offset,characteristic.getValue());
++		} else if (characteristic.getUuid().equals(UUID.fromString(IMXUuid.CHAR_SERIAL_NUMBER_STRING))) {
++			characteristic.setValue("000-000-000");
++			mGattServer.sendResponse(device, requestId, BluetoothGatt.GATT_SUCCESS, offset,characteristic.getValue());
++		} else if (characteristic.getUuid().equals(UUID.fromString(IMXUuid.CHAR_ALERT_LEVEL))) {
++			characteristic.setValue(mAlertLevel);
++			mGattServer.sendResponse(device, requestId, BluetoothGatt.GATT_SUCCESS, offset,characteristic.getValue());
++		} else if (characteristic.getUuid().equals(UUID.fromString(IMXUuid.CHAR_BATTERY_LEVEL))) {
++			characteristic.setValue(Attributes.battery+"");
++			mGattServer.sendResponse(device, requestId, BluetoothGatt.GATT_SUCCESS, offset,characteristic.getValue());
++		} else if (characteristic.getUuid().equals(UUID.fromString(IMXUuid.CHAR_BATTER))){
++			characteristic.setValue(Attributes.heartRate+"");
++			mGattServer.sendResponse(device, requestId, BluetoothGatt.GATT_SUCCESS, offset,characteristic.getValue());
++		} else if (characteristic.getUuid().equals(UUID.fromString(IMXUuid.CHAR_CPU_TEMP))){
++			characteristic.setValue(Attributes.cpuTemp+"");
++			mGattServer.sendResponse(device, requestId, BluetoothGatt.GATT_SUCCESS, offset,characteristic.getValue());
++		} else if (characteristic.getUuid().equals(UUID.fromString(IMXUuid.CHAR_DATE))){
++			characteristic.setValue(Attributes.Date+"");
++			mGattServer.sendResponse(device, requestId, BluetoothGatt.GATT_SUCCESS, offset,characteristic.getValue());
++		} else if (characteristic.getUuid().equals(UUID.fromString(IMXUuid.CHAR_MESSAGE))){
++			characteristic.setValue(Attributes.Message+"");
++			mGattServer.sendResponse(device, requestId, BluetoothGatt.GATT_SUCCESS, offset,characteristic.getValue());
++		}
++	}
++
++	public void onCharacteristicWriteRequest(android.bluetooth.BluetoothDevice device,
++			int requestId, BluetoothGattCharacteristic characteristic, boolean preparedWrite,
++			boolean responseNeeded, int offset, byte[] value) {
++		if (characteristic.getUuid().equals(UUID.fromString(IMXUuid.CHAR_ALERT_LEVEL))) {
++			if (value != null && value.length > 0) {
++				mAlertLevel[0] = value[0];
++			} else {
++			}
++			mGattServer.sendResponse(device, requestId, BluetoothGatt.GATT_SUCCESS, offset, null);
++		}if(characteristic.getUuid().equals(UUID.fromString(IMXUuid.CHAR_MESSAGE))){
++			String messageValue = new String(value);
++			Attributes.Message = messageValue;
++			if(MessageAcitivity.mMessageHandler != null)
++				MessageAcitivity.mMessageHandler.sendEmptyMessage(0);
++		}
++	}
++
++	@Override
++	public void onDescriptorWriteRequest (BluetoothDevice device, int requestId, BluetoothGattDescriptor descriptor, boolean preparedWrite, boolean responseNeeded, int offset, byte[] value) {
++
++		btClient = device;
++		Log.d(TAG, "onDescriptorWriteRequest");
++		// now tell the connected device that this was all successfull
++		mGattServer.sendResponse(device, requestId, BluetoothGatt.GATT_SUCCESS, offset, value);
++	}
++}
+diff --git a/BleServerEmulator/src/com/freescale/bleserver/ble/BleServerManager.java b/BleServerEmulator/src/com/freescale/bleserver/ble/BleServerManager.java
+new file mode 100755
+index 0000000..40863f0
+--- /dev/null
++++ b/BleServerEmulator/src/com/freescale/bleserver/ble/BleServerManager.java
+@@ -0,0 +1,172 @@
++/*
++ * Copyright (C) 2016 Freescale Semiconductor, Inc.
++ *
++ * Licensed under the Apache License, Version 2.0 (the "License");
++ * you may not use this file except in compliance with the License.
++ * You may obtain a copy of the License at
++ *
++ *      http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++package com.freescale.bleserver.ble;
++
++import com.freescale.bleserver.MockServerCallBack;
++import com.freescale.bleserver.R;
++
++import android.app.Activity;
++import android.bluetooth.BluetoothAdapter;
++import android.bluetooth.BluetoothGattServer;
++import android.bluetooth.BluetoothManager;
++import android.bluetooth.le.AdvertiseCallback;
++import android.bluetooth.le.AdvertiseData;
++import android.bluetooth.le.AdvertiseSettings;
++import android.bluetooth.le.BluetoothLeAdvertiser;
++import android.content.Context;
++import android.content.Intent;
++import android.content.pm.PackageManager;
++import android.util.Log;
++import android.widget.Toast;
++
++public class BleServerManager {
++
++	private static BleServerManager mBleServerManager;
++	private static Activity mActivity;
++	private BluetoothManager mBluetoothManager;
++	private BluetoothAdapter mBluetoothAdapter;
++	private BluetoothLeAdvertiser mBluetoothAdvertiser;
++	private BluetoothGattServer mGattServer;
++
++	private static final int REQUEST_ENABLE_BT = 1;
++	private static final String TAG = "BleServer";
++	private MockServerCallBack mMockServerCallBack;
++
++	private BleServerManager(){
++		initBle();
++	}
++
++	private void initBle() {
++		
++		if(mBluetoothManager == null)
++			mBluetoothManager = (BluetoothManager) mActivity.getSystemService(Context.BLUETOOTH_SERVICE);
++
++		if (mBluetoothManager != null && mBluetoothAdapter == null) {
++			mBluetoothAdapter = mBluetoothManager.getAdapter();
++		}
++
++		//if the bluetooth has not been enabled, enable it!
++		if ((mBluetoothAdapter == null) || (!mBluetoothAdapter.isEnabled())) {
++			Toast.makeText(mActivity, R.string.bt_unavailable, Toast.LENGTH_SHORT).show();
++			Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
++			mActivity.startActivityForResult(enableBtIntent, REQUEST_ENABLE_BT);
++		}
++	}
++
++	public static BleServerManager getBleServerManager(Activity activity){
++		mActivity = activity;
++		if( mBleServerManager == null){
++			mBleServerManager = new BleServerManager();
++		}
++		return mBleServerManager;
++	}
++
++	public boolean isBLESupported(Context context) {
++		return context.getPackageManager().hasSystemFeature(PackageManager.FEATURE_BLUETOOTH_LE);
++	}
++
++	public BluetoothManager getManager() {
++		return mBluetoothManager; 
++	}
++
++	public static AdvertiseSettings createAdvSettings(boolean connectable, int timeoutMillis) {
++		AdvertiseSettings.Builder builder = new AdvertiseSettings.Builder();
++		builder.setAdvertiseMode(AdvertiseSettings.ADVERTISE_MODE_BALANCED);
++		builder.setConnectable(connectable);
++		builder.setTimeout(timeoutMillis);
++		builder.setTxPowerLevel(AdvertiseSettings.ADVERTISE_TX_POWER_HIGH);
++		return builder.build();
++	}
++
++
++	public static AdvertiseData createFMPAdvertiseData() {
++		AdvertiseData.Builder builder = new AdvertiseData.Builder();
++		builder.setIncludeDeviceName(true);
++		AdvertiseData adv = builder.build();
++		return adv;
++	}
++
++	public boolean setName(String deviceName){
++		if(mBluetoothAdapter != null)
++			return mBluetoothAdapter.setName(deviceName);
++		else 
++			return false;
++	}
++
++	//start and stop Advertise as Immediate Alert Service
++	public void startIASAdvertise() {
++		
++		initBle();
++		if (mBluetoothAdapter == null) {
++			return;
++		}
++		if (mBluetoothAdvertiser == null) {
++			mBluetoothAdvertiser = mBluetoothAdapter.getBluetoothLeAdvertiser();
++		}
++		if (mBluetoothAdvertiser != null) {
++			mMockServerCallBack = new MockServerCallBack(mActivity);
++			mGattServer = mBluetoothManager.openGattServer(mActivity, mMockServerCallBack);
++			if(mGattServer == null){
++				Log.d(TAG , "BleServerManger:gatt is null");
++			}
++			mMockServerCallBack.setupServices(mGattServer);
++			mBluetoothAdvertiser.startAdvertising(createAdvSettings(true, 0), createFMPAdvertiseData(),mAdvCallback);
++		}
++	}
++
++	public void stopAdvertise() {
++
++		if (mBluetoothAdvertiser != null) {
++			mBluetoothAdvertiser.stopAdvertising(mAdvCallback);
++			mBluetoothAdvertiser = null;
++		}
++		
++		if(mBluetoothAdapter != null){
++			mBluetoothAdapter = null;
++		}
++		
++		if (mGattServer != null) {
++			mGattServer.clearServices();
++			mGattServer.close();
++			mGattServer = null;
++		}
++	}
++
++	private AdvertiseCallback mAdvCallback = new AdvertiseCallback() {
++		public void onStartSuccess(android.bluetooth.le.AdvertiseSettings settingsInEffect) {
++			Log.d(TAG, "AdvertiseCallBack");
++			if (settingsInEffect != null) {
++				Log.d(TAG, "onStartSuccess TxPowerLv="+ settingsInEffect.getTxPowerLevel()+ " mode=" + settingsInEffect.getMode()+ " timeout=" + settingsInEffect.getTimeout());
++			} else {
++				Log.d(TAG, "onStartSuccess, settingInEffect is null");
++			}
++		}
++
++		public void onStartFailure(int errorCode) {
++			Log.d(TAG, "onStartFailure errorCode=" + errorCode);
++		};
++	};
++
++
++	//Getters and Setters
++	public BluetoothManager getBluetoothManager(){
++		return mBluetoothManager;
++	}
++
++	public BluetoothAdapter getBluetoothAdapter(){
++		return mBluetoothAdapter;
++	}
++}
+diff --git a/BleServerEmulator/src/com/freescale/bleserver/global/IMXUuid.java b/BleServerEmulator/src/com/freescale/bleserver/global/IMXUuid.java
+index 5324866..8963687 100755
+--- a/BleServerEmulator/src/com/freescale/bleserver/global/IMXUuid.java
++++ b/BleServerEmulator/src/com/freescale/bleserver/global/IMXUuid.java
+@@ -17,6 +17,7 @@ package com.freescale.bleserver.global;
+ 
+ /** BLE UUID Strings */
+ public class IMXUuid {
++	public static String CLIENT_CHARACTERISTIC_CONFIG = "00002902-0000-1000-8000-00805f9b34fb";
+ 	// 180A Device Information
+ 	public static final String SERVICE_DEVICE_INFORMATION = "aaaabbbb-0000-1000-8000-cccccccccccc";
+ 	public static final String CHAR_MANUFACTURER_NAME_STRING = "00002a29-0000-1000-8000-00805f9b34fb";
+diff --git a/BleServerEmulator/src/com/freescale/bleserver/pager/HomePager.java b/BleServerEmulator/src/com/freescale/bleserver/pager/HomePager.java
+index b969779..c0c4bbd 100755
+--- a/BleServerEmulator/src/com/freescale/bleserver/pager/HomePager.java
++++ b/BleServerEmulator/src/com/freescale/bleserver/pager/HomePager.java
+@@ -28,25 +28,24 @@ import android.view.View.OnClickListener;
+ import android.widget.RelativeLayout;
+ import android.widget.TextView;
+ 
+-import com.freescale.bleserver.R;
+ import com.freescale.bleserver.CpuInfoActivity;
+ import com.freescale.bleserver.GuideAcitivity;
+ import com.freescale.bleserver.HeartRateAcitivity;
+ import com.freescale.bleserver.HomeActivity;
+ import com.freescale.bleserver.MessageAcitivity;
++import com.freescale.bleserver.R;
++import com.freescale.bleserver.ble.BleServerManager;
+ import com.freescale.bleserver.global.Attributes;
+ import com.freescale.bleserver.utils.PrefUtils;
+ import com.freescale.bleserver.utils.StreamUtil;
+ 
+ public class HomePager extends BasePager implements OnClickListener{ 
+ 
+-	//Varialbe related to some thread
+ 	private boolean mIsRunTemp = true;
+ 	private boolean mIsRunHeart = true;
+ 	private boolean mIsRunDate = true;
+ 	private boolean mIsBleOn;
+ 
+-	//UI Compoments
+ 	private TextView mTvTemp;
+ 	private TextView mTvBleState;
+ 	private RelativeLayout mRlCpuTempl;
+@@ -55,8 +54,6 @@ public class HomePager extends BasePager implements OnClickListener{
+ 	private RelativeLayout mRlSetting;
+ 	private TextView mTvHeartRate;
+ 
+-
+-	//handler of refreshing the temperature
+ 	private Handler mTempHandler = new Handler(){
+ 		public void handleMessage(android.os.Message msg) {
+ 			mTvTemp.setText(Attributes.cpuTemp+"");
+@@ -88,7 +85,6 @@ public class HomePager extends BasePager implements OnClickListener{
+ 		mRlHeart = (RelativeLayout) mRootView.findViewById(R.id.rl_cpu_heart);
+ 		mRlSetting = (RelativeLayout) mRootView.findViewById(R.id.rl_cpu_guide);
+ 
+-		//setListener
+ 		mTvBleState.setOnClickListener(this);
+ 		mRlCpuTempl.setOnClickListener(this);
+ 		mRlMessage.setOnClickListener(this);
+@@ -103,7 +99,6 @@ public class HomePager extends BasePager implements OnClickListener{
+ 		new ScanTempThread().start();
+ 		new HeartRateThread().start();
+ 		new DateThread().start();
+-
+ 	}
+ 
+ 	public void setEnable(){
+@@ -132,7 +127,9 @@ public class HomePager extends BasePager implements OnClickListener{
+ 					String cpuTemp = StreamUtil.getStreamString(is);
+ 					Attributes.cpuTemp = Integer.parseInt(cpuTemp)/1000;
+ 					mTempHandler.sendEmptyMessage(0);
+-					sleep(5000);
++					if(listener != null)
++						listener.onTemperatureChanged();
++					sleep(4010);
+ 				} catch (IOException e) {
+ 					e.printStackTrace();
+ 				} catch (InterruptedException e) {
+@@ -142,14 +139,14 @@ public class HomePager extends BasePager implements OnClickListener{
+ 		}
+ 	}
+ 
+-	
+-
+ 	class DateThread extends Thread{
+ 		@Override
+ 		public void run() {
+ 			while(mIsRunDate){
+ 				SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+ 				Attributes.Date = df.format(new Date());
++				if(listener != null)
++					listener.onDateChanged();
+ 				try {
+ 					sleep(1000);
+ 				} catch (InterruptedException e) {
+@@ -159,23 +156,52 @@ public class HomePager extends BasePager implements OnClickListener{
+ 		}
+ 	}
+ 	
++	class HeartRateThread extends Thread{
++		@Override
++		public void run() {
++			while(mIsRunHeart){
++				Attributes.heartRate = (int) Math.floor(Math.random()*30 + 50);
++				mHeartRateHandler.sendEmptyMessage(0);
++				if(listener != null)
++					listener.onHeartRateChanged();
++				try {
++					sleep(3013);
++				} catch (InterruptedException e) {
++					e.printStackTrace();
++				}
++			}
++		}
++	}
++	
++	public void setOnDataChangedListener(onDataChangedListener listener){
++		this.listener = listener;
++	}
++	
++	private onDataChangedListener listener;
++	
++	public interface onDataChangedListener{
++		void onDateChanged();
++		void onTemperatureChanged();
++		void onHeartRateChanged();
++	}
++	
++	
+ 	public void stopThread(){
+ 		mIsRunTemp = false;
+ 		mIsRunHeart = false;
+ 		mIsRunDate = false;
+ 	}
+ 
+-
+ 	@Override
+ 	public void onClick(View v) {
+ 		switch (v.getId()) {
+ 		case R.id.btn_on_off:
+ 			if(mIsBleOn){
+ 				mIsBleOn = false;
+-				homeUI.stopAdvertise();
++				homeUI.mBleServerManager.stopAdvertise();
+ 			}else{
+ 				mIsBleOn = true;
+-				homeUI.startIASAdvertise();
++				homeUI.mBleServerManager.startIASAdvertise();
+ 			}
+ 			refreshState(mIsBleOn);
+ 			PrefUtils.setBoolean(mActivity, PrefUtils.BLE_STATE, mIsBleOn);
+@@ -205,21 +231,6 @@ public class HomePager extends BasePager implements OnClickListener{
+ 		}
+ 	}
+ 	
+-	class HeartRateThread extends Thread{
+-		@Override
+-		public void run() {
+-			while(mIsRunHeart){
+-				Attributes.heartRate = (int) Math.floor(Math.random()*30 + 50);
+-				mHeartRateHandler.sendEmptyMessage(0);
+-				try {
+-					sleep(60000);
+-				} catch (InterruptedException e) {
+-					e.printStackTrace();
+-				}
+-			}
+-		}
+-	}
+-	
+ 	public void refreshView(){
+ 		mTvHeartRate.setText(Attributes.heartRate+"");
+ 	}
+diff --git a/BleServerEmulator/src/com/freescale/bleserver/pager/SettingPager.java b/BleServerEmulator/src/com/freescale/bleserver/pager/SettingPager.java
+index 3cee45d..25950fc 100755
+--- a/BleServerEmulator/src/com/freescale/bleserver/pager/SettingPager.java
++++ b/BleServerEmulator/src/com/freescale/bleserver/pager/SettingPager.java
+@@ -15,15 +15,15 @@
+  */
+ package com.freescale.bleserver.pager;
+ 
++import com.freescale.bleserver.R;
++import com.freescale.bleserver.utils.PrefUtils;
++
+ import android.app.Activity;
+ import android.view.View;
+ import android.view.View.OnClickListener;
+ import android.widget.TextView;
+ import android.widget.ToggleButton;
+ 
+-import com.freescale.bleserver.R;
+-import com.freescale.bleserver.utils.PrefUtils;
+-
+ public class SettingPager extends BasePager implements OnClickListener{
+ 
+ 	private TextView mTvState;
+diff --git a/BleServerEmulator/src/com/freescale/bleserver/utils/BleUtil.java b/BleServerEmulator/src/com/freescale/bleserver/utils/BleUtil.java
+deleted file mode 100755
+index bc836f4..0000000
+--- a/BleServerEmulator/src/com/freescale/bleserver/utils/BleUtil.java
++++ /dev/null
+@@ -1,52 +0,0 @@
+-/*
+- * Copyright (C) 2016 Freescale Semiconductor, Inc.
+- *
+- * Licensed under the Apache License, Version 2.0 (the "License");
+- * you may not use this file except in compliance with the License.
+- * You may obtain a copy of the License at
+- *
+- *      http://www.apache.org/licenses/LICENSE-2.0
+- *
+- * Unless required by applicable law or agreed to in writing, software
+- * distributed under the License is distributed on an "AS IS" BASIS,
+- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+- * See the License for the specific language governing permissions and
+- * limitations under the License.
+- */
+-package com.freescale.bleserver.utils;
+-
+-import android.bluetooth.BluetoothManager;
+-import android.bluetooth.le.AdvertiseData;
+-import android.bluetooth.le.AdvertiseSettings;
+-import android.content.Context;
+-import android.content.pm.PackageManager;
+-
+-public class BleUtil {
+-
+-    public static boolean isBLESupported(Context context) {
+-        return context.getPackageManager().hasSystemFeature(PackageManager.FEATURE_BLUETOOTH_LE);
+-    }
+-
+-    public static BluetoothManager getManager(Context context) {
+-        return (BluetoothManager) context.getSystemService(Context.BLUETOOTH_SERVICE);
+-    }
+-
+-    public static AdvertiseSettings createAdvSettings(boolean connectable, int timeoutMillis) {
+-        AdvertiseSettings.Builder builder = new AdvertiseSettings.Builder();
+-        builder.setAdvertiseMode(AdvertiseSettings.ADVERTISE_MODE_BALANCED);
+-        builder.setConnectable(connectable);
+-        builder.setTimeout(timeoutMillis);
+-        builder.setTxPowerLevel(AdvertiseSettings.ADVERTISE_TX_POWER_HIGH);
+-        return builder.build();
+-    }
+-
+-
+-    public static AdvertiseData createFMPAdvertiseData() {
+-        AdvertiseData.Builder builder = new AdvertiseData.Builder();
+-        //Advertise the deviceName
+-        builder.setIncludeDeviceName(true);
+-        AdvertiseData adv = builder.build();
+-        return adv;
+-    }
+-
+-}
+-- 
+1.8.0
+

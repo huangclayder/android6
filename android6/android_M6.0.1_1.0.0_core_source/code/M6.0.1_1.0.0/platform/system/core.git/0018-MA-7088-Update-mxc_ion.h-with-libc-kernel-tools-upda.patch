@@ -1,0 +1,148 @@
+From 38ebff814e9c258c63650cc1c9192318a403a312 Mon Sep 17 00:00:00 2001
+From: "guoyin.chen" <guoyin.chen@freescale.com>
+Date: Fri, 9 Oct 2015 16:22:06 +0800
+Subject: [PATCH 18/22] MA-7088 Update mxc_ion.h with
+ libc/kernel/tools/update_all.py
+
+Follow other kernel header's update
+Update mxc_ion.h with libc/kernel/tools/update_all.py
+
+Signed-off-by: guoyin.chen <guoyin.chen@freescale.com>
+---
+ libion/include/ion/mxc_ion.h                   | 47 +++++++++++++-------------
+ libion/kernel-headers/linux/mxc_ion.h          | 29 ++++++++++++++++
+ libion/original-kernel-headers/linux/mxc_ion.h | 30 ++++++++++++++++
+ 3 files changed, 82 insertions(+), 24 deletions(-)
+
+diff --git a/libion/include/ion/mxc_ion.h b/libion/include/ion/mxc_ion.h
+index 954570c..3ae8e55 100644
+--- a/libion/include/ion/mxc_ion.h
++++ b/libion/include/ion/mxc_ion.h
+@@ -1,30 +1,29 @@
+-/*
+- * drivers/gpu/mxc/mxc_ion.h
+- *
+- * Copyright (C) 2011 Google, Inc.
+- * Copyright (C) 2012-2014 Freescale Semiconductor, Inc.
+- *
+- * This software is licensed under the terms of the GNU General Public
+- * License version 2, as published by the Free Software Foundation, and
+- * may be copied, distributed, and modified under those terms.
+- *
+- * This program is distributed in the hope that it will be useful,
+- * but WITHOUT ANY WARRANTY; without even the implied warranty of
+- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+- * GNU General Public License for more details.
+- *
+- */
+-
++/****************************************************************************
++ ****************************************************************************
++ ***
++ ***   This header was automatically generated from a Linux kernel header
++ ***   of the same name, to make information necessary for userspace to
++ ***   call into the kernel available to libc.  It contains only constants,
++ ***   structures, and macros generated from the original header, and thus,
++ ***   contains no copyrightable information.
++ ***
++ ***   To edit the content of this header, modify the corresponding
++ ***   source file (e.g. under external/kernel-headers/original/) then
++ ***   run bionic/libc/kernel/tools/update_all.py
++ ***
++ ***   Any manual change here will be lost the next time this script will
++ ***   be run. You've been warned!
++ ***
++ ****************************************************************************
++ ****************************************************************************/
+ #ifndef _LINUX_MXC_ION_H
+ #define _LINUX_MXC_ION_H
+-
+ #include <linux/ion.h>
+-
+ struct ion_phys_data {
+-        ion_user_handle_t handle;
+-        unsigned long phys;
++/* WARNING: DO NOT EDIT, AUTO-GENERATED CODE - SEE TOP FOR INSTRUCTIONS */
++ ion_user_handle_t handle;
++ unsigned long phys;
+ };
+-
+-#define ION_IOC_PHYS   _IOWR(ION_IOC_MAGIC, 7, struct ion_phys_data)
+-
++#define ION_IOC_PHYS _IOWR(ION_IOC_MAGIC, 7, struct ion_phys_data)
++/* WARNING: DO NOT EDIT, AUTO-GENERATED CODE - SEE TOP FOR INSTRUCTIONS */
+ #endif
+diff --git a/libion/kernel-headers/linux/mxc_ion.h b/libion/kernel-headers/linux/mxc_ion.h
+new file mode 100644
+index 0000000..3ae8e55
+--- /dev/null
++++ b/libion/kernel-headers/linux/mxc_ion.h
+@@ -0,0 +1,29 @@
++/****************************************************************************
++ ****************************************************************************
++ ***
++ ***   This header was automatically generated from a Linux kernel header
++ ***   of the same name, to make information necessary for userspace to
++ ***   call into the kernel available to libc.  It contains only constants,
++ ***   structures, and macros generated from the original header, and thus,
++ ***   contains no copyrightable information.
++ ***
++ ***   To edit the content of this header, modify the corresponding
++ ***   source file (e.g. under external/kernel-headers/original/) then
++ ***   run bionic/libc/kernel/tools/update_all.py
++ ***
++ ***   Any manual change here will be lost the next time this script will
++ ***   be run. You've been warned!
++ ***
++ ****************************************************************************
++ ****************************************************************************/
++#ifndef _LINUX_MXC_ION_H
++#define _LINUX_MXC_ION_H
++#include <linux/ion.h>
++struct ion_phys_data {
++/* WARNING: DO NOT EDIT, AUTO-GENERATED CODE - SEE TOP FOR INSTRUCTIONS */
++ ion_user_handle_t handle;
++ unsigned long phys;
++};
++#define ION_IOC_PHYS _IOWR(ION_IOC_MAGIC, 7, struct ion_phys_data)
++/* WARNING: DO NOT EDIT, AUTO-GENERATED CODE - SEE TOP FOR INSTRUCTIONS */
++#endif
+diff --git a/libion/original-kernel-headers/linux/mxc_ion.h b/libion/original-kernel-headers/linux/mxc_ion.h
+new file mode 100644
+index 0000000..954570c
+--- /dev/null
++++ b/libion/original-kernel-headers/linux/mxc_ion.h
+@@ -0,0 +1,30 @@
++/*
++ * drivers/gpu/mxc/mxc_ion.h
++ *
++ * Copyright (C) 2011 Google, Inc.
++ * Copyright (C) 2012-2014 Freescale Semiconductor, Inc.
++ *
++ * This software is licensed under the terms of the GNU General Public
++ * License version 2, as published by the Free Software Foundation, and
++ * may be copied, distributed, and modified under those terms.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ */
++
++#ifndef _LINUX_MXC_ION_H
++#define _LINUX_MXC_ION_H
++
++#include <linux/ion.h>
++
++struct ion_phys_data {
++        ion_user_handle_t handle;
++        unsigned long phys;
++};
++
++#define ION_IOC_PHYS   _IOWR(ION_IOC_MAGIC, 7, struct ion_phys_data)
++
++#endif
+-- 
+1.8.0
+

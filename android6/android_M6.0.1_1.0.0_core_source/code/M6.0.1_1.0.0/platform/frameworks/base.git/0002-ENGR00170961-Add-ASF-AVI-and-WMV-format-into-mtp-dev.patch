@@ -1,0 +1,33 @@
+From a771251ff662a37c9d7d25b71a68e8974484b780 Mon Sep 17 00:00:00 2001
+From: "guoyin.chen" <guoyin.chen@freescale.com>
+Date: Tue, 27 Dec 2011 16:03:15 +0800
+Subject: [PATCH 02/45] ENGR00170961 Add ASF, AVI, and WMV format into mtp
+ device info
+
+add freescale extension media file format support. Currently
+mkv, flv media format is not define in MTP spec which cannot be
+supported in MTP.
+
+Signed-off-by: guoyin.chen <guoyin.chen@freescale.com>
+---
+ media/java/android/mtp/MtpDatabase.java | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/media/java/android/mtp/MtpDatabase.java b/media/java/android/mtp/MtpDatabase.java
+index 3541fba..90d1f2d 100755
+--- a/media/java/android/mtp/MtpDatabase.java
++++ b/media/java/android/mtp/MtpDatabase.java
+@@ -580,6 +580,10 @@ public class MtpDatabase {
+             MtpConstants.FORMAT_PLS_PLAYLIST,
+             MtpConstants.FORMAT_XML_DOCUMENT,
+             MtpConstants.FORMAT_FLAC,
++            // add fsl supported medial format
++            MtpConstants.FORMAT_ASF,
++            MtpConstants.FORMAT_AVI,
++            MtpConstants.FORMAT_WMV,
+         };
+     }
+ 
+-- 
+1.8.0
+

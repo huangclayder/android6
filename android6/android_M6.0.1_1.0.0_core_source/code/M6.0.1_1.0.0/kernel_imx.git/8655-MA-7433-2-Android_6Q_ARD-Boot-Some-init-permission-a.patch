@@ -1,0 +1,37 @@
+From 8720762df7f3a6011f8884ec883b73bedd8fb1ed Mon Sep 17 00:00:00 2001
+From: zhang sanshan <b51434@freescale.com>
+Date: Tue, 5 Jan 2016 15:07:14 +0800
+Subject: [PATCH] MA-7433-2 [Android_6Q_ARD]Boot: Some init permission&avc et.
+ denied logs print during boot up. 100%
+
+There are many error log when boot up mm6.0.
+init: write_file: Unable to open '/proc/sys/kernel/hung_task_timeout_secs': No such file or directory
+init: write_file: Unable to open '/proc/sys/kernel/sched_tunable_scaling': No such file or directory
+init: write_file: Unable to open '/proc/sys/kernel/sched_latency_ns': No such file or directory
+init: write_file: Unable to open '/proc/sys/kernel/sched_wakeup_granularity_ns': No such file or directory
+init: write_file: Unable to open '/proc/sys/kernel/sched_compat_yield': No such file or directory
+
+Add these two macro to enable these node which support setting scheduler parameter in user space.
+
+Signed-off-by: zhang sanshan <b51434@freescale.com>
+---
+ arch/arm/configs/imx_v7_android_defconfig | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/arch/arm/configs/imx_v7_android_defconfig b/arch/arm/configs/imx_v7_android_defconfig
+index 9c2eef8..f23b39e 100644
+--- a/arch/arm/configs/imx_v7_android_defconfig
++++ b/arch/arm/configs/imx_v7_android_defconfig
+@@ -601,7 +601,8 @@ CONFIG_NLS_UTF8=y
+ CONFIG_DEBUG_FS=y
+ CONFIG_MAGIC_SYSRQ=y
+ CONFIG_PANIC_TIMEOUT=5
+-# CONFIG_SCHED_DEBUG is not set
++CONFIG_SCHED_DEBUG=y
++CONFIG_DETECT_HUNG_TASK=y
+ CONFIG_SCHEDSTATS=y
+ CONFIG_TIMER_STATS=y
+ # CONFIG_DEBUG_BUGVERBOSE is not set
+-- 
+1.8.0
+

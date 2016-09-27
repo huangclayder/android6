@@ -1,0 +1,34 @@
+From 055eee5ffb6990f7fc313245af63abb854ae8e7e Mon Sep 17 00:00:00 2001
+From: JongHo Kim <furmuwon@gmail.com>
+Date: Tue, 3 Nov 2015 11:06:32 +0900
+Subject: [PATCH] ASoC: wm8960: Fix the Input PGA Mute switch
+
+Change the xinvert value from 0 to 1 on the "Capture Switch" control
+WM8960 datasheet is shown as follows:
+Bit 7 at 00h and 01h register address
+1 : Enable Mute, 0 : Disable Mute
+
+Signed-off-by: JongHo Kim <furmuwon@gmail.com>
+Acked-by: Charles Keepax <ckeepax@opensource.wolfsonmicro.com>
+Signed-off-by: Mark Brown <broonie@kernel.org>
+(cherry picked from commit 41a59cae585678136c28cdcbba9cb2faf27685f5)
+---
+ sound/soc/codecs/wm8960.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/sound/soc/codecs/wm8960.c b/sound/soc/codecs/wm8960.c
+index e6b1bb9..06fa1a4 100644
+--- a/sound/soc/codecs/wm8960.c
++++ b/sound/soc/codecs/wm8960.c
+@@ -229,7 +229,7 @@ SOC_DOUBLE_R_TLV("Capture Volume", WM8960_LINVOL, WM8960_RINVOL,
+ SOC_DOUBLE_R("Capture Volume ZC Switch", WM8960_LINVOL, WM8960_RINVOL,
+ 	6, 1, 0),
+ SOC_DOUBLE_R("Capture Switch", WM8960_LINVOL, WM8960_RINVOL,
+-	7, 1, 0),
++	7, 1, 1),
+ 
+ SOC_SINGLE_TLV("Right Input Boost Mixer RINPUT3 Volume",
+ 	       WM8960_INBMIX1, 4, 7, 0, lineinboost_tlv),
+-- 
+1.8.0
+

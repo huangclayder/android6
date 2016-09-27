@@ -1,0 +1,33 @@
+From 00d0c6b8909703b12c02d18576efb5d860dfd749 Mon Sep 17 00:00:00 2001
+From: Liu Xiaowen <b37945@freescale.com>
+Date: Tue, 18 Mar 2014 10:59:14 +0800
+Subject: [PATCH 20/45] ENGR00303803 fix HDMI as second display show black
+ when open presentation apk.
+
+the root cause is android kitkat framework upgrade which refine the
+windowmanagerservice code but doesn't make sure the second display
+initialized correctly which connected when system bootup.
+make sure second display can be added to WindowAnimator when do
+assignLayersLocked().
+
+Signed-off-by: Liu Xiaowen <b37945@freescale.com>
+---
+ services/core/java/com/android/server/wm/TaskStack.java | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/services/core/java/com/android/server/wm/TaskStack.java b/services/core/java/com/android/server/wm/TaskStack.java
+index 985bbfb..ac8f452 100644
+--- a/services/core/java/com/android/server/wm/TaskStack.java
++++ b/services/core/java/com/android/server/wm/TaskStack.java
+@@ -461,6 +461,8 @@ public class TaskStack {
+     }
+ 
+     boolean isDimming(WindowStateAnimator winAnimator) {
++        mService.mAnimator.getScreenRotationAnimationLocked(
++                             winAnimator.mWin.getDisplayId());
+         return mDimWinAnimator == winAnimator && mDimLayer.isDimming();
+     }
+ 
+-- 
+1.8.0
+

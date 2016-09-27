@@ -1,0 +1,36 @@
+From 4f476f523b275aeb3a9de1ef454d973eaff4d87f Mon Sep 17 00:00:00 2001
+From: Peng Fan <peng.fan@nxp.com>
+Date: Tue, 12 Jan 2016 13:50:51 +0800
+Subject: [PATCH] MLK-12206 common: usb: fix check condition
+
+We support max 16 endpoints, but endpoint starts from 0.
+So we need to use >= 16 but not > 16 to check whether we
+already reach max endpoints or not.
+
+Coverity ID 17955:
+Out-of-bounds read (OVERRUN)
+37. overrun-local: Overrunning array dev->config.if_desc[ifno].ep_desc of 16
+9-byte elements at element index 16 (byte offset 144) using index epno
+(which evaluates to 16).
+
+Signed-off-by: Peng Fan <peng.fan@nxp.com>
+---
+ common/usb.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/common/usb.c b/common/usb.c
+index 32e15cd..7c02fbd 100644
+--- a/common/usb.c
++++ b/common/usb.c
+@@ -418,7 +418,7 @@ static int usb_parse_config(struct usb_device *dev,
+ 			}
+ 			epno = dev->config.if_desc[ifno].no_of_ep;
+ 			if_desc = &dev->config.if_desc[ifno];
+-			if (epno > USB_MAXENDPOINTS) {
++			if (epno >= USB_MAXENDPOINTS) {
+ 				printf("Interface %d has too many endpoints!\n",
+ 					if_desc->desc.bInterfaceNumber);
+ 				return 1;
+-- 
+1.8.0
+

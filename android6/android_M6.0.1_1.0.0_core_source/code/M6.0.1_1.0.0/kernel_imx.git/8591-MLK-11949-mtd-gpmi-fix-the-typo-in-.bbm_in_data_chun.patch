@@ -1,0 +1,29 @@
+From 69fbd45b525d89e8c24d773e5db731a2b4cc2228 Mon Sep 17 00:00:00 2001
+From: Fugang Duan <b38611@freescale.com>
+Date: Thu, 3 Dec 2015 15:43:33 +0800
+Subject: [PATCH] MLK-11949 mtd: gpmi: fix the typo in .bbm_in_data_chunk()
+
+Fix the typo in when check bch geometry ecc chunk0 and chunkn size.
+
+Signed-off-by: Fugang Duan <B38611@freescale.com>
+(cherry picked from commit f622b1f95400d21b90f81c946283cb540da29826)
+---
+ drivers/mtd/nand/gpmi-nand/gpmi-nand.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/mtd/nand/gpmi-nand/gpmi-nand.c b/drivers/mtd/nand/gpmi-nand/gpmi-nand.c
+index 9c0475f..9c53992 100644
+--- a/drivers/mtd/nand/gpmi-nand/gpmi-nand.c
++++ b/drivers/mtd/nand/gpmi-nand/gpmi-nand.c
+@@ -159,7 +159,7 @@ static inline bool bbm_in_data_chunk(struct gpmi_nand_data *this,
+ 	struct mtd_info *mtd = &this->mtd;
+ 	unsigned int i, j;
+ 
+-	if (geo->ecc_chunk0_size != geo->ecc_chunk0_size) {
++	if (geo->ecc_chunk0_size != geo->ecc_chunkn_size) {
+ 		dev_err(this->dev, "The size of chunk0 must equal to chunkn\n");
+ 		return false;
+ 	}
+-- 
+1.8.0
+

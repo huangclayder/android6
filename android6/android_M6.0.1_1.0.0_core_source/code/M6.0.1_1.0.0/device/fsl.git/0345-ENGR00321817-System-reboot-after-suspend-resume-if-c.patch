@@ -1,0 +1,30 @@
+From c9b52aeaabb5bd6efa4b9c6fe32ccc193f99f694 Mon Sep 17 00:00:00 2001
+From: "guoyin.chen" <guoyin.chen@freescale.com>
+Date: Fri, 18 Jul 2014 13:33:42 +0800
+Subject: [PATCH 345/602] ENGR00321817 System reboot after suspend&resume if
+ connect the HDMI after boot
+
+Deattach the fbcon after init, so fbcon will not reset FB's var
+
+Signed-off-by: guoyin.chen <guoyin.chen@freescale.com>
+---
+ imx6/etc/init.rc | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/imx6/etc/init.rc b/imx6/etc/init.rc
+index f59037d..0693a59 100755
+--- a/imx6/etc/init.rc
++++ b/imx6/etc/init.rc
+@@ -159,6 +159,9 @@ loglevel 3
+ # disable cursor blink for fbcon, if no splash screen support
+     write /sys/class/graphics/fbcon/cursor_blink 0
+ 
++# deattch the fbcon as hdmi hotplug conflict with fbcon
++    write /sys/class/vtconsole/vtcon1/bind 0
++
+ on post-fs
+     # once everything is setup, no need to modify /
+     mount rootfs rootfs / ro remount
+-- 
+1.8.0
+

@@ -1,0 +1,31 @@
+From 664f43e5972b55445269a231218f5ee1b2603674 Mon Sep 17 00:00:00 2001
+From: Haoran Wang <b50027@freescale.com>
+Date: Wed, 10 Jun 2015 14:10:44 +0800
+Subject: [PATCH] MA-6785 Correct mag3110 initial position
+
+Modify the initial position from 2 to 1
+according to the user guide for mag3110.
+
+This will fix the biased eCompass direction issue.
+
+Signed-off-by: Haoran Wang <b50027@freescale.com>
+---
+ arch/arm/boot/dts/imx6qdl-sabresd.dtsi | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/arch/arm/boot/dts/imx6qdl-sabresd.dtsi b/arch/arm/boot/dts/imx6qdl-sabresd.dtsi
+index 6e51ca0..6d81551 100644
+--- a/arch/arm/boot/dts/imx6qdl-sabresd.dtsi
++++ b/arch/arm/boot/dts/imx6qdl-sabresd.dtsi
+@@ -582,7 +582,7 @@
+ 	mag3110@0e {
+ 		compatible = "fsl,mag3110";
+ 		reg = <0x0e>;
+-		position = <2>;
++		position = <1>;
+ 		vdd-supply = <&reg_sensor>;
+ 		vddio-supply = <&reg_sensor>;
+ 		interrupt-parent = <&gpio3>;
+-- 
+1.8.0
+

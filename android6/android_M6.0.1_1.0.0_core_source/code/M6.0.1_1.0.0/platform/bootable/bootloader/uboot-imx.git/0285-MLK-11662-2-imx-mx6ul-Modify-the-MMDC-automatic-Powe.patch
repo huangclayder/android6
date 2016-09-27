@@ -1,0 +1,30 @@
+From f2093fb3141914befac96722e290de6129d3828a Mon Sep 17 00:00:00 2001
+From: "Ye.Li" <B37916@freescale.com>
+Date: Wed, 30 Sep 2015 16:41:29 +0800
+Subject: [PATCH] MLK-11662-2 imx: mx6ul: Modify the MMDC automatic Power
+ saving timer
+
+The PST bit can't be set too small which will cause performance drop.
+Refer the commit for same issue on MX6UL 9x9 EVK, now fix it for 14x14 LPDDR2 ARM2
+commit e1ca547d198dde94c4d8278c99499ec2d2008880
+
+Signed-off-by: Ye.Li <B37916@freescale.com>
+---
+ board/freescale/mx6ul_14x14_lpddr2_arm2/imximage.cfg | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/board/freescale/mx6ul_14x14_lpddr2_arm2/imximage.cfg b/board/freescale/mx6ul_14x14_lpddr2_arm2/imximage.cfg
+index 90eb8c4..9d993fc 100644
+--- a/board/freescale/mx6ul_14x14_lpddr2_arm2/imximage.cfg
++++ b/board/freescale/mx6ul_14x14_lpddr2_arm2/imximage.cfg
+@@ -116,6 +116,6 @@ DATA 4 0x021B0020 0x00001800
+ DATA 4 0x021B0818 0x00000000
+ DATA 4 0x021B0800 0xA1310003
+ DATA 4 0x021B0004 0x00025576
+-DATA 4 0x021B0404 0x00010106
++DATA 4 0x021B0404 0x00011006
+ DATA 4 0x021B001C 0x00000000
+ #endif
+-- 
+1.8.0
+

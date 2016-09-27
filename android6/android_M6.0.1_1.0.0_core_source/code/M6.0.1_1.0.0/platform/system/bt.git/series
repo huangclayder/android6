@@ -1,0 +1,4 @@
+0001-MA-5957-Hack-to-enable-BLE-host-mode.patch
+0002-MA-6133-Add-missed-av-stop-event-response.patch
+0003-MA-7413-Ignore-the-HID-socket-status-check.patch
+0004-MA-7398-Revert-Remove-check-for-stream-type-in-a2dp-.patch

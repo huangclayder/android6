@@ -1,0 +1,153 @@
+From 5c07f000e8d721dce2d01c87b30c8ff13708ff72 Mon Sep 17 00:00:00 2001
+From: Richard Liu <r66033@freescale.com>
+Date: Thu, 20 Nov 2014 13:36:49 +0800
+Subject: [PATCH 392/602] MGS-228 set NUM_FRAMEBUFFER_SURFACE_BUFFERS to 3 by
+ default
+
+NUM_FRAMEBUFFER_SURFACE_BUFFERS default is set to 2 on android framework,
+but our IPU driver need configure frame buffer number to 3 else there is
+tearing issue, so we set NUM_FRAMEBUFFER_SURFACE_BUFFERS to three in each
+board configure file, but customer may missing add such configure and cause
+tearing issue, we should by default set NUM_FRAMEBUFFER_SURFACE_BUFFERS to
+3 and remove such configure request on board configure file.
+
+This patch remove NUM_FRAMEBUFFER_SURFACE_BUFFERS in board configure file.
+
+Signed-off-by: Richard Liu <r66033@freescale.com>
+---
+ arm2_6dq/BoardConfig.mk       | 3 ---
+ arm2_6sl/BoardConfig.mk       | 3 ---
+ evk_6sl/BoardConfig.mk        | 3 ---
+ hdmidongle_6dq/BoardConfig.mk | 3 ---
+ imx53_smd/BoardConfig.mk      | 3 ---
+ sabreauto_6q/BoardConfig.mk   | 3 ---
+ sabreauto_6sx/BoardConfig.mk  | 3 ---
+ sabresd_6dq/BoardConfig.mk    | 3 ---
+ sabresd_6sx/BoardConfig.mk    | 3 ---
+ 9 files changed, 27 deletions(-)
+
+diff --git a/arm2_6dq/BoardConfig.mk b/arm2_6dq/BoardConfig.mk
+index 38f21d6..a1ae596 100755
+--- a/arm2_6dq/BoardConfig.mk
++++ b/arm2_6dq/BoardConfig.mk
+@@ -73,8 +73,5 @@ BOARD_USE_AR3K_BLUETOOTH := false
+ USE_ION_ALLOCATOR := false
+ USE_GPU_ALLOCATOR := true
+ 
+-# define frame buffer count
+-NUM_FRAMEBUFFER_SURFACE_BUFFERS := 3
+-
+ BOARD_KERNEL_CMDLINE := console=ttymxc0,115200 init=/init androidboot.console=ttymxc0 consoleblank=0 androidboot.hardware=freescale
+ TARGET_BOOTLOADER_CONFIG := 6q:mx6q_arm2_android_config 6dl:mx6dl_arm2_config
+diff --git a/arm2_6sl/BoardConfig.mk b/arm2_6sl/BoardConfig.mk
+index ab31209..42ff56d 100755
+--- a/arm2_6sl/BoardConfig.mk
++++ b/arm2_6sl/BoardConfig.mk
+@@ -73,9 +73,6 @@ BOARD_USE_AR3K_BLUETOOTH := false
+ USE_ION_ALLOCATOR := false
+ USE_GPU_ALLOCATOR := true
+ 
+-# define frame buffer count
+-NUM_FRAMEBUFFER_SURFACE_BUFFERS := 3
+-
+ USE_CAMERA_STUB := true
+ BOARD_HAVE_IMX_CAMERA := false
+ PRODUCT_MODEL := ARM2-MX6SL
+diff --git a/evk_6sl/BoardConfig.mk b/evk_6sl/BoardConfig.mk
+index 0492d3a..9f3dd1a 100644
+--- a/evk_6sl/BoardConfig.mk
++++ b/evk_6sl/BoardConfig.mk
+@@ -75,9 +75,6 @@ USE_GPU_ALLOCATOR := true
+ # camera hal v2
+ IMX_CAMERA_HAL_V2 := false
+ 
+-# define frame buffer count
+-NUM_FRAMEBUFFER_SURFACE_BUFFERS := 3
+-
+ BOARD_KERNEL_CMDLINE := console=ttymxc0,115200 init=/init androidboot.console=ttymxc0 consoleblank=0 androidboot.hardware=freescale
+ TARGET_BOOTLOADER_CONFIG := imx6sl:mx6slevkandroid_config
+ TARGET_BOARD_DTS_CONFIG := imx6sl:imx6sl-evk-csi.dtb
+diff --git a/hdmidongle_6dq/BoardConfig.mk b/hdmidongle_6dq/BoardConfig.mk
+index c7f95dc..96ceeb1 100755
+--- a/hdmidongle_6dq/BoardConfig.mk
++++ b/hdmidongle_6dq/BoardConfig.mk
+@@ -100,9 +100,6 @@ USE_GPU_ALLOCATOR := true
+ # camera hal v2
+ IMX_CAMERA_HAL_V2 := true
+ 
+-# define frame buffer count
+-NUM_FRAMEBUFFER_SURFACE_BUFFERS := 3
+-
+ 
+ TARGET_BOOTLOADER_CONFIG := 6q:mx6q_hdmidongle_nand_android_config 6dl:mx6dl_hdmidongle_nand_android_config
+ TARGET_KERNEL_DEFCONF := imx6_hdmidongle_android_defconfig
+diff --git a/imx53_smd/BoardConfig.mk b/imx53_smd/BoardConfig.mk
+index 5d491a4..23bac1b 100755
+--- a/imx53_smd/BoardConfig.mk
++++ b/imx53_smd/BoardConfig.mk
+@@ -67,6 +67,3 @@ BOARD_KERNEL_BASE := 0x70800000
+ 
+ TARGET_BOOTLOADER_CONFIG := mx53_smd_android_config
+ 
+-
+-# define frame buffer count
+-NUM_FRAMEBUFFER_SURFACE_BUFFERS := 3
+diff --git a/sabreauto_6q/BoardConfig.mk b/sabreauto_6q/BoardConfig.mk
+index 876c2e7..28a3935 100644
+--- a/sabreauto_6q/BoardConfig.mk
++++ b/sabreauto_6q/BoardConfig.mk
+@@ -79,9 +79,6 @@ IMX_CAMERA_HAL_V2 := true
+ 
+ BOARD_HAVE_USB_CAMERA := true
+ 
+-# define frame buffer count
+-NUM_FRAMEBUFFER_SURFACE_BUFFERS := 3
+-
+ USE_ION_ALLOCATOR := false
+ USE_GPU_ALLOCATOR := true
+ 
+diff --git a/sabreauto_6sx/BoardConfig.mk b/sabreauto_6sx/BoardConfig.mk
+index a556d9e..e38b765 100755
+--- a/sabreauto_6sx/BoardConfig.mk
++++ b/sabreauto_6sx/BoardConfig.mk
+@@ -94,9 +94,6 @@ USE_GPU_ALLOCATOR := true
+ # camera hal v2
+ IMX_CAMERA_HAL_V2 := false
+ 
+-# define frame buffer count
+-NUM_FRAMEBUFFER_SURFACE_BUFFERS := 3
+-
+ TARGET_BOOTLOADER_CONFIG := imx6sx:mx6sxsabreautoandroid_config imx6sx-nand:mx6sxsabreautoandroid_nand_config
+ TARGET_BOARD_DTS_CONFIG := imx6sx:imx6sx-sabreauto.dtb
+ 
+diff --git a/sabresd_6dq/BoardConfig.mk b/sabresd_6dq/BoardConfig.mk
+index 53d3d8f..fe35fd7 100644
+--- a/sabresd_6dq/BoardConfig.mk
++++ b/sabresd_6dq/BoardConfig.mk
+@@ -101,9 +101,6 @@ USE_GPU_ALLOCATOR := true
+ # camera hal v2
+ IMX_CAMERA_HAL_V2 := true
+ 
+-# define frame buffer count
+-NUM_FRAMEBUFFER_SURFACE_BUFFERS := 3
+-
+ #define consumer IR HAL support
+ IMX6_CONSUMER_IR_HAL := true
+ 
+diff --git a/sabresd_6sx/BoardConfig.mk b/sabresd_6sx/BoardConfig.mk
+index 7ebd6eb..37a02c2 100644
+--- a/sabresd_6sx/BoardConfig.mk
++++ b/sabresd_6sx/BoardConfig.mk
+@@ -101,9 +101,6 @@ USE_GPU_ALLOCATOR := true
+ # camera hal v2
+ IMX_CAMERA_HAL_V2 := false
+ 
+-# define frame buffer count
+-NUM_FRAMEBUFFER_SURFACE_BUFFERS := 3
+-
+ 
+ TARGET_BOOTLOADER_CONFIG := imx6sx:mx6sxsabresdandroid_config
+ TARGET_BOARD_DTS_CONFIG := imx6sx:imx6sx-sdb.dtb
+-- 
+1.8.0
+

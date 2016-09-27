@@ -1,0 +1,98 @@
+From 8d52c67d2680f42f21274675bb36b253a6a8d7ad Mon Sep 17 00:00:00 2001
+From: Peng Fan <Peng.Fan@freescale.com>
+Date: Tue, 31 Mar 2015 09:44:48 +0800
+Subject: [PATCH] MLK-10774-29 imx:thermal change from CONFIG_IMX6_THERMAL to
+ CONFIG_IMX_THERMAL
+
+Change macro name to make driver support more platforms.
+
+Signed-off-by: Peng Fan <Peng.Fan@freescale.com>
+---
+ arch/arm/cpu/armv7/mx6/soc.c      | 2 +-
+ drivers/thermal/Makefile          | 2 +-
+ include/configs/mx6qarm2.h        | 4 ++--
+ include/configs/mx6sabre_common.h | 4 ++--
+ include/configs/mx6sxsabresd.h    | 4 ++--
+ 5 files changed, 8 insertions(+), 8 deletions(-)
+
+diff --git a/arch/arm/cpu/armv7/mx6/soc.c b/arch/arm/cpu/armv7/mx6/soc.c
+index 394687f..7bd2118 100644
+--- a/arch/arm/cpu/armv7/mx6/soc.c
++++ b/arch/arm/cpu/armv7/mx6/soc.c
+@@ -39,7 +39,7 @@ struct scu_regs {
+ 	u32	fpga_rev;
+ };
+ 
+-#if defined(CONFIG_IMX6_THERMAL)
++#if defined(CONFIG_IMX_THERMAL)
+ static const struct imx_thermal_plat imx6_thermal_plat = {
+ 	.regs = (void *)ANATOP_BASE_ADDR,
+ 	.fuse_bank = 1,
+diff --git a/drivers/thermal/Makefile b/drivers/thermal/Makefile
+index 6d4cacd..d768f5e 100644
+--- a/drivers/thermal/Makefile
++++ b/drivers/thermal/Makefile
+@@ -6,4 +6,4 @@
+ #
+ 
+ obj-$(CONFIG_DM_THERMAL) += thermal-uclass.o
+-obj-$(CONFIG_IMX6_THERMAL) += imx_thermal.o
++obj-$(CONFIG_IMX_THERMAL) += imx_thermal.o
+diff --git a/include/configs/mx6qarm2.h b/include/configs/mx6qarm2.h
+index c734176..f6f01c1 100644
+--- a/include/configs/mx6qarm2.h
++++ b/include/configs/mx6qarm2.h
+@@ -39,9 +39,9 @@
+ 
+ #define CONFIG_MXC_UART
+ #define CONFIG_MXC_UART_BASE		UART4_BASE
+-#define CONFIG_IMX6_THERMAL
++#define CONFIG_IMX_THERMAL
+ #define CONFIG_CMD_FUSE
+-#if defined(CONFIG_CMD_FUSE) || defined(CONFIG_IMX6_THERMAL)
++#if defined(CONFIG_CMD_FUSE) || defined(CONFIG_IMX_THERMAL)
+ #define CONFIG_MXC_OCOTP
+ #endif
+ 
+diff --git a/include/configs/mx6sabre_common.h b/include/configs/mx6sabre_common.h
+index 4790be0..1425229 100644
+--- a/include/configs/mx6sabre_common.h
++++ b/include/configs/mx6sabre_common.h
+@@ -35,7 +35,7 @@
+ #define CONFIG_INITRD_TAG
+ #define CONFIG_REVISION_TAG
+ 
+-#define CONFIG_IMX6_THERMAL
++#define CONFIG_IMX_THERMAL
+ 
+ #define CONFIG_SYS_GENERIC_BOARD
+ 
+@@ -49,7 +49,7 @@
+ #define CONFIG_MXC_UART
+ 
+ #define CONFIG_CMD_FUSE
+-#if defined(CONFIG_CMD_FUSE) || defined(CONFIG_IMX6_THERMAL)
++#if defined(CONFIG_CMD_FUSE) || defined(CONFIG_IMX_THERMAL)
+ #define CONFIG_MXC_OCOTP
+ #endif
+ 
+diff --git a/include/configs/mx6sxsabresd.h b/include/configs/mx6sxsabresd.h
+index 9ea0152..23192b1 100644
+--- a/include/configs/mx6sxsabresd.h
++++ b/include/configs/mx6sxsabresd.h
+@@ -396,10 +396,10 @@
+ #define CONFIG_PCIE_IMX_POWER_GPIO	IMX_GPIO_NR(2, 1)
+ #endif
+ 
+-#define CONFIG_IMX6_THERMAL
++#define CONFIG_IMX_THERMAL
+ 
+ #define CONFIG_CMD_FUSE
+-#if defined(CONFIG_CMD_FUSE) || defined(CONFIG_IMX6_THERMAL)
++#if defined(CONFIG_CMD_FUSE) || defined(CONFIG_IMX_THERMAL)
+ #define CONFIG_MXC_OCOTP
+ #endif
+ 
+-- 
+1.8.0
+

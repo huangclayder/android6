@@ -1,0 +1,134 @@
+From b8760a10e7f55d50572fbb07ecc2608074a0051d Mon Sep 17 00:00:00 2001
+From: Peng Fan <Peng.Fan@freescale.com>
+Date: Thu, 9 Jul 2015 12:23:38 +0800
+Subject: [PATCH] MLK-11227 imx: mx6ul_14x14_lpddr2_arm2 add weimnor defconfig
+
+1. Add weimnor boot defconfig
+2. move CONFIG_FSL_USDHC and CONFIG_VIDEO to board header
+3. Add CONFIG_SYS_FLASH_PROTECTION for mx6ul 14x14 lpddr2 arm2
+4. correct CONFIG_SYS_FLASH_SECT_SIZE and CONFIG_SYS_MAX_FLASH_SECT
+5. Add comments for setup_eimnor, since ENET2_RXER pin conflicts
+   with ENET2. Also eimnor support will disable SD1/SD2, need ENET
+   to boot kernel and nfs using enet. So setup_eimnor should be
+   invoked after setup_fec
+
+Signed-off-by: Peng Fan <Peng.Fan@freescale.com>
+---
+ .../mx6ul_14x14_lpddr2_arm2/mx6ul_14x14_lpddr2_arm2.c      |  6 ++++++
+ configs/mx6ul_14x14_lpddr2_arm2_eimnor_defconfig           |  7 +++++++
+ include/configs/mx6ul_14x14_ddr3_arm2.h                    |  2 ++
+ include/configs/mx6ul_14x14_lpddr2_arm2.h                  | 14 ++++++++++++++
+ include/configs/mx6ul_arm2.h                               |  7 ++-----
+ 5 files changed, 31 insertions(+), 5 deletions(-)
+
+diff --git a/board/freescale/mx6ul_14x14_lpddr2_arm2/mx6ul_14x14_lpddr2_arm2.c b/board/freescale/mx6ul_14x14_lpddr2_arm2/mx6ul_14x14_lpddr2_arm2.c
+index 251364d..e37e870 100644
+--- a/board/freescale/mx6ul_14x14_lpddr2_arm2/mx6ul_14x14_lpddr2_arm2.c
++++ b/board/freescale/mx6ul_14x14_lpddr2_arm2/mx6ul_14x14_lpddr2_arm2.c
+@@ -892,6 +892,12 @@ int board_init(void)
+ #endif
+ 
+ #ifdef CONFIG_SYS_USE_EIMNOR
++	/*
++	 * This function should be invoked after setup_fec,
++	 * because ENET2_RX_ER conflicts. However, we rarely need
++	 * ENET2_RX_ER for enet, and when use eimnor, we do not
++	 * have sd1/sd2, enet is a must to boot kernel and nfsrootfs.
++	 */
+ 	setup_eimnor();
+ #endif
+ 
+diff --git a/configs/mx6ul_14x14_lpddr2_arm2_eimnor_defconfig b/configs/mx6ul_14x14_lpddr2_arm2_eimnor_defconfig
+new file mode 100644
+index 0000000..d5b5916
+--- /dev/null
++++ b/configs/mx6ul_14x14_lpddr2_arm2_eimnor_defconfig
+@@ -0,0 +1,7 @@
++CONFIG_SYS_EXTRA_OPTIONS="IMX_CONFIG=board/freescale/mx6ul_14x14_lpddr2_arm2/imximage.cfg,MX6UL,SYS_BOOT_EIMNOR"
++CONFIG_ARM=y
++CONFIG_TARGET_MX6UL_14X14_LPDDR2_ARM2=y
++CONFIG_SYS_MALLOC_F=y
++CONFIG_SYS_MALLOC_F_LEN=0x400
++CONFIG_DM=y
++CONFIG_DM_THERMAL=y
+diff --git a/include/configs/mx6ul_14x14_ddr3_arm2.h b/include/configs/mx6ul_14x14_ddr3_arm2.h
+index 3ad0b68..30e074f 100644
+--- a/include/configs/mx6ul_14x14_ddr3_arm2.h
++++ b/include/configs/mx6ul_14x14_ddr3_arm2.h
+@@ -27,6 +27,8 @@
+ #define CONFIG_ENV_IS_IN_MMC
+ #endif
+ 
++#define CONFIG_VIDEO
++#define CONFIG_FSL_USDHC
+ #include "mx6ul_arm2.h"
+ 
+ #define PHYS_SDRAM_SIZE			SZ_1G
+diff --git a/include/configs/mx6ul_14x14_lpddr2_arm2.h b/include/configs/mx6ul_14x14_lpddr2_arm2.h
+index c0b2129..5b29688 100644
+--- a/include/configs/mx6ul_14x14_lpddr2_arm2.h
++++ b/include/configs/mx6ul_14x14_lpddr2_arm2.h
+@@ -19,6 +19,7 @@
+ #elif defined CONFIG_SYS_BOOT_EIMNOR
+ #define CONFIG_SYS_USE_EIMNOR
+ #define CONFIG_ENV_IS_IN_FLASH
++#define CONFIG_SYS_FLASH_PROTECTION
+ #elif defined CONFIG_SYS_BOOT_NAND
+ #define CONFIG_SYS_USE_NAND
+ #define CONFIG_ENV_IS_IN_NAND
+@@ -26,6 +27,19 @@
+ #define CONFIG_ENV_IS_IN_MMC
+ #endif
+ 
++#define CONFIG_FSL_USDHC
++#define CONFIG_VIDEO
++#ifdef CONFIG_SYS_BOOT_EIMNOR
++/*
++ * Conflicts with SD1/SD2/VIDEO/ENET
++ * ENET is keeped, since only RXER conflicts.
++ * If removed ENET, we can not boot kernel, since sd1/sd2 is disabled
++ * when support weimnor.
++ */
++#undef CONFIG_FSL_USDHC
++#undef CONFIG_VIDEO
++#endif
++
+ #include "mx6ul_arm2.h"
+ 
+ #define PHYS_SDRAM_SIZE			SZ_512M
+diff --git a/include/configs/mx6ul_arm2.h b/include/configs/mx6ul_arm2.h
+index 096d1f4..076cabf 100644
+--- a/include/configs/mx6ul_arm2.h
++++ b/include/configs/mx6ul_arm2.h
+@@ -82,8 +82,6 @@
+ #define CONFIG_POWER_PFUZE100_I2C_ADDR	0x08
+ #endif
+ 
+-#define CONFIG_VIDEO
+-
+ /* Command definition */
+ #include <config_cmd_default.h>
+ 
+@@ -274,9 +272,9 @@
+ #ifdef CONFIG_SYS_USE_EIMNOR
+ #undef CONFIG_SYS_NO_FLASH
+ #define CONFIG_SYS_FLASH_BASE           WEIM_ARB_BASE_ADDR
+-#define CONFIG_SYS_FLASH_SECT_SIZE	(128 * 1024)
++#define CONFIG_SYS_FLASH_SECT_SIZE     (256 * 1024)
+ #define CONFIG_SYS_MAX_FLASH_BANKS 1    /* max number of memory banks */
+-#define CONFIG_SYS_MAX_FLASH_SECT 1024   /* max number of sectors on one chip */
++#define CONFIG_SYS_MAX_FLASH_SECT  512   /* max number of sectors on one chip */
+ #define CONFIG_SYS_FLASH_CFI            /* Flash memory is CFI compliant */
+ #define CONFIG_FLASH_CFI_DRIVER         /* Use drivers/cfi_flash.c */
+ #define CONFIG_SYS_FLASH_USE_BUFFER_WRITE /* Use buffered writes*/
+@@ -320,7 +318,6 @@
+ #endif
+ 
+ /* MMC Configs */
+-#define CONFIG_FSL_USDHC
+ #ifdef CONFIG_FSL_USDHC
+ #define CONFIG_FSL_ESDHC
+ #define CONFIG_SYS_FSL_ESDHC_ADDR	0
+-- 
+1.8.0
+

@@ -1,0 +1,122 @@
+From ea9641e76008c6f805a1e74d2c4a438c7aefdeba Mon Sep 17 00:00:00 2001
+From: "xuegang.liu" <xuegang.liu@freescale.com>
+Date: Wed, 10 Jun 2015 14:58:27 +0800
+Subject: [PATCH 585/635] MA-6759 fix Virtual display flicker issue on mx6qp
+ board
+
+Root cause is Vivante gralloc will allocte tile buffer for
+RGB format to support no-resolve feature, but Virtual display
+buffer will as VPU input so it can be tiled, for such buffer
+we should go to FSL gralloc.
+
+Below three kinds of buffer will go to FSL gralloc:
+1. Frame buffer
+2. YUV format buffer
+3. RGB formmat buffer with usage GRALLOC_USAGE_HW_VIDEO_ENCODER
+
+Signed-off-by: Richard Liu <r66033@freescale.com>
+---
+ mx6/libgralloc_wrapper/BufferManager.cpp    | 13 ++++++++-----
+ mx6/libgralloc_wrapper/BufferManager.h      |  2 +-
+ mx6/libgralloc_wrapper/GPUBufferManager.cpp | 12 ++++++------
+ 3 files changed, 15 insertions(+), 12 deletions(-)
+
+diff --git a/mx6/libgralloc_wrapper/BufferManager.cpp b/mx6/libgralloc_wrapper/BufferManager.cpp
+index 6a5e908..e0aa96b 100755
+--- a/mx6/libgralloc_wrapper/BufferManager.cpp
++++ b/mx6/libgralloc_wrapper/BufferManager.cpp
+@@ -158,12 +158,15 @@ int BufferManager::free(buffer_handle_t handle)
+     return freeBuffer(handle);
+ }
+ 
+-bool BufferManager::isYUVFormat(int format)
++bool BufferManager::useFSLGralloc(int format, int usage)
+ {
+-    bool isYUV = true;
+-    if (format >= HAL_PIXEL_FORMAT_RGBA_8888 && format <= HAL_PIXEL_FORMAT_sRGB_X_8888) {
+-        isYUV = false;
++    bool bUseFSLGralloc = true;
++
++    //RGB format and without video encoder flag
++    if ((format >= HAL_PIXEL_FORMAT_RGBA_8888 && format <= HAL_PIXEL_FORMAT_sRGB_X_8888)
++       && !(usage & GRALLOC_USAGE_HW_VIDEO_ENCODER)) {
++        bUseFSLGralloc = false;
+     }
+ 
+-    return isYUV;
++    return bUseFSLGralloc;
+ }
+diff --git a/mx6/libgralloc_wrapper/BufferManager.h b/mx6/libgralloc_wrapper/BufferManager.h
+index 53318d8..dc14383 100755
+--- a/mx6/libgralloc_wrapper/BufferManager.h
++++ b/mx6/libgralloc_wrapper/BufferManager.h
+@@ -125,7 +125,7 @@ protected:
+     virtual int freeBuffer(buffer_handle_t handle) = 0;
+ 
+     int allocFramebuffer(size_t size, int usage, buffer_handle_t* pHandle);
+-    bool isYUVFormat(int format);
++    bool useFSLGralloc(int format, int usage);
+     BufferManager();
+ 
+ public:
+diff --git a/mx6/libgralloc_wrapper/GPUBufferManager.cpp b/mx6/libgralloc_wrapper/GPUBufferManager.cpp
+index c2cabcb..21f7e4a 100755
+--- a/mx6/libgralloc_wrapper/GPUBufferManager.cpp
++++ b/mx6/libgralloc_wrapper/GPUBufferManager.cpp
+@@ -107,7 +107,7 @@ int GPUBufferManager::allocBuffer(int w, int h, int format, int usage,
+     }
+ 
+     //YUV format
+-    if (isYUVFormat(format) || (gpu_device == NULL)) {
++    if (useFSLGralloc(format, usage) || (gpu_device == NULL)) {
+         return allocHandle(w, h, format, alignW, size,
+                          usage, (buffer_handle_t*)handle, stride);
+     }
+@@ -141,7 +141,7 @@ int GPUBufferManager::freeBuffer(buffer_handle_t handle)
+     }
+ 
+     //YUV format
+-    if (isYUVFormat(hnd->format) || (gpu_device == NULL)) {
++    if (useFSLGralloc(hnd->format, hnd->usage) || (gpu_device == NULL)) {
+         ALOGV("free handle");
+         return freeHandle(handle);
+     }
+@@ -166,7 +166,7 @@ int GPUBufferManager::registerBuffer(buffer_handle_t handle)
+     }
+ 
+     //YUV format
+-    if (isYUVFormat(hnd->format) || (gralloc_viv == NULL)) {
++    if (useFSLGralloc(hnd->format, hnd->usage) || (gralloc_viv == NULL)) {
+         return registerHandle((private_handle_t*)handle);
+     }
+ 
+@@ -189,7 +189,7 @@ int GPUBufferManager::unregisterBuffer(buffer_handle_t handle)
+     }
+ 
+     //YUV format
+-    if (isYUVFormat(hnd->format) || (gralloc_viv == NULL)) {
++    if (useFSLGralloc(hnd->format, hnd->usage) || (gralloc_viv == NULL)) {
+         return unregisterHandle((private_handle_t*)handle);
+     }
+ 
+@@ -215,7 +215,7 @@ int GPUBufferManager::lock(buffer_handle_t handle, int usage,
+     }
+ 
+     // yuv format buffer.
+-    if (isYUVFormat(hnd->format) || (gralloc_viv == NULL)) {
++    if (useFSLGralloc(hnd->format, hnd->usage) ||  (gralloc_viv == NULL)) {
+         return lockHandle(hnd, vaddr);
+     }
+ 
+@@ -239,7 +239,7 @@ int GPUBufferManager::unlock(buffer_handle_t handle)
+     }
+ 
+     // yuv format buffer.
+-    if (isYUVFormat(hnd->format) || (gralloc_viv == NULL)) {
++    if (useFSLGralloc(hnd->format, hnd->usage) || (gralloc_viv == NULL)) {
+         return unlockHandle(hnd);
+     }
+ 
+-- 
+1.8.0
+

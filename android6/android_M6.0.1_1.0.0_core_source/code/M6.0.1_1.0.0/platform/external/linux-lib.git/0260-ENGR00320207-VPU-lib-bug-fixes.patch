@@ -1,0 +1,590 @@
+From 17f0ba71744d9c5a81c35f0cf5176a4f94a8c7e1 Mon Sep 17 00:00:00 2001
+From: Hongzhang Yang <Hongzhang.Yang@freescale.com>
+Date: Fri, 27 Jun 2014 17:05:49 +0800
+Subject: [PATCH 260/280] ENGR00320207 VPU lib bug fixes
+
+VPU lib v5.4.26
+
+1) Fixed multiple instances performance issue
+
+Issues:
+- VPU performance drops disproportionally when number of instances
+increases (if number of instances is greater than number of CPUs).
+- CPU loading increases disproportionally when number of instances
+increases.
+
+Root cause:
+- get_futex_key() always returns error, so the waiter cannot be queued
+and put to sleep. So it is always trying. CPU loading is higher.
+Process/thread switch is frequent.
+- get_futex_key() returns error because get_user_pages_fast cannot find
+the page associated with the futex memory. The memory cannot have
+vm_flags of VM_IO or VM_PFNMAP. After we remove VM_IO from vshare memory,
+get_futex_key still returns error because page_head->mapping == 0.
+
+Solution:
+Replace the memory storing mutex by open() a file under shared memory
+path and mmap() it.
+
+Special care should be taken to solve the robustness issues:
+- how to free the memory after processes are killed
+- how to reinit the mutex if it remains locked after processes are killed
+The memory no longer syncs with VPU status if processes are killed
+because memory persists after VPU release. However vshare memory in
+driver does sync with VPU status. We have a flag "is_initialized" in it
+and we can refer to it for VPU status.
+
+The next instance relies on is_initialized==0 to free memory not freed
+and do all necessary init jobs including reallocating memory and
+reinitializing mutex.
+
+2) IOGetVirtMem detects failure incorrectly
+Bug:
+Many callers of this routine tested the return value for <= 0 to detect failure.
+In some kernel, a negative number (!= -1) is a valid (successful) return value.
+
+Solution:
+Only check -1 for failure.
+
+3) Optimized SOI search performance
+Remove unnessesary operations
+
+4) Some registers are no longer used in MX6 and introduce some new
+registers for MX6 only
+
+Signed-off-by: Hongzhang Yang <Hongzhang.Yang@freescale.com>
+---
+ vpu/vpu_io.c   |  13 +++--
+ vpu/vpu_lib.c  |  18 +++---
+ vpu/vpu_lib.h  |   2 +-
+ vpu/vpu_reg.h  |   8 ++-
+ vpu/vpu_util.c | 181 +++++++++++++++++++++++++++++++++++++++++++++++----------
+ vpu/vpu_util.h |  16 +++--
+ 6 files changed, 184 insertions(+), 54 deletions(-)
+
+diff --git a/vpu/vpu_io.c b/vpu/vpu_io.c
+index 8cbb571..a95f837 100644
+--- a/vpu/vpu_io.c
++++ b/vpu/vpu_io.c
+@@ -1,7 +1,7 @@
+ /*
+  * Copyright (c) 2006, Chips & Media.  All rights reserved.
+  *
+- * Copyright (C) 2004-2013 Freescale Semiconductor, Inc.
++ * Copyright (C) 2004-2014 Freescale Semiconductor, Inc.
+  */
+ 
+ /* The following programs are the sole property of Freescale Semiconductor Inc.,
+@@ -55,6 +55,7 @@ static int vpu_active_num = 0;
+ 
+ unsigned int system_rev;
+ semaphore_t *vpu_semap;
++shared_mem_t *vpu_shared_mem;
+ vpu_mem_desc bit_work_addr;
+ 
+ int _IOGetPhyMem(int which, vpu_mem_desc *buff);
+@@ -208,8 +209,8 @@ int IOSystemInit(void *callback)
+ 		return -1;
+ 	}
+ 
+-	vpu_semap = vpu_semaphore_open();
+-	if (vpu_semap == NULL) {
++	vpu_shared_mem = vpu_semaphore_open();
++	if (vpu_shared_mem == NULL) {
+ 		err_msg("Error: Unable to open vpu shared memory file\n");
+ 		close(vpu_fd);
+ 		vpu_fd = -1;
+@@ -265,7 +266,7 @@ int IOSystemInit(void *callback)
+ 		goto err;
+ 	}
+ 
+-	if (IOGetVirtMem(&bit_work_addr) <= 0)
++	if (IOGetVirtMem(&bit_work_addr) == -1)
+ 		goto err;
+ #endif
+ 	UnlockVpu(vpu_semap);
+@@ -335,7 +336,7 @@ int IOSystemShutdown(void)
+ 	vpu_active_num--;
+ 
+ 	semaphore_post(vpu_semap, API_MUTEX);
+-	vpu_semaphore_close(vpu_semap);
++	vpu_semaphore_close(vpu_shared_mem);
+ 
+ 	if (vpu_fd >= 0) {
+ 		close(vpu_fd);
+@@ -672,7 +673,7 @@ int IOPhyMemCheck(unsigned long phyaddr, const char *name)
+  *
+  * @param	buff	the structure containing memory information to be mapped.
+  *
+- * @return	user space address.
++ * @return	user space address on success or -1 ((int)MAP_FAILED) on failure.
+  */
+ int IOGetVirtMem(vpu_mem_desc * buff)
+ {
+diff --git a/vpu/vpu_lib.c b/vpu/vpu_lib.c
+index 2d400dd..06d6b00 100644
+--- a/vpu/vpu_lib.c
++++ b/vpu/vpu_lib.c
+@@ -49,6 +49,7 @@ unsigned long *virt_paraBuf2;
+ 
+ extern vpu_mem_desc bit_work_addr;
+ extern semaphore_t *vpu_semap;
++extern shared_mem_t *vpu_shared_mem;
+ 
+ extern void vpu_setting_iram();
+ 
+@@ -293,7 +294,7 @@ RetCode vpu_Init(void *cb)
+ 	virt_paraBuf2 = (unsigned long *)(virt_codeBuf + CODE_BUF_SIZE +
+ 					  TEMP_BUF_SIZE);
+ 
+-	ppendingInst = (CodecInst **) (&vpu_semap->pendingInst);
++	ppendingInst = (CodecInst **) (&vpu_shared_mem->pendingInst);
+ 
+ 	if (!isVpuInitialized()) {
+ 		bit_code = malloc(MAX_FW_BINARY_LEN * sizeof(Uint16));
+@@ -398,7 +399,7 @@ RetCode vpu_SWReset(DecHandle handle, int index)
+ 			return RETCODE_FAILURE;
+ 
+ 		/* Free instance info per index */
+-		pCodecInst = (CodecInst *)(&vpu_semap->codecInstPool[index]);
++		pCodecInst = (CodecInst *)(&vpu_shared_mem->codecInstPool[index]);
+ 		if (pCodecInst == NULL)
+ 			warn_msg("The instance is freed\n");
+ 		else {
+@@ -1770,7 +1771,7 @@ RetCode vpu_EncStartOneFrame(EncHandle handle, EncParam * param)
+ 				err_msg("Unable to obtain physical mem\n");
+ 				return RETCODE_FAILURE;
+ 			}
+-			if (IOGetVirtMem(&pEncInfo->picParaBaseMem) <= 0) {
++			if (IOGetVirtMem(&pEncInfo->picParaBaseMem) == -1) {
+ 				IOFreePhyMem(&pEncInfo->picParaBaseMem);
+ 				pEncInfo->picParaBaseMem.phy_addr = 0;
+ 				err_msg("Unable to obtain virtual mem\n");
+@@ -2994,7 +2995,7 @@ RetCode vpu_DecGetInitialInfo(DecHandle handle, DecInitialInfo * info)
+ 			UnlockVpu(vpu_semap);
+ 			return RETCODE_FAILURE;
+ 		}
+-		if (IOGetVirtMem(&pDecInfo->userDataBufMem) <= 0) {
++		if (IOGetVirtMem(&pDecInfo->userDataBufMem) == -1) {
+ 			IOFreePhyMem(&pDecInfo->userDataBufMem);
+ 			pDecInfo->userDataBufMem.phy_addr = 0;
+ 			err_msg("Unable to obtain virtual mem\n");
+@@ -3037,7 +3038,7 @@ RetCode vpu_DecGetInitialInfo(DecHandle handle, DecInitialInfo * info)
+ 			    pDecInfo->openParam.mjpg_thumbNailDecEnable);
+ 	}
+ 
+-	if (!cpu_is_mx6x() || (pCodecInst->codecMode == VPX_DEC))
++	if (!cpu_is_mx6x())
+ 		VpuWriteReg(CMD_DEC_SEQ_SRC_SIZE, pDecInfo->picSrcSize);
+ 	else if (cpu_is_mx6x() && (pCodecInst->codecMode == AVC_DEC))
+ 		VpuWriteReg(CMD_DEC_SEQ_SPP_CHUNK_SIZE, 512);
+@@ -4031,7 +4032,7 @@ RetCode vpu_DecStartOneFrame(DecHandle handle, DecParam * param)
+ 				UnlockVpu(vpu_semap);
+ 				return RETCODE_FAILURE;
+ 			}
+-			if (IOGetVirtMem(&pDecInfo->picParaBaseMem) <= 0) {
++			if (IOGetVirtMem(&pDecInfo->picParaBaseMem) == -1) {
+ 				IOFreePhyMem(&pDecInfo->picParaBaseMem);
+ 				pDecInfo->picParaBaseMem.phy_addr = 0;
+ 				err_msg("Unable to obtain virtual mem\n");
+@@ -4071,7 +4072,7 @@ RetCode vpu_DecStartOneFrame(DecHandle handle, DecParam * param)
+ 			UnlockVpu(vpu_semap);
+ 			return RETCODE_FAILURE;
+ 		}
+-		if (IOGetVirtMem(&pDecInfo->userDataBufMem) <= 0) {
++		if (IOGetVirtMem(&pDecInfo->userDataBufMem) == -1) {
+ 			IOFreePhyMem(&pDecInfo->userDataBufMem);
+ 			pDecInfo->userDataBufMem.phy_addr = 0;
+ 			err_msg("Unable to obtain virtual mem\n");
+@@ -4567,7 +4568,8 @@ RetCode vpu_DecGetOutputInfo(DecHandle handle, DecOutputInfo * info)
+ 
+ 	info->indexFrameDisplay = VpuReadReg(RET_DEC_PIC_FRAME_IDX);
+ 	info->indexFrameDecoded = VpuReadReg(RET_DEC_PIC_CUR_IDX);
+-	info->NumDecFrameBuf = VpuReadReg(RET_DEC_PIC_FRAME_NEED);
++	if (!cpu_is_mx6x())
++		info->NumDecFrameBuf = VpuReadReg(RET_DEC_PIC_FRAME_NEED);
+ 
+ 	/* save decoded picType to this array */
+ 	if (info->indexFrameDecoded >= 0)
+diff --git a/vpu/vpu_lib.h b/vpu/vpu_lib.h
+index 6d65d0c..bed1cc7 100644
+--- a/vpu/vpu_lib.h
++++ b/vpu/vpu_lib.h
+@@ -684,7 +684,7 @@ static const SocInfo soc_info[] = {
+  * v4.2.2 [2008.09.03] support encoder on MX51
+  * v4.0.2 [2008.08.21] add the IOClkGateSet() for power saving.
+  */
+-#define VPU_LIB_VERSION_CODE	VPU_LIB_VERSION(5, 4, 25)
++#define VPU_LIB_VERSION_CODE	VPU_LIB_VERSION(5, 4, 26)
+ 
+ extern unsigned int system_rev;
+ 
+diff --git a/vpu/vpu_reg.h b/vpu/vpu_reg.h
+index cf1755c..9c2b57e 100644
+--- a/vpu/vpu_reg.h
++++ b/vpu/vpu_reg.h
+@@ -1,7 +1,7 @@
+ /*
+  * Copyright (c) 2006, Chips & Media.  All rights reserved.
+  *
+- * Copyright (C) 2004-2013 Freescale Semiconductor, Inc.
++ * Copyright (C) 2004-2014 Freescale Semiconductor, Inc.
+  */
+ 
+ /* The following programs are the sole property of Freescale Semiconductor Inc.,
+@@ -113,7 +113,7 @@
+ #define CMD_DEC_SEQ_BB_START		0x180
+ #define CMD_DEC_SEQ_BB_SIZE		0x184
+ #define CMD_DEC_SEQ_OPTION		0x188
+-#define CMD_DEC_SEQ_SRC_SIZE		0x18C
++#define CMD_DEC_SEQ_SRC_SIZE		0x18C  /* dummy for mx6 */
+ #define CMD_DEC_SEQ_START_BYTE		0x190
+ #define CMD_DEC_SEQ_PS_BB_START     	0x194  /* dummy for mx6 */
+ #define CMD_DEC_SEQ_PS_BB_SIZE      	0x198  /* dummy for mx6 */
+@@ -125,6 +125,7 @@
+ 
+ #define CMD_DEC_SEQ_INIT_ESCAPE		0x114
+ 
++#define RET_DEC_SEQ_VUI_INFO            0x18C /* MX6 platform */
+ #define RET_DEC_SEQ_BIT_RATE            0x1B4 /* MX6 platform */
+ 
+ #if defined(IMX6Q)
+@@ -270,7 +271,8 @@
+ #endif
+ 
+ #define RET_DEC_PIC_CUR_IDX		0x1DC
+-#define RET_DEC_PIC_FRAME_NEED		0x1EC
++#define RET_DEC_PIC_FRAME_NEED		0x1EC  /* dummy for mx6 */
++#define RET_DEC_PIC_VUI_INFO		0x1EC  /* MX6 platform */
+ 
+ #define RET_DEC_PIC_CROP_LEFT_RIGHT	0x1E0
+ #define RET_DEC_PIC_CROP_TOP_BOTTOM	0x1E4
+diff --git a/vpu/vpu_util.c b/vpu/vpu_util.c
+index bc5bea7..cbcf990 100644
+--- a/vpu/vpu_util.c
++++ b/vpu/vpu_util.c
+@@ -16,6 +16,7 @@
+ #include <sys/mman.h>
+ #include <errno.h>
+ #include <pthread.h>
++#include <sys/stat.h>
+ 
+ #include "vpu_util.h"
+ #include "vpu_io.h"
+@@ -48,7 +49,15 @@ typedef struct {
+ 
+ extern unsigned long *virt_paraBuf;
+ extern semaphore_t *vpu_semap;
++extern shared_mem_t *vpu_shared_mem;
+ static int mutex_timeout;
++static int fd_share;
++
++#ifdef BUILD_FOR_ANDROID
++#define FN_SHARE "/mnt/shm/vpu"
++#else
++#define FN_SHARE "/dev/shm/vpu"
++#endif
+ 
+ // thumbnail
+ typedef enum {
+@@ -189,7 +198,7 @@ RetCode GetCodecInstance(CodecInst ** ppInst)
+ 	CodecInst *pCodecInst;
+ 
+ 	for (i = 0; i < MAX_NUM_INSTANCE; ++i) {
+-		pCodecInst = (CodecInst *) (&vpu_semap->codecInstPool[i]);
++		pCodecInst = (CodecInst *) (&vpu_shared_mem->codecInstPool[i]);
+ 		if (!pCodecInst->inUse)
+ 			break;
+ 	}
+@@ -213,7 +222,7 @@ RetCode CheckInstanceValidity(CodecInst * pci)
+ 	int i;
+ 
+ 	for (i = 0; i < MAX_NUM_INSTANCE; ++i) {
+-		pCodecInst = (CodecInst *) (&vpu_semap->codecInstPool[i]);
++		pCodecInst = (CodecInst *) (&vpu_shared_mem->codecInstPool[i]);
+ 		if (pCodecInst == pci)
+ 			return RETCODE_SUCCESS;
+ 	}
+@@ -1171,9 +1180,83 @@ void SetMaverickCache(MaverickCacheConfig *pCacheConf, int mapType, int chromInt
+ 	}
+ }
+ 
+-semaphore_t *vpu_semaphore_open(void)
++static void *get_shared_buf(int size, int create) {
++	int ret;
++	void *buf;
++
++	if (create) {
++		fd_share = open(FN_SHARE, O_RDWR|O_CREAT, S_IRUSR|S_IWUSR);
++		if(-1 == (ret = fd_share)) {
++			perror("open failed");
++			return NULL;
++		}
++
++		ret = close(fd_share);
++		if(-1 == ret) {
++			perror("close failed");
++			return NULL;
++		}
++
++		ret = unlink(FN_SHARE);
++		if(-1 == ret) {
++			perror("unlink failed");
++			return NULL;
++		}
++
++		fd_share = open(FN_SHARE, O_RDWR|O_CREAT, S_IRUSR|S_IWUSR);
++		if(-1 == (ret = fd_share)) {
++			perror("open failed");
++			return NULL;
++		}
++
++		ret = ftruncate(fd_share, size);
++		if(-1 == ret) {
++			perror("ftruncate failed");
++			return NULL;
++		}
++
++		buf = (void *)mmap(NULL, size, PROT_READ|PROT_WRITE,
++				MAP_SHARED, fd_share, SEEK_SET);
++		if(NULL == buf)
++			perror("mmap failed");
++
++		return buf;
++	} else {
++		fd_share = open(FN_SHARE, O_RDWR, S_IRUSR|S_IWUSR);
++		if(-1 == (ret = fd_share)) {
++			perror("open failed");
++			return NULL;
++		}
++
++		buf = (void *)mmap(NULL, size, PROT_READ|PROT_WRITE,
++				MAP_SHARED, fd_share, SEEK_SET);
++		if(NULL == buf)
++			perror("mmap failed");
++		return buf;
++	}
++}
++
++static void release_shared_buf(void *buf, int size, int destroy) {
++	int ret;
++
++	ret = munmap(buf, size);
++	if(-1 == ret)
++		perror("munmap failed");
++
++	ret = close(fd_share);
++	if(-1 == ret)
++		perror("close failed");
++
++	if (destroy) {
++		ret = unlink(FN_SHARE);
++		if(-1 == ret)
++			perror("unlink failed");
++	}
++}
++
++shared_mem_t *vpu_semaphore_open(void)
+ {
+-	semaphore_t *semap;
++	shared_mem_t *shared_mem;
+ 	pthread_mutexattr_t psharedm;
+ #ifdef FIFO_MUTEX
+ 	pthread_condattr_t psharedc;
+@@ -1183,15 +1266,22 @@ semaphore_t *vpu_semaphore_open(void)
+ 	int i;
+ 
+ 	/* Use vmalloced share memory for all platforms */
+-	semap = (semaphore_t *)IOGetVShareMem(sizeof(semaphore_t));
+-	if (!semap) {
++	shared_mem = (shared_mem_t *)IOGetVShareMem(sizeof(shared_mem_t));
++	if (!shared_mem) {
+ 		err_msg("Unable to Get VShare memory\n");
+ 		return NULL;
+ 	}
+ 
+ 	IOLockDev(1);
+ 
+-	if (!semap->is_initialized) {
++	vpu_semap = (semaphore_t *)get_shared_buf(sizeof(semaphore_t), !shared_mem->is_initialized);
++	if (vpu_semap == NULL) {
++		munmap((void *)shared_mem, sizeof(shared_mem_t));
++		IOLockDev(0);
++		return NULL;
++	}
++
++	if (!shared_mem->is_initialized) {
+ 		dprintf(4, "sema not init\n");
+ 		pthread_mutexattr_init(&psharedm);
+ 		pthread_mutexattr_setpshared(&psharedm, PTHREAD_PROCESS_SHARED);
+@@ -1199,29 +1289,30 @@ semaphore_t *vpu_semaphore_open(void)
+ 		pthread_mutexattr_setrobust(&psharedm, PTHREAD_MUTEX_ROBUST);
+ #endif
+ #ifdef FIFO_MUTEX
+-		pthread_mutex_init(&semap->api_lock.mutex, &psharedm);
++		pthread_mutex_init(&vpu_semap->api_lock.mutex, &psharedm);
+ 		pthread_condattr_init(&psharedc);
+ 		pthread_condattr_setpshared(&psharedc, PTHREAD_PROCESS_SHARED);
+-		pthread_cond_init(&semap->api_lock.cond, &psharedc);
+-		semap->api_lock.ts_late = 0;
+-		semap->api_lock.locked = 0;
+-		semap->api_lock.buf_head = 0;
+-		semap->api_lock.buf_tail = -1;
++		pthread_cond_init(&vpu_semap->api_lock.cond, &psharedc);
++		vpu_semap->api_lock.ts_late = 0;
++		vpu_semap->api_lock.locked = 0;
++		vpu_semap->api_lock.buf_head = 0;
++		vpu_semap->api_lock.buf_tail = -1;
+ 		for (i=0; i<MAX_ITEM_NUM; i++)
+-			semap->api_lock.ts_buf[i].inUse = 0;
++			vpu_semap->api_lock.ts_buf[i].inUse = 0;
+ #else
+-		pthread_mutex_init(&semap->api_lock, &psharedm);
++		pthread_mutex_init(&vpu_semap->api_lock, &psharedm);
+ #endif
+-		pthread_mutex_init(&semap->reg_lock, &psharedm);
++		pthread_mutex_init(&vpu_semap->reg_lock, &psharedm);
+ 		for (i = 0; i < MAX_NUM_INSTANCE; ++i) {
+-			pCodecInst = (CodecInst *) (&semap->codecInstPool[i]);
++			pCodecInst = (CodecInst *) (&shared_mem->codecInstPool[i]);
+ 			pCodecInst->instIndex = i;
+ 			pCodecInst->inUse = 0;
+ 		}
+-		semap->is_initialized = 1;
++		shared_mem->is_initialized = 1;
+ 		dprintf(4, "sema inited\n");
+ 	}
+ 
++	shared_mem->numInst++;
+ 	IOLockDev(0);
+ 
+ 	timeout_env = getenv("VPU_MUTEX_TIMEOUT");
+@@ -1230,7 +1321,7 @@ semaphore_t *vpu_semaphore_open(void)
+ 	else
+ 		mutex_timeout = atoi(timeout_env);
+ 
+-	return semap;
++	return shared_mem;
+ }
+ 
+ #ifdef FIFO_MUTEX
+@@ -1415,10 +1506,22 @@ unsigned char semaphore_wait(semaphore_t *semap, int mutex)
+ #endif
+ }
+ 
+-void vpu_semaphore_close(semaphore_t * semap)
++void vpu_semaphore_close(shared_mem_t * shared_mem)
+ {
+-	if (munmap((void *)semap, sizeof(semaphore_t)) != 0)
++	IOLockDev(1);
++
++	shared_mem->numInst--;
++
++	release_shared_buf(vpu_semap, sizeof(semaphore_t), shared_mem->numInst == 0);
++
++	if (shared_mem->numInst == 0)
++		shared_mem->is_initialized = 0;
++
++	if (munmap((void *)shared_mem, sizeof(shared_mem_t)) != 0)
+ 		err_msg("munmap share mem failed\n");
++
++	IOLockDev(0);
++
+ 	return;
+ }
+ 
+@@ -2102,6 +2205,29 @@ int find_start_code(JpgDecInfo *jpg)
+ 	return word;
+ }
+ 
++int find_start_soi_code_one_shot(JpgDecInfo *jpg)
++{
++	int size;
++	unsigned char *buf;
++	unsigned char *ptr;
++	unsigned short word = 0;
++
++	size = get_bits_left(&jpg->gbc)/8;
++	buf = jpg->gbc.buffer + jpg->gbc.index;
++	ptr = buf;
++
++	while (ptr < buf + size) {
++		word = (word << 8) | *ptr++;
++		if (word == SOI_Marker) {
++			jpg->gbc.index += (int)(ptr - 2 - buf);
++			return 0;
++		}
++	}
++
++	jpg->gbc.index += (int)(ptr - 1 - buf);
++	return -1;
++}
++
+ int find_start_soi_code(JpgDecInfo *jpg)
+ {
+ 	unsigned int word;
+@@ -2981,15 +3107,10 @@ int JpegDecodeHeader(DecInfo *pDecInfo)
+ 			}
+ 
+ 			init_get_bits(&jpg->gbc, b, size * 8);
+-			for (;;) {
+-				code = find_start_soi_code(jpg);
+-				if (code == 0) {
+-					ret = -1;
+-					dprintf(4, "return 0 in soi finding\n");
+-					goto DONE_DEC_HEADER;
+-				}
+-				if (code == SOI_Marker)
+-					break;
++			if (find_start_soi_code_one_shot(jpg) == -1) {
++				ret = -1;
++				dprintf(4, "return 0 in soi finding\n");
++				goto DONE_DEC_HEADER;
+ 			}
+ 			soiOffset = get_bits_count(&pDecInfo->jpgInfo.gbc) / 8;
+ 			b += soiOffset;
+diff --git a/vpu/vpu_util.h b/vpu/vpu_util.h
+index 1ea2079..175c558 100644
+--- a/vpu/vpu_util.h
++++ b/vpu/vpu_util.h
+@@ -584,16 +584,20 @@ typedef struct fifo_mutex {
+ 
+ typedef struct {
+ 	int is_initialized;
++	int numInst;
++
++	/* VPU data for sharing */
++	CodecInst codecInstPool[MAX_NUM_INSTANCE];
++	CodecInst *pendingInst;
++} shared_mem_t;
++
++typedef struct {
+ #ifdef FIFO_MUTEX
+ 	fifo_mutex_t api_lock;
+ #else
+ 	pthread_mutex_t api_lock;
+ #endif
+ 	pthread_mutex_t reg_lock;
+-
+-	/* VPU data for sharing */
+-	CodecInst codecInstPool[MAX_NUM_INSTANCE];
+-	CodecInst *pendingInst;
+ } semaphore_t;
+ 
+ void BitIssueCommand(CodecInst *pCodecInst, int cmd);
+@@ -629,10 +633,10 @@ void SetDecSecondAXIIRAM(SecAxiUse *psecAxiIramInfo, SetIramParam *parm);
+ void SetEncSecondAXIIRAM(SecAxiUse *psecAxiIramInfo, SetIramParam *parm);
+ void SetMaverickCache(MaverickCacheConfig *pCacheConf, int mapType, int chromInterleave);
+ 
+-semaphore_t *vpu_semaphore_open(void);
++shared_mem_t *vpu_semaphore_open(void);
+ void semaphore_post(semaphore_t *semap, int mutex);
+ unsigned char semaphore_wait(semaphore_t *semap, int mutex);
+-void vpu_semaphore_close(semaphore_t *semap);
++void vpu_semaphore_close(shared_mem_t *shared_mem);
+ 
+ static inline unsigned char LockVpu(semaphore_t *semap)
+ {
+-- 
+1.8.0
+

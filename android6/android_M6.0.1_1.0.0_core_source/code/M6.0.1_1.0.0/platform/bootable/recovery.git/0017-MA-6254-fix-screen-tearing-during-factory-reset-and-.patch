@@ -1,0 +1,187 @@
+From 9847786af5a4e1dc60ebf8ff7bf874f45b043d41 Mon Sep 17 00:00:00 2001
+From: Liu Xiaowen <xiaowen.liu@freescale.com>
+Date: Tue, 15 Sep 2015 13:20:09 +0800
+Subject: [PATCH 17/21] MA-6254 fix screen tearing during factory reset and
+ OTA upgrading.
+
+The root cause is recovery uses 2 framebuffer to draw UI.
+But display controller requires 3 framebuffer to avoid screen tearing.
+Change recovery to use 3 framebuffer.
+
+Signed-off-by: Liu Xiaowen <xiaowen.liu@freescale.com>
+
+Conflicts:
+	minui/graphics_fbdev.cpp
+	screen_ui.cpp
+	screen_ui.h
+---
+ minui/graphics_fbdev.cpp | 41 +++++++++++++++++++++++++++--------------
+ screen_ui.cpp            |  8 ++++----
+ screen_ui.h              |  6 ++++--
+ 3 files changed, 35 insertions(+), 20 deletions(-)
+
+diff --git a/minui/graphics_fbdev.cpp b/minui/graphics_fbdev.cpp
+index be4a329..6508ced 100644
+--- a/minui/graphics_fbdev.cpp
++++ b/minui/graphics_fbdev.cpp
+@@ -39,10 +39,10 @@ static GRSurface* fbdev_flip(minui_backend*);
+ static void fbdev_blank(minui_backend*, bool);
+ static void fbdev_exit(minui_backend*);
+ 
+-static GRSurface gr_framebuffer[2];
++static GRSurface gr_framebuffer[3];
+ static bool double_buffered;
+ static GRSurface* gr_draw = NULL;
+-static int displayed_buffer;
++static int front_buffer = 0;
+ 
+ static fb_var_screeninfo vi;
+ static int fb_fd = -1;
+@@ -69,20 +69,27 @@ static void fbdev_blank(minui_backend* backend __unused, bool blank)
+ 
+ static void set_displayed_framebuffer(unsigned n)
+ {
+-    if (n > 1 || !double_buffered) return;
++    if (n > 2 || !double_buffered) {
++        printf("set_displayed_framebuffer failed n:%d\n", n);
++        return;
++    }
+ 
+-    vi.yres_virtual = gr_framebuffer[0].height * 2;
+-    vi.yoffset = n * gr_framebuffer[0].height;
+-    vi.bits_per_pixel = gr_framebuffer[0].pixel_bytes * 8;
+-    if (ioctl(fb_fd, FBIOPUT_VSCREENINFO, &vi) < 0) {
++    vi.activate = FB_ACTIVATE_VBL;
++    vi.yoffset = n * gr_framebuffer[n].height;
++    if (ioctl(fb_fd, FBIOPAN_DISPLAY, &vi) < 0) {
+         perror("active fb swap failed");
+     }
+-    displayed_buffer = n;
++    front_buffer = (n + 1)%3;
+ }
+ 
+ static GRSurface* fbdev_init(minui_backend* backend) {
+     int fd = open("/dev/graphics/fb0", O_RDWR);
+     if (fd == -1) {
++    void *bits;
++
++    struct fb_fix_screeninfo fi;
++
++    front_buffer = 0;
+         perror("cannot open fb0");
+         return NULL;
+     }
+@@ -110,7 +117,7 @@ static GRSurface* fbdev_init(minui_backend* backend) {
+     vi.transp.length  = 0;
+     vi.bits_per_pixel = 16;
+     vi.xres_virtual = vi.xres;
+-    vi.yres_virtual = vi.yres * 2;
++    vi.yres_virtual = vi.yres * 3;
+     vi.activate = FB_ACTIVATE_NOW;
+ 
+     if (ioctl(fd, FBIOPUT_VSCREENINFO, &vi) < 0) {
+@@ -168,14 +175,18 @@ static GRSurface* fbdev_init(minui_backend* backend) {
+     memset(gr_framebuffer[0].data, 0, gr_framebuffer[0].height * gr_framebuffer[0].row_bytes);
+ 
+     /* check if we can use double buffering */
+-    if (vi.yres * fi.line_length * 2 <= fi.smem_len) {
++    if (vi.yres * fi.line_length * 3 <= fi.smem_len) {
+         double_buffered = true;
+ 
+         memcpy(gr_framebuffer+1, gr_framebuffer, sizeof(GRSurface));
++        memcpy(gr_framebuffer+2, gr_framebuffer, sizeof(GRSurface));
+         gr_framebuffer[1].data = gr_framebuffer[0].data +
+             gr_framebuffer[0].height * gr_framebuffer[0].row_bytes;
++        memset(gr_framebuffer[1].data, 0, gr_framebuffer[1].height * gr_framebuffer[1].row_bytes);
++        gr_framebuffer[2].data = gr_framebuffer[1].data +
++            gr_framebuffer[1].height * gr_framebuffer[1].row_bytes;
+ 
+-        gr_draw = gr_framebuffer+1;
++        gr_draw = gr_framebuffer+front_buffer;
+ 
+     } else {
+         double_buffered = false;
+@@ -195,9 +206,11 @@ static GRSurface* fbdev_init(minui_backend* backend) {
+ 
+     memset(gr_draw->data, 0, gr_draw->height * gr_draw->row_bytes);
+     fb_fd = fd;
+-    set_displayed_framebuffer(0);
++    set_displayed_framebuffer(front_buffer);
++    gr_draw = gr_framebuffer + front_buffer;
+ 
+     printf("framebuffer: %d (%d x %d)\n", fb_fd, gr_draw->width, gr_draw->height);
++    printf("double_buffered: %s\n", double_buffered ? "true" : "false");
+ 
+     fbdev_blank(backend, true);
+     fbdev_blank(backend, false);
+@@ -222,8 +235,8 @@ static GRSurface* fbdev_flip(minui_backend* backend __unused) {
+         // Change gr_draw to point to the buffer currently displayed,
+         // then flip the driver so we're displaying the other buffer
+         // instead.
+-        gr_draw = gr_framebuffer + displayed_buffer;
+-        set_displayed_framebuffer(1-displayed_buffer);
++        set_displayed_framebuffer(front_buffer);
++        gr_draw = gr_framebuffer + front_buffer;
+     } else {
+         // Copy from the in-memory surface to the framebuffer.
+         memcpy(gr_framebuffer[0].data, gr_draw->data,
+diff --git a/screen_ui.cpp b/screen_ui.cpp
+index 43d150e..0a3cd9f 100644
+--- a/screen_ui.cpp
++++ b/screen_ui.cpp
+@@ -62,7 +62,7 @@ ScreenRecoveryUI::ScreenRecoveryUI() :
+     progressScopeStart(0),
+     progressScopeSize(0),
+     progress(0),
+-    pagesIdentical(false),
++    pagesIdentical(3),
+     text_cols_(0),
+     text_rows_(0),
+     text_(nullptr),
+@@ -90,7 +90,7 @@ ScreenRecoveryUI::ScreenRecoveryUI() :
+ // Clear the screen and draw the currently selected background icon (if any).
+ // Should only be called with updateMutex locked.
+ void ScreenRecoveryUI::draw_background_locked(Icon icon) {
+-    pagesIdentical = false;
++    pagesIdentical = 3;
+     gr_color(0, 0, 0, 255);
+     gr_clear();
+ 
+@@ -325,9 +325,9 @@ void ScreenRecoveryUI::update_screen_locked() {
+ // Updates only the progress bar, if possible, otherwise redraws the screen.
+ // Should only be called with updateMutex locked.
+ void ScreenRecoveryUI::update_progress_locked() {
+-    if (show_text || !pagesIdentical) {
++    if (show_text || pagesIdentical != 0) {
+         draw_screen_locked();    // Must redraw the whole screen
+-        pagesIdentical = true;
++        pagesIdentical--;
+     } else {
+         draw_progress_locked();  // Draw only the progress bar and overlays
+     }
+diff --git a/screen_ui.h b/screen_ui.h
+index ea05bf1..541d5e2 100644
+--- a/screen_ui.h
++++ b/screen_ui.h
+@@ -1,5 +1,6 @@
+ /*
+  * Copyright (C) 2011 The Android Open Source Project
++ * Copyright (C) 2015 Freescale Semiconductor, Inc.
+  *
+  * Licensed under the Apache License, Version 2.0 (the "License");
+  * you may not use this file except in compliance with the License.
+@@ -86,8 +87,9 @@ class ScreenRecoveryUI : public RecoveryUI {
+     float progressScopeStart, progressScopeSize, progress;
+     double progressScopeTime, progressScopeDuration;
+ 
+-    // true when both graphics pages are the same (except for the progress bar).
+-    bool pagesIdentical;
++    // true when both graphics pages are the same (except for the
++    // progress bar)
++    int pagesIdentical;
+ 
+     size_t text_cols_, text_rows_;
+ 
+-- 
+1.8.0
+

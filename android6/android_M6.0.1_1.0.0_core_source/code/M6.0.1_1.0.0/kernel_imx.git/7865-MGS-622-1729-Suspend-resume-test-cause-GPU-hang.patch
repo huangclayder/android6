@@ -1,0 +1,54 @@
+From c02bf3f31db33bafe6a163c3425c8918020a4a7f Mon Sep 17 00:00:00 2001
+From: Shawn Xiao <b49994@freescale.com>
+Date: Tue, 19 May 2015 14:32:46 +0800
+Subject: [PATCH] MGS-622 [#1729] Suspend/resume test cause GPU hang
+
+Signal will cause some GPU kernel call return with error status
+gcvSTATUS_INTERRUPTED. If adding interruptcount first, the signal will
+cause the number not align with actual event, and the monitor funciton
+will make a fake GPU hang judgement based on this.
+
+Date May 21, 2015
+
+Signed-off-by: Shawn Xiao <b49994@freescale.com>
+---
+ drivers/mxc/gpu-viv/hal/kernel/gc_hal_kernel_event.c | 16 ++++++++--------
+ 1 file changed, 8 insertions(+), 8 deletions(-)
+
+diff --git a/drivers/mxc/gpu-viv/hal/kernel/gc_hal_kernel_event.c b/drivers/mxc/gpu-viv/hal/kernel/gc_hal_kernel_event.c
+index b592169..7aa0dfe 100644
+--- a/drivers/mxc/gpu-viv/hal/kernel/gc_hal_kernel_event.c
++++ b/drivers/mxc/gpu-viv/hal/kernel/gc_hal_kernel_event.c
+@@ -1728,14 +1728,6 @@ gckEVENT_Submit(
+             /* Determine cache needed to flush. */
+             gcmkVERIFY_OK(_QueryFlush(Event, Event->queues[id].head, &flush));
+ 
+-#if gcdINTERRUPT_STATISTIC
+-            gcmkVERIFY_OK(gckOS_AtomIncrement(
+-                Event->os,
+-                Event->interruptCount,
+-                &oldValue
+-                ));
+-#endif
+-
+ #if gcdNULL_DRIVER
+             /* Notify immediately on infinite hardware. */
+             gcmkONERROR(gckEVENT_Interrupt(Event, 1 << id));
+@@ -1835,6 +1827,14 @@ gckEVENT_Submit(
+             gcmkONERROR(gckCOMMAND_Execute(command, executeBytes));
+ #endif
+ #endif
++#if gcdINTERRUPT_STATISTIC
++            gcmkVERIFY_OK(gckOS_AtomIncrement(
++                Event->os,
++                Event->interruptCount,
++                &oldValue
++                ));
++#endif
++
+         }
+ 
+         /* Release the command queue. */
+-- 
+1.8.0
+

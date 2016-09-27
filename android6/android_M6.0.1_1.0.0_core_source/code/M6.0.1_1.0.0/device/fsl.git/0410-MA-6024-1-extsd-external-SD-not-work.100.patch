@@ -1,0 +1,29 @@
+From 543a750062c2b3e1899c1d690b6d773638d91f2a Mon Sep 17 00:00:00 2001
+From: Wang Haoran <b50027@freescale.com>
+Date: Wed, 17 Dec 2014 20:32:25 +0800
+Subject: [PATCH 410/602] MA-6024-1 extsd: external SD not work.100%
+
+Align the path as that actual in board for
+the NAND boot of sabreauto_6sx.
+
+Signed-off-by: Wang Haoran <b50027@freescale.com>
+---
+ sabreauto_6sx/fstab_nand.freescale | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/sabreauto_6sx/fstab_nand.freescale b/sabreauto_6sx/fstab_nand.freescale
+index 1929817..c9bf3f9 100644
+--- a/sabreauto_6sx/fstab_nand.freescale
++++ b/sabreauto_6sx/fstab_nand.freescale
+@@ -5,7 +5,7 @@
+ 
+ # below is for ubi support, uncomment to support ubifs(NAND)
+ 
+-/devices/soc0/soc.1/2100000.aips-bus/2190000.usdhc/mmc_host /mnt/media_rw/extsd vfat defaults voldmanaged=extsd:auto
++/devices/soc0/soc.1/2100000.aips-bus/219c000.usdhc/mmc_host /mnt/media_rw/extsd vfat defaults voldmanaged=extsd:auto
+ /devices/soc0/soc.1/2100000.aips-bus/2184200.usb/ci_hdrc.1 /mnt/media_rw/udisk vfat defaults voldmanaged=udisk:auto
+ /dev/ubi0_0     /system		    ubifs 	ro                                      wait
+ /dev/ubi0_3     /data           ubifs   nosuid,nodev,nodiratime,noatime         wait
+-- 
+1.8.0
+

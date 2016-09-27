@@ -1,0 +1,30 @@
+From bf58f5d7acb176fa6a0b86addefb1c32f95ead05 Mon Sep 17 00:00:00 2001
+From: Zidan Wang <zidan.wang@freescale.com>
+Date: Thu, 27 Aug 2015 15:40:10 +0800
+Subject: [PATCH] MLK-11430 ARM: dts: imx7d-12x12-lpddr3-arm2-sai: restore
+ pinhogs after exit from lpsr mode
+
+restore pinhogs after exit from lpsr mode
+
+Signed-off-by: Zidan Wang <zidan.wang@freescale.com>
+---
+ arch/arm/boot/dts/imx7d-12x12-lpddr3-arm2-sai.dts | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/arch/arm/boot/dts/imx7d-12x12-lpddr3-arm2-sai.dts b/arch/arm/boot/dts/imx7d-12x12-lpddr3-arm2-sai.dts
+index 12b4031..11a5b46b 100644
+--- a/arch/arm/boot/dts/imx7d-12x12-lpddr3-arm2-sai.dts
++++ b/arch/arm/boot/dts/imx7d-12x12-lpddr3-arm2-sai.dts
+@@ -22,7 +22,9 @@
+ };
+ 
+ &iomuxc {
++	pinctrl-names = "default", "sleep";
+ 	pinctrl-0 = <&pinctrl_hog_1>;
++	pinctrl-1 = <&pinctrl_hog_1>;
+ };
+ 
+ &sai1 {
+-- 
+1.8.0
+

@@ -1,0 +1,44 @@
+From 0853c7b9ab0b0fb253d710df5234efa542cabd53 Mon Sep 17 00:00:00 2001
+From: Haoran Wang <b50027@freescale.com>
+Date: Tue, 5 May 2015 10:59:13 +0800
+Subject: [PATCH 485/602] MA-6376-1 Add SELinux permission for 7d sensors
+
+In sabresd_7d sensors use sensor fusion and sensor
+hub.Add the SELinux policy to allow them to access
+the device.
+
+Signed-off-by: Haoran Wang <b50027@freescale.com>
+---
+ imx7/sepolicy/file_contexts | 4 ++++
+ imx7/sepolicy/sensors.te    | 1 +
+ 2 files changed, 5 insertions(+)
+
+diff --git a/imx7/sepolicy/file_contexts b/imx7/sepolicy/file_contexts
+index f3e5e85..26933da 100644
+--- a/imx7/sepolicy/file_contexts
++++ b/imx7/sepolicy/file_contexts
+@@ -1,4 +1,5 @@
+ /system/bin/magd                u:object_r:sensors_exec:s0
++/system/bin/fsl_sensor_fusion   u:object_r:sensors_exec:s0
+ /system/bin/ingsvcd             u:object_r:gpsd_exec:s0
+ /system/bin/rtl_wpa_supplicant  u:object_r:wpa_exec:s0
+ /system/bin/rtl_hostapd         u:object_r:hostapd_exec:s0
+@@ -17,3 +18,6 @@
+ /dev/galcore                    u:object_r:gpu_device:s0
+ /dev/sda[0-8]*			u:object_r:sdcard_internal:s0
+ /dev/caam_kb                    u:object_r:caam_device:s0
++/dev/FreescaleAccelerometer     u:object_r:sensors_device:s0
++/dev/FreescaleMagnetometer      u:object_r:sensors_device:s0
++/dev/FreescaleGyroscope         u:object_r:sensors_device:s0
+diff --git a/imx7/sepolicy/sensors.te b/imx7/sepolicy/sensors.te
+index e19953e..e0564ae 100644
+--- a/imx7/sepolicy/sensors.te
++++ b/imx7/sepolicy/sensors.te
+@@ -25,3 +25,4 @@ wakelock_use(sensors)
+ allow sensors cgroup:dir { create add_name };
+ allow sensors input_device:chr_file rw_file_perms;
+ allow sensors input_device:dir r_dir_perms;
++allow sensors uhid_device:chr_file rw_file_perms;
+-- 
+1.8.0
+

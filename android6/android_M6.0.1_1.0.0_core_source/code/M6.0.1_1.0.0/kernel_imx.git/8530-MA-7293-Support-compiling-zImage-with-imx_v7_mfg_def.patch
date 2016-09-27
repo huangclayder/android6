@@ -1,0 +1,43 @@
+From 7ca93a9d192bd31b03d55abcdeb03631c137a1bf Mon Sep 17 00:00:00 2001
+From: Zhang Sanshan <b51434@freescale.com>
+Date: Fri, 20 Nov 2015 10:23:29 +0800
+Subject: [PATCH] MA-7293 Support compiling zImage with imx_v7_mfg_defconfig
+ in android imx 3.14 branch
+
+When use zImage compiled with android imx_3.14 branch in mfgtool,
+It will show erro "No device connected"
+
+The root cause is DP is not pull up.
+This patch distinguish mfgtool zImage and android zImage with macro CONFIG_FSL_UTP.
+
+Signed-off-by: Zhang Sanshan <b51434@freescale.com>
+---
+ drivers/usb/chipidea/udc.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/usb/chipidea/udc.c b/drivers/usb/chipidea/udc.c
+index f63886d..dbc7a2c 100644
+--- a/drivers/usb/chipidea/udc.c
++++ b/drivers/usb/chipidea/udc.c
+@@ -1766,7 +1766,6 @@ static int ci_udc_start(struct usb_gadget *gadget,
+ 			ci_hdrc_otg_fsm_start(ci);
+ 		return retval;
+ 	}
+-
+ 	if (ci->vbus_active) {
+ 		pm_runtime_get_sync(&gadget->dev);
+ 		hw_device_reset(ci);
+@@ -1774,8 +1773,9 @@ static int ci_udc_start(struct usb_gadget *gadget,
+ 		/* interrupt, error, port change, reset, sleep/suspend */
+ 		hw_write(ci, OP_USBINTR, ~0,
+ 			USBi_UI|USBi_UEI|USBi_PCI|USBi_URI|USBi_SLI);
++		if (IS_ENABLED(CONFIG_FSL_UTP))
++			hw_write(ci, OP_USBCMD, USBCMD_RS, USBCMD_RS);
+ 	}
+-
+ 	return retval;
+ }
+ 
+-- 
+1.8.0
+

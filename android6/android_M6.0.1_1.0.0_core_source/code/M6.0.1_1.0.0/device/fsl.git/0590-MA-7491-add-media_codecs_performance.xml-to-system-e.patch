@@ -1,0 +1,60 @@
+From 7ff1c12cbc87ae8d321b4b202846f69e00f86a1e Mon Sep 17 00:00:00 2001
+From: Ming Zhou <ming.zhou@nxp.com>
+Date: Fri, 8 Jan 2016 16:36:25 +0800
+Subject: [PATCH 590/602] MA-7491: add media_codecs_performance.xml to
+ /system/etc/
+
+add media_codecs_google_telephony.xml
+
+Signed-off-by: Ming Zhou <ming.zhou@nxp.com>
+---
+ imx6/imx6.mk | 5 ++++-
+ imx7/imx7.mk | 2 ++
+ 2 files changed, 6 insertions(+), 1 deletion(-)
+
+diff --git a/imx6/imx6.mk b/imx6/imx6.mk
+index 525bb29..43979dd 100644
+--- a/imx6/imx6.mk
++++ b/imx6/imx6.mk
+@@ -177,6 +177,7 @@ omx_libs := \
+ 	fslomx.cfg					\
+ 	media_profiles.xml				\
+ 	media_codecs.xml				\
++    media_codecs_performance.xml    \
+ 	ComponentRegistry.txt				\
+ 	lib_omx_player_arm11_elinux			 \
+ 	lib_omx_client_arm11_elinux			\
+@@ -357,7 +358,9 @@ PRODUCT_COPY_FILES +=	\
+ 	device/fsl/common/display/display_mode_fb4.conf:system/etc/display_mode_fb4.conf \
+     device/fsl-proprietary/media-profile/media_codecs_google_audio.xml:system/etc/media_codecs_google_audio.xml \
+     device/fsl-proprietary/media-profile/media_codecs_google_video.xml:system/etc/media_codecs_google_video.xml \
+-    device/fsl-proprietary/media-profile/media_profiles_720p.xml:system/etc/media_profiles_720p.xml
++    device/fsl-proprietary/media-profile/media_codecs_google_telephony.xml:system/etc/media_codecs_google_telephony.xml \
++    device/fsl-proprietary/media-profile/media_profiles_720p.xml:system/etc/media_profiles_720p.xml \
++    
+ 
+ # we have enough storage space to hold precise GC data
+ PRODUCT_TAGS += dalvik.gc.type-precise
+diff --git a/imx7/imx7.mk b/imx7/imx7.mk
+index a4f524a..73e59a3 100644
+--- a/imx7/imx7.mk
++++ b/imx7/imx7.mk
+@@ -166,6 +166,7 @@ omx_libs := \
+ 	fslomx.cfg					\
+ 	media_profiles.xml				\
+ 	media_codecs.xml				\
++    media_codecs_performance.xml  \
+ 	ComponentRegistry.txt				\
+ 	lib_omx_player_arm11_elinux			 \
+ 	lib_omx_client_arm11_elinux			\
+@@ -346,6 +347,7 @@ PRODUCT_COPY_FILES +=	\
+ 	device/fsl/common/display/display_mode_fb4.conf:system/etc/display_mode_fb4.conf \
+     device/fsl-proprietary/media-profile/media_codecs_google_audio.xml:system/etc/media_codecs_google_audio.xml \
+     device/fsl-proprietary/media-profile/media_codecs_google_video.xml:system/etc/media_codecs_google_video.xml \
++    device/fsl-proprietary/media-profile/media_codecs_google_telephony.xml:system/etc/media_codecs_google_telephony.xml \
+ 
+ 
+ # we have enough storage space to hold precise GC data
+-- 
+1.8.0
+

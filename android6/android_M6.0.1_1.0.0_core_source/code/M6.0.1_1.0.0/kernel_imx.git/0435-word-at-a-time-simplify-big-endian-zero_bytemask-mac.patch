@@ -1,0 +1,32 @@
+From dd429e144fe3a9cea9b08985a687da8740ec5d8a Mon Sep 17 00:00:00 2001
+From: "H. Peter Anvin" <hpa@zytor.com>
+Date: Wed, 30 Apr 2014 14:22:19 -0700
+Subject: [PATCH] word-at-a-time: simplify big-endian zero_bytemask macro
+
+This is simpler and cleaner.  Depending on architecture, a smart
+compiler may or may not generate the same code.
+
+Acked-by: Will Deacon <will.deacon@arm.com>
+Signed-off-by: Linus Torvalds <torvalds@linux-foundation.org>
+(cherry picked from commit 789ce9dca8007ab5d7c72b9a174a29243817ac32)
+Signed-off-by: Alex Shi <alex.shi@linaro.org>
+---
+ include/asm-generic/word-at-a-time.h | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/include/asm-generic/word-at-a-time.h b/include/asm-generic/word-at-a-time.h
+index d96deb4..94f9ea8 100644
+--- a/include/asm-generic/word-at-a-time.h
++++ b/include/asm-generic/word-at-a-time.h
+@@ -50,7 +50,7 @@ static inline bool has_zero(unsigned long val, unsigned long *data, const struct
+ }
+ 
+ #ifndef zero_bytemask
+-#define zero_bytemask(mask) (~0ul << __fls(mask) << 1)
++#define zero_bytemask(mask) (~1ul << __fls(mask))
+ #endif
+ 
+ #endif /* _ASM_WORD_AT_A_TIME_H */
+-- 
+1.8.0
+

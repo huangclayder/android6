@@ -1,0 +1,74 @@
+From 6035afc6b761785a9cb22e3b212ec80f2300e784 Mon Sep 17 00:00:00 2001
+From: Marc Zyngier <marc.zyngier@arm.com>
+Date: Tue, 21 Jan 2014 10:55:17 +0000
+Subject: [PATCH] arm64: KVM: allows discrimination of AArch32 sysreg access
+
+The current handling of AArch32 trapping is slightly less than
+perfect, as it is not possible (from a handler point of view)
+to distinguish it from an AArch64 access, nor to tell a 32bit
+from a 64bit access either.
+
+Fix this by introducing two additional flags:
+- is_aarch32: true if the access was made in AArch32 mode
+- is_32bit: true if is_aarch32 == true and a MCR/MRC instruction
+  was used to perform the access (as opposed to MCRR/MRRC).
+
+This allows a handler to cover all the possible conditions in which
+a system register gets trapped.
+
+Signed-off-by: Marc Zyngier <marc.zyngier@arm.com>
+Acked-by: Christoffer Dall <christoffer.dall@linaro.org>
+(cherry picked from commit 2072d29c46b73e39b3c6c56c6027af77086f45fd)
+Signed-off-by: Christoffer Dall <christoffer.dall@linaro.org>
+---
+ arch/arm64/kvm/sys_regs.c | 6 ++++++
+ arch/arm64/kvm/sys_regs.h | 2 ++
+ 2 files changed, 8 insertions(+)
+
+diff --git a/arch/arm64/kvm/sys_regs.c b/arch/arm64/kvm/sys_regs.c
+index d800dbc..58afb87 100644
+--- a/arch/arm64/kvm/sys_regs.c
++++ b/arch/arm64/kvm/sys_regs.c
+@@ -437,6 +437,8 @@ int kvm_handle_cp15_64(struct kvm_vcpu *vcpu, struct kvm_run *run)
+ 	u32 hsr = kvm_vcpu_get_hsr(vcpu);
+ 	int Rt2 = (hsr >> 10) & 0xf;
+ 
++	params.is_aarch32 = true;
++	params.is_32bit = false;
+ 	params.CRm = (hsr >> 1) & 0xf;
+ 	params.Rt = (hsr >> 5) & 0xf;
+ 	params.is_write = ((hsr & 1) == 0);
+@@ -480,6 +482,8 @@ int kvm_handle_cp15_32(struct kvm_vcpu *vcpu, struct kvm_run *run)
+ 	struct sys_reg_params params;
+ 	u32 hsr = kvm_vcpu_get_hsr(vcpu);
+ 
++	params.is_aarch32 = true;
++	params.is_32bit = true;
+ 	params.CRm = (hsr >> 1) & 0xf;
+ 	params.Rt  = (hsr >> 5) & 0xf;
+ 	params.is_write = ((hsr & 1) == 0);
+@@ -549,6 +553,8 @@ int kvm_handle_sys_reg(struct kvm_vcpu *vcpu, struct kvm_run *run)
+ 	struct sys_reg_params params;
+ 	unsigned long esr = kvm_vcpu_get_hsr(vcpu);
+ 
++	params.is_aarch32 = false;
++	params.is_32bit = false;
+ 	params.Op0 = (esr >> 20) & 3;
+ 	params.Op1 = (esr >> 14) & 0x7;
+ 	params.CRn = (esr >> 10) & 0xf;
+diff --git a/arch/arm64/kvm/sys_regs.h b/arch/arm64/kvm/sys_regs.h
+index d50d372..d411e25 100644
+--- a/arch/arm64/kvm/sys_regs.h
++++ b/arch/arm64/kvm/sys_regs.h
+@@ -30,6 +30,8 @@ struct sys_reg_params {
+ 	u8	Op2;
+ 	u8	Rt;
+ 	bool	is_write;
++	bool	is_aarch32;
++	bool	is_32bit;	/* Only valid if is_aarch32 is true */
+ };
+ 
+ struct sys_reg_desc {
+-- 
+1.8.0
+

@@ -1,0 +1,67 @@
+From b8c49f0135dc2cf61583a9cb24a21fd9d8a04a90 Mon Sep 17 00:00:00 2001
+From: Xu Mao <B34688@freescale.com>
+Date: Tue, 22 Jul 2014 13:14:37 +0800
+Subject: [PATCH 59/95] ENGR00323218 Movie Studio: Can't export files
+
+add macro to use frame drop checking when using software encoder
+
+Signed-off-by: Xu Mao <B34688@freescale.com>
+
+Conflicts:
+	media/libstagefright/Android.mk
+---
+ media/libstagefright/Android.mk   |  4 ++++
+ media/libstagefright/OMXCodec.cpp | 10 +++++-----
+ 2 files changed, 9 insertions(+), 5 deletions(-)
+
+diff --git a/media/libstagefright/Android.mk b/media/libstagefright/Android.mk
+index 2d901f8..9c29737 100644
+--- a/media/libstagefright/Android.mk
++++ b/media/libstagefright/Android.mk
+@@ -128,6 +128,10 @@ ifeq ($(BOARD_SOC_CLASS), IMX5X)
+    LOCAL_CFLAGS += -DIMX5X
+ endif
+ 
++ifeq ($(BOARD_HAVE_VPU),false)
++   LOCAL_CFLAGS += -DSOFTWARE_ENCODER
++endif
++
+ LOCAL_SHARED_LIBRARIES += \
+         libstagefright_enc_common \
+         libstagefright_avc_common \
+diff --git a/media/libstagefright/OMXCodec.cpp b/media/libstagefright/OMXCodec.cpp
+index d97238a..c440883 100644
+--- a/media/libstagefright/OMXCodec.cpp
++++ b/media/libstagefright/OMXCodec.cpp
+@@ -2045,7 +2045,7 @@ void OMXCodec::on_message(const omx_message &msg) {
+         {
+             IOMX::buffer_id buffer = msg.u.extended_buffer_data.buffer;
+ 
+-            /*  Buffer header pointer from vpu component can only be used as raw
++            /*  In MovieEditor, Buffer header pointer from vpu component can only be used as raw
+                 value, if use it to access structure member, segment fault occurs.
+                 It might be IPC issue or limitation.
+                 
+@@ -2053,15 +2053,15 @@ void OMXCodec::on_message(const omx_message &msg) {
+                 comment out these lines when using vpu encoder.
+             */
+             
+-            /*
+-			//If the frame is dropped by avcEncoder, need drop stamp in mDecodingTimeList
++#ifdef SOFTWARE_ENCODER                
++            //If the frame is dropped by avcEncoder, need drop stamp in mDecodingTimeList
+             OMX_BUFFERHEADERTYPE *head = (OMX_BUFFERHEADERTYPE *)buffer;
+              if( mIsEncoder && mIsVideo && (!strcasecmp(MEDIA_MIMETYPE_VIDEO_AVC, mMIME)) &&
+                 (head->nFlags == OMX_BUFFERFLAG_FRAMEDROP) ) {
+-                CODEC_LOGV("drop time stamp %lld us", head->nTimeStamp);
++                CODEC_LOGE("drop time stamp %lld us", head->nTimeStamp);
+                 getDecodingTimeUs();
+              }
+-             */
++#endif
+ 
+             CODEC_LOGV("EMPTY_BUFFER_DONE(buffer: %u)", buffer);
+ 
+-- 
+1.8.0
+

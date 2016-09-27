@@ -1,0 +1,36 @@
+From 311805fd240e77d04d0dcd8f6f7fa805502b79f7 Mon Sep 17 00:00:00 2001
+From: Wang Haoran <Haoran.Wang@freescale.com>
+Date: Thu, 7 Jan 2016 20:45:28 +0800
+Subject: [PATCH 588/602] MA-7313 Remove BT rfkill operating codes for evk_6sl
+
+Since evk_6sl has no bluetooth so remove the BT
+related rfkill operation.
+
+This patch will fix the no BT device cannot enable
+built-in wifi issue. As it will change the rfkill
+status for wifi device when boot up.
+
+Signed-off-by: Wang Haoran <Haoran.Wang@freescale.com>
+---
+ evk_6sl/init.rc | 5 -----
+ 1 file changed, 5 deletions(-)
+
+diff --git a/evk_6sl/init.rc b/evk_6sl/init.rc
+index 2580e79..3228ccb 100644
+--- a/evk_6sl/init.rc
++++ b/evk_6sl/init.rc
+@@ -80,11 +80,6 @@ on boot
+     setprop wifi.interface wlan0
+     setprop wifi.ap.interface wlan0
+ 
+-    # Prepare for bluetooth
+-    chmod 665 /sys/class/rfkill/rfkill0/state
+-    chown bluetooth bluetooth /sys/class/rfkill/rfkill0/state
+-    write /sys/class/rfkill/rfkill0/state 0
+-
+     # Prepare for RIL
+     setprop gsm.ril.delay 15
+     setprop ro.ril.wake_lock_timeout 300
+-- 
+1.8.0
+

@@ -1,0 +1,44 @@
+From deee257ca5fdb3b275ea99f8bb3ca2e79417284a Mon Sep 17 00:00:00 2001
+From: Zidan Wang <zidan.wang@freescale.com>
+Date: Mon, 12 Oct 2015 17:37:09 +0800
+Subject: [PATCH] MLK-11570-01 mfd: wm8994: fix kernel dump when enter suspend
+ state
+
+Revert "MLK-11411 ASoC: wm8994-core: add suspend/resume support"
+
+When playback a wav, pm runtime resume will be called to enable
+regulators. And when stop a wav, pm runtime suspend will be called
+to disable regulators.
+
+We are using the same suspend/resume function for runtime and system
+sleep pm. When enter suspend state without playback a wav, the pm
+runtime resume will not be called, so the regulator will not be
+enabled, but system sleep suspend will be called to disable regulator,
+it will cause unbalanced disable for regulator.
+
+In order to fix kernel dump issue and sound distorted after resume back
+from suspend issue, we'd better remove the system sleep pm, and restore
+the register values in codec driver suspend/resume.
+
+This reverts commit 897a5298b10c32f2ec15b8c2660e272e458c2cf6.
+
+Signed-off-by: Zidan Wang <zidan.wang@freescale.com>
+---
+ drivers/mfd/wm8994-core.c | 1 -
+ 1 file changed, 1 deletion(-)
+
+diff --git a/drivers/mfd/wm8994-core.c b/drivers/mfd/wm8994-core.c
+index a33eb04..e6fab94 100644
+--- a/drivers/mfd/wm8994-core.c
++++ b/drivers/mfd/wm8994-core.c
+@@ -672,7 +672,6 @@ MODULE_DEVICE_TABLE(i2c, wm8994_i2c_id);
+ 
+ static const struct dev_pm_ops wm8994_pm_ops = {
+ 	SET_RUNTIME_PM_OPS(wm8994_suspend, wm8994_resume, NULL)
+-	SET_SYSTEM_SLEEP_PM_OPS(wm8994_suspend, wm8994_resume)
+ };
+ 
+ static struct i2c_driver wm8994_i2c_driver = {
+-- 
+1.8.0
+

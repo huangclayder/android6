@@ -1,0 +1,41 @@
+From 147f0d77725b6ad048922c6dc8ecf3677249e160 Mon Sep 17 00:00:00 2001
+From: Sascha Hauer <s.hauer@pengutronix.de>
+Date: Mon, 14 Apr 2014 16:20:39 +0200
+Subject: [PATCH] ARM: imx6q: clk: Parent DI clocks to video PLL via
+ di_pre_sel
+
+Route the video PLL to the display interface clocks via the di_pre_sel
+and di_sel muxes by default.
+
+Signed-off-by: Sascha Hauer <s.hauer@pengutronix.de>
+Signed-off-by: Philipp Zabel <p.zabel@pengutronix.de>
+Tested-by: Russell King <rmk+kernel@arm.linux.org.uk>
+Signed-off-by: Shawn Guo <shawn.guo@freescale.com>
+[shawn.guo: cherry-pick commit 17b9b3b9e88a from upstream]
+---
+ arch/arm/mach-imx/clk-imx6q.c | 9 +++++++++
+ 1 file changed, 9 insertions(+)
+
+diff --git a/arch/arm/mach-imx/clk-imx6q.c b/arch/arm/mach-imx/clk-imx6q.c
+index 5bd1ce8..9cdaeec 100644
+--- a/arch/arm/mach-imx/clk-imx6q.c
++++ b/arch/arm/mach-imx/clk-imx6q.c
+@@ -448,6 +448,15 @@ static void __init imx6q_clocks_init(struct device_node *ccm_node)
+ 		clk_set_parent(clk[ldb_di1_sel], clk[pll5_video_div]);
+ 	}
+ 
++	clk_set_parent(clk[ipu1_di0_pre_sel], clk[pll5_video_div]);
++	clk_set_parent(clk[ipu1_di1_pre_sel], clk[pll5_video_div]);
++	clk_set_parent(clk[ipu2_di0_pre_sel], clk[pll5_video_div]);
++	clk_set_parent(clk[ipu2_di1_pre_sel], clk[pll5_video_div]);
++	clk_set_parent(clk[ipu1_di0_sel], clk[ipu1_di0_pre]);
++	clk_set_parent(clk[ipu1_di1_sel], clk[ipu1_di1_pre]);
++	clk_set_parent(clk[ipu2_di0_sel], clk[ipu2_di0_pre]);
++	clk_set_parent(clk[ipu2_di1_sel], clk[ipu2_di1_pre]);
++
+ 	/*
+ 	 * The gpmi needs 100MHz frequency in the EDO/Sync mode,
+ 	 * We can not get the 100MHz from the pll2_pfd0_352m.
+-- 
+1.8.0
+

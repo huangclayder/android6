@@ -1,0 +1,339 @@
+From e52a54c754df30885ce5a900d2514ccd0b28ee25 Mon Sep 17 00:00:00 2001
+From: Yu Zhen <b53395@freescale.com>
+Date: Wed, 14 Jan 2015 15:56:47 +0800
+Subject: [PATCH 081/115] MA-6116 add a netmask and gateway address
+
+Use EthernetService of Lollipop to configure the
+gateway and mask.
+
+Signed-off-by: Yu Zhen <b53395@freescale.com>
+---
+ Ethernet/AndroidManifest.xml                       |  4 +-
+ .../com/fsl/ethernet/EthernetConfigDialog.java     | 11 ++-
+ Ethernet/com/fsl/ethernet/EthernetDevInfo.java     | 12 +++-
+ Ethernet/com/fsl/ethernet/EthernetManager.java     | 79 +++++++++++++++-------
+ Ethernet/res/layout/eth_configure.xml              | 32 +++++++++
+ 5 files changed, 110 insertions(+), 28 deletions(-)
+
+diff --git a/Ethernet/AndroidManifest.xml b/Ethernet/AndroidManifest.xml
+index 56e9c4b..6042412 100644
+--- a/Ethernet/AndroidManifest.xml
++++ b/Ethernet/AndroidManifest.xml
+@@ -6,8 +6,8 @@
+     android:sharedUserId="android.uid.system" >
+ 
+     <uses-sdk
+-        android:minSdkVersion="14"
+-        android:targetSdkVersion="18" />
++        android:minSdkVersion="19"
++        android:targetSdkVersion="19" />
+ 
+     <application
+         android:allowBackup="true"
+diff --git a/Ethernet/com/fsl/ethernet/EthernetConfigDialog.java b/Ethernet/com/fsl/ethernet/EthernetConfigDialog.java
+index 3f01332..48e26aa 100644
+--- a/Ethernet/com/fsl/ethernet/EthernetConfigDialog.java
++++ b/Ethernet/com/fsl/ethernet/EthernetConfigDialog.java
+@@ -1,5 +1,5 @@
+ /*
+- * Copyright (C) 2013-2014 Freescale Semiconductor, Inc.
++ * Copyright (C) 2013-2015 Freescale Semiconductor, Inc.
+  *
+  * Licensed under the Apache License, Version 2.0 (the "License");
+  * you may not use this file except in compliance with the License.
+@@ -51,6 +51,8 @@ public class EthernetConfigDialog extends AlertDialog implements
+     private RadioButton mConTypeManual;
+     private EditText mIpaddr;
+     private EditText mDns;
++    private EditText mMask;
++    private EditText mGateway;
+     private LinearLayout ip_dns_setting;
+     private static String Mode_dhcp = "dhcp";
+ 
+@@ -69,6 +71,9 @@ public class EthernetConfigDialog extends AlertDialog implements
+         mConTypeManual = (RadioButton) mView.findViewById(R.id.manual_radio);
+         mIpaddr = (EditText)mView.findViewById(R.id.ipaddr_edit);
+         mDns = (EditText)mView.findViewById(R.id.eth_dns_edit);
++        mMask = (EditText)mView.findViewById(R.id.eth_netmask_edit);
++        mGateway = (EditText)mView.findViewById(R.id.eth_gateway_edit);
++
+         ip_dns_setting = (LinearLayout)mView.findViewById(R.id.ip_dns_setting);
+ 
+         if (mEthEnabler.getManager().isConfigured()) {
+@@ -83,6 +88,8 @@ public class EthernetConfigDialog extends AlertDialog implements
+                 ip_dns_setting.setVisibility(View.VISIBLE);
+                 mIpaddr.setText(mEthEnabler.getManager().getSharedPreIpAddress(),TextView.BufferType.EDITABLE);
+                 mDns.setText(mEthEnabler.getManager().getSharedPreDnsAddress(),TextView.BufferType.EDITABLE);
++                mMask.setText(mEthEnabler.getManager().getSharedPreNetMask(),TextView.BufferType.EDITABLE);
++                mGateway.setText(mEthEnabler.getManager().getSharedPreGateway(),TextView.BufferType.EDITABLE);
+             }
+         } else {
+             mConTypeDhcp.setChecked(true);
+@@ -125,6 +132,8 @@ public class EthernetConfigDialog extends AlertDialog implements
+                 info.setConnectMode(EthernetDevInfo.ETHERNET_CONN_MODE_MANUAL);
+                 info.setIpAddress(mIpaddr.getText().toString());
+                 info.setDnsAddr(mDns.getText().toString());
++                info.setNetMask(mMask.getText().toString());
++                info.setGateway(mGateway.getText().toString());
+             }
+         } else {
+             info.setConnectMode(EthernetDevInfo.ETHERNET_CONN_MODE_DHCP);
+diff --git a/Ethernet/com/fsl/ethernet/EthernetDevInfo.java b/Ethernet/com/fsl/ethernet/EthernetDevInfo.java
+index 3b27bad..6b0e492 100644
+--- a/Ethernet/com/fsl/ethernet/EthernetDevInfo.java
++++ b/Ethernet/com/fsl/ethernet/EthernetDevInfo.java
+@@ -1,5 +1,5 @@
+ /*
+- * Copyright (C) 2013-2014 Freescale Semiconductor, Inc.
++ * Copyright (C) 2013-2015 Freescale Semiconductor, Inc.
+  *
+  * Licensed under the Apache License, Version 2.0 (the "License");
+  * you may not use this file except in compliance with the License.
+@@ -40,6 +40,7 @@ public class EthernetDevInfo {
+     private String proxyIp;
+     private String proxyPort;
+     private String proxyExclusionList;
++    private String gateway;
+ 
+     public EthernetDevInfo () {
+         dev_name = null;
+@@ -50,6 +51,7 @@ public class EthernetDevInfo {
+         mode = ETHERNET_CONN_MODE_DHCP;
+         proxyIp = null;
+         proxyPort = null;
++        gateway = null;
+     }
+ 
+     /**
+@@ -75,6 +77,14 @@ public class EthernetDevInfo {
+         return this.ipaddr;
+     }
+ 
++    public void setGateway(String gw) {
++        this.gateway = gw;
++    }
++
++    public String getGateway() {
++        return this.gateway;
++    }
++
+     public void setNetMask(String ip) {
+         this.netmask = ip;
+     }
+diff --git a/Ethernet/com/fsl/ethernet/EthernetManager.java b/Ethernet/com/fsl/ethernet/EthernetManager.java
+index 9ab1489..ffb8342 100644
+--- a/Ethernet/com/fsl/ethernet/EthernetManager.java
++++ b/Ethernet/com/fsl/ethernet/EthernetManager.java
+@@ -1,5 +1,5 @@
+ /*
+- * Copyright (C) 2013-2014 Freescale Semiconductor, Inc.
++ * Copyright (C) 2013-2015 Freescale Semiconductor, Inc.
+  *
+  * Licensed under the Apache License, Version 2.0 (the "License");
+  * you may not use this file except in compliance with the License.
+@@ -47,6 +47,14 @@ import android.os.SystemProperties;
+ import android.content.SharedPreferences;
+ import android.content.SharedPreferences.Editor;
+ import android.widget.Toast;
++import android.net.LinkAddress;
++import android.net.StaticIpConfiguration;
++import android.net.IpConfiguration;
++import android.net.IpConfiguration.*;
++import java.util.ArrayList;
++import java.net.Inet4Address;
++import java.lang.Integer;
++
+ /**
+  * Created by B38613 on 9/27/13.
+  */
+@@ -93,6 +101,7 @@ public class EthernetManager {
+     /** @hide */
+     public static final int DATA_ACTIVITY_INOUT        = 0x03;
+ 
++    private android.net.EthernetManager ethernetService;
+     private Context mContext;
+     private String[] DevName;
+     private int mEthState= ETHERNET_STATE_UNKNOWN;
+@@ -112,6 +121,7 @@ public class EthernetManager {
+ 
+         mConnMgr = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
+         IBinder b = ServiceManager.getService(Context.NETWORKMANAGEMENT_SERVICE);
++        ethernetService = (android.net.EthernetManager) context.getSystemService(Context.ETHERNET_SERVICE);
+         mNMService = INetworkManagementService.Stub.asInterface(b);
+         HandlerThread dhcpThread = new HandlerThread("DHCP Handler Thread");
+         dhcpThread.start();
+@@ -142,6 +152,8 @@ public class EthernetManager {
+         }
+         info.setIpAddress(getSharedPreIpAddress());
+         info.setDnsAddr(getSharedPreDnsAddress());
++        info.setGateway(getSharedPreGateway());
++        info.setNetMask(getSharedPreNetMask());
+         info.setProxyAddr(getSharedPreProxyAddress());
+         info.setProxyPort(getSharedPreProxyPort());
+         info.setProxyExclusionList(getSharedPreProxyExclusionList());
+@@ -178,29 +190,32 @@ public class EthernetManager {
+ 
+     void configureInterface(EthernetDevInfo info) {
+         if (info.getConnectMode().equals(EthernetDevInfo.ETHERNET_CONN_MODE_DHCP)) {
+-
+-            try {
+-                mNMService.setInterfaceDown(info.getIfName());
+-                mNMService.clearInterfaceAddresses(info.getIfName());
+-                mNMService.setInterfaceUp(info.getIfName());
+-            } catch (RemoteException re){
+-                Log.e(TAG,"DHCP configuration failed: " + re);
+-            } catch (IllegalStateException e) {
+-                Log.e(TAG,"DHCP configuration fialed: " + e);
+-            }
++            IpConfiguration ipcfg = new IpConfiguration();
++            ipcfg.ipAssignment = IpAssignment.DHCP;
++            ethernetService.setConfiguration(ipcfg);
+         } else {
+             InterfaceConfiguration ifcg = null;
+             Log.d(TAG, "Static IP =" + info.getIpAddress());
+             try {
+-                ifcg = mNMService.getInterfaceConfig(info.getIfName());
+-                ifcg.setLinkAddress(new LinkAddress(NetworkUtils.numericToInetAddress(
+-                        info.getIpAddress()), 24));
+-                ifcg.setInterfaceUp();
+-                mNMService.setInterfaceConfig(info.getIfName(), ifcg);
++                IpConfiguration ipcfg = ethernetService.getConfiguration();
++                ipcfg.ipAssignment = IpAssignment.STATIC;
++
++                Inet4Address iNetmask = (Inet4Address)InetAddress.getByName(info.getNetMask());
++                int netmask = NetworkUtils.inetAddressToInt(iNetmask);
++                int prefixLength = NetworkUtils.netmaskIntToPrefixLength(netmask);
++                LinkAddress ipAddr = new LinkAddress(info.getIpAddress()+"/"+ Integer.toString(prefixLength));
++                InetAddress gwAddr = InetAddress.getByName(info.getGateway());
++                StaticIpConfiguration config = new StaticIpConfiguration();
++                config.ipAddress = ipAddr;
++                config.gateway = gwAddr;
++                if (info.getDnsAddr() != null)
++                    config.dnsServers.add(InetAddress.getByName(info.getDnsAddr()));
++                   ipcfg.staticIpConfiguration = config;
++                  ethernetService.setConfiguration(ipcfg);
+ 
+                 Log.d(TAG,"Static IP configuration succeeded");
+-            } catch (RemoteException re){
+-                Log.e(TAG,"Static IP configuration failed: " + re);
++            } catch (UnknownHostException e){
++                Log.e(TAG,"Static IP configuration failed: " + e);
+             } catch (IllegalStateException e) {
+                 Log.e(TAG,"Static IP configuration fialed: " + e);
+             }catch (IllegalArgumentException e) {
+@@ -210,7 +225,6 @@ public class EthernetManager {
+             Log.d(TAG, "set ip manually " + info.toString());
+             SystemProperties.set("net.dns1", info.getDnsAddr());
+             SystemProperties.set("net." + info.getIfName() + ".dns1",info.getDnsAddr());
+-            SystemProperties.set("net." + info.getIfName() + ".dns2", "0.0.0.0");
+             updateDevInfo(info);
+         }
+     }
+@@ -222,7 +236,6 @@ public class EthernetManager {
+         infotemp.setConnectMode(EthernetDevInfo.ETHERNET_CONN_MODE_DHCP);
+         String ip;
+         ip = mConnMgr.getLinkProperties(ConnectivityManager.TYPE_ETHERNET).getAddresses().toString();
+-        Log.d(TAG, "===========IP=" + ip);
+         if (ip != "[]" )
+             infotemp.setIpAddress(ip.substring(2, ip.length()-1));
+         String dns = " ";
+@@ -280,9 +293,6 @@ public class EthernetManager {
+         SystemProperties.set("net.dns1", info.getDnsAddr());
+         SystemProperties.set("net." + info.getIfName() + ".dns1",info.getDnsAddr());
+         SystemProperties.set("net." + info.getIfName() + ".dns2", "0.0.0.0");
+-        SystemProperties.set("net." + info.getIfName() + ".config", "1");
+-        SystemProperties.set("net." + info.getIfName() + ".mode", info.getConnectMode());
+-        SystemProperties.set("net." + info.getIfName() + ".ip", info.getIpAddress());
+     }
+ 
+     public SharedPreferences sharedPreferences(){
+@@ -297,6 +307,8 @@ public class EthernetManager {
+             editor.putString("conn_mode",info.getConnectMode());
+             editor.putString("mIpaddr",info.getIpAddress());
+             editor.putString("mDns",info.getDnsAddr());
++            editor.putString("mGateway", info.getGateway());
++            editor.putString("mNetMask", info.getNetMask());
+             editor.putString("mProxyIp",info.getProxyAddr());
+             editor.putString("mProxyPort", info.getProxyPort());
+             editor.putString("mProxyExclusionList", info.getProxyExclusionList());
+@@ -337,6 +349,26 @@ public class EthernetManager {
+         return temp;
+     }
+ 
++    public String getSharedPreGateway(){
++        String temp = null;
++        try {
++            temp = sharedPreferences().getString("mGateway",null);
++        } catch (Exception e) {
++            e.printStackTrace();
++        }
++        return temp;
++    }
++
++    public String getSharedPreNetMask(){
++        String temp = null;
++        try {
++            temp = sharedPreferences().getString("mNetMask",null);
++        } catch (Exception e) {
++            e.printStackTrace();
++        }
++        return temp;
++    }
++
+     public String getSharedPreProxyAddress(){
+         String temp = null;
+         try {
+@@ -386,7 +418,6 @@ public class EthernetManager {
+             new ProxyInfo(getSharedPreProxyAddress(), port, exclusionList);
+         mConnMgr.setGlobalProxy(null);
+         mConnMgr.setGlobalProxy(proxyProperties);
+-        Log.i(TAG,"=============getHttpProxy==============" + proxyProperties);
+     }
+ 
+     public void initProxy(){
+diff --git a/Ethernet/res/layout/eth_configure.xml b/Ethernet/res/layout/eth_configure.xml
+index 22c5bb2..57911e9 100644
+--- a/Ethernet/res/layout/eth_configure.xml
++++ b/Ethernet/res/layout/eth_configure.xml
+@@ -107,6 +107,38 @@
+                       android:textAlignment="viewStart"
+                       android:singleLine="true"
+                       android:inputType="none" />
++            <TextView android:id="@+id/netmask_text"
++                      android:layout_width="match_parent"
++                      android:layout_height="wrap_content"
++                      android:layout_marginTop="8dip"
++                      android:layout_marginStart="16dip"
++                      android:layout_marginEnd="16dip"
++                      android:orientation="vertical"
++                      android:gravity="start"
++                      android:text="@string/eth_mask" />
++            <EditText android:id="@+id/eth_netmask_edit"
++                      android:layout_width="match_parent"
++                      android:layout_height="wrap_content"
++                      android:textSize="18sp"
++                      android:textAlignment="viewStart"
++                      android:singleLine="true"
++                      android:inputType="none" />
++            <TextView android:id="@+id/gateway_text"
++                      android:layout_width="match_parent"
++                      android:layout_height="wrap_content"
++                      android:layout_marginTop="8dip"
++                      android:layout_marginStart="16dip"
++                      android:layout_marginEnd="16dip"
++                      android:orientation="vertical"
++                      android:gravity="start"
++                      android:text="@string/eth_gw" />
++            <EditText android:id="@+id/eth_gateway_edit"
++                      android:layout_width="match_parent"
++                      android:layout_height="wrap_content"
++                      android:textSize="18sp"
++                      android:textAlignment="viewStart"
++                      android:singleLine="true"
++                      android:inputType="none" />
+             </LinearLayout>
+         </LinearLayout>
+     </LinearLayout>
+-- 
+1.8.0
+

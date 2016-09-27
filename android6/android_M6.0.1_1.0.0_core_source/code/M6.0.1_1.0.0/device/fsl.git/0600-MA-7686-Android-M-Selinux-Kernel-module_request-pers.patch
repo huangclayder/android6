@@ -1,0 +1,170 @@
+From db1589b80d60a3c2fcdc8af0e94c67487b3d1969 Mon Sep 17 00:00:00 2001
+From: Zhang Sanshan <pete.zhang@nxp.com>
+Date: Tue, 1 Mar 2016 09:15:20 +0800
+Subject: [PATCH 600/602] MA-7686 [Android M] Selinux :Kernel module_request
+ personality-8
+
+There are many module_request denials when 32bit executable is executed.
+The executable file will loader personality-8, but selinux denied.
+It do not care whether the moudule is loadered correctly.
+Add dontaudit policy for module_request.
+
+Signed-off-by: Zhang Sanshan <pete.zhang@nxp.com>
+---
+ imx6/sepolicy/domain.te        |  1 +
+ imx6/sepolicy/init.te          |  1 -
+ imx6/sepolicy/kernel.te        | 27 ---------------------------
+ imx6/sepolicy/netd.te          |  1 -
+ imx6/sepolicy/untrusted_app.te |  1 -
+ imx7/sepolicy/domain.te        |  1 +
+ imx7/sepolicy/init.te          |  1 -
+ imx7/sepolicy/kernel.te        | 27 ---------------------------
+ imx7/sepolicy/netd.te          |  1 -
+ imx7/sepolicy/untrusted_app.te |  1 -
+ 10 files changed, 2 insertions(+), 60 deletions(-)
+
+diff --git a/imx6/sepolicy/domain.te b/imx6/sepolicy/domain.te
+index f91c490..9bdba22 100644
+--- a/imx6/sepolicy/domain.te
++++ b/imx6/sepolicy/domain.te
+@@ -18,3 +18,4 @@ allow domain unlabeled:file { setattr getattr rename rw_file_perms };
+ allow domain unlabeled:dir { setattr getattr rename rw_dir_perms };
+ allow domain unlabeled:lnk_file { read };
+ allow domain ashmem_device:chr_file {execute};
++dontaudit domain kernel:system module_request;
+diff --git a/imx6/sepolicy/init.te b/imx6/sepolicy/init.te
+index e76503d..2a50fc6 100644
+--- a/imx6/sepolicy/init.te
++++ b/imx6/sepolicy/init.te
+@@ -1,5 +1,4 @@
+ allow init cache_file:dir  { mounton };
+-allow init kernel:system  { module_request };
+ allow init asec_apk_file:dir  { mounton };
+ allow init perfprofd_exec:file  { read open getattr execute };
+ allow init shell_data_file:dir  { write };
+diff --git a/imx6/sepolicy/kernel.te b/imx6/sepolicy/kernel.te
+index 41c1ccf..1bc0742 100644
+--- a/imx6/sepolicy/kernel.te
++++ b/imx6/sepolicy/kernel.te
+@@ -4,30 +4,3 @@ allow kernel sdcard_internal:dir rw_dir_perms;
+ allow kernel device:blk_file  { create setattr getattr unlink};
+ allow kernel device:dir  { add_name write };
+ allow kernel device:chr_file  { create setattr };
+-allow healthd kernel:system  { module_request };
+-allow logd kernel:system  { module_request };
+-allow ueventd kernel:system  { module_request };
+-allow vold kernel:system  { module_request };
+-allow watchdogd kernel:system  { module_request };
+-allow lmkd kernel:system  { module_request };
+-allow servicemanager kernel:system  { module_request };
+-allow surfaceflinger kernel:system  { module_request };
+-allow toolbox kernel:system  { module_request };
+-allow debuggerd kernel:system  { module_request };
+-allow drmserver kernel:system  { module_request };
+-allow installd kernel:system  { module_request };
+-allow keystore kernel:system  { module_request };
+-allow sensors kernel:system  { module_request };
+-allow sdcardd kernel:system  { module_request };
+-allow bootanim kernel:system  { module_request };
+-allow zygote kernel:system  { module_request };
+-allow tzdatacheck kernel:system  { module_request };
+-allow shell kernel:system  { module_request };
+-allow dex2oat kernel:system  { module_request };
+-allow gatekeeperd kernel:system  { module_request };
+-allow dhcp kernel:system  { module_request };
+-allow adbd kernel:system  { module_request };
+-allow dnsmasq kernel:system  { module_request };
+-allow sgdisk kernel:system  { module_request };
+-allow blkid_untrusted kernel:system  { module_request };
+-allow fsck_untrusted kernel:system  { module_request };
+diff --git a/imx6/sepolicy/netd.te b/imx6/sepolicy/netd.te
+index e4fa6f2..9d5e453 100644
+--- a/imx6/sepolicy/netd.te
++++ b/imx6/sepolicy/netd.te
+@@ -1,2 +1 @@
+-allow netd kernel:system { module_request };
+ allow netd netd:capability { sys_module };
+diff --git a/imx6/sepolicy/untrusted_app.te b/imx6/sepolicy/untrusted_app.te
+index 32bd76f..ed06422 100644
+--- a/imx6/sepolicy/untrusted_app.te
++++ b/imx6/sepolicy/untrusted_app.te
+@@ -5,5 +5,4 @@ allow untrusted_app sdcard_external:file rw_file_perms;
+ allow untrusted_app vfat:dir { rw_file_perms create setattr rename };
+ allow untrusted_app vfat:file { rw_file_perms create setattr rename };
+ allow untrusted_app mnt_media_rw_file:dir { search read open };
+-allow untrusted_app kernel:system { module_request };
+ 
+diff --git a/imx7/sepolicy/domain.te b/imx7/sepolicy/domain.te
+index f91c490..9bdba22 100644
+--- a/imx7/sepolicy/domain.te
++++ b/imx7/sepolicy/domain.te
+@@ -18,3 +18,4 @@ allow domain unlabeled:file { setattr getattr rename rw_file_perms };
+ allow domain unlabeled:dir { setattr getattr rename rw_dir_perms };
+ allow domain unlabeled:lnk_file { read };
+ allow domain ashmem_device:chr_file {execute};
++dontaudit domain kernel:system module_request;
+diff --git a/imx7/sepolicy/init.te b/imx7/sepolicy/init.te
+index e76503d..2a50fc6 100644
+--- a/imx7/sepolicy/init.te
++++ b/imx7/sepolicy/init.te
+@@ -1,5 +1,4 @@
+ allow init cache_file:dir  { mounton };
+-allow init kernel:system  { module_request };
+ allow init asec_apk_file:dir  { mounton };
+ allow init perfprofd_exec:file  { read open getattr execute };
+ allow init shell_data_file:dir  { write };
+diff --git a/imx7/sepolicy/kernel.te b/imx7/sepolicy/kernel.te
+index 41c1ccf..1bc0742 100644
+--- a/imx7/sepolicy/kernel.te
++++ b/imx7/sepolicy/kernel.te
+@@ -4,30 +4,3 @@ allow kernel sdcard_internal:dir rw_dir_perms;
+ allow kernel device:blk_file  { create setattr getattr unlink};
+ allow kernel device:dir  { add_name write };
+ allow kernel device:chr_file  { create setattr };
+-allow healthd kernel:system  { module_request };
+-allow logd kernel:system  { module_request };
+-allow ueventd kernel:system  { module_request };
+-allow vold kernel:system  { module_request };
+-allow watchdogd kernel:system  { module_request };
+-allow lmkd kernel:system  { module_request };
+-allow servicemanager kernel:system  { module_request };
+-allow surfaceflinger kernel:system  { module_request };
+-allow toolbox kernel:system  { module_request };
+-allow debuggerd kernel:system  { module_request };
+-allow drmserver kernel:system  { module_request };
+-allow installd kernel:system  { module_request };
+-allow keystore kernel:system  { module_request };
+-allow sensors kernel:system  { module_request };
+-allow sdcardd kernel:system  { module_request };
+-allow bootanim kernel:system  { module_request };
+-allow zygote kernel:system  { module_request };
+-allow tzdatacheck kernel:system  { module_request };
+-allow shell kernel:system  { module_request };
+-allow dex2oat kernel:system  { module_request };
+-allow gatekeeperd kernel:system  { module_request };
+-allow dhcp kernel:system  { module_request };
+-allow adbd kernel:system  { module_request };
+-allow dnsmasq kernel:system  { module_request };
+-allow sgdisk kernel:system  { module_request };
+-allow blkid_untrusted kernel:system  { module_request };
+-allow fsck_untrusted kernel:system  { module_request };
+diff --git a/imx7/sepolicy/netd.te b/imx7/sepolicy/netd.te
+index e4fa6f2..9d5e453 100644
+--- a/imx7/sepolicy/netd.te
++++ b/imx7/sepolicy/netd.te
+@@ -1,2 +1 @@
+-allow netd kernel:system { module_request };
+ allow netd netd:capability { sys_module };
+diff --git a/imx7/sepolicy/untrusted_app.te b/imx7/sepolicy/untrusted_app.te
+index 32bd76f..ed06422 100644
+--- a/imx7/sepolicy/untrusted_app.te
++++ b/imx7/sepolicy/untrusted_app.te
+@@ -5,5 +5,4 @@ allow untrusted_app sdcard_external:file rw_file_perms;
+ allow untrusted_app vfat:dir { rw_file_perms create setattr rename };
+ allow untrusted_app vfat:file { rw_file_perms create setattr rename };
+ allow untrusted_app mnt_media_rw_file:dir { search read open };
+-allow untrusted_app kernel:system { module_request };
+ 
+-- 
+1.8.0
+

@@ -1,0 +1,54 @@
+From 8b3999ce813e599b6090a98ae58171268f778448 Mon Sep 17 00:00:00 2001
+From: "guoyin.chen" <guoyin.chen@freescale.com>
+Date: Wed, 2 Mar 2016 10:55:32 +0800
+Subject: [PATCH 6/6] MA-7695 testJobParameters_expiredDeadline failed on DL
+ ARD
+
+ARD board boot will have below exception, which will block the Broadcast intent 60s
+from system server.
+jobscheduler service depends on the AlarmManagerService to broadcast the intent to
+CTS on the JOB_DEADLINE_EXPIRED job. As those CTS cases is start just after the boot
+process. The CTS cannot get the JOB_DEADLINE_EXPIRED job's intent in time
+
+Caused by: java.lang.RuntimeException: Fail to get camera info
+at android.hardware.Camera._getCameraInfo(Native Method)
+at android.hardware.Camera.getCameraInfo(Camera.java:236)
+at com.android.camera.DisableCameraReceiver.hasBackCamera(DisableCameraReceiver.java:65)
+at com.android.camera.DisableCameraReceiver.onReceive(DisableCameraReceiver.java:41)
+at android.app.ActivityThread.handleReceiver(ActivityThread.java:2725)
+
+Change-Id: I52fdc81d6db4cf6a7f824b2a77304d61f7d29d91
+Signed-off-by: guoyin.chen <guoyin.chen@freescale.com>
+---
+ src/com/android/camera/DisableCameraReceiver.java | 14 +++++++++-----
+ 1 file changed, 9 insertions(+), 5 deletions(-)
+
+diff --git a/src/com/android/camera/DisableCameraReceiver.java b/src/com/android/camera/DisableCameraReceiver.java
+index d51d6b9..15a41f5 100644
+--- a/src/com/android/camera/DisableCameraReceiver.java
++++ b/src/com/android/camera/DisableCameraReceiver.java
+@@ -61,12 +61,16 @@ public class DisableCameraReceiver extends BroadcastReceiver {
+     private boolean hasBackCamera() {
+         int n = android.hardware.Camera.getNumberOfCameras();
+         CameraInfo info = new CameraInfo();
+-        for (int i = 0; i < n; i++) {
+-            android.hardware.Camera.getCameraInfo(i, info);
+-            if (info.facing == CameraInfo.CAMERA_FACING_BACK) {
+-                Log.i(TAG, "back camera found: " + i);
+-                return true;
++        try {
++            for (int i = 0; i < n; i++) {
++                android.hardware.Camera.getCameraInfo(i, info);
++                if (info.facing == CameraInfo.CAMERA_FACING_BACK) {
++                    Log.i(TAG, "back camera found: " + i);
++                    return true;
++                }
+             }
++        } catch (Exception e) {
++            Log.e(TAG, "Camera Info is unavailable for queries");
+         }
+         Log.i(TAG, "no back camera");
+         return false;
+-- 
+1.8.0
+

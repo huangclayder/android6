@@ -1,0 +1,520 @@
+From 76885e14fa8aa562fd2f02c53f1b5a5784678e51 Mon Sep 17 00:00:00 2001
+From: "Ye.Li" <B37916@freescale.com>
+Date: Mon, 23 Mar 2015 17:33:43 +0800
+Subject: [PATCH] MLK-10448-6 imx: mx6qpsabreauto: Add MX6QP SABREAUTO CPU3
+ board support
+
+1. Add DDR script v1.04 for i.MX6DQP SABREAUTO board.
+2. On CPU3 board, enet RGMII tx clock is from internal PLL. Set the GPR5[9]
+and init the enet pll output to 125Mhz.
+3. On CPU3 board, SW1ABC=VDDSOC_IN, SW2=VDDARM_IN.
+
+Build target: mx6qpsabreauto_config
+
+Signed-off-by: Fugang Duan <B38611@freescale.com>
+Signed-off-by: Robin Gong <b38343@freescale.com>
+Signed-off-by: Ye.Li <B37916@freescale.com>
+(cherry picked from commit e0b316f071aa17c8e41a50f395346ab9f012e665)
+
+Conflicts:
+	board/freescale/mx6qsabreauto/mx6qsabreauto.c
+	boards.cfg
+---
+ board/freescale/mx6qsabreauto/mx6qp.cfg       | 155 +++++++++++++++++++++++
+ board/freescale/mx6qsabreauto/mx6qsabreauto.c |  15 +++
+ board/freescale/mx6qsabreauto/plugin.S        | 170 +++++++++++++++++++++++++-
+ configs/mx6qpsabreauto_defconfig              |   7 ++
+ configs/mx6qpsabreauto_eimnor_defconfig       |   7 ++
+ configs/mx6qpsabreauto_nand_defconfig         |   7 ++
+ configs/mx6qpsabreauto_sata_defconfig         |   7 ++
+ configs/mx6qpsabreauto_spinor_defconfig       |   7 ++
+ configs/mx6qpsabreautoandroid_defconfig       |   7 ++
+ configs/mx6qpsabreautoandroid_nand_defconfig  |   7 ++
+ 10 files changed, 388 insertions(+), 1 deletion(-)
+
+diff --git a/board/freescale/mx6qsabreauto/mx6qp.cfg b/board/freescale/mx6qsabreauto/mx6qp.cfg
+new file mode 100644
+index 0000000..b3ccaef
+--- /dev/null
++++ b/board/freescale/mx6qsabreauto/mx6qp.cfg
+@@ -0,0 +1,155 @@
++/*
++ * Copyright (C) 2015 Freescale Semiconductor, Inc.
++ *
++ * SPDX-License-Identifier:	GPL-2.0+
++ *
++ * Refer doc/README.imximage for more details about how-to configure
++ * and create imximage boot image
++ *
++ * The syntax is taken as close as possible with the kwbimage
++ */
++/* image version */
++
++#define __ASSEMBLY__
++#include <config.h>
++
++IMAGE_VERSION 2
++
++/*
++ * Boot Device : one of spi, sd, eimnor, nand, sata:
++ * spinor: flash_offset: 0x0400
++ * nand:   flash_offset: 0x0400
++ * sata:   flash_offset: 0x0400
++ * sd/mmc: flash_offset: 0x0400
++ * eimnor: flash_offset: 0x1000
++ */
++
++#if defined(CONFIG_SYS_BOOT_EIMNOR)
++BOOT_FROM	nor
++#else /* others has the same flash_offset as sd */
++BOOT_FROM	sd
++#endif
++
++#ifdef CONFIG_USE_PLUGIN
++/*PLUGIN    plugin-binary-file    IRAM_FREE_START_ADDR*/
++PLUGIN	board/freescale/mx6qsabreauto/plugin.bin 0x00907000
++#else
++
++#ifdef CONFIG_SECURE_BOOT
++CSF 0x2000
++#endif
++
++/*
++ * Device Configuration Data (DCD)
++ *
++ * Each entry must have the format:
++ * Addr-type           Address        Value
++ *
++ * where:
++ *	Addr-type register length (1,2 or 4 bytes)
++ *	Address	  absolute address of the register
++ *	value	  value to be stored in the register
++ */
++DATA 4 0x020e0798 0x000C0000
++DATA 4 0x020e0758 0x00000000
++DATA 4 0x020e0588 0x00000030
++DATA 4 0x020e0594 0x00000030
++DATA 4 0x020e056c 0x00000030
++DATA 4 0x020e0578 0x00000030
++DATA 4 0x020e074c 0x00000030
++DATA 4 0x020e057c 0x00000030
++DATA 4 0x020e058c 0x00000000
++DATA 4 0x020e059c 0x00000030
++DATA 4 0x020e05a0 0x00000030
++DATA 4 0x020e078c 0x00000030
++DATA 4 0x020e0750 0x00020000
++DATA 4 0x020e05a8 0x00000030
++DATA 4 0x020e05b0 0x00000030
++DATA 4 0x020e0524 0x00000030
++DATA 4 0x020e051c 0x00000030
++DATA 4 0x020e0518 0x00000030
++DATA 4 0x020e050c 0x00000030
++DATA 4 0x020e05b8 0x00000030
++DATA 4 0x020e05c0 0x00000030
++DATA 4 0x020e0774 0x00020000
++DATA 4 0x020e0784 0x00000030
++DATA 4 0x020e0788 0x00000030
++DATA 4 0x020e0794 0x00000030
++DATA 4 0x020e079c 0x00000030
++DATA 4 0x020e07a0 0x00000030
++DATA 4 0x020e07a4 0x00000030
++DATA 4 0x020e07a8 0x00000030
++DATA 4 0x020e0748 0x00000030
++DATA 4 0x020e05ac 0x00000030
++DATA 4 0x020e05b4 0x00000030
++DATA 4 0x020e0528 0x00000030
++DATA 4 0x020e0520 0x00000030
++DATA 4 0x020e0514 0x00000030
++DATA 4 0x020e0510 0x00000030
++DATA 4 0x020e05bc 0x00000030
++DATA 4 0x020e05c4 0x00000030
++DATA 4 0x021b0800 0xa1390003
++DATA 4 0x021b080c 0x001b001e
++DATA 4 0x021b0810 0x002e0029
++DATA 4 0x021b480c 0x001b002a
++DATA 4 0x021b4810 0x0019002c
++DATA 4 0x021b083c 0x43240334
++DATA 4 0x021b0840 0x0324031a
++DATA 4 0x021b483c 0x43340344
++DATA 4 0x021b4840 0x03280276
++DATA 4 0x021b0848 0x44383A3E
++DATA 4 0x021b4848 0x3C3C3846
++DATA 4 0x021b0850 0x2e303230
++DATA 4 0x021b4850 0x38283E34
++DATA 4 0x021b081c 0x33333333
++DATA 4 0x021b0820 0x33333333
++DATA 4 0x021b0824 0x33333333
++DATA 4 0x021b0828 0x33333333
++DATA 4 0x021b481c 0x33333333
++DATA 4 0x021b4820 0x33333333
++DATA 4 0x021b4824 0x33333333
++DATA 4 0x021b4828 0x33333333
++DATA 4 0x021b08b8 0x00000800
++DATA 4 0x021b48b8 0x00000800
++DATA 4 0x021b0004 0x00020036
++DATA 4 0x021b0008 0x09444040
++DATA 4 0x021b000c 0x898E7955
++DATA 4 0x021b0010 0xFF328F64
++DATA 4 0x021b0014 0x01FF00DB
++DATA 4 0x021b0018 0x00001740
++DATA 4 0x021b001c 0x00008000
++DATA 4 0x021b002c 0x000026d2
++DATA 4 0x021b0030 0x008E1023
++DATA 4 0x021b0040 0x00000047
++DATA 4 0x021b0400 0x12420000
++DATA 4 0x021b0000 0x841A0000
++DATA 4 0x00bb0008 0x00000004
++DATA 4 0x00bb000c 0x2891E41A
++DATA 4 0x00bb0038 0x00000564
++DATA 4 0x021b001c 0x04088032
++DATA 4 0x021b001c 0x00008033
++DATA 4 0x021b001c 0x00048031
++DATA 4 0x021b001c 0x09408030
++DATA 4 0x021b001c 0x04008040
++DATA 4 0x021b0020 0x00005800
++DATA 4 0x021b0818 0x00011117
++DATA 4 0x021b4818 0x00011117
++DATA 4 0x021b0004 0x00025576
++DATA 4 0x021b0404 0x00011006
++DATA 4 0x021b001c 0x00000000
++
++/* set the default clock gate to save power */
++DATA 4, 0x020c4068, 0x00C03F3F
++DATA 4, 0x020c406c, 0x0030FC03
++DATA 4, 0x020c4070, 0x0FFFC000
++DATA 4, 0x020c4074, 0x3FF00000
++DATA 4, 0x020c4078, 0xFFFFF300
++DATA 4, 0x020c407c, 0x0F0000F3
++DATA 4, 0x020c4080, 0x00000FFF
++
++/* enable AXI cache for VDOA/VPU/IPU */
++DATA 4, 0x020e0010, 0xF00000CF
++/* set IPU AXI-id0 Qos=0xf(bypass) AXI-id1 Qos=0x7 */
++DATA 4, 0x020e0018, 0x007F007F
++DATA 4, 0x020e001c, 0x007F007F
++#endif
+diff --git a/board/freescale/mx6qsabreauto/mx6qsabreauto.c b/board/freescale/mx6qsabreauto/mx6qsabreauto.c
+index e9b4fe0..7989669 100644
+--- a/board/freescale/mx6qsabreauto/mx6qsabreauto.c
++++ b/board/freescale/mx6qsabreauto/mx6qsabreauto.c
+@@ -452,7 +452,12 @@ static int setup_fec(void)
+ {
+ 	int ret;
+ 
++#ifdef CONFIG_MX6QP
++	imx_iomux_set_gpr_register(5, 9, 1, 1);
++#else
+ 	imx_iomux_set_gpr_register(1, 21, 1, 1);
++#endif
++
+ 	ret = enable_fec_anatop_clock(0, ENET_125MHZ);
+ 	if (ret)
+ 		return ret;
+@@ -679,10 +684,20 @@ int board_init(void)
+ static struct pmic *pfuze;
+ int power_init_board(void)
+ {
++	unsigned int value;
++
+ 	pfuze = pfuze_common_init(I2C_PMIC);
+ 	if (!pfuze)
+ 		return -ENODEV;
+ 
++	if (is_mx6dqp()) {
++		/* set SW2 staby volatage 0.975V*/
++		pmic_reg_read(pfuze, PFUZE100_SW2STBY, &value);
++		value &= ~0x3f;
++		value |= 0x17;
++		pmic_reg_write(pfuze, PFUZE100_SW2STBY, value);
++	}
++
+ 	return pfuze_mode_init(pfuze, APS_PFM);
+ }
+ 
+diff --git a/board/freescale/mx6qsabreauto/plugin.S b/board/freescale/mx6qsabreauto/plugin.S
+index eeecac1..18f49b8 100644
+--- a/board/freescale/mx6qsabreauto/plugin.S
++++ b/board/freescale/mx6qsabreauto/plugin.S
+@@ -1,5 +1,5 @@
+ /*
+- * Copyright (C) 2012-2014 Freescale Semiconductor, Inc.
++ * Copyright (C) 2012-2015 Freescale Semiconductor, Inc.
+  *
+  * SPDX-License-Identifier:	GPL-2.0+
+  */
+@@ -7,6 +7,172 @@
+ #include <config.h>
+ 
+ /* DDR script */
++.macro imx6dqpsabreauto_ddr_setting
++	ldr r0, =IOMUXC_BASE_ADDR
++	ldr r1, =0x000c0000
++	str r1, [r0, #0x798]
++	ldr r1, =0x00000000
++	str r1, [r0, #0x758]
++
++	ldr r1, =0x00000030
++	str r1, [r0, #0x588]
++	str r1, [r0, #0x594]
++	str r1, [r0, #0x56c]
++	str r1, [r0, #0x578]
++	str r1, [r0, #0x74c]
++	str r1, [r0, #0x57c]
++
++	ldr r1, =0x00000000
++	str r1, [r0, #0x58c]
++
++	ldr r1, =0x00000030
++	str r1, [r0, #0x59c]
++	str r1, [r0, #0x5a0]
++	str r1, [r0, #0x78c]
++
++	ldr r1, =0x00020000
++	str r1, [r0, #0x750]
++
++	ldr r1, =0x00000030
++	str r1, [r0, #0x5a8]
++	str r1, [r0, #0x5b0]
++	str r1, [r0, #0x524]
++	str r1, [r0, #0x51c]
++	str r1, [r0, #0x518]
++	str r1, [r0, #0x50c]
++	str r1, [r0, #0x5b8]
++	str r1, [r0, #0x5c0]
++
++	ldr r1, =0x00020000
++	str r1, [r0, #0x774]
++
++	ldr r1, =0x00000030
++	str r1, [r0, #0x784]
++	str r1, [r0, #0x788]
++	str r1, [r0, #0x794]
++	str r1, [r0, #0x79c]
++	str r1, [r0, #0x7a0]
++	str r1, [r0, #0x7a4]
++	str r1, [r0, #0x7a8]
++	str r1, [r0, #0x748]
++	str r1, [r0, #0x5ac]
++	str r1, [r0, #0x5b4]
++	str r1, [r0, #0x528]
++	str r1, [r0, #0x520]
++	str r1, [r0, #0x514]
++	str r1, [r0, #0x510]
++	str r1, [r0, #0x5bc]
++	str r1, [r0, #0x5c4]
++
++	ldr r0, =MMDC_P0_BASE_ADDR
++	ldr r2, =0xa1390003
++	str r2, [r0, #0x800]
++
++	ldr r2, =0x001b001e
++	str r2, [r0, #0x80c]
++	ldr r2, =0x002e0029
++	str r2, [r0, #0x810]
++	ldr r1, =MMDC_P1_BASE_ADDR
++	ldr r2, =0x001b002a
++	str r2, [r1, #0x80c]
++	ldr r2, =0x0019002c
++	str r2, [r1, #0x810]
++
++	ldr r2, =0x43240334
++	str r2, [r0, #0x83c]
++	ldr r2, =0x0324031a
++	str r2, [r0, #0x840]
++
++	ldr r2, =0x43340344
++	str r2, [r1, #0x83c]
++	ldr r2, =0x03280276
++	str r2, [r1, #0x840]
++
++	ldr r2, =0x44383A3E
++	str r2, [r0, #0x848]
++	ldr r2, =0x3C3C3846
++	str r2, [r1, #0x848]
++
++	ldr r2, =0x2e303230
++	str r2, [r0, #0x850]
++	ldr r2, =0x38283E34
++	str r2, [r1, #0x850]
++
++	ldr r2, =0x33333333
++	str r2, [r0, #0x81c]
++	str r2, [r0, #0x820]
++	str r2, [r0, #0x824]
++	str r2, [r0, #0x828]
++	str r2, [r1, #0x81c]
++	str r2, [r1, #0x820]
++	str r2, [r1, #0x824]
++	str r2, [r1, #0x828]
++
++	ldr r2, =0x00000800
++	str r2, [r0, #0x8b8]
++	str r2, [r1, #0x8b8]
++
++	ldr r2, =0x00020036
++	str r2, [r0, #0x004]
++	ldr r2, =0x09444040
++	str r2, [r0, #0x008]
++
++	ldr r2, =0x898E7955
++	str r2, [r0, #0x00c]
++	ldr r2, =0xFF328F64
++	str r2, [r0, #0x010]
++
++	ldr r2, =0x01FF00DB
++	str r2, [r0, #0x014]
++	ldr r2, =0x00001740
++	str r2, [r0, #0x018]
++
++	ldr r2, =0x00008000
++	str r2, [r0, #0x01c]
++	ldr r2, =0x000026d2
++	str r2, [r0, #0x02c]
++	ldr r2, =0x008E1023
++	str r2, [r0, #0x030]
++	ldr r2, =0x00000047
++	str r2, [r0, #0x040]
++
++	ldr r2, =0x12420000
++	str r2, [r0, #0x400]
++	ldr r2, =0x841A0000
++	str r2, [r0, #0x000]
++
++	ldr r3, =0x00bb0000
++	ldr r2, =0x00000004
++	str r2, [r3, #0x008]
++	ldr r2, =0x2891E41A
++	str r2, [r3, #0x00c]
++	ldr r2, =0x00000564
++	str r2, [r3, #0x038]
++
++	ldr r2, =0x04088032
++	str r2, [r0, #0x01c]
++	ldr r2, =0x00008033
++	str r2, [r0, #0x01c]
++	ldr r2, =0x00048031
++	str r2, [r0, #0x01c]
++	ldr r2, =0x09408030
++	str r2, [r0, #0x01c]
++	ldr r2, =0x04008040
++	str r2, [r0, #0x01c]
++
++	ldr r2, =0x00005800
++	str r2, [r0, #0x020]
++	ldr r2, =0x00011117
++	str r2, [r0, #0x818]
++	str r2, [r1, #0x818]
++	ldr r2, =0x00025576
++	str r2, [r0, #0x004]
++	ldr r2, =0x00011006
++	str r2, [r0, #0x404]
++	ldr r2, =0x00000000
++	str r2, [r0, #0x01c]
++.endm
++
+ .macro imx6dqsabreauto_ddr_setting
+ 	ldr r0, =IOMUXC_BASE_ADDR
+ 	ldr r1, =0x000c0000
+@@ -469,6 +635,8 @@
+ 	imx6solosabreauto_ddr_setting
+ #elif defined (CONFIG_MX6DL)
+ 	imx6dlsabreauto_ddr_setting
++#elif defined (CONFIG_MX6QP)
++	imx6dqpsabreauto_ddr_setting
+ #elif defined (CONFIG_MX6Q)
+ 	imx6dqsabreauto_ddr_setting
+ #else
+diff --git a/configs/mx6qpsabreauto_defconfig b/configs/mx6qpsabreauto_defconfig
+new file mode 100644
+index 0000000..d2e8f1b
+--- /dev/null
++++ b/configs/mx6qpsabreauto_defconfig
+@@ -0,0 +1,7 @@
++CONFIG_SYS_EXTRA_OPTIONS="IMX_CONFIG=board/freescale/mx6qsabreauto/imximage.cfg,MX6QP"
++CONFIG_ARM=y
++CONFIG_TARGET_MX6QSABREAUTO=y
++CONFIG_SYS_MALLOC_F=y
++CONFIG_SYS_MALLOC_F_LEN=0x400
++CONFIG_DM=y
++CONFIG_DM_THERMAL=y
+diff --git a/configs/mx6qpsabreauto_eimnor_defconfig b/configs/mx6qpsabreauto_eimnor_defconfig
+new file mode 100644
+index 0000000..5207818
+--- /dev/null
++++ b/configs/mx6qpsabreauto_eimnor_defconfig
+@@ -0,0 +1,7 @@
++CONFIG_SYS_EXTRA_OPTIONS="IMX_CONFIG=board/freescale/mx6qsabreauto/imximage.cfg,MX6QP,SYS_BOOT_EIMNOR"
++CONFIG_ARM=y
++CONFIG_TARGET_MX6QSABREAUTO=y
++CONFIG_SYS_MALLOC_F=y
++CONFIG_SYS_MALLOC_F_LEN=0x400
++CONFIG_DM=y
++CONFIG_DM_THERMAL=y
+diff --git a/configs/mx6qpsabreauto_nand_defconfig b/configs/mx6qpsabreauto_nand_defconfig
+new file mode 100644
+index 0000000..7c890a3
+--- /dev/null
++++ b/configs/mx6qpsabreauto_nand_defconfig
+@@ -0,0 +1,7 @@
++CONFIG_SYS_EXTRA_OPTIONS="IMX_CONFIG=board/freescale/mx6qsabreauto/imximage.cfg,MX6QP,SYS_BOOT_NAND"
++CONFIG_ARM=y
++CONFIG_TARGET_MX6QSABREAUTO=y
++CONFIG_SYS_MALLOC_F=y
++CONFIG_SYS_MALLOC_F_LEN=0x400
++CONFIG_DM=y
++CONFIG_DM_THERMAL=y
+diff --git a/configs/mx6qpsabreauto_sata_defconfig b/configs/mx6qpsabreauto_sata_defconfig
+new file mode 100644
+index 0000000..b3eb4e1
+--- /dev/null
++++ b/configs/mx6qpsabreauto_sata_defconfig
+@@ -0,0 +1,7 @@
++CONFIG_SYS_EXTRA_OPTIONS="IMX_CONFIG=board/freescale/mx6qsabreauto/imximage.cfg,MX6QP,SYS_BOOT_SATA"
++CONFIG_ARM=y
++CONFIG_TARGET_MX6QSABREAUTO=y
++CONFIG_SYS_MALLOC_F=y
++CONFIG_SYS_MALLOC_F_LEN=0x400
++CONFIG_DM=y
++CONFIG_DM_THERMAL=y
+diff --git a/configs/mx6qpsabreauto_spinor_defconfig b/configs/mx6qpsabreauto_spinor_defconfig
+new file mode 100644
+index 0000000..401eaa6
+--- /dev/null
++++ b/configs/mx6qpsabreauto_spinor_defconfig
+@@ -0,0 +1,7 @@
++CONFIG_SYS_EXTRA_OPTIONS="IMX_CONFIG=board/freescale/mx6qsabreauto/imximage.cfg,MX6QP,SYS_BOOT_SPINOR"
++CONFIG_ARM=y
++CONFIG_TARGET_MX6QSABREAUTO=y
++CONFIG_SYS_MALLOC_F=y
++CONFIG_SYS_MALLOC_F_LEN=0x400
++CONFIG_DM=y
++CONFIG_DM_THERMAL=y
+diff --git a/configs/mx6qpsabreautoandroid_defconfig b/configs/mx6qpsabreautoandroid_defconfig
+new file mode 100644
+index 0000000..78738f2
+--- /dev/null
++++ b/configs/mx6qpsabreautoandroid_defconfig
+@@ -0,0 +1,7 @@
++CONFIG_SYS_EXTRA_OPTIONS="IMX_CONFIG=board/freescale/mx6qsabreauto/imximage.cfg,MX6QP,ANDROID_SUPPORT"
++CONFIG_ARM=y
++CONFIG_TARGET_MX6QSABREAUTO=y
++CONFIG_SYS_MALLOC_F=y
++CONFIG_SYS_MALLOC_F_LEN=0x400
++CONFIG_DM=y
++CONFIG_DM_THERMAL=y
+diff --git a/configs/mx6qpsabreautoandroid_nand_defconfig b/configs/mx6qpsabreautoandroid_nand_defconfig
+new file mode 100644
+index 0000000..035e48a
+--- /dev/null
++++ b/configs/mx6qpsabreautoandroid_nand_defconfig
+@@ -0,0 +1,7 @@
++CONFIG_SYS_EXTRA_OPTIONS="IMX_CONFIG=board/freescale/mx6qsabreauto/imximage.cfg,MX6QP,SYS_BOOT_NAND,ANDROID_SUPPORT"
++CONFIG_ARM=y
++CONFIG_TARGET_MX6QSABREAUTO=y
++CONFIG_SYS_MALLOC_F=y
++CONFIG_SYS_MALLOC_F_LEN=0x400
++CONFIG_DM=y
++CONFIG_DM_THERMAL=y
+-- 
+1.8.0
+

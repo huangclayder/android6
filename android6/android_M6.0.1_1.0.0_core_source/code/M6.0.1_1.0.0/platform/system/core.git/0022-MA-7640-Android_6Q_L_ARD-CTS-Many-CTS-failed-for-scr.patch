@@ -1,0 +1,43 @@
+From 160f4693ad182585420963ea73ed22f89015ffed Mon Sep 17 00:00:00 2001
+From: Zhang Sanshan <pete.zhang@nxp.com>
+Date: Fri, 19 Feb 2016 18:13:28 +0800
+Subject: [PATCH 22/22] MA-7640 [Android_6Q_L_ARD]CTS: Many CTS failed for
+ screen change to black.
+
+CTS test case will do HostPreconditionPreparer in mm6.0 R3.
+plugTypeSet  to BATTERY_PLUGGED_USB in HostPreconditionPreparer.
+However mBatteryProps.chargerUsbOnline is false on some i.mx board.
+For sabresd-6q, props.chargerUsbOnline is set to true according sys/class/power_supply/max8903-usb/online
+But for sabreauto-6dl, props.chargerUsbOnline stil be false for the node sys/class/power_supply/max8903-usb do not exist.
+
+This patch set props.chargerUsbOnline to true as default.
+
+Signed-off-by: Zhang Sanshan <pete.zhang@nxp.com>
+---
+ healthd/BatteryMonitor.cpp | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/healthd/BatteryMonitor.cpp b/healthd/BatteryMonitor.cpp
+index 8e02e7e..3fd8408 100644
+--- a/healthd/BatteryMonitor.cpp
++++ b/healthd/BatteryMonitor.cpp
+@@ -15,7 +15,7 @@
+  */
+ 
+ /*
+- * Copyright (C) 2013-2014 Freescale Semiconductor, Inc.
++ * Copyright (C) 2013-2016 Freescale Semiconductor, Inc.
+  */
+ 
+ #define LOG_TAG "healthd"
+@@ -323,6 +323,7 @@ bool BatteryMonitor::update(void) {
+     // always report AC plug-in and capacity 100% if emulated.battery is set to 1
+     property_get("sys.emulated.battery", prop, "0");
+     if (!strcmp(prop, "1")){
++        props.chargerUsbOnline = true;
+         props.chargerAcOnline = true;
+         props.batteryLevel = 100;
+         props.chargerWirelessOnline = false;
+-- 
+1.8.0
+

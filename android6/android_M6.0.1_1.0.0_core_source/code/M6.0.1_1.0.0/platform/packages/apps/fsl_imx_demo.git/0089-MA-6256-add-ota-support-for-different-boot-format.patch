@@ -1,0 +1,138 @@
+From 15e5cb0e099b3b92414f4c847b9218a71d8aea8c Mon Sep 17 00:00:00 2001
+From: WenboZhu <WenboZhu@freescale.com>
+Date: Wed, 11 Feb 2015 13:16:48 +0800
+Subject: [PATCH 089/115] MA-6256 add ota support for different boot format
+
+update the FSLota.apk and make it support the following boottype
+1 support the sabresd-6q sd ota online update
+2 support the sabreauto-6q nand ota online update
+3 support the sabreauto-6sx nand ota  online update
+add ro.boot.storage_type on build.prop to distinguish the
+different boottype.
+then change the fileadder due to the ro.boot.storage_type
+
+Signed-off-by: WenboZhu <WenboZhu@freescale.com>
+---
+ .../src/com/fsl/android/ota/BuildPropParser.java   |  5 +++--
+ .../src/com/fsl/android/ota/OTAServerConfig.java   | 26 +++++++++++++++++-----
+ .../src/com/fsl/android/ota/OTAServerManager.java  |  4 +++-
+ 3 files changed, 26 insertions(+), 9 deletions(-)
+
+diff --git a/FSLOta/src/com/fsl/android/ota/BuildPropParser.java b/FSLOta/src/com/fsl/android/ota/BuildPropParser.java
+index cb6e6ce..4f85d44 100644
+--- a/FSLOta/src/com/fsl/android/ota/BuildPropParser.java
++++ b/FSLOta/src/com/fsl/android/ota/BuildPropParser.java
+@@ -1,5 +1,5 @@
+ /*
+-/* Copyright 2012 Freescale Semiconductor, Inc.
++/* Copyright 2012-2015 Freescale Semiconductor, Inc.
+  *
+  * Licensed under the Apache License, Version 2.0 (the "License");
+  * you may not use this file except in compliance with the License.
+@@ -91,7 +91,7 @@ public class BuildPropParser {
+     
+     public String getRelease() { 
+     	if (propHM != null) 
+-    		return propHM.get("ro.build.version.release"); 
++               return propHM.get("ro.build.version.release");
+     	else 
+     		return null;
+     }
+@@ -102,4 +102,5 @@ public class BuildPropParser {
+     		return null;
+     }
+ 
++
+ }
+diff --git a/FSLOta/src/com/fsl/android/ota/OTAServerConfig.java b/FSLOta/src/com/fsl/android/ota/OTAServerConfig.java
+index d194700..fe8a8ba 100644
+--- a/FSLOta/src/com/fsl/android/ota/OTAServerConfig.java
++++ b/FSLOta/src/com/fsl/android/ota/OTAServerConfig.java
+@@ -1,5 +1,5 @@
+ /*
+-/* Copyright 2012-2014 Freescale Semiconductor, Inc.
++/* Copyright 2012-2015 Freescale Semiconductor, Inc.
+  *
+  * Licensed under the Apache License, Version 2.0 (the "License");
+  * you may not use this file except in compliance with the License.
+@@ -16,6 +16,7 @@
+ 
+ package com.fsl.android.ota;
+ 
++import android.os.SystemProperties;
+ import java.io.File;
+ import java.net.MalformedURLException;
+ import java.net.URL;
+@@ -41,9 +42,7 @@ public class OTAServerConfig {
+ 	final String port_config_str = "port";
+ 	final String android_nickname = "ota_folder_suffix";
+ 	String machineString = null;
+-	
+ 	public OTAServerConfig (String productname) throws MalformedURLException {
+-		
+ 		if (loadConfigureFromFile(configFile, productname) == false)
+ 			defaultConfigure(productname);
+ 	}
+@@ -71,14 +70,29 @@ public class OTAServerConfig {
+ 
+ 			readMachine();
+ 
++                        String boottype = SystemProperties.get("ro.boot.storage_type");
+ 			if (machineString.indexOf("DualLite") != -1) {
+-				fileaddr = fileaddr + ".imx6dl";
++                               if (boottype.equals("sd"))
++                                  {fileaddr = fileaddr + ".imx6dl_sd";}
++                              else if (boottype.equals("nand"))
++                                  {fileaddr = fileaddr + ".imx6dl_nand";}
++                              else
++                              fileaddr = fileaddr + ".imx6dl";
+ 			} else if (machineString.indexOf("Quad") != -1) {
+-				fileaddr = fileaddr + ".imx6q";
++                               if (boottype.equals("sd"))
++                                  {fileaddr = fileaddr + ".imx6q_sd";}
++                              else if (boottype.equals("nand"))
++                                  {fileaddr = fileaddr + ".imx6q_nand";}
++                              else
++                              fileaddr = fileaddr + ".imx6q";
+ 			} else if (machineString.indexOf("SoloLite") != -1) {
+ 				fileaddr = fileaddr + ".imx6sl";
+ 			} else if (machineString.indexOf("SoloX") != -1) {
+-				fileaddr = fileaddr + ".imx6sx";
++                               if (boottype.equals("nand"))
++                                  {fileaddr = fileaddr + ".imx6sx_nand";
++                        }
++                              else
++			      fileaddr = fileaddr + ".imx6sx";
+ 			}
+ 
+ 			updatePackageURL = new URL(default_protocol, server, port, fileaddr);
+diff --git a/FSLOta/src/com/fsl/android/ota/OTAServerManager.java b/FSLOta/src/com/fsl/android/ota/OTAServerManager.java
+index 09dcff3..8402f52 100644
+--- a/FSLOta/src/com/fsl/android/ota/OTAServerManager.java
++++ b/FSLOta/src/com/fsl/android/ota/OTAServerManager.java
+@@ -1,5 +1,5 @@
+ /*
+-/* Copyright 2012-2014 Freescale Semiconductor, Inc.
++/* Copyright 2012-2015 Freescale Semiconductor, Inc.
+  *
+  * Licensed under the Apache License, Version 2.0 (the "License");
+  * you may not use this file except in compliance with the License.
+@@ -20,6 +20,7 @@ import java.net.*;
+ import java.security.GeneralSecurityException;
+ import java.io.*;
+ 
++import android.os.SystemProperties;
+ import android.content.*;
+ import android.net.ConnectivityManager;
+ import android.os.Build;
+@@ -137,6 +138,7 @@ public class OTAServerManager  {
+ 		Long remoteBuildUTC = (Long.parseLong(parser.getProp("ro.build.date.utc"))) * 1000;
+ 		// *1000 because Build.java also *1000, align with it.
+ 		Log.d(TAG, "Local Version:" + Build.VERSION.INCREMENTAL + "server Version:" + parser.getNumRelease());
++                 Log.d(TAG, "BOARD BOOTTYPE:" + SystemProperties.get("ro.boot.storage_type"));
+ 		boolean upgrade = false;
+ 		upgrade = remoteBuildUTC > buildutc;
+ 		// here only check build time, in your case, you may also check build id, etc.
+-- 
+1.8.0
+

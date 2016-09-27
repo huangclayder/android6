@@ -1,0 +1,31 @@
+From 80b0c9df274fe7a4f724a2e6976ca07363b3103e Mon Sep 17 00:00:00 2001
+From: Anson Huang <b20788@freescale.com>
+Date: Fri, 7 Aug 2015 17:44:49 +0800
+Subject: [PATCH] MLK-11331 ARM: imx: need to enable rc-osc before entering
+ low power idle
+
+On i.MX7D, RC-OSC must be enabled before entering low power idle,
+otherwise, system will fail as 24MHz XTAL is power down during
+low power idle and RC-OSC is used instead.
+
+Signed-off-by: Anson Huang <b20788@freescale.com>
+---
+ arch/arm/mach-imx/cpuidle-imx7d.c | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/arch/arm/mach-imx/cpuidle-imx7d.c b/arch/arm/mach-imx/cpuidle-imx7d.c
+index 13364b9..c5bc81c 100644
+--- a/arch/arm/mach-imx/cpuidle-imx7d.c
++++ b/arch/arm/mach-imx/cpuidle-imx7d.c
+@@ -254,6 +254,8 @@ int __init imx7d_cpuidle_init(void)
+ 	cpuidle_pm_info->src_base.vbase =
+ 		(void __iomem *)IMX_IO_P2V(MX7D_SRC_BASE_ADDR);
+ 
++	imx7d_enable_rcosc();
++
+ 	/* code size should include cpuidle_pm_info size */
+ 	imx7d_wfi_in_iram_fn = (void *)fncpy(wfi_iram_base +
+ 		sizeof(*cpuidle_pm_info),
+-- 
+1.8.0
+

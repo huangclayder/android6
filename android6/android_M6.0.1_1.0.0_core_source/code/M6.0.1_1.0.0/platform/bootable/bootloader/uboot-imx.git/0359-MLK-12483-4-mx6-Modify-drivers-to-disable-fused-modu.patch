@@ -1,0 +1,316 @@
+From 0980df53fb5ba44e84f7b2d9cb95b806242e144c Mon Sep 17 00:00:00 2001
+From: Ye Li <ye.li@nxp.com>
+Date: Wed, 2 Mar 2016 11:13:51 +0800
+Subject: [PATCH] MLK-12483-4 mx6: Modify drivers to disable fused modules
+
+Add the fuse checking in drivers, when the module is disabled in fuse,
+the driver will not work.
+
+Changed drivers: BEE, GPMI, APBH-DMA, ESDHC, FEC, QSPI, ECSPI, I2C,
+USB-EHCI, GIS, LCDIF.
+
+Signed-off-by: Ye Li <ye.li@nxp.com>
+---
+ arch/arm/cpu/armv7/mx6/bee.c | 15 +++++++--------
+ drivers/dma/apbh_dma.c       |  7 +++++++
+ drivers/i2c/mxc_i2c.c        | 10 ++++++++++
+ drivers/mmc/fsl_esdhc.c      |  8 ++++++++
+ drivers/mtd/nand/mxs_nand.c  |  7 +++++++
+ drivers/net/fec_mxc.c        |  8 ++++++++
+ drivers/spi/fsl_qspi.c       |  8 ++++++++
+ drivers/spi/mxc_spi.c        |  6 ++++++
+ drivers/usb/host/ehci-mx6.c  |  8 ++++++++
+ drivers/video/mxc_gis.c      | 14 ++++++++++++++
+ drivers/video/mxsfb.c        | 11 +++++++++++
+ 11 files changed, 94 insertions(+), 8 deletions(-)
+
+diff --git a/arch/arm/cpu/armv7/mx6/bee.c b/arch/arm/cpu/armv7/mx6/bee.c
+index d40b584..f84c729 100644
+--- a/arch/arm/cpu/armv7/mx6/bee.c
++++ b/arch/arm/cpu/armv7/mx6/bee.c
+@@ -11,6 +11,7 @@
+ #include <common.h>
+ #include <command.h>
+ #include <fuse.h>
++#include <asm/arch/sys_proto.h>
+ 
+ DECLARE_GLOBAL_DATA_PTR;
+ 
+@@ -266,7 +267,7 @@ static int region_valid(u32 start, u32 size)
+ static int do_bee_init(cmd_tbl_t *cmdtp, int flag, int argc,
+ 		       char * const argv[])
+ {
+-	u32 start, size, val;
++	u32 start, size;
+ 	int ret;
+ 	struct bee_parameters *p = &para;
+ 
+@@ -279,14 +280,12 @@ static int do_bee_init(cmd_tbl_t *cmdtp, int flag, int argc,
+ 	if (argc > 5)
+ 		return CMD_RET_USAGE;
+ 
+-	if (fuse_read(0, 4, &val)) {
+-		puts("Can not get fuse bank 0, word 4\n");
+-	} else {
+-		if (val & (1 << 25)) {
+-			puts("BEE disabed in fuse!\n");
+-			return CMD_RET_FAILURE;
+-		}
++#ifdef CONFIG_MX6
++	if (check_module_fused(MX6_MODULE_BEE)) {
++		printf("BEE is fused, disable it!\n");
++		return CMD_RET_FAILURE;
+ 	}
++#endif
+ 
+ 	/* Cache enabled? */
+ 	if ((get_cr() & (CR_I | CR_C)) != (CR_I | CR_C)) {
+diff --git a/drivers/dma/apbh_dma.c b/drivers/dma/apbh_dma.c
+index c65a215..d5c9a7f 100644
+--- a/drivers/dma/apbh_dma.c
++++ b/drivers/dma/apbh_dma.c
+@@ -574,6 +574,13 @@ void mxs_dma_init(void)
+ 	struct mxs_apbh_regs *apbh_regs =
+ 		(struct mxs_apbh_regs *)MXS_APBH_BASE;
+ 
++#ifdef CONFIG_MX6
++	if (check_module_fused(MX6_MODULE_APBHDMA)) {
++		printf("NAND APBH-DMA@0x%x is fused, disable it\n", MXS_APBH_BASE);
++		return;
++	}
++#endif
++
+ 	mxs_reset_block(&apbh_regs->hw_apbh_ctrl0_reg);
+ 
+ #ifdef CONFIG_APBH_DMA_BURST8
+diff --git a/drivers/i2c/mxc_i2c.c b/drivers/i2c/mxc_i2c.c
+index 7bc6d07..b77caac 100644
+--- a/drivers/i2c/mxc_i2c.c
++++ b/drivers/i2c/mxc_i2c.c
+@@ -21,6 +21,7 @@
+ #include <asm/io.h>
+ #include <i2c.h>
+ #include <watchdog.h>
++#include <asm/arch/sys_proto.h>
+ 
+ DECLARE_GLOBAL_DATA_PTR;
+ 
+@@ -525,6 +526,15 @@ void bus_i2c_init(void *base, int speed, int unused,
+ 	struct i2c_parms *p = srdata->i2c_data;
+ 	if (!base)
+ 		return;
++	
++#ifdef CONFIG_MX6
++	if (mx6_i2c_fused((u32)base)) {
++		printf("I2C@0x%x is fused, disable it\n", 
++			(u32)base);
++		return;
++	}
++#endif
++
+ 	for (;;) {
+ 		if (!p->base || (p->base == base)) {
+ 			p->base = base;
+diff --git a/drivers/mmc/fsl_esdhc.c b/drivers/mmc/fsl_esdhc.c
+index e1fbb33..07fbc46 100644
+--- a/drivers/mmc/fsl_esdhc.c
++++ b/drivers/mmc/fsl_esdhc.c
+@@ -20,6 +20,7 @@
+ #include <fsl_esdhc.h>
+ #include <fdt_support.h>
+ #include <asm/io.h>
++#include <asm/arch/sys_proto.h>
+ 
+ DECLARE_GLOBAL_DATA_PTR;
+ 
+@@ -612,6 +613,13 @@ int fsl_esdhc_initialize(bd_t *bis, struct fsl_esdhc_cfg *cfg)
+ 
+ 	regs = (struct fsl_esdhc *)cfg->esdhc_base;
+ 
++#ifdef CONFIG_MX6
++	if (mx6_esdhc_fused(cfg->esdhc_base)) {
++		printf("ESDHC@0x%x is fused, disable it\n", cfg->esdhc_base);
++		return -2;
++	}
++#endif
++
+ 	/* First reset the eSDHC controller */
+ 	esdhc_reset(regs);
+ 
+diff --git a/drivers/mtd/nand/mxs_nand.c b/drivers/mtd/nand/mxs_nand.c
+index 3b55ac2..d81f83c 100644
+--- a/drivers/mtd/nand/mxs_nand.c
++++ b/drivers/mtd/nand/mxs_nand.c
+@@ -1172,6 +1172,13 @@ int mxs_nand_init(struct mxs_nand_info *info)
+ 		(struct mxs_bch_regs *)MXS_BCH_BASE;
+ 	int i = 0, j;
+ 
++#ifdef CONFIG_MX6
++	if (check_module_fused(MX6_MODULE_GPMI)) {
++		printf("NAND GPMI@0x%x is fused, disable it\n", MXS_GPMI_BASE);
++		return -EPERM;
++	}
++#endif
++
+ 	info->desc = malloc(sizeof(struct mxs_dma_desc *) *
+ 				MXS_NAND_DMA_DESCRIPTOR_COUNT);
+ 	if (!info->desc)
+diff --git a/drivers/net/fec_mxc.c b/drivers/net/fec_mxc.c
+index 0743f7b..72ba08d 100644
+--- a/drivers/net/fec_mxc.c
++++ b/drivers/net/fec_mxc.c
+@@ -20,6 +20,7 @@
+ #include <asm/io.h>
+ #include <asm/errno.h>
+ #include <linux/compiler.h>
++#include <asm/arch/sys_proto.h>
+ 
+ DECLARE_GLOBAL_DATA_PTR;
+ 
+@@ -1091,6 +1092,13 @@ int fecmxc_initialize_multi(bd_t *bd, int dev_id, int phy_id, uint32_t addr)
+ #endif
+ 	int ret;
+ 
++#ifdef CONFIG_MX6
++	if (mx6_enet_fused(addr)) {
++		printf("Ethernet@0x%x is fused, disable it\n", addr);
++		return -2;
++	}
++#endif
++
+ #ifdef CONFIG_MX28
+ 	/*
+ 	 * The i.MX28 has two ethernet interfaces, but they are not equal.
+diff --git a/drivers/spi/fsl_qspi.c b/drivers/spi/fsl_qspi.c
+index bb5c236..e3777d8 100644
+--- a/drivers/spi/fsl_qspi.c
++++ b/drivers/spi/fsl_qspi.c
+@@ -13,6 +13,7 @@
+ #include <spi.h>
+ 
+ #include <asm/io.h>
++#include <asm/arch/sys_proto.h>
+ 
+ #define QUADSPI_AHBMAP_BANK_MAXSIZE SZ_64M
+ 
+@@ -544,6 +545,13 @@ struct spi_slave *spi_setup_slave(unsigned int bus, unsigned int cs,
+ 	struct fsl_qspi *q;
+ 	int ret;
+ 
++#ifdef CONFIG_MX6
++	if (mx6_qspi_fused(CONFIG_QSPI_BASE)) {
++		printf("QSPI@0x%x is fused, disable it\n", CONFIG_QSPI_BASE);
++		return NULL;
++	}
++#endif
++
+ 	if (bus > 1) {
+ 		puts("FSL_QSPI: Not a valid bus !\n");
+ 		return NULL;
+diff --git a/drivers/spi/mxc_spi.c b/drivers/spi/mxc_spi.c
+index 0881599..c061145 100644
+--- a/drivers/spi/mxc_spi.c
++++ b/drivers/spi/mxc_spi.c
+@@ -13,6 +13,7 @@
+ #include <asm/arch/imx-regs.h>
+ #include <asm/arch/clock.h>
+ #include <asm/imx-common/spi.h>
++#include <asm/arch/sys_proto.h>
+ 
+ #ifdef CONFIG_MX27
+ /* i.MX27 has a completely wrong register layout and register definitions in the
+@@ -413,6 +414,11 @@ struct spi_slave *spi_setup_slave(unsigned int bus, unsigned int cs,
+ 		return NULL;
+ 	}
+ 
++	if (mx6_ecspi_fused(spi_bases[bus])){
++		printf("ECSPI@0x%lx is fused, disable it\n", spi_bases[bus]);
++		return NULL;
++	}
++
+ 	mxcs = spi_alloc_slave(struct mxc_spi_slave, bus, cs);
+ 	if (!mxcs) {
+ 		puts("mxc_spi: SPI Slave not allocated !\n");
+diff --git a/drivers/usb/host/ehci-mx6.c b/drivers/usb/host/ehci-mx6.c
+index 951dd3b..3ec16ec 100644
+--- a/drivers/usb/host/ehci-mx6.c
++++ b/drivers/usb/host/ehci-mx6.c
+@@ -14,6 +14,7 @@
+ #include <asm/arch/imx-regs.h>
+ #include <asm/arch/clock.h>
+ #include <asm/imx-common/iomux-v3.h>
++#include <asm/arch/sys_proto.h>
+ 
+ #include "ehci.h"
+ 
+@@ -234,6 +235,13 @@ int ehci_hcd_init(int index, enum usb_init_type init,
+ 
+ 	if (index > 3)
+ 		return -EINVAL;
++
++	if (mx6_usb_fused(USB_BASE_ADDR + (0x200 * index))) {
++		printf("USB@0x%x is fused, disable it\n", 
++			USB_BASE_ADDR + (0x200 * index));
++		return -2;
++	}
++	
+ 	enable_usboh3_clk(1);
+ 	mdelay(1);
+ 
+diff --git a/drivers/video/mxc_gis.c b/drivers/video/mxc_gis.c
+index 01befb3..3d98cc2 100644
+--- a/drivers/video/mxc_gis.c
++++ b/drivers/video/mxc_gis.c
+@@ -301,6 +301,20 @@ void mxc_enable_gis(void)
+ 	u32 csimemsize, pxpmemsize;
+ 	char const *gis_input = getenv("gis");
+ 
++#ifdef CONFIG_MX6
++	if (check_module_fused(MX6_MODULE_CSI)) {
++		printf("CSI@0x%x is fused, disable it\n", CSI1_BASE_ADDR);
++		return;
++	}
++#endif
++
++#ifdef CONFIG_MX6
++	if (check_module_fused(MX6_MODULE_PXP)) {
++		printf("PXP@0x%x is fused, disable it\n", PXP_BASE_ADDR);
++		return;
++	}
++#endif
++
+ 	gis_regs = (struct mxs_gis_regs *)GIS_BASE_ADDR;
+ 	pxp_regs = (struct mxs_pxp_regs *)PXP_BASE_ADDR;
+ 	csi_regs = (struct mxs_csi_regs *)CSI1_BASE_ADDR;
+diff --git a/drivers/video/mxsfb.c b/drivers/video/mxsfb.c
+index 44004b1..270a31a 100644
+--- a/drivers/video/mxsfb.c
++++ b/drivers/video/mxsfb.c
+@@ -170,6 +170,11 @@ void lcdif_power_down()
+ 	struct mxs_lcdif_regs *regs = (struct mxs_lcdif_regs *)(panel.isaBase);
+ 	int timeout = WAIT_FOR_VSYNC_TIMEOUT;
+ 
++#ifdef CONFIG_MX6
++	if (check_module_fused(MX6_MODULE_LCDIF)) {
++		return;
++	}
++#endif
+ 	writel(panel.frameAdrs, &regs->hw_lcdif_cur_buf);
+ 	writel(panel.frameAdrs, &regs->hw_lcdif_next_buf);
+ 	writel(LCDIF_CTRL1_VSYNC_EDGE_IRQ, &regs->hw_lcdif_ctrl1_clr);
+@@ -216,6 +221,12 @@ void *video_hw_init(void)
+ 		bpp = depth;
+ 	}
+ 
++#ifdef CONFIG_MX6
++	if (check_module_fused(MX6_MODULE_LCDIF)) {
++		printf("LCDIF@0x%x is fused, disable it\n", MXS_LCDIF_BASE);
++		return NULL;
++	}
++#endif
+ 	/* fill in Graphic device struct */
+ 	sprintf(panel.modeIdent, "%dx%dx%d",
+ 			mode.xres, mode.yres, bpp);
+-- 
+1.8.0
+

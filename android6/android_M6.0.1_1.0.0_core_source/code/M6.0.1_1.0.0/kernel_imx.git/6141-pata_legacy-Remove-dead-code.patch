@@ -1,0 +1,30 @@
+From a6edf3766bba7b70af202bb13fa6e373b156fdb4 Mon Sep 17 00:00:00 2001
+From: Silvan Jegen <s.jegen@gmail.com>
+Date: Mon, 10 Mar 2014 22:33:50 +0100
+Subject: [PATCH] pata_legacy: Remove dead code
+
+The current flow of control prevents this function from being
+called. Let's remove the call.
+
+Signed-off-by: Silvan Jegen <s.jegen@gmail.com>
+Signed-off-by: Tejun Heo <tj@kernel.org>
+(cherry picked from commit e853a4e01ffd0962a197f61e792178b458ae4763)
+---
+ drivers/ata/pata_legacy.c | 1 -
+ 1 file changed, 1 deletion(-)
+
+diff --git a/drivers/ata/pata_legacy.c b/drivers/ata/pata_legacy.c
+index be81642..bce2a8c 100644
+--- a/drivers/ata/pata_legacy.c
++++ b/drivers/ata/pata_legacy.c
+@@ -916,7 +916,6 @@ static __init int probe_chip_type(struct legacy_probe *probe)
+ 			local_irq_restore(flags);
+ 			return BIOS;
+ 		}
+-		local_irq_restore(flags);
+ 	}
+ 
+ 	if (ht6560a & mask)
+-- 
+1.8.0
+

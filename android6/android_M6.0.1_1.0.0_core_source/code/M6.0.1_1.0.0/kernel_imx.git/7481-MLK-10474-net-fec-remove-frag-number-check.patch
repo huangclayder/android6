@@ -1,0 +1,30 @@
+From 2ceed4b99415b96a19fb4cf75c1b9feb66cbdb0b Mon Sep 17 00:00:00 2001
+From: Fugang Duan <b38611@freescale.com>
+Date: Wed, 25 Mar 2015 10:29:33 +0800
+Subject: [PATCH] MLK-10474 net: fec: remove frag number check
+
+Since TSO has no frag list, the frag number is zero. Remove the frag number
+check to fix kernel dump issue when SW TSO feature enable.
+
+Signed-off-by: Fugang Duan <B38611@freescale.com>
+---
+ drivers/net/ethernet/freescale/fec_main.c | 3 +--
+ 1 file changed, 1 insertion(+), 2 deletions(-)
+
+diff --git a/drivers/net/ethernet/freescale/fec_main.c b/drivers/net/ethernet/freescale/fec_main.c
+index 47a81a1..96fc418 100644
+--- a/drivers/net/ethernet/freescale/fec_main.c
++++ b/drivers/net/ethernet/freescale/fec_main.c
+@@ -1229,8 +1229,7 @@ fec_enet_tx_queue(struct net_device *ndev, u16 queue_id)
+ 			skb = txq->tx_skbuff[index];
+ 			bdnum++;
+ 		}
+-		if (skb_shinfo(skb)->nr_frags &&
+-		    (status = bdp_t->cbd_sc) & BD_ENET_TX_READY)
++		if ((status = bdp_t->cbd_sc) & BD_ENET_TX_READY)
+ 			break;
+ 
+ 		for (i = 0; i < bdnum; i++) {
+-- 
+1.8.0
+

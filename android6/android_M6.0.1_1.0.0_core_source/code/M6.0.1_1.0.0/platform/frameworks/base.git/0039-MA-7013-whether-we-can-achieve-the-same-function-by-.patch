@@ -1,0 +1,229 @@
+From 0a62a9b7e148d4645cebe81956181371b3950036 Mon Sep 17 00:00:00 2001
+From: MJm <B55507@freescale.com>
+Date: Mon, 12 Oct 2015 11:49:45 +0800
+Subject: [PATCH 39/45] MA-7013 whether we can achieve the same function by
+ removing the SHOW_SYSTEM_TIME in api/current.txt
+
+remove the SHOW_SYSTEM_TIME api in api/current.txt
+
+Signed-off-by:Ma Jiamin<b55507@freescale.com>
+---
+ Android.mk                                                            | 2 --
+ api/current.txt                                                       | 2 --
+ api/system-current.txt                                                | 2 --
+ core/java/android/provider/Settings.java                              | 3 ---
+ packages/SettingsProvider/Android.mk                                  | 2 +-
+ packages/SettingsProvider/AndroidManifest.xml                         | 4 ++--
+ .../src/com/android/providers/settings/DatabaseHelper.java            | 3 ++-
+ packages/SystemUI/Android.mk                                          | 3 +--
+ packages/SystemUI/AndroidManifest.xml                                 | 4 ++--
+ packages/SystemUI/src/com/android/systemui/BootReceiver.java          | 3 ++-
+ packages/SystemUI/tests/Android.mk                                    | 2 +-
+ 11 files changed, 11 insertions(+), 19 deletions(-)
+
+diff --git a/Android.mk b/Android.mk
+index 99e0c46..d088dc0 100644
+--- a/Android.mk
++++ b/Android.mk
+@@ -1087,7 +1087,6 @@ ext_src_files := $(call all-java-files-under,$(ext_dirs))
+ 
+ # ====  the library  =========================================
+ include $(CLEAR_VARS)
+-
+ LOCAL_SRC_FILES := $(ext_src_files)
+ 
+ LOCAL_NO_STANDARD_LIBRARIES := true
+@@ -1100,7 +1099,6 @@ LOCAL_DX_FLAGS := --core-library
+ 
+ include $(BUILD_JAVA_LIBRARY)
+ 
+-
+ # Include subdirectory makefiles
+ # ============================================================
+ 
+diff --git a/api/current.txt b/api/current.txt
+index 75075cc..90d5f37 100644
+--- a/api/current.txt
++++ b/api/current.txt
+@@ -26513,7 +26513,6 @@ package android.provider {
+     field public static final java.lang.String RADIO_NFC = "nfc";
+     field public static final java.lang.String RADIO_WIFI = "wifi";
+     field public static final java.lang.String SHOW_PROCESSES = "show_processes";
+-    field public static final java.lang.String SHOW_SYSTEM_TIME = "show_system_time";
+     field public static final java.lang.String STAY_ON_WHILE_PLUGGED_IN = "stay_on_while_plugged_in";
+     field public static final java.lang.String SYS_PROP_SETTING_VERSION = "sys.settings_global_version";
+     field public static final java.lang.String TRANSITION_ANIMATION_SCALE = "transition_animation_scale";
+@@ -26707,7 +26706,6 @@ package android.provider {
+     field public static final java.lang.String SETUP_WIZARD_HAS_RUN = "setup_wizard_has_run";
+     field public static final java.lang.String SHOW_GTALK_SERVICE_STATUS = "SHOW_GTALK_SERVICE_STATUS";
+     field public static final deprecated java.lang.String SHOW_PROCESSES = "show_processes";
+-    field public static final java.lang.String SHOW_SYSTEM_TIME = "show_system_time";
+     field public static final deprecated java.lang.String SHOW_WEB_SUGGESTIONS = "show_web_suggestions";
+     field public static final java.lang.String SOUND_EFFECTS_ENABLED = "sound_effects_enabled";
+     field public static final deprecated java.lang.String STAY_ON_WHILE_PLUGGED_IN = "stay_on_while_plugged_in";
+diff --git a/api/system-current.txt b/api/system-current.txt
+index 8e0ca7c..140cf06 100644
+--- a/api/system-current.txt
++++ b/api/system-current.txt
+@@ -28571,7 +28571,6 @@ package android.provider {
+     field public static final java.lang.String RADIO_NFC = "nfc";
+     field public static final java.lang.String RADIO_WIFI = "wifi";
+     field public static final java.lang.String SHOW_PROCESSES = "show_processes";
+-    field public static final java.lang.String SHOW_SYSTEM_TIME = "show_system_time";
+     field public static final java.lang.String STAY_ON_WHILE_PLUGGED_IN = "stay_on_while_plugged_in";
+     field public static final java.lang.String SYS_PROP_SETTING_VERSION = "sys.settings_global_version";
+     field public static final java.lang.String THEATER_MODE_ON = "theater_mode_on";
+@@ -28766,7 +28765,6 @@ package android.provider {
+     field public static final java.lang.String SETUP_WIZARD_HAS_RUN = "setup_wizard_has_run";
+     field public static final java.lang.String SHOW_GTALK_SERVICE_STATUS = "SHOW_GTALK_SERVICE_STATUS";
+     field public static final deprecated java.lang.String SHOW_PROCESSES = "show_processes";
+-    field public static final java.lang.String SHOW_SYSTEM_TIME = "show_system_time";
+     field public static final deprecated java.lang.String SHOW_WEB_SUGGESTIONS = "show_web_suggestions";
+     field public static final java.lang.String SOUND_EFFECTS_ENABLED = "sound_effects_enabled";
+     field public static final deprecated java.lang.String STAY_ON_WHILE_PLUGGED_IN = "stay_on_while_plugged_in";
+diff --git a/core/java/android/provider/Settings.java b/core/java/android/provider/Settings.java
+index 49f86cb..53897e0 100644
+--- a/core/java/android/provider/Settings.java
++++ b/core/java/android/provider/Settings.java
+@@ -1537,7 +1537,6 @@ public final class Settings {
+             MOVED_TO_GLOBAL.add(Settings.Global.DEBUG_APP);
+             MOVED_TO_GLOBAL.add(Settings.Global.WAIT_FOR_DEBUGGER);
+             MOVED_TO_GLOBAL.add(Settings.Global.SHOW_PROCESSES);
+-            MOVED_TO_GLOBAL.add(Settings.Global.SHOW_SYSTEM_TIME);
+             MOVED_TO_GLOBAL.add(Settings.Global.ALWAYS_FINISH_ACTIVITIES);
+             MOVED_TO_GLOBAL.add(Settings.Global.TZINFO_UPDATE_CONTENT_URL);
+             MOVED_TO_GLOBAL.add(Settings.Global.TZINFO_UPDATE_METADATA_URL);
+@@ -2440,7 +2439,6 @@ public final class Settings {
+          */
+         @Deprecated
+         public static final String SHOW_PROCESSES = Global.SHOW_PROCESSES;
+-        public static final String SHOW_SYSTEM_TIME = Global.SHOW_SYSTEM_TIME;
+ 
+         /**
+          * If 1, the activity manager will aggressively finish activities and
+@@ -7426,7 +7424,6 @@ public final class Settings {
+          * Control whether the process CPU usage meter should be shown.
+          */
+         public static final String SHOW_PROCESSES = "show_processes";
+-        public static final String SHOW_SYSTEM_TIME = "show_system_time";
+ 
+         /**
+          * If 1 low power mode is enabled.
+diff --git a/packages/SettingsProvider/Android.mk b/packages/SettingsProvider/Android.mk
+index 2b833b2..2d15717 100644
+--- a/packages/SettingsProvider/Android.mk
++++ b/packages/SettingsProvider/Android.mk
+@@ -6,7 +6,7 @@ LOCAL_MODULE_TAGS := optional
+ LOCAL_SRC_FILES := $(call all-subdir-java-files) \
+     src/com/android/providers/settings/EventLogTags.logtags
+ 
+-LOCAL_JAVA_LIBRARIES := telephony-common ims-common
++LOCAL_JAVA_LIBRARIES := telephony-common ims-common freescale-extended
+ 
+ LOCAL_PACKAGE_NAME := SettingsProvider
+ LOCAL_CERTIFICATE := platform
+diff --git a/packages/SettingsProvider/AndroidManifest.xml b/packages/SettingsProvider/AndroidManifest.xml
+index 71aefad..9ab08be 100644
+--- a/packages/SettingsProvider/AndroidManifest.xml
++++ b/packages/SettingsProvider/AndroidManifest.xml
+@@ -9,9 +9,9 @@
+                  android:backupAgent="SettingsBackupAgent"
+                  android:killAfterRestore="false"
+                  android:icon="@mipmap/ic_launcher_settings">
+-                 
+-    <!-- todo add: android:neverEncrypt="true" -->
+ 
++	<uses-library android:name="freescale-extended" />
++    <!-- todo add: android:neverEncrypt="true" -->
+         <provider android:name="SettingsProvider" android:authorities="settings"
+                   android:multiprocess="false"
+                   android:exported="true"
+diff --git a/packages/SettingsProvider/src/com/android/providers/settings/DatabaseHelper.java b/packages/SettingsProvider/src/com/android/providers/settings/DatabaseHelper.java
+index 15dc618..db201e6 100644
+--- a/packages/SettingsProvider/src/com/android/providers/settings/DatabaseHelper.java
++++ b/packages/SettingsProvider/src/com/android/providers/settings/DatabaseHelper.java
+@@ -16,6 +16,7 @@
+ 
+ package com.android.providers.settings;
+ 
++import com.freescale.provider.Developer;
+ import android.content.ComponentName;
+ import android.content.ContentValues;
+ import android.content.Context;
+@@ -1466,7 +1467,7 @@ class DatabaseHelper extends SQLiteOpenHelper {
+                             Settings.Global.DEBUG_APP,
+                             Settings.Global.WAIT_FOR_DEBUGGER,
+                             Settings.Global.SHOW_PROCESSES,
+-                            Settings.Global.SHOW_SYSTEM_TIME,
++                            new Developer().getShowSystemTime(),
+                             Settings.Global.ALWAYS_FINISH_ACTIVITIES,
+                     };
+                     String[] secureToGlobal = {
+diff --git a/packages/SystemUI/Android.mk b/packages/SystemUI/Android.mk
+index 51fea2a..ec8fa4e 100644
+--- a/packages/SystemUI/Android.mk
++++ b/packages/SystemUI/Android.mk
+@@ -7,8 +7,7 @@ LOCAL_SRC_FILES := $(call all-java-files-under, src) \
+     src/com/android/systemui/EventLogTags.logtags
+ 
+ LOCAL_STATIC_JAVA_LIBRARIES := Keyguard
+-LOCAL_JAVA_LIBRARIES := telephony-common
+-
++LOCAL_JAVA_LIBRARIES := telephony-common freescale-extended
+ LOCAL_PACKAGE_NAME := SystemUI
+ LOCAL_CERTIFICATE := platform
+ LOCAL_PRIVILEGED_MODULE := true
+diff --git a/packages/SystemUI/AndroidManifest.xml b/packages/SystemUI/AndroidManifest.xml
+index 11da502..be19a1d 100644
+--- a/packages/SystemUI/AndroidManifest.xml
++++ b/packages/SystemUI/AndroidManifest.xml
+@@ -146,10 +146,10 @@
+         android:process="com.android.systemui"
+         android:supportsRtl="true"
+         android:theme="@style/systemui_theme">
+-        <!-- Keep theme in sync with SystemUIApplication.onCreate().
++	<uses-library android:name="freescale-extended" />
++	<!-- Keep theme in sync with SystemUIApplication.onCreate().
+              Setting the theme on the application does not affect views inflated by services.
+              The application theme is set again from onCreate to take effect for those views. -->
+-
+         <!-- Broadcast receiver that gets the broadcast at boot time and starts
+              up everything else.
+              TODO: Should have an android:permission attribute
+diff --git a/packages/SystemUI/src/com/android/systemui/BootReceiver.java b/packages/SystemUI/src/com/android/systemui/BootReceiver.java
+index e253edf..589f292 100644
+--- a/packages/SystemUI/src/com/android/systemui/BootReceiver.java
++++ b/packages/SystemUI/src/com/android/systemui/BootReceiver.java
+@@ -23,6 +23,7 @@ import android.content.Intent;
+ import android.provider.Settings;
+ import android.util.Slog;
+ import android.util.Log;
++import com.freescale.provider.Developer;
+ 
+ /**
+  * Performs a number of miscellaneous, non-system-critical actions
+@@ -42,7 +43,7 @@ public class BootReceiver extends BroadcastReceiver {
+             }
+ 
+             // ContentResolver sys = context.getContentResolver();
+-            if (Settings.Global.getInt(res,Settings.Global.SHOW_SYSTEM_TIME,0) != 0){
++            if (Settings.Global.getInt(res, new Developer().getShowSystemTime(),0) != 0){
+                 Intent loadsystime = new Intent(context, com.android.systemui.LoadSystemTime.class);
+                 context.startService(loadsystime);
+             }
+diff --git a/packages/SystemUI/tests/Android.mk b/packages/SystemUI/tests/Android.mk
+index 6a7201c..c2dfd84 100644
+--- a/packages/SystemUI/tests/Android.mk
++++ b/packages/SystemUI/tests/Android.mk
+@@ -26,7 +26,7 @@ LOCAL_RESOURCE_DIR := $(LOCAL_PATH)/res \
+     frameworks/base/packages/SystemUI/res \
+     frameworks/base/packages/Keyguard/res
+ 
+-LOCAL_JAVA_LIBRARIES := android.test.runner telephony-common
++LOCAL_JAVA_LIBRARIES := android.test.runner telephony-common freescale-extended
+ 
+ LOCAL_PACKAGE_NAME := SystemUITests
+ 
+-- 
+1.8.0
+

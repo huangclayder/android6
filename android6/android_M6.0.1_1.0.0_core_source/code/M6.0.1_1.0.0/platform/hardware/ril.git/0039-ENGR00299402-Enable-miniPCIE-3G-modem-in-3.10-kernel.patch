@@ -1,0 +1,37 @@
+From 26b0b5c72cd9daf8ee0abf30aa20dd3ed13677f0 Mon Sep 17 00:00:00 2001
+From: "guoyin.chen" <guoyin.chen@freescale.com>
+Date: Thu, 20 Feb 2014 15:51:51 +0800
+Subject: [PATCH 39/43] ENGR00299402 Enable miniPCIE 3G modem in 3.10 kernel
+
+Remove unused power ctrl which only available for omap
+
+Signed-off-by: guoyin.chen <guoyin.chen@freescale.com>
+---
+ reference-ril/atchannel.c | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
+
+diff --git a/reference-ril/atchannel.c b/reference-ril/atchannel.c
+index fdf7dbd..0ce2c6f 100644
+--- a/reference-ril/atchannel.c
++++ b/reference-ril/atchannel.c
+@@ -14,7 +14,7 @@
+ ** See the License for the specific language governing permissions and
+ ** limitations under the License.
+ */
+-/* Copyright (C) 2011-2013 Freescale Semiconductor, Inc. */
++/* Copyright (C) 2011-2014 Freescale Semiconductor, Inc. */
+ 
+ #include "atchannel.h"
+ #include "at_tok.h"
+@@ -64,6 +64,8 @@ static ATUnsolHandler s_unsolHandler;
+ static char s_ATBuffer[MAX_AT_RESPONSE+1];
+ static char *s_ATBufferCur = s_ATBuffer;
+ 
++static int s_readCount = 0;
++
+ #if AT_DEBUG
+ void  AT_DUMP(const char*  prefix, const char*  buff, int  len)
+ {
+-- 
+1.8.0
+

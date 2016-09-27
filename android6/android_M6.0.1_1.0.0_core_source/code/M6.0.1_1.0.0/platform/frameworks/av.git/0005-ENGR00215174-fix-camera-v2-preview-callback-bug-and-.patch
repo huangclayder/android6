@@ -1,0 +1,80 @@
+From e1d0e20493e7fbd3f0889523f36cb4b62938c851 Mon Sep 17 00:00:00 2001
+From: Xiaowen Liu <b37945@freescale.com>
+Date: Fri, 11 Jan 2013 16:57:53 +0800
+Subject: [PATCH 05/95] ENGR00215174 fix camera v2 preview callback bug and
+ cts failure.
+
+1. add HAL_PIXEL_FORMAT_YCbCr_420_P format.
+   VPU only support I420 and NV12. but they are not supported by
+   camera v2. and cts requires it support more than 1 format.
+
+2. the face detection return BAD_VALUE other than INVALID_OPERATION
+   adapt for cts.
+
+3. fix preview callback bug.
+   when delete callback stream and release CallbackConsumer,
+   but, the onFrameAvailable may happen and access CallbackConsumer.
+   so, when CallbackConsumer released, then onFrameAvailable return directly.
+
+Signed-off-by: Xiaowen Liu <b37945@freescale.com>
+
+Conflicts:
+	services/camera/libcameraservice/api1/client2/Parameters.cpp
+---
+ camera/CameraParameters.cpp                                         | 2 +-
+ services/camera/libcameraservice/api1/client2/CallbackProcessor.cpp | 5 +++++
+ services/camera/libcameraservice/api1/client2/Parameters.cpp        | 2 ++
+ 3 files changed, 8 insertions(+), 1 deletion(-)
+
+diff --git a/camera/CameraParameters.cpp b/camera/CameraParameters.cpp
+index 8eeb3fd..59a56a2 100644
+--- a/camera/CameraParameters.cpp
++++ b/camera/CameraParameters.cpp
+@@ -520,7 +520,7 @@ int CameraParameters::previewFormatToEnum(const char* format) {
+         !strcmp(format, PIXEL_FORMAT_YUV422I) ?
+             HAL_PIXEL_FORMAT_YCbCr_422_I :  // YUY2
+         !strcmp(format, PIXEL_FORMAT_YUV420P) ?
+-            HAL_PIXEL_FORMAT_YV12 :         // YV12
++            HAL_PIXEL_FORMAT_YCbCr_420_P :         // YV12
+         !strcmp(format, PIXEL_FORMAT_RGB565) ?
+             HAL_PIXEL_FORMAT_RGB_565 :      // RGB565
+         !strcmp(format, PIXEL_FORMAT_RGBA8888) ?
+diff --git a/services/camera/libcameraservice/api1/client2/CallbackProcessor.cpp b/services/camera/libcameraservice/api1/client2/CallbackProcessor.cpp
+index 5f4fb22..73032f0 100644
+--- a/services/camera/libcameraservice/api1/client2/CallbackProcessor.cpp
++++ b/services/camera/libcameraservice/api1/client2/CallbackProcessor.cpp
+@@ -245,6 +245,11 @@ bool CallbackProcessor::threadLoop() {
+ status_t CallbackProcessor::discardNewCallback() {
+     ATRACE_CALL();
+     status_t res;
++
++    if (mCallbackConsumer.get() == NULL) {
++        return BAD_VALUE;
++    }
++
+     CpuConsumer::LockedBuffer imgBuffer;
+     res = mCallbackConsumer->lockNextBuffer(&imgBuffer);
+     if (res != OK) {
+diff --git a/services/camera/libcameraservice/api1/client2/Parameters.cpp b/services/camera/libcameraservice/api1/client2/Parameters.cpp
+index 9f6f91e..1e10320 100644
+--- a/services/camera/libcameraservice/api1/client2/Parameters.cpp
++++ b/services/camera/libcameraservice/api1/client2/Parameters.cpp
+@@ -197,6 +197,7 @@ status_t Parameters::initialize(const CameraMetadata *info, int deviceVersion) {
+                     CameraParameters::PIXEL_FORMAT_YUV422I;
+                 break;
+             case HAL_PIXEL_FORMAT_YV12:
++            case HAL_PIXEL_FORMAT_YCbCr_420_P:
+                 supportedPreviewFormats +=
+                     CameraParameters::PIXEL_FORMAT_YUV420P;
+                 break;
+@@ -2289,6 +2290,7 @@ const char* Parameters::formatEnumToString(int format) {
+             fmt = CameraParameters::PIXEL_FORMAT_YUV422I;
+             break;
+         case HAL_PIXEL_FORMAT_YV12:        // YV12
++        case HAL_PIXEL_FORMAT_YCbCr_420_P:        // I420
+             fmt = CameraParameters::PIXEL_FORMAT_YUV420P;
+             break;
+         case HAL_PIXEL_FORMAT_RGB_565:     // RGB565
+-- 
+1.8.0
+

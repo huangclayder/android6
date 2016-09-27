@@ -1,0 +1,287 @@
+From d499f270ba6dfbe920a658146c7d7a04256a7e54 Mon Sep 17 00:00:00 2001
+From: "guoyin.chen" <guoyin.chen@freescale.com>
+Date: Thu, 6 Aug 2015 12:38:06 +0800
+Subject: [PATCH 521/602] MA-6975-1 Fix the build error for fsl.git in
+ m-preview
+
+Fix below build error due to no link_file_perms in sepolicy and no init_shell type
+allow domain self:process execmem;
+allow domain unlabeled:file { setattr getattr rename link_file_perms { { getattr
+    open read ioctl lock } { open append write } } };
+device/fsl/imx6/sepolicy/domain.te:21:ERROR 'permission link_file_perms is not defined
+    for class dir' at token ';' on line 13412:
+allow domain unlabeled:dir { setattr getattr rename link_file_perms { { open getattr
+    read search ioctl } { open search write add_name remove_name } } };
+allow domain unlabeled:file { setattr getattr rename link_file_perms { { getattr open
+    read ioctl lock } { open append write } } };
+device/fsl/imx6/sepolicy/init_shell.te:2:ERROR 'unknown type init_shell' at token ';' on line 13416:
+    allow init_shell domain:file { { getattr open read ioctl lock } { open append write } };
+neverallow on line 144 of external/sepolicy/untrusted_app.te (or line 12526 of policy.conf)
+    violated by allow untrusted_app unlabeled:file { link };
+neverallow on line 86 of external/sepolicy/shell.te (or line 10378 of policy.conf) violated
+    by allow shell unlabeled:file { link };
+neverallow on line 284 of external/sepolicy/init.te (or line 7107 of policy.conf) violated
+    by allow init ppp_exec:file { execute_no_trans };
+neverallow on line 27 of external/sepolicy/gpsd.te (or line 6400 of policy.conf) violated
+    by allow gpsd gpsd:capability { sys_nice };
+neverallow on line 341 of external/sepolicy/domain.te (or line 5245 of policy.conf) violated
+    by allow system_server default_prop:property_service { set };
+neverallow on line 341 of external/sepolicy/domain.te (or line 5245 of policy.conf) violated
+    by allow dnsmasq default_prop:property_service { set };
+neverallow on line 341 of external/sepolicy/domain.te (or line 5245 of policy.conf) violated
+    by allow gpsd default_prop:property_service { set };
+
+Signed-off-by: guoyin.chen <guoyin.chen@freescale.com>
+---
+ evk_6sl/BoardConfig.mk         |  1 -
+ imx6/sepolicy/dnsmasq.te       |  1 -
+ imx6/sepolicy/domain.te        |  7 ++-----
+ imx6/sepolicy/init.te          |  1 -
+ imx6/sepolicy/init_shell.te    | 16 ----------------
+ imx6/sepolicy/system_server.te |  3 +--
+ imx6/sepolicy/untrusted_app.te |  3 +--
+ imx7/sepolicy/domain.te        |  6 ++----
+ imx7/sepolicy/init.te          |  1 -
+ imx7/sepolicy/init_shell.te    | 16 ----------------
+ imx7/sepolicy/system_server.te |  2 +-
+ imx7/sepolicy/untrusted_app.te |  2 --
+ sabreauto_6q/BoardConfig.mk    |  1 -
+ sabreauto_6sx/BoardConfig.mk   |  1 -
+ sabresd_6dq/BoardConfig.mk     |  1 -
+ sabresd_6sx/BoardConfig.mk     |  1 -
+ sabresd_7d/BoardConfig.mk      |  1 -
+ 17 files changed, 7 insertions(+), 57 deletions(-)
+ delete mode 100644 imx6/sepolicy/init_shell.te
+ delete mode 100644 imx7/sepolicy/init_shell.te
+
+diff --git a/evk_6sl/BoardConfig.mk b/evk_6sl/BoardConfig.mk
+index 401fe56..1174279 100644
+--- a/evk_6sl/BoardConfig.mk
++++ b/evk_6sl/BoardConfig.mk
+@@ -95,7 +95,6 @@ BOARD_SEPOLICY_UNION := \
+        system_server.te \
+        untrusted_app.te \
+        sensors.te \
+-       init_shell.te \
+        kernel.te \
+        mediaserver.te \
+        file_contexts \
+diff --git a/imx6/sepolicy/dnsmasq.te b/imx6/sepolicy/dnsmasq.te
+index 5c8f411..08f2e04 100644
+--- a/imx6/sepolicy/dnsmasq.te
++++ b/imx6/sepolicy/dnsmasq.te
+@@ -1,6 +1,5 @@
+ allow dnsmasq property_socket:sock_file rw_file_perms;
+ allow dnsmasq properties_device:file rwx_file_perms;
+ allow dnsmasq init:unix_stream_socket connectto;
+-allow dnsmasq default_prop:property_service set;
+ allow dnsmasq net_radio_prop:property_service set;
+ 
+diff --git a/imx6/sepolicy/domain.te b/imx6/sepolicy/domain.te
+index c045380..2ff3da3 100644
+--- a/imx6/sepolicy/domain.te
++++ b/imx6/sepolicy/domain.te
+@@ -8,15 +8,12 @@ allow gpsd apk_data_file:dir rw_dir_perms;
+ allow gpsd apk_data_file:file create_file_perms;
+ allow gpsd properties_device:file rwx_file_perms;
+ allow gpsd init:unix_stream_socket connectto;
+-allow gpsd default_prop:property_service set;
+ allow gpsd device:dir rw_dir_perms;
+ allow gpsd device:notdevfile_class_set create_file_perms;
+-allow gpsd self:capability sys_nice;
+ allow gpsd devpts:chr_file create_file_perms;
+ allow {domain -untrusted_app -shell -isolated_app} graphics_device:chr_file rw_file_perms;
+ allow {domain -untrusted_app -shell -isolated_app} graphics_device:dir rw_dir_perms;
+ allow domain self:process execmem;
+-allow domain unlabeled:file { setattr getattr rename link_file_perms rw_file_perms };
+-allow domain unlabeled:dir { setattr getattr rename link_file_perms rw_dir_perms };
+-allow domain unlabeled:lnk_file { setattr getattr read };
++allow domain unlabeled:file { setattr getattr rename rw_file_perms };
++allow domain unlabeled:dir { setattr getattr rename rw_dir_perms };
+ allow domain ashmem_device:chr_file {execute};
+diff --git a/imx6/sepolicy/init.te b/imx6/sepolicy/init.te
+index 4d6c59c..e69de29 100644
+--- a/imx6/sepolicy/init.te
++++ b/imx6/sepolicy/init.te
+@@ -1 +0,0 @@
+-allow init ppp_exec:file { execute_no_trans };
+diff --git a/imx6/sepolicy/init_shell.te b/imx6/sepolicy/init_shell.te
+deleted file mode 100644
+index 8e743ba..0000000
+--- a/imx6/sepolicy/init_shell.te
++++ /dev/null
+@@ -1,16 +0,0 @@
+-allow init_shell domain:file rw_file_perms;
+-allow init_shell domain:dir rw_dir_perms;
+-allow init_shell domain:process {getattr};
+-allow init_shell unlabeled:file rw_file_perms;
+-allow init_shell property_socket:sock_file {read write};
+-allow init_shell radio_prop:property_service {set};
+-allow init_shell init:unix_stream_socket {connectto};
+-allow init_shell unlabeled:dir rw_dir_perms;
+-allow init_shell { file_type -keystore_data_file}:file { getattr };
+-allow init_shell { dev_type -keystore_data_file -kmem_device -hw_random_device }:chr_file { getattr };
+-allow init_shell sdcard_external:dir rw_dir_perms;
+-allow init_shell sdcard_external:file rw_file_perms;
+-allow init_shell powerctl_prop:property_service {set};
+-allow init_shell fuse:dir {search read open write};
+-allow init_shell fuse:file {getattr read open write};
+-allow init_shell kernel:system { syslog_mod syslog_read};
+diff --git a/imx6/sepolicy/system_server.te b/imx6/sepolicy/system_server.te
+index c45343a..8b1a553 100644
+--- a/imx6/sepolicy/system_server.te
++++ b/imx6/sepolicy/system_server.te
+@@ -1,5 +1,4 @@
+ allow system_server unlabeled:dir {relabelfrom rw_dir_perms};
+-allow system_server unlabeled:sock_file {link_file_perms rw_file_perms};
++allow system_server unlabeled:sock_file {link unlink rw_file_perms};
+ allow system_server system_data_file:file {relabelto rw_file_perms};
+ allow system_server system_data_file:dir {relabelto rw_dir_perms};
+-allow system_server default_prop:property_service { set };
+diff --git a/imx6/sepolicy/untrusted_app.te b/imx6/sepolicy/untrusted_app.te
+index 459a9c3..859d7e1 100644
+--- a/imx6/sepolicy/untrusted_app.te
++++ b/imx6/sepolicy/untrusted_app.te
+@@ -1,8 +1,7 @@
+ allow untrusted_app graphics_device:dir rw_dir_perms;
+ allow untrusted_app graphics_device:file rw_file_perms;
+-allow untrusted_app unlabeled:dir rw_dir_perms;
+-allow untrusted_app unlabeled:lnk_file {read};
+ allow untrusted_app sdcard_external:dir rw_dir_perms;
+ allow untrusted_app sdcard_external:file rw_file_perms;
+ allow untrusted_app vfat:dir { rw_file_perms create setattr rename };
+ allow untrusted_app vfat:file { rw_file_perms create setattr rename };
++
+diff --git a/imx7/sepolicy/domain.te b/imx7/sepolicy/domain.te
+index c045380..dc078a8 100644
+--- a/imx7/sepolicy/domain.te
++++ b/imx7/sepolicy/domain.te
+@@ -11,12 +11,10 @@ allow gpsd init:unix_stream_socket connectto;
+ allow gpsd default_prop:property_service set;
+ allow gpsd device:dir rw_dir_perms;
+ allow gpsd device:notdevfile_class_set create_file_perms;
+-allow gpsd self:capability sys_nice;
+ allow gpsd devpts:chr_file create_file_perms;
+ allow {domain -untrusted_app -shell -isolated_app} graphics_device:chr_file rw_file_perms;
+ allow {domain -untrusted_app -shell -isolated_app} graphics_device:dir rw_dir_perms;
+ allow domain self:process execmem;
+-allow domain unlabeled:file { setattr getattr rename link_file_perms rw_file_perms };
+-allow domain unlabeled:dir { setattr getattr rename link_file_perms rw_dir_perms };
+-allow domain unlabeled:lnk_file { setattr getattr read };
++allow domain unlabeled:file { setattr getattr rename link unlink rw_file_perms };
++allow domain unlabeled:dir { setattr getattr rename link unlink rw_dir_perms };
+ allow domain ashmem_device:chr_file {execute};
+diff --git a/imx7/sepolicy/init.te b/imx7/sepolicy/init.te
+index 4d6c59c..e69de29 100644
+--- a/imx7/sepolicy/init.te
++++ b/imx7/sepolicy/init.te
+@@ -1 +0,0 @@
+-allow init ppp_exec:file { execute_no_trans };
+diff --git a/imx7/sepolicy/init_shell.te b/imx7/sepolicy/init_shell.te
+deleted file mode 100644
+index 8e743ba..0000000
+--- a/imx7/sepolicy/init_shell.te
++++ /dev/null
+@@ -1,16 +0,0 @@
+-allow init_shell domain:file rw_file_perms;
+-allow init_shell domain:dir rw_dir_perms;
+-allow init_shell domain:process {getattr};
+-allow init_shell unlabeled:file rw_file_perms;
+-allow init_shell property_socket:sock_file {read write};
+-allow init_shell radio_prop:property_service {set};
+-allow init_shell init:unix_stream_socket {connectto};
+-allow init_shell unlabeled:dir rw_dir_perms;
+-allow init_shell { file_type -keystore_data_file}:file { getattr };
+-allow init_shell { dev_type -keystore_data_file -kmem_device -hw_random_device }:chr_file { getattr };
+-allow init_shell sdcard_external:dir rw_dir_perms;
+-allow init_shell sdcard_external:file rw_file_perms;
+-allow init_shell powerctl_prop:property_service {set};
+-allow init_shell fuse:dir {search read open write};
+-allow init_shell fuse:file {getattr read open write};
+-allow init_shell kernel:system { syslog_mod syslog_read};
+diff --git a/imx7/sepolicy/system_server.te b/imx7/sepolicy/system_server.te
+index c45343a..b214c57 100644
+--- a/imx7/sepolicy/system_server.te
++++ b/imx7/sepolicy/system_server.te
+@@ -1,5 +1,5 @@
+ allow system_server unlabeled:dir {relabelfrom rw_dir_perms};
+-allow system_server unlabeled:sock_file {link_file_perms rw_file_perms};
++allow system_server unlabeled:sock_file {link unlink rw_file_perms};
+ allow system_server system_data_file:file {relabelto rw_file_perms};
+ allow system_server system_data_file:dir {relabelto rw_dir_perms};
+ allow system_server default_prop:property_service { set };
+diff --git a/imx7/sepolicy/untrusted_app.te b/imx7/sepolicy/untrusted_app.te
+index 459a9c3..54867f8 100644
+--- a/imx7/sepolicy/untrusted_app.te
++++ b/imx7/sepolicy/untrusted_app.te
+@@ -1,7 +1,5 @@
+ allow untrusted_app graphics_device:dir rw_dir_perms;
+ allow untrusted_app graphics_device:file rw_file_perms;
+-allow untrusted_app unlabeled:dir rw_dir_perms;
+-allow untrusted_app unlabeled:lnk_file {read};
+ allow untrusted_app sdcard_external:dir rw_dir_perms;
+ allow untrusted_app sdcard_external:file rw_file_perms;
+ allow untrusted_app vfat:dir { rw_file_perms create setattr rename };
+diff --git a/sabreauto_6q/BoardConfig.mk b/sabreauto_6q/BoardConfig.mk
+index e8ad189..dd62b78 100644
+--- a/sabreauto_6q/BoardConfig.mk
++++ b/sabreauto_6q/BoardConfig.mk
+@@ -129,7 +129,6 @@ BOARD_SEPOLICY_UNION := \
+        system_server.te \
+        untrusted_app.te \
+        sensors.te \
+-       init_shell.te \
+        kernel.te \
+        mediaserver.te \
+        file_contexts \
+diff --git a/sabreauto_6sx/BoardConfig.mk b/sabreauto_6sx/BoardConfig.mk
+index 2ab9565..87f1a5f 100755
+--- a/sabreauto_6sx/BoardConfig.mk
++++ b/sabreauto_6sx/BoardConfig.mk
+@@ -122,7 +122,6 @@ BOARD_SEPOLICY_UNION := \
+        system_server.te \
+        untrusted_app.te \
+        sensors.te \
+-       init_shell.te \
+        kernel.te \
+        mediaserver.te \
+        file_contexts \
+diff --git a/sabresd_6dq/BoardConfig.mk b/sabresd_6dq/BoardConfig.mk
+index ba34a98..18dbdac 100644
+--- a/sabresd_6dq/BoardConfig.mk
++++ b/sabresd_6dq/BoardConfig.mk
+@@ -135,7 +135,6 @@ BOARD_SEPOLICY_UNION := \
+        system_server.te \
+        untrusted_app.te \
+        sensors.te \
+-       init_shell.te \
+        bluetooth.te \
+        kernel.te \
+        mediaserver.te \
+diff --git a/sabresd_6sx/BoardConfig.mk b/sabresd_6sx/BoardConfig.mk
+index 7385882..8f28cac 100644
+--- a/sabresd_6sx/BoardConfig.mk
++++ b/sabresd_6sx/BoardConfig.mk
+@@ -122,7 +122,6 @@ BOARD_SEPOLICY_UNION := \
+        system_server.te \
+        untrusted_app.te \
+        sensors.te \
+-       init_shell.te \
+        bluetooth.te \
+        kernel.te \
+        mediaserver.te \
+diff --git a/sabresd_7d/BoardConfig.mk b/sabresd_7d/BoardConfig.mk
+index e68b12a..fd53a70 100644
+--- a/sabresd_7d/BoardConfig.mk
++++ b/sabresd_7d/BoardConfig.mk
+@@ -105,7 +105,6 @@ BOARD_SEPOLICY_UNION := \
+        system_server.te \
+        untrusted_app.te \
+        sensors.te \
+-       init_shell.te \
+        kernel.te \
+        mediaserver.te \
+        file_contexts \
+-- 
+1.8.0
+

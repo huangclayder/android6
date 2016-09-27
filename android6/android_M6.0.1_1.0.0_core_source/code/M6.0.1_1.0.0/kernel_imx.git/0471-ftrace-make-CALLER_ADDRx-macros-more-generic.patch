@@ -1,0 +1,159 @@
+From de8e380b1f7ba30ba9e6515b959bab2eef87ae3b Mon Sep 17 00:00:00 2001
+From: AKASHI Takahiro <takahiro.akashi@linaro.org>
+Date: Wed, 30 Apr 2014 18:54:29 +0900
+Subject: [PATCH] ftrace: make CALLER_ADDRx macros more generic
+
+Most archs with HAVE_ARCH_CALLER_ADDR have the almost same definitions
+of CALLER_ADDRx(n), and so put them into linux/ftrace.h.
+
+Signed-off-by: AKASHI Takahiro <takahiro.akashi@linaro.org>
+Signed-off-by: Mark Brown <broonie@linaro.org>
+(cherry picked from LSK commit f2f646bdd599cb551bfeb8f1934a9e14ccfeac84)
+Signed-off-by: Alex Shi <alex.shi@linaro.org>
+
+Conflicts:
+	arch/xtensa/include/asm/ftrace.h
+---
+ arch/arm/include/asm/ftrace.h      | 10 +---------
+ arch/blackfin/include/asm/ftrace.h | 11 +----------
+ arch/parisc/include/asm/ftrace.h   | 10 +---------
+ arch/sh/include/asm/ftrace.h       | 10 +---------
+ include/linux/ftrace.h             | 34 ++++++++++++++++++----------------
+ 5 files changed, 22 insertions(+), 53 deletions(-)
+
+diff --git a/arch/arm/include/asm/ftrace.h b/arch/arm/include/asm/ftrace.h
+index f89515a..eb577f4 100644
+--- a/arch/arm/include/asm/ftrace.h
++++ b/arch/arm/include/asm/ftrace.h
+@@ -52,15 +52,7 @@ extern inline void *return_address(unsigned int level)
+ 
+ #endif
+ 
+-#define HAVE_ARCH_CALLER_ADDR
+-
+-#define CALLER_ADDR0 ((unsigned long)__builtin_return_address(0))
+-#define CALLER_ADDR1 ((unsigned long)return_address(1))
+-#define CALLER_ADDR2 ((unsigned long)return_address(2))
+-#define CALLER_ADDR3 ((unsigned long)return_address(3))
+-#define CALLER_ADDR4 ((unsigned long)return_address(4))
+-#define CALLER_ADDR5 ((unsigned long)return_address(5))
+-#define CALLER_ADDR6 ((unsigned long)return_address(6))
++#define ftrace_return_addr(n) return_address(n)
+ 
+ #endif /* ifndef __ASSEMBLY__ */
+ 
+diff --git a/arch/blackfin/include/asm/ftrace.h b/arch/blackfin/include/asm/ftrace.h
+index 8a02950..2f1c3c2 100644
+--- a/arch/blackfin/include/asm/ftrace.h
++++ b/arch/blackfin/include/asm/ftrace.h
+@@ -66,16 +66,7 @@ extern inline void *return_address(unsigned int level)
+ 
+ #endif /* CONFIG_FRAME_POINTER */
+ 
+-#define HAVE_ARCH_CALLER_ADDR
+-
+-/* inline function or macro may lead to unexpected result */
+-#define CALLER_ADDR0 ((unsigned long)__builtin_return_address(0))
+-#define CALLER_ADDR1 ((unsigned long)return_address(1))
+-#define CALLER_ADDR2 ((unsigned long)return_address(2))
+-#define CALLER_ADDR3 ((unsigned long)return_address(3))
+-#define CALLER_ADDR4 ((unsigned long)return_address(4))
+-#define CALLER_ADDR5 ((unsigned long)return_address(5))
+-#define CALLER_ADDR6 ((unsigned long)return_address(6))
++#define ftrace_return_address(n) return_address(n)
+ 
+ #endif /* __ASSEMBLY__ */
+ 
+diff --git a/arch/parisc/include/asm/ftrace.h b/arch/parisc/include/asm/ftrace.h
+index 72c0faf..544ed8e 100644
+--- a/arch/parisc/include/asm/ftrace.h
++++ b/arch/parisc/include/asm/ftrace.h
+@@ -24,15 +24,7 @@ extern void return_to_handler(void);
+ 
+ extern unsigned long return_address(unsigned int);
+ 
+-#define HAVE_ARCH_CALLER_ADDR
+-
+-#define CALLER_ADDR0 ((unsigned long)__builtin_return_address(0))
+-#define CALLER_ADDR1 return_address(1)
+-#define CALLER_ADDR2 return_address(2)
+-#define CALLER_ADDR3 return_address(3)
+-#define CALLER_ADDR4 return_address(4)
+-#define CALLER_ADDR5 return_address(5)
+-#define CALLER_ADDR6 return_address(6)
++#define ftrace_return_address(n) return_address(n)
+ 
+ #endif /* __ASSEMBLY__ */
+ 
+diff --git a/arch/sh/include/asm/ftrace.h b/arch/sh/include/asm/ftrace.h
+index 13e9966..e79fb6e 100644
+--- a/arch/sh/include/asm/ftrace.h
++++ b/arch/sh/include/asm/ftrace.h
+@@ -40,15 +40,7 @@ static inline unsigned long ftrace_call_adjust(unsigned long addr)
+ /* arch/sh/kernel/return_address.c */
+ extern void *return_address(unsigned int);
+ 
+-#define HAVE_ARCH_CALLER_ADDR
+-
+-#define CALLER_ADDR0 ((unsigned long)__builtin_return_address(0))
+-#define CALLER_ADDR1 ((unsigned long)return_address(1))
+-#define CALLER_ADDR2 ((unsigned long)return_address(2))
+-#define CALLER_ADDR3 ((unsigned long)return_address(3))
+-#define CALLER_ADDR4 ((unsigned long)return_address(4))
+-#define CALLER_ADDR5 ((unsigned long)return_address(5))
+-#define CALLER_ADDR6 ((unsigned long)return_address(6))
++#define ftrace_return_address(n) return_address(n)
+ 
+ #endif /* __ASSEMBLY__ */
+ 
+diff --git a/include/linux/ftrace.h b/include/linux/ftrace.h
+index f4233b1..1150c45 100644
+--- a/include/linux/ftrace.h
++++ b/include/linux/ftrace.h
+@@ -603,25 +603,27 @@ static inline void __ftrace_enabled_restore(int enabled)
+ #endif
+ }
+ 
+-#ifndef HAVE_ARCH_CALLER_ADDR
++/* All archs should have this, but we define it for consistency */
++#ifndef ftrace_return_address0
++# define ftrace_return_address0 __builtin_return_address(0)
++#endif
++
++/* Archs may use other ways for ADDR1 and beyond */
++#ifndef ftrace_return_address
+ # ifdef CONFIG_FRAME_POINTER
+-#  define CALLER_ADDR0 ((unsigned long)__builtin_return_address(0))
+-#  define CALLER_ADDR1 ((unsigned long)__builtin_return_address(1))
+-#  define CALLER_ADDR2 ((unsigned long)__builtin_return_address(2))
+-#  define CALLER_ADDR3 ((unsigned long)__builtin_return_address(3))
+-#  define CALLER_ADDR4 ((unsigned long)__builtin_return_address(4))
+-#  define CALLER_ADDR5 ((unsigned long)__builtin_return_address(5))
+-#  define CALLER_ADDR6 ((unsigned long)__builtin_return_address(6))
++#  define ftrace_return_address(n) __builtin_return_address(n)
+ # else
+-#  define CALLER_ADDR0 ((unsigned long)__builtin_return_address(0))
+-#  define CALLER_ADDR1 0UL
+-#  define CALLER_ADDR2 0UL
+-#  define CALLER_ADDR3 0UL
+-#  define CALLER_ADDR4 0UL
+-#  define CALLER_ADDR5 0UL
+-#  define CALLER_ADDR6 0UL
++#  define ftrace_return_address(n) 0UL
+ # endif
+-#endif /* ifndef HAVE_ARCH_CALLER_ADDR */
++#endif
++
++#define CALLER_ADDR0 ((unsigned long)ftrace_return_address0)
++#define CALLER_ADDR1 ((unsigned long)ftrace_return_address(1))
++#define CALLER_ADDR2 ((unsigned long)ftrace_return_address(2))
++#define CALLER_ADDR3 ((unsigned long)ftrace_return_address(3))
++#define CALLER_ADDR4 ((unsigned long)ftrace_return_address(4))
++#define CALLER_ADDR5 ((unsigned long)ftrace_return_address(5))
++#define CALLER_ADDR6 ((unsigned long)ftrace_return_address(6))
+ 
+ #ifdef CONFIG_IRQSOFF_TRACER
+   extern void time_hardirqs_on(unsigned long a0, unsigned long a1);
+-- 
+1.8.0
+

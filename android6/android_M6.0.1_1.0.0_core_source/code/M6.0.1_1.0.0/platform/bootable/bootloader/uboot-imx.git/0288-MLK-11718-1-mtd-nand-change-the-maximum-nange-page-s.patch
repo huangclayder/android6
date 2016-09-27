@@ -1,0 +1,32 @@
+From 77e3c2ad2a08a5cfe9f055957c44590121658aeb Mon Sep 17 00:00:00 2001
+From: Han Xu <b45815@freescale.com>
+Date: Fri, 9 Oct 2015 13:28:16 -0500
+Subject: [PATCH] MLK-11718-1: mtd: nand: change the maximum nange page size
+ and oob size
+
+enlarge the maximum nand page size and oob size to
+16k byte and 1280byte.
+
+Signed-off-by: Han Xu <b45815@freescale.com>
+---
+ include/linux/mtd/nand.h | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/include/linux/mtd/nand.h b/include/linux/mtd/nand.h
+index bc927ec..528266b 100644
+--- a/include/linux/mtd/nand.h
++++ b/include/linux/mtd/nand.h
+@@ -64,8 +64,8 @@ extern int nand_unlock(struct mtd_info *mtd, loff_t ofs, uint64_t len);
+  * is supported now. If you add a chip with bigger oobsize/page
+  * adjust this accordingly.
+  */
+-#define NAND_MAX_OOBSIZE       744
+-#define NAND_MAX_PAGESIZE      8192
++#define NAND_MAX_OOBSIZE       1280
++#define NAND_MAX_PAGESIZE      16384
+ #endif
+ 
+ /*
+-- 
+1.8.0
+

@@ -1,0 +1,36 @@
+From 804b030cf40b5e6364d07e1f1f818a0f7287569a Mon Sep 17 00:00:00 2001
+From: Zhang Sanshan <b51434@freescale.com>
+Date: Wed, 28 Jan 2015 14:21:42 +0800
+Subject: [PATCH 22/34] MA-5948 fix compile error after enable dm-verity
+
+it will BOOT_SIGNER the recovery.img after enable dm-verity.
+the process of BOOT_SIGNER should be after making recovery.img
+
+Signed-off-by: Zhang Sanshan <b51434@freescale.com>
+
+Conflicts:
+	core/Makefile
+
+Conflicts:
+	core/Makefile
+---
+ core/Makefile | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/core/Makefile b/core/Makefile
+index b184058..f9d948d 100644
+--- a/core/Makefile
++++ b/core/Makefile
+@@ -935,6 +935,9 @@ define build-recoveryimage-target
+ 	DTS_BOARD=`echo $$dtsplat | cut -d':' -f2`; \
+ 	RECOVERY_IMAGE_BOARD=$(patsubst %.img,%-$$DTS_PLATFORM.img,$(1)); \
+ 	$(MKBOOTIMG) $(INTERNAL_RECOVERYIMAGE_ARGS) --second $(PRODUCT_OUT)/$$DTS_BOARD $(BOARD_MKBOOTIMG_ARGS) --output $(1); \
++	if [ $(PRODUCTS.$(INTERNAL_PRODUCT).PRODUCT_SUPPORTS_VERITY) = true ]; then \
++	  $(BOOT_SIGNER) /recovery $(1) $(PRODUCTS.$(INTERNAL_PRODUCT).PRODUCT_VERITY_SIGNING_KEY).pk8 $(PRODUCTS.$(INTERNAL_PRODUCT).PRODUCT_VERITY_SIGNING_KEY).x509.pem $(1)
++	fi;\
+     $(call assert-max-image-size,$(1),$(BOARD_RECOVERYIMAGE_PARTITION_SIZE)); \
+     cp -f $(1) $$RECOVERY_IMAGE_BOARD; \
+   done
+-- 
+1.8.0
+

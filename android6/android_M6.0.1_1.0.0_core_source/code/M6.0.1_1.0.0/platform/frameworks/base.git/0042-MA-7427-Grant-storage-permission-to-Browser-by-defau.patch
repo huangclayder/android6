@@ -1,0 +1,27 @@
+From 71885a1d1c766b7042e3d674a2e09aa52cbfb733 Mon Sep 17 00:00:00 2001
+From: Ma <b55507@freescale.com>
+Date: Mon, 4 Jan 2016 09:26:37 +0800
+Subject: [PATCH 42/45] MA-7427 Grant storage permission to Browser by default
+
+	Modify the DefaultPermissionGrantPolicy.java to set up the default permission
+
+Signed-off-by: Ma Jiamin<b55507@freescale.com>
+---
+ .../core/java/com/android/server/pm/DefaultPermissionGrantPolicy.java    | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/services/core/java/com/android/server/pm/DefaultPermissionGrantPolicy.java b/services/core/java/com/android/server/pm/DefaultPermissionGrantPolicy.java
+index b504605..c06d842 100644
+--- a/services/core/java/com/android/server/pm/DefaultPermissionGrantPolicy.java
++++ b/services/core/java/com/android/server/pm/DefaultPermissionGrantPolicy.java
+@@ -493,6 +493,7 @@ final class DefaultPermissionGrantPolicy {
+             if (browserPackage != null
+                     && doesPackageSupportRuntimePermissions(browserPackage)) {
+                 grantRuntimePermissionsLPw(browserPackage, LOCATION_PERMISSIONS, userId);
++                grantRuntimePermissionsLPw(browserPackage, STORAGE_PERMISSIONS, userId);
+             }
+ 
+             // IME
+-- 
+1.8.0
+

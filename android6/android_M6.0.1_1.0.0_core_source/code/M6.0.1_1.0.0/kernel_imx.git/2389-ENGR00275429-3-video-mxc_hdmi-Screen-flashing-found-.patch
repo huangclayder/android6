@@ -1,0 +1,49 @@
+From 15726ada1d06d9b8a2227c3e9a8aa10b9456b4b4 Mon Sep 17 00:00:00 2001
+From: "guoyin.chen" <guoyin.chen@freescale.com>
+Date: Mon, 30 Jun 2014 17:52:29 +0800
+Subject: [PATCH] ENGR00275429-3 video: mxc_hdmi Screen flashing found when in
+ recovery mode
+
+HDMI driver should only reinit hdmi only when the mode changed. fbmem will
+broadcast MODE_CHANGE for each FBIOPUT_VSCREENINFO ioctl even it only have
+yoffset update.
+
+Signed-off-by: guoyin.chen <guoyin.chen@freescale.com>
+---
+ drivers/video/mxc/mxc_hdmi.c | 8 ++++++--
+ 1 file changed, 6 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/video/mxc/mxc_hdmi.c b/drivers/video/mxc/mxc_hdmi.c
+index ab7165e..34ebc8d 100644
+--- a/drivers/video/mxc/mxc_hdmi.c
++++ b/drivers/video/mxc/mxc_hdmi.c
+@@ -1,5 +1,5 @@
+ /*
+- * Copyright (C) 2011-2014 Freescale Semiconductor, Inc.
++ * Copyright (C) 2011-2015 Freescale Semiconductor, Inc.
+  *
+  * This program is free software; you can redistribute it and/or modify
+  * it under the terms of the GNU General Public License as published by
+@@ -2280,6 +2280,7 @@ static int mxc_hdmi_fb_event(struct notifier_block *nb,
+ {
+ 	struct fb_event *event = v;
+ 	struct mxc_hdmi *hdmi = container_of(nb, struct mxc_hdmi, nb);
++	struct fb_videomode *mode;
+ 
+ 	if (strcmp(event->info->fix.id, hdmi->fbi->fix.id))
+ 		return 0;
+@@ -2299,7 +2300,10 @@ static int mxc_hdmi_fb_event(struct notifier_block *nb,
+ 
+ 	case FB_EVENT_MODE_CHANGE:
+ 		dev_dbg(&hdmi->pdev->dev, "event=FB_EVENT_MODE_CHANGE\n");
+-		if (hdmi->fb_reg)
++		mode = (struct fb_videomode *)event->data;
++		if ((hdmi->fb_reg) &&
++			(mode != NULL) &&
++			!fb_mode_is_equal(&hdmi->previous_non_vga_mode, mode))
+ 			mxc_hdmi_setup(hdmi, val);
+ 		break;
+ 
+-- 
+1.8.0
+

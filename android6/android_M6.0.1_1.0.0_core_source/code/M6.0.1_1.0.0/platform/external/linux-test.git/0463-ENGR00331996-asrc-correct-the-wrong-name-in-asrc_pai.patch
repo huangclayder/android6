@@ -1,0 +1,39 @@
+From 81d19ce6734b91d8e6938a7c80fa385a0c7c5317 Mon Sep 17 00:00:00 2001
+From: Shengjiu Wang <shengjiu.wang@freescale.com>
+Date: Thu, 18 Sep 2014 10:50:17 +0800
+Subject: [PATCH 463/505] ENGR00331996 asrc: correct the wrong name in
+ asrc_pair_index
+
+As the asrc unit test is used for all kernel version, imx_3.14 use the
+upstreamed asrc driver, which have correct the name of ASRC_UNVALID_PAIR
+to ASRC_INVALID_PAIR.
+So here also update the unit test to align with kernel.
+
+Signed-off-by: Shengjiu Wang <shengjiu.wang@freescale.com>
+---
+ test/mxc_asrc_test/mxc_asrc_test.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/test/mxc_asrc_test/mxc_asrc_test.c b/test/mxc_asrc_test/mxc_asrc_test.c
+index 8e3145a..574ebaa 100644
+--- a/test/mxc_asrc_test/mxc_asrc_test.c
++++ b/test/mxc_asrc_test/mxc_asrc_test.c
+@@ -1,5 +1,5 @@
+ /*
+- * Copyright 2008-2013 Freescale Semiconductor, Inc. All rights reserved.
++ * Copyright 2008-2014 Freescale Semiconductor, Inc. All rights reserved.
+  */
+ 
+ /*
+@@ -445,7 +445,7 @@ int main(int ac, char *av[])
+ 	inclk = INCLK_NONE;
+ 	outclk = OUTCLK_ASRCK1_CLK;
+ 	convert_flag = 0;
+-	pair_index = ASRC_UNVALID_PAIR;
++	pair_index = ASRC_INVALID_PAIR;
+ 	printf("Hi... \n");
+ 
+ 	if (ac < 5) {
+-- 
+1.8.0
+

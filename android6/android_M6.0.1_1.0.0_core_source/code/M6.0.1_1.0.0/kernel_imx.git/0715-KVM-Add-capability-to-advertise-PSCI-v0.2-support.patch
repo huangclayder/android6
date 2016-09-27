@@ -1,0 +1,35 @@
+From 3209d033e9ce7193e24da041530957bb45b6315b Mon Sep 17 00:00:00 2001
+From: Christoffer Dall <christoffer.dall@linaro.org>
+Date: Thu, 2 Oct 2014 21:59:00 +0200
+Subject: [PATCH] KVM: Add capability to advertise PSCI v0.2 support
+
+User space (i.e. QEMU or KVMTOOL) should be able to check whether KVM
+ARM/ARM64 supports in-kernel PSCI v0.2 emulation. For this purpose, we
+define KVM_CAP_ARM_PSCI_0_2 in KVM user space interface header.
+
+Signed-off-by: Anup Patel <anup.patel@linaro.org>
+Signed-off-by: Pranavkumar Sawargaonkar <pranavkumar@linaro.org>
+Acked-by: Christoffer Dall <christoffer.dall@linaro.org>
+Acked-by: Marc Zyngier <marc.zyngier@arm.com>
+Signed-off-by: Christoffer Dall <christoffer.dall@linaro.org>
+(cherry picked from commit 717abd208dff75b343243aa5ed688f62190dda5e)
+Signed-off-by: Christoffer Dall <christoffer.dall@linaro.org>
+---
+ include/uapi/linux/kvm.h | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/include/uapi/linux/kvm.h b/include/uapi/linux/kvm.h
+index 932d7f2..d31f2bc 100644
+--- a/include/uapi/linux/kvm.h
++++ b/include/uapi/linux/kvm.h
+@@ -675,6 +675,7 @@ struct kvm_ppc_smmu_info {
+ #define KVM_CAP_SPAPR_MULTITCE 94
+ #define KVM_CAP_EXT_EMUL_CPUID 95
+ #define KVM_CAP_HYPERV_TIME 96
++#define KVM_CAP_ARM_PSCI_0_2 102
+ 
+ #ifdef KVM_CAP_IRQ_ROUTING
+ 
+-- 
+1.8.0
+

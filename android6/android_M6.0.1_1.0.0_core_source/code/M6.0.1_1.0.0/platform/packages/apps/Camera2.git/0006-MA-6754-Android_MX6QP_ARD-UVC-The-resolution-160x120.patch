@@ -1,0 +1,62 @@
+From cc75ec91a885696c424a4caee39dad4cff72d6ee Mon Sep 17 00:00:00 2001
+From: fang hui <b31070@freescale.com>
+Date: Wed, 22 Jul 2015 15:54:12 +0800
+Subject: [PATCH 6/8] MA-6754 [Android_MX6QP_ARD] UVC: The resolution 160x120
+ of UVC picture mode
+
+displayed as "(4:3) 0.0 Megapixels", brought confusion to user. 100%
+
+If resolution size is little than 0.1M, then use 0.0xM.
+
+Signed-off-by: fang hui <b31070@freescale.com>
+---
+ src/com/android/camera/settings/CameraSettingsActivity.java | 13 +++++++++++--
+ 1 file changed, 11 insertions(+), 2 deletions(-)
+
+diff --git a/src/com/android/camera/settings/CameraSettingsActivity.java b/src/com/android/camera/settings/CameraSettingsActivity.java
+index 50641fd..9148cb6 100644
+--- a/src/com/android/camera/settings/CameraSettingsActivity.java
++++ b/src/com/android/camera/settings/CameraSettingsActivity.java
+@@ -1,6 +1,6 @@
+ /*
+  * Copyright (C) 2014 The Android Open Source Project
+- *
++ * Copyright (C) 2015 Freescale Semiconductor, Inc.
+  * Licensed under the Apache License, Version 2.0 (the "License");
+  * you may not use this file except in compliance with the License.
+  * You may obtain a copy of the License at
+@@ -14,6 +14,7 @@
+  * limitations under the License.
+  */
+ 
++
+ package com.android.camera.settings;
+ 
+ import android.app.ActionBar;
+@@ -142,6 +143,7 @@ public class CameraSettingsActivity extends FragmentActivity {
+         public static final String PREF_LAUNCH_HELP = "pref_launch_help";
+         private static final Log.Tag TAG = new Log.Tag("SettingsFragment");
+         private static DecimalFormat sMegaPixelFormat = new DecimalFormat("##0.0");
++        private static DecimalFormat sLittleMegaPixelFormat = new DecimalFormat("##0.00");
+         private String[] mCamcorderProfileNames;
+         private CameraDeviceInfo mInfos;
+         private String mPrefKey;
+@@ -507,7 +509,14 @@ public class CameraSettingsActivity extends FragmentActivity {
+          */
+         private String getSizeSummaryString(Size size) {
+             Size approximateSize = ResolutionUtil.getApproximateSize(size);
+-            String megaPixels = sMegaPixelFormat.format((size.width() * size.height()) / 1e6);
++            String megaPixels;
++
++            if(size.width() * size.height() * 10 >= 1e6) {
++                megaPixels = sMegaPixelFormat.format((size.width() * size.height()) / 1e6);
++            } else {
++                megaPixels = sLittleMegaPixelFormat.format((size.width() * size.height()) / 1e6);
++            }
++
+             int numerator = ResolutionUtil.aspectRatioNumerator(approximateSize);
+             int denominator = ResolutionUtil.aspectRatioDenominator(approximateSize);
+             String result = getResources().getString(
+-- 
+1.8.0
+

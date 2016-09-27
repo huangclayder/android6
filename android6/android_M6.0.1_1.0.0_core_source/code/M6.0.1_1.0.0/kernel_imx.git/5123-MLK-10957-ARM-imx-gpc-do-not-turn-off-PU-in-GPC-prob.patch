@@ -1,0 +1,34 @@
+From c6b7d7aabbccaf8cdf25cf6bb317a725cdedf140 Mon Sep 17 00:00:00 2001
+From: Robin Gong <b38343@freescale.com>
+Date: Fri, 22 May 2015 10:59:23 +0800
+Subject: [PATCH] MLK-10957 : ARM: imx: gpc: do not turn off PU in GPC probe
+
+There is narrow window that PRE driver is ready but  GPU driver probe later,
+and the later GPU driver turn on PU may cause 'PRE hang' issue. To simplify
+thing, do not turn off PU in u-boot and PU power domain register.
+
+check more information from below commit:
+MLK-10465: ARM: imx6qp: keep PU always on for TKT259465
+
+Signed-off-by: Robin Gong <b38343@freescale.com>
+---
+ arch/arm/mach-imx/gpc.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/arch/arm/mach-imx/gpc.c b/arch/arm/mach-imx/gpc.c
+index 2815e16..18f026b 100644
+--- a/arch/arm/mach-imx/gpc.c
++++ b/arch/arm/mach-imx/gpc.c
+@@ -598,7 +598,8 @@ static int imx_gpc_genpd_init(struct device *dev, struct regulator *pu_reg)
+ 	imx6s_display_domain.num_clks = k;
+ 
+ 	is_off = IS_ENABLED(CONFIG_PM_RUNTIME);
+-	if (is_off)
++	if (is_off && !(cpu_is_imx6q() &&
++		imx_get_soc_revision() == IMX_CHIP_REVISION_2_0))
+ 		imx6q_pm_pu_power_off(&imx6q_pu_domain.base);
+ 
+ 	pm_genpd_init(&imx6q_pu_domain.base, NULL, is_off);
+-- 
+1.8.0
+

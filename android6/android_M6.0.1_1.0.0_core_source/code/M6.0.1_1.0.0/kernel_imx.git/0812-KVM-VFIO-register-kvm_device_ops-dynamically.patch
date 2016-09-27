@@ -1,0 +1,77 @@
+From c3a7643fc4e4931985390ba85f820132a829cece Mon Sep 17 00:00:00 2001
+From: Christoffer Dall <christoffer.dall@linaro.org>
+Date: Thu, 2 Oct 2014 22:35:53 +0200
+Subject: [PATCH] KVM: VFIO: register kvm_device_ops dynamically
+
+Now that we have a dynamic means to register kvm_device_ops, use that
+for the VFIO kvm device, instead of relying on the static table.
+
+This is achieved by a module_init call to register the ops with KVM.
+
+Cc: Gleb Natapov <gleb@kernel.org>
+Cc: Paolo Bonzini <pbonzini@redhat.com>
+Acked-by: Alex Williamson <Alex.Williamson@redhat.com>
+Signed-off-by: Will Deacon <will.deacon@arm.com>
+Signed-off-by: Paolo Bonzini <pbonzini@redhat.com>
+(cherry picked from commit 80ce1639727e9d38729c34f162378508c307ca25)
+Signed-off-by: Christoffer Dall <christoffer.dall@linaro.org>
+---
+ virt/kvm/kvm_main.c |  4 ----
+ virt/kvm/vfio.c     | 22 +++++++++++++++-------
+ 2 files changed, 15 insertions(+), 11 deletions(-)
+
+diff --git a/virt/kvm/kvm_main.c b/virt/kvm/kvm_main.c
+index 51e7fa7..39fad76 100644
+--- a/virt/kvm/kvm_main.c
++++ b/virt/kvm/kvm_main.c
+@@ -2291,10 +2291,6 @@ static struct kvm_device_ops *kvm_device_ops_table[KVM_DEV_TYPE_MAX] = {
+ 	[KVM_DEV_TYPE_XICS]		= &kvm_xics_ops,
+ #endif
+ 
+-#ifdef CONFIG_KVM_VFIO
+-	[KVM_DEV_TYPE_VFIO]		= &kvm_vfio_ops,
+-#endif
+-
+ #ifdef CONFIG_S390
+ 	[KVM_DEV_TYPE_FLIC]		= &kvm_flic_ops,
+ #endif
+diff --git a/virt/kvm/vfio.c b/virt/kvm/vfio.c
+index b4f9507..4c8a2e1 100644
+--- a/virt/kvm/vfio.c
++++ b/virt/kvm/vfio.c
+@@ -233,6 +233,16 @@ static void kvm_vfio_destroy(struct kvm_device *dev)
+ 	kfree(dev); /* alloc by kvm_ioctl_create_device, free by .destroy */
+ }
+ 
++static int kvm_vfio_create(struct kvm_device *dev, u32 type);
++
++static struct kvm_device_ops kvm_vfio_ops = {
++	.name = "kvm-vfio",
++	.create = kvm_vfio_create,
++	.destroy = kvm_vfio_destroy,
++	.set_attr = kvm_vfio_set_attr,
++	.has_attr = kvm_vfio_has_attr,
++};
++
+ static int kvm_vfio_create(struct kvm_device *dev, u32 type)
+ {
+ 	struct kvm_device *tmp;
+@@ -255,10 +265,8 @@ static int kvm_vfio_create(struct kvm_device *dev, u32 type)
+ 	return 0;
+ }
+ 
+-struct kvm_device_ops kvm_vfio_ops = {
+-	.name = "kvm-vfio",
+-	.create = kvm_vfio_create,
+-	.destroy = kvm_vfio_destroy,
+-	.set_attr = kvm_vfio_set_attr,
+-	.has_attr = kvm_vfio_has_attr,
+-};
++static int __init kvm_vfio_ops_init(void)
++{
++	return kvm_register_device_ops(&kvm_vfio_ops, KVM_DEV_TYPE_VFIO);
++}
++module_init(kvm_vfio_ops_init);
+-- 
+1.8.0
+

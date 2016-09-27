@@ -1,0 +1,57 @@
+From e20226ce2efec65452be1f52343626b99d7479d3 Mon Sep 17 00:00:00 2001
+From: Peng Fan <peng.fan@nxp.com>
+Date: Thu, 14 Jan 2016 17:23:36 +0800
+Subject: [PATCH] MLK-12195 imx: mx6/7 define CONFIG_SYS_VSNPRINTF
+
+Define CONFIG_SYS_VSNPRINTF to use snprintf, but not sprintf.
+Coverity ID: 17926.
+
+Signed-off-by: Peng Fan <peng.fan@nxp.com>
+---
+ include/configs/mx6_common.h | 4 +++-
+ include/configs/mx7_common.h | 4 +++-
+ 2 files changed, 6 insertions(+), 2 deletions(-)
+
+diff --git a/include/configs/mx6_common.h b/include/configs/mx6_common.h
+index 819867e..176ec92 100644
+--- a/include/configs/mx6_common.h
++++ b/include/configs/mx6_common.h
+@@ -1,5 +1,5 @@
+ /*
+- * Copyright (C) 2012-2015 Freescale Semiconductor, Inc.
++ * Copyright (C) 2012-2016 Freescale Semiconductor, Inc.
+  * Copyright (c) 2013, NVIDIA CORPORATION.  All rights reserved.
+  *
+  * This program is free software; you can redistribute it and/or modify it
+@@ -18,6 +18,8 @@
+ #ifndef __MX6_COMMON_H
+ #define __MX6_COMMON_H
+ 
++#define CONFIG_SYS_VSNPRINTF
++
+ #ifndef CONFIG_MX6UL
+ #define CONFIG_ARM_ERRATA_743622
+ #if (defined(CONFIG_MX6QP) || defined(CONFIG_MX6Q) ||\
+diff --git a/include/configs/mx7_common.h b/include/configs/mx7_common.h
+index 8aa7b49..ad3c005 100644
+--- a/include/configs/mx7_common.h
++++ b/include/configs/mx7_common.h
+@@ -1,5 +1,5 @@
+ /*
+- * Copyright (C) 2014-2015 Freescale Semiconductor, Inc.
++ * Copyright (C) 2014-2016 Freescale Semiconductor, Inc.
+  *
+  * Configuration settings for the Freescale i.MX7.
+  *
+@@ -10,6 +10,8 @@
+ #ifndef __MX7_COMMON_H
+ #define __MX7_COMMON_H
+ 
++#define CONFIG_SYS_VSNPRINTF
++
+ #define CONFIG_BOARD_POSTCLK_INIT
+ #define CONFIG_MXC_GPT_HCLK
+ 
+-- 
+1.8.0
+

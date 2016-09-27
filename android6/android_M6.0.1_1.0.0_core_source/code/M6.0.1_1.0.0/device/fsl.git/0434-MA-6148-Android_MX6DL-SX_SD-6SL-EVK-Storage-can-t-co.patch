@@ -1,0 +1,27 @@
+From 98c2d4b07238fb88d56c09296588d6d0efa19e06 Mon Sep 17 00:00:00 2001
+From: Zhang Sanshan <b51434@freescale.com>
+Date: Thu, 29 Jan 2015 11:27:02 +0800
+Subject: [PATCH 434/602] MA-6148 [Android_MX6DL/SX_SD&6SL-EVK] Storage: can't
+ copy files from PC to u-disk/external sd card.100%
+
+It have no permission to operate sd's file and dir.
+This patch add related selinux policy.
+
+Signed-off-by: Zhang Sanshan <b51434@freescale.com>
+---
+ imx6/sepolicy/untrusted_app.te | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/imx6/sepolicy/untrusted_app.te b/imx6/sepolicy/untrusted_app.te
+index 8c60ac6..459a9c3 100644
+--- a/imx6/sepolicy/untrusted_app.te
++++ b/imx6/sepolicy/untrusted_app.te
+@@ -4,3 +4,5 @@ allow untrusted_app unlabeled:dir rw_dir_perms;
+ allow untrusted_app unlabeled:lnk_file {read};
+ allow untrusted_app sdcard_external:dir rw_dir_perms;
+ allow untrusted_app sdcard_external:file rw_file_perms;
++allow untrusted_app vfat:dir { rw_file_perms create setattr rename };
++allow untrusted_app vfat:file { rw_file_perms create setattr rename };
+-- 
+1.8.0
+

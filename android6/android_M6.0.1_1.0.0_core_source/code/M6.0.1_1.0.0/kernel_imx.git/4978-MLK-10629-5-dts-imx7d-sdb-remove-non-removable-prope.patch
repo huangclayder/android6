@@ -1,0 +1,32 @@
+From 35355c330de16fded3e167f95aef814aa4e48718 Mon Sep 17 00:00:00 2001
+From: Dong Aisheng <b29396@freescale.com>
+Date: Thu, 9 Apr 2015 16:25:48 +0800
+Subject: [PATCH] MLK-10629-5 dts: imx7d-sdb: remove non-removable property of
+ wifi host
+
+The card detect of Broadcom WiFi on uSDHC2 port can not function
+well with a non-removalbe card. Because MMC core only enumerate
+one time for non-removable card which is not work for Broadcom WiFI.
+So remove it.
+
+Signed-off-by: Dong Aisheng <b29396@freescale.com>
+(cherry picked from commit f4935685db10e1a7f426f15ea8ae817deaa44c64)
+---
+ arch/arm/boot/dts/imx7d-sdb.dts | 1 -
+ 1 file changed, 1 deletion(-)
+
+diff --git a/arch/arm/boot/dts/imx7d-sdb.dts b/arch/arm/boot/dts/imx7d-sdb.dts
+index 61afdcd..8998e7c 100644
+--- a/arch/arm/boot/dts/imx7d-sdb.dts
++++ b/arch/arm/boot/dts/imx7d-sdb.dts
+@@ -907,7 +907,6 @@
+ 	enable-sdio-wakeup;
+ 	keep-power-in-suspend;
+ 	tuning-step = <2>;
+-	non-removable;
+ 	wifi-host;
+ 	status = "okay";
+ };
+-- 
+1.8.0
+

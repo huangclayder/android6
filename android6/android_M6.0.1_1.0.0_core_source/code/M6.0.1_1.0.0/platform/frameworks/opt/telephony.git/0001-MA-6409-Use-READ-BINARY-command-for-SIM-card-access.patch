@@ -1,0 +1,41 @@
+From d2e0ffb587886a92c8bb6c11ba887f414f006681 Mon Sep 17 00:00:00 2001
+From: Haoran Wang <b50027@freescale.com>
+Date: Wed, 15 Apr 2015 12:38:17 +0800
+Subject: [PATCH] MA-6409 Use READ BINARY command for SIM card access
+
+The GET RESPONSE command won't work for getting the
+EF ICCID. Use the READ BINARY command for all of the
+SIM access operation.
+
+Signed-off-by: Haoran Wang <b50027@freescale.com>
+---
+ src/java/com/android/internal/telephony/uicc/IccFileHandler.java | 5 +++--
+ 1 file changed, 3 insertions(+), 2 deletions(-)
+
+diff --git a/src/java/com/android/internal/telephony/uicc/IccFileHandler.java b/src/java/com/android/internal/telephony/uicc/IccFileHandler.java
+index 881b4c3..4fd21e6 100644
+--- a/src/java/com/android/internal/telephony/uicc/IccFileHandler.java
++++ b/src/java/com/android/internal/telephony/uicc/IccFileHandler.java
+@@ -1,5 +1,6 @@
+ /*
+  * Copyright (C) 2008 The Android Open Source Project
++ * Copyright (C) 2015 Freescale Semiconductor, Inc.
+  *
+  * Licensed under the Apache License, Version 2.0 (the "License");
+  * you may not use this file except in compliance with the License.
+@@ -285,10 +286,10 @@ public abstract class IccFileHandler extends Handler implements IccConstants {
+      */
+ 
+     public void loadEFTransparent(int fileid, Message onLoaded) {
+-        Message response = obtainMessage(EVENT_GET_BINARY_SIZE_DONE,
++        Message response = obtainMessage(EVENT_READ_BINARY_DONE,
+                         fileid, 0, onLoaded);
+ 
+-        mCi.iccIOForApp(COMMAND_GET_RESPONSE, fileid, getEFPath(fileid),
++        mCi.iccIOForApp(COMMAND_READ_BINARY, fileid, getEFPath(fileid),
+                         0, 0, GET_RESPONSE_EF_SIZE_BYTES, null, null, mAid, response);
+     }
+ 
+-- 
+1.8.0
+

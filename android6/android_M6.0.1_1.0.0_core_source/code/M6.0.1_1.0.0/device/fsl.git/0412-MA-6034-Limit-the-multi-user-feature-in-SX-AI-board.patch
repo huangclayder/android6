@@ -1,0 +1,28 @@
+From 84064b075a25f03295e841eed770d84b413b9644 Mon Sep 17 00:00:00 2001
+From: "guoyin.chen" <guoyin.chen@freescale.com>
+Date: Fri, 19 Dec 2014 17:03:40 +0800
+Subject: [PATCH 412/602] MA-6034 Limit the multi-user feature in SX AI board
+
+Align this setting with SX SD board
+
+Signed-off-by: guoyin.chen <guoyin.chen@freescale.com>
+---
+ sabreauto_6sx/overlay/frameworks/base/core/res/res/values/config.xml | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/sabreauto_6sx/overlay/frameworks/base/core/res/res/values/config.xml b/sabreauto_6sx/overlay/frameworks/base/core/res/res/values/config.xml
+index 864ae0b..70607f3 100755
+--- a/sabreauto_6sx/overlay/frameworks/base/core/res/res/values/config.xml
++++ b/sabreauto_6sx/overlay/frameworks/base/core/res/res/values/config.xml
+@@ -178,7 +178,7 @@
+     <dimen name="config_viewConfigurationTouchSlop">24dp</dimen>
+ 
+     <!--  Maximum number of supported users -->
+-    <integer name="config_multiuserMaximumUsers">8</integer>
++    <integer name="config_multiuserMaximumUsers">1</integer>
+ 
+     <!-- Whether a software navigation bar should be shown. NOTE: in the future this may be
+          autodetected from the Configuration. -->
+-- 
+1.8.0
+

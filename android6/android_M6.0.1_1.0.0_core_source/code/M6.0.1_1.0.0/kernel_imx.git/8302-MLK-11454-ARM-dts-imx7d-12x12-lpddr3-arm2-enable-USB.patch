@@ -1,0 +1,38 @@
+From b53894f9112fc4ad47760309c44e862143cf4f21 Mon Sep 17 00:00:00 2001
+From: Peter Chen <peter.chen@freescale.com>
+Date: Fri, 28 Aug 2015 15:39:48 +0800
+Subject: [PATCH] MLK-11454 ARM: dts: imx7d-12x12-lpddr3-arm2: enable USB
+ function
+
+It doesn't need to do any changes when using lpsr mode for USB.
+
+Signed-off-by: Peter Chen <peter.chen@freescale.com>
+---
+ arch/arm/boot/dts/imx7d-12x12-lpddr3-arm2.dts | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/arch/arm/boot/dts/imx7d-12x12-lpddr3-arm2.dts b/arch/arm/boot/dts/imx7d-12x12-lpddr3-arm2.dts
+index 737c6b4..4d0fc3b 100644
+--- a/arch/arm/boot/dts/imx7d-12x12-lpddr3-arm2.dts
++++ b/arch/arm/boot/dts/imx7d-12x12-lpddr3-arm2.dts
+@@ -978,7 +978,7 @@
+ 	srp-disable;
+ 	hnp-disable;
+ 	adp-disable;
+-	status = "disabled";
++	status = "okay";
+ };
+ 
+ &usbotg2 {
+@@ -986,7 +986,7 @@
+ 	srp-disable;
+ 	hnp-disable;
+ 	adp-disable;
+-	status = "disabled";
++	status = "okay";
+ };
+ 
+ &usdhc1 {
+-- 
+1.8.0
+

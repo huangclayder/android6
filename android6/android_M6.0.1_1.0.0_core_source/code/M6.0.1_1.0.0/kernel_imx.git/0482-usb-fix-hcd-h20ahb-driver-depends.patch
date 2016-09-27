@@ -1,0 +1,33 @@
+From d06ac7395a247898ac5b535825e26c7460d5f869 Mon Sep 17 00:00:00 2001
+From: Alex Shi <alex.shi@linaro.org>
+Date: Thu, 5 Jun 2014 14:48:36 +0800
+Subject: [PATCH] usb: fix hcd h20ahb driver depends
+
+USB_EHCI_HCD_SYNOPSYS is not only dependent on USB_EHCI_HCD, but
+also on USB_PHY. Otherwise kernel build has the following error:
+
+  LD      init/built-in.o
+drivers/built-in.o: In function `ehci_hcd_h20ahb_probe':
+:(.text+0xb9bb4): undefined reference to `usb_add_phy_dev'
+
+Signed-off-by: Alex Shi <alex.shi@linaro.org>
+---
+ drivers/usb/host/Kconfig | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/usb/host/Kconfig b/drivers/usb/host/Kconfig
+index 9549bb5..8a21d6a 100644
+--- a/drivers/usb/host/Kconfig
++++ b/drivers/usb/host/Kconfig
+@@ -160,7 +160,7 @@ config USB_EHCI_HCD_SPEAR
+ 
+ config USB_EHCI_HCD_SYNOPSYS
+        tristate "Support for Synopsys Host-AHB USB 2.0 controller"
+-	depends on USB_EHCI_HCD
++	depends on USB_EHCI_HCD && USB_PHY
+ 	---help---
+ 	  Enable support for onchip USB controllers based on DesignWare USB 2.0
+ 	  Host-AHB Controller IP from Synopsys.
+-- 
+1.8.0
+

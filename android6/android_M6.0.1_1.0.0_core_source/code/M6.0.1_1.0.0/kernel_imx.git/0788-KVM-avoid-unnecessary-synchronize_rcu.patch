@@ -1,0 +1,34 @@
+From 13dd312e32c02c90572eb3b3151c247d5eedf89a Mon Sep 17 00:00:00 2001
+From: Christian Borntraeger <borntraeger@de.ibm.com>
+Date: Tue, 19 Aug 2014 16:45:56 +0200
+Subject: [PATCH] KVM: avoid unnecessary synchronize_rcu
+
+We dont have to wait for a grace period if there is no oldpid that
+we are going to free. putpid also checks for NULL, so this patch
+only fences synchronize_rcu.
+
+Signed-off-by: Christian Borntraeger <borntraeger@de.ibm.com>
+Signed-off-by: Paolo Bonzini <pbonzini@redhat.com>
+(cherry picked from commit 7103f60de8bed21a0ad5d15d2ad5b7a333dda201)
+Signed-off-by: Christoffer Dall <christoffer.dall@linaro.org>
+---
+ virt/kvm/kvm_main.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/virt/kvm/kvm_main.c b/virt/kvm/kvm_main.c
+index 00872dd..b83ea5c 100644
+--- a/virt/kvm/kvm_main.c
++++ b/virt/kvm/kvm_main.c
+@@ -129,7 +129,8 @@ int vcpu_load(struct kvm_vcpu *vcpu)
+ 		struct pid *oldpid = vcpu->pid;
+ 		struct pid *newpid = get_task_pid(current, PIDTYPE_PID);
+ 		rcu_assign_pointer(vcpu->pid, newpid);
+-		synchronize_rcu();
++		if (oldpid)
++			synchronize_rcu();
+ 		put_pid(oldpid);
+ 	}
+ 	cpu = get_cpu();
+-- 
+1.8.0
+

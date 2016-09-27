@@ -1,0 +1,31 @@
+From 05b18d1de4e6b41abb6cfd067a601451419ae3ff Mon Sep 17 00:00:00 2001
+From: Mark Brown <broonie@linaro.org>
+Date: Tue, 14 Jan 2014 20:22:47 +0000
+Subject: [PATCH] configs: Enable ION test driver, sync and ADF on Android
+
+Mainly for build coverage at this point.
+
+Signed-off-by: Mark Brown <broonie@linaro.org>
+---
+ linaro/configs/android.conf | 8 ++++++++
+ 1 file changed, 8 insertions(+)
+
+diff --git a/linaro/configs/android.conf b/linaro/configs/android.conf
+index 538adef..0062c61 100644
+--- a/linaro/configs/android.conf
++++ b/linaro/configs/android.conf
+@@ -30,3 +30,11 @@ CONFIG_FUSE_FS=y
+ CONFIG_CPU_FREQ_GOV_INTERACTIVE=y
+ CONFIG_CPU_FREQ_DEFAULT_GOV_INTERACTIVE=y
+ CONFIG_ION=y
++CONFIG_SYNC=y
++CONFIG_SW_SYNC=y
++CONFIG_SW_SYNC_USER=y
++CONFIG_ION_TEST=y
++CONFIG_ADF=y
++CONFIG_ADF_FBDEV=y
++CONFIG_ADF_MEMBLOCK=y
++CONFIG_DMA_SHARED_BUFFER=y
+-- 
+1.8.0
+

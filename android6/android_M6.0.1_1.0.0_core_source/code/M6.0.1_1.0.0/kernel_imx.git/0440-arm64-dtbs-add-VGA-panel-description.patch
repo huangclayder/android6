@@ -1,0 +1,120 @@
+From f5f5434c684efc84887b9d108a3d1cc94eb3ddbc Mon Sep 17 00:00:00 2001
+From: Ryan Harkin <ryan.harkin@linaro.org>
+Date: Wed, 16 Apr 2014 18:08:00 +0100
+Subject: [PATCH] arm64: dtbs: add VGA panel description
+
+Signed-off-by: Ryan Harkin <ryan.harkin@linaro.org>
+Signed-off-by: Mark Brown <broonie@linaro.org>
+(cherry picked from commit 4cb9670f141f980afa9e68d1f44023976a166f0b)
+Signed-off-by: Alex Shi <alex.shi@linaro.org>
+---
+ arch/arm64/boot/dts/clcd-panels.dtsi        | 52 +++++++++++++++++++++++++++++
+ arch/arm64/boot/dts/fvp-base-gicv2-psci.dts | 25 ++------------
+ arch/arm64/boot/dts/rtsm_ve-aemv8a.dts      |  2 ++
+ 3 files changed, 56 insertions(+), 23 deletions(-)
+
+diff --git a/arch/arm64/boot/dts/clcd-panels.dtsi b/arch/arm64/boot/dts/clcd-panels.dtsi
+new file mode 100644
+index 0000000..0b0ff6e
+--- /dev/null
++++ b/arch/arm64/boot/dts/clcd-panels.dtsi
+@@ -0,0 +1,52 @@
++/*
++ * ARM Ltd. Versatile Express
++ *
++ */
++
++/ {
++	panels {
++		panel@0 {
++			compatible	= "panel";
++			mode		= "VGA";
++			refresh		= <60>;
++			xres		= <640>;
++			yres		= <480>;
++			pixclock	= <39721>;
++			left_margin	= <40>;
++			right_margin	= <24>;
++			upper_margin	= <32>;
++			lower_margin	= <11>;
++			hsync_len	= <96>;
++			vsync_len	= <2>;
++			sync		= <0>;
++			vmode		= "FB_VMODE_NONINTERLACED";
++
++			tim2		= "TIM2_BCD", "TIM2_IPC";
++			cntl		= "CNTL_LCDTFT", "CNTL_BGR", "CNTL_LCDVCOMP(1)";
++			caps		= "CLCD_CAP_5551", "CLCD_CAP_565", "CLCD_CAP_888";
++			bpp		= <16>;
++		};
++
++		panel@1 {
++			compatible	= "panel";
++			mode		= "XVGA";
++			refresh		= <60>;
++			xres		= <1024>;
++			yres		= <768>;
++			pixclock	= <15748>;
++			left_margin	= <152>;
++			right_margin	= <48>;
++			upper_margin	= <23>;
++			lower_margin	= <3>;
++			hsync_len	= <104>;
++			vsync_len	= <4>;
++			sync		= <0>;
++			vmode		= "FB_VMODE_NONINTERLACED";
++
++			tim2		= "TIM2_BCD", "TIM2_IPC";
++			cntl		= "CNTL_LCDTFT", "CNTL_BGR", "CNTL_LCDVCOMP(1)";
++			caps		= "CLCD_CAP_5551", "CLCD_CAP_565", "CLCD_CAP_888";
++			bpp		= <16>;
++		};
++	};
++};
+diff --git a/arch/arm64/boot/dts/fvp-base-gicv2-psci.dts b/arch/arm64/boot/dts/fvp-base-gicv2-psci.dts
+index 79ddd46..a46be61 100644
+--- a/arch/arm64/boot/dts/fvp-base-gicv2-psci.dts
++++ b/arch/arm64/boot/dts/fvp-base-gicv2-psci.dts
+@@ -261,27 +261,6 @@
+ 
+ 		/include/ "rtsm_ve-motherboard.dtsi"
+ 	};
+-
+-	panels {
+-		panel@0 {
+-			compatible	= "panel";
+-			mode		= "XVGA";
+-			refresh		= <60>;
+-			xres		= <1024>;
+-			yres		= <768>;
+-			pixclock	= <15748>;
+-			left_margin	= <152>;
+-			right_margin	= <48>;
+-			upper_margin	= <23>;
+-			lower_margin	= <3>;
+-			hsync_len	= <104>;
+-			vsync_len	= <4>;
+-			sync		= <0>;
+-			vmode		= "FB_VMODE_NONINTERLACED";
+-			tim2		= "TIM2_BCD", "TIM2_IPC";
+-			cntl		= "CNTL_LCDTFT", "CNTL_BGR", "CNTL_LCDVCOMP(1)";
+-			caps		= "CLCD_CAP_5551", "CLCD_CAP_565", "CLCD_CAP_888";
+-			bpp		= <16>;
+-		};
+-	};
+ };
++
++/include/ "clcd-panels.dtsi"
+diff --git a/arch/arm64/boot/dts/rtsm_ve-aemv8a.dts b/arch/arm64/boot/dts/rtsm_ve-aemv8a.dts
+index 572005e..f76eb90 100644
+--- a/arch/arm64/boot/dts/rtsm_ve-aemv8a.dts
++++ b/arch/arm64/boot/dts/rtsm_ve-aemv8a.dts
+@@ -157,3 +157,5 @@
+ 		/include/ "rtsm_ve-motherboard.dtsi"
+ 	};
+ };
++
++/include/ "clcd-panels.dtsi"
+-- 
+1.8.0
+

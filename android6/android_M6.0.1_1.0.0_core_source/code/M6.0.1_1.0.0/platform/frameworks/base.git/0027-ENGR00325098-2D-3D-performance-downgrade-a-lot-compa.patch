@@ -1,0 +1,56 @@
+From 217b28e4ef631f9753eadab995add4c58af6b904 Mon Sep 17 00:00:00 2001
+From: "guoyin.chen" <guoyin.chen@freescale.com>
+Date: Tue, 5 Aug 2014 09:53:34 +0800
+Subject: [PATCH 27/45] ENGR00325098 2D/3D performance downgrade a lot
+ comparing with GA
+
+Force hwui to use es2.0 API for DL&DQ
+Performance will down grade a lot on es3.0 in DL
+No Performance different in DQ between es3.0 and es2.0
+Improve the 2D performance from 250 to 490 in DL ARD
+
+Signed-off-by: guoyin.chen <guoyin.chen@freescale.com>
+
+Conflicts:
+	libs/hwui/Android.mk
+---
+ libs/hwui/Android.common.mk | 4 ++++
+ libs/hwui/Extensions.cpp    | 7 +++++++
+ 2 files changed, 11 insertions(+)
+
+diff --git a/libs/hwui/Android.common.mk b/libs/hwui/Android.common.mk
+index 38e8be9..16198ec 100644
+--- a/libs/hwui/Android.common.mk
++++ b/libs/hwui/Android.common.mk
+@@ -103,6 +103,10 @@ ifndef HWUI_COMPILE_SYMBOLS
+     LOCAL_CFLAGS += -fvisibility=hidden
+ endif
+ 
++ifeq ($(BOARD_SOC_TYPE), IMX6DQ)
++    LOCAL_CFLAGS += -DFSL_FORCE_USE_OPENGL_2X
++endif
++
+ ifdef HWUI_COMPILE_FOR_PERF
+     # TODO: Non-arm?
+     LOCAL_CFLAGS += -fno-omit-frame-pointer -marm -mapcs
+diff --git a/libs/hwui/Extensions.cpp b/libs/hwui/Extensions.cpp
+index 2a82216..9b182b4 100644
+--- a/libs/hwui/Extensions.cpp
++++ b/libs/hwui/Extensions.cpp
+@@ -88,6 +88,13 @@ Extensions::Extensions() {
+         mVersionMajor = 2;
+         mVersionMinor = 0;
+     }
++
++#ifdef FSL_FORCE_USE_OPENGL_2X
++    // Fall back to openGL ES 2.x, as 3.x have performance drop in DL GC880
++    if (mVersionMajor == 3)
++        mVersionMajor = 2;
++#endif
++
+ }
+ 
+ ///////////////////////////////////////////////////////////////////////////////
+-- 
+1.8.0
+

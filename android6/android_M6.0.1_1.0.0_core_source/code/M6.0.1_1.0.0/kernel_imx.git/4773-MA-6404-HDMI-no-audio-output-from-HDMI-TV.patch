@@ -1,0 +1,38 @@
+From 6eeb78382ec307cd362dfdf7ffd69efa495b776b Mon Sep 17 00:00:00 2001
+From: Xiaowen Liu <b37945@freescale.com>
+Date: Wed, 23 Apr 2014 10:12:45 +0800
+Subject: [PATCH] MA-6404 HDMI: no audio output from HDMI TV.
+
+android framework need seperated hdmi display and hdmi audio switch.
+add lost code when do merge.
+
+Signed-off-by: Xiaowen Liu <b37945@freescale.com>
+---
+ drivers/video/mxc/mxc_hdmi.c | 6 ++++--
+ 1 file changed, 4 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/video/mxc/mxc_hdmi.c b/drivers/video/mxc/mxc_hdmi.c
+index c1465b6..25881d3 100644
+--- a/drivers/video/mxc/mxc_hdmi.c
++++ b/drivers/video/mxc/mxc_hdmi.c
+@@ -2025,13 +2025,15 @@ static void hotplug_worker(struct work_struct *work)
+ 
+ 			hdmi_set_cable_state(1);
+ 
++			if (!hdmi->hdmi_data.video_mode.mDVI)
++				switch_set_state(&hdmi->sdev_audio, 1);
++			switch_set_state(&hdmi->sdev_display, 1);
++
+ 			sprintf(event_string, "EVENT=plugin");
+ 			kobject_uevent_env(&hdmi->pdev->dev.kobj, KOBJ_CHANGE, envp);
+ #ifdef CONFIG_MXC_HDMI_CEC
+ 			mxc_hdmi_cec_handle(0x80);
+ #endif
+-			switch_set_state(&hdmi->sdev_audio, 1);
+-			switch_set_state(&hdmi->sdev_display, 1);
+ 
+ 		} else if (!(phy_int_pol & HDMI_PHY_HPD)) {
+ 			/* Plugout event */
+-- 
+1.8.0
+

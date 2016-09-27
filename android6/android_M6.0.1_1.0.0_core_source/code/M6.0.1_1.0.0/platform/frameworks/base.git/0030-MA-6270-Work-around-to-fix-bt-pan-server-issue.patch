@@ -1,0 +1,57 @@
+From e5380ff4f51bcd301e45e9f6854a9533c831d21d Mon Sep 17 00:00:00 2001
+From: Haoran Wang <b50027@freescale.com>
+Date: Tue, 3 Mar 2015 14:21:59 +0800
+Subject: [PATCH 30/45] MA-6270 Work around to fix bt-pan server issue
+
+1.Block bt-pan device down message. The down message
+  will remove the bt-pan interface from the list.
+  The down message from Route can be ignore as it
+  impact the statemachine. The interface will be
+  removed in the interfaceRemove operation.
+
+2.Ignore the available flag. As bt-pan is slow and
+  it may not sync ready in the sm. But the unAvailable
+  sm is also able to complete the tethering work.
+  So ignore it.
+
+Signed-off-by: Haoran Wang <b50027@freescale.com>
+---
+ .../core/java/com/android/server/connectivity/Tethering.java     | 9 +++++++--
+ 1 file changed, 7 insertions(+), 2 deletions(-)
+
+diff --git a/services/core/java/com/android/server/connectivity/Tethering.java b/services/core/java/com/android/server/connectivity/Tethering.java
+index f01b540..816d834 100644
+--- a/services/core/java/com/android/server/connectivity/Tethering.java
++++ b/services/core/java/com/android/server/connectivity/Tethering.java
+@@ -1,6 +1,6 @@
+ /*
+  * Copyright (C) 2010 The Android Open Source Project
+- * Copyright (C) 2014 Freescale Semiconductor, Inc.
++ * Copyright (C) 2015 Freescale Semiconductor, Inc.
+  *
+  * Licensed under the Apache License, Version 2.0 (the "License");
+  * you may not use this file except in compliance with the License.
+@@ -242,6 +242,8 @@ public class Tethering extends BaseNetworkObserver {
+                     // ignore usb0 down after enabling RNDIS
+                     // we will handle disconnect in interfaceRemoved instead
+                     if (VDBG) Log.d(TAG, "ignore interface down for " + iface);
++                } else if (isBluetooth(iface)) {
++                    if (VDBG) Log.d(TAG, "Bluetooth device should ignore interface down for " + iface);
+                 } else if (sm != null) {
+                     sm.sendMessage(TetherInterfaceSM.CMD_INTERFACE_DOWN);
+                     mIfaces.remove(iface);
+@@ -344,7 +346,10 @@ public class Tethering extends BaseNetworkObserver {
+         }
+         if (!sm.isAvailable() && !sm.isErrored()) {
+             Log.e(TAG, "Tried to Tether an unavailable iface :" + iface + ", ignoring");
+-            return ConnectivityManager.TETHER_ERROR_UNAVAIL_IFACE;
++            if (isBluetooth(iface))
++                Log.d(TAG, "For Bluetooth pan we should have a try");
++            else
++                return ConnectivityManager.TETHER_ERROR_UNAVAIL_IFACE;
+         }
+         sm.sendMessage(TetherInterfaceSM.CMD_TETHER_REQUESTED);
+         return ConnectivityManager.TETHER_ERROR_NO_ERROR;
+-- 
+1.8.0
+

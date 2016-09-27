@@ -1,0 +1,41 @@
+From d86453f5a9622d4e79170a66d870ad2f52e579f1 Mon Sep 17 00:00:00 2001
+From: b37945 <b37945@freescale.com>
+Date: Fri, 8 Aug 2014 12:43:08 +0800
+Subject: [PATCH 61/95] ENGR00324255 fix YV12 format mismatched on
+ CTS-Verifier.
+
+The root cause is YV12/I420 format stride is not aligned with
+CTS-Verifier defination.
+Correct the YV12/I420 format stride.
+
+Signed-off-by: b37945 <b37945@freescale.com>
+---
+ services/camera/libcameraservice/api1/client2/CallbackProcessor.cpp | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
+
+diff --git a/services/camera/libcameraservice/api1/client2/CallbackProcessor.cpp b/services/camera/libcameraservice/api1/client2/CallbackProcessor.cpp
+index a122ccf..d56f50a 100644
+--- a/services/camera/libcameraservice/api1/client2/CallbackProcessor.cpp
++++ b/services/camera/libcameraservice/api1/client2/CallbackProcessor.cpp
+@@ -1,5 +1,6 @@
+ /*
+  * Copyright (C) 2012 The Android Open Source Project
++ * Copyright (C) 2014 Freescale Semiconductor, Inc.
+  *
+  * Licensed under the Apache License, Version 2.0 (the "License");
+  * you may not use this file except in compliance with the License.
+@@ -361,9 +362,10 @@ status_t CallbackProcessor::processNewCallback(sp<Camera2Client> &client,
+             l.mParameters.previewCallbackOneShot = false;
+         }
+ 
++        bool recalculateStrideOnImx6Platform = true;
+         uint32_t destYStride = 0;
+         uint32_t destCStride = 0;
+-        if (useFlexibleYuv) {
++        if (useFlexibleYuv || recalculateStrideOnImx6Platform) {
+             if (previewFormat == HAL_PIXEL_FORMAT_YV12) {
+                 // Strides must align to 16 for YV12
+                 destYStride = ALIGN(imgBuffer.width, 16);
+-- 
+1.8.0
+

@@ -1,0 +1,32 @@
+From 57e83e13bf3e11d78447f3b524bdff99cd72364f Mon Sep 17 00:00:00 2001
+From: Dan Douglass <dan.douglass@freescale.com>
+Date: Mon, 29 Jun 2015 10:49:22 -0500
+Subject: [PATCH] MLK-11142 ARM: dts: Add third Job Ring to CAAM i.mx6ul
+ device tree.
+
+Populate i.mx6ul device tree with third Job Ring configuration.
+
+Signed-off-by: Dan Douglass <dan.douglass@freescale.com>
+---
+ arch/arm/boot/dts/imx6ul.dtsi | 5 +++++
+ 1 file changed, 5 insertions(+)
+
+diff --git a/arch/arm/boot/dts/imx6ul.dtsi b/arch/arm/boot/dts/imx6ul.dtsi
+index 2dddec7..24ce500 100644
+--- a/arch/arm/boot/dts/imx6ul.dtsi
++++ b/arch/arm/boot/dts/imx6ul.dtsi
+@@ -804,6 +804,11 @@
+ 					reg = <0x2000 0x1000>;
+ 					interrupts = <GIC_SPI 106 IRQ_TYPE_LEVEL_HIGH>;
+ 				};
++				sec_jr2: jr2@3000 {
++					compatible = "fsl,sec-v4.0-job-ring";
++					reg = <0x3000 0x1000>;
++					interrupts = <GIC_SPI 46 IRQ_TYPE_LEVEL_HIGH>;
++				};
+ 			};
+ 
+ 			usbotg1: usb@02184000 {
+-- 
+1.8.0
+

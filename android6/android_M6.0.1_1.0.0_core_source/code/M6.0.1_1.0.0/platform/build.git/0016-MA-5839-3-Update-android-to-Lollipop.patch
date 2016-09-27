@@ -1,0 +1,49 @@
+From fd5fae298fa6f3287170a267b4b56ecc31ce4ea8 Mon Sep 17 00:00:00 2001
+From: zhang sanshan <b51434@freescale.com>
+Date: Wed, 19 Nov 2014 09:59:35 +0800
+Subject: [PATCH 16/34] MA-5839-3 Update android to Lollipop
+
+change to use the ubuntu server's mkfs.ubifs tool.
+
+Signed-off-by: zhang sanshan <b51434@freescale.com>
+---
+ core/config.mk                    | 2 +-
+ tools/releasetools/build_image.py | 2 ++
+ 2 files changed, 3 insertions(+), 1 deletion(-)
+
+diff --git a/core/config.mk b/core/config.mk
+index 248f814..01c33e5 100644
+--- a/core/config.mk
++++ b/core/config.mk
+@@ -408,7 +408,7 @@ else
+ MKBOOTIMG := $(BOARD_CUSTOM_MKBOOTIMG)
+ endif
+ MKYAFFS2 := $(HOST_OUT_EXECUTABLES)/mkyaffs2image$(HOST_EXECUTABLE_SUFFIX)
+-MKUBIFS := $(HOST_OUT_EXECUTABLES)/mkfs.ubifs$(HOST_EXECUTABLE_SUFFIX)
++MKUBIFS := /usr/sbin/mkfs.ubifs
+ MKUBIRAW := $(HOST_OUT_EXECUTABLES)/ubinize$(HOST_EXECUTABLE_SUFFIX)
+ APICHECK := $(HOST_OUT_EXECUTABLES)/apicheck$(HOST_EXECUTABLE_SUFFIX)
+ FS_GET_STATS := $(HOST_OUT_EXECUTABLES)/fs_get_stats$(HOST_EXECUTABLE_SUFFIX)
+diff --git a/tools/releasetools/build_image.py b/tools/releasetools/build_image.py
+index 784ad4e..0cc93a0 100755
+--- a/tools/releasetools/build_image.py
++++ b/tools/releasetools/build_image.py
+@@ -431,6 +431,7 @@ def ImagePropFromGlobalDict(glob_dict, mount_point):
+   for p in common_props:
+     copy_prop(p, p)
+ 
++  copy_prop("mkfsubifs_flags", "mkfsubifs_flags")
+   d["mount_point"] = mount_point
+   if mount_point == "system":
+     copy_prop("fs_type", "fs_type")
+@@ -478,6 +479,7 @@ def LoadGlobalDict(filename):
+       continue
+     k, v = line.split("=", 1)
+     d[k] = v
++
+   f.close()
+   return d
+ 
+-- 
+1.8.0
+

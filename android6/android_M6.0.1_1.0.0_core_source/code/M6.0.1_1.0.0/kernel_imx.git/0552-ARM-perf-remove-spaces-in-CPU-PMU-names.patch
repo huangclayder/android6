@@ -1,0 +1,72 @@
+From 6bc8e68f90240e9db44a55484314aac6d23356da Mon Sep 17 00:00:00 2001
+From: Sudeep KarkadaNagesha <sudeep.karkadanagesha@arm.com>
+Date: Tue, 25 Sep 2012 17:36:12 +0100
+Subject: [PATCH] ARM: perf: remove spaces in CPU PMU names
+
+The userspace perf tool provides options to specify PMU names from command
+line for the event. An example of pmu event syntax would be
+	(<pmu_name>/<config>/<modifier>)
+However the parser in the perf tool breaks the tokens at spacesand fails to
+identify the PMU name with spaces correctly.
+
+This patch removes spaces in the ARMv7 CPU PMU names.
+
+Signed-off-by: Sudeep KarkadaNagesha <sudeep.karkadanagesha@arm.com>
+(cherry picked from commit d7a9a394c1950ab952c353900bd690d4476b3bf2)
+Signed-off-by: Alex Shi <alex.shi@linaro.org>
+---
+ arch/arm/kernel/perf_event_v7.c | 10 +++++-----
+ 1 file changed, 5 insertions(+), 5 deletions(-)
+
+diff --git a/arch/arm/kernel/perf_event_v7.c b/arch/arm/kernel/perf_event_v7.c
+index 039cffb..16a0455 100644
+--- a/arch/arm/kernel/perf_event_v7.c
++++ b/arch/arm/kernel/perf_event_v7.c
+@@ -1240,7 +1240,7 @@ static u32 armv7_read_num_pmnc_events(void)
+ static int armv7_a8_pmu_init(struct arm_pmu *cpu_pmu)
+ {
+ 	armv7pmu_init(cpu_pmu);
+-	cpu_pmu->name		= "ARMv7 Cortex-A8";
++	cpu_pmu->name		= "ARMv7_Cortex_A8";
+ 	cpu_pmu->map_event	= armv7_a8_map_event;
+ 	cpu_pmu->num_events	= armv7_read_num_pmnc_events();
+ 	return 0;
+@@ -1249,7 +1249,7 @@ static int armv7_a8_pmu_init(struct arm_pmu *cpu_pmu)
+ static int armv7_a9_pmu_init(struct arm_pmu *cpu_pmu)
+ {
+ 	armv7pmu_init(cpu_pmu);
+-	cpu_pmu->name		= "ARMv7 Cortex-A9";
++	cpu_pmu->name		= "ARMv7_Cortex_A9";
+ 	cpu_pmu->map_event	= armv7_a9_map_event;
+ 	cpu_pmu->num_events	= armv7_read_num_pmnc_events();
+ 	return 0;
+@@ -1258,7 +1258,7 @@ static int armv7_a9_pmu_init(struct arm_pmu *cpu_pmu)
+ static int armv7_a5_pmu_init(struct arm_pmu *cpu_pmu)
+ {
+ 	armv7pmu_init(cpu_pmu);
+-	cpu_pmu->name		= "ARMv7 Cortex-A5";
++	cpu_pmu->name		= "ARMv7_Cortex_A5";
+ 	cpu_pmu->map_event	= armv7_a5_map_event;
+ 	cpu_pmu->num_events	= armv7_read_num_pmnc_events();
+ 	return 0;
+@@ -1267,7 +1267,7 @@ static int armv7_a5_pmu_init(struct arm_pmu *cpu_pmu)
+ static int armv7_a15_pmu_init(struct arm_pmu *cpu_pmu)
+ {
+ 	armv7pmu_init(cpu_pmu);
+-	cpu_pmu->name		= "ARMv7 Cortex-A15";
++	cpu_pmu->name		= "ARMv7_Cortex_A15";
+ 	cpu_pmu->map_event	= armv7_a15_map_event;
+ 	cpu_pmu->num_events	= armv7_read_num_pmnc_events();
+ 	cpu_pmu->set_event_filter = armv7pmu_set_event_filter;
+@@ -1277,7 +1277,7 @@ static int armv7_a15_pmu_init(struct arm_pmu *cpu_pmu)
+ static int armv7_a7_pmu_init(struct arm_pmu *cpu_pmu)
+ {
+ 	armv7pmu_init(cpu_pmu);
+-	cpu_pmu->name		= "ARMv7 Cortex-A7";
++	cpu_pmu->name		= "ARMv7_Cortex_A7";
+ 	cpu_pmu->map_event	= armv7_a7_map_event;
+ 	cpu_pmu->num_events	= armv7_read_num_pmnc_events();
+ 	cpu_pmu->set_event_filter = armv7pmu_set_event_filter;
+-- 
+1.8.0
+

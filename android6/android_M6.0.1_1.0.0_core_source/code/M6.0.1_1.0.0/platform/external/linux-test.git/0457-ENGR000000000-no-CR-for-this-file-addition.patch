@@ -1,0 +1,29 @@
+From 612895263bdc2ca99f0a74f604a2aca835fb06a4 Mon Sep 17 00:00:00 2001
+From: Ann Thornton <ra43240@freescale.com>
+Date: Tue, 19 Aug 2014 17:27:53 -0500
+Subject: [PATCH 457/505] ENGR000000000: no CR for this file addition
+ copyrights-images: added
+
+Explanation of image copyrights.
+
+Signed-off-by: Ann Thornton <ra43240@freescale.com>
+---
+ test/mxc_fb_test/copyrights-images.txt | 6 ++++++
+ 1 file changed, 6 insertions(+)
+ create mode 100644 test/mxc_fb_test/copyrights-images.txt
+
+diff --git a/test/mxc_fb_test/copyrights-images.txt b/test/mxc_fb_test/copyrights-images.txt
+new file mode 100644
+index 0000000..f3b6305
+--- /dev/null
++++ b/test/mxc_fb_test/copyrights-images.txt
+@@ -0,0 +1,6 @@
++
++The images wall-, rose-, plumbago-, pansy-, daisy-, desk- are images that belong to Freescale and can be used and distributed freely. They were taken by an employee and intended for this purpose.
++
++The image Lara does NOT belong to Freescale.  It must NOT be distributed outside of Freescale.
++
++
+-- 
+1.8.0
+

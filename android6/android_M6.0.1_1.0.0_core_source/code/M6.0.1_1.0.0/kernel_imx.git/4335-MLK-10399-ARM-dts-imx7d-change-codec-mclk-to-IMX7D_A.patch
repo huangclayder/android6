@@ -1,0 +1,43 @@
+From 652dc7d2de627df32a5f273265aebcb0d87d7224 Mon Sep 17 00:00:00 2001
+From: Zidan Wang <zidan.wang@freescale.com>
+Date: Tue, 10 Mar 2015 18:34:54 +0800
+Subject: [PATCH] MLK-10399 ARM: dts: imx7d: change codec mclk to
+ IMX7D_AUDIO_MCLK_ROOT_CLK
+
+codec mclk is IMX7D_AUDIO_MCLK_ROOT_CLK instead of IMX7D_SAI1_ROOT_CLK.
+
+Signed-off-by: Zidan Wang <zidan.wang@freescale.com>
+---
+ arch/arm/boot/dts/imx7d-12x12-arm2.dts | 2 +-
+ arch/arm/boot/dts/imx7d-19x19-arm2.dts | 2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/arch/arm/boot/dts/imx7d-12x12-arm2.dts b/arch/arm/boot/dts/imx7d-12x12-arm2.dts
+index b39549b..bb791db 100644
+--- a/arch/arm/boot/dts/imx7d-12x12-arm2.dts
++++ b/arch/arm/boot/dts/imx7d-12x12-arm2.dts
+@@ -912,7 +912,7 @@
+ 	codec: wm8958@1a {
+ 		compatible = "wlf,wm8958";
+ 		reg = <0x1a>;
+-		clocks = <&clks IMX7D_SAI1_ROOT_CLK>,
++		clocks = <&clks IMX7D_AUDIO_MCLK_ROOT_CLK>,
+ 		         <&clks IMX7D_CLK_DUMMY>;
+ 		clock-names = "mclk1", "mclk2";
+ 
+diff --git a/arch/arm/boot/dts/imx7d-19x19-arm2.dts b/arch/arm/boot/dts/imx7d-19x19-arm2.dts
+index adf7c0e..a9527c8 100644
+--- a/arch/arm/boot/dts/imx7d-19x19-arm2.dts
++++ b/arch/arm/boot/dts/imx7d-19x19-arm2.dts
+@@ -641,7 +641,7 @@
+ 	codec: wm8958@1a {
+ 		compatible = "wlf,wm8958";
+ 		reg = <0x1a>;
+-		clocks = <&clks IMX7D_SAI1_ROOT_CLK>,
++		clocks = <&clks IMX7D_AUDIO_MCLK_ROOT_CLK>,
+ 		       <&clks IMX7D_CLK_DUMMY>;
+ 		clock-names = "mclk1", "mclk2";
+ 
+-- 
+1.8.0
+

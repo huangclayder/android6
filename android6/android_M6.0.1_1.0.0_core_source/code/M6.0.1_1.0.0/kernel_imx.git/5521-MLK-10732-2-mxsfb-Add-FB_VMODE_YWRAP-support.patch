@@ -1,0 +1,35 @@
+From 3e6713a3a70c83dcd5b22cc1afce00bdd7bc478c Mon Sep 17 00:00:00 2001
+From: Sandor Yu <R01008@freescale.com>
+Date: Mon, 13 Jul 2015 16:22:53 +0800
+Subject: [PATCH] MLK-10732-2: mxsfb: Add FB_VMODE_YWRAP support
+
+Add FB_VMODE_YWRAP support in mxsfb driver.
+
+Signed-off-by: Sandor Yu <R01008@freescale.com>
+---
+ drivers/video/mxsfb.c | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/drivers/video/mxsfb.c b/drivers/video/mxsfb.c
+index 72378cd..e9c61df 100644
+--- a/drivers/video/mxsfb.c
++++ b/drivers/video/mxsfb.c
+@@ -1105,6 +1105,7 @@ static int mxsfb_restore_mode(struct mxsfb_info *host)
+ 
+ 	line_count = fb_info->fix.smem_len / fb_info->fix.line_length;
+ 	fb_info->fix.ypanstep = 1;
++	fb_info->fix.ywrapstep = 1;
+ 
+ 	host->enabled = 1;
+ 
+@@ -1223,6 +1224,7 @@ static int mxsfb_init_fbinfo(struct mxsfb_info *host)
+ 	fb_info->flags = FBINFO_FLAG_DEFAULT | FBINFO_READS_FAST;
+ 	fb_info->fix.type = FB_TYPE_PACKED_PIXELS;
+ 	fb_info->fix.ypanstep = 1;
++	fb_info->fix.ywrapstep = 1;
+ 	fb_info->fix.visual = FB_VISUAL_TRUECOLOR,
+ 	fb_info->fix.accel = FB_ACCEL_NONE;
+ 
+-- 
+1.8.0
+

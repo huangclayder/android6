@@ -1,0 +1,54 @@
+From 903a59ef941f39b6d7f693dd7c60528e166de079 Mon Sep 17 00:00:00 2001
+From: "Ye.Li" <B37916@freescale.com>
+Date: Thu, 12 Jun 2014 19:33:05 +0800
+Subject: [PATCH] ENGR00315894-76 mx6 clock: Add vadc clock enable function
+
+Add vadc clock enable function.
+
+Signed-off-by: Sandor Yu <R01008@freescale.com>
+Signed-off-by: Ye.Li <B37916@freescale.com>
+(cherry picked from commit 721c7a1448c5b7265b597b83d18f8338a27ea213)
+Signed-off-by: Peng Fan <Peng.Fan@freescale.com>
+
+Conflicts:
+	arch/arm/cpu/armv7/mx6/clock.c
+	arch/arm/include/asm/arch-mx6/clock.h
+---
+ arch/arm/cpu/armv7/mx6/clock.c        | 10 ++++++++++
+ arch/arm/include/asm/arch-mx6/clock.h |  1 +
+ 2 files changed, 11 insertions(+)
+
+diff --git a/arch/arm/cpu/armv7/mx6/clock.c b/arch/arm/cpu/armv7/mx6/clock.c
+index edfc6b3..434a0b8 100644
+--- a/arch/arm/cpu/armv7/mx6/clock.c
++++ b/arch/arm/cpu/armv7/mx6/clock.c
+@@ -681,6 +681,16 @@ void enable_qspi_clk(int qspi_num)
+ 		break;
+ 	}
+ }
++
++void mxs_set_vadcclk()
++{
++	u32 reg = 0;
++
++	reg = readl(&imx_ccm->cscmr2);
++	reg &= ~MXC_CCM_CSCMR2_VID_CLK_SEL_MASK;
++	reg |= 0x19 << MXC_CCM_CSCMR2_VID_CLK_SEL_OFFSET;
++	writel(reg, &imx_ccm->cscmr2);
++}
+ #endif
+ 
+ #ifdef CONFIG_FEC_MXC
+diff --git a/arch/arm/include/asm/arch-mx6/clock.h b/arch/arm/include/asm/arch-mx6/clock.h
+index bdf2ea0..ab03ab6 100644
+--- a/arch/arm/include/asm/arch-mx6/clock.h
++++ b/arch/arm/include/asm/arch-mx6/clock.h
+@@ -73,4 +73,5 @@ void enable_enet_clock(void);
+ void enable_lcdif_clock(uint32_t base_addr);
+ void mxs_set_lcdclk(uint32_t base_addr, uint32_t freq);
+ void enable_lvds(uint32_t lcdif_base);
++void mxs_set_vadcclk(void);
+ #endif /* __ASM_ARCH_CLOCK_H */
+-- 
+1.8.0
+

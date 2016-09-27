@@ -1,0 +1,50 @@
+From a42055ccf4afbd513754296793c5732821088c5e Mon Sep 17 00:00:00 2001
+From: Fugang Duan <b38611@freescale.com>
+Date: Tue, 26 Aug 2014 10:53:08 +0800
+Subject: [PATCH 460/505] ENGR00328569 UART: fix the bug in loopback test case
+
+Uart loopback test case "mxc_uart_test.out" has issue, the current design
+don't make sure read all data from rx xmit buffer since cpu instrcution
+is very faster that uart don't transmit all data during the two instructions
+time. The patch just fix the issue.
+
+Signed-off-by: Fugang Duan <B38611@freescale.com>
+---
+ test/mxc_uart_test/mxc_uart_test.c | 9 ++++++---
+ 1 file changed, 6 insertions(+), 3 deletions(-)
+
+diff --git a/test/mxc_uart_test/mxc_uart_test.c b/test/mxc_uart_test/mxc_uart_test.c
+index 41c9fcf..6c88c6f 100644
+--- a/test/mxc_uart_test/mxc_uart_test.c
++++ b/test/mxc_uart_test/mxc_uart_test.c
+@@ -1,5 +1,5 @@
+ /*
+- * Copyright 2004-2009 Freescale Semiconductor, Inc. All rights reserved.
++ * Copyright 2004-2014 Freescale Semiconductor, Inc. All rights reserved.
+  */
+ 
+ /*
+@@ -28,7 +28,8 @@ int main(int argc, char **argv)
+         unsigned int line_val;
+         char buf[5];
+         struct termios mxc, old;
+-        int retval;
++        int retval = 0;
++	int retries = 5;
+ 
+         printf("Test: MXC UART!\n");
+         printf("Usage: mxc_uart_test <UART device name, opens UART2 if no dev name is specified>\n");
+@@ -64,7 +65,9 @@ int main(int argc, char **argv)
+         write(uart_file1, "Test\0", 5);
+         printf("Data Written= Test\n");
+ 
+-        read(uart_file1, buf, 5);
++	sleep(1);
++        while (retries-- && retval < 5)
++		retval += read(uart_file1, buf + retval, 5 - retval);
+         printf("Data Read back= %s\n", buf);
+         sleep(2);
+         ioctl(uart_file1, TIOCMBIC, &line_val);
+-- 
+1.8.0
+

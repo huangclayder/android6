@@ -1,0 +1,29 @@
+From c71caf99b842c47c726e95992c0fc115608ba69b Mon Sep 17 00:00:00 2001
+From: Liu Xiaowen <xiaowen.liu@freescale.com>
+Date: Tue, 17 Mar 2015 16:43:59 +0800
+Subject: [PATCH] MA-6411 add HDMI audio lost config to kernel 3.14 default
+ config.
+
+when upgrade to kernel 3.14, the HDMI audio relevant android config is lost.
+add HDMI audio lost config to kernel 3.14 default config.
+
+Signed-off-by: Liu Xiaowen <xiaowen.liu@freescale.com>
+---
+ arch/arm/configs/imx_v7_android_defconfig | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/arch/arm/configs/imx_v7_android_defconfig b/arch/arm/configs/imx_v7_android_defconfig
+index 75bac38..06b1cbc 100644
+--- a/arch/arm/configs/imx_v7_android_defconfig
++++ b/arch/arm/configs/imx_v7_android_defconfig
+@@ -328,6 +328,7 @@ CONFIG_MFD_MC13XXX_I2C=y
+ CONFIG_MFD_MAX17135=y
+ CONFIG_MFD_SI476X_CORE=y
+ CONFIG_MFD_STMPE=y
++CONFIG_MFD_MXC_HDMI_ANDROID=y
+ CONFIG_REGULATOR=y
+ CONFIG_REGULATOR_FIXED_VOLTAGE=y
+ CONFIG_REGULATOR_ANATOP=y
+-- 
+1.8.0
+

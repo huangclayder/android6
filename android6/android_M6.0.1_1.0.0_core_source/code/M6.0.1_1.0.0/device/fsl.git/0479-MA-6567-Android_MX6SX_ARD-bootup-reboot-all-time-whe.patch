@@ -1,0 +1,31 @@
+From 732449f9564a75a1126b16573847c0de6ca520ac Mon Sep 17 00:00:00 2001
+From: fang hui <b31070@freescale.com>
+Date: Fri, 24 Apr 2015 14:39:35 +0800
+Subject: [PATCH 479/602] MA-6567 - [Android_MX6SX_ARD]bootup: reboot all time
+ when first bootup.
+
+When 1G/3G config, zone "lowmem" has 608 MB. CMA is reserved from lowmem.
+If cma 512M, then left 96M, seems not enough for system, so cause oom.
+Change cma to 384M can fix it.
+
+Signed-off-by: fang hui <b31070@freescale.com>
+---
+ sabreauto_6sx/BoardConfig.mk | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/sabreauto_6sx/BoardConfig.mk b/sabreauto_6sx/BoardConfig.mk
+index 2858b43..14ebc44 100755
+--- a/sabreauto_6sx/BoardConfig.mk
++++ b/sabreauto_6sx/BoardConfig.mk
+@@ -76,7 +76,7 @@ TARGET_SELECT_KEY := 28
+ # we don't support sparse image.
+ TARGET_USERIMAGES_SPARSE_EXT_DISABLED := false
+ DM_VERITY_RUNTIME_CONFIG := true
+-BOARD_KERNEL_CMDLINE := console=ttymxc0,115200 init=/init androidboot.console=ttymxc0 consoleblank=0 androidboot.hardware=freescale vmalloc=400M cma=512M 
++BOARD_KERNEL_CMDLINE := console=ttymxc0,115200 init=/init androidboot.console=ttymxc0 consoleblank=0 androidboot.hardware=freescale vmalloc=400M cma=384M
+ 
+ ifeq ($(TARGET_USERIMAGES_USE_UBIFS),true)
+ #UBI boot command line.
+-- 
+1.8.0
+

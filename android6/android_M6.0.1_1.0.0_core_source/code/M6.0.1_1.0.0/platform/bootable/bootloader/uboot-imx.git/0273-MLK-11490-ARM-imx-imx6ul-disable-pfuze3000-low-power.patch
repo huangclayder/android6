@@ -1,0 +1,32 @@
+From 83e13ec000013378e65cd0a6ddd77c4f3931db65 Mon Sep 17 00:00:00 2001
+From: Anson Huang <b20788@freescale.com>
+Date: Wed, 2 Sep 2015 23:05:04 +0800
+Subject: [PATCH] MLK-11490 ARM: imx: imx6ul: disable pfuze3000 low power mode
+
+Disable PFuze3000 low power mode during standby mode, otherwise,
+if the power consumption exceed the threshold, PFuze will reboot.
+
+Signed-off-by: Anson Huang <b20788@freescale.com>
+---
+ board/freescale/mx6ul_14x14_evk/mx6ul_14x14_evk.c | 5 +++++
+ 1 file changed, 5 insertions(+)
+
+diff --git a/board/freescale/mx6ul_14x14_evk/mx6ul_14x14_evk.c b/board/freescale/mx6ul_14x14_evk/mx6ul_14x14_evk.c
+index d7d28a3..b5c3374 100644
+--- a/board/freescale/mx6ul_14x14_evk/mx6ul_14x14_evk.c
++++ b/board/freescale/mx6ul_14x14_evk/mx6ul_14x14_evk.c
+@@ -848,6 +848,11 @@ int power_init_board(void)
+ 	pmic_reg_read(pfuze, PFUZE300_REVID, &rev_id);
+ 	printf("PMIC: PFUZE300 DEV_ID=0x%x REV_ID=0x%x\n", reg, rev_id);
+ 
++	/* disable Low Power Mode during standby mode */
++	pmic_reg_read(pfuze, PFUZE300_LDOGCTL, &reg);
++	reg |= 0x1;
++	pmic_reg_write(pfuze, PFUZE300_LDOGCTL, reg);
++
+ 	/* SW1B step ramp up time from 2us to 4us/25mV */
+ 	reg = 0x40;
+ 	pmic_reg_write(pfuze, PFUZE300_SW1BCONF, reg);
+-- 
+1.8.0
+

@@ -1,0 +1,188 @@
+From a27f59a83c96510314e6260543fce67f1c08ebfe Mon Sep 17 00:00:00 2001
+From: Wang Haoran <Haoran.Wang@freescale.com>
+Date: Thu, 19 Mar 2015 14:08:34 +0800
+Subject: [PATCH 456/602] MA-6426 Remove all of the GPS related code from
+ i.mx6
+
+Remove all GPS releated code to pass CTS check.
+
+Signed-off-by: Wang Haoran <Haoran.Wang@freescale.com>
+---
+ evk_6sl/init.rc                                    |  2 --
+ imx6/imx6.mk                                       | 11 ---------
+ imx6/sabresd_6dq.mk                                |  2 --
+ imx6/sabresd_6sx.mk                                |  1 -
+ sabreauto_6q/init.rc                               | 10 --------
+ sabreauto_6sx/init.rc                              | 10 --------
+ sabresd_6dq/init.rc                                | 27 ----------------------
+ .../SettingsProvider/res/values/defaults.xml       |  2 ++
+ 8 files changed, 2 insertions(+), 63 deletions(-)
+
+diff --git a/evk_6sl/init.rc b/evk_6sl/init.rc
+index a52406d..92619a8 100644
+--- a/evk_6sl/init.rc
++++ b/evk_6sl/init.rc
+@@ -25,8 +25,6 @@ on boot
+     # Set permission for IIM node
+     symlink /dev/mxs_viim /dev/mxc_mem
+ 
+-    symlink /dev/ttymxc1 /dev/gpsdevice
+-
+     # Enable Tethering in the Settings
+     setprop ro.tether.denied false
+ 
+diff --git a/imx6/imx6.mk b/imx6/imx6.mk
+index fc35f5c..7a5c17a 100644
+--- a/imx6/imx6.mk
++++ b/imx6/imx6.mk
+@@ -143,17 +143,6 @@ PRODUCT_PACKAGES += \
+ 	iwlwifi-5000-5.ucode			\
+ 	iwlagn.ko
+ 
+-# gps related lib
+-PRODUCT_PACKAGES += \
+-	gps.SABRESD				\
+-	gps.ARM2				\
+-	gps.SABREAUTO				\
+-	Orion.ini 				\
+-	AR1520A-Auto.img 			\
+-	ingsvcd 				\
+-	libOrionCtl.so 				\
+-	OrionSys.so
+-
+ # drm related lib
+ PRODUCT_PACKAGES += \
+ 	drmserver                   		\
+diff --git a/imx6/sabresd_6dq.mk b/imx6/sabresd_6dq.mk
+index c1a1a28..93dd989 100644
+--- a/imx6/sabresd_6dq.mk
++++ b/imx6/sabresd_6dq.mk
+@@ -18,7 +18,6 @@ PRODUCT_DEVICE := sabresd_6dq
+ 
+ PRODUCT_COPY_FILES += \
+ 	device/fsl/sabresd_6dq/init.rc:root/init.freescale.rc \
+-	device/fsl/sabresd_6dq/gpsreset.sh:system/etc/gpsreset.sh \
+ 	device/fsl/sabresd_6dq/audio_policy.conf:system/etc/audio_policy.conf \
+ 	device/fsl/sabresd_6dq/audio_effects.conf:system/vendor/etc/audio_effects.conf
+ 
+@@ -47,7 +46,6 @@ PRODUCT_COPY_FILES += \
+ 	frameworks/native/data/etc/tablet_core_hardware.xml:system/etc/permissions/tablet_core_hardware.xml \
+ 	frameworks/native/data/etc/android.hardware.camera.xml:system/etc/permissions/android.hardware.camera.xml \
+ 	frameworks/native/data/etc/android.hardware.camera.front.xml:system/etc/permissions/android.hardware.camera.front.xml \
+-	frameworks/native/data/etc/android.hardware.location.gps.xml:system/etc/permissions/android.hardware.location.gps.xml \
+ 	frameworks/native/data/etc/android.hardware.wifi.xml:system/etc/permissions/android.hardware.wifi.xml \
+ 	frameworks/native/data/etc/android.hardware.wifi.direct.xml:system/etc/permissions/android.hardware.wifi.direct.xml \
+ 	frameworks/native/data/etc/android.hardware.sensor.light.xml:system/etc/permissions/android.hardware.sensor.light.xml \
+diff --git a/imx6/sabresd_6sx.mk b/imx6/sabresd_6sx.mk
+index 854a4ca..9f9826f 100644
+--- a/imx6/sabresd_6sx.mk
++++ b/imx6/sabresd_6sx.mk
+@@ -18,7 +18,6 @@ PRODUCT_DEVICE := sabresd_6sx
+ 
+ PRODUCT_COPY_FILES += \
+ 	device/fsl/sabresd_6sx/init.rc:root/init.freescale.rc \
+-	device/fsl/sabresd_6sx/gpsreset.sh:system/etc/gpsreset.sh \
+ 	device/fsl/sabresd_6sx/audio_policy.conf:system/etc/audio_policy.conf \
+ 	device/fsl/sabresd_6sx/audio_effects.conf:system/vendor/etc/audio_effects.conf
+ # setup dm-verity configs.
+diff --git a/sabreauto_6q/init.rc b/sabreauto_6q/init.rc
+index 64d3418..aab96a2 100644
+--- a/sabreauto_6q/init.rc
++++ b/sabreauto_6q/init.rc
+@@ -159,16 +159,6 @@ service magd /system/bin/magd
+     group input
+     oneshot
+ 
+-# Orion InG
+-service ing /system/bin/ingsvcd -c /system/etc/gps/Orion.ini
+-    socket athrkv9988    stream 666 system system
+-    socket athrshmsocket stream 666 system system
+-    socket athrsupl59991 stream 666 system system
+-    class late_start
+-    seclabel u:r:gpsd:s0
+-    user root
+-    group gps
+-    oneshot
+ 
+ # Set watchdog timer to 30 seconds and pet it every 10 seconds to get a 20 second margin
+ service watchdogd /sbin/watchdogd 10 20
+diff --git a/sabreauto_6sx/init.rc b/sabreauto_6sx/init.rc
+index b26d54b..335669e 100755
+--- a/sabreauto_6sx/init.rc
++++ b/sabreauto_6sx/init.rc
+@@ -156,16 +156,6 @@ service magd /system/bin/magd
+     group input
+     oneshot
+ 
+-# Orion InG
+-service ing /system/bin/ingsvcd -c /system/etc/gps/Orion.ini
+-    socket athrkv9988    stream 666 system system
+-    socket athrshmsocket stream 666 system system
+-    socket athrsupl59991 stream 666 system system
+-    class late_start
+-    user root
+-    group gps
+-    oneshot
+-
+ service dhcpcd_eth1 /system/bin/dhcpcd -ABKL
+     class main
+     disabled
+diff --git a/sabresd_6dq/init.rc b/sabresd_6dq/init.rc
+index 5a8669b..3af7bcc 100755
+--- a/sabresd_6dq/init.rc
++++ b/sabresd_6dq/init.rc
+@@ -22,22 +22,6 @@ on boot
+     # Set permission for IIM node
+     symlink /dev/mxs_viim /dev/mxc_mem
+ 
+-    # Set GPS serial GPS power-on GPIO64 pin and reset GPIO60 pin
+-    setprop ro.kernel.android.gps /dev/athrnmea
+-    setprop persist.gps.oacmode @f
+-    symlink /dev/ttymxc2 /dev/gpsdevice
+-    write /sys/class/gpio/export 64
+-    write /sys/class/gpio/gpio64/direction "out"
+-    chown gps gps /sys/class/gpio/gpio64/value
+-    chmod 0660 /sys/class/gpio/gpio64/value
+-    write /sys/class/gpio/gpio64/value 1
+-
+-    write /sys/class/gpio/export 60
+-    write /sys/class/gpio/gpio60/direction "out"
+-    chown gps gps /sys/class/gpio/gpio60/value
+-    chmod 0660 /sys/class/gpio/gpio60/value
+-    write /sys/class/gpio/gpio60/value 1
+-
+     # Enable Tethering in the Settings
+     setprop ro.tether.denied false
+ 
+@@ -190,17 +174,6 @@ service magd /system/bin/magd
+     group input
+     oneshot
+ 
+-# Orion InG
+-service ing /system/bin/ingsvcd -c /system/etc/gps/Orion.ini
+-    socket athrkv9988    stream 666 system system
+-    socket athrshmsocket stream 666 system system
+-    socket athrsupl59991 stream 666 system system
+-    class late_start
+-    seclabel u:r:gpsd:s0
+-    user root
+-    group gps
+-    oneshot
+-
+ service charger /charger
+     class charger
+ 
+diff --git a/sabresd_6dq/overlay/frameworks/base/packages/SettingsProvider/res/values/defaults.xml b/sabresd_6dq/overlay/frameworks/base/packages/SettingsProvider/res/values/defaults.xml
+index 3f2232a..f299a33 100644
+--- a/sabresd_6dq/overlay/frameworks/base/packages/SettingsProvider/res/values/defaults.xml
++++ b/sabresd_6dq/overlay/frameworks/base/packages/SettingsProvider/res/values/defaults.xml
+@@ -19,4 +19,6 @@
+ <resources>
+     <!-- Default for Settings.Secure.USER_SETUP_COMPLETE -->
+     <bool name="def_user_setup_complete">true</bool>
++    <!-- Disable GPS Provider-->
++    <string name="def_location_providers_allowed" translatable="false"></string>
+ </resources>
+-- 
+1.8.0
+

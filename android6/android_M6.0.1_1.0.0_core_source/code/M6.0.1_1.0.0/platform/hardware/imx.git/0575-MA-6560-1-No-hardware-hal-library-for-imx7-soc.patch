@@ -1,0 +1,46 @@
+From 75f7a4d2ef148994a71ed992cc91380a06e2b49b Mon Sep 17 00:00:00 2001
+From: "guoyin.chen" <guoyin.chen@freescale.com>
+Date: Mon, 20 Apr 2015 20:29:27 +0800
+Subject: [PATCH 575/635] MA-6560-1 No hardware hal library for imx7 soc
+
+Add HAL directory for imx7 soc type
+
+Signed-off-by: guoyin.chen <guoyin.chen@freescale.com>
+---
+ Android.mk | 14 ++++++++++++--
+ 1 file changed, 12 insertions(+), 2 deletions(-)
+
+diff --git a/Android.mk b/Android.mk
+index f7800e3..79d8164 100644
+--- a/Android.mk
++++ b/Android.mk
+@@ -1,6 +1,7 @@
+ common_imx_dirs := libsensors libgps lights wlan libbt-ath3k
+ mx5x_dirs := $(common_imx_dirs) mx5x/audio mx5x/libcopybit mx5x/libgralloc  mx5x/hwcomposer mx5x/libcamera mx5x/power
+ mx6_dirs := $(common_imx_dirs) alsa mx6/libgralloc_wrapper mx6/hwcomposer mx6/power mx6/consumerir
++mx7_dirs := $(common_imx_dirs) alsa mx6/power
+ 
+ ifeq ($(TARGET_BOARD_PLATFORM),imx6)
+   ifeq ($(IMX_CAMERA_HAL_V2),true)
+@@ -10,7 +11,16 @@ ifeq ($(TARGET_BOARD_PLATFORM),imx6)
+   endif
+   include $(call all-named-subdir-makefiles,$(mx6_dirs))
+ else
+-  ifeq ($(TARGET_BOARD_PLATFORM),imx5x)
+-    include $(call all-named-subdir-makefiles,$(mx5x_dirs))
++  ifeq ($(TARGET_BOARD_PLATFORM),imx7)
++    ifeq ($(IMX_CAMERA_HAL_V2),true)
++      mx7_dirs += mx6/libcamera2
++    else
++      mx7_dirs += mx6/libcamera
++    endif
++    include $(call all-named-subdir-makefiles,$(mx7_dirs))
++  else
++    ifeq ($(TARGET_BOARD_PLATFORM),imx5x)
++      include $(call all-named-subdir-makefiles,$(mx5x_dirs))
++    endif
+   endif
+ endif
+-- 
+1.8.0
+

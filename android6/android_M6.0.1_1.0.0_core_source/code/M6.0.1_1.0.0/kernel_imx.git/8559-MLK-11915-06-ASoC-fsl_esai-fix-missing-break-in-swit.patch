@@ -1,0 +1,27 @@
+From ec9d74d9258e3320ec68a1f977932cb20ace4ca2 Mon Sep 17 00:00:00 2001
+From: Zidan Wang <zidan.wang@freescale.com>
+Date: Fri, 27 Nov 2015 11:15:38 +0800
+Subject: [PATCH] MLK-11915-06 ASoC: fsl_esai: fix missing break in switch
+
+fix missing break in switch. Reported by Coverity.
+
+Signed-off-by: Zidan Wang <zidan.wang@freescale.com>
+---
+ sound/soc/fsl/fsl_esai.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/sound/soc/fsl/fsl_esai.c b/sound/soc/fsl/fsl_esai.c
+index 57341bd..16f0efd 100644
+--- a/sound/soc/fsl/fsl_esai.c
++++ b/sound/soc/fsl/fsl_esai.c
+@@ -243,6 +243,7 @@ static int fsl_esai_set_dai_sysclk(struct snd_soc_dai *dai, int clk_id,
+ 		break;
+ 	case ESAI_HCKT_EXTAL:
+ 		ecr |= ESAI_ECR_ETI;
++		break;
+ 	case ESAI_HCKR_EXTAL:
+ 		ecr |= ESAI_ECR_ERI;
+ 		break;
+-- 
+1.8.0
+

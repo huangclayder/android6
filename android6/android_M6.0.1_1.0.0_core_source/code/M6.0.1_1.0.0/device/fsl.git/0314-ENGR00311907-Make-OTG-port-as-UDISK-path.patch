@@ -1,0 +1,28 @@
+From 09e030cd97c3a240a3edac9cf29ae59d72257f5d Mon Sep 17 00:00:00 2001
+From: "guoyin.chen" <guoyin.chen@freescale.com>
+Date: Tue, 6 May 2014 09:47:23 +0800
+Subject: [PATCH 314/602] ENGR00311907 Make OTG port as UDISK path
+
+Align the dts bus address for otg port
+
+Signed-off-by: guoyin.chen <guoyin.chen@freescale.com>
+---
+ sabreauto_6q/fstab.freescale | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/sabreauto_6q/fstab.freescale b/sabreauto_6q/fstab.freescale
+index 1e88341..777f9c9 100644
+--- a/sabreauto_6q/fstab.freescale
++++ b/sabreauto_6q/fstab.freescale
+@@ -4,7 +4,7 @@
+ # specify MF_CHECK, and must come before any filesystems that do specify MF_CHECK
+ 
+ /devices/soc0/soc.1/2100000.aips-bus/2190000.usdhc/mmc_host /mnt/media_rw/extsd vfat defaults voldmanaged=extsd:auto
+-/devices/soc0/soc.1/2100000.aips-bus/2184200.usb/ci_hdrc.1  /mnt/media_rw/udisk vfat defaults voldmanaged=udisk:auto
++/devices/soc0/soc.1/2100000.aips-bus/2184000.usb/ci_hdrc.0  /mnt/media_rw/udisk vfat defaults voldmanaged=udisk:auto
+ /dev/block/mmcblk0p5    /system      ext4    ro                                                                               wait
+ /dev/block/mmcblk0p4    /data        ext4    nosuid,nodev,nodiratime,noatime,nomblk_io_submit,noauto_da_alloc,errors=panic    wait
+ /dev/block/mmcblk0p6    /cache       ext4    nosuid,nodev,nomblk_io_submit                                                    wait
+-- 
+1.8.0
+

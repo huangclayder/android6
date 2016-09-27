@@ -1,0 +1,31 @@
+From 4c3191e538309bef9ac6f9effb9d698d52699a1a Mon Sep 17 00:00:00 2001
+From: Li Jun <jun.li@freescale.com>
+Date: Fri, 3 Jul 2015 14:11:53 +0800
+Subject: [PATCH] MLK-11123-27 ARM: dts: disable otg features for
+ imx6sx-sabreauto board
+
+Disable all otg features for otg1 port of imx6sx-sabreauto board, then
+the otg port can only do role swtich by ID pin state.
+
+Signed-off-by: Li Jun <jun.li@freescale.com>
+---
+ arch/arm/boot/dts/imx6sx-sabreauto.dts | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/arch/arm/boot/dts/imx6sx-sabreauto.dts b/arch/arm/boot/dts/imx6sx-sabreauto.dts
+index 7020d6e..3671a22 100644
+--- a/arch/arm/boot/dts/imx6sx-sabreauto.dts
++++ b/arch/arm/boot/dts/imx6sx-sabreauto.dts
+@@ -836,6 +836,9 @@
+ 	vbus-supply = <&reg_usb_otg1_vbus>;
+ 	pinctrl-names = "default";
+ 	pinctrl-0 = <&pinctrl_usbotg1_1>;
++	srp-disable;
++	hnp-disable;
++	adp-disable;
+ 	status = "okay";
+ };
+ 
+-- 
+1.8.0
+

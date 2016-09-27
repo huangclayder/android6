@@ -1,0 +1,37 @@
+From 5d9c39bf319fb8788d1764b7dd4898b321b87001 Mon Sep 17 00:00:00 2001
+From: Bai Ping <b51503@freescale.com>
+Date: Fri, 5 Jun 2015 23:25:17 +0800
+Subject: [PATCH] MLK-11050 ARM: imx6: configure the PMIC_STBY_REQ pin as open
+ drain
+
+Configure the PMIC_STBY_REQ pin as open drain 100K according to
+the design team's requirement for the PMIC_STBY_REQ pin.
+
+Signed-off-by: Bai Ping <b51503@freescale.com>
+---
+ arch/arm/cpu/armv7/mx6/soc.c | 9 +++++++++
+ 1 file changed, 9 insertions(+)
+
+diff --git a/arch/arm/cpu/armv7/mx6/soc.c b/arch/arm/cpu/armv7/mx6/soc.c
+index 9b0f126..3f4b094 100644
+--- a/arch/arm/cpu/armv7/mx6/soc.c
++++ b/arch/arm/cpu/armv7/mx6/soc.c
+@@ -469,6 +469,15 @@ int arch_cpu_init(void)
+ 		set_ahb_rate(132000000);
+ #endif
+ 
++#if defined(CONFIG_MX6UL)
++	/*
++	 * According to the design team's requirement on i.MX6UL,
++	 * the PMIC_STBY_REQ PAD should be configured as open
++	 * drain 100K (0x0000b8a0).
++	 */
++	writel(0x0000b8a0, IOMUXC_BASE_ADDR + 0x29c);
++#endif
++
+ 	/* Set perclk to source from OSC 24MHz */
+ #if defined(CONFIG_MX6SL)
+ 	set_preclk_from_osc();
+-- 
+1.8.0
+

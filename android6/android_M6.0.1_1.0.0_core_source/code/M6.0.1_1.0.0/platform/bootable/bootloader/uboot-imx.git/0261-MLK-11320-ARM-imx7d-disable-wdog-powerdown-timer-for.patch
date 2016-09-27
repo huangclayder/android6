@@ -1,0 +1,33 @@
+From 2b5128a2886d98a63efc806a8e6d1f74e5be36ab Mon Sep 17 00:00:00 2001
+From: Anson Huang <b20788@freescale.com>
+Date: Wed, 5 Aug 2015 20:57:54 +0800
+Subject: [PATCH] MLK-11320 ARM: imx7d: disable wdog powerdown timer for LPSR
+
+In LPSR mode, wdog will be reset when resume, need
+to disable wdog powerdown timer to avoid system
+reset after timeout setting of 16 seconds.
+
+Signed-off-by: Anson Huang <b20788@freescale.com>
+---
+ board/freescale/mx7d_12x12_lpddr3_arm2/plugin.S | 5 +++++
+ 1 file changed, 5 insertions(+)
+
+diff --git a/board/freescale/mx7d_12x12_lpddr3_arm2/plugin.S b/board/freescale/mx7d_12x12_lpddr3_arm2/plugin.S
+index 2aee8c8..121e2f0 100644
+--- a/board/freescale/mx7d_12x12_lpddr3_arm2/plugin.S
++++ b/board/freescale/mx7d_12x12_lpddr3_arm2/plugin.S
+@@ -15,6 +15,11 @@
+ 	cmp	r7, #0
+ 	beq	16f
+ 
++	/* disable wdog powerdown counter */
++	ldr	r0, =0x30280000
++	ldrh	r1, =0x0
++	strh	r1, [r0, #0x8]
++
+ 	/* initialize AIPs 1-3 port */
+ 	ldr	r0, =0x301f0000
+ 	ldr	r1, =0x77777777
+-- 
+1.8.0
+

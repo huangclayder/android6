@@ -1,0 +1,11 @@
+0001-ENGR00117591-Rework-all-telephony-related-code-after.patch
+0002-ENGR00137445-Update-Android.mk-to-add-LOCAL_MODULE_T.patch
+0003-ENGR00151320-restart-activateDataCall-when-pppd-tern.patch
+0004-ENGR00153391-don-t-reset-net.dns1-when-wifi-already-.patch
+0005-ENGR00154182-update-copyright.patch
+0006-ENGR00154294-enlarge-Maximum-number-of-nak-loops-and.patch
+0007-ENGR00154415-Remove-the-net.dns-prop-setting-in-rild.patch
+0008-ENGR00153459-Integrate-Huawei-MU509-update.patch
+0009-ENGR0000001-Add-chat.c-to-pass-build.patch
+0010-ENGR00256988-3G-delete-redundant-set-on-route.patch
+0011-ENGR00295141-Android-Linux-3.10-kernel-upgrade.patch

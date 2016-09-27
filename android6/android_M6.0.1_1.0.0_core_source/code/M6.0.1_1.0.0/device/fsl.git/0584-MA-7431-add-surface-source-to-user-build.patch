@@ -1,0 +1,40 @@
+From e4235b3460a2e4b82f776487c57cffcab5d6475d Mon Sep 17 00:00:00 2001
+From: xumao <b34688@freescale.com>
+Date: Wed, 30 Dec 2015 11:28:10 +0800
+Subject: [PATCH 584/602] MA-7431 add surface source to user build
+
+add surface source to user build
+
+Signed-off-by: xumao <b34688@freescale.com>
+---
+ imx6/imx6.mk | 1 +
+ imx7/imx7.mk | 1 +
+ 2 files changed, 2 insertions(+)
+
+diff --git a/imx6/imx6.mk b/imx6/imx6.mk
+index f9bd48c..525bb29 100644
+--- a/imx6/imx6.mk
++++ b/imx6/imx6.mk
+@@ -248,6 +248,7 @@ omx_libs := \
+ 	lib_omx_rtps_pipe_arm11_elinux \
+ 	lib_omx_streaming_parser_arm11_elinux \
+ 	lib_omx_surface_render_arm11_elinux \
++	lib_omx_surface_source_arm11_elinux \
+ 	libfsl_jpeg_enc_arm11_elinux \
+ 	lib_wb_amr_enc_arm11_elinux \
+ 	lib_wb_amr_dec_arm9_elinux \
+diff --git a/imx7/imx7.mk b/imx7/imx7.mk
+index 4d0c0d3..a4f524a 100644
+--- a/imx7/imx7.mk
++++ b/imx7/imx7.mk
+@@ -237,6 +237,7 @@ omx_libs := \
+ 	lib_omx_rtps_pipe_arm11_elinux \
+ 	lib_omx_streaming_parser_arm11_elinux \
+ 	lib_omx_surface_render_arm11_elinux \
++	lib_omx_surface_source_arm11_elinux \
+ 	libfsl_jpeg_enc_arm11_elinux \
+ 	lib_wb_amr_enc_arm11_elinux \
+ 	lib_wb_amr_dec_arm9_elinux \
+-- 
+1.8.0
+

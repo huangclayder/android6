@@ -1,0 +1,37 @@
+From 1dc5e6a42f83d52d314e79c7d46ace9d848c1dc8 Mon Sep 17 00:00:00 2001
+From: "Ye.Li" <ye.li@nxp.com>
+Date: Wed, 13 Jan 2016 10:06:59 +0800
+Subject: [PATCH] MLK-12214 NAND:apbh_dma: Fix logically dead code issue
+
+The list_first_entry always assumes the list is not empty, it won't return NULL pointer when
+the list is empty. So the "if (pdesc == NULL)" becomes a dead code. Fix the issue by calling
+the list_empty before the list_first_entry.
+
+(Coverity CID 29934)
+
+Signed-off-by: Ye.Li <ye.li@nxp.com>
+---
+ drivers/dma/apbh_dma.c | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/drivers/dma/apbh_dma.c b/drivers/dma/apbh_dma.c
+index c63f4f6..c65a215 100644
+--- a/drivers/dma/apbh_dma.c
++++ b/drivers/dma/apbh_dma.c
+@@ -126,10 +126,10 @@ static int mxs_dma_enable(int channel)
+ 		return 0;
+ 	}
+ 
+-	pdesc = list_first_entry(&pchan->active, struct mxs_dma_desc, node);
+-	if (pdesc == NULL)
++	if (list_empty(&pchan->active))
+ 		return -EFAULT;
+-
++		
++	pdesc = list_first_entry(&pchan->active, struct mxs_dma_desc, node);
+ 	if (pchan->flags & MXS_DMA_FLAGS_BUSY) {
+ 		if (!(pdesc->cmd.data & MXS_DMA_DESC_CHAIN))
+ 			return 0;
+-- 
+1.8.0
+

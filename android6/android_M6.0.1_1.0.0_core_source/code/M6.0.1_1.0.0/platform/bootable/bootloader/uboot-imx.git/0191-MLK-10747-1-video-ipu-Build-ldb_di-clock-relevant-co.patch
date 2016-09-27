@@ -1,0 +1,107 @@
+From 3e40c7466ae7d1d6ca74011bfe69ae059d412a3b Mon Sep 17 00:00:00 2001
+From: Liu Ying <Ying.Liu@freescale.com>
+Date: Tue, 28 Apr 2015 14:20:44 +0800
+Subject: [PATCH] MLK-10747-1 video: ipu: Build ldb_di clock relevant code
+ only for MX6 and MX53
+
+The LDB is found in MX6 variants and MX53, so this patch makes the ldb_di clock
+relevant code be built only for them.
+
+Signed-off-by: Liu Ying <Ying.Liu@freescale.com>
+(cherry picked from commit c0dc175a9780505ec8939bda5dda9c2ec549a7f0)
+---
+ drivers/video/ipu_common.c | 10 +++++++++-
+ drivers/video/ipu_disp.c   |  6 +++++-
+ 2 files changed, 14 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/video/ipu_common.c b/drivers/video/ipu_common.c
+index d22b963..a3dc695 100644
+--- a/drivers/video/ipu_common.c
++++ b/drivers/video/ipu_common.c
+@@ -6,7 +6,7 @@
+  *
+  * Linux IPU driver for MX51:
+  *
+- * (C) Copyright 2005-2014 Freescale Semiconductor, Inc.
++ * (C) Copyright 2005-2015 Freescale Semiconductor, Inc.
+  *
+  * SPDX-License-Identifier:	GPL-2.0+
+  */
+@@ -211,15 +211,19 @@ static struct clk ipu_clk = {
+ 	.usecount = 0,
+ };
+ 
++#if defined(CONFIG_MX6) || defined(CONFIG_MX53)
+ static struct clk ldb_clk = {
+ 	.name = "ldb_clk",
+ 	.rate = 65000000,
+ 	.usecount = 0,
+ };
++#endif
+ 
+ /* Globals */
+ struct clk *g_ipu_clk;
++#if defined(CONFIG_MX6) || defined(CONFIG_MX53)
+ struct clk *g_ldb_clk;
++#endif
+ unsigned char g_ipu_clk_enabled;
+ struct clk *g_di_clk[2];
+ struct clk *g_pixel_clk[2];
+@@ -372,8 +376,10 @@ static int ipu_pixel_clk_set_parent(struct clk *clk, struct clk *parent)
+ 
+ 	if (parent == g_ipu_clk)
+ 		di_gen &= ~DI_GEN_DI_CLK_EXT;
++#if defined(CONFIG_MX6) || defined(CONFIG_MX53)
+ 	else if (!IS_ERR(g_di_clk[clk->id]) && parent == g_ldb_clk)
+ 		di_gen |= DI_GEN_DI_CLK_EXT;
++#endif
+ 	else
+ 		return -EINVAL;
+ 
+@@ -467,8 +473,10 @@ int ipu_probe(void)
+ 
+ 	g_ipu_clk = &ipu_clk;
+ 	debug("ipu_clk = %u\n", clk_get_rate(g_ipu_clk));
++#if defined(CONFIG_MX6) || defined(CONFIG_MX53)
+ 	g_ldb_clk = &ldb_clk;
+ 	debug("ldb_clk = %u\n", clk_get_rate(g_ldb_clk));
++#endif
+ 	ipu_reset();
+ 
+ 	clk_set_parent(g_pixel_clk[0], g_ipu_clk);
+diff --git a/drivers/video/ipu_disp.c b/drivers/video/ipu_disp.c
+index 86ddb9d..3c24863 100644
+--- a/drivers/video/ipu_disp.c
++++ b/drivers/video/ipu_disp.c
+@@ -6,7 +6,7 @@
+  *
+  * Linux IPU driver for MX51:
+  *
+- * (C) Copyright 2005-2014 Freescale Semiconductor, Inc.
++ * (C) Copyright 2005-2015 Freescale Semiconductor, Inc.
+  *
+  * SPDX-License-Identifier:	GPL-2.0+
+  */
+@@ -48,7 +48,9 @@ static int dmfc_size_28, dmfc_size_29, dmfc_size_24, dmfc_size_27, dmfc_size_23;
+ int g_di1_tvout;
+ 
+ extern struct clk *g_ipu_clk;
++#if defined(CONFIG_MX6) || defined(CONFIG_MX53)
+ extern struct clk *g_ldb_clk;
++#endif
+ extern struct clk *g_di_clk[2];
+ extern struct clk *g_pixel_clk[2];
+ 
+@@ -885,7 +887,9 @@ int32_t ipu_init_sync_panel(int disp, uint32_t pixel_clk,
+ 				udelay(10000);
+ 			}
+ 		}
++#if defined(CONFIG_MX6) || defined(CONFIG_MX53)
+ 		clk_set_parent(g_pixel_clk[disp], g_ldb_clk);
++#endif
+ 	} else {
+ 		if (clk_get_usecount(g_pixel_clk[disp]) != 0)
+ 			clk_set_parent(g_pixel_clk[disp], g_ipu_clk);
+-- 
+1.8.0
+

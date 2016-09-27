@@ -1,0 +1,122 @@
+From cd6b065c44d7075763f8aa86332ca5e9ad80a035 Mon Sep 17 00:00:00 2001
+From: Dominik Dingel <dingel@linux.vnet.ibm.com>
+Date: Thu, 6 Jun 2013 15:32:37 +0200
+Subject: [PATCH] KVM: async_pf: Provide additional direct page notification
+
+By setting a Kconfig option, the architecture can control when
+guest notifications will be presented by the apf backend.
+There is the default batch mechanism, working as before, where the vcpu
+thread should pull in this information.
+Opposite to this, there is now the direct mechanism, that will push the
+information to the guest.
+This way s390 can use an already existing architecture interface.
+
+Still the vcpu thread should call check_completion to cleanup leftovers.
+
+Signed-off-by: Dominik Dingel <dingel@linux.vnet.ibm.com>
+Signed-off-by: Christian Borntraeger <borntraeger@de.ibm.com>
+(cherry picked from commit e0ead41a6dac09f86675ce07a66e4b253a9b7bd5)
+Signed-off-by: Christoffer Dall <christoffer.dall@linaro.org>
+---
+ arch/x86/kvm/mmu.c       |  2 +-
+ include/linux/kvm_host.h |  2 +-
+ virt/kvm/Kconfig         |  4 ++++
+ virt/kvm/async_pf.c      | 20 ++++++++++++++++++--
+ 4 files changed, 24 insertions(+), 4 deletions(-)
+
+diff --git a/arch/x86/kvm/mmu.c b/arch/x86/kvm/mmu.c
+index 9b53135..f5704d9 100644
+--- a/arch/x86/kvm/mmu.c
++++ b/arch/x86/kvm/mmu.c
+@@ -3329,7 +3329,7 @@ static int kvm_arch_setup_async_pf(struct kvm_vcpu *vcpu, gva_t gva, gfn_t gfn)
+ 	arch.direct_map = vcpu->arch.mmu.direct_map;
+ 	arch.cr3 = vcpu->arch.mmu.get_cr3(vcpu);
+ 
+-	return kvm_setup_async_pf(vcpu, gva, gfn, &arch);
++	return kvm_setup_async_pf(vcpu, gva, gfn_to_hva(vcpu->kvm, gfn), &arch);
+ }
+ 
+ static bool can_do_async_pf(struct kvm_vcpu *vcpu)
+diff --git a/include/linux/kvm_host.h b/include/linux/kvm_host.h
+index b8e9a43..8865c48 100644
+--- a/include/linux/kvm_host.h
++++ b/include/linux/kvm_host.h
+@@ -192,7 +192,7 @@ struct kvm_async_pf {
+ 
+ void kvm_clear_async_pf_completion_queue(struct kvm_vcpu *vcpu);
+ void kvm_check_async_pf_completion(struct kvm_vcpu *vcpu);
+-int kvm_setup_async_pf(struct kvm_vcpu *vcpu, gva_t gva, gfn_t gfn,
++int kvm_setup_async_pf(struct kvm_vcpu *vcpu, gva_t gva, unsigned long hva,
+ 		       struct kvm_arch_async_pf *arch);
+ int kvm_async_pf_wakeup_all(struct kvm_vcpu *vcpu);
+ #endif
+diff --git a/virt/kvm/Kconfig b/virt/kvm/Kconfig
+index fbe1a48..13f2d19 100644
+--- a/virt/kvm/Kconfig
++++ b/virt/kvm/Kconfig
+@@ -22,6 +22,10 @@ config KVM_MMIO
+ config KVM_ASYNC_PF
+        bool
+ 
++# Toggle to switch between direct notification and batch job
++config KVM_ASYNC_PF_SYNC
++       bool
++
+ config HAVE_KVM_MSI
+        bool
+ 
+diff --git a/virt/kvm/async_pf.c b/virt/kvm/async_pf.c
+index 8631d9c..00980ab 100644
+--- a/virt/kvm/async_pf.c
++++ b/virt/kvm/async_pf.c
+@@ -28,6 +28,21 @@
+ #include "async_pf.h"
+ #include <trace/events/kvm.h>
+ 
++static inline void kvm_async_page_present_sync(struct kvm_vcpu *vcpu,
++					       struct kvm_async_pf *work)
++{
++#ifdef CONFIG_KVM_ASYNC_PF_SYNC
++	kvm_arch_async_page_present(vcpu, work);
++#endif
++}
++static inline void kvm_async_page_present_async(struct kvm_vcpu *vcpu,
++						struct kvm_async_pf *work)
++{
++#ifndef CONFIG_KVM_ASYNC_PF_SYNC
++	kvm_arch_async_page_present(vcpu, work);
++#endif
++}
++
+ static struct kmem_cache *async_pf_cache;
+ 
+ int kvm_async_pf_init(void)
+@@ -69,6 +84,7 @@ static void async_pf_execute(struct work_struct *work)
+ 	down_read(&mm->mmap_sem);
+ 	get_user_pages(current, mm, addr, 1, 1, 0, NULL, NULL);
+ 	up_read(&mm->mmap_sem);
++	kvm_async_page_present_sync(vcpu, apf);
+ 	unuse_mm(mm);
+ 
+ 	spin_lock(&vcpu->async_pf.lock);
+@@ -138,7 +154,7 @@ void kvm_check_async_pf_completion(struct kvm_vcpu *vcpu)
+ 	}
+ }
+ 
+-int kvm_setup_async_pf(struct kvm_vcpu *vcpu, gva_t gva, gfn_t gfn,
++int kvm_setup_async_pf(struct kvm_vcpu *vcpu, gva_t gva, unsigned long hva,
+ 		       struct kvm_arch_async_pf *arch)
+ {
+ 	struct kvm_async_pf *work;
+@@ -159,7 +175,7 @@ int kvm_setup_async_pf(struct kvm_vcpu *vcpu, gva_t gva, gfn_t gfn,
+ 	work->wakeup_all = false;
+ 	work->vcpu = vcpu;
+ 	work->gva = gva;
+-	work->addr = gfn_to_hva(vcpu->kvm, gfn);
++	work->addr = hva;
+ 	work->arch = *arch;
+ 	work->mm = current->mm;
+ 	atomic_inc(&work->mm->mm_count);
+-- 
+1.8.0
+

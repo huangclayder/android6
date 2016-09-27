@@ -1,0 +1,29 @@
+From 497e421f4e27361d319b3294ad2cf8d1549ba037 Mon Sep 17 00:00:00 2001
+From: Li Jun <jun.li@freescale.com>
+Date: Tue, 4 Aug 2015 18:57:20 +0800
+Subject: [PATCH] MLK-11319-4 ARM: imx_v7_defconfig: remove
+ CONFIG_IMX6_USB_CHARGER
+
+Remove CONFIG_IMX6_USB_CHARGER since it's no longer used.
+
+Acked-by: Peter Chen <peter.chen@freescale.com>
+Signed-off-by: Li Jun <jun.li@freescale.com>
+---
+ arch/arm/configs/imx_v7_defconfig | 1 -
+ 1 file changed, 1 deletion(-)
+
+diff --git a/arch/arm/configs/imx_v7_defconfig b/arch/arm/configs/imx_v7_defconfig
+index 3639100..64cc212 100644
+--- a/arch/arm/configs/imx_v7_defconfig
++++ b/arch/arm/configs/imx_v7_defconfig
+@@ -203,7 +203,6 @@ CONFIG_GPIO_MAX732X=y
+ CONFIG_GPIO_74X164=y
+ CONFIG_POWER_SUPPLY=y
+ CONFIG_SABRESD_MAX8903=y
+-CONFIG_IMX6_USB_CHARGER=y
+ CONFIG_SENSORS_MAX17135=y
+ CONFIG_SENSORS_MAG3110=y
+ CONFIG_THERMAL=y
+-- 
+1.8.0
+

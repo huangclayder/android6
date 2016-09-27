@@ -1,0 +1,29 @@
+From c86f315c0a4ed85b9c6c281a9330cc8073c66f02 Mon Sep 17 00:00:00 2001
+From: MJm <B55507@freescale.com>
+Date: Tue, 13 Oct 2015 13:10:50 +0800
+Subject: [PATCH 543/602] MA-7013 whether we can achieve the same function by
+ removing the SHOW_SYSTEM_TIME in api/current.txt
+
+Change the LOCAL_MODULE_TAG to optional
+
+Signed-off-by: Ma Jiamin<b55507@freescale.com>
+---
+ common/extended/freescale-extended/Android.mk | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/common/extended/freescale-extended/Android.mk b/common/extended/freescale-extended/Android.mk
+index 1025d77..aae9031 100755
+--- a/common/extended/freescale-extended/Android.mk
++++ b/common/extended/freescale-extended/Android.mk
+@@ -9,7 +9,7 @@ include $(BUILD_JAVA_LIBRARY)
+ 
+ include $(CLEAR_VARS)
+ LOCAL_MODULE := freescale-extended.xml
+-LOCAL_MODULE_TAGS := eng
++LOCAL_MODULE_TAGS := optional
+ LOCAL_MODULE_CLASS := ETC
+ LOCAL_MODULE_PATH := $(TARGET_OUT_ETC)/permissions
+ LOCAL_SRC_FILES := $(LOCAL_MODULE)
+-- 
+1.8.0
+

@@ -1,0 +1,70 @@
+From b0f4944da69e67f1439e2d703d7b9cbff9afb12b Mon Sep 17 00:00:00 2001
+From: Xiaowen Liu <xiaowen.liu@freescale.com>
+Date: Thu, 10 Dec 2015 11:55:22 -0500
+Subject: [PATCH 616/635] MA-7342 Memory leakage issue in Camera HAL v3 code.
+
+Fix Memory leakage issue in Camera HAL v3 code.
+munmap size should match mmap size.
+
+Signed-off-by: Xiaowen Liu <xiaowen.liu@freescale.com>
+---
+ mx6/libcamera3/CameraHAL.cpp | 11 +++++++++++
+ mx6/libcamera3/USPStream.cpp |  4 ++--
+ 2 files changed, 13 insertions(+), 2 deletions(-)
+
+diff --git a/mx6/libcamera3/CameraHAL.cpp b/mx6/libcamera3/CameraHAL.cpp
+index 01ccc24..5f373bb 100644
+--- a/mx6/libcamera3/CameraHAL.cpp
++++ b/mx6/libcamera3/CameraHAL.cpp
+@@ -187,6 +187,10 @@ int32_t CameraHAL::handleCameraConnected(char* uevent)
+         }
+     }
+ 
++    if (node != NULL) {
++        free(node);
++    }
++
+     return 0;
+ }
+ 
+@@ -455,6 +459,13 @@ int32_t CameraHAL::matchDevNodes()
+         matchPropertyName(nodes, index);
+     }
+ 
++    node = nodes;
++    while (node != NULL) {
++        last = node->next;
++        free(node);
++        node = last;
++    }
++
+     return 0;
+ }
+ 
+diff --git a/mx6/libcamera3/USPStream.cpp b/mx6/libcamera3/USPStream.cpp
+index cb2beb3..018c631 100644
+--- a/mx6/libcamera3/USPStream.cpp
++++ b/mx6/libcamera3/USPStream.cpp
+@@ -253,7 +253,7 @@ int32_t USPStream::allocateBuffersLocked()
+         mBuffers[i] = new StreamBuffer();
+         mBuffers[i]->mVirtAddr  = ptr;
+         mBuffers[i]->mPhyAddr   = phyAddr;
+-        mBuffers[i]->mSize      =  size;
++        mBuffers[i]->mSize      =  ionSize;
+         mBuffers[i]->mBufHandle = (buffer_handle_t*)ionHandle;
+         mBuffers[i]->mFd = sharedFd;
+         mBuffers[i]->mStream = this;
+@@ -282,9 +282,9 @@ int32_t USPStream::freeBuffersLocked()
+     for (uint32_t i = 0; i < mAllocatedBuffers; i++) {
+         ion_user_handle_t ionHandle =
+             (ion_user_handle_t)mBuffers[i]->mBufHandle;
++        munmap(mBuffers[i]->mVirtAddr, mBuffers[i]->mSize);
+         close(mBuffers[i]->mFd);
+         ion_free(mIonFd, ionHandle);
+-        munmap(mBuffers[i]->mVirtAddr, mBuffers[i]->mSize);
+         delete mBuffers[i];
+         mBuffers[i] = NULL;
+     }
+-- 
+1.8.0
+

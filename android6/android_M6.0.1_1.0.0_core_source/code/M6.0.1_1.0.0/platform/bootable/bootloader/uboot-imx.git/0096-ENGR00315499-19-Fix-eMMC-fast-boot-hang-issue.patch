@@ -1,0 +1,124 @@
+From cf77f982b9969eda4cb5af2a78d3d40e17290756 Mon Sep 17 00:00:00 2001
+From: "Ye.Li" <B37916@freescale.com>
+Date: Mon, 18 Nov 2013 16:21:30 +0800
+Subject: [PATCH] ENGR00315499-19 Fix eMMC fast boot hang issue
+
+When booting in eMMC fast boot, the uboot v2013.04 always hangs.
+The root cause is that MMC host does not exit from boot mode after
+bootrom loading image. So the first command 'CMD0' sent
+in uboot will pull down the CMD line to low and cause errors.
+
+This patch cleans the MMC boot register in "mmc_init" to put the
+MMC host back to normal mode.
+
+Signed-off-by: Ye Li <b37916@freescale.com>
+Signed-off-by: Nitin Garg <nitin.garg@freescale.com>
+(cherry picked from commit 2ead2f9501c6d2571e0f5365bd808ed7c73257ef)
+Signed-off-by: Peng Fan <Peng.Fan@freescale.com>
+
+Conflicts:
+	drivers/mmc/fsl_esdhc.c
+---
+ drivers/mmc/fsl_esdhc.c | 37 ++++++++++++++++++++++++++++---------
+ include/fsl_esdhc.h     |  9 ++++++++-
+ 2 files changed, 36 insertions(+), 10 deletions(-)
+
+diff --git a/drivers/mmc/fsl_esdhc.c b/drivers/mmc/fsl_esdhc.c
+index 9daceab..6356bc5 100644
+--- a/drivers/mmc/fsl_esdhc.c
++++ b/drivers/mmc/fsl_esdhc.c
+@@ -54,22 +54,30 @@ struct fsl_esdhc {
+ 	uint    fevt;		/* Force event register */
+ 	uint    admaes;		/* ADMA error status register */
+ 	uint    adsaddr;	/* ADMA system address register */
+-	char    reserved2[100];	/* reserved */
+-	uint    vendorspec;	/* Vendor Specific register */
+-	char    reserved3[56];	/* reserved */
++	char    reserved2[4];
++	uint    dllctrl;
++	uint    dllstat;
++	uint    clktunectrlstatus;
++	char    reserved3[84];
++	uint    vendorspec;
++	uint    mmcboot;
++	uint    vendorspec2;
++	char	reserved4[48];
+ 	uint    hostver;	/* Host controller version register */
+-	char    reserved4[4];	/* reserved */
+-	uint    dmaerraddr;	/* DMA error address register */
++#ifndef ARCH_MXC
+ 	char    reserved5[4];	/* reserved */
+-	uint    dmaerrattr;	/* DMA error attribute register */
++	uint    dmaerraddr;	/* DMA error address register */
+ 	char    reserved6[4];	/* reserved */
++	uint    dmaerrattr;	/* DMA error attribute register */
++	char    reserved7[4];	/* reserved */
+ 	uint    hostcapblt2;	/* Host controller capabilities register 2 */
+-	char    reserved7[8];	/* reserved */
++	char    reserved8[8];	/* reserved */
+ 	uint    tcr;		/* Tuning control register */
+-	char    reserved8[28];	/* reserved */
++	char    reserved9[28];	/* reserved */
+ 	uint    sddirctl;	/* SD direction control register */
+-	char    reserved9[712];	/* reserved */
++	char    reserved10[712];/* reserved */
+ 	uint    scr;		/* eSDHC control register */
++#endif
+ };
+ 
+ /* Return the XFERTYP flags for a given command and data packet */
+@@ -513,6 +521,17 @@ static int esdhc_init(struct mmc *mmc)
+ 	while ((esdhc_read32(&regs->sysctl) & SYSCTL_RSTA) && --timeout)
+ 		udelay(1000);
+ 
++#if defined(CONFIG_FSL_USDHC)
++	/* RSTA doesn't reset MMC_BOOT register, so manually reset it */
++	esdhc_write32(&regs->mmcboot, 0x0);
++	/* Reset MIX_CTRL and CLK_TUNE_CTRL_STATUS regs to 0 */
++	esdhc_write32(&regs->mixctrl, 0x0);
++	esdhc_write32(&regs->clktunectrlstatus, 0x0);
++
++	/* Put VEND_SPEC to default value */
++	esdhc_write32(&regs->vendorspec, VENDORSPEC_INIT);
++#endif
++
+ #ifndef ARCH_MXC
+ 	/* Enable cache snooping */
+ 	esdhc_write32(&regs->scr, 0x00000040);
+diff --git a/include/fsl_esdhc.h b/include/fsl_esdhc.h
+index 57295b4..90338e6 100644
+--- a/include/fsl_esdhc.h
++++ b/include/fsl_esdhc.h
+@@ -2,7 +2,7 @@
+  * FSL SD/MMC Defines
+  *-------------------------------------------------------------------
+  *
+- * Copyright 2007-2008,2010-2011 Freescale Semiconductor, Inc
++ * Copyright 2007-2008, 2010-2013 Freescale Semiconductor, Inc.
+  *
+  * SPDX-License-Identifier:	GPL-2.0+
+  */
+@@ -29,6 +29,12 @@
+ #define SYSCTL_RSTC		0x02000000
+ #define SYSCTL_RSTD		0x04000000
+ 
++#define VENDORSPEC_CKEN		0x00004000
++#define VENDORSPEC_PEREN		0x00002000
++#define VENDORSPEC_HCKEN		0x00001000
++#define VENDORSPEC_IPGEN		0x00000800
++#define VENDORSPEC_INIT     0x20007809
++
+ #define IRQSTAT			0x0002e030
+ #define IRQSTAT_DMAE		(0x10000000)
+ #define IRQSTAT_AC12E		(0x01000000)
+@@ -82,6 +88,7 @@
+ #define PRSSTAT_CINS		(0x00010000)
+ #define PRSSTAT_BREN		(0x00000800)
+ #define PRSSTAT_BWEN		(0x00000400)
++#define PRSSTAT_SDSTB		(0x00000008)
+ #define PRSSTAT_DLA		(0x00000004)
+ #define PRSSTAT_CICHB		(0x00000002)
+ #define PRSSTAT_CIDHB		(0x00000001)
+-- 
+1.8.0
+

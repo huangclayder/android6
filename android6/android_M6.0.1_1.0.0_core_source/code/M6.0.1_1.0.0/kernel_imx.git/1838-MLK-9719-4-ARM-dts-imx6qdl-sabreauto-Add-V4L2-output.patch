@@ -1,0 +1,32 @@
+From 93043b90a2392bd14679cd710196040beb162bfd Mon Sep 17 00:00:00 2001
+From: Robby Cai <r63905@freescale.com>
+Date: Thu, 23 Oct 2014 20:51:33 +0800
+Subject: [PATCH] MLK-9719-4 ARM: dts: imx6qdl-sabreauto: Add V4L2 output
+ support
+
+Add v4l2 output support for imx6qdl sabreauto board
+
+Signed-off-by: Robby Cai <r63905@freescale.com>
+---
+ arch/arm/boot/dts/imx6qdl-sabreauto.dtsi | 5 +++++
+ 1 file changed, 5 insertions(+)
+
+diff --git a/arch/arm/boot/dts/imx6qdl-sabreauto.dtsi b/arch/arm/boot/dts/imx6qdl-sabreauto.dtsi
+index 8cb4e75..1df3178 100644
+--- a/arch/arm/boot/dts/imx6qdl-sabreauto.dtsi
++++ b/arch/arm/boot/dts/imx6qdl-sabreauto.dtsi
+@@ -232,6 +232,11 @@
+ 		mux-int-port = <2>;
+ 		mux-ext-port = <5>;
+ 	};
++
++	v4l2_out {
++		compatible = "fsl,mxc_v4l2_output";
++		status = "okay";
++	};
+ };
+ 
+ &audmux {
+-- 
+1.8.0
+

@@ -1,0 +1,29 @@
+From 9fcb73868a696b977280e37a9e9c46c7bf588d95 Mon Sep 17 00:00:00 2001
+From: zhang sanshan <b51434@freescale.com>
+Date: Tue, 1 Dec 2015 16:08:19 +0800
+Subject: [PATCH 32/34] MA-7315-1 support online OTA in android6.0
+
+Fix compile error when 'make otapackage BUILD_TARGET_FS=ubifs'
+The member of item have change from dir to is_dir.
+
+Signed-off-by: zhang sanshan <b51434@freescale.com>
+---
+ tools/releasetools/ota_from_target_files.py | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/tools/releasetools/ota_from_target_files.py b/tools/releasetools/ota_from_target_files.py
+index 4568eaf..7911f82 100755
+--- a/tools/releasetools/ota_from_target_files.py
++++ b/tools/releasetools/ota_from_target_files.py
+@@ -372,7 +372,7 @@ class Item(object):
+       # item (and all its children) have already been set to.  We only
+       # need to issue set_perm/set_perm_recursive commands if we're
+       # supposed to be something different.
+-      if item.dir:
++      if item.is_dir:
+         if current != item.best_subtree:
+           script.SetPermissionsRecursive_NonSelinux("/"+item.name, *item.best_subtree)
+           current = item.best_subtree
+-- 
+1.8.0
+

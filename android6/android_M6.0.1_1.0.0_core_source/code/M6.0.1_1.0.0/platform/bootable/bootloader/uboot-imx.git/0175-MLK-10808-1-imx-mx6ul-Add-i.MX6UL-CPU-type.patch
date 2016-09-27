@@ -1,0 +1,56 @@
+From e70b30f39df9e88c3e5f088145de8e441ee82593 Mon Sep 17 00:00:00 2001
+From: "Ye.Li" <B37916@freescale.com>
+Date: Mon, 4 May 2015 17:04:23 +0800
+Subject: [PATCH] MLK-10808-1 imx: mx6ul: Add i.MX6UL CPU type
+
+Add MXC_CPU_MX6UL for i.MX6UL CPU type which is got at runtime.
+The 0x64 is defined as i.MX6Ul CPU type value in RM, but the value
+has been occupied by i.MX6D as a dummy CPU type.
+So we also need change i.MX6D to a invalid value 0x67.
+
+Signed-off-by: Ye.Li <B37916@freescale.com>
+---
+ arch/arm/imx-common/cpu.c           | 4 +++-
+ arch/arm/include/asm/arch-imx/cpu.h | 3 ++-
+ 2 files changed, 5 insertions(+), 2 deletions(-)
+
+diff --git a/arch/arm/imx-common/cpu.c b/arch/arm/imx-common/cpu.c
+index 7d0e5c0..8eb6a5a 100644
+--- a/arch/arm/imx-common/cpu.c
++++ b/arch/arm/imx-common/cpu.c
+@@ -2,7 +2,7 @@
+  * (C) Copyright 2007
+  * Sascha Hauer, Pengutronix
+  *
+- * (C) Copyright 2009 Freescale Semiconductor, Inc.
++ * (C) Copyright 2009-2015 Freescale Semiconductor, Inc.
+  *
+  * SPDX-License-Identifier:	GPL-2.0+
+  */
+@@ -151,6 +151,8 @@ const char *get_imx_type(u32 imxtype)
+ 		return "6SL";	/* Solo-Lite version of the mx6 */
+ 	case MXC_CPU_MX6SX:
+ 		return "6SX";   /* SoloX version of the mx6 */
++	case MXC_CPU_MX6UL:
++		return "6UL";	/* UL version of the mx6 */
+ 	case MXC_CPU_MX51:
+ 		return "51";
+ 	case MXC_CPU_MX53:
+diff --git a/arch/arm/include/asm/arch-imx/cpu.h b/arch/arm/include/asm/arch-imx/cpu.h
+index 80a4d77..d198906 100644
+--- a/arch/arm/include/asm/arch-imx/cpu.h
++++ b/arch/arm/include/asm/arch-imx/cpu.h
+@@ -10,8 +10,9 @@
+ #define MXC_CPU_MX6DL		0x61
+ #define MXC_CPU_MX6SX		0x62
+ #define MXC_CPU_MX6Q		0x63
+-#define MXC_CPU_MX6D		0x64
++#define MXC_CPU_MX6UL		0x64
+ #define MXC_CPU_MX6SOLO		0x66 /* dummy */
++#define MXC_CPU_MX6D		0x67
+ #define MXC_CPU_MX7D		0x72
+ 
+ #define CS0_128					0
+-- 
+1.8.0
+

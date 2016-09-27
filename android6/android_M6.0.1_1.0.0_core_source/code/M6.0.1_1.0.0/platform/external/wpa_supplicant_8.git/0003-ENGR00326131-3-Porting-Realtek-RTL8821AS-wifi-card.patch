@@ -1,0 +1,30 @@
+From 42e8886270bfb5ad806c05d53a68ddb2161dc2af Mon Sep 17 00:00:00 2001
+From: Wang Haoran <b50027@freescale.com>
+Date: Tue, 2 Sep 2014 15:23:36 +0800
+Subject: [PATCH 03/22] ENGR00326131-3 Porting Realtek RTL8821AS wifi card
+
+Disable the 5G freq when Realtek 5G wifi use p2p
+in selected channel.
+This fixed the p2p compatility to Nexus 5.
+
+Signed-off-by: Wang Haoran <b50027@freescale.com>
+---
+ src/p2p/p2p_utils.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/src/p2p/p2p_utils.c b/src/p2p/p2p_utils.c
+index eee3c5a..c43a7d0 100644
+--- a/src/p2p/p2p_utils.c
++++ b/src/p2p/p2p_utils.c
+@@ -345,7 +345,7 @@ int p2p_supported_freq_go(struct p2p_data *p2p, unsigned int freq)
+ {
+ 	u8 op_reg_class, op_channel;
+ 	if (p2p_freq_to_channel(freq, &op_reg_class, &op_channel) < 0)
+-		return 0;
++		return 0; 
+ 	return p2p_channels_includes(&p2p->cfg->channels, op_reg_class,
+ 				     op_channel) &&
+ 		!freq_range_list_includes(&p2p->no_go_freq, freq);
+-- 
+1.8.0
+

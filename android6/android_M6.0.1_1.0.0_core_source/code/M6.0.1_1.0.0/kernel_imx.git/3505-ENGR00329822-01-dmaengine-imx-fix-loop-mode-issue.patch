@@ -1,0 +1,44 @@
+From 00cc7021317ac6efb460eb1b9bc3bd8aa6ad73c2 Mon Sep 17 00:00:00 2001
+From: Fugang Duan <b38611@freescale.com>
+Date: Fri, 10 Oct 2014 15:31:11 +0800
+Subject: [PATCH] ENGR00329822-01 dmaengine: imx: fix loop mode issue
+
+Fix loop mode issue that calling dmaengine_tx_status() can get
+right state.residue value.
+
+Signed-off-by: Fugang Duan <B38611@freescale.com>
+Signed-off-by: Robin Gong <b38343@freescale.com>
+(cherry picked from commit 37e17f10b35c34317def08704e4b4edf5aa23894)
+---
+ drivers/dma/imx-sdma.c | 8 ++++++++
+ 1 file changed, 8 insertions(+)
+
+diff --git a/drivers/dma/imx-sdma.c b/drivers/dma/imx-sdma.c
+index 08d65de..5f97c96 100644
+--- a/drivers/dma/imx-sdma.c
++++ b/drivers/dma/imx-sdma.c
+@@ -625,6 +625,11 @@ static void sdma_update_channel_loop(struct sdma_channel *sdmac)
+ 		bd->mode.status |= BD_DONE;
+ 		sdmac->buf_tail++;
+ 		sdmac->buf_tail %= sdmac->num_bd;
++		if (sdmac->peripheral_type == IMX_DMATYPE_UART) {
++			/* restore mode.count after counter readed */
++			sdmac->chn_real_count = bd->mode.count;
++			bd->mode.count = sdmac->chn_count;
++		}
+ 	}
+ }
+ 
+@@ -1258,6 +1263,9 @@ static struct dma_async_tx_descriptor *sdma_prep_dma_cyclic(
+ 		goto err_out;
+ 	}
+ 
++	if (sdmac->peripheral_type == IMX_DMATYPE_UART)
++		sdmac->chn_count = period_len;
++
+ 	while (buf < buf_len) {
+ 		struct sdma_buffer_descriptor *bd = &sdmac->bd[i];
+ 		int param;
+-- 
+1.8.0
+

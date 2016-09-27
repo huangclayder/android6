@@ -1,0 +1,45 @@
+From 82947badf060f969866239a3c82b96343d2063cf Mon Sep 17 00:00:00 2001
+From: "guoyin.chen" <guoyin.chen@freescale.com>
+Date: Mon, 10 Aug 2015 17:33:50 +0800
+Subject: [PATCH 80/95] MA-6971 Fix build error for WifiDisplaySource in
+ m-preview
+
+Change StringPrintf to AStringPrintf
+
+Signed-off-by: guoyin.chen <guoyin.chen@freescale.com>
+---
+ media/libstagefright/wifi-display/source/WifiDisplaySource.cpp | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/media/libstagefright/wifi-display/source/WifiDisplaySource.cpp b/media/libstagefright/wifi-display/source/WifiDisplaySource.cpp
+index b10445e..f5364d1 100644
+--- a/media/libstagefright/wifi-display/source/WifiDisplaySource.cpp
++++ b/media/libstagefright/wifi-display/source/WifiDisplaySource.cpp
+@@ -1,6 +1,6 @@
+ /*
+  * Copyright 2012, The Android Open Source Project
+- * Copyright (C) 2014 Freescale Semiconductor, Inc.
++ * Copyright (C) 2014-2015 Freescale Semiconductor, Inc.
+  *
+  * Licensed under the Apache License, Version 2.0 (the "License");
+  * you may not use this file except in compliance with the License.
+@@ -1023,14 +1023,14 @@ status_t WifiDisplaySource::sendM4(int32_t sessionID) {
+                 "wfd_client_rtp_ports: %s\r\n", mWfdClientRtpPorts.c_str()));
+     if (mSinkSupportsUIBC) {
+         body.append(
+-                StringPrintf(
++                AStringPrintf(
+                     "wfd_uibc_capability: input_category_list=GENERIC;"
+                     "generic_cap_list=Mouse,SingleTouch;"
+                     "hidc_cap_list=none;"
+                     "port=%d\r\n", DEFAULT_UIBC_PORT)
+                 );
+         body.append(
+-                StringPrintf(
++                AStringPrintf(
+                     "wfd_uibc_setting: %s\r\n", "enable")
+                 );
+ 
+-- 
+1.8.0
+

@@ -1,0 +1,43 @@
+From ed909d38858095178dcaa704ac9b76ec7aca6280 Mon Sep 17 00:00:00 2001
+From: Andrey Konovalov <andrey.konovalov@linaro.org>
+Date: Thu, 11 Apr 2013 16:44:26 +0400
+Subject: [PATCH] configs: Move CONFIG_PROVE_LOCKING from linaro-base.conf to
+ debug.conf
+
+CONFIG_PROVE_LOCKING is an expensive option which adds significant
+overhead to lock operations. The examples are 5% power consumption increase
+for vexpress with this option enabled, and improving netperf on the loopback
+results by ~200% after disabling DEBUG_MUTEXES (DEBUG_MUTEXES is selected by
+PROVE_LOCKING).
+
+Move CONFIG_PROVE_LOCKING to a separate debug.conf fragment, so that it
+could be enabled only when it is needed.
+
+Signed-off-by: Andrey Konovalov <andrey.konovalov@linaro.org>
+---
+ linaro/configs/debug.conf       | 1 +
+ linaro/configs/linaro-base.conf | 1 -
+ 2 files changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/linaro/configs/debug.conf b/linaro/configs/debug.conf
+new file mode 100644
+index 0000000..3698056
+--- /dev/null
++++ b/linaro/configs/debug.conf
+@@ -0,0 +1 @@
++CONFIG_PROVE_LOCKING=y
+diff --git a/linaro/configs/linaro-base.conf b/linaro/configs/linaro-base.conf
+index 1b4872b..5c748a7 100644
+--- a/linaro/configs/linaro-base.conf
++++ b/linaro/configs/linaro-base.conf
+@@ -76,7 +76,6 @@ CONFIG_MAGIC_SYSRQ=y
+ CONFIG_DEBUG_FS=y
+ CONFIG_SCHEDSTATS=y
+ CONFIG_TIMER_STATS=y
+-CONFIG_PROVE_LOCKING=y
+ CONFIG_KEYS=y
+ CONFIG_CRYPTO_MICHAEL_MIC=y
+ CONFIG_CRC_CCITT=y
+-- 
+1.8.0
+

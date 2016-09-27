@@ -1,0 +1,40 @@
+From 967cb883eb3523492f5b44d89d2837ed9e793ed7 Mon Sep 17 00:00:00 2001
+From: Peter Chen <peter.chen@freescale.com>
+Date: Fri, 10 Jul 2015 15:40:09 +0800
+Subject: [PATCH] MLK-11235-3 ARM: imx7d-12x12-ddr3-arm2.dts: enable the USB
+ HSIC function
+
+- Enable the USB HSIC port
+- Add pin control for USB HUB 24M clock
+
+Signed-off-by: Peter Chen <peter.chen@freescale.com>
+---
+ arch/arm/boot/dts/imx7d-12x12-ddr3-arm2.dts | 5 +++++
+ 1 file changed, 5 insertions(+)
+
+diff --git a/arch/arm/boot/dts/imx7d-12x12-ddr3-arm2.dts b/arch/arm/boot/dts/imx7d-12x12-ddr3-arm2.dts
+index 6ccfd53..4f1e166 100644
+--- a/arch/arm/boot/dts/imx7d-12x12-ddr3-arm2.dts
++++ b/arch/arm/boot/dts/imx7d-12x12-ddr3-arm2.dts
+@@ -269,6 +269,7 @@
+ 			fsl,pins = <
+ 				MX7D_PAD_GPIO1_IO02__GPIO1_IO2 	0x59 /* flexcan stby1 */
+ 				MX7D_PAD_GPIO1_IO03__GPIO1_IO3  0x59 /* flexcan stby2 */
++				MX7D_PAD_GPIO1_IO01__ANATOP_24M_OUT 0x80000000
+ 			>;
+ 		};
+ 	};
+@@ -292,6 +293,10 @@
+ 	};
+ };
+ 
++&usbh {
++	status = "okay";
++};
++
+ &usbotg1 {
+ 	vbus-supply = <&reg_usb_otg1_vbus>;
+ 	srp-disable;
+-- 
+1.8.0
+

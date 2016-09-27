@@ -1,0 +1,66 @@
+From 1680f0d62dce4bdbb6e535f5a6e8ddd826429ed9 Mon Sep 17 00:00:00 2001
+From: Amit Pundir <amit.pundir@linaro.org>
+Date: Mon, 3 Nov 2014 12:21:22 +0530
+Subject: [PATCH] xt_qtaguid: check xt_sock socket before releasing
+
+Bug in xt_qtguid wherein xt_socket_get_*_sk() can steal the sk from
+skb without taking a reference, so we may end up lowering the refcnt
+of sk too much.
+
+This is hard to trigger, you need to take a special path in tcp_v4, half
+closed state + remote has to send you some data packets.
+
+[   74.024530] ------------[ cut here ]------------
+[   74.029157] kernel BUG at net/ipv4/inet_timewait_sock.c:101!
+[   74.034822] Internal error: Oops - BUG: 0 [#1] PREEMPT SMP ARM
+[   74.052880] CPU: 0 PID: 3 Comm: ksoftirqd/0 Tainted: P         C O
+3.14.13-1.1pre+ #25
+[   74.060806] task: cd88f400 ti: cd8a8000 task.ti: cd8a8000
+[   74.066219] PC is at __inet_twsk_kill+0x138/0x15c
+[   74.070930] LR is at __inet_twsk_kill+0x10c/0x15c
+[   74.075639] pc : [<c041efa0>]    lr : [<c041ef74>]    psr: 600f0013
+[   74.075639] sp : cd8a9cb0  ip : 000008d8  fp : 00000000
+[   74.087128] r10: 00000001  r9 : 000043b0  r8 : cda38ba0
+[   74.092357] r7 : 00000001  r6 : 00000001  r5 : 00000002  r4 : c7f50bc0
+[   74.098891] r3 : 00000002  r2 : 00000100  r1 : 200f0093  r0 : 00000016
+[   74.105426] Flags: nZCv  IRQs on  FIQs on  Mode SVC_32  ISA ARM
+Segment kernel
+[   74.112742] Control: 30c5387d  Table: 0c6c5e40  DAC: fffffffd
+[   74.703277] [<c041efa0>] (__inet_twsk_kill) from [<c04376b4>]
+(tcp_timewait_state_process+0x30c/0x380)
+[   74.712595] [<c04376b4>] (tcp_timewait_state_process) from
+[<c0436d54>] (tcp_v4_rcv+0x17c/0x7c0)
+[   74.721391] [<c0436d54>] (tcp_v4_rcv) from [<c04148b8>]
+(ip_local_deliver_finish+0xd0/0x2b0)
+[   74.729840] [<c04148b8>] (ip_local_deliver_finish) from
+[<c0414be0>] (ip_rcv_finish+0x148/0x36c)
+[   74.738638] [<c0414be0>] (ip_rcv_finish) from [<c03b9b00>]
+(__netif_receive_skb_core+0x200/0x75c)
+[   74.747522] [<c03b9b00>] (__netif_receive_skb_core) from
+[<c03ba104>] (netif_receive_skb_internal+0x30/0xbc)
+[   74.757365] [<c03ba104>] (netif_receive_skb_internal) from
+[<c04d30d0>] (brcm_tag_rcv+0x13c/0x178)
+
+Bug (and subsequent fix) reported by an external tester.
+Signed-off-by: Amit Pundir <amit.pundir@linaro.org>
+---
+ net/netfilter/xt_qtaguid.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/net/netfilter/xt_qtaguid.c b/net/netfilter/xt_qtaguid.c
+index fcd2d81..8e5eba4 100644
+--- a/net/netfilter/xt_qtaguid.c
++++ b/net/netfilter/xt_qtaguid.c
+@@ -1605,7 +1605,8 @@ static struct sock *qtaguid_find_sk(const struct sk_buff *skb,
+ 		 * "struct inet_timewait_sock" which is missing fields.
+ 		 */
+ 		if (sk->sk_state  == TCP_TIME_WAIT) {
+-			sock_gen_put(sk);
++			if (sk != skb->sk)
++				sock_gen_put(sk);
+ 			sk = NULL;
+ 		}
+ 	}
+-- 
+1.8.0
+

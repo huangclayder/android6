@@ -1,0 +1,59 @@
+From cd1bd6ee94e720af911a2ce7db697af0df59c0a9 Mon Sep 17 00:00:00 2001
+From: Peng Fan <Peng.Fan@freescale.com>
+Date: Fri, 22 May 2015 13:09:58 +0800
+Subject: [PATCH] MLK-10546-2 imx: mx7 implement reset_misc
+
+On mx7d 12x12 lpddr3 arm2 board, POR_B reset in uboot will fail stress
+reset test, and hangs in rom code. Rom log buffer show thats wrong
+hab_image_entry and runs into serial download mode. Also there is no
+time delay reset circuit for this board.
+
+We found when disable CONFIG_VIDEO, all seems fine. Actually,
+only the following piece of code can make stress reset ok,
+"
+  writel(LCDIF_CTRL1_VSYNC_EDGE_IRQ, &regs->hw_lcdif_ctrl1_clr);
+  while (--timeout) {
+	  if (readl(&regs->hw_lcdif_ctrl1) & LCDIF_CTRL1_VSYNC_EDGE_IRQ)
+		  break;
+	  udelay(1);
+  }
+"
+Here we use lcdif_power_down API which is better to shutdown lcdif same as
+the way used in arch_preboot_os.
+
+Implement reset_misc for mx7, since it does not hurt for others boards.
+
+Signed-off-by: Peng Fan <Peng.Fan@freescale.com>
+---
+ arch/arm/cpu/armv7/mx7/soc.c | 8 ++++++++
+ 1 file changed, 8 insertions(+)
+
+diff --git a/arch/arm/cpu/armv7/mx7/soc.c b/arch/arm/cpu/armv7/mx7/soc.c
+index 5b8ae2e..586a6f2 100644
+--- a/arch/arm/cpu/armv7/mx7/soc.c
++++ b/arch/arm/cpu/armv7/mx7/soc.c
+@@ -17,6 +17,7 @@
+ #include <asm/arch/crm_regs.h>
+ #include <dm.h>
+ #include <imx_thermal.h>
++#include <mxsfb.h>
+ #ifdef CONFIG_FASTBOOT
+ #ifdef CONFIG_ANDROID_RECOVERY
+ #include <recovery.h>
+@@ -386,6 +387,13 @@ void s_init(void)
+ 	return;
+ }
+ 
++void reset_misc(void)
++{
++#ifdef CONFIG_VIDEO_MXS
++	lcdif_power_down();
++#endif
++}
++
+ #ifdef CONFIG_FASTBOOT
+ 
+ #ifdef CONFIG_ANDROID_RECOVERY
+-- 
+1.8.0
+

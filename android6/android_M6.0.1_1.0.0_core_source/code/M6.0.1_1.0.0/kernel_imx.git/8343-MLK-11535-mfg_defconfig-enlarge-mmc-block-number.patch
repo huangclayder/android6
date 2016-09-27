@@ -1,0 +1,28 @@
+From 8533e05615e3881d879a622f533aa45b1564a3ce Mon Sep 17 00:00:00 2001
+From: Frank Li <Frank.Li@freescale.com>
+Date: Fri, 11 Sep 2015 21:40:07 +0800
+Subject: [PATCH] MLK-11535 mfg_defconfig: enlarge mmc block number
+
+default is 8. android require more.
+Change to 16.
+
+Signed-off-by: Frank Li <Frank.Li@freescale.com>
+---
+ arch/arm/configs/imx_v7_mfg_defconfig | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/arch/arm/configs/imx_v7_mfg_defconfig b/arch/arm/configs/imx_v7_mfg_defconfig
+index 2e4c0fb..dbe140a 100644
+--- a/arch/arm/configs/imx_v7_mfg_defconfig
++++ b/arch/arm/configs/imx_v7_mfg_defconfig
+@@ -238,6 +238,7 @@ CONFIG_USB_MASS_STORAGE=y
+ CONFIG_FSL_UTP=y
+ CONFIG_MMC=y
+ CONFIG_MMC_UNSAFE_RESUME=y
++CONFIG_MMC_BLOCK_MINORS=16
+ CONFIG_MMC_SDHCI=y
+ CONFIG_MMC_SDHCI_PLTFM=y
+ CONFIG_MMC_SDHCI_ESDHC_IMX=y
+-- 
+1.8.0
+

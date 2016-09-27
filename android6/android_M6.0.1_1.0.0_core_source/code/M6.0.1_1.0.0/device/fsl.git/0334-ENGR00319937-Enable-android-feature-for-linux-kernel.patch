@@ -1,0 +1,83 @@
+From 1c77c1351a05ca7453267c9deaa4ce6b1c33e883 Mon Sep 17 00:00:00 2001
+From: Ke Qinghua <qinghua.ke@freescale.com>
+Date: Mon, 30 Jun 2014 10:30:58 +0800
+Subject: [PATCH 334/602] ENGR00319937 Enable android feature for linux kernel
+ 3.10.y
+
+Add imx keypad configuration file for new kernel 3.10
+
+Signed-off-by: Ke Qinghua <qinghua.ke@freescale.com>
+---
+ common/input/20b8000_kpp.idc | 25 +++++++++++++++++++++++++
+ common/input/20b8000_kpp.kl  | 13 +++++++++++++
+ imx6/evk_6sl.mk              |  2 ++
+ 3 files changed, 40 insertions(+)
+ create mode 100644 common/input/20b8000_kpp.idc
+ create mode 100644 common/input/20b8000_kpp.kl
+
+diff --git a/common/input/20b8000_kpp.idc b/common/input/20b8000_kpp.idc
+new file mode 100644
+index 0000000..fbe1423
+--- /dev/null
++++ b/common/input/20b8000_kpp.idc
+@@ -0,0 +1,25 @@
++# Copyright (C) 2010 The Android Open Source Project
++#
++# Licensed under the Apache License, Version 2.0 (the "License");
++# you may not use this file except in compliance with the License.
++# You may obtain a copy of the License at
++#
++#      http://www.apache.org/licenses/LICENSE-2.0
++#
++# Unless required by applicable law or agreed to in writing, software
++# distributed under the License is distributed on an "AS IS" BASIS,
++# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++# See the License for the specific language governing permissions and
++# limitations under the License.
++
++
++touch.deviceType = touchScreen
++touch.orientationAware = 1
++
++keyboard.layout = 20b8000_kpp
++keyboard.characterMap = Generic
++keyboard.orientationAware = 1
++keyboard.builtIn = 1
++
++cursor.mode = navigation
++cursor.orientationAware = 1
+diff --git a/common/input/20b8000_kpp.kl b/common/input/20b8000_kpp.kl
+new file mode 100644
+index 0000000..a1600bd
+--- /dev/null
++++ b/common/input/20b8000_kpp.kl
+@@ -0,0 +1,13 @@
++key 158    BACK
++key 116    POWER           WAKE
++key 139    MENU
++key 412    BACK
++key 102    HOME
++key 353    DPAD_CENTER
++key 103    DPAD_UP
++key 105    DPAD_LEFT
++key 106    DPAD_RIGHT
++key 108    DPAD_DOWN
++key 114    VOLUME_DOWN
++key 115    VOLUME_UP
++
+diff --git a/imx6/evk_6sl.mk b/imx6/evk_6sl.mk
+index 200d902..392d251 100644
+--- a/imx6/evk_6sl.mk
++++ b/imx6/evk_6sl.mk
+@@ -21,6 +21,8 @@ PRODUCT_COPY_FILES += \
+ 	device/fsl/evk_6sl/init.rc:root/init.freescale.rc \
+ 	device/fsl/common/input/imx-keypad.idc:system/usr/idc/imx-keypad.idc \
+ 	device/fsl/common/input/imx-keypad.kl:system/usr/keylayout/imx-keypad.kl \
++	device/fsl/common/input/20b8000_kpp.idc:system/usr/idc/20b8000_kpp.idc \
++	device/fsl/common/input/20b8000_kpp.kl:system/usr/keylayout/20b8000_kpp.kl \
+ 	device/fsl/evk_6sl/audio_policy.conf:system/etc/audio_policy.conf \
+ 	device/fsl/evk_6sl/audio_effects.conf:system/vendor/etc/audio_effects.conf
+ 
+-- 
+1.8.0
+

@@ -1,0 +1,47 @@
+From 55dcde805c59882f8f0c2edd495b77608be354ee Mon Sep 17 00:00:00 2001
+From: Liu Ying <Ying.Liu@freescale.com>
+Date: Thu, 26 Nov 2015 15:28:36 +0800
+Subject: [PATCH] MLK-11911-1 mxc IPUv3: capture: Define div_ratio as type of
+ int32_t
+
+The local variable div_ratio could be less than zero, so let's define
+it as type of int32_t instead of uint32_t.
+
+This issue is reported by Coverity:
+Unsigned compared against 0 (NO_EFFECT)
+unsigned_compare: This less-than-zero comparison of an unsigned value
+is never true. div_ratio < 0U.
+	if (div_ratio > 0xFF || div_ratio < 0) {
+		dev_dbg(ipu->dev, "value of pixel_clk extends normal range\n");
+		return -EINVAL;
+	}
+
+Signed-off-by: Liu Ying <Ying.Liu@freescale.com>
+(cherry picked from commit ee86e8791bc665c9b63e2f4a5fa9bd92a1d87af3)
+---
+ drivers/mxc/ipu3/ipu_capture.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/mxc/ipu3/ipu_capture.c b/drivers/mxc/ipu3/ipu_capture.c
+index b1d6fb3..f304c81 100644
+--- a/drivers/mxc/ipu3/ipu_capture.c
++++ b/drivers/mxc/ipu3/ipu_capture.c
+@@ -1,5 +1,5 @@
+ /*
+- * Copyright 2008-2014 Freescale Semiconductor, Inc. All Rights Reserved.
++ * Copyright 2008-2015 Freescale Semiconductor, Inc. All Rights Reserved.
+  */
+ 
+ /*
+@@ -43,7 +43,7 @@
+ int _ipu_csi_mclk_set(struct ipu_soc *ipu, uint32_t pixel_clk, uint32_t csi)
+ {
+ 	uint32_t temp;
+-	uint32_t div_ratio;
++	int32_t div_ratio;
+ 
+ 	div_ratio = (clk_get_rate(ipu->ipu_clk) / pixel_clk) - 1;
+ 
+-- 
+1.8.0
+

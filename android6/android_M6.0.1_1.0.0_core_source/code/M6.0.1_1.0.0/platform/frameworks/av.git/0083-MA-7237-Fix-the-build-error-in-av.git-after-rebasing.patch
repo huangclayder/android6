@@ -1,0 +1,30 @@
+From 2a5a95be84384e2080dd9d12c1ac555f08fee613 Mon Sep 17 00:00:00 2001
+From: "guoyin.chen" <guoyin.chen@freescale.com>
+Date: Mon, 9 Nov 2015 19:04:20 +0800
+Subject: [PATCH 83/95] MA-7237 Fix the build error in av.git after rebasing
+ android-6.0.0_r26
+
+As the constructor is private function, change the instance creation of
+NuCachedSource2 by static function NuCachedSource2::Create()
+
+Signed-off-by: guoyin.chen <guoyin.chen@freescale.com>
+---
+ media/libmediaplayerservice/MediaPlayerFactory.cpp | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/media/libmediaplayerservice/MediaPlayerFactory.cpp b/media/libmediaplayerservice/MediaPlayerFactory.cpp
+index d4ed4ea..3b96eb1 100644
+--- a/media/libmediaplayerservice/MediaPlayerFactory.cpp
++++ b/media/libmediaplayerservice/MediaPlayerFactory.cpp
+@@ -260,7 +260,7 @@ bool isWVM(const char* url,
+         }
+ 
+         // The widevine extractor does its own caching.
+-        mCachedSource = new NuCachedSource2(
++        mCachedSource = NuCachedSource2::Create(
+                 mConnectingDataSource,
+                 cacheConfig.isEmpty() ? NULL : cacheConfig.string(),
+                 disconnectAtHighwatermark);
+-- 
+1.8.0
+

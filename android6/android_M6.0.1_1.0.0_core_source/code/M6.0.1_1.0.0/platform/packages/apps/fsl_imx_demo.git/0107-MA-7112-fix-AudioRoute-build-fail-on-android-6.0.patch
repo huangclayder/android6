@@ -1,0 +1,34 @@
+From 306587e450bcce0cec6554b739292ed13e1084b3 Mon Sep 17 00:00:00 2001
+From: Richard Liu <r66033@freescale.com>
+Date: Wed, 14 Oct 2015 14:29:45 +0800
+Subject: [PATCH 107/115] MA-7112 fix AudioRoute build fail on android 6.0
+
+setWiredDeviceConnectionState() api changed on android 6.0,
+update AudioRoute code to fix build error.
+
+Android 5.0 API:
+setWiredDeviceConnectionState(int, int, String)
+Android 6.0 API:
+setWiredDeviceConnectionState(int, int, String, String)
+
+Signed-off-by: Richard Liu <r66033@freescale.com>
+---
+ AudioRoute/src/com/example/audioroute/AudioRoute.java | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/AudioRoute/src/com/example/audioroute/AudioRoute.java b/AudioRoute/src/com/example/audioroute/AudioRoute.java
+index 4d49976..c7ba47f 100644
+--- a/AudioRoute/src/com/example/audioroute/AudioRoute.java
++++ b/AudioRoute/src/com/example/audioroute/AudioRoute.java
+@@ -169,7 +169,7 @@ public class AudioRoute extends Activity {
+ 
+     private void setupAudioRoute() {
+         Log.d(TAG, "SPDIF IN "+ mSpdifIn.isChecked());
+-        mAudioManager.setWiredDeviceConnectionState(AudioSystem.DEVICE_IN_AUX_DIGITAL, mSpdifIn.isChecked() ? 1 : 0, "");
++        mAudioManager.setWiredDeviceConnectionState(AudioSystem.DEVICE_IN_AUX_DIGITAL, mSpdifIn.isChecked() ? 1 : 0, "", "");
+     }
+ 
+ }
+-- 
+1.8.0
+

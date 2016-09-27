@@ -1,0 +1,48 @@
+From 586a239d881c3b65bf1208609a313e3a991066ff Mon Sep 17 00:00:00 2001
+From: Matthew Leach <matthew.leach@arm.com>
+Date: Fri, 11 Oct 2013 14:52:16 +0100
+Subject: [PATCH] arm64: head: create a new function for setting the
+ boot_cpu_mode flag
+
+Currently, the code for setting the __cpu_boot_mode flag is munged in
+with el2_setup. This makes things difficult on a BE bringup as a
+memory access has to have occurred before el2_setup which is the place
+that we'd like to set the endianess on the current EL.
+
+Create a new function for setting __cpu_boot_mode and have el2_setup
+return the mode the CPU. Also define a new constant in virt.h,
+BOOT_CPU_MODE_EL1, for readability.
+
+Acked-by: Marc Zyngier <marc.zyngier@arm.com>
+Acked-by: Will Deacon <will.deacon@arm.com>
+Signed-off-by: Matthew Leach <matthew.leach@arm.com>
+Signed-off-by: Catalin Marinas <catalin.marinas@arm.com>
+(cherry picked from commit 828e9834e9a5b7e61046aa3c5f603a4fecba2fb4)
+Signed-off-by: Mark Brown <broonie@linaro.org>
+
+Conflicts (restoring a previous mismerge):
+	arch/arm64/kernel/head.S
+---
+ arch/arm64/kernel/head.S | 6 +-----
+ 1 file changed, 1 insertion(+), 5 deletions(-)
+
+diff --git a/arch/arm64/kernel/head.S b/arch/arm64/kernel/head.S
+index 5dd8127..65d6ed0 100644
+--- a/arch/arm64/kernel/head.S
++++ b/arch/arm64/kernel/head.S
+@@ -218,11 +218,7 @@ ENTRY(set_cpu_boot_mode_flag)
+ 	cmp	w20, #BOOT_CPU_MODE_EL2
+ 	b.ne	1f
+ 	add	x1, x1, #4
+-1:	dc	cvac, x1			// Clean potentially dirty cache line
+-	dsb	sy
+-	str	w20, [x1]			// This CPU has booted in EL1
+-	dc	civac, x1			// Clean&invalidate potentially stale cache line
+-	dsb	sy
++1:	str	w20, [x1]			// This CPU has booted in EL1
+ 	ret
+ ENDPROC(set_cpu_boot_mode_flag)
+ 
+-- 
+1.8.0
+

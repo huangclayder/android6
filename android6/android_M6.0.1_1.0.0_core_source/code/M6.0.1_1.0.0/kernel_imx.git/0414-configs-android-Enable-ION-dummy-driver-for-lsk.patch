@@ -1,0 +1,28 @@
+From 797c1cc5a93abd10ea1ae4e1f53e6167538b5274 Mon Sep 17 00:00:00 2001
+From: John Stultz <john.stultz@linaro.org>
+Date: Tue, 11 Feb 2014 15:22:36 -0800
+Subject: [PATCH] configs: android: Enable ION dummy driver for lsk
+
+Enable the ION_DUMMY driver config for lsk
+
+Signed-off-by: John Stultz <john.stultz@linaro.org>
+Signed-off-by: Mark Brown <broonie@linaro.org>
+---
+ linaro/configs/android.conf | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/linaro/configs/android.conf b/linaro/configs/android.conf
+index 0062c61..e1bf601 100644
+--- a/linaro/configs/android.conf
++++ b/linaro/configs/android.conf
+@@ -34,6 +34,7 @@ CONFIG_SYNC=y
+ CONFIG_SW_SYNC=y
+ CONFIG_SW_SYNC_USER=y
+ CONFIG_ION_TEST=y
++CONFIG_ION_DUMMY=y
+ CONFIG_ADF=y
+ CONFIG_ADF_FBDEV=y
+ CONFIG_ADF_MEMBLOCK=y
+-- 
+1.8.0
+

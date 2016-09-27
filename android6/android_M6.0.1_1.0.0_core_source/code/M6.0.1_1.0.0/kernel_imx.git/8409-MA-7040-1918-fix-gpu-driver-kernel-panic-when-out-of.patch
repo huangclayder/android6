@@ -1,0 +1,84 @@
+From ace21839e4f35d971a730218de83e033f1e4a72a Mon Sep 17 00:00:00 2001
+From: "xuegang.liu" <xuegang.liu@freescale.com>
+Date: Wed, 9 Sep 2015 14:57:41 +0800
+Subject: [PATCH] MA-7040 [#1918] fix gpu driver kernel panic when out of
+ vmalloc
+
+Monkey test meet below kernel panic when vmalloc out of space,
+fixed through checking invalid kernel pointer before free memory.
+
+kernel panic log:
+Kernel BUG at c00eb3ec [verbose debug info unavailable]
+Internal error: Oops - BUG: 0 [#1] PREEMPT SMP ARM
+Modules linked in:
+CPU: 2 PID: 30070 Comm: Binder_1 Not tainted 3.14.38-05787-gd5e5aaa #1
+task: cf9bf8c0 ti: c1618000 task.ti: c1618000
+PC is at kfree+0x1ac/0x1bc
+LR is at gckOS_FreeMemory+0x48/0x80
+pc : [<c00eb3ec>]  lr : [<c0605468>]  psr: 40070113
+sp : c1619d18 ip : c52680c0 fp : 00000000
+r10: 00000004 r9 : ce0eb000 r8 : d1804000
+r7 : 00000000 r6 : c37fc400 r5 : 00000000 r4 : 00200200
+r3 : 8002026c r2 : d1000000 r1 : 8002026c r0 : 00000000
+Flags: nZcv IRQs on FIQs on Mode SVC_32 ISA ARM Segment user
+Control: 10c53c7d Table: 1c9c004a DAC: 00000015
+
+Date: Sep 09, 2015
+
+Signed-off-by: Richard Liu <r66033@freescale.com>
+---
+ .../hal/kernel/arch/gc_hal_kernel_context.c        | 22 +++++++++++++++-------
+ 1 file changed, 15 insertions(+), 7 deletions(-)
+
+diff --git a/drivers/mxc/gpu-viv/hal/kernel/arch/gc_hal_kernel_context.c b/drivers/mxc/gpu-viv/hal/kernel/arch/gc_hal_kernel_context.c
+index 04e669a..62b3993 100644
+--- a/drivers/mxc/gpu-viv/hal/kernel/arch/gc_hal_kernel_context.c
++++ b/drivers/mxc/gpu-viv/hal/kernel/arch/gc_hal_kernel_context.c
+@@ -1432,15 +1432,18 @@ _DestroyContext(
+ #if REMOVE_DUPLICATED_COPY_FROM_USER
+         if (Context->recordArrayMap != gcvNULL)
+         {
+-            gcsRECORD_ARRAY_MAP_PTR map = Context->recordArrayMap;
++            gctUINT i;
+ 
+-            do
++            for (i = 0; i < gcdCONTEXT_BUFFER_COUNT; i++)
+             {
+-                /* Free record array. */
+-                gcmkONERROR(gcmkOS_SAFE_FREE(Context->os, map->kData));
+-                map = map->next;
++                gcsRECORD_ARRAY_MAP_PTR map = &Context->recordArrayMap[i];
++
++                if (map->kData != gcvNULL)
++                {
++                    /* Free record array. */
++                    gcmkONERROR(gcmkOS_SAFE_FREE(Context->os, map->kData));
++                }
+             }
+-            while (map != Context->recordArrayMap);
+ 
+             gcmkONERROR(gcmkOS_SAFE_FREE(Context->os, Context->recordArrayMap));
+         }
+@@ -1925,13 +1928,18 @@ gckCONTEXT_Update(
+ #if REMOVE_DUPLICATED_COPY_FROM_USER
+     if (needCopy && (Context->recordArrayMap == gcvNULL))
+     {
++        gctSIZE_T size = gcmSIZEOF(struct _gcsRECORD_ARRAY_MAP)
++                       * gcdCONTEXT_BUFFER_COUNT;
++
+         /* Allocate enough maps. */
+         gcmkONERROR(gckOS_Allocate(
+             Context->os,
+-            gcmSIZEOF(gcsRECORD_ARRAY_MAP_PTR) * gcdCONTEXT_BUFFER_COUNT,
++            size,
+             (gctPOINTER *) &Context->recordArrayMap
+             ));
+ 
++        gcmkONERROR(gckOS_ZeroMemory(Context->recordArrayMap, size));
++
+         for (i = 0; i < gcdCONTEXT_BUFFER_COUNT; i++)
+         {
+             /* Next mapping id. */
+-- 
+1.8.0
+

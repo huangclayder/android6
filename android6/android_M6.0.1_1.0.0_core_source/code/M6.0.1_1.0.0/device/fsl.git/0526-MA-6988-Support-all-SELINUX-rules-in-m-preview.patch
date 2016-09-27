@@ -1,0 +1,305 @@
+From 8b6c4b9ae90cc99a50052d6209d08a1a6ec62375 Mon Sep 17 00:00:00 2001
+From: zhang sanshan <b51434@freescale.com>
+Date: Thu, 20 Aug 2015 10:10:59 +0800
+Subject: [PATCH 526/602] MA-6988 Support all SELINUX rules in m-preview
+
+1 add module_request permission which allow one process load kernel module.
+2 use seclabel to label /system/bin/sh to shell domain.
+3 add other policy  for android-m
+
+Signed-off-by: zhang sanshan <b51434@freescale.com>
+---
+ imx6/etc/init.rc                |  1 +
+ imx6/sepolicy/init.te           |  6 ++++++
+ imx6/sepolicy/kernel.te         | 22 +++++++++++++++++++++-
+ imx6/sepolicy/logd.te           |  3 +++
+ imx6/sepolicy/mediaserver.te    |  3 ++-
+ imx6/sepolicy/platform_app.te   |  1 +
+ imx6/sepolicy/shell.te          |  1 +
+ imx6/sepolicy/surfaceflinger.te |  1 +
+ imx6/sepolicy/system_server.te  |  1 +
+ imx6/sepolicy/toolbox.te        |  3 +++
+ imx6/sepolicy/untrusted_app.te  |  2 ++
+ imx6/sepolicy/zygote.te         |  1 +
+ imx7/etc/init.rc                |  1 +
+ imx7/sepolicy/init.te           |  7 +++++++
+ imx7/sepolicy/kernel.te         | 22 ++++++++++++++++++++++
+ imx7/sepolicy/logd.te           |  3 +++
+ imx7/sepolicy/mediaserver.te    |  3 ++-
+ imx7/sepolicy/shell.te          |  1 +
+ imx7/sepolicy/surfaceflinger.te |  1 +
+ imx7/sepolicy/system_server.te  |  1 +
+ imx7/sepolicy/toolbox.te        |  2 ++
+ imx7/sepolicy/untrusted_app.te  |  3 +++
+ imx7/sepolicy/zygote.te         |  1 +
+ 23 files changed, 87 insertions(+), 3 deletions(-)
+ create mode 100644 imx6/sepolicy/logd.te
+ create mode 100644 imx6/sepolicy/platform_app.te
+ create mode 100644 imx6/sepolicy/shell.te
+ create mode 100644 imx6/sepolicy/surfaceflinger.te
+ create mode 100644 imx6/sepolicy/toolbox.te
+ create mode 100644 imx7/sepolicy/logd.te
+ create mode 100644 imx7/sepolicy/shell.te
+ create mode 100644 imx7/sepolicy/surfaceflinger.te
+ create mode 100644 imx7/sepolicy/toolbox.te
+ create mode 100644 imx7/sepolicy/zygote.te
+
+diff --git a/imx6/etc/init.rc b/imx6/etc/init.rc
+index c006692..12a07e0 100755
+--- a/imx6/etc/init.rc
++++ b/imx6/etc/init.rc
+@@ -556,6 +556,7 @@ service console /system/bin/sh
+     console
+     user root
+     group root
++    seclabel u:r:shell:s0
+ 
+ #on property:ro.debuggable=1
+ #    start console
+diff --git a/imx6/sepolicy/init.te b/imx6/sepolicy/init.te
+index e69de29..4c64c78 100644
+--- a/imx6/sepolicy/init.te
++++ b/imx6/sepolicy/init.te
+@@ -0,0 +1,6 @@
++allow init cache_file:dir  { mounton };
++allow init kernel:system  { module_request };
++allow init asec_apk_file:dir  { mounton };
++allow init perfprofd_exec:file  { read open getattr execute };
++allow init shell_data_file:dir  { write };
++allow init socket_device:sock_file  { setattr create };
+diff --git a/imx6/sepolicy/kernel.te b/imx6/sepolicy/kernel.te
+index a0465bb..21c16db 100644
+--- a/imx6/sepolicy/kernel.te
++++ b/imx6/sepolicy/kernel.te
+@@ -2,4 +2,24 @@ allow kernel self:capability { mknod };
+ allow kernel sdcard_internal:file rw_file_perms;
+ allow kernel sdcard_internal:dir rw_dir_perms;
+ allow kernel device:blk_file  { create setattr getattr unlink};
+-
++allow kernel device:dir  { add_name write };
++allow healthd kernel:system  { module_request };
++allow logd kernel:system  { module_request };
++allow ueventd kernel:system  { module_request };
++allow vold kernel:system  { module_request };
++allow watchdogd kernel:system  { module_request };
++allow lmkd kernel:system  { module_request };
++allow servicemanager kernel:system  { module_request };
++allow surfaceflinger kernel:system  { module_request };
++allow toolbox kernel:system  { module_request };
++allow debuggerd kernel:system  { module_request };
++allow drmserver kernel:system  { module_request };
++allow installd kernel:system  { module_request };
++allow keystore kernel:system  { module_request };
++allow sensors kernel:system  { module_request };
++allow sdcardd kernel:system  { module_request };
++allow bootanim kernel:system  { module_request };
++allow zygote kernel:system  { module_request };
++allow tzdatacheck kernel:system  { module_request };
++allow shell kernel:system  { module_request };
++allow dex2oat kernel:system  { module_request };
+diff --git a/imx6/sepolicy/logd.te b/imx6/sepolicy/logd.te
+new file mode 100644
+index 0000000..cee439d
+--- /dev/null
++++ b/imx6/sepolicy/logd.te
+@@ -0,0 +1,3 @@
++allow logd init:unix_stream_socket { connectto };
++allow logd property_socket:sock_file { write };
++allow logd debug_prop:property_service  { set };
+diff --git a/imx6/sepolicy/mediaserver.te b/imx6/sepolicy/mediaserver.te
+index 21b76a4..7bfc384 100644
+--- a/imx6/sepolicy/mediaserver.te
++++ b/imx6/sepolicy/mediaserver.te
+@@ -1,4 +1,5 @@
+ allow mediaserver tmpfs:dir rw_dir_perms;
+ allow mediaserver tmpfs:file rw_file_perms;
+ allow mediaserver mediaserver_tmpfs:dir create_dir_perms;
+-allow mediaserver mediaserver_tmpfs:file create_file_perms;
+\ No newline at end of file
++allow mediaserver mediaserver_tmpfs:file create_file_perms;
++allow mediaserver system_file:file execmod;
+diff --git a/imx6/sepolicy/platform_app.te b/imx6/sepolicy/platform_app.te
+new file mode 100644
+index 0000000..57b99f4
+--- /dev/null
++++ b/imx6/sepolicy/platform_app.te
+@@ -0,0 +1 @@
++allow  platform_app system_file:file { execmod };
+diff --git a/imx6/sepolicy/shell.te b/imx6/sepolicy/shell.te
+new file mode 100644
+index 0000000..2b55944
+--- /dev/null
++++ b/imx6/sepolicy/shell.te
+@@ -0,0 +1 @@
++allow shell procrank_exec:file { getattr };
+diff --git a/imx6/sepolicy/surfaceflinger.te b/imx6/sepolicy/surfaceflinger.te
+new file mode 100644
+index 0000000..bb808e5
+--- /dev/null
++++ b/imx6/sepolicy/surfaceflinger.te
+@@ -0,0 +1 @@
++allow surfaceflinger debug_prop:property_service { set };
+diff --git a/imx6/sepolicy/system_server.te b/imx6/sepolicy/system_server.te
+index 8b1a553..f73cd54 100644
+--- a/imx6/sepolicy/system_server.te
++++ b/imx6/sepolicy/system_server.te
+@@ -2,3 +2,4 @@ allow system_server unlabeled:dir {relabelfrom rw_dir_perms};
+ allow system_server unlabeled:sock_file {link unlink rw_file_perms};
+ allow system_server system_data_file:file {relabelto rw_file_perms};
+ allow system_server system_data_file:dir {relabelto rw_dir_perms};
++allow system_server system_file:file {execmod};
+diff --git a/imx6/sepolicy/toolbox.te b/imx6/sepolicy/toolbox.te
+new file mode 100644
+index 0000000..8f756cd
+--- /dev/null
++++ b/imx6/sepolicy/toolbox.te
+@@ -0,0 +1,3 @@
++allow toolbox init:fifo_file { write };
++allow toolbox init:fifo_file { getattr };
++
+diff --git a/imx6/sepolicy/untrusted_app.te b/imx6/sepolicy/untrusted_app.te
+index 859d7e1..32bd76f 100644
+--- a/imx6/sepolicy/untrusted_app.te
++++ b/imx6/sepolicy/untrusted_app.te
+@@ -4,4 +4,6 @@ allow untrusted_app sdcard_external:dir rw_dir_perms;
+ allow untrusted_app sdcard_external:file rw_file_perms;
+ allow untrusted_app vfat:dir { rw_file_perms create setattr rename };
+ allow untrusted_app vfat:file { rw_file_perms create setattr rename };
++allow untrusted_app mnt_media_rw_file:dir { search read open };
++allow untrusted_app kernel:system { module_request };
+ 
+diff --git a/imx6/sepolicy/zygote.te b/imx6/sepolicy/zygote.te
+index a13c51b..dd1491a 100644
+--- a/imx6/sepolicy/zygote.te
++++ b/imx6/sepolicy/zygote.te
+@@ -1 +1,2 @@
+ allow zygote gpu_device:chr_file { read write open ioctl };
++allow zygote storage_file:dir { getattr };
+diff --git a/imx7/etc/init.rc b/imx7/etc/init.rc
+index 45d9f01..eca222e 100755
+--- a/imx7/etc/init.rc
++++ b/imx7/etc/init.rc
+@@ -586,6 +586,7 @@ service console /system/bin/sh
+     console
+     user root
+     group root
++    seclabel u:r:shell:s0
+ 
+ #on property:ro.debuggable=1
+ #    start console
+diff --git a/imx7/sepolicy/init.te b/imx7/sepolicy/init.te
+index e69de29..386712c 100644
+--- a/imx7/sepolicy/init.te
++++ b/imx7/sepolicy/init.te
+@@ -0,0 +1,7 @@
++allow init cache_file:dir  { mounton };
++allow init kernel:system  { module_request };
++allow init asec_apk_file:dir  { mounton };
++allow init perfprofd_exec:file  { read open getattr execute };
++allow init shell_data_file:dir  { write };
++allow init socket_device:sock_file  { setattr create };
++
+diff --git a/imx7/sepolicy/kernel.te b/imx7/sepolicy/kernel.te
+index a0465bb..c7d0e30 100644
+--- a/imx7/sepolicy/kernel.te
++++ b/imx7/sepolicy/kernel.te
+@@ -2,4 +2,26 @@ allow kernel self:capability { mknod };
+ allow kernel sdcard_internal:file rw_file_perms;
+ allow kernel sdcard_internal:dir rw_dir_perms;
+ allow kernel device:blk_file  { create setattr getattr unlink};
++allow kernel device:dir  { add_name write };
++allow healthd kernel:system  { module_request };
++allow logd kernel:system  { module_request };
++allow ueventd kernel:system  { module_request };
++allow vold kernel:system  { module_request };
++allow watchdogd kernel:system  { module_request };
++allow lmkd kernel:system  { module_request };
++allow servicemanager kernel:system  { module_request };
++allow surfaceflinger kernel:system  { module_request };
++allow toolbox kernel:system  { module_request };
++allow debuggerd kernel:system  { module_request };
++allow drmserver kernel:system  { module_request };
++allow installd kernel:system  { module_request };
++allow keystore kernel:system  { module_request };
++allow sensors kernel:system  { module_request };
++allow sdcardd kernel:system  { module_request };
++allow bootanim kernel:system  { module_request };
++allow zygote kernel:system  { module_request };
++allow tzdatacheck kernel:system  { module_request };
++allow shell kernel:system  { module_request };
++allow dex2oat kernel:system  { module_request };
++
+ 
+diff --git a/imx7/sepolicy/logd.te b/imx7/sepolicy/logd.te
+new file mode 100644
+index 0000000..cee439d
+--- /dev/null
++++ b/imx7/sepolicy/logd.te
+@@ -0,0 +1,3 @@
++allow logd init:unix_stream_socket { connectto };
++allow logd property_socket:sock_file { write };
++allow logd debug_prop:property_service  { set };
+diff --git a/imx7/sepolicy/mediaserver.te b/imx7/sepolicy/mediaserver.te
+index 21b76a4..7bfc384 100644
+--- a/imx7/sepolicy/mediaserver.te
++++ b/imx7/sepolicy/mediaserver.te
+@@ -1,4 +1,5 @@
+ allow mediaserver tmpfs:dir rw_dir_perms;
+ allow mediaserver tmpfs:file rw_file_perms;
+ allow mediaserver mediaserver_tmpfs:dir create_dir_perms;
+-allow mediaserver mediaserver_tmpfs:file create_file_perms;
+\ No newline at end of file
++allow mediaserver mediaserver_tmpfs:file create_file_perms;
++allow mediaserver system_file:file execmod;
+diff --git a/imx7/sepolicy/shell.te b/imx7/sepolicy/shell.te
+new file mode 100644
+index 0000000..2b55944
+--- /dev/null
++++ b/imx7/sepolicy/shell.te
+@@ -0,0 +1 @@
++allow shell procrank_exec:file { getattr };
+diff --git a/imx7/sepolicy/surfaceflinger.te b/imx7/sepolicy/surfaceflinger.te
+new file mode 100644
+index 0000000..bb808e5
+--- /dev/null
++++ b/imx7/sepolicy/surfaceflinger.te
+@@ -0,0 +1 @@
++allow surfaceflinger debug_prop:property_service { set };
+diff --git a/imx7/sepolicy/system_server.te b/imx7/sepolicy/system_server.te
+index b214c57..7f6bd16 100644
+--- a/imx7/sepolicy/system_server.te
++++ b/imx7/sepolicy/system_server.te
+@@ -3,3 +3,4 @@ allow system_server unlabeled:sock_file {link unlink rw_file_perms};
+ allow system_server system_data_file:file {relabelto rw_file_perms};
+ allow system_server system_data_file:dir {relabelto rw_dir_perms};
+ allow system_server default_prop:property_service { set };
++allow system_server system_file:file {execmod};
+diff --git a/imx7/sepolicy/toolbox.te b/imx7/sepolicy/toolbox.te
+new file mode 100644
+index 0000000..850efe6
+--- /dev/null
++++ b/imx7/sepolicy/toolbox.te
+@@ -0,0 +1,2 @@
++allow toolbox init:fifo_file { write };
++allow toolbox init:fifo_file { getattr };
+diff --git a/imx7/sepolicy/untrusted_app.te b/imx7/sepolicy/untrusted_app.te
+index 54867f8..32bd76f 100644
+--- a/imx7/sepolicy/untrusted_app.te
++++ b/imx7/sepolicy/untrusted_app.te
+@@ -4,3 +4,6 @@ allow untrusted_app sdcard_external:dir rw_dir_perms;
+ allow untrusted_app sdcard_external:file rw_file_perms;
+ allow untrusted_app vfat:dir { rw_file_perms create setattr rename };
+ allow untrusted_app vfat:file { rw_file_perms create setattr rename };
++allow untrusted_app mnt_media_rw_file:dir { search read open };
++allow untrusted_app kernel:system { module_request };
++
+diff --git a/imx7/sepolicy/zygote.te b/imx7/sepolicy/zygote.te
+new file mode 100644
+index 0000000..b86cc61
+--- /dev/null
++++ b/imx7/sepolicy/zygote.te
+@@ -0,0 +1 @@
++allow zygote storage_file:dir { getattr };
+-- 
+1.8.0
+

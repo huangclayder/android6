@@ -1,0 +1,172 @@
+From 270a39c7c46c978b0e752f00b8c5d851a741ac29 Mon Sep 17 00:00:00 2001
+From: Haoran Wang <b50027@freescale.com>
+Date: Wed, 3 Jun 2015 18:05:39 +0800
+Subject: [PATCH 099/115] MA-6531-1 ethernet app: Add proxy enable in proxy
+ setting
+
+Added proxy enable checkbox in proxy setting activity.
+When it is checked user can setup the proxy info.
+If it is unchecked the input TextEdit will be gone.
+
+Signed-off-by: Haoran Wang <b50027@freescale.com>
+---
+ Ethernet/com/fsl/ethernet/EthernetAdvDialog.java | 43 +++++++++++++++++++++---
+ Ethernet/res/layout-hdpi/advanced_setting.xml    |  8 +++++
+ Ethernet/res/layout-ldpi/advanced_setting.xml    |  8 +++++
+ Ethernet/res/layout-mdpi/advanced_setting.xml    |  8 +++++
+ Ethernet/res/values/strings.xml                  |  1 +
+ 5 files changed, 63 insertions(+), 5 deletions(-)
+
+diff --git a/Ethernet/com/fsl/ethernet/EthernetAdvDialog.java b/Ethernet/com/fsl/ethernet/EthernetAdvDialog.java
+index aa89886..a230ac9 100644
+--- a/Ethernet/com/fsl/ethernet/EthernetAdvDialog.java
++++ b/Ethernet/com/fsl/ethernet/EthernetAdvDialog.java
+@@ -1,5 +1,5 @@
+ /*
+- * Copyright (C) 2014 Freescale Semiconductor, Inc.
++ * Copyright (C) 2014-2015 Freescale Semiconductor, Inc.
+  *
+  * Licensed under the Apache License, Version 2.0 (the "License");
+  * you may not use this file except in compliance with the License.
+@@ -43,7 +43,9 @@ public class EthernetAdvDialog extends AlertDialog implements DialogInterface.On
+     private EditText mProxyIp;
+     private EditText mProxyPort;
+     private EditText mProxyExclusionList;
++    private LinearLayout mConfigWindow;
+     private LinkProperties mLinkProperties;
++    private CheckBox mProxyEnableCheckBox;
+     private ProxyInfo mHttpProxy;
+     private static ConnectivityManager sConnectivityManager = null;
+ 
+@@ -62,6 +64,22 @@ public class EthernetAdvDialog extends AlertDialog implements DialogInterface.On
+         mProxyIp = (EditText)mView.findViewById(R.id.proxy_address_edit);
+         mProxyPort = (EditText)mView.findViewById(R.id.proxy_port_edit);
+         mProxyExclusionList = (EditText)mView.findViewById(R.id.proxy_exclusionlist);
++        mProxyEnableCheckBox = (CheckBox)mView.findViewById(R.id.proxy_enable_checkbox);
++        mConfigWindow = (LinearLayout)mView.findViewById(R.id.enterprise_wrapper);
++        mProxyEnableCheckBox.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
++            @Override
++            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
++                if (isChecked) {
++                    mConfigWindow.setVisibility(View.VISIBLE);
++                } else {
++                    mConfigWindow.setVisibility(View.GONE);
++                }
++                mProxyIp.setEnabled(isChecked);
++                mProxyPort.setEnabled(isChecked);
++                mProxyExclusionList.setEnabled(isChecked);
++            }
++        });
++
+ 
+         this.setInverseBackgroundForced(true);
+         this.setButton(BUTTON_POSITIVE, context.getText(R.string.menu_save), this);
+@@ -69,6 +87,13 @@ public class EthernetAdvDialog extends AlertDialog implements DialogInterface.On
+         mProxyIp.setText(mEthEnabler.getManager().getSharedPreProxyAddress(),TextView.BufferType.EDITABLE);
+         mProxyPort.setText(mEthEnabler.getManager().getSharedPreProxyPort(),TextView.BufferType.EDITABLE);
+         mProxyExclusionList.setText(mEthEnabler.getManager().getSharedPreProxyExclusionList(),TextView.BufferType.EDITABLE);
++        if (mEthEnabler.getManager().getSharedPreProxyAddress() == "") {
++            mProxyEnableCheckBox.setChecked(false);
++            mConfigWindow.setVisibility(View.GONE);
++        } else {
++            mProxyEnableCheckBox.setChecked(true);
++            mConfigWindow.setVisibility(View.VISIBLE);
++        }
+         this.setInverseBackgroundForced(true);
+         this.setButton(BUTTON_POSITIVE, context.getText(R.string.menu_save), this);
+         this.setButton(BUTTON_NEGATIVE, context.getText(R.string.menu_cancel), this);
+@@ -83,12 +108,20 @@ public class EthernetAdvDialog extends AlertDialog implements DialogInterface.On
+             info.setConnectMode(mEthEnabler.getManager().getSharedPreMode());
+             info.setIpAddress(mEthEnabler.getManager().getSharedPreIpAddress());
+             info.setDnsAddr(mEthEnabler.getManager().getSharedPreDnsAddress());
+-            info.setProxyAddr(mProxyIp.getText().toString());
+-            info.setProxyPort(mProxyPort.getText().toString());
+-            info.setProxyExclusionList(mProxyExclusionList.getText().toString());
++
++            if (mProxyEnableCheckBox.isChecked()) {
++                info.setProxyAddr(mProxyIp.getText().toString());
++                info.setProxyPort(mProxyPort.getText().toString());
++                info.setProxyExclusionList(mProxyExclusionList.getText().toString());
++            } else {
++                info.setProxyAddr("");
++                info.setProxyPort("");
++                info.setProxyExclusionList("");
++            }
++
+             mEthEnabler.getManager().updateDevInfo(info);
+             mEthEnabler.getManager().setProxy();
+-        }else{
++        } else {
+            Toast.makeText(this.getContext(),R.string.show_connect_ethernet,Toast.LENGTH_SHORT).show();
+         }
+     }
+diff --git a/Ethernet/res/layout-hdpi/advanced_setting.xml b/Ethernet/res/layout-hdpi/advanced_setting.xml
+index 951e049..d939ef4 100644
+--- a/Ethernet/res/layout-hdpi/advanced_setting.xml
++++ b/Ethernet/res/layout-hdpi/advanced_setting.xml
+@@ -20,6 +20,14 @@
+                   android:textAppearance="?android:attr/textAppearanceMedium"
+                   android:text="@string/proxy_setting" />
+ 
++        <CheckBox
++                  android:id="@+id/proxy_enable_checkbox"
++                  android:layout_width="match_parent"
++                  android:layout_height="wrap_content"
++                  android:layout_marginTop="8dip"
++                  android:layout_marginEnd="16dip"
++                  android:text="@string/proxy_enable_checkbox" />
++
+         <!-- IP address -->
+         <LinearLayout android:id="@+id/enterprise_wrapper"
+                       android:layout_width="match_parent"
+diff --git a/Ethernet/res/layout-ldpi/advanced_setting.xml b/Ethernet/res/layout-ldpi/advanced_setting.xml
+index 951e049..d939ef4 100755
+--- a/Ethernet/res/layout-ldpi/advanced_setting.xml
++++ b/Ethernet/res/layout-ldpi/advanced_setting.xml
+@@ -20,6 +20,14 @@
+                   android:textAppearance="?android:attr/textAppearanceMedium"
+                   android:text="@string/proxy_setting" />
+ 
++        <CheckBox
++                  android:id="@+id/proxy_enable_checkbox"
++                  android:layout_width="match_parent"
++                  android:layout_height="wrap_content"
++                  android:layout_marginTop="8dip"
++                  android:layout_marginEnd="16dip"
++                  android:text="@string/proxy_enable_checkbox" />
++
+         <!-- IP address -->
+         <LinearLayout android:id="@+id/enterprise_wrapper"
+                       android:layout_width="match_parent"
+diff --git a/Ethernet/res/layout-mdpi/advanced_setting.xml b/Ethernet/res/layout-mdpi/advanced_setting.xml
+index 951e049..d939ef4 100755
+--- a/Ethernet/res/layout-mdpi/advanced_setting.xml
++++ b/Ethernet/res/layout-mdpi/advanced_setting.xml
+@@ -20,6 +20,14 @@
+                   android:textAppearance="?android:attr/textAppearanceMedium"
+                   android:text="@string/proxy_setting" />
+ 
++        <CheckBox
++                  android:id="@+id/proxy_enable_checkbox"
++                  android:layout_width="match_parent"
++                  android:layout_height="wrap_content"
++                  android:layout_marginTop="8dip"
++                  android:layout_marginEnd="16dip"
++                  android:text="@string/proxy_enable_checkbox" />
++
+         <!-- IP address -->
+         <LinearLayout android:id="@+id/enterprise_wrapper"
+                       android:layout_width="match_parent"
+diff --git a/Ethernet/res/values/strings.xml b/Ethernet/res/values/strings.xml
+index 9b6b209..df74ed0 100644
+--- a/Ethernet/res/values/strings.xml
++++ b/Ethernet/res/values/strings.xml
+@@ -35,4 +35,5 @@
+     <string name="advanced_need_setting">You should not set the Proxy address and Proxy port null</string>
+     <string name="bypass_hint">You should put valid addresses split by \",\"</string>
+     <string name="show_connect_ethernet">Connect the Ethernet before setting the proxy.</string>
++    <string name="proxy_enable_checkbox">Enable Http Proxy</string>
+ </resources>
+-- 
+1.8.0
+

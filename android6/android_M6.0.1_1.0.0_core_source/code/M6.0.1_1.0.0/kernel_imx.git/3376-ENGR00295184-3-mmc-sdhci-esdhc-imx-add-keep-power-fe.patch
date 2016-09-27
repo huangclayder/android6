@@ -1,0 +1,40 @@
+From a793f91d8e1cc6f27bf74f2fa9cf591193ac5b87 Mon Sep 17 00:00:00 2001
+From: Dong Aisheng <b29396@freescale.com>
+Date: Mon, 13 Jan 2014 16:26:19 +0800
+Subject: [PATCH] ENGR00295184-3 mmc: sdhci-esdhc-imx: add keep power feature
+ during suspend
+
+IMX boards can keep power for cards during suspend.
+User can enable it from device tree.
+
+Signed-off-by: Dong Aisheng <b29396@freescale.com>
+(cherry picked from commit c493df82295e0384f81c21cf126412280d81411d)
+---
+ drivers/mmc/host/sdhci-esdhc-imx.c | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/drivers/mmc/host/sdhci-esdhc-imx.c b/drivers/mmc/host/sdhci-esdhc-imx.c
+index fbb449b..3b972aa 100644
+--- a/drivers/mmc/host/sdhci-esdhc-imx.c
++++ b/drivers/mmc/host/sdhci-esdhc-imx.c
+@@ -914,6 +914,7 @@ sdhci_esdhc_imx_probe_dt(struct platform_device *pdev,
+ 			 struct esdhc_platform_data *boarddata)
+ {
+ 	struct device_node *np = pdev->dev.of_node;
++	struct sdhci_host *host = platform_get_drvdata(pdev);
+ 
+ 	if (!np)
+ 		return -ENODEV;
+@@ -947,6 +948,9 @@ sdhci_esdhc_imx_probe_dt(struct platform_device *pdev,
+ 	if (of_property_read_u32(np, "fsl,delay-line", &boarddata->delay_line))
+ 		boarddata->delay_line = 0;
+ 
++	if (of_find_property(np, "keep-power-in-suspend", NULL))
++		host->mmc->pm_caps |= MMC_PM_KEEP_POWER;
++
+ 	return 0;
+ }
+ #else
+-- 
+1.8.0
+

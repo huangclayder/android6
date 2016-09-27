@@ -1,0 +1,41 @@
+From a455a369bb0b849a5d661ac27418aecfdc3c2a46 Mon Sep 17 00:00:00 2001
+From: Heiko Carstens <heiko.carstens@de.ibm.com>
+Date: Wed, 1 Jan 2014 16:09:21 +0100
+Subject: [PATCH] KVM: add kvm_is_error_gpa() helper
+
+It's quite common (in the s390 guest access code) to test if a guest
+physical address points to a valid guest memory area or not.
+So add a simple helper function in common code, since this might be
+of interest for other architectures as well.
+
+Signed-off-by: Heiko Carstens <heiko.carstens@de.ibm.com>
+Reviewed-by: Thomas Huth <thuth@linux.vnet.ibm.com>
+Reviewed-by: Cornelia Huck <cornelia.huck@de.ibm.com>
+Signed-off-by: Christian Borntraeger <borntraeger@de.ibm.com>
+(cherry picked from commit dfeec843fb237d73947e818f961e8d6f0df22b01)
+Signed-off-by: Christoffer Dall <christoffer.dall@linaro.org>
+---
+ include/linux/kvm_host.h | 7 +++++++
+ 1 file changed, 7 insertions(+)
+
+diff --git a/include/linux/kvm_host.h b/include/linux/kvm_host.h
+index 8865c48..35f2cdb 100644
+--- a/include/linux/kvm_host.h
++++ b/include/linux/kvm_host.h
+@@ -868,6 +868,13 @@ static inline hpa_t pfn_to_hpa(pfn_t pfn)
+ 	return (hpa_t)pfn << PAGE_SHIFT;
+ }
+ 
++static inline bool kvm_is_error_gpa(struct kvm *kvm, gpa_t gpa)
++{
++	unsigned long hva = gfn_to_hva(kvm, gpa_to_gfn(gpa));
++
++	return kvm_is_error_hva(hva);
++}
++
+ static inline void kvm_migrate_timers(struct kvm_vcpu *vcpu)
+ {
+ 	set_bit(KVM_REQ_MIGRATE_TIMER, &vcpu->requests);
+-- 
+1.8.0
+

@@ -1,0 +1,36 @@
+From 414d49da2d0c9a808305ed91c5d02799506cffb8 Mon Sep 17 00:00:00 2001
+From: Will Deacon <will.deacon@arm.com>
+Date: Tue, 26 Aug 2014 15:13:25 +0100
+Subject: [PATCH] KVM: vgic: declare probe function pointer as const
+
+We extract the vgic probe function from the of_device_id data pointer,
+which is const. Kill the sparse warning by ensuring that the local
+function pointer is also marked as const.
+
+Cc: Marc Zyngier <marc.zyngier@arm.com>
+Signed-off-by: Will Deacon <will.deacon@arm.com>
+Signed-off-by: Christoffer Dall <christoffer.dall@linaro.org>
+(cherry picked from commit de56fb1923ca11f428bf557870e0faa99f38762e)
+Signed-off-by: Christoffer Dall <christoffer.dall@linaro.org>
+---
+ virt/kvm/arm/vgic.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/virt/kvm/arm/vgic.c b/virt/kvm/arm/vgic.c
+index 3e81bc4..a4f722a 100644
+--- a/virt/kvm/arm/vgic.c
++++ b/virt/kvm/arm/vgic.c
+@@ -1557,8 +1557,8 @@ static const struct of_device_id vgic_ids[] = {
+ int kvm_vgic_hyp_init(void)
+ {
+ 	const struct of_device_id *matched_id;
+-	int (*vgic_probe)(struct device_node *,const struct vgic_ops **,
+-			  const struct vgic_params **);
++	const int (*vgic_probe)(struct device_node *,const struct vgic_ops **,
++				const struct vgic_params **);
+ 	struct device_node *vgic_node;
+ 	int ret;
+ 
+-- 
+1.8.0
+

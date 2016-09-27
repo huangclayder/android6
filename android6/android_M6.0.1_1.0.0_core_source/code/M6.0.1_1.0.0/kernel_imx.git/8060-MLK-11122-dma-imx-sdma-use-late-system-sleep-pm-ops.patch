@@ -1,0 +1,30 @@
+From 8c9eabb14e151d20012f5788f4dbb989736968e5 Mon Sep 17 00:00:00 2001
+From: Robin Gong <b38343@freescale.com>
+Date: Thu, 18 Jun 2015 09:40:58 +0800
+Subject: [PATCH] MLK-11122: dma: imx-sdma: use late system sleep pm ops
+
+Use SET_LATE_SYSTEM_SLEEP_PM_OPS rather than the common sleep pm ops to ensure
+sdma has resumed back before all other module drivers which use sdma resume
+back.
+
+Signed-off-by: Robin Gong <b38343@freescale.com>
+---
+ drivers/dma/imx-sdma.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/dma/imx-sdma.c b/drivers/dma/imx-sdma.c
+index 4c1569a..9d2685c 100644
+--- a/drivers/dma/imx-sdma.c
++++ b/drivers/dma/imx-sdma.c
+@@ -2165,7 +2165,7 @@ static int sdma_resume(struct device *dev)
+ #endif
+ 
+ static const struct dev_pm_ops sdma_pm_ops = {
+-	SET_SYSTEM_SLEEP_PM_OPS(sdma_suspend, sdma_resume)
++	SET_LATE_SYSTEM_SLEEP_PM_OPS(sdma_suspend, sdma_resume)
+ };
+ 
+ static struct platform_driver sdma_driver = {
+-- 
+1.8.0
+

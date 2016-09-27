@@ -1,0 +1,63 @@
+From c6e73057773052b8f7d7b1bbc795d3efbc174a45 Mon Sep 17 00:00:00 2001
+From: Peng Fan <Peng.Fan@freescale.com>
+Date: Tue, 31 Mar 2015 15:05:42 +0800
+Subject: [PATCH] MLK-10774-41 imx: mx6sx: update VDDSOC standby voltage
+
+This patch is from commit "f2c5102bf3763d77a227c1cba7fcd49e3db53a1d".
+"
+According the latest datasheet Rev.0,2/2015, the VDDSOC_IN voltage in standby/DSM
+mode is 1.05V. As we use PFM mode of pFuse and this mode has 3% tolerance issue,
+so the standby mode voltage should be (1.05 * 1.03) = 1.0815, we use 1.10V as the
+minimal step is 25mV. For i.MX6sx SDB RevB boards, the VDDARM and VDDSOC use the
+same supply, so the DSM voltage for VDDARM also need to be updated.
+"
+
+Signed-off-by: Peng Fan <Peng.Fan@freescale.com>
+---
+ board/freescale/mx6sxsabreauto/mx6sxsabreauto.c |  6 ++++++
+ board/freescale/mx6sxsabresd/mx6sxsabresd.c     | 12 ++++++++++++
+ 2 files changed, 18 insertions(+)
+
+diff --git a/board/freescale/mx6sxsabreauto/mx6sxsabreauto.c b/board/freescale/mx6sxsabreauto/mx6sxsabreauto.c
+index 589922f..6a026d4 100644
+--- a/board/freescale/mx6sxsabreauto/mx6sxsabreauto.c
++++ b/board/freescale/mx6sxsabreauto/mx6sxsabreauto.c
+@@ -132,6 +132,12 @@ int power_init_board(void)
+ 	if (ret < 0)
+ 		return ret;
+ 
++	/* set SW1C standby volatage 1.10V */
++	pmic_reg_read(pfuze, PFUZE100_SW1CSTBY, &reg);
++	reg &= ~0x3f;
++	reg |= PFUZE100_SW1ABC_SETP(11000);
++	pmic_reg_write(pfuze, PFUZE100_SW1CSTBY, reg);
++
+ 	/* Enable power of VGEN5 3V3, needed for SD3 */
+ 	pmic_reg_read(pfuze, PFUZE100_VGEN5VOL, &reg);
+ 	reg &= ~LDO_VOL_MASK;
+diff --git a/board/freescale/mx6sxsabresd/mx6sxsabresd.c b/board/freescale/mx6sxsabresd/mx6sxsabresd.c
+index a632d35..621f205 100644
+--- a/board/freescale/mx6sxsabresd/mx6sxsabresd.c
++++ b/board/freescale/mx6sxsabresd/mx6sxsabresd.c
+@@ -469,6 +469,18 @@ int power_init_board(void)
+ 	if (ret < 0)
+ 		return ret;
+ 
++	/* set SW1AB standby volatage 1.10V */
++	pmic_reg_read(pfuze, PFUZE100_SW1ABSTBY, &reg);
++	reg &= ~0x3f;
++	reg |= PFUZE100_SW1ABC_SETP(11000);
++	pmic_reg_write(pfuze, PFUZE100_SW1ABSTBY, reg);
++
++	/* set SW1C standby volatage 1.10V */
++	pmic_reg_read(pfuze, PFUZE100_SW1CSTBY, &reg);
++	reg &= ~0x3f;
++	reg |= PFUZE100_SW1ABC_SETP(11000);
++	pmic_reg_write(pfuze, PFUZE100_SW1CSTBY, reg);
++
+ 	/* Enable power of VGEN5 3V3, needed for SD3 */
+ 	pmic_reg_read(pfuze, PFUZE100_VGEN5VOL, &reg);
+ 	reg &= ~LDO_VOL_MASK;
+-- 
+1.8.0
+

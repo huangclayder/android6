@@ -1,0 +1,38 @@
+From 2588095a0d167ed188d4ca2c46288382efe5eb31 Mon Sep 17 00:00:00 2001
+From: Wang Haoran <b50027@freescale.com>
+Date: Tue, 4 Nov 2014 13:22:25 +0800
+Subject: [PATCH 17/25] MA-5834 Fix wifi failure for sabreauto_6sx board
+
+One macro use not correct and it will make load
+dirvers failure. Correct it and the wifi driver  for
+sabreauto_6sx will be loaded successfully.
+
+Signed-off-by: Wang Haoran <b50027@freescale.com>
+---
+ wifi/wifi_unite.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/wifi/wifi_unite.c b/wifi/wifi_unite.c
+index 3ad02e5..1ad1681 100644
+--- a/wifi/wifi_unite.c
++++ b/wifi/wifi_unite.c
+@@ -1,6 +1,6 @@
+ /*
+  * Copyright 2008, The Android Open Source Project
+- * Copyright (C) 2013 Freescale Semiconductor, Inc.
++ * Copyright (C) 2014 Freescale Semiconductor, Inc.
+  *
+  * Licensed under the Apache License, Version 2.0 (the "License");
+  * you may not use this file except in compliance with the License.
+@@ -196,7 +196,7 @@ int get_wifi_vendor_info(int* model)
+         SYS_SDIO_BUS_MMC_PATH_DEVICE(0),
+         SYS_SDIO_BUS_MMC_PATH_DEVICE(1),
+         SYS_SDIO_BUS_MMC_PATH_DEVICE(2),
+-        SYS_SDIO_BUS_MMC_PATH_DEVICE(4),
++        SYS_SDIO_BUS_MMC_PATH_DEVICE(3),
+     };
+     char linebuf[1024];
+     long value;
+-- 
+1.8.0
+

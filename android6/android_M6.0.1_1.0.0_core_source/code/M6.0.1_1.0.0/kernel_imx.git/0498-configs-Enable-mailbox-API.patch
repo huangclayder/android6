@@ -1,0 +1,22 @@
+From d83d74e23e2c34545c86ddcb83006aea1ed64495 Mon Sep 17 00:00:00 2001
+From: Mark Brown <broonie@linaro.org>
+Date: Fri, 13 Jun 2014 21:22:02 +0100
+Subject: [PATCH] configs: Enable mailbox API
+
+Signed-off-by: Mark Brown <broonie@linaro.org>
+---
+ linaro/configs/linaro-base.conf | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/linaro/configs/linaro-base.conf b/linaro/configs/linaro-base.conf
+index 4d2ac02..fa38b9e 100644
+--- a/linaro/configs/linaro-base.conf
++++ b/linaro/configs/linaro-base.conf
+@@ -102,3 +102,4 @@ CONFIG_FUNCTION_TRACER=y
+ CONFIG_FTRACE_SYSCALLS=y
+ CONFIG_STACK_TRACER=y
+ CONFIG_FUNCTION_PROFILER=y
++CONFIG_MAILBOX=y
+-- 
+1.8.0
+

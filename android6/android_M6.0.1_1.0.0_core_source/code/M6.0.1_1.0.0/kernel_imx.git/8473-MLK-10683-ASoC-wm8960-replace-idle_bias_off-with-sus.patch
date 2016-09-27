@@ -1,0 +1,33 @@
+From ca7958ba19f5cee32215894fc7664b3451f7e9e6 Mon Sep 17 00:00:00 2001
+From: Zidan Wang <zidan.wang@freescale.com>
+Date: Wed, 28 Oct 2015 13:50:18 +0800
+Subject: [PATCH] MLK-10683 ASoC: wm8960: replace idle_bias_off with
+ suspend_bias_off
+
+After removing idle_bias_off, it will not set bias to off after playback,
+it just set bias to standby, and will not power down codec VREF, so it can
+decrease the obvious pop noise at the first second.
+
+Only in suspend, it will set codec bias to off.
+
+Signed-off-by: Zidan Wang <zidan.wang@freescale.com>
+---
+ sound/soc/codecs/wm8960.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/sound/soc/codecs/wm8960.c b/sound/soc/codecs/wm8960.c
+index 8715361..50079fa 100644
+--- a/sound/soc/codecs/wm8960.c
++++ b/sound/soc/codecs/wm8960.c
+@@ -1122,7 +1122,7 @@ static int wm8960_probe(struct snd_soc_codec *codec)
+ static struct snd_soc_codec_driver soc_codec_dev_wm8960 = {
+ 	.probe =	wm8960_probe,
+ 	.set_bias_level = wm8960_set_bias_level,
+-	.idle_bias_off = true,
++	.suspend_bias_off = true,
+ };
+ 
+ static const struct regmap_config wm8960_regmap = {
+-- 
+1.8.0
+

@@ -1,0 +1,32 @@
+From 90efa4017b2a44b3f6c84d51a9589a9011f929fa Mon Sep 17 00:00:00 2001
+From: Peng Fan <Peng.Fan@freescale.com>
+Date: Thu, 29 Jan 2015 13:53:04 +0800
+Subject: [PATCH] MLK-10178-7 imx:wdog add imx7 support
+
+Add mx7 in driver/watchdog/Makefile to support watchdog driver for imx7
+
+Signed-off-by: Peng Fan <Peng.Fan@freescale.com>
+(cherry picked from commit 19d698109fd136586b292430989e0f6edb723db6)
+
+Conflicts:
+	drivers/watchdog/Makefile
+---
+ drivers/watchdog/Makefile | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/watchdog/Makefile b/drivers/watchdog/Makefile
+index 482a4bd..9e9cb55 100644
+--- a/drivers/watchdog/Makefile
++++ b/drivers/watchdog/Makefile
+@@ -7,7 +7,7 @@
+ 
+ obj-$(CONFIG_AT91SAM9_WATCHDOG) += at91sam9_wdt.o
+ obj-$(CONFIG_FTWDT010_WATCHDOG) += ftwdt010_wdt.o
+-ifneq (,$(filter $(SOC), mx31 mx35 mx5 mx6 vf610 ls102xa))
++ifneq (,$(filter $(SOC), mx31 mx35 mx5 mx6 mx7 vf610 ls102xa))
+ obj-y += imx_watchdog.o
+ endif
+ obj-$(CONFIG_S5P)               += s5p_wdt.o
+-- 
+1.8.0
+

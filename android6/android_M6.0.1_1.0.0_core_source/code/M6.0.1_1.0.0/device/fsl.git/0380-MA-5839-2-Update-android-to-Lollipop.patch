@@ -1,0 +1,29 @@
+From eb757a43910e83256f40a4bc445d9cdfafabfcb2 Mon Sep 17 00:00:00 2001
+From: "guoyin.chen" <guoyin.chen@freescale.com>
+Date: Mon, 10 Nov 2014 10:55:29 +0800
+Subject: [PATCH 380/602] MA-5839-2 Update android to Lollipop
+
+Remove graphics_device:chr_file permission for untrucsted_app
+as sepolicy compiler does not allow this for untrusted_app
+
+Signed-off-by: guoyin.chen <guoyin.chen@freescale.com>
+---
+ imx6/sepolicy/untrusted_app.te | 3 +--
+ 1 file changed, 1 insertion(+), 2 deletions(-)
+
+diff --git a/imx6/sepolicy/untrusted_app.te b/imx6/sepolicy/untrusted_app.te
+index e77e344..5080429 100644
+--- a/imx6/sepolicy/untrusted_app.te
++++ b/imx6/sepolicy/untrusted_app.te
+@@ -1,6 +1,5 @@
+ allow untrusted_app graphics_device:dir rw_dir_perms;
+ allow untrusted_app graphics_device:file rw_file_perms;
+-allow untrusted_app graphics_device:chr_file rw_file_perms;
+ allow untrusted_app unlabeled:dir rw_dir_perms;
+ allow untrusted_app sdcard_external:dir rw_dir_perms;
+-allow untrusted_app sdcard_external:file rw_file_perms;
+\ No newline at end of file
++allow untrusted_app sdcard_external:file rw_file_perms;
+-- 
+1.8.0
+

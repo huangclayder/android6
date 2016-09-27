@@ -1,0 +1,33 @@
+From e65ac50d64181afe30beaa2bf6c4496c42f121ab Mon Sep 17 00:00:00 2001
+From: Liu Ying <Ying.Liu@freescale.com>
+Date: Mon, 2 Mar 2015 17:40:24 +0800
+Subject: [PATCH] MLK-10373-5 video: mxsfb: remove duplicate clock rate
+ setting of lcdif pix clk
+
+Remove the duplicated clock rate set for the lcdif pix
+clk when enable the lcdif controller.
+
+Signed-off-by: Liu Ying <Ying.Liu@freescale.com>
+Signed-off-by: Fancy Fang <chen.fang@freescale.com>
+---
+ drivers/video/mxsfb.c | 4 +---
+ 1 file changed, 1 insertion(+), 3 deletions(-)
+
+diff --git a/drivers/video/mxsfb.c b/drivers/video/mxsfb.c
+index 9a3b4d8..f5d084b 100644
+--- a/drivers/video/mxsfb.c
++++ b/drivers/video/mxsfb.c
+@@ -505,9 +505,7 @@ static void mxsfb_enable_controller(struct fb_info *fb_info)
+ 	clk_enable_axi(host);
+ 	clk_enable_disp_axi(host);
+ 
+-	clk_set_rate(host->clk_pix, PICOS2KHZ(fb_info->var.pixclock) * 1000U);
+-	ret =
+-	    clk_set_rate(host->clk_pix,
++	ret = clk_set_rate(host->clk_pix,
+ 			 PICOS2KHZ(fb_info->var.pixclock) * 1000U);
+ 	if (ret) {
+ 		dev_err(&host->pdev->dev,
+-- 
+1.8.0
+

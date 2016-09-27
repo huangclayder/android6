@@ -1,0 +1,33 @@
+From 246bf68cd4a7008a2313c51248a5ec19a0cd850d Mon Sep 17 00:00:00 2001
+From: Fugang Duan <b38611@freescale.com>
+Date: Tue, 5 May 2015 13:58:51 +0800
+Subject: [PATCH] MLK-10834 ARM: dts: imx6ul: Add mag3110 sensor support
+
+Enable mag3110 sensor. By default, use polling mode instead of interrupt
+mode since there have no hw irq line connection for current.
+
+Signed-off-by: Fugang Duan <B38611@freescale.com>
+---
+ arch/arm/boot/dts/imx6ul-evk.dts | 6 ++++++
+ 1 file changed, 6 insertions(+)
+
+diff --git a/arch/arm/boot/dts/imx6ul-evk.dts b/arch/arm/boot/dts/imx6ul-evk.dts
+index 46926de..4446b05 100755
+--- a/arch/arm/boot/dts/imx6ul-evk.dts
++++ b/arch/arm/boot/dts/imx6ul-evk.dts
+@@ -246,6 +246,12 @@
+ 	pinctrl-names = "default";
+ 	pinctrl-0 = <&pinctrl_i2c1>;
+ 	status = "okay";
++
++	mag3110@0e {
++		compatible = "fsl,mag3110";
++		reg = <0x0e>;
++		position = <2>;
++	};
+ };
+ 
+ &i2c2 {
+-- 
+1.8.0
+

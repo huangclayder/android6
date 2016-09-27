@@ -1,0 +1,35 @@
+From 129854d0252921a140e76ca59e76d7787c8403ca Mon Sep 17 00:00:00 2001
+From: Haoran Wang <b50027@freescale.com>
+Date: Wed, 13 May 2015 12:53:17 +0800
+Subject: [PATCH] MA-6665 Added NAT config for iptables
+
+Added NAT config for iptables.
+
+Signed-off-by: Haoran Wang <b50027@freescale.com>
+---
+ arch/arm/configs/imx_v7_android_defconfig | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/arch/arm/configs/imx_v7_android_defconfig b/arch/arm/configs/imx_v7_android_defconfig
+index 152bd50..21f7955 100644
+--- a/arch/arm/configs/imx_v7_android_defconfig
++++ b/arch/arm/configs/imx_v7_android_defconfig
+@@ -144,6 +144,7 @@ CONFIG_NETFILTER_XT_MATCH_STRING=y
+ CONFIG_NETFILTER_XT_MATCH_TIME=y
+ CONFIG_NETFILTER_XT_MATCH_U32=y
+ CONFIG_NF_CONNTRACK_IPV4=y
++CONFIG_NF_NAT_IPV4=y
+ CONFIG_IP_NF_IPTABLES=y
+ CONFIG_IP_NF_MATCH_AH=y
+ CONFIG_IP_NF_MATCH_ECN=y
+@@ -156,6 +157,7 @@ CONFIG_IP_NF_ARPTABLES=y
+ CONFIG_IP_NF_ARPFILTER=y
+ CONFIG_IP_NF_ARP_MANGLE=y
+ CONFIG_NF_CONNTRACK_IPV6=y
++CONFIG_NF_NAT_IPV6=y
+ CONFIG_IP6_NF_IPTABLES=y
+ CONFIG_IP6_NF_FILTER=y
+ CONFIG_IP6_NF_TARGET_REJECT=y
+-- 
+1.8.0
+

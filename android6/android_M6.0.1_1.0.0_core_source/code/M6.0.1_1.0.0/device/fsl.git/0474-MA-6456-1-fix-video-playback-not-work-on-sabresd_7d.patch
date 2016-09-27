@@ -1,0 +1,34 @@
+From 2841b10e9227a61a9f1044443129750f3e5e73f0 Mon Sep 17 00:00:00 2001
+From: "xuegang.liu" <xuegang.liu@freescale.com>
+Date: Wed, 15 Apr 2015 15:14:25 +0800
+Subject: [PATCH 474/602] MA-6456-1 fix video playback not work on sabresd_7d
+
+There is no GPU on sabresd_7d, android default software opengl es
+does not support YUV format, set ro.kernel.qemu=1 stagefright will
+output RGB format surface instead of YUV format surface, but this
+property control too many things in android framework, so we add
+a property sys.composer.no-yuv-support to do the control.
+
+set sys.composer.no-yuv-support=1 on sabresd_7d.
+
+Signed-off-by: Richard Liu <r66033@freescale.com>
+---
+ sabresd_7d/init.rc | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/sabresd_7d/init.rc b/sabresd_7d/init.rc
+index 2cf8f31..ce567c2 100644
+--- a/sabresd_7d/init.rc
++++ b/sabresd_7d/init.rc
+@@ -68,7 +68,7 @@ on boot
+     setprop sys.device.type tablet
+ 
+     # Set ro.kernel.qemu on i.mx7d
+-    setprop ro.kernel.qemu 1 
++    setprop sys.composer.no-yuv-support 1
+ 
+     # Set extsd access permission
+     setprop persist.sampling_profiler 1
+-- 
+1.8.0
+

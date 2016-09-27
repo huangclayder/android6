@@ -1,0 +1,55 @@
+From 2e65f2aa7d8f322170bbb698b454eeac34a5c5ad Mon Sep 17 00:00:00 2001
+From: Christoffer Dall <christoffer.dall@linaro.org>
+Date: Tue, 26 Aug 2014 14:00:37 +0200
+Subject: [PATCH] KVM: Unconditionally export KVM_CAP_READONLY_MEM
+
+The idea between capabilities and the KVM_CHECK_EXTENSION ioctl is that
+userspace can, at run-time, determine if a feature is supported or not.
+This allows KVM to being supporting a new feature with a new kernel
+version without any need to update user space.  Unfortunately, since the
+definition of KVM_CAP_READONLY_MEM was guarded by #ifdef
+__KVM_HAVE_READONLY_MEM, such discovery still required a user space
+update.
+
+Therefore, unconditionally export KVM_CAP_READONLY_MEM and change the
+in-kernel conditional to rely on __KVM_HAVE_READONLY_MEM.
+
+Signed-off-by: Christoffer Dall <christoffer.dall@linaro.org>
+Signed-off-by: Paolo Bonzini <pbonzini@redhat.com>
+(cherry picked from commit 0f8a4de3e088797576ac76200b634b802e5c7781)
+Signed-off-by: Christoffer Dall <christoffer.dall@linaro.org>
+---
+ include/uapi/linux/kvm.h | 2 --
+ virt/kvm/kvm_main.c      | 2 +-
+ 2 files changed, 1 insertion(+), 3 deletions(-)
+
+diff --git a/include/uapi/linux/kvm.h b/include/uapi/linux/kvm.h
+index cc38b60..464e5cd 100644
+--- a/include/uapi/linux/kvm.h
++++ b/include/uapi/linux/kvm.h
+@@ -666,9 +666,7 @@ struct kvm_ppc_smmu_info {
+ #define KVM_CAP_PPC_GET_SMMU_INFO 78
+ #define KVM_CAP_S390_COW 79
+ #define KVM_CAP_PPC_ALLOC_HTAB 80
+-#ifdef __KVM_HAVE_READONLY_MEM
+ #define KVM_CAP_READONLY_MEM 81
+-#endif
+ #define KVM_CAP_IRQFD_RESAMPLE 82
+ #define KVM_CAP_PPC_BOOKE_WATCHDOG 83
+ #define KVM_CAP_PPC_HTAB_FD 84
+diff --git a/virt/kvm/kvm_main.c b/virt/kvm/kvm_main.c
+index 20b6ec8..7381ec6 100644
+--- a/virt/kvm/kvm_main.c
++++ b/virt/kvm/kvm_main.c
+@@ -710,7 +710,7 @@ static int check_memory_region_flags(struct kvm_userspace_memory_region *mem)
+ {
+ 	u32 valid_flags = KVM_MEM_LOG_DIRTY_PAGES;
+ 
+-#ifdef KVM_CAP_READONLY_MEM
++#ifdef __KVM_HAVE_READONLY_MEM
+ 	valid_flags |= KVM_MEM_READONLY;
+ #endif
+ 
+-- 
+1.8.0
+

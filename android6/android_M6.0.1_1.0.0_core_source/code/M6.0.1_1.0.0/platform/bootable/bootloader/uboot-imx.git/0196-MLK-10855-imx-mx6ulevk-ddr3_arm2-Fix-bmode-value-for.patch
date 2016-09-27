@@ -1,0 +1,45 @@
+From 31a4b1d4c19ed710515acdd31c5d32505e609d38 Mon Sep 17 00:00:00 2001
+From: "Ye.Li" <B37916@freescale.com>
+Date: Thu, 7 May 2015 16:38:41 +0800
+Subject: [PATCH] MLK-10855 imx: mx6ulevk/ddr3_arm2: Fix bmode value for SD1
+ and SD2
+
+Correct USDHC Port Selection bits in bmode value for SD1 and SD2.
+
+Signed-off-by: Ye.Li <B37916@freescale.com>
+---
+ board/freescale/mx6ul_ddr3_arm2/mx6ul_ddr3_arm2.c | 2 +-
+ board/freescale/mx6ulevk/mx6ulevk.c               | 4 ++--
+ 2 files changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/board/freescale/mx6ul_ddr3_arm2/mx6ul_ddr3_arm2.c b/board/freescale/mx6ul_ddr3_arm2/mx6ul_ddr3_arm2.c
+index 644018e..c1ec25c 100644
+--- a/board/freescale/mx6ul_ddr3_arm2/mx6ul_ddr3_arm2.c
++++ b/board/freescale/mx6ul_ddr3_arm2/mx6ul_ddr3_arm2.c
+@@ -938,7 +938,7 @@ int board_init(void)
+ #ifdef CONFIG_CMD_BMODE
+ static const struct boot_mode board_boot_modes[] = {
+ 	/* 4 bit bus width */
+-	{"sd1", MAKE_CFGVAL(0x42, 0x30, 0x00, 0x00)},
++	{"sd1", MAKE_CFGVAL(0x42, 0x20, 0x00, 0x00)},
+ 	{"qspi1", MAKE_CFGVAL(0x10, 0x00, 0x00, 0x00)},
+ 	{NULL,	 0},
+ };
+diff --git a/board/freescale/mx6ulevk/mx6ulevk.c b/board/freescale/mx6ulevk/mx6ulevk.c
+index 52ccdfd..5342c25 100644
+--- a/board/freescale/mx6ulevk/mx6ulevk.c
++++ b/board/freescale/mx6ulevk/mx6ulevk.c
+@@ -845,8 +845,8 @@ int board_init(void)
+ #ifdef CONFIG_CMD_BMODE
+ static const struct boot_mode board_boot_modes[] = {
+ 	/* 4 bit bus width */
+-	{"sd1", MAKE_CFGVAL(0x42, 0x30, 0x00, 0x00)},
+-	{"sd2", MAKE_CFGVAL(0x40, 0x38, 0x00, 0x00)},
++	{"sd1", MAKE_CFGVAL(0x42, 0x20, 0x00, 0x00)},
++	{"sd2", MAKE_CFGVAL(0x40, 0x28, 0x00, 0x00)},
+ 	{"qspi1", MAKE_CFGVAL(0x10, 0x00, 0x00, 0x00)},
+ 	{NULL,	 0},
+ };
+-- 
+1.8.0
+

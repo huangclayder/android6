@@ -1,0 +1,43 @@
+From d9e2ac7049b13c01277976f5c574f51cd8aacbe4 Mon Sep 17 00:00:00 2001
+From: Fancy Fang <chen.fang@freescale.com>
+Date: Fri, 27 Nov 2015 10:21:27 +0800
+Subject: [PATCH] MLK-11913 dma: pxp-v3: remove some duplicate dead code
+
+The code slice in the pxp_probe() function:
+"
+       if (!res || irq < 0) {
+               err = -ENODEV;
+               goto exit;
+       }
+"
+appears twice closely. And the second code slice will become
+dead code which is never executed. So remove the second one.
+
+Signed-off-by: Fancy Fang <chen.fang@freescale.com>
+(cherry picked from commit 964d15464286b6d56c89ac52697deb672cfcc5ac)
+---
+ drivers/dma/pxp/pxp_dma_v3.c | 7 +------
+ 1 file changed, 1 insertion(+), 6 deletions(-)
+
+diff --git a/drivers/dma/pxp/pxp_dma_v3.c b/drivers/dma/pxp/pxp_dma_v3.c
+index 5b021ff..b81e7ee 100644
+--- a/drivers/dma/pxp/pxp_dma_v3.c
++++ b/drivers/dma/pxp/pxp_dma_v3.c
+@@ -4281,13 +4281,8 @@ static int pxp_probe(struct platform_device *pdev)
+ 
+ 	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
+ 	irq = platform_get_irq(pdev, 0);
+-	if (!res || irq < 0) {
+-		err = -ENODEV;
+-		goto exit;
+-	}
+-
+ 	std_irq = platform_get_irq(pdev, 1);
+-	if (!res || irq < 0) {
++	if (!res || irq < 0 || std_irq < 0) {
+ 		err = -ENODEV;
+ 		goto exit;
+ 	}
+-- 
+1.8.0
+

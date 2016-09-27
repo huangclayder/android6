@@ -1,0 +1,115 @@
+From 5f22af87260341e8d326239c11a9c32cd64280d2 Mon Sep 17 00:00:00 2001
+From: Ard Biesheuvel <ard.biesheuvel@linaro.org>
+Date: Tue, 9 Sep 2014 11:27:09 +0100
+Subject: [PATCH] ARM/arm64: KVM: fix use of WnR bit in kvm_is_write_fault()
+
+The ISS encoding for an exception from a Data Abort has a WnR
+bit[6] that indicates whether the Data Abort was caused by a
+read or a write instruction. While there are several fields
+in the encoding that are only valid if the ISV bit[24] is set,
+WnR is not one of them, so we can read it unconditionally.
+
+Instead of fixing both implementations of kvm_is_write_fault()
+in place, reimplement it just once using kvm_vcpu_dabt_iswrite(),
+which already does the right thing with respect to the WnR bit.
+Also fix up the callers to pass 'vcpu'
+
+Acked-by: Laszlo Ersek <lersek@redhat.com>
+Acked-by: Marc Zyngier <marc.zyngier@arm.com>
+Acked-by: Christoffer Dall <christoffer.dall@linaro.org>
+Signed-off-by: Ard Biesheuvel <ard.biesheuvel@linaro.org>
+Signed-off-by: Marc Zyngier <marc.zyngier@arm.com>
+(cherry picked from commit a7d079cea2dffb112e26da2566dd84c0ef1fce97)
+Signed-off-by: Christoffer Dall <christoffer.dall@linaro.org>
+---
+ arch/arm/include/asm/kvm_mmu.h   | 11 -----------
+ arch/arm/kvm/mmu.c               | 12 ++++++++++--
+ arch/arm64/include/asm/kvm_mmu.h | 13 -------------
+ 3 files changed, 10 insertions(+), 26 deletions(-)
+
+diff --git a/arch/arm/include/asm/kvm_mmu.h b/arch/arm/include/asm/kvm_mmu.h
+index 5cc0b0f..3f688b4 100644
+--- a/arch/arm/include/asm/kvm_mmu.h
++++ b/arch/arm/include/asm/kvm_mmu.h
+@@ -78,17 +78,6 @@ static inline void kvm_set_pte(pte_t *pte, pte_t new_pte)
+ 	flush_pmd_entry(pte);
+ }
+ 
+-static inline bool kvm_is_write_fault(unsigned long hsr)
+-{
+-	unsigned long hsr_ec = hsr >> HSR_EC_SHIFT;
+-	if (hsr_ec == HSR_EC_IABT)
+-		return false;
+-	else if ((hsr & HSR_ISV) && !(hsr & HSR_WNR))
+-		return false;
+-	else
+-		return true;
+-}
+-
+ static inline void kvm_clean_pgd(pgd_t *pgd)
+ {
+ 	clean_dcache_area(pgd, PTRS_PER_S2_PGD * sizeof(pgd_t));
+diff --git a/arch/arm/kvm/mmu.c b/arch/arm/kvm/mmu.c
+index 62f5642..bb06f76 100644
+--- a/arch/arm/kvm/mmu.c
++++ b/arch/arm/kvm/mmu.c
+@@ -746,6 +746,14 @@ static bool transparent_hugepage_adjust(pfn_t *pfnp, phys_addr_t *ipap)
+ 	return false;
+ }
+ 
++static bool kvm_is_write_fault(struct kvm_vcpu *vcpu)
++{
++	if (kvm_vcpu_trap_is_iabt(vcpu))
++		return false;
++
++	return kvm_vcpu_dabt_iswrite(vcpu);
++}
++
+ static int user_mem_abort(struct kvm_vcpu *vcpu, phys_addr_t fault_ipa,
+ 			  struct kvm_memory_slot *memslot, unsigned long hva,
+ 			  unsigned long fault_status)
+@@ -760,7 +768,7 @@ static int user_mem_abort(struct kvm_vcpu *vcpu, phys_addr_t fault_ipa,
+ 	pfn_t pfn;
+ 	pgprot_t mem_type = PAGE_S2;
+ 
+-	write_fault = kvm_is_write_fault(kvm_vcpu_get_hsr(vcpu));
++	write_fault = kvm_is_write_fault(vcpu);
+ 	if (fault_status == FSC_PERM && !write_fault) {
+ 		kvm_err("Unexpected L2 read permission error\n");
+ 		return -EFAULT;
+@@ -886,7 +894,7 @@ int kvm_handle_guest_abort(struct kvm_vcpu *vcpu, struct kvm_run *run)
+ 	gfn = fault_ipa >> PAGE_SHIFT;
+ 	memslot = gfn_to_memslot(vcpu->kvm, gfn);
+ 	hva = gfn_to_hva_memslot_prot(memslot, gfn, &writable);
+-	write_fault = kvm_is_write_fault(kvm_vcpu_get_hsr(vcpu));
++	write_fault = kvm_is_write_fault(vcpu);
+ 	if (kvm_is_error_hva(hva) || (write_fault && !writable)) {
+ 		if (is_iabt) {
+ 			/* Prefetch Abort on I/O address */
+diff --git a/arch/arm64/include/asm/kvm_mmu.h b/arch/arm64/include/asm/kvm_mmu.h
+index 8e138c7..737da74 100644
+--- a/arch/arm64/include/asm/kvm_mmu.h
++++ b/arch/arm64/include/asm/kvm_mmu.h
+@@ -93,19 +93,6 @@ void kvm_clear_hyp_idmap(void);
+ #define	kvm_set_pte(ptep, pte)		set_pte(ptep, pte)
+ #define	kvm_set_pmd(pmdp, pmd)		set_pmd(pmdp, pmd)
+ 
+-static inline bool kvm_is_write_fault(unsigned long esr)
+-{
+-	unsigned long esr_ec = esr >> ESR_EL2_EC_SHIFT;
+-
+-	if (esr_ec == ESR_EL2_EC_IABT)
+-		return false;
+-
+-	if ((esr & ESR_EL2_ISV) && !(esr & ESR_EL2_WNR))
+-		return false;
+-
+-	return true;
+-}
+-
+ static inline void kvm_clean_pgd(pgd_t *pgd) {}
+ static inline void kvm_clean_pmd_entry(pmd_t *pmd) {}
+ static inline void kvm_clean_pte(pte_t *pte) {}
+-- 
+1.8.0
+

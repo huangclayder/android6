@@ -1,0 +1,29 @@
+From 85e887ab787ea4438fa3ec60522e036461be4b18 Mon Sep 17 00:00:00 2001
+From: Wang Haoran <Haoran.Wang@freescale.com>
+Date: Mon, 18 May 2015 13:42:41 +0800
+Subject: [PATCH 492/602] MA-6573-1 [Android_MX6SX_SD/ARD] Ethernet: The first
+ open time of ethernet more than 5 sceonds . 80%
+
+Added SELinux policy for i.mx7d platform.
+
+Signed-off-by: Wang Haoran <Haoran.Wang@freescale.com>
+---
+ imx7/sepolicy/system_app.te | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/imx7/sepolicy/system_app.te b/imx7/sepolicy/system_app.te
+index dc3f9af..cf90a3a 100644
+--- a/imx7/sepolicy/system_app.te
++++ b/imx7/sepolicy/system_app.te
+@@ -2,4 +2,8 @@ allow system_app system_app_data_file:notdevfile_class_set rw_file_perms;
+ allow system_app cache_file:dir { rw_file_perms add_name create };
+ allow system_app cache_file:file  { rw_file_perms create };
+ allow system_app caam_device:chr_file  rw_file_perms;
++allow system_app net_radio_prop:property_service  { set };
++allow system_app net_radio_prop:property_service  { set };
++allow system_app ctl_default_prop:property_service  { set };
++allow system_app dhcp_prop:property_service  { set };
+ 
+-- 
+1.8.0
+

@@ -1,0 +1,37 @@
+From 9c4084f6ec7a9c92894240cdc45ff0a733534e4a Mon Sep 17 00:00:00 2001
+From: Haoran Wang <b50027@freescale.com>
+Date: Mon, 31 Aug 2015 13:26:16 +0800
+Subject: [PATCH 43/43] MA-7021 Enhance robustness
+
+Enhance the robustness of the HAL code.
+Removed the memory leak warning from "cppcheck".
+
+Signed-off-by: Haoran Wang <b50027@freescale.com>
+---
+ runtime-ril-port/runtime_port.c | 9 +++++++--
+ 1 file changed, 7 insertions(+), 2 deletions(-)
+
+diff --git a/runtime-ril-port/runtime_port.c b/runtime-ril-port/runtime_port.c
+index 4997493..673d749 100755
+--- a/runtime-ril-port/runtime_port.c
++++ b/runtime-ril-port/runtime_port.c
+@@ -193,9 +193,14 @@ struct modem_3g_device *find_matched_device(void)
+ 	int ret, i;
+ 
+ 	path = malloc(PATH_SIZE);
++    if (!path)
++        return NULL;
++
+ 	path2 = malloc(PATH_SIZE);
+-	if (!path || !path2)
+-		return NULL;
++    if (!path2) {
++        free(path);
++        return NULL;
++    }
+ 
+ 	usbdir = opendir(USB_DIR_BASE);
+ 	if (usbdir == NULL) {
+-- 
+1.8.0
+

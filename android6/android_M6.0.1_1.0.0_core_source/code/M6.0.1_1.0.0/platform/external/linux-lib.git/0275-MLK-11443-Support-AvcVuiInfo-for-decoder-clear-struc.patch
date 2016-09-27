@@ -1,0 +1,197 @@
+From 2e1079664ff9bf3f21f9d4760c031df7b54c58b3 Mon Sep 17 00:00:00 2001
+From: Hongzhang Yang <Hongzhang.Yang@freescale.com>
+Date: Mon, 31 Aug 2015 13:32:37 +0800
+Subject: [PATCH 275/280] MLK-11443 Support AvcVuiInfo for decoder, clear
+ structure iram
+
+VPU lib v5.4.32
+
+- Support AvcVuiInfo for decoder
+  User can get AvcVuiInfo from DecInitialInfo or DecOutputInfo
+
+- Clear structure iram
+  Clear structure iram if IOGetIramBase() fails to set them to avoid
+using uninitialized variables.
+
+Caution: app must be rebuilt with new vpu_lib.h
+
+Signed-off-by: Hongzhang Yang <Hongzhang.Yang@freescale.com>
+---
+ vpu/vpu_lib.c  | 40 ++++++++++++++++++++++++++++++++++++++++
+ vpu/vpu_lib.h  | 22 +++++++++++++++++++++-
+ vpu/vpu_reg.h  |  4 +++-
+ vpu/vpu_util.c | 10 ++++++++--
+ 4 files changed, 72 insertions(+), 4 deletions(-)
+
+diff --git a/vpu/vpu_lib.c b/vpu/vpu_lib.c
+index ba875ee..92d4e19 100644
+--- a/vpu/vpu_lib.c
++++ b/vpu/vpu_lib.c
+@@ -3242,6 +3242,26 @@ RetCode vpu_DecGetInitialInfo(DecHandle handle, DecInitialInfo * info)
+ 	val = VpuReadReg(RET_DEC_SEQ_ASPECT);
+ 	info->aspectRateInfo = val;
+ 
++	if (cpu_is_mx6x() && (pCodecInst->codecMode == AVC_DEC)) {
++		val = VpuReadReg(RET_DEC_SEQ_VUI_INFO);
++		info->avcVuiInfo.fixedFrameRateFlag    = val &1;
++		info->avcVuiInfo.timingInfoPresent     = (val>>1) & 0x01;
++		info->avcVuiInfo.chromaLocBotField     = (val>>2) & 0x07;
++		info->avcVuiInfo.chromaLocTopField     = (val>>5) & 0x07;
++		info->avcVuiInfo.chromaLocInfoPresent  = (val>>8) & 0x01;
++		info->avcVuiInfo.colorPrimaries        = (val>>16) & 0xff;
++		info->avcVuiInfo.colorDescPresent      = (val>>24) & 0x01;
++		info->avcVuiInfo.isExtSAR              = (val>>25) & 0x01;
++		info->avcVuiInfo.vidFullRange          = (val>>26) & 0x01;
++		info->avcVuiInfo.vidFormat             = (val>>27) & 0x07;
++		info->avcVuiInfo.vidSigTypePresent     = (val>>30) & 0x01;
++		info->avcVuiInfo.vuiParamPresent       = (val>>31) & 0x01;
++
++		val = VpuReadReg(RET_DEC_SEQ_VUI_PIC_STRUCT);
++		info->avcVuiInfo.vuiPicStructPresent = (val & 0x1);
++		info->avcVuiInfo.vuiPicStruct = (val>>1);
++	}
++
+ 	info->reportBufSize.frameBufStatBufSize = SIZE_FRAME_BUF_STAT;
+ 	info->reportBufSize.mbInfoBufSize = SIZE_MB_DATA;
+ 	info->reportBufSize.mvInfoBufSize = SIZE_MV_DATA;
+@@ -4460,6 +4480,26 @@ RetCode vpu_DecGetOutputInfo(DecHandle handle, DecOutputInfo * info)
+ 		info->fieldSequence = (val >> 25) & 0x0007;
+ 	}
+ 
++	if (cpu_is_mx6x() && (pCodecInst->codecMode == AVC_DEC)) {
++		val = VpuReadReg(RET_DEC_PIC_VUI_INFO);
++		info->avcVuiInfo.fixedFrameRateFlag    = val &1;
++		info->avcVuiInfo.timingInfoPresent     = (val>>1) & 0x01;
++		info->avcVuiInfo.chromaLocBotField     = (val>>2) & 0x07;
++		info->avcVuiInfo.chromaLocTopField     = (val>>5) & 0x07;
++		info->avcVuiInfo.chromaLocInfoPresent  = (val>>8) & 0x01;
++		info->avcVuiInfo.colorPrimaries        = (val>>16) & 0xff;
++		info->avcVuiInfo.colorDescPresent      = (val>>24) & 0x01;
++		info->avcVuiInfo.isExtSAR              = (val>>25) & 0x01;
++		info->avcVuiInfo.vidFullRange          = (val>>26) & 0x01;
++		info->avcVuiInfo.vidFormat             = (val>>27) & 0x07;
++		info->avcVuiInfo.vidSigTypePresent     = (val>>30) & 0x01;
++		info->avcVuiInfo.vuiParamPresent       = (val>>31) & 0x01;
++
++		val = VpuReadReg(RET_DEC_PIC_VUI_PIC_STRUCT);
++		info->avcVuiInfo.vuiPicStructPresent = (val & 0x1);
++		info->avcVuiInfo.vuiPicStruct = (val>>1);
++	}
++
+ 	if (cpu_is_mx6x()) {
+ 		info->frameRateRes = VpuReadReg(RET_DEC_PIC_FRATE_NR);
+ 		info->frameRateDiv = VpuReadReg(RET_DEC_PIC_FRATE_DR);
+diff --git a/vpu/vpu_lib.h b/vpu/vpu_lib.h
+index 3471293..87b84c3 100644
+--- a/vpu/vpu_lib.h
++++ b/vpu/vpu_lib.h
+@@ -198,6 +198,24 @@ typedef struct {
+ typedef struct CodecInst DecInst;
+ typedef DecInst *DecHandle;
+ 
++/* Not used on none mx6 */
++typedef struct {
++	int fixedFrameRateFlag;
++	int timingInfoPresent;
++	int chromaLocBotField;
++	int chromaLocTopField;
++	int chromaLocInfoPresent;
++	int colorPrimaries;
++	int colorDescPresent;
++	int isExtSAR;
++	int vidFullRange;
++	int vidFormat;
++	int vidSigTypePresent;
++	int vuiParamPresent;
++	int vuiPicStructPresent;
++	int vuiPicStruct;
++} AvcVuiInfo;
++
+ typedef struct {
+ 	CodStd bitstreamFormat;
+ 	PhysicalAddress bitstreamBuffer;
+@@ -273,6 +291,7 @@ typedef struct {
+ 	int mjpg_ecsPtr;
+ 
+ 	DecReportBufSize reportBufSize;
++	AvcVuiInfo avcVuiInfo; /* Not used on none mx6 */
+ } DecInitialInfo;
+ 
+ typedef struct {
+@@ -424,6 +443,7 @@ typedef struct {
+ 	Vp8PicInfo vp8PicInfo;
+ 	MvcPicInfo mvcPicInfo;  /* Not used on none mx6 */
+ 	AvcFpaSei avcFpaSei;
++	AvcVuiInfo avcVuiInfo;  /* Not used on none mx6 */
+ 
+ 	int frameStartPos;   /* Not used on none mx6 */
+ 	int frameEndPos;     /* Not used on none mx6 */
+@@ -709,7 +729,7 @@ static const SocInfo soc_info[] = {
+  * v4.2.2 [2008.09.03] support encoder on MX51
+  * v4.0.2 [2008.08.21] add the IOClkGateSet() for power saving.
+  */
+-#define VPU_LIB_VERSION_CODE	VPU_LIB_VERSION(5, 4, 31)
++#define VPU_LIB_VERSION_CODE	VPU_LIB_VERSION(5, 4, 32)
+ 
+ extern unsigned int system_rev;
+ 
+diff --git a/vpu/vpu_reg.h b/vpu/vpu_reg.h
+index 9c2b57e..583e237 100644
+--- a/vpu/vpu_reg.h
++++ b/vpu/vpu_reg.h
+@@ -1,7 +1,7 @@
+ /*
+  * Copyright (c) 2006, Chips & Media.  All rights reserved.
+  *
+- * Copyright (C) 2004-2014 Freescale Semiconductor, Inc.
++ * Copyright (C) 2004-2015 Freescale Semiconductor, Inc.
+  */
+ 
+ /* The following programs are the sole property of Freescale Semiconductor Inc.,
+@@ -126,6 +126,7 @@
+ #define CMD_DEC_SEQ_INIT_ESCAPE		0x114
+ 
+ #define RET_DEC_SEQ_VUI_INFO            0x18C /* MX6 platform */
++#define RET_DEC_SEQ_VUI_PIC_STRUCT	0x1A8 /* MX6 platform */
+ #define RET_DEC_SEQ_BIT_RATE            0x1B4 /* MX6 platform */
+ 
+ #if defined(IMX6Q)
+@@ -252,6 +253,7 @@
+ #define RET_DEC_PIC_AVC_FPA_SEI0	0x19C
+ #define RET_DEC_PIC_AVC_FPA_SEI1	0x1A0
+ #define RET_DEC_PIC_AVC_FPA_SEI2	0x1A4
++#define RET_DEC_PIC_VUI_PIC_STRUCT	0x1A8 /* MX6 platform */
+ 
+ #define RET_DEC_PIC_SIZE		0x1BC
+ #define RET_DEC_PIC_FRAME_NUM		0x1C0
+diff --git a/vpu/vpu_util.c b/vpu/vpu_util.c
+index 051b0ea..aa13063 100644
+--- a/vpu/vpu_util.c
++++ b/vpu/vpu_util.c
+@@ -1049,7 +1049,10 @@ void SetDecSecondAXIIRAM(SecAxiUse *psecAxiIramInfo, SetIramParam *parm)
+ 
+ 	memset(psecAxiIramInfo, 0, sizeof(SecAxiUse));
+ 
+-	IOGetIramBase(&iram);
++	if (IOGetIramBase(&iram)) {
++		iram.start = 0;
++		iram.end = 0;
++	}
+ 	size = iram.end - iram.start + 1;
+ 
+ 	mbNumX = (parm->width + 15 ) / 16;
+@@ -1134,7 +1137,10 @@ void SetEncSecondAXIIRAM(SecAxiUse *psecAxiIramInfo, SetIramParam *parm)
+ 
+ 	memset(psecAxiIramInfo, 0, sizeof(SecAxiUse));
+ 
+-	IOGetIramBase(&iram);
++	if (IOGetIramBase(&iram)) {
++		iram.start = 0;
++		iram.end = 0;
++	}
+ 	size = iram.end - iram.start + 1;
+ 
+ 	mbNumX = (parm->width + 15 ) / 16;
+-- 
+1.8.0
+

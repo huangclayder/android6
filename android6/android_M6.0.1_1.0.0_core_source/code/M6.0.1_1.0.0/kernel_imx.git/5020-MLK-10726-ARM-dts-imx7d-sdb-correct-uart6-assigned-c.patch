@@ -1,0 +1,32 @@
+From 6202910161fee4ce5ea14c30de79b9e661895938 Mon Sep 17 00:00:00 2001
+From: Fugang Duan <b38611@freescale.com>
+Date: Thu, 23 Apr 2015 09:32:43 +0800
+Subject: [PATCH] MLK-10726 ARM: dts: imx7d-sdb: correct uart6 assigned clocks
+
+The issue is introduced by the commit:
+2b640b0f16e4b6b549ae466011ab9b96778162c9
+
+Correct uart6 assigned clock parent, otherwise the default parent clock
+is 24Mhz.
+
+Signed-off-by: Fugang Duan <B38611@freescale.com>
+---
+ arch/arm/boot/dts/imx7d-sdb.dts | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/arch/arm/boot/dts/imx7d-sdb.dts b/arch/arm/boot/dts/imx7d-sdb.dts
+index 50da20b..381c78c 100644
+--- a/arch/arm/boot/dts/imx7d-sdb.dts
++++ b/arch/arm/boot/dts/imx7d-sdb.dts
+@@ -896,7 +896,7 @@
+ &uart6 {
+ 	pinctrl-names = "default";
+ 	pinctrl-0 = <&pinctrl_uart6>;
+-	assigned-clocks = <&clks IMX7D_UART7_ROOT_SRC>;
++	assigned-clocks = <&clks IMX7D_UART6_ROOT_SRC>;
+ 	assigned-clock-parents = <&clks IMX7D_PLL_SYS_MAIN_240M_CLK>;
+ 	fsl,uart-has-rtscts;
+ 	status = "okay";
+-- 
+1.8.0
+

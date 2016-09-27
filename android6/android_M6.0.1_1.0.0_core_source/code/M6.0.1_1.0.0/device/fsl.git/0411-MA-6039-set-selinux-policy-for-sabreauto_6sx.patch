@@ -1,0 +1,116 @@
+From d8ea3b49758ce5882b062b682cec9b9ffcdf6509 Mon Sep 17 00:00:00 2001
+From: zhang sanshan <b51434@freescale.com>
+Date: Mon, 22 Dec 2014 09:04:25 +0800
+Subject: [PATCH 411/602] MA-6039 set selinux policy for sabreauto_6sx
+
+delete the folder /sabreauto_6sx/sepolicy
+add selinux policy for sabreauto-6sx in folder device/fsl/imx6/sepolicy
+
+Signed-off-by: zhang sanshan <b51434@freescale.com>
+---
+ sabreauto_6sx/BoardConfig.mk            | 18 +++++++++++++++---
+ sabreauto_6sx/sepolicy/app.te           |  7 -------
+ sabreauto_6sx/sepolicy/file_contexts    |  6 ------
+ sabreauto_6sx/sepolicy/fs_use           |  4 ----
+ sabreauto_6sx/sepolicy/genfs_contexts   |  2 --
+ sabreauto_6sx/sepolicy/untrusted_app.te |  9 ---------
+ 6 files changed, 15 insertions(+), 31 deletions(-)
+ delete mode 100644 sabreauto_6sx/sepolicy/app.te
+ delete mode 100644 sabreauto_6sx/sepolicy/file_contexts
+ delete mode 100644 sabreauto_6sx/sepolicy/fs_use
+ delete mode 100644 sabreauto_6sx/sepolicy/genfs_contexts
+ delete mode 100644 sabreauto_6sx/sepolicy/untrusted_app.te
+
+diff --git a/sabreauto_6sx/BoardConfig.mk b/sabreauto_6sx/BoardConfig.mk
+index 6d96d26..686ad7e 100755
+--- a/sabreauto_6sx/BoardConfig.mk
++++ b/sabreauto_6sx/BoardConfig.mk
+@@ -98,11 +98,23 @@ TARGET_BOOTLOADER_CONFIG := imx6sx:mx6sxsabreautoandroid_config imx6sx-nand:mx6s
+ TARGET_BOARD_DTS_CONFIG := imx6sx:imx6sx-sabreauto.dtb
+ 
+ BOARD_SEPOLICY_DIRS := \
++       device/fsl/imx6/sepolicy \
+        device/fsl/sabreauto_6sx/sepolicy
+ 
+ BOARD_SEPOLICY_UNION := \
+-       app.te \
++       domain.te \
++       system_app.te \
++       system_server.te \
++       untrusted_app.te \
++       sensors.te \
++       init_shell.te \
++       kernel.te \
++       mediaserver.te \
+        file_contexts \
++       genfs_contexts \
+        fs_use \
+-       untrusted_app.te \
+-       genfs_contexts
++       rild.te \
++       init.te \
++       netd.te \
++       bootanim.te
++
+diff --git a/sabreauto_6sx/sepolicy/app.te b/sabreauto_6sx/sepolicy/app.te
+deleted file mode 100644
+index 561a2b1..0000000
+--- a/sabreauto_6sx/sepolicy/app.te
++++ /dev/null
+@@ -1,7 +0,0 @@
+-# Grant GPU access to all processes started by Zygote.
+-# They need that to render the standard UI.
+-allow domain    graphics_device:chr_file rw_file_perms;
+-allow domain    graphics_device:dir { write create add_name setattr mounton search };
+-allow system    system_data_file:dir *;
+-allow vold      self:capability { setgid setuid };
+-allow vold      fuse_device:chr_file rw_file_perms;
+diff --git a/sabreauto_6sx/sepolicy/file_contexts b/sabreauto_6sx/sepolicy/file_contexts
+deleted file mode 100644
+index 55d7e38..0000000
+--- a/sabreauto_6sx/sepolicy/file_contexts
++++ /dev/null
+@@ -1,6 +0,0 @@
+-/system/bin/rtl_wpa_supplicant  u:object_r:wpa_exec:s0
+-/system/bin/rtl_hostapd     u:object_r:hostapd_exec:s0
+-/dev/ubi0_0                   u:object_r:block_device:s0
+-/dev/ubi0_1                   u:object_r:block_device:s0
+-/dev/ubi0_2                   u:object_r:block_device:s0
+-/dev/ubi0_3                   u:object_r:block_device:s0
+\ No newline at end of file
+diff --git a/sabreauto_6sx/sepolicy/fs_use b/sabreauto_6sx/sepolicy/fs_use
+deleted file mode 100644
+index 848581b..0000000
+--- a/sabreauto_6sx/sepolicy/fs_use
++++ /dev/null
+@@ -1,4 +0,0 @@
+-# Label inodes via getxattr.
+-fs_use_xattr ubifs u:object_r:labeledfs:s0;
+-
+-
+diff --git a/sabreauto_6sx/sepolicy/genfs_contexts b/sabreauto_6sx/sepolicy/genfs_contexts
+deleted file mode 100644
+index 34f9db4..0000000
+--- a/sabreauto_6sx/sepolicy/genfs_contexts
++++ /dev/null
+@@ -1,2 +0,0 @@
+-genfscon nfs / u:object_r:rootfs:s0
+-genfscon fuseblk / u:object_r:sdcard_external:s0
+diff --git a/sabreauto_6sx/sepolicy/untrusted_app.te b/sabreauto_6sx/sepolicy/untrusted_app.te
+deleted file mode 100644
+index d03f9c6..0000000
+--- a/sabreauto_6sx/sepolicy/untrusted_app.te
++++ /dev/null
+@@ -1,9 +0,0 @@
+-allow untrusted_app domain:dir r_dir_perms;
+-allow untrusted_app domain:file rw_file_perms;
+-allow untrusted_app domain:unix_stream_socket {read write};
+-allow untrusted_app appdomain:dir r_dir_perms;
+-allow untrusted_app appdomain:file rw_file_perms;
+-allow untrusted_app fs_type:dir r_dir_perms;
+-allow untrusted_app fs_type:file rw_file_perms;
+-allow untrusted_app untrusted_app:process *;
+-allow untrusted_app init_tmpfs:file rw_file_perms;
+-- 
+1.8.0
+

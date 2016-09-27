@@ -1,0 +1,72 @@
+From bd483695f85b2e5b69334661c6626348a4f8e9d6 Mon Sep 17 00:00:00 2001
+From: "Ye.Li" <B37916@freescale.com>
+Date: Tue, 31 Mar 2015 14:20:28 +0800
+Subject: [PATCH] MLK-10513 mx7: HAB: Fix HAB RVT addresses to unified section
+
+Incorrect hab_rvt addresses were used for getting HAB functions.
+Need to change to addresses in unified section.
+
+Signed-off-by: Ye.Li <B37916@freescale.com>
+(cherry picked from commit 5ae1cb9d8e7cd7babd1d7ef7f2303664a4e15c26)
+---
+ arch/arm/cpu/armv7/mx7/hab.c        | 10 +++++-----
+ arch/arm/include/asm/arch-mx7/hab.h |  6 ------
+ 2 files changed, 5 insertions(+), 11 deletions(-)
+
+diff --git a/arch/arm/cpu/armv7/mx7/hab.c b/arch/arm/cpu/armv7/mx7/hab.c
+index 5b36f67..ae9591b 100644
+--- a/arch/arm/cpu/armv7/mx7/hab.c
++++ b/arch/arm/cpu/armv7/mx7/hab.c
+@@ -13,27 +13,27 @@
+ /* -------- start of HAB API updates ------------*/
+ #define hab_rvt_report_event_p						\
+ (									\
+-	((hab_rvt_report_event_t *)HAB_RVT_REPORT_EVENT_NEW)		\
++	((hab_rvt_report_event_t *)HAB_RVT_REPORT_EVENT)		\
+ )
+ 
+ #define hab_rvt_report_status_p						\
+ (									\
+-	((hab_rvt_report_status_t *)HAB_RVT_REPORT_STATUS_NEW)		\
++	((hab_rvt_report_status_t *)HAB_RVT_REPORT_STATUS)		\
+ )
+ 
+ #define hab_rvt_authenticate_image_p					\
+ (									\
+-	((hab_rvt_authenticate_image_t *)HAB_RVT_AUTHENTICATE_IMAGE_NEW)	\
++	((hab_rvt_authenticate_image_t *)HAB_RVT_AUTHENTICATE_IMAGE)	\
+ )
+ 
+ #define hab_rvt_entry_p							\
+ (									\
+-	((hab_rvt_entry_t *)HAB_RVT_ENTRY_NEW)				\
++	((hab_rvt_entry_t *)HAB_RVT_ENTRY)				\
+ )
+ 
+ #define hab_rvt_exit_p							\
+ (									\
+-	((hab_rvt_exit_t *)HAB_RVT_EXIT_NEW)				\
++	((hab_rvt_exit_t *)HAB_RVT_EXIT)				\
+ )
+ 
+ #define IVT_SIZE		0x20
+diff --git a/arch/arm/include/asm/arch-mx7/hab.h b/arch/arm/include/asm/arch-mx7/hab.h
+index 97a2fec..fa29c78 100644
+--- a/arch/arm/include/asm/arch-mx7/hab.h
++++ b/arch/arm/include/asm/arch-mx7/hab.h
+@@ -60,12 +60,6 @@ typedef void hapi_clock_init_t(void);
+ #define HAB_RVT_REPORT_EVENT			(*(uint32_t *) (HAB_RVT_UNIFIED_BASE + 0x20))
+ #define HAB_RVT_REPORT_STATUS			(*(uint32_t *) (HAB_RVT_UNIFIED_BASE + 0x24))
+ 
+-#define HAB_RVT_REPORT_EVENT_NEW		(*(uint32_t *) 0x000000B8)
+-#define HAB_RVT_REPORT_STATUS_NEW		(*(uint32_t *) 0x000000BC)
+-#define HAB_RVT_AUTHENTICATE_IMAGE_NEW		(*(uint32_t *) 0x000000A8)
+-#define HAB_RVT_ENTRY_NEW			(*(uint32_t *) 0x0000009C)
+-#define HAB_RVT_EXIT_NEW			(*(uint32_t *) 0x000000A0)
+-
+ #define HAB_RVT_CLOCK_INIT ((hapi_clock_init_t *)0x0000024D)
+ 
+ #define HAB_CID_ROM 0 /**< ROM Caller ID */
+-- 
+1.8.0
+

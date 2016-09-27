@@ -1,0 +1,43 @@
+From c91130efc5f6de6c0c9578a93c50619fdf1cd8c7 Mon Sep 17 00:00:00 2001
+From: Liu Xiaowen <b37945@freescale.com>
+Date: Thu, 6 Nov 2014 09:43:10 +0800
+Subject: [PATCH 369/602] MA-5846 add vmalloc size to command line on 6SX
+ board.
+
+add vmalloc size to command line on 6SX board.
+
+Signed-off-by: Liu Xiaowen <b37945@freescale.com>
+---
+ sabreauto_6sx/BoardConfig.mk | 2 +-
+ sabresd_6sx/BoardConfig.mk   | 2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/sabreauto_6sx/BoardConfig.mk b/sabreauto_6sx/BoardConfig.mk
+index 1c3eba7..a556d9e 100755
+--- a/sabreauto_6sx/BoardConfig.mk
++++ b/sabreauto_6sx/BoardConfig.mk
+@@ -66,7 +66,7 @@ TARGET_SELECT_KEY := 28
+ # we don't support sparse image.
+ TARGET_USERIMAGES_SPARSE_EXT_DISABLED := true
+ 
+-BOARD_KERNEL_CMDLINE := console=ttymxc0,115200 init=/init androidboot.console=ttymxc0 consoleblank=0 androidboot.hardware=freescale cma=512M
++BOARD_KERNEL_CMDLINE := console=ttymxc0,115200 init=/init androidboot.console=ttymxc0 consoleblank=0 androidboot.hardware=freescale vmalloc=400M cma=512M
+ 
+ ifeq ($(TARGET_USERIMAGES_USE_UBIFS),true)
+ #UBI boot command line.
+diff --git a/sabresd_6sx/BoardConfig.mk b/sabresd_6sx/BoardConfig.mk
+index 1997056..1b56767 100644
+--- a/sabresd_6sx/BoardConfig.mk
++++ b/sabresd_6sx/BoardConfig.mk
+@@ -83,7 +83,7 @@ $(error "TARGET_USERIMAGES_USE_UBIFS and TARGET_USERIMAGES_USE_EXT4 config open
+ endif
+ endif
+ 
+-BOARD_KERNEL_CMDLINE := console=ttymxc0,115200 init=/init androidboot.console=ttymxc0 consoleblank=0 androidboot.hardware=freescale cma=384M
++BOARD_KERNEL_CMDLINE := console=ttymxc0,115200 init=/init androidboot.console=ttymxc0 consoleblank=0 androidboot.hardware=freescale vmalloc=400M cma=384M
+ 
+ ifeq ($(TARGET_USERIMAGES_USE_UBIFS),true)
+ #UBI boot command line.
+-- 
+1.8.0
+

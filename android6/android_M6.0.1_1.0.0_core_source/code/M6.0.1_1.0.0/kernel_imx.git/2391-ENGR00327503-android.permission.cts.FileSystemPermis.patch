@@ -1,0 +1,45 @@
+From 84f156c693215f1ab2ef2af30ddbe59c546de257 Mon Sep 17 00:00:00 2001
+From: "guoyin.chen" <guoyin.chen@freescale.com>
+Date: Mon, 18 Aug 2014 17:54:10 +0800
+Subject: [PATCH] ENGR00327503
+ android.permission.cts.FileSystemPermissionTest#testAllFilesInSysAreNotWritable
+
+Remove other write permission to pass this CTS case
+
+Signed-off-by: guoyin.chen <guoyin.chen@freescale.com>
+---
+ drivers/mmc/core/mmc.c       | 4 ++--
+ kernel/power/wakeup_reason.c | 2 +-
+ 2 files changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/drivers/mmc/core/mmc.c b/drivers/mmc/core/mmc.c
+index 42d74d7..d3b5bc5 100644
+--- a/drivers/mmc/core/mmc.c
++++ b/drivers/mmc/core/mmc.c
+@@ -1045,8 +1045,8 @@ MMC_DEV_ATTR(enhanced_area_size, "%u\n", card->ext_csd.enhanced_area_size);
+ MMC_DEV_ATTR(raw_rpmb_size_mult, "%#x\n", card->ext_csd.raw_rpmb_size_mult);
+ MMC_DEV_ATTR(rel_sectors, "%#x\n", card->ext_csd.rel_sectors);
+ DEVICE_ATTR(boot_info, S_IRUGO, mmc_boot_info_show, NULL);
+-DEVICE_ATTR(boot_config, S_IWUGO, NULL, setup_boot_partitions);
+-DEVICE_ATTR(boot_bus_config, S_IWUGO, NULL, setup_boot_bus);
++DEVICE_ATTR(boot_config, S_IWUSR|S_IWGRP, NULL, setup_boot_partitions);
++DEVICE_ATTR(boot_bus_config, S_IWUSR|S_IWGRP, NULL, setup_boot_bus);
+ 
+ static struct attribute *mmc_std_attrs[] = {
+ 	&dev_attr_cid.attr,
+diff --git a/kernel/power/wakeup_reason.c b/kernel/power/wakeup_reason.c
+index 188a6bf..d321d25 100644
+--- a/kernel/power/wakeup_reason.c
++++ b/kernel/power/wakeup_reason.c
+@@ -53,7 +53,7 @@ static ssize_t reason_show(struct kobject *kobj, struct kobj_attribute *attr,
+ 	return buf_offset;
+ }
+ 
+-static struct kobj_attribute resume_reason = __ATTR(last_resume_reason, 0666,
++static struct kobj_attribute resume_reason = __ATTR(last_resume_reason, 0664,
+ 		reason_show, NULL);
+ 
+ static struct attribute *attrs[] = {
+-- 
+1.8.0
+

@@ -1,0 +1,60 @@
+From 8e38fdb8a07f087431ab5c46729cbf8de60ae256 Mon Sep 17 00:00:00 2001
+From: Marc Zyngier <marc.zyngier@arm.com>
+Date: Wed, 7 May 2014 13:43:39 +0100
+Subject: [PATCH] arm64: KVM: check ordering of all system register tables
+
+We now have multiple tables for the various system registers
+we trap. Make sure we check the order of all of them, as it is
+critical that we get the order right (been there, done that...).
+
+Reviewed-by: Anup Patel <anup.patel@linaro.org>
+Reviewed-by: Christoffer Dall <christoffer.dall@linaro.org>
+Signed-off-by: Marc Zyngier <marc.zyngier@arm.com>
+(cherry picked from commit e6a9551760623d1703487e8a16bb9c3ea8a7e7a8)
+Signed-off-by: Christoffer Dall <christoffer.dall@linaro.org>
+---
+ arch/arm64/kvm/sys_regs.c | 22 ++++++++++++++++++++--
+ 1 file changed, 20 insertions(+), 2 deletions(-)
+
+diff --git a/arch/arm64/kvm/sys_regs.c b/arch/arm64/kvm/sys_regs.c
+index 499a351..8ab47c7 100644
+--- a/arch/arm64/kvm/sys_regs.c
++++ b/arch/arm64/kvm/sys_regs.c
+@@ -1308,14 +1308,32 @@ int kvm_arm_copy_sys_reg_indices(struct kvm_vcpu *vcpu, u64 __user *uindices)
+ 	return write_demux_regids(uindices);
+ }
+ 
++static int check_sysreg_table(const struct sys_reg_desc *table, unsigned int n)
++{
++	unsigned int i;
++
++	for (i = 1; i < n; i++) {
++		if (cmp_sys_reg(&table[i-1], &table[i]) >= 0) {
++			kvm_err("sys_reg table %p out of order (%d)\n", table, i - 1);
++			return 1;
++		}
++	}
++
++	return 0;
++}
++
+ void kvm_sys_reg_table_init(void)
+ {
+ 	unsigned int i;
+ 	struct sys_reg_desc clidr;
+ 
+ 	/* Make sure tables are unique and in order. */
+-	for (i = 1; i < ARRAY_SIZE(sys_reg_descs); i++)
+-		BUG_ON(cmp_sys_reg(&sys_reg_descs[i-1], &sys_reg_descs[i]) >= 0);
++	BUG_ON(check_sysreg_table(sys_reg_descs, ARRAY_SIZE(sys_reg_descs)));
++	BUG_ON(check_sysreg_table(cp14_regs, ARRAY_SIZE(cp14_regs)));
++	BUG_ON(check_sysreg_table(cp14_64_regs, ARRAY_SIZE(cp14_64_regs)));
++	BUG_ON(check_sysreg_table(cp15_regs, ARRAY_SIZE(cp15_regs)));
++	BUG_ON(check_sysreg_table(cp15_64_regs, ARRAY_SIZE(cp15_64_regs)));
++	BUG_ON(check_sysreg_table(invariant_sys_regs, ARRAY_SIZE(invariant_sys_regs)));
+ 
+ 	/* We abuse the reset function to overwrite the table itself. */
+ 	for (i = 0; i < ARRAY_SIZE(invariant_sys_regs); i++)
+-- 
+1.8.0
+

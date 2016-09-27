@@ -1,0 +1,44 @@
+From e6d5e9b5a6c7a80bdabe647fe6ca79d88e7cdf91 Mon Sep 17 00:00:00 2001
+From: Haoran Wang <b50027@freescale.com>
+Date: Tue, 10 Nov 2015 09:23:53 +0800
+Subject: [PATCH 566/602] MA-7145	Disable wifi display source in i.mx6sx
+
+As i.mx6sx platform doesn't have the encoder
+capacity so disable its wifi display source
+feature.
+
+Signed-off-by: Haoran Wang <b50027@freescale.com>
+---
+ sabreauto_6sx/overlay/frameworks/base/core/res/res/values/config.xml | 2 +-
+ sabresd_6sx/overlay/frameworks/base/core/res/res/values/config.xml   | 2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/sabreauto_6sx/overlay/frameworks/base/core/res/res/values/config.xml b/sabreauto_6sx/overlay/frameworks/base/core/res/res/values/config.xml
+index ada401b..f285c6d 100755
+--- a/sabreauto_6sx/overlay/frameworks/base/core/res/res/values/config.xml
++++ b/sabreauto_6sx/overlay/frameworks/base/core/res/res/values/config.xml
+@@ -215,7 +215,7 @@
+          * The remote submix module "audio.r_submix.default" must be installed on the device.
+          * The device must be provisioned with HDCP keys (for protected content).
+     -->
+-    <bool name="config_enableWifiDisplay">true</bool>
++    <bool name="config_enableWifiDisplay">false</bool>
+ 
+     <!-- Disables fading edges when marquee is enabled in TextView.
+          The fading edge effect will bring performance drop when
+diff --git a/sabresd_6sx/overlay/frameworks/base/core/res/res/values/config.xml b/sabresd_6sx/overlay/frameworks/base/core/res/res/values/config.xml
+index ec305d7..e855e90 100755
+--- a/sabresd_6sx/overlay/frameworks/base/core/res/res/values/config.xml
++++ b/sabresd_6sx/overlay/frameworks/base/core/res/res/values/config.xml
+@@ -206,7 +206,7 @@
+          * The remote submix module "audio.r_submix.default" must be installed on the device.
+          * The device must be provisioned with HDCP keys (for protected content).
+     -->
+-    <bool name="config_enableWifiDisplay">true</bool>
++    <bool name="config_enableWifiDisplay">false</bool>
+ 
+     <!-- Disables fading edges when marquee is enabled in TextView.
+          The fading edge effect will bring performance drop when
+-- 
+1.8.0
+

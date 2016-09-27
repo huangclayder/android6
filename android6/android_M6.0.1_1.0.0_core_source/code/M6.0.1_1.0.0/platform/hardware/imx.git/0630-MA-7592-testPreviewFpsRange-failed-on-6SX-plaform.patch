@@ -1,0 +1,50 @@
+From 5f783f77b124ecf7b4cf64df5dbd3df64350e911 Mon Sep 17 00:00:00 2001
+From: Xiaowen Liu <xiaowen.liu@freescale.com>
+Date: Wed, 3 Feb 2016 12:16:55 -0500
+Subject: [PATCH 630/635] MA-7592 testPreviewFpsRange failed on 6SX plaform.
+
+CTS required (15000, 15000), (30000, 30000) fps range.
+And change (12000,17000)-(25000,33000) to (12000,30000).
+
+Signed-off-by: Xiaowen Liu <xiaowen.liu@freescale.com>
+---
+ mx6/libcamera/Ov5640.cpp | 8 ++++----
+ 1 file changed, 4 insertions(+), 4 deletions(-)
+
+diff --git a/mx6/libcamera/Ov5640.cpp b/mx6/libcamera/Ov5640.cpp
+index d5d2457..ba8c1e3 100644
+--- a/mx6/libcamera/Ov5640.cpp
++++ b/mx6/libcamera/Ov5640.cpp
+@@ -1,6 +1,6 @@
+ /*
+  * Copyright (C) 2008 The Android Open Source Project
+- * Copyright (C) 2012-2015 Freescale Semiconductor, Inc.
++ * Copyright (C) 2012-2016 Freescale Semiconductor, Inc.
+  *
+  * Licensed under the Apache License, Version 2.0 (the "License");
+  * you may not use this file except in compliance with the License.
+@@ -187,7 +187,7 @@ status_t Ov5640::initParameters(CameraParameters& params,
+     mParams.set(CameraParameters::KEY_SUPPORTED_PREVIEW_FRAME_RATES,
+                 mSupportedFPS);
+     mParams.set(CameraParameters::KEY_SUPPORTED_PREVIEW_FPS_RANGE,
+-                "(12000,17000),(25000,33000)");
++                "(12000,30000),(15000,15000),(30000,30000)");
+     // Align the default FPS RANGE to the DEFAULT_PREVIEW_FPS
+     mParams.set(CameraParameters::KEY_PREVIEW_FPS_RANGE, "12000,17000");
+ 
+@@ -262,10 +262,10 @@ status_t Ov5640::setParameters(CameraParameters& params)
+     }
+     else if (local_framerate != framerate) {
+         if (framerate == 15) {
+-            params.set(CameraParameters::KEY_PREVIEW_FPS_RANGE, "12000,17000");
++            params.set(CameraParameters::KEY_PREVIEW_FPS_RANGE, "15000,15000");
+         }
+         else if (framerate == 30) {
+-            params.set(CameraParameters::KEY_PREVIEW_FPS_RANGE, "25000,33000");
++            params.set(CameraParameters::KEY_PREVIEW_FPS_RANGE, "30000,30000");
+         }
+     }
+ 
+-- 
+1.8.0
+

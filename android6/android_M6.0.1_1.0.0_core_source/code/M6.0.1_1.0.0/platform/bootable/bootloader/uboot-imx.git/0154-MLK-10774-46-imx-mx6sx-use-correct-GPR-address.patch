@@ -1,0 +1,28 @@
+From b24edf45a4ba4a62ada30c7caf618b6e44357b11 Mon Sep 17 00:00:00 2001
+From: Peng Fan <Peng.Fan@freescale.com>
+Date: Mon, 20 Apr 2015 20:01:48 +0800
+Subject: [PATCH] MLK-10774-46 imx:mx6sx use correct GPR address
+
+Use correct GPR address.
+
+Signed-off-by: Peng Fan <Peng.Fan@freescale.com>
+---
+ arch/arm/cpu/armv7/mx6/clock.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/arch/arm/cpu/armv7/mx6/clock.c b/arch/arm/cpu/armv7/mx6/clock.c
+index 49feff3..0a1fd44 100644
+--- a/arch/arm/cpu/armv7/mx6/clock.c
++++ b/arch/arm/cpu/armv7/mx6/clock.c
+@@ -456,7 +456,7 @@ static u32 get_mmdc_ch0_clk(void)
+ void enable_lvds(uint32_t lcdif_base)
+ {
+ 	u32 reg = 0;
+-	struct iomuxc *iomux = (struct iomuxc *)IOMUXC_GPR_BASE_ADDR;
++	struct iomuxc *iomux = (struct iomuxc *)IOMUXC_BASE_ADDR;
+ 
+ 	/* Turn on LDB DI0 clocks */
+ 	reg = readl(&imx_ccm->CCGR3);
+-- 
+1.8.0
+

@@ -1,0 +1,28 @@
+From 1e880a4d8361dd277ef45505b0d8e02b0e643a99 Mon Sep 17 00:00:00 2001
+From: Haoran Wang <b50027@freescale.com>
+Date: Wed, 2 Sep 2015 16:50:10 +0800
+Subject: [PATCH 594/635] MA-7023-1 Fix compile error
+
+Use fclose instead of close to fix the compile error.
+
+Signed-off-by: Haoran Wang <b50027@freescale.com>
+---
+ libsensors/LightSensor.cpp | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/libsensors/LightSensor.cpp b/libsensors/LightSensor.cpp
+index 1fa00d0..f2819e1 100755
+--- a/libsensors/LightSensor.cpp
++++ b/libsensors/LightSensor.cpp
+@@ -120,7 +120,7 @@ int LightSensor::setIntLux()
+     memset(buf, 0, 6);
+     if ((n = fread(buf, 1, 6, fd)) < 0) {
+         ALOGE("Unable to read %s\n", ls_sysfs_path);
+-        close(fd);
++        fclose(fd);
+ 	return -1;
+     }
+     fclose(fd);
+-- 
+1.8.0
+

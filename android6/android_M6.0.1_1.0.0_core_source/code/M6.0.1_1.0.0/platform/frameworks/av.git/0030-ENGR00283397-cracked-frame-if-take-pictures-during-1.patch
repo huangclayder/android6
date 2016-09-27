@@ -1,0 +1,44 @@
+From 4c5b26d43d981eaea40d8f32221b4b4cd72d545f Mon Sep 17 00:00:00 2001
+From: Fang Hui <b31070@freescale.com>
+Date: Wed, 16 Oct 2013 13:07:26 +0800
+Subject: [PATCH 30/95] ENGR00283397: cracked frame if take pictures during
+ 1080p recording
+
+Each time switch to recording, startStream will called,
+then call releaseAllRecordingFramesLocked,
+This will Force-freed buffer status.
+So a buffer maybe updated while it's under encoding.
+
+Signed-off-by: Fang Hui <b31070@freescale.com>
+
+Conflicts:
+	services/camera/libcameraservice/api1/client2/StreamingProcessor.cpp
+---
+ services/camera/libcameraservice/api1/client2/StreamingProcessor.cpp | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/services/camera/libcameraservice/api1/client2/StreamingProcessor.cpp b/services/camera/libcameraservice/api1/client2/StreamingProcessor.cpp
+index 66d7b00..521a775 100644
+--- a/services/camera/libcameraservice/api1/client2/StreamingProcessor.cpp
++++ b/services/camera/libcameraservice/api1/client2/StreamingProcessor.cpp
+@@ -542,6 +542,9 @@ status_t StreamingProcessor::startStream(StreamType type,
+ 
+     Mutex::Autolock m(mMutex);
+ 
++    //Force-freed buffer will make status chaos.
++    //So a buffer maybe updated while it's under encoding.
++#if 0
+     // If a recording stream is being started up and no recording
+     // stream is active yet, free up any outstanding buffers left
+     // from the previous recording session. There should never be
+@@ -551,6 +554,7 @@ status_t StreamingProcessor::startStream(StreamType type,
+     if (startRecordingStream && isRecordingStreamIdle) {
+         releaseAllRecordingFramesLocked();
+     }
++#endif
+ 
+     ALOGV("%s: Camera %d: %s started, recording heap has %zu free of %zu",
+             __FUNCTION__, mId, (type == PREVIEW) ? "preview" : "recording",
+-- 
+1.8.0
+

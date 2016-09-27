@@ -1,0 +1,287 @@
+From 49e5e01e5dcfdb05544b693cec9f3a719219e1c7 Mon Sep 17 00:00:00 2001
+From: Haoran Wang <b50027@freescale.com>
+Date: Wed, 21 Oct 2015 17:42:00 +0800
+Subject: [PATCH] MA-6450-1 Enable BCM4339 on i.mx6
+
+Enable BCM4339 on i.MX6 chips.
+Modify DTS for i.MX6 series chips:
+i.MX6DQ SDB --> Use Murata V2 adapter module
+i.MX6SL EVK --> Use Murata V1 adapter + EX card
+i.MX6SX SDB --> Use Murata V1 adapter + EX card
+
+Signed-off-by: Haoran Wang <b50027@freescale.com>
+---
+ arch/arm/boot/dts/imx6qdl-sabresd.dtsi | 23 ++++++++++----
+ arch/arm/boot/dts/imx6sl-evk.dts       | 43 +++++++++++++-------------
+ arch/arm/boot/dts/imx6sx-sdb.dts       | 55 +++++++++++++++++++++-------------
+ 3 files changed, 75 insertions(+), 46 deletions(-)
+
+diff --git a/arch/arm/boot/dts/imx6qdl-sabresd.dtsi b/arch/arm/boot/dts/imx6qdl-sabresd.dtsi
+index 614e676..79c48b2 100644
+--- a/arch/arm/boot/dts/imx6qdl-sabresd.dtsi
++++ b/arch/arm/boot/dts/imx6qdl-sabresd.dtsi
+@@ -109,6 +109,20 @@
+ 			startup-delay-us = <500>;
+ 			enable-active-high;
+ 		};
++		wlreg_on: fixedregulator@100 {
++			compatible = "regulator-fixed";
++			regulator-min-microvolt = <5000000>;
++			regulator-max-microvolt = <5000000>;
++			regulator-name = "wlreg_on";
++			gpio = <&gpio4 7 0>;
++			startup-delay-us = <100>;
++			enable-active-high;
++		};
++
++		bcmdhd_wlan_1: bcmdhd_wlan@0 {
++			compatible = "android,bcmdhd_wlan";
++			wlreg_on-supply = <&wlreg_on>;
++		};
+ 	};
+ 
+ 	gpio-keys {
+@@ -839,10 +853,7 @@
+ 				MX6QDL_PAD_SD2_DAT1__SD2_DATA1		0x17059
+ 				MX6QDL_PAD_SD2_DAT2__SD2_DATA2		0x17059
+ 				MX6QDL_PAD_SD2_DAT3__SD2_DATA3		0x17059
+-				MX6QDL_PAD_NANDF_D4__SD2_DATA4		0x17059
+-				MX6QDL_PAD_NANDF_D5__SD2_DATA5		0x17059
+-				MX6QDL_PAD_NANDF_D6__SD2_DATA6		0x17059
+-				MX6QDL_PAD_NANDF_D7__SD2_DATA7		0x17059
++				MX6QDL_PAD_KEY_ROW0__GPIO4_IO07		0x13069	/* WL_REG_ON */
+ 			>;
+ 		};
+ 
+@@ -1032,10 +1043,12 @@
+ &usdhc2 {
+ 	pinctrl-names = "default";
+ 	pinctrl-0 = <&pinctrl_usdhc2>;
+-	bus-width = <8>;
++	bus-width = <4>;
+ 	cd-gpios = <&gpio2 2 0>;
+ 	wp-gpios = <&gpio2 3 0>;
+ 	no-1-8-v;
++	wifi-host;
++	pm-ignore-notify;
+ 	keep-power-in-suspend;
+ 	enable-sdio-wakeup;
+ 	status = "okay";
+diff --git a/arch/arm/boot/dts/imx6sl-evk.dts b/arch/arm/boot/dts/imx6sl-evk.dts
+index 03ecc94..36e26a5 100644
+--- a/arch/arm/boot/dts/imx6sl-evk.dts
++++ b/arch/arm/boot/dts/imx6sl-evk.dts
+@@ -81,8 +81,23 @@
+ 			regulator-max-microvolt = <4325000>;
+ 			regulator-boot-on;
+ 		};
++		wlreg_on: fixedregulator@100 {
++			compatible = "regulator-fixed";
++			regulator-min-microvolt = <5000000>;
++			regulator-max-microvolt = <5000000>;
++			regulator-name = "wlreg_on";
++			gpio = <&gpio5 16 0>;
++			startup-delay-us = <100>;
++			enable-active-high;
++		};
++
+ 	};
+ 
++	bcmdhd_wlan_1: bcmdhd_wlan@0 {
++	       compatible = "android,bcmdhd_wlan";
++	       wlreg_on-supply = <&wlreg_on>;
++       };
++
+ 	pwm-backlight {
+ 		compatible = "pwm-backlight";
+ 		pwms = <&pwm1 0 5000000>;
+@@ -722,10 +737,7 @@
+ 				MX6SL_PAD_SD1_DAT1__SD1_DATA1		0x17059
+ 				MX6SL_PAD_SD1_DAT2__SD1_DATA2		0x17059
+ 				MX6SL_PAD_SD1_DAT3__SD1_DATA3		0x17059
+-				MX6SL_PAD_SD1_DAT4__SD1_DATA4		0x17059
+-				MX6SL_PAD_SD1_DAT5__SD1_DATA5		0x17059
+-				MX6SL_PAD_SD1_DAT6__SD1_DATA6		0x17059
+-				MX6SL_PAD_SD1_DAT7__SD1_DATA7		0x17059
++				MX6SL_PAD_SD3_DAT2__GPIO5_IO16		0x13069 /* WL_REG_ON */
+ 			>;
+ 		};
+ 
+@@ -797,9 +809,6 @@
+ 				MX6SL_PAD_SD3_CMD__SD3_CMD		0x17059
+ 				MX6SL_PAD_SD3_CLK__SD3_CLK		0x10059
+ 				MX6SL_PAD_SD3_DAT0__SD3_DATA0		0x17059
+-				MX6SL_PAD_SD3_DAT1__SD3_DATA1		0x17059
+-				MX6SL_PAD_SD3_DAT2__SD3_DATA2		0x17059
+-				MX6SL_PAD_SD3_DAT3__SD3_DATA3		0x17059
+ 			>;
+ 		};
+ 
+@@ -808,9 +817,6 @@
+ 				MX6SL_PAD_SD3_CMD__SD3_CMD		0x170b9
+ 				MX6SL_PAD_SD3_CLK__SD3_CLK		0x100b9
+ 				MX6SL_PAD_SD3_DAT0__SD3_DATA0		0x170b9
+-				MX6SL_PAD_SD3_DAT1__SD3_DATA1		0x170b9
+-				MX6SL_PAD_SD3_DAT2__SD3_DATA2		0x170b9
+-				MX6SL_PAD_SD3_DAT3__SD3_DATA3		0x170b9
+ 			>;
+ 		};
+ 
+@@ -819,9 +825,6 @@
+ 				MX6SL_PAD_SD3_CMD__SD3_CMD		0x170f9
+ 				MX6SL_PAD_SD3_CLK__SD3_CLK		0x100f9
+ 				MX6SL_PAD_SD3_DAT0__SD3_DATA0		0x170f9
+-				MX6SL_PAD_SD3_DAT1__SD3_DATA1		0x170f9
+-				MX6SL_PAD_SD3_DAT2__SD3_DATA2		0x170f9
+-				MX6SL_PAD_SD3_DAT3__SD3_DATA3		0x170f9
+ 			>;
+ 		};
+ 
+@@ -951,15 +954,17 @@
+ };
+ 
+ &usdhc1 {
+-	pinctrl-names = "default", "state_100mhz", "state_200mhz";
++	pinctrl-names = "default";
+ 	pinctrl-0 = <&pinctrl_usdhc1>;
+ 	pinctrl-1 = <&pinctrl_usdhc1_100mhz>;
+ 	pinctrl-2 = <&pinctrl_usdhc1_200mhz>;
+-	bus-width = <8>;
++	bus-width = <4>;
+ 	cd-gpios = <&gpio4 7 0>;
+ 	wp-gpios = <&gpio4 6 0>;
+ 	keep-power-in-suspend;
+ 	enable-sdio-wakeup;
++	wifi-host;
++	pm-ignore-notify;
+ 	status = "okay";
+ };
+ 
+@@ -976,12 +981,8 @@
+ };
+ 
+ &usdhc3 {
+-	pinctrl-names = "default", "state_100mhz", "state_200mhz";
++	pinctrl-names = "default";
+ 	pinctrl-0 = <&pinctrl_usdhc3>;
+-	pinctrl-1 = <&pinctrl_usdhc3_100mhz>;
+-	pinctrl-2 = <&pinctrl_usdhc3_200mhz>;
+-	cd-gpios = <&gpio3 22 0>;
+-	keep-power-in-suspend;
+-	enable-sdio-wakeup;
++	bus-width = <1>;
+ 	status = "okay";
+ };
+diff --git a/arch/arm/boot/dts/imx6sx-sdb.dts b/arch/arm/boot/dts/imx6sx-sdb.dts
+index b713b62..dfec85d 100644
+--- a/arch/arm/boot/dts/imx6sx-sdb.dts
++++ b/arch/arm/boot/dts/imx6sx-sdb.dts
+@@ -159,6 +159,21 @@
+ 			regulator-always-on;
+ 			enable-active-high;
+ 		};
++		wlreg_on: fixedregulator@100 {
++			compatible = "regulator-fixed";
++			regulator-min-microvolt = <5000000>;
++			regulator-max-microvolt = <5000000>;
++			regulator-name = "wlreg_on";
++			gpio = <&gpio6 10 0>;
++			startup-delay-us = <100>;
++			enable-active-high;
++		};
++
++	};
++
++	bcmdhd_wlan_1: bcmdhd_wlan@0 {
++		compatible = "android,bcmdhd_wlan";
++		wlreg_on-supply = <&wlreg_on>;
+ 	};
+ 
+ 	sound {
+@@ -197,7 +212,7 @@
+ 
+     bt_rfkill {
+         compatible = "fsl,mxc_bt_rfkill";
+-        bt-power-gpios = <&gpio4 10 0>;
++        bt-power-gpios = <&gpio6 11 0>;
+         status = "okay";
+     };
+ 
+@@ -457,6 +472,13 @@
+ 	status = "okay";
+ };
+ 
++&uart3 {
++	pinctrl-names = "default";
++	pinctrl-0 = <&pinctrl_usdhc2>;
++	fsl,uart-has-rtscts;
++	status = "okay";
++};
++
+ &uart5 { /* for bluetooth */
+ 	pinctrl-names = "default";
+ 	pinctrl-0 = <&pinctrl_uart5>;
+@@ -491,28 +513,21 @@
+ 	tx-d-cal = <0x5>;
+ };
+ 
+-&usdhc2 {
+-	pinctrl-names = "default";
+-	pinctrl-0 = <&pinctrl_usdhc2>;
+-	non-removable;
+-	no-1-8-v;
+-	keep-power-in-suspend;
+-	enable-sdio-wakeup;
+-	status = "okay";
+-};
+ 
+ &usdhc3 {
+-	pinctrl-names = "default", "state_100mhz", "state_200mhz";
++	pinctrl-names = "default";
+ 	pinctrl-0 = <&pinctrl_usdhc3>;
+-	pinctrl-1 = <&pinctrl_usdhc3_100mhz>;
+-	pinctrl-2 = <&pinctrl_usdhc3_200mhz>;
+-	bus-width = <8>;
++	bus-width = <4>;
+ 	cd-gpios = <&gpio2 10 GPIO_ACTIVE_HIGH>;
+ 	wp-gpios = <&gpio2 15 GPIO_ACTIVE_HIGH>;
+ 	keep-power-in-suspend;
+ 	enable-sdio-wakeup;
+ 	vmmc-supply = <&vcc_sd3>;
++	no-1-8-v;       /* force 3.3V VIO */
++	wifi-host;      /* pull in card detect mechanism for BCMDHD driver */
++	pm-ignore-notify;
+ 	status = "okay";
++
+ };
+ 
+ &usdhc4 {
+@@ -1053,8 +1068,8 @@
+ 				MX6SX_PAD_SD2_CLK__USDHC2_CLK		0x10059
+ 				MX6SX_PAD_SD2_DATA0__USDHC2_DATA0	0x17059
+ 				MX6SX_PAD_SD2_DATA1__USDHC2_DATA1	0x17059
+-				MX6SX_PAD_SD2_DATA2__USDHC2_DATA2	0x17059
+-				MX6SX_PAD_SD2_DATA3__USDHC2_DATA3	0x17059
++				MX6SX_PAD_SD2_DATA2__GPIO6_IO_10	0x13069 /* WL_REG_ON */
++		    		MX6SX_PAD_SD2_DATA3__GPIO6_IO_11        0x13069 /* BT_REG_ON */
+ 			>;
+ 		};
+ 
+@@ -1066,10 +1081,10 @@
+ 				MX6SX_PAD_SD3_DATA1__USDHC3_DATA1	0x17069
+ 				MX6SX_PAD_SD3_DATA2__USDHC3_DATA2	0x17069
+ 				MX6SX_PAD_SD3_DATA3__USDHC3_DATA3	0x17069
+-				MX6SX_PAD_SD3_DATA4__USDHC3_DATA4	0x17069
+-				MX6SX_PAD_SD3_DATA5__USDHC3_DATA5	0x17069
+-				MX6SX_PAD_SD3_DATA6__USDHC3_DATA6	0x17069
+-				MX6SX_PAD_SD3_DATA7__USDHC3_DATA7	0x17069
++				MX6SX_PAD_SD3_DATA4__UART3_RX           0x1b0b1
++				MX6SX_PAD_SD3_DATA5__UART3_TX           0x1b0b1
++				MX6SX_PAD_SD3_DATA7__UART3_CTS_B        0x1b0b1
++				MX6SX_PAD_SD3_DATA6__UART3_RTS_B        0x1b0b1
+ 				MX6SX_PAD_KEY_COL0__GPIO2_IO_10		0x17059 /* CD */
+ 				MX6SX_PAD_KEY_ROW0__GPIO2_IO_15		0x17059 /* WP */
+ 			>;
+-- 
+1.8.0
+

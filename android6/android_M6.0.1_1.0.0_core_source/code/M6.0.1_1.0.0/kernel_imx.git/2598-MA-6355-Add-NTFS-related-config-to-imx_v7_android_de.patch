@@ -1,0 +1,29 @@
+From d346d7edc68b29d7a535f267f95e7964f2024d76 Mon Sep 17 00:00:00 2001
+From: "guoyin.chen" <guoyin.chen@freescale.com>
+Date: Wed, 4 Mar 2015 16:16:20 +0800
+Subject: [PATCH] MA-6355 Add NTFS related config to imx_v7_android_defconfig
+
+Enable CONFIG_NTFS_FS, CONFIG_NTFS_DEBUG, and CONFIG_NTFS_RW
+
+Signed-off-by: guoyin.chen <guoyin.chen@freescale.com>
+---
+ arch/arm/configs/imx_v7_android_defconfig | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/arch/arm/configs/imx_v7_android_defconfig b/arch/arm/configs/imx_v7_android_defconfig
+index 075f545..60962e2 100644
+--- a/arch/arm/configs/imx_v7_android_defconfig
++++ b/arch/arm/configs/imx_v7_android_defconfig
+@@ -538,6 +538,9 @@ CONFIG_ZISOFS=y
+ CONFIG_UDF_FS=y
+ CONFIG_MSDOS_FS=y
+ CONFIG_VFAT_FS=y
++CONFIG_NTFS_FS=y
++CONFIG_NTFS_DEBUG=y
++CONFIG_NTFS_RW=y
+ CONFIG_TMPFS=y
+ CONFIG_TMPFS_POSIX_ACL=y
+ CONFIG_JFFS2_FS=y
+-- 
+1.8.0
+

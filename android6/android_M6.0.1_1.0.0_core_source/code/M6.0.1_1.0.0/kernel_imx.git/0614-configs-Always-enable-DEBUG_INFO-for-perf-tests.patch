@@ -1,0 +1,22 @@
+From eef50ab0ea33a343cbba117717d47a05f782bf88 Mon Sep 17 00:00:00 2001
+From: Mark Brown <broonie@linaro.org>
+Date: Mon, 11 Aug 2014 13:07:09 +0100
+Subject: [PATCH] configs: Always enable DEBUG_INFO for perf tests
+
+Signed-off-by: Mark Brown <broonie@linaro.org>
+---
+ linaro/configs/linaro-base.conf | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/linaro/configs/linaro-base.conf b/linaro/configs/linaro-base.conf
+index eb9fe26..0620d5e 100644
+--- a/linaro/configs/linaro-base.conf
++++ b/linaro/configs/linaro-base.conf
+@@ -114,3 +114,4 @@ CONFIG_LSM_MMAP_MIN_ADDR=4096
+ CONFIG_SECURITY_SELINUX=y
+ CONFIG_EXT4_FS_SECURITY=y
+ CONFIG_BLK_DEV_LOOP=y
++CONFIG_DEBUG_INFO=y
+-- 
+1.8.0
+

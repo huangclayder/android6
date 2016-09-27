@@ -1,0 +1,26 @@
+From 69de7a3c679debd5dcb7fc1dc073f5df56472bb7 Mon Sep 17 00:00:00 2001
+From: Mark Brown <broonie@linaro.org>
+Date: Wed, 11 Jun 2014 23:54:16 +0100
+Subject: [PATCH] usb: ehci: Fix warning in ARMv8 enablement
+
+Signed-off-by: Mark Brown <broonie@linaro.org>
+---
+ drivers/usb/host/ehci-hcd.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/usb/host/ehci-hcd.c b/drivers/usb/host/ehci-hcd.c
+index d1a48e4..142ebd8 100644
+--- a/drivers/usb/host/ehci-hcd.c
++++ b/drivers/usb/host/ehci-hcd.c
+@@ -590,7 +590,7 @@ static int ehci_run (struct usb_hcd *hcd)
+ 	 */
+ 	hcc_params = ehci_readl(ehci, &ehci->caps->hcc_params);
+ 	if (HCC_64BIT_ADDR(hcc_params)) {
+-#if CONFIG_ARM64
++#ifdef CONFIG_ARM64
+ 		ehci_writel(ehci, ehci->periodic_dma >> 32, &ehci->regs->segment);
+ 		/*
+ 		 * this is deeply broken on almost all architectures
+-- 
+1.8.0
+

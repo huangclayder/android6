@@ -1,0 +1,30 @@
+From 5d04e0a7c31e57bac3c629300972f1d62fe61042 Mon Sep 17 00:00:00 2001
+From: Jon Medhurst <tixy@linaro.org>
+Date: Mon, 2 Sep 2013 13:02:51 +0100
+Subject: [PATCH] configs: vexpress: Enable big.LITTLE power management
+
+Signed-off-by: Jon Medhurst <tixy@linaro.org>
+(cherry picked from commit bbc13666ceaf274b9fa8dbc61ac590fab0440404)
+Signed-off-by: Alex Shi <alex.shi@linaro.org>
+---
+ linaro/configs/vexpress.conf | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/linaro/configs/vexpress.conf b/linaro/configs/vexpress.conf
+index a75400a..62f491c 100644
+--- a/linaro/configs/vexpress.conf
++++ b/linaro/configs/vexpress.conf
+@@ -4,6 +4,10 @@ CONFIG_HAVE_ARM_ARCH_TIMER=y
+ CONFIG_NR_CPUS=8
+ CONFIG_HIGHMEM=y
+ CONFIG_HIGHPTE=y
++CONFIG_MCPM=y
++CONFIG_ARCH_VEXPRESS_DCSCB=y
++CONFIG_ARCH_VEXPRESS_TC2_PM=y
++CONFIG_ARM_BIG_LITTLE_CPUIDLE=y
+ CONFIG_CMDLINE="console=ttyAMA0,38400n8 root=/dev/mmcblk0p2 rootwait mmci.fmax=4000000"
+ CONFIG_VFP=y
+ CONFIG_NEON=y
+-- 
+1.8.0
+

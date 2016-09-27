@@ -1,0 +1,29 @@
+From 40b34ed4cf26f5e7596690a87a6471d31dd7ca0f Mon Sep 17 00:00:00 2001
+From: Richard Liu <r66033@freescale.com>
+Date: Fri, 26 Feb 2016 10:58:12 +0800
+Subject: [PATCH 43/43] MA-7601 Coverity 29165: UNINIT in Component
+ native-opengl
+
+Fix Coverity 29165: UNINIT in Component native-opengl,
+File /frameworks/native/opengl/libagl/TextureObjectManager.cpp
+
+Signed-off-by: Richard Liu <r66033@freescale.com>
+---
+ opengl/libagl/TextureObjectManager.cpp | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/opengl/libagl/TextureObjectManager.cpp b/opengl/libagl/TextureObjectManager.cpp
+index 2244a60..b6e45e1 100644
+--- a/opengl/libagl/TextureObjectManager.cpp
++++ b/opengl/libagl/TextureObjectManager.cpp
+@@ -146,6 +146,7 @@ status_t EGLTextureObject::setSurface(GGLSurface const* s)
+ status_t EGLTextureObject::setImage(ANativeWindowBuffer* native_buffer)
+ {
+     GGLSurface sur;
++    memset(&sur, 0, sizeof(sur));
+     sur.version = sizeof(GGLSurface);
+     sur.width = native_buffer->width;
+     sur.height= native_buffer->height;
+-- 
+1.8.0
+

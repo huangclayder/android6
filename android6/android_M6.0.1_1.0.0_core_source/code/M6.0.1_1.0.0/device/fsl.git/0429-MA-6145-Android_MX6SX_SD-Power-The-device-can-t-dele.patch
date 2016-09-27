@@ -1,0 +1,69 @@
+From 9bca5fed00533c569e414d33cf46362718e7eed0 Mon Sep 17 00:00:00 2001
+From: zhang sanshan <b51434@freescale.com>
+Date: Fri, 23 Jan 2015 17:28:44 +0800
+Subject: [PATCH 429/602] MA-6145 [Android_MX6SX_SD]Power:The device can't
+ delete data and echo error when enter factory
+ reset,100%
+
+It can't do factory reset for selinux.
+This patch add related policy.
+
+Signed-off-by: zhang sanshan <b51434@freescale.com>
+---
+ evk_6sl/BoardConfig.mk     | 3 ++-
+ imx6/sepolicy/recovery.te  | 2 ++
+ sabresd_6dq/BoardConfig.mk | 3 ++-
+ sabresd_6sx/BoardConfig.mk | 3 ++-
+ 4 files changed, 8 insertions(+), 3 deletions(-)
+
+diff --git a/evk_6sl/BoardConfig.mk b/evk_6sl/BoardConfig.mk
+index 6bc602c..e851d43 100644
+--- a/evk_6sl/BoardConfig.mk
++++ b/evk_6sl/BoardConfig.mk
+@@ -105,4 +105,5 @@ BOARD_SEPOLICY_UNION := \
+        init.te \
+        netd.te \
+        bootanim.te \
+-       dnsmasq.te
++       dnsmasq.te \
++       recovery.te
+diff --git a/imx6/sepolicy/recovery.te b/imx6/sepolicy/recovery.te
+index 4fe9c16..345dcfa 100644
+--- a/imx6/sepolicy/recovery.te
++++ b/imx6/sepolicy/recovery.te
+@@ -1,5 +1,7 @@
+ recovery_only(`
+   allow recovery block_device:chr_file {getattr read write open ioctl};
++  allow recovery block_device:dir { read write open ioctl add_name};
++  allow recovery block_device:file { read write open ioctl create};
+   allow recovery self:capability {sys_resource};
+   allow recovery mtd_device:dir { search }; 
+   allow recovery mtd_device:chr_file { getattr read write open ioctl}; 
+diff --git a/sabresd_6dq/BoardConfig.mk b/sabresd_6dq/BoardConfig.mk
+index 4a9097a..7a2c3c5 100644
+--- a/sabresd_6dq/BoardConfig.mk
++++ b/sabresd_6dq/BoardConfig.mk
+@@ -142,6 +142,7 @@ BOARD_SEPOLICY_UNION := \
+        init.te \
+        netd.te \
+        bootanim.te \
+-       dnsmasq.te
++       dnsmasq.te \
++       recovery.te
+ 
+ 
+diff --git a/sabresd_6sx/BoardConfig.mk b/sabresd_6sx/BoardConfig.mk
+index bca161c..24d1328 100644
+--- a/sabresd_6sx/BoardConfig.mk
++++ b/sabresd_6sx/BoardConfig.mk
+@@ -133,5 +133,6 @@ BOARD_SEPOLICY_UNION := \
+        init.te \
+        netd.te \
+        bootanim.te \
+-       dnsmasq.te
++       dnsmasq.te \
++       recovery.te
+ 
+-- 
+1.8.0
+

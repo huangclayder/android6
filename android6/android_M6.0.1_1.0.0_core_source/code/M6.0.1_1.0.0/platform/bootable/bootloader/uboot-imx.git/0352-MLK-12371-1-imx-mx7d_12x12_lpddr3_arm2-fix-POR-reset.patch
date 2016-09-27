@@ -1,0 +1,87 @@
+From 015a8f9e3e37633e1cedc856ddc220fd24f82eb8 Mon Sep 17 00:00:00 2001
+From: Robin Gong <yibin.gong@nxp.com>
+Date: Tue, 2 Feb 2016 16:54:35 +0800
+Subject: [PATCH] MLK-12371-1: imx: mx7d_12x12_lpddr3_arm2: fix POR reset
+ failed after DDR enter retention
+
+Since DDR enter retention mode after kernel enter DSM mode, we have to exit DDR
+retention mode before uboot boot, so add this in DCD and plugin code. Meanwhile
+correct the HW_ANADIG_SNVS_MISC_CTRL setting to avoid touching other bits.
+
+Signed-off-by: Robin Gong <yibin.gong@nxp.com>
+---
+ board/freescale/mx7d_12x12_lpddr3_arm2/imximage.cfg        |  3 +++
+ board/freescale/mx7d_12x12_lpddr3_arm2/imximage_TO_1_0.cfg |  3 +++
+ board/freescale/mx7d_12x12_lpddr3_arm2/plugin.S            | 13 +++++++++++--
+ 3 files changed, 17 insertions(+), 2 deletions(-)
+
+diff --git a/board/freescale/mx7d_12x12_lpddr3_arm2/imximage.cfg b/board/freescale/mx7d_12x12_lpddr3_arm2/imximage.cfg
+index 00a74f7..e38c44c 100644
+--- a/board/freescale/mx7d_12x12_lpddr3_arm2/imximage.cfg
++++ b/board/freescale/mx7d_12x12_lpddr3_arm2/imximage.cfg
+@@ -51,6 +51,9 @@ CSF CONFIG_CSF_SIZE
+  */
+ 
+ DATA 4 0x30340004 0x4F400005
++/* Clear then set bit30 to ensure exit from DDR retention */
++DATA 4 0x30360388 0x40000000
++DATA 4 0x30360384 0x40000000
+ 
+ DATA 4 0x30391000 0x00000002
+ DATA 4 0x307a0000 0x03040008
+diff --git a/board/freescale/mx7d_12x12_lpddr3_arm2/imximage_TO_1_0.cfg b/board/freescale/mx7d_12x12_lpddr3_arm2/imximage_TO_1_0.cfg
+index 3c4ace4..c0da271 100644
+--- a/board/freescale/mx7d_12x12_lpddr3_arm2/imximage_TO_1_0.cfg
++++ b/board/freescale/mx7d_12x12_lpddr3_arm2/imximage_TO_1_0.cfg
+@@ -51,6 +51,9 @@ CSF CONFIG_CSF_SIZE
+  */
+ 
+ DATA 4 0x30340004 0x4F400005
++/* Clear then set bit30 to ensure exit from DDR retention */
++DATA 4 0x30360388 0x40000000
++DATA 4 0x30360384 0x40000000
+ 
+ DATA 4 0x30391000 0x00000002
+ DATA 4 0x307a0000 0x03040008
+diff --git a/board/freescale/mx7d_12x12_lpddr3_arm2/plugin.S b/board/freescale/mx7d_12x12_lpddr3_arm2/plugin.S
+index e80d7ed..d5d116e 100644
+--- a/board/freescale/mx7d_12x12_lpddr3_arm2/plugin.S
++++ b/board/freescale/mx7d_12x12_lpddr3_arm2/plugin.S
+@@ -85,7 +85,7 @@ TUNE_END:
+ 
+ 	/* turn on ddr power */
+ 	ldr	r7, =(0x1 << 29)
+-	str	r7, [r1, #0x380]
++	str	r7, [r1, #0x388]
+ 
+ 	ldr	r6, =50
+ 1:
+@@ -238,8 +238,11 @@ TUNE_END:
+ 	bic	r7, r7, #(1 << 29)
+ 	str	r7, [r11]
+ 2:
++	/* clear/set bit30 of SNVS_MISC_CTRL to ensure exit from ddr retention */
+ 	ldr	r7, =(0x1 << 30)
+-	str	r7, [r1, #0x380]
++	str	r7, [r1, #0x388]
++	ldr	r7, =(0x1 << 30)
++	str	r7, [r1, #0x384]
+ 
+ 	/* need to delay ~5mS */
+ 	ldr	r6, =0x100000
+@@ -402,6 +405,12 @@ TUNE_END:
+ 	ldr r1, =0x4f400005
+ 	str r1, [r0, #0x4]
+ 
++	/* clear/set bit30 of SNVS_MISC_CTRL to ensure exit from ddr retention */
++	ldr r0, =ANATOP_BASE_ADDR
++	ldr r1, =(0x1 << 30)
++	str r1, [r0, #0x388]
++	str r1, [r0, #0x384]
++
+ 	ldr r0, =SRC_BASE_ADDR
+ 	ldr r1, =0x2
+ 	ldr r2, =0x1000
+-- 
+1.8.0
+

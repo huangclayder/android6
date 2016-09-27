@@ -1,0 +1,30 @@
+From cae72b85d16687adb73805fb003c50890b151bd3 Mon Sep 17 00:00:00 2001
+From: Fang Hui <b31070@freescale.com>
+Date: Tue, 12 Aug 2014 09:37:28 +0800
+Subject: [PATCH 372/602] ENGR00324853 Update for l-preview build
+
+mkdir /data/misc/user for installd
+
+Change-Id: Iedc3b81a89eb4fcc4a4acd88b3fc2e5a2512b00d
+Signed-off-by: Fang Hui <b31070@freescale.com>
+---
+ imx6/etc/init.rc | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/imx6/etc/init.rc b/imx6/etc/init.rc
+index 4e87972..eed0228 100755
+--- a/imx6/etc/init.rc
++++ b/imx6/etc/init.rc
+@@ -45,6 +45,9 @@ loglevel 3
+ # but someday that may change.
+     symlink /system/vendor /vendor
+ 
++# create dir for installd
++    mkdir /data/misc/user
++
+ # Create cgroup mount point for cpu accounting
+     mkdir /acct
+     mount cgroup none /acct cpuacct
+-- 
+1.8.0
+

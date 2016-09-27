@@ -1,0 +1,29 @@
+From 0a8df5f3a5f8e06c912b0668dd3f268f914e99e3 Mon Sep 17 00:00:00 2001
+From: zhang sanshan <b51434@freescale.com>
+Date: Fri, 10 Apr 2015 18:33:57 +0800
+Subject: [PATCH 473/602] MA-6530 enable dm-verity in 7d board
+
+PRODUCT_SYSTEM_VERITY_PARTITION is used in dm-verity metadate.
+the system partition is /dev/block/mmcblk0p5.
+
+Signed-off-by: zhang sanshan <b51434@freescale.com>
+---
+ imx7/sabresd_7d.mk | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/imx7/sabresd_7d.mk b/imx7/sabresd_7d.mk
+index 6e8dd32..4c9bb35 100644
+--- a/imx7/sabresd_7d.mk
++++ b/imx7/sabresd_7d.mk
+@@ -13,7 +13,7 @@ $(shell touch device/fsl/sabresd_7d/fstab.freescale)
+ endif
+ 
+ # setup dm-verity configs.
+- PRODUCT_SYSTEM_VERITY_PARTITION := /dev/block/mmcblk1p5
++ PRODUCT_SYSTEM_VERITY_PARTITION := /dev/block/mmcblk0p5
+  $(call inherit-product, build/target/product/verity.mk)
+ 
+ # Overrides
+-- 
+1.8.0
+

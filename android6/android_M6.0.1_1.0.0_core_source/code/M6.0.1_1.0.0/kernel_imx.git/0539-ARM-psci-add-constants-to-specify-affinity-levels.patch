@@ -1,0 +1,34 @@
+From e382ef99d521bfbabb72b76a3cf6f4972375834d Mon Sep 17 00:00:00 2001
+From: Achin Gupta <achin.gupta@arm.com>
+Date: Sun, 16 Dec 2012 21:46:10 +0000
+Subject: [PATCH] ARM: psci: add constants to specify affinity levels
+
+This patch defines constants to allow callers of the psci 'suspend'
+& 'off' calls specify supported affinity levels.
+
+Signed-off-by: Achin Gupta <achin.gupta@arm.com>
+Signed-off-by: Liviu Dudau <Liviu.Dudau@arm.com>
+(cherry picked from commit aae1f07fce7d14dd19d20d553745fdf4c34076c4)
+Signed-off-by: Alex Shi <alex.shi@linaro.org>
+---
+ arch/arm/include/asm/psci.h | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/arch/arm/include/asm/psci.h b/arch/arm/include/asm/psci.h
+index c4ae171..66d8184 100644
+--- a/arch/arm/include/asm/psci.h
++++ b/arch/arm/include/asm/psci.h
+@@ -16,6 +16,10 @@
+ 
+ #define PSCI_POWER_STATE_TYPE_STANDBY		0
+ #define PSCI_POWER_STATE_TYPE_POWER_DOWN	1
++#define PSCI_POWER_STATE_AFFINITY_LEVEL0	0
++#define PSCI_POWER_STATE_AFFINITY_LEVEL1	1
++#define PSCI_POWER_STATE_AFFINITY_LEVEL2	2
++#define PSCI_POWER_STATE_AFFINITY_LEVEL3	3
+ 
+ struct psci_power_state {
+ 	u16	id;
+-- 
+1.8.0
+

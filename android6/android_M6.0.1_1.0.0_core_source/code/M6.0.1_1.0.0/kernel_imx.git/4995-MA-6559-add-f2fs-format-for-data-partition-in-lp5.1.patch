@@ -1,0 +1,29 @@
+From 991d5367affedfaa3cbcf11f449b0564b433b1de Mon Sep 17 00:00:00 2001
+From: "guoyin.chen" <guoyin.chen@freescale.com>
+Date: Tue, 21 Apr 2015 12:50:13 +0800
+Subject: [PATCH] MA-6559 add f2fs format for data partition in lp5.1
+
+enable f2fs
+
+Signed-off-by: guoyin.chen <guoyin.chen@freescale.com>
+---
+ arch/arm/configs/imx_v7_android_defconfig | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/arch/arm/configs/imx_v7_android_defconfig b/arch/arm/configs/imx_v7_android_defconfig
+index 71ccef8..feca5f8 100644
+--- a/arch/arm/configs/imx_v7_android_defconfig
++++ b/arch/arm/configs/imx_v7_android_defconfig
+@@ -15,6 +15,9 @@ CONFIG_BLK_DEV_INITRD=y
+ CONFIG_KALLSYMS_ALL=y
+ CONFIG_EMBEDDED=y
+ CONFIG_PERF_EVENTS=y
++CONFIG_F2FS_FS=y
++CONFIG_F2FS_FS_XATTR=y
++CONFIG_F2FS_FS_SECURITY=y
+ # CONFIG_SLUB_DEBUG is not set
+ # CONFIG_COMPAT_BRK is not set
+ CONFIG_MODULES=y
+-- 
+1.8.0
+

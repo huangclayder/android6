@@ -1,0 +1,119 @@
+From e0d5b405e202816212269dd811bca8581a04567a Mon Sep 17 00:00:00 2001
+From: Haoran Wang <b50027@freescale.com>
+Date: Wed, 14 Oct 2015 15:27:42 +0800
+Subject: [PATCH 13/22] MA-7113 Fix compile error for marshmallow
+
+Wpa_supplicant_8 in marshmallow use the keystore-engine
+for TLS. Added the share_library for every vendor's
+supplicant binary.
+Use direct assignment for the wpa_supplicant_lib variable
+to pass the compile error.
+
+Signed-off-by: Haoran Wang <b50027@freescale.com>
+---
+ hostapd/Android.mk        | 12 +++---------
+ wpa_supplicant/Android.mk | 26 +++++++++++++++++---------
+ 2 files changed, 20 insertions(+), 18 deletions(-)
+
+diff --git a/hostapd/Android.mk b/hostapd/Android.mk
+index 6d47908..200c0e6 100644
+--- a/hostapd/Android.mk
++++ b/hostapd/Android.mk
+@@ -919,9 +919,7 @@ LOCAL_MODULE_TAGS := optional
+ ifdef CONFIG_DRIVER_CUSTOM
+ LOCAL_STATIC_LIBRARIES := libCustomWifi
+ endif
+-ifneq ($(BOARD_HOSTAPD_PRIVATE_LIB_QCOM),)
+-LOCAL_STATIC_LIBRARIES += $(BOARD_HOSTAPD_PRIVATE_LIB_BCM)
+-endif
++LOCAL_STATIC_LIBRARIES += lib_driver_cmd_bcmdhd
+ LOCAL_SHARED_LIBRARIES := libc libcutils liblog libcrypto libssl
+ ifdef CONFIG_DRIVER_NL80211
+ ifneq ($(wildcard external/libnl),)
+@@ -944,9 +942,7 @@ LOCAL_MODULE_TAGS := optional
+ ifdef CONFIG_DRIVER_CUSTOM
+ LOCAL_STATIC_LIBRARIES := libCustomWifi
+ endif
+-ifneq ($(BOARD_HOSTAPD_PRIVATE_LIB),)
+-LOCAL_STATIC_LIBRARIES += $(BOARD_HOSTAPD_PRIVATE_LIB)
+-endif
++LOCAL_STATIC_LIBRARIES += lib_driver_cmd_qcwcn
+ LOCAL_SHARED_LIBRARIES := libc libcutils liblog libcrypto libssl
+ ifdef CONFIG_DRIVER_NL80211
+ ifneq ($(wildcard external/libnl),)
+@@ -967,9 +963,7 @@ LOCAL_MODULE_TAGS := optional
+ ifdef CONFIG_DRIVER_CUSTOM
+ LOCAL_STATIC_LIBRARIES := libCustomWifi
+ endif
+-ifneq ($(BOARD_HOSTAPD_PRIVATE_LIB_RTL),)
+-LOCAL_STATIC_LIBRARIES += $(BOARD_HOSTAPD_PRIVATE_LIB_RTL)
+-endif
++LOCAL_STATIC_LIBRARIES += lib_driver_cmd_rtl
+ LOCAL_SHARED_LIBRARIES := libc libcutils liblog libcrypto libssl
+ ifdef CONFIG_DRIVER_NL80211
+ ifneq ($(wildcard external/libnl),)
+diff --git a/wpa_supplicant/Android.mk b/wpa_supplicant/Android.mk
+index 986eb60..476c4e0 100644
+--- a/wpa_supplicant/Android.mk
++++ b/wpa_supplicant/Android.mk
+@@ -1550,9 +1550,7 @@ LOCAL_MODULE := bcm_supplicant
+ ifdef CONFIG_DRIVER_CUSTOM
+ LOCAL_STATIC_LIBRARIES := libCustomWifi
+ endif
+-ifneq ($(BOARD_WPA_SUPPLICANT_PRIVATE_LIB_QCOM),)
+-LOCAL_STATIC_LIBRARIES += $(BOARD_WPA_SUPPLICANT_PRIVATE_LIB_BCM)
+-endif
++LOCAL_STATIC_LIBRARIES += lib_driver_cmd_bcmdhd
+ LOCAL_SHARED_LIBRARIES := libc libcutils liblog
+ ifdef CONFIG_EAP_PROXY
+ LOCAL_STATIC_LIBRARIES += $(LIB_STATIC_EAP_PROXY)
+@@ -1561,6 +1559,13 @@ endif
+ ifeq ($(CONFIG_TLS), openssl)
+ LOCAL_SHARED_LIBRARIES += libcrypto libssl libkeystore_binder
+ endif
++
++# With BoringSSL we need libkeystore-engine in order to provide access to
++# keystore keys.
++ifneq (,$(wildcard external/boringssl/flavor.mk))
++LOCAL_SHARED_LIBRARIES += libkeystore-engine
++endif
++
+ ifdef CONFIG_DRIVER_NL80211
+ ifneq ($(wildcard external/libnl),)
+ LOCAL_SHARED_LIBRARIES += libnl
+@@ -1582,9 +1587,7 @@ LOCAL_MODULE := wpa_supplicant
+ ifdef CONFIG_DRIVER_CUSTOM
+ LOCAL_STATIC_LIBRARIES := libCustomWifi
+ endif
+-ifneq ($(BOARD_WPA_SUPPLICANT_PRIVATE_LIB),)
+-LOCAL_STATIC_LIBRARIES += $(BOARD_WPA_SUPPLICANT_PRIVATE_LIB)
+-endif
++LOCAL_STATIC_LIBRARIES += lib_driver_cmd_qcwcn
+ LOCAL_SHARED_LIBRARIES := libc libcutils liblog
+ ifdef CONFIG_EAP_PROXY
+ LOCAL_STATIC_LIBRARIES += $(LIB_STATIC_EAP_PROXY)
+@@ -1619,13 +1622,18 @@ LOCAL_MODULE := rtl_wpa_supplicant
+ ifdef CONFIG_DRIVER_CUSTOM
+ LOCAL_STATIC_LIBRARIES := libCustomWifi
+ endif
+-ifneq ($(BOARD_WPA_SUPPLICANT_PRIVATE_LIB_RTL),)
+-LOCAL_STATIC_LIBRARIES += $(BOARD_WPA_SUPPLICANT_PRIVATE_LIB_RTL)
+-endif
++LOCAL_STATIC_LIBRARIES += lib_driver_cmd_rtl
+ LOCAL_SHARED_LIBRARIES := libc libcutils liblog
+ ifeq ($(CONFIG_TLS), openssl)
+ LOCAL_SHARED_LIBRARIES += libcrypto libssl libkeystore_binder
+ endif
++
++# With BoringSSL we need libkeystore-engine in order to provide access to
++# keystore keys.
++ifneq (,$(wildcard external/boringssl/flavor.mk))
++LOCAL_SHARED_LIBRARIES += libkeystore-engine
++endif
++
+ ifdef CONFIG_DRIVER_NL80211
+ ifneq ($(wildcard external/libnl),)
+ LOCAL_SHARED_LIBRARIES += libnl
+-- 
+1.8.0
+

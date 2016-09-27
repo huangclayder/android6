@@ -1,0 +1,64 @@
+From 25bff8657c7c79e41b3d77c839aef199c94733a3 Mon Sep 17 00:00:00 2001
+From: Victor Kamensky <victor.kamensky@linaro.org>
+Date: Wed, 2 Jul 2014 17:19:30 +0100
+Subject: [PATCH] ARM64: KVM: fix big endian issue in access_vm_reg for 32bit
+ guest
+
+Fix issue with 32bit guests running on top of BE KVM host.
+Indexes of high and low words of 64bit cp15 register are
+swapped in case of big endian code, since 64bit cp15 state is
+restored or saved with double word write or read instruction.
+
+Define helper macro to access low words of 64bit cp15 register.
+
+Signed-off-by: Victor Kamensky <victor.kamensky@linaro.org>
+Signed-off-by: Marc Zyngier <marc.zyngier@arm.com>
+(cherry picked from commit f0a3eaff71b8bd5d5acfda1f0cf3eedf49755622)
+Signed-off-by: Christoffer Dall <christoffer.dall@linaro.org>
+---
+ arch/arm64/include/asm/kvm_host.h |  6 ++++++
+ arch/arm64/kvm/sys_regs.c         | 10 ++++------
+ 2 files changed, 10 insertions(+), 6 deletions(-)
+
+diff --git a/arch/arm64/include/asm/kvm_host.h b/arch/arm64/include/asm/kvm_host.h
+index 4ae9213..503c706 100644
+--- a/arch/arm64/include/asm/kvm_host.h
++++ b/arch/arm64/include/asm/kvm_host.h
+@@ -140,6 +140,12 @@ struct kvm_vcpu_arch {
+ #define vcpu_sys_reg(v,r)	((v)->arch.ctxt.sys_regs[(r)])
+ #define vcpu_cp15(v,r)		((v)->arch.ctxt.cp15[(r)])
+ 
++#ifdef CONFIG_CPU_BIG_ENDIAN
++#define vcpu_cp15_64_low(v,r) ((v)->arch.ctxt.cp15[((r) + 1)])
++#else
++#define vcpu_cp15_64_low(v,r) ((v)->arch.ctxt.cp15[((r) + 0)])
++#endif
++
+ struct kvm_vm_stat {
+ 	u32 remote_tlb_flush;
+ };
+diff --git a/arch/arm64/kvm/sys_regs.c b/arch/arm64/kvm/sys_regs.c
+index f0cecef..56288f3 100644
+--- a/arch/arm64/kvm/sys_regs.c
++++ b/arch/arm64/kvm/sys_regs.c
+@@ -134,13 +134,11 @@ static bool access_vm_reg(struct kvm_vcpu *vcpu,
+ 	BUG_ON(!p->is_write);
+ 
+ 	val = *vcpu_reg(vcpu, p->Rt);
+-	if (!p->is_aarch32) {
++	if (!p->is_aarch32 || !p->is_32bit)
+ 		vcpu_sys_reg(vcpu, r->reg) = val;
+-	} else {
+-		vcpu_cp15(vcpu, r->reg) = val & 0xffffffffUL;
+-		if (!p->is_32bit)
+-			vcpu_cp15(vcpu, r->reg + 1) = val >> 32;
+-	}
++	else
++		vcpu_cp15_64_low(vcpu, r->reg) = val & 0xffffffffUL;
++
+ 	return true;
+ }
+ 
+-- 
+1.8.0
+

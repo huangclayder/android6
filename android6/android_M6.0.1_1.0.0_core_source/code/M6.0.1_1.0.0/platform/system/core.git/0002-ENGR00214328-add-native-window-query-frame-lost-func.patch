@@ -1,0 +1,31 @@
+From 5ac90c4cdc17f9f4be06c960b32832fa3206f1ab Mon Sep 17 00:00:00 2001
+From: Xiaowen Liu <b37945@freescale.com>
+Date: Thu, 4 Jul 2013 13:00:22 +0800
+Subject: [PATCH 02/22] ENGR00214328 add native window query frame lost
+ function.
+
+add native window query frame lost function.
+
+Signed-off-by: Xiaowen Liu <b37945@freescale.com>
+
+Conflicts:
+	include/system/window.h
+---
+ include/system/window.h | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/include/system/window.h b/include/system/window.h
+index 508ce00..ef47dba 100644
+--- a/include/system/window.h
++++ b/include/system/window.h
+@@ -277,6 +277,7 @@ enum {
+      * age will be 0.
+      */
+     NATIVE_WINDOW_BUFFER_AGE = 13,
++    NATIVE_WINDOW_GET_FRAME_LOST = 100
+ };
+ 
+ /* Valid operations for the (*perform)() hook.
+-- 
+1.8.0
+

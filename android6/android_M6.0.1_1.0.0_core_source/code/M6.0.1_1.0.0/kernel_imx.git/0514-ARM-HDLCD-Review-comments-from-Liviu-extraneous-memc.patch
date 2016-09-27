@@ -1,0 +1,34 @@
+From 4450ca21f8f91a648a087031601d3fca9d38e926 Mon Sep 17 00:00:00 2001
+From: Chris Redpath <chris.redpath@arm.com>
+Date: Fri, 29 Jun 2012 16:07:46 +0100
+Subject: [PATCH] ARM HDLCD: Review comments from Liviu - extraneous memcpy
+
+Signed-off-by: Chris Redpath <chris.redpath@arm.com>
+Reviewed-By: Liviu Dudau <liviu.dudau@arm.com>
+(cherry picked from commit d81ef6e2c92174b65e1c6af80d05cddfc0c4e7a1)
+Signed-off-by: Alex Shi <alex.shi@linaro.org>
+---
+ drivers/video/arm-hdlcd.c | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/drivers/video/arm-hdlcd.c b/drivers/video/arm-hdlcd.c
+index 8d5409d..f16bb88 100644
+--- a/drivers/video/arm-hdlcd.c
++++ b/drivers/video/arm-hdlcd.c
+@@ -262,10 +262,10 @@ static int hdlcd_set_par(struct fb_info *info)
+ 	if (!memcmp(&info->var, &cached_var_screeninfo,
+ 				sizeof(struct fb_var_screeninfo))) {
+ 		if(old_yoffset != info->var.yoffset) {
+-			/* we only changed yoffset */
++			/* we only changed yoffset, and we already
++			 * already recorded it a couple lines up
++			 */
+ 			hdlcd_pan_display(&info->var, info);
+-			memcpy(&cached_var_screeninfo, &info->var,
+-				sizeof(struct fb_var_screeninfo));
+ 		}
+ 		/* or no change */
+ 		return 0;
+-- 
+1.8.0
+

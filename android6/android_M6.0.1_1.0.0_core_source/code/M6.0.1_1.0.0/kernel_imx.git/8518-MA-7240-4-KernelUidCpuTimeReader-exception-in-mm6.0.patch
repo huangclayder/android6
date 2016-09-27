@@ -1,0 +1,30 @@
+From 988785de6c79081fca2af0d66ff5e87099cb25a9 Mon Sep 17 00:00:00 2001
+From: Zhang Sanshan <b51434@freescale.com>
+Date: Tue, 10 Nov 2015 14:36:12 +0800
+Subject: [PATCH] MA-7240-4 KernelUidCpuTimeReader exception in mm6.0
+
+logcat error info in mm6.0
+01-01 04:59:56.628  1089  1105 E KernelUidCpuTimeReader: Failed to read uid_cputime
+01-01 04:59:56.628  1089  1105 E KernelUidCpuTimeReader: java.io.FileNotFoundException:
+/proc/uid_cputime/show_uid_stat: open failed: ENOENT (No such file or directory)
+
+This patch add the configure to support /proc/uid_cputime/show_uid_stat.
+
+Signed-off-by: Zhang Sanshan <b51434@freescale.com>
+---
+ arch/arm/configs/imx_v7_android_defconfig | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/arch/arm/configs/imx_v7_android_defconfig b/arch/arm/configs/imx_v7_android_defconfig
+index ff08f0f..9fb3206 100644
+--- a/arch/arm/configs/imx_v7_android_defconfig
++++ b/arch/arm/configs/imx_v7_android_defconfig
+@@ -641,3 +641,5 @@ CONFIG_CRC7=y
+ CONFIG_FONTS=y
+ CONFIG_FONT_8x8=y
+ CONFIG_FONT_8x16=y
++CONFIG_PROFILING=y
++CONFIG_UID_CPUTIME=y
+-- 
+1.8.0
+

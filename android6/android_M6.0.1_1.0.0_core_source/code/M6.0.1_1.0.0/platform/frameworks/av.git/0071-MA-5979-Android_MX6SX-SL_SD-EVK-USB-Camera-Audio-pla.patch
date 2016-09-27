@@ -1,0 +1,57 @@
+From d2c9ab93c96ab47936ccc2fc7595b59073cb93bb Mon Sep 17 00:00:00 2001
+From: Fang Hui <b31070@freescale.com>
+Date: Wed, 31 Dec 2014 13:29:28 +0800
+Subject: [PATCH 71/95] MA-5979 - [Android_MX6SX/SL_SD/EVK]USB Camera: Audio
+ plays with frozen frame
+
+when play to the end of recorded video clip. 100%
+
+In MediaCodecSource.cpp, when has input data, push it's time stamp to a list.
+When has output data, erase a stamp from the list.
+But if the frame is dropped in h264 encoder, the list will enlarge continuously.
+Thus video time stamp drift and memory leak.
+
+To fix it, not use a list, just use time stamp got from output.
+
+Signed-off-by: Fang Hui <b31070@freescale.com>
+---
+ media/libstagefright/MediaCodecSource.cpp | 10 ++++++----
+ 1 file changed, 6 insertions(+), 4 deletions(-)
+
+diff --git a/media/libstagefright/MediaCodecSource.cpp b/media/libstagefright/MediaCodecSource.cpp
+index 7f9f824..7df66af 100644
+--- a/media/libstagefright/MediaCodecSource.cpp
++++ b/media/libstagefright/MediaCodecSource.cpp
+@@ -1,5 +1,6 @@
+ /*
+  * Copyright 2014, The Android Open Source Project
++ * Copyright (C) 2015 Freescale Semiconductor, Inc.
+  *
+  * Licensed under the Apache License, Version 2.0 (the "License");
+  * you may not use this file except in compliance with the License.
+@@ -571,7 +572,7 @@ status_t MediaCodecSource::feedEncoderInputBuffers() {
+ 
+             // push decoding time for video, or drift time for audio
+             if (mIsVideo) {
+-                mDecodingTimeQueue.push_back(timeUs);
++                //mDecodingTimeQueue.push_back(timeUs);
+             } else {
+ #if DEBUG_DRIFT_TIME
+                 if (mFirstSampleTimeUs < 0ll) {
+@@ -758,9 +759,10 @@ void MediaCodecSource::onMessageReceived(const sp<AMessage> &msg) {
+                         // this logic into MediaCodec.
+                         decodingTimeUs = timeUs;
+                     } else {
+-                        CHECK(!mDecodingTimeQueue.empty());
+-                        decodingTimeUs = *(mDecodingTimeQueue.begin());
+-                        mDecodingTimeQueue.erase(mDecodingTimeQueue.begin());
++                      //  CHECK(!mDecodingTimeQueue.empty());
++                       // decodingTimeUs = *(mDecodingTimeQueue.begin());
++                       // mDecodingTimeQueue.erase(mDecodingTimeQueue.begin());
++                       decodingTimeUs = timeUs;
+                     }
+                     mbuf->meta_data()->setInt64(kKeyDecodingTime, decodingTimeUs);
+ 
+-- 
+1.8.0
+

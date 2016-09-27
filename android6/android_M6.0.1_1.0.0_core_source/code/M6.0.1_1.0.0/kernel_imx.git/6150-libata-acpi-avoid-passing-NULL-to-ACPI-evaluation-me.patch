@@ -1,0 +1,31 @@
+From 5abe1c3c14227f1298273eb9022f5a6c938d02ea Mon Sep 17 00:00:00 2001
+From: Aaron Lu <aaron.lu@intel.com>
+Date: Fri, 14 Mar 2014 13:46:09 +0800
+Subject: [PATCH] libata: acpi: avoid passing NULL to ACPI evaluation method
+
+If ACPI handle for an ATA device is NULL, we shouldn't call
+ata_dev_get_GTF as that function will use handle to do some ACPI
+evaluation.
+
+Signed-off-by: Aaron Lu <aaron.lu@intel.com>
+Signed-off-by: Tejun Heo <tj@kernel.org>
+(cherry picked from commit c75da205e02dda3b79ca057e558f97f3d61c855d)
+---
+ drivers/ata/libata-acpi.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/drivers/ata/libata-acpi.c b/drivers/ata/libata-acpi.c
+index 9e69a53..b4f7cc2 100644
+--- a/drivers/ata/libata-acpi.c
++++ b/drivers/ata/libata-acpi.c
+@@ -835,6 +835,7 @@ void ata_acpi_on_resume(struct ata_port *ap)
+ 		ata_for_each_dev(dev, &ap->link, ALL) {
+ 			ata_acpi_clear_gtf(dev);
+ 			if (ata_dev_enabled(dev) &&
++			    ata_dev_acpi_handle(dev) &&
+ 			    ata_dev_get_GTF(dev, NULL) >= 0)
+ 				dev->flags |= ATA_DFLAG_ACPI_PENDING;
+ 		}
+-- 
+1.8.0
+

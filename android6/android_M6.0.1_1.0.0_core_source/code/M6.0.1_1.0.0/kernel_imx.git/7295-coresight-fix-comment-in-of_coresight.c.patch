@@ -1,0 +1,31 @@
+From c3b02411ec1492274fd40e413a1abd11ed7deca0 Mon Sep 17 00:00:00 2001
+From: Kaixu Xia <xiakaixu@huawei.com>
+Date: Fri, 9 Jan 2015 16:57:21 -0700
+Subject: [PATCH] coresight: fix comment in of_coresight.c
+
+Outports is a member of the struct pdata and should be
+a better choice.
+
+Signed-off-by: Kaixu Xia <xiakaixu@huawei.com>
+Signed-off-by: Mathieu Poirier <mathieu.poirier@linaro.org>
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+---
+ drivers/coresight/of_coresight.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/coresight/of_coresight.c b/drivers/coresight/of_coresight.c
+index 8bd524e..89ebbe2 100644
+--- a/drivers/coresight/of_coresight.c
++++ b/drivers/coresight/of_coresight.c
+@@ -93,7 +93,7 @@ static int of_coresight_alloc_memory(struct device *dev,
+ 	if (!pdata->outports)
+ 		return -ENOMEM;
+ 
+-	/* Children connected to this component via @outport */
++	/* Children connected to this component via @outports */
+ 	 pdata->child_names = devm_kzalloc(dev, pdata->nr_outport *
+ 					  sizeof(*pdata->child_names),
+ 					  GFP_KERNEL);
+-- 
+1.8.0
+

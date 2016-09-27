@@ -1,0 +1,49 @@
+From 0a07276ebc876f9f619dc254eb7781019ad8401a Mon Sep 17 00:00:00 2001
+From: Haoran Wang <b50027@freescale.com>
+Date: Wed, 8 Jul 2015 20:30:01 +0800
+Subject: [PATCH 508/602] MA-6872 Use bcm wpa_supplicant in sabresd_7d
+
+Use broadcom wpa_supplicant for sabresd_7d.
+
+Signed-off-by: Haoran Wang <b50027@freescale.com>
+---
+ imx7/imx7.mk       | 2 ++
+ sabresd_7d/init.rc | 2 +-
+ 2 files changed, 3 insertions(+), 1 deletion(-)
+
+diff --git a/imx7/imx7.mk b/imx7/imx7.mk
+index 8d048e6..4342456 100644
+--- a/imx7/imx7.mk
++++ b/imx7/imx7.mk
+@@ -40,6 +40,7 @@ PRODUCT_PACKAGES += \
+ 	ip-down-ppp0				\
+ 	wpa_supplicant				\
+ 	rtl_wpa_supplicant			\
++	bcm_supplicant				\
+ 	wpa_supplicant.conf			\
+ 	p2p_supplicant_overlay.conf			\
+ 	wpa_supplicant_overlay.conf			\
+@@ -64,6 +65,7 @@ PRODUCT_PACKAGES += \
+ PRODUCT_PACKAGES += \
+ 	hostapd 				\
+ 	rtl_hostapd 				\
++	bcm_hostapd				\
+ 	hostapd_cli
+ 
+ # keyboard mapping files.
+diff --git a/sabresd_7d/init.rc b/sabresd_7d/init.rc
+index 920367a..3cdc289 100644
+--- a/sabresd_7d/init.rc
++++ b/sabresd_7d/init.rc
+@@ -155,7 +155,7 @@ service wpa_supplicant /system/bin/wpa_supplicant \
+     disabled
+     oneshot
+ 
+-service bcm_supplicant /system/bin/wpa_supplicant \
++service bcm_supplicant /system/bin/bcm_supplicant \
+     -iwlan0 -Dnl80211 -c/data/misc/wifi/wpa_supplicant.conf \
+     -I/system/etc/wifi/wpa_supplicant_overlay.conf \
+     -puse_p2p_group_interface=1p2p_device=1 \
+-- 
+1.8.0
+

@@ -1,0 +1,136 @@
+From 2f29ef83d9215f7373d5491fe33d6fadc2183d4a Mon Sep 17 00:00:00 2001
+From: Christoffer Dall <christoffer.dall@linaro.org>
+Date: Thu, 2 Oct 2014 22:17:34 +0200
+Subject: [PATCH] KVM: Rename and add argument to check_extension
+
+In preparation to make the check_extension function available to VM scope
+we add a struct kvm * argument to the function header and rename the function
+accordingly. It will still be called from the /dev/kvm fd, but with a NULL
+argument for struct kvm *.
+
+Signed-off-by: Alexander Graf <agraf@suse.de>
+Acked-by: Paolo Bonzini <pbonzini@redhat.com>
+(cherry picked from commit 784aa3d7fb6f729c06d5836c9d9569f58e4d05ae)
+Signed-off-by: Christoffer Dall <christoffer.dall@linaro.org>
+---
+ arch/arm/kvm/arm.c         | 2 +-
+ arch/ia64/kvm/kvm-ia64.c   | 2 +-
+ arch/powerpc/kvm/powerpc.c | 2 +-
+ arch/s390/kvm/kvm-s390.c   | 2 +-
+ arch/x86/kvm/x86.c         | 2 +-
+ include/linux/kvm_host.h   | 2 +-
+ virt/kvm/kvm_main.c        | 6 +++---
+ 7 files changed, 9 insertions(+), 9 deletions(-)
+
+diff --git a/arch/arm/kvm/arm.c b/arch/arm/kvm/arm.c
+index dd3a41e..c8858fd 100644
+--- a/arch/arm/kvm/arm.c
++++ b/arch/arm/kvm/arm.c
+@@ -174,7 +174,7 @@ void kvm_arch_destroy_vm(struct kvm *kvm)
+ 	}
+ }
+ 
+-int kvm_dev_ioctl_check_extension(long ext)
++int kvm_vm_ioctl_check_extension(struct kvm *kvm, long ext)
+ {
+ 	int r;
+ 	switch (ext) {
+diff --git a/arch/ia64/kvm/kvm-ia64.c b/arch/ia64/kvm/kvm-ia64.c
+index 53f44be..b48aa69 100644
+--- a/arch/ia64/kvm/kvm-ia64.c
++++ b/arch/ia64/kvm/kvm-ia64.c
+@@ -190,7 +190,7 @@ void kvm_arch_check_processor_compat(void *rtn)
+ 	*(int *)rtn = 0;
+ }
+ 
+-int kvm_dev_ioctl_check_extension(long ext)
++int kvm_vm_ioctl_check_extension(struct kvm *kvm, long ext)
+ {
+ 
+ 	int r;
+diff --git a/arch/powerpc/kvm/powerpc.c b/arch/powerpc/kvm/powerpc.c
+index 3cf541a..89ba9e4 100644
+--- a/arch/powerpc/kvm/powerpc.c
++++ b/arch/powerpc/kvm/powerpc.c
+@@ -325,7 +325,7 @@ void kvm_arch_sync_events(struct kvm *kvm)
+ {
+ }
+ 
+-int kvm_dev_ioctl_check_extension(long ext)
++int kvm_vm_ioctl_check_extension(struct kvm *kvm, long ext)
+ {
+ 	int r;
+ 	/* FIXME!!
+diff --git a/arch/s390/kvm/kvm-s390.c b/arch/s390/kvm/kvm-s390.c
+index e0676f3..bd89b94 100644
+--- a/arch/s390/kvm/kvm-s390.c
++++ b/arch/s390/kvm/kvm-s390.c
+@@ -141,7 +141,7 @@ long kvm_arch_dev_ioctl(struct file *filp,
+ 	return -EINVAL;
+ }
+ 
+-int kvm_dev_ioctl_check_extension(long ext)
++int kvm_vm_ioctl_check_extension(struct kvm *kvm, long ext)
+ {
+ 	int r;
+ 
+diff --git a/arch/x86/kvm/x86.c b/arch/x86/kvm/x86.c
+index 2b85784..44f00dd 100644
+--- a/arch/x86/kvm/x86.c
++++ b/arch/x86/kvm/x86.c
+@@ -2578,7 +2578,7 @@ out:
+ 	return r;
+ }
+ 
+-int kvm_dev_ioctl_check_extension(long ext)
++int kvm_vm_ioctl_check_extension(struct kvm *kvm, long ext)
+ {
+ 	int r;
+ 
+diff --git a/include/linux/kvm_host.h b/include/linux/kvm_host.h
+index 69531e3..55c44d6 100644
+--- a/include/linux/kvm_host.h
++++ b/include/linux/kvm_host.h
+@@ -590,7 +590,7 @@ long kvm_arch_vcpu_ioctl(struct file *filp,
+ 			 unsigned int ioctl, unsigned long arg);
+ int kvm_arch_vcpu_fault(struct kvm_vcpu *vcpu, struct vm_fault *vmf);
+ 
+-int kvm_dev_ioctl_check_extension(long ext);
++int kvm_vm_ioctl_check_extension(struct kvm *kvm, long ext);
+ 
+ int kvm_get_dirty_log(struct kvm *kvm,
+ 			struct kvm_dirty_log *log, int *is_dirty);
+diff --git a/virt/kvm/kvm_main.c b/virt/kvm/kvm_main.c
+index bf6cc06..6075902 100644
+--- a/virt/kvm/kvm_main.c
++++ b/virt/kvm/kvm_main.c
+@@ -2568,7 +2568,7 @@ static int kvm_dev_ioctl_create_vm(unsigned long type)
+ 	return r;
+ }
+ 
+-static long kvm_dev_ioctl_check_extension_generic(long arg)
++static long kvm_vm_ioctl_check_extension_generic(struct kvm *kvm, long arg)
+ {
+ 	switch (arg) {
+ 	case KVM_CAP_USER_MEMORY:
+@@ -2592,7 +2592,7 @@ static long kvm_dev_ioctl_check_extension_generic(long arg)
+ 	default:
+ 		break;
+ 	}
+-	return kvm_dev_ioctl_check_extension(arg);
++	return kvm_vm_ioctl_check_extension(kvm, arg);
+ }
+ 
+ static long kvm_dev_ioctl(struct file *filp,
+@@ -2611,7 +2611,7 @@ static long kvm_dev_ioctl(struct file *filp,
+ 		r = kvm_dev_ioctl_create_vm(arg);
+ 		break;
+ 	case KVM_CHECK_EXTENSION:
+-		r = kvm_dev_ioctl_check_extension_generic(arg);
++		r = kvm_vm_ioctl_check_extension_generic(NULL, arg);
+ 		break;
+ 	case KVM_GET_VCPU_MMAP_SIZE:
+ 		r = -EINVAL;
+-- 
+1.8.0
+

@@ -1,0 +1,49 @@
+From 3406430d8355a31e2b64e18124bfc3b8150b6347 Mon Sep 17 00:00:00 2001
+From: Ke Qinghua <qinghua.ke@freescale.com>
+Date: Mon, 24 Feb 2014 12:03:57 +0800
+Subject: [PATCH] MA-5963-8 Upgrade kernel version from 3.10.y to 3.14.y
+
+Make sure the pwm-backlight.0 as the backlight device to
+control the backlight from Android framework
+
+Signed-off-by: guoyin.chen <guoyin.chen@freescale.com>
+---
+ drivers/video/backlight/backlight.c | 12 +++++++++++-
+ 1 file changed, 11 insertions(+), 1 deletion(-)
+
+diff --git a/drivers/video/backlight/backlight.c b/drivers/video/backlight/backlight.c
+index 7e4667a..e45374d 100644
+--- a/drivers/video/backlight/backlight.c
++++ b/drivers/video/backlight/backlight.c
+@@ -317,9 +317,19 @@ struct backlight_device *backlight_device_register(const char *name,
+ {
+ 	struct backlight_device *new_bd;
+ 	int rc;
++	static int bk_id;
++	char tmp_name[64];
++	int  i = 0;
++	char *p = NULL;
+ 
+ 	pr_debug("backlight_device_register: name=%s\n", name);
+ 
++	memset(tmp_name , 0x00, sizeof(tmp_name));
++	p = strchr(name, '.');
++	i = p - name;
++	strncpy(tmp_name, name, i);
++	sprintf(tmp_name, "%s.%d", tmp_name, bk_id++);
++
+ 	new_bd = kzalloc(sizeof(struct backlight_device), GFP_KERNEL);
+ 	if (!new_bd)
+ 		return ERR_PTR(-ENOMEM);
+@@ -330,7 +340,7 @@ struct backlight_device *backlight_device_register(const char *name,
+ 	new_bd->dev.class = backlight_class;
+ 	new_bd->dev.parent = parent;
+ 	new_bd->dev.release = bl_device_release;
+-	dev_set_name(&new_bd->dev, "%s", name);
++	dev_set_name(&new_bd->dev, "%s", tmp_name);
+ 	dev_set_drvdata(&new_bd->dev, devdata);
+ 
+ 	/* Set default properties */
+-- 
+1.8.0
+

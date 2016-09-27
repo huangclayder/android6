@@ -1,0 +1,38 @@
+From 699d6a59f5d9aeddaf74ee4f9f81c51d5860f12c Mon Sep 17 00:00:00 2001
+From: Ard Biesheuvel <ard.biesheuvel@linaro.org>
+Date: Fri, 12 Sep 2014 15:16:00 +0200
+Subject: [PATCH] KVM: check for !is_zero_pfn() in kvm_is_mmio_pfn()
+
+Read-only memory ranges may be backed by the zero page, so avoid
+misidentifying it a a MMIO pfn.
+
+This fixes another issue I identified when testing QEMU+KVM_UEFI, where
+a read to an uninitialized emulated NOR flash brought in the zero page,
+but mapped as a read-write device region, because kvm_is_mmio_pfn()
+misidentifies it as a MMIO pfn due to its PG_reserved bit being set.
+
+Signed-off-by: Ard Biesheuvel <ard.biesheuvel@linaro.org>
+Fixes: b88657674d39 ("ARM: KVM: user_mem_abort: support stage 2 MMIO page mapping")
+Signed-off-by: Paolo Bonzini <pbonzini@redhat.com>
+(cherry picked from commit 85c8555ff07ef09261bd50d603cd4290cff5a8cc)
+Signed-off-by: Christoffer Dall <christoffer.dall@linaro.org>
+---
+ virt/kvm/kvm_main.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/virt/kvm/kvm_main.c b/virt/kvm/kvm_main.c
+index 39fad76..0733a2a 100644
+--- a/virt/kvm/kvm_main.c
++++ b/virt/kvm/kvm_main.c
+@@ -108,7 +108,7 @@ static bool largepages_enabled = true;
+ bool kvm_is_mmio_pfn(pfn_t pfn)
+ {
+ 	if (pfn_valid(pfn))
+-		return PageReserved(pfn_to_page(pfn));
++		return !is_zero_pfn(pfn) && PageReserved(pfn_to_page(pfn));
+ 
+ 	return true;
+ }
+-- 
+1.8.0
+

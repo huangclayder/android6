@@ -1,0 +1,26 @@
+From d72e78d889908d4ff8524a4a97378d3b646746cc Mon Sep 17 00:00:00 2001
+From: Mark Brown <broonie@linaro.org>
+Date: Sat, 13 Dec 2014 19:56:59 +0000
+Subject: [PATCH] usb: dwc3: Fix previous mismerge
+
+Signed-off-by: Mark Brown <broonie@linaro.org>
+---
+ drivers/usb/dwc3/gadget.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/usb/dwc3/gadget.c b/drivers/usb/dwc3/gadget.c
+index 09401ce..5bdbcff 100644
+--- a/drivers/usb/dwc3/gadget.c
++++ b/drivers/usb/dwc3/gadget.c
+@@ -587,7 +587,7 @@ static int __dwc3_gadget_ep_disable(struct dwc3_ep *dep)
+ 
+ 	/* make sure HW endpoint isn't stalled */
+ 	if (dep->flags & DWC3_EP_STALL)
+-		__dwc3_gadget_ep_set_halt(dep, 0);
++		__dwc3_gadget_ep_set_halt(dep, 0, false);
+ 
+ 	reg = dwc3_readl(dwc->regs, DWC3_DALEPENA);
+ 	reg &= ~DWC3_DALEPENA_EP(dep->number);
+-- 
+1.8.0
+

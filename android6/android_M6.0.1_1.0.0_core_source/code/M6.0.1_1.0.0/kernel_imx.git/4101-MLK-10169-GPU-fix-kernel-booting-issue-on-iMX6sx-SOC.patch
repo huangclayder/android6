@@ -1,0 +1,32 @@
+From 06998b7fa3a66f6cba599d372c72c790d3dda111 Mon Sep 17 00:00:00 2001
+From: Shawn Xiao <b49994@freescale.com>
+Date: Wed, 28 Jan 2015 16:39:16 +0800
+Subject: [PATCH] MLK-10169 GPU: fix kernel booting issue on iMX6sx SOC
+ without GPU
+
+Add checking GPU module logic in qos init. This prevents kernel
+booting issue in the iMX6sx SOC where there is no GPU module.
+
+Signed-off-by: Shawn Xiao <b49994@freescale.com>
+---
+ arch/arm/mach-imx/mach-imx6sx.c | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/arch/arm/mach-imx/mach-imx6sx.c b/arch/arm/mach-imx/mach-imx6sx.c
+index 3b3da52..7f5188f 100755
+--- a/arch/arm/mach-imx/mach-imx6sx.c
++++ b/arch/arm/mach-imx/mach-imx6sx.c
+@@ -239,6 +239,10 @@ static inline void imx6sx_qos_init(void)
+ 	struct device_node *np;
+ 	void   __iomem *src_base;
+ 
++	np = of_find_compatible_node(NULL, NULL, "fsl,imx6sx-gpu");
++	if (!np || !of_device_is_available(np))
++		return;
++
+ 	np = of_find_compatible_node(NULL, NULL, "fsl,imx6sx-qosc");
+ 	if (!np)
+ 		return;
+-- 
+1.8.0
+

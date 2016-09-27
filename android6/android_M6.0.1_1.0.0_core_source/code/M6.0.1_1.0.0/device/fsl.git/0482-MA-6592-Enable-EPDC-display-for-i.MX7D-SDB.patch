@@ -1,0 +1,43 @@
+From a025eb6572b84a44064f4ee041da254b0881ace8 Mon Sep 17 00:00:00 2001
+From: "guoyin.chen" <guoyin.chen@freescale.com>
+Date: Mon, 27 Apr 2015 11:22:34 +0800
+Subject: [PATCH 482/602] MA-6592 Enable EPDC display for i.MX7D SDB
+
+Add epdc dts to build epdc specific bootimage
+Enable IMX GRALLOC env setting
+
+Signed-off-by: guoyin.chen <guoyin.chen@freescale.com>
+---
+ imx7/soc/imx7d.mk         | 2 +-
+ sabresd_7d/BoardConfig.mk | 2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/imx7/soc/imx7d.mk b/imx7/soc/imx7d.mk
+index 3c229b4..242655a 100644
+--- a/imx7/soc/imx7d.mk
++++ b/imx7/soc/imx7d.mk
+@@ -11,7 +11,7 @@ BOARD_KERNEL_BASE := 0x82800000
+ LOAD_KERNEL_ENTRY := 0x80008000
+ TARGET_KERNEL_DEFCONF := imx_v7_android_defconfig
+ -include external/fsl_imx_omx/codec_env.mk
+-TARGET_HAVE_IMX_GRALLOC := false
++TARGET_HAVE_IMX_GRALLOC := true
+ TARGET_HAVE_IMX_HWCOMPOSER = false
+ USE_OPENGL_RENDERER := true
+ TARGET_CPU_SMP := false
+diff --git a/sabresd_7d/BoardConfig.mk b/sabresd_7d/BoardConfig.mk
+index 8a612a8..aba7250 100644
+--- a/sabresd_7d/BoardConfig.mk
++++ b/sabresd_7d/BoardConfig.mk
+@@ -84,7 +84,7 @@ TARGET_VSYNC_DIRECT_REFRESH := true
+ 
+ BOARD_KERNEL_CMDLINE := console=ttymxc0,115200 init=/init androidboot.console=ttymxc0 consoleblank=0 androidboot.hardware=freescale 
+ TARGET_BOOTLOADER_CONFIG := imx7d:mx7dsabresdandroid_config
+-TARGET_BOARD_DTS_CONFIG := imx7d:imx7d-sdb.dtb
++TARGET_BOARD_DTS_CONFIG := imx7d:imx7d-sdb.dtb imx7d-epdc:imx7d-sdb-epdc.dtb
+ 
+ BOARD_SEPOLICY_DIRS := \
+        device/fsl/imx7/sepolicy \
+-- 
+1.8.0
+

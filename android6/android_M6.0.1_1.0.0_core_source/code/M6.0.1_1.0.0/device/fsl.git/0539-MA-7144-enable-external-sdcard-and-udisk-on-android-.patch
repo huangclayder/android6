@@ -1,0 +1,612 @@
+From 81a15670d574c478a6697b3722cd9fd3310eddea Mon Sep 17 00:00:00 2001
+From: Richard Liu <r66033@freescale.com>
+Date: Wed, 21 Oct 2015 17:15:48 +0800
+Subject: [PATCH 539/602] MA-7144 enable external sdcard and udisk on android
+ 6.0
+
+Android 6.0 redesign the external sdcard and udisk support,
+update the configure to make them work on FSL platform.
+1. remove overlay storage_list.xml as it is not need anymore.
+2. modify the fstab file to match the /system/vold changes.
+
+Signed-off-by: Richard Liu <r66033@freescale.com>
+---
+ evk_6sl/fstab-f2fs.freescale                       |  4 +-
+ evk_6sl/fstab.freescale                            |  4 +-
+ .../base/core/res/res/xml/storage_list.xml         | 49 ----------------------
+ sabreauto_6q/fstab-f2fs.freescale                  |  4 +-
+ sabreauto_6q/fstab.freescale                       |  4 +-
+ sabreauto_6q/fstab_nand.freescale                  |  4 +-
+ .../base/core/res/res/xml/storage_list.xml         | 49 ----------------------
+ sabreauto_6sx/fstab-f2fs.freescale                 |  4 +-
+ sabreauto_6sx/fstab.freescale                      |  4 +-
+ sabreauto_6sx/fstab_nand.freescale                 |  4 +-
+ .../base/core/res/res/xml/storage_list.xml         | 49 ----------------------
+ sabresd_6dq/fstab-f2fs.freescale                   |  4 +-
+ sabresd_6dq/fstab.freescale                        |  4 +-
+ sabresd_6dq/fstab_sd-f2fs.freescale                |  4 +-
+ sabresd_6dq/fstab_sd.freescale                     |  4 +-
+ .../base/core/res/res/xml/storage_list.xml         | 49 ----------------------
+ sabresd_6sx/fstab-f2fs.freescale                   |  4 +-
+ sabresd_6sx/fstab.freescale                        |  4 +-
+ .../base/core/res/res/xml/storage_list.xml         | 49 ----------------------
+ sabresd_7d/fstab-f2fs.freescale                    |  2 +-
+ sabresd_7d/fstab.freescale                         |  2 +-
+ .../base/core/res/res/xml/storage_list.xml         | 49 ----------------------
+ 22 files changed, 30 insertions(+), 324 deletions(-)
+ delete mode 100644 evk_6sl/overlay/frameworks/base/core/res/res/xml/storage_list.xml
+ delete mode 100644 sabreauto_6q/overlay/frameworks/base/core/res/res/xml/storage_list.xml
+ delete mode 100644 sabreauto_6sx/overlay/frameworks/base/core/res/res/xml/storage_list.xml
+ delete mode 100644 sabresd_6dq/overlay/frameworks/base/core/res/res/xml/storage_list.xml
+ delete mode 100644 sabresd_6sx/overlay/frameworks/base/core/res/res/xml/storage_list.xml
+ delete mode 100644 sabresd_7d/overlay/frameworks/base/core/res/res/xml/storage_list.xml
+
+diff --git a/evk_6sl/fstab-f2fs.freescale b/evk_6sl/fstab-f2fs.freescale
+index 9f715df..bf768a2 100644
+--- a/evk_6sl/fstab-f2fs.freescale
++++ b/evk_6sl/fstab-f2fs.freescale
+@@ -3,8 +3,8 @@
+ # The filesystem that contains the filesystem checker binary (typically /system) cannot
+ # specify MF_CHECK, and must come before any filesystems that do specify MF_CHECK
+ 
+-/devices/soc0/soc.1/2100000.aips-bus/2190000.usdhc/mmc_host /mnt/media_rw/extsd vfat defaults voldmanaged=extsd:auto
+-/devices/soc0/soc.1/2100000.aips-bus/2184200.usb/ci_hdrc.1 /mnt/media_rw/udisk vfat defaults voldmanaged=udisk:auto
++/devices/soc0/soc.1/2100000.aips-bus/2190000.usdhc/mmc_host* auto auto defaults voldmanaged=extsd:auto,encryptable=userdata
++/devices/soc0/soc.1/2100000.aips-bus/2184200.usb/ci_hdrc.1* auto auto defaults voldmanaged=udisk:auto
+ /dev/block/mmcblk1p5    /system      ext4    ro                                                                               wait
+ /dev/block/mmcblk1p4    /data        f2fs    nosuid,nodev,noatime    wait,encryptable=/dev/block/mmcblk1p9
+ /dev/block/mmcblk1p4    /data        ext4    nosuid,nodev,nodiratime,noatime,nomblk_io_submit,noauto_da_alloc,errors=panic    wait,encryptable=/dev/block/mmcblk1p9
+diff --git a/evk_6sl/fstab.freescale b/evk_6sl/fstab.freescale
+index 43fab52..ed77700 100644
+--- a/evk_6sl/fstab.freescale
++++ b/evk_6sl/fstab.freescale
+@@ -3,8 +3,8 @@
+ # The filesystem that contains the filesystem checker binary (typically /system) cannot
+ # specify MF_CHECK, and must come before any filesystems that do specify MF_CHECK
+ 
+-/devices/soc0/soc.1/2100000.aips-bus/2190000.usdhc/mmc_host /mnt/media_rw/extsd vfat defaults voldmanaged=extsd:auto
+-/devices/soc0/soc.1/2100000.aips-bus/2184200.usb/ci_hdrc.1 /mnt/media_rw/udisk vfat defaults voldmanaged=udisk:auto
++/devices/soc0/soc.1/2100000.aips-bus/2190000.usdhc/mmc_host* auto auto defaults voldmanaged=extsd:auto,encryptable=userdata
++/devices/soc0/soc.1/2100000.aips-bus/2184200.usb/ci_hdrc.1* auto auto defaults voldmanaged=udisk:auto
+ /dev/block/mmcblk1p5    /system      ext4    ro,barrier=1                                                                               wait,verify
+ /dev/block/mmcblk1p4    /data        ext4    nosuid,nodev,nodiratime,noatime,nomblk_io_submit,noauto_da_alloc,errors=panic    wait,encryptable=/dev/block/mmcblk1p9
+ /dev/block/mmcblk1p6    /cache       ext4    nosuid,nodev,nomblk_io_submit                                                    wait
+diff --git a/evk_6sl/overlay/frameworks/base/core/res/res/xml/storage_list.xml b/evk_6sl/overlay/frameworks/base/core/res/res/xml/storage_list.xml
+deleted file mode 100644
+index 3639bdc..0000000
+--- a/evk_6sl/overlay/frameworks/base/core/res/res/xml/storage_list.xml
++++ /dev/null
+@@ -1,49 +0,0 @@
+-<?xml version="1.0" encoding="utf-8"?>
+-<!--
+-**
+-** Copyright 2011, The Android Open Source Project
+-**
+-** Licensed under the Apache License, Version 2.0 (the "License")
+-** you may not use this file except in compliance with the License.
+-** You may obtain a copy of the License at
+-**
+-**     http://www.apache.org/licenses/LICENSE-2.0
+-**
+-** Unless required by applicable law or agreed to in writing, software
+-** distributed under the License is distributed on an "AS IS" BASIS,
+-** WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+-** See the License for the specific language governing permissions and
+-** limitations under the License.
+-*/
+--->
+-
+-<!-- The <device> element should contain one or more <storage> elements.
+-     Exactly one of these should have the attribute primary="true".
+-     This storage will be the primary external storage and should have path="/mnt/sdcard".
+-     Each storage should have both a path and description attribute set.
+-     The following boolean attributes are optional:
+-
+-        primary:    this storage is the primary external storage
+-        removable:  this is removable storage (for example, a real SD card)
+-        emulated:   the storage is emulated via the FUSE sdcard daemon
+-        mtp-reserve: number of megabytes of storage MTP should reserve for free storage
+-                     (used for emulated storage that is shared with system's data partition)
+-
+-      A storage should not have both emulated and removable set to true
+--->
+-
+-<StorageList xmlns:android="http://schemas.android.com/apk/res/android">
+-    <storage android:storageDescription="@string/storage_internal"
+-             android:primary="true"
+-             android:emulated="true"
+-             android:mtpReserve="100" />
+-    <storage android:mountPoint="/storage/extsd"
+-             android:storageDescription="@string/storage_sd_card"
+-             android:primary="false"
+-             android:removable="true" />
+-    <storage android:mountPoint="/storage/udisk"
+-             android:storageDescription="@string/storage_usb"
+-             android:primary="false"
+-             android:removable="true" />
+-</StorageList>
+-
+diff --git a/sabreauto_6q/fstab-f2fs.freescale b/sabreauto_6q/fstab-f2fs.freescale
+index 2eba6c6..d497089 100644
+--- a/sabreauto_6q/fstab-f2fs.freescale
++++ b/sabreauto_6q/fstab-f2fs.freescale
+@@ -3,8 +3,8 @@
+ # The filesystem that contains the filesystem checker binary (typically /system) cannot
+ # specify MF_CHECK, and must come before any filesystems that do specify MF_CHECK
+ 
+-/devices/soc0/soc.0/2100000.aips-bus/2190000.usdhc/mmc_host /mnt/media_rw/extsd vfat defaults voldmanaged=extsd:auto
+-/devices/soc0/soc.0/2100000.aips-bus/2184000.usb/ci_hdrc.0  /mnt/media_rw/udisk vfat defaults voldmanaged=udisk:auto
++/devices/soc0/soc.0/2100000.aips-bus/2190000.usdhc/mmc_host* auto auto defaults voldmanaged=extsd:auto,encryptable=userdata
++/devices/soc0/soc.0/2100000.aips-bus/2184000.usb/ci_hdrc.0*  auto auto defaults voldmanaged=udisk:auto
+ /dev/block/mmcblk2p5    /system      ext4    ro                                                                               wait
+ /dev/block/mmcblk2p4    /data        f2fs    nosuid,nodev,noatime    wait,encryptable=/dev/block/mmcblk2p9
+ /dev/block/mmcblk2p4    /data        ext4    nosuid,nodev,nodiratime,noatime,nomblk_io_submit,noauto_da_alloc,errors=panic    wait,encryptable=/dev/block/mmcblk2p9
+diff --git a/sabreauto_6q/fstab.freescale b/sabreauto_6q/fstab.freescale
+index ffc493c..f0a7470 100644
+--- a/sabreauto_6q/fstab.freescale
++++ b/sabreauto_6q/fstab.freescale
+@@ -3,8 +3,8 @@
+ # The filesystem that contains the filesystem checker binary (typically /system) cannot
+ # specify MF_CHECK, and must come before any filesystems that do specify MF_CHECK
+ 
+-/devices/soc0/soc.0/2100000.aips-bus/2190000.usdhc/mmc_host /mnt/media_rw/extsd vfat defaults voldmanaged=extsd:auto
+-/devices/soc0/soc.0/2100000.aips-bus/2184000.usb/ci_hdrc.0  /mnt/media_rw/udisk vfat defaults voldmanaged=udisk:auto
++/devices/soc0/soc.0/2100000.aips-bus/2190000.usdhc/mmc_host* auto auto defaults voldmanaged=extsd:auto,encryptable=userdata
++/devices/soc0/soc.0/2100000.aips-bus/2184000.usb/ci_hdrc.0*  auto auto defaults voldmanaged=udisk:auto
+ /dev/block/mmcblk2p5    /system      ext4    ro,barrier=1                                                                               wait,verify
+ /dev/block/mmcblk2p4    /data        ext4    nosuid,nodev,nodiratime,noatime,nomblk_io_submit,noauto_da_alloc,errors=panic    wait,encryptable=/dev/block/mmcblk2p9
+ /dev/block/mmcblk2p6    /cache       ext4    nosuid,nodev,nomblk_io_submit                                                    wait
+diff --git a/sabreauto_6q/fstab_nand.freescale b/sabreauto_6q/fstab_nand.freescale
+index f2748d1..b62ff1e 100644
+--- a/sabreauto_6q/fstab_nand.freescale
++++ b/sabreauto_6q/fstab_nand.freescale
+@@ -5,8 +5,8 @@
+ 
+ # below is for ubi support, uncomment to support ubifs(NAND)
+ 
+-/devices/soc0/soc.0/2100000.aips-bus/2190000.usdhc/mmc_host /mnt/media_rw/extsd vfat defaults voldmanaged=extsd:auto
+-/devices/soc0/soc.0/2100000.aips-bus/2184200.usb/ci_hdrc.1 /mnt/media_rw/udisk vfat defaults voldmanaged=udisk:auto
++/devices/soc0/soc.0/2100000.aips-bus/2190000.usdhc/mmc_host* auto auto defaults voldmanaged=extsd:auto,encryptable=userdata
++/devices/soc0/soc.0/2100000.aips-bus/2184200.usb/ci_hdrc.1* auto auto defaults voldmanaged=udisk:auto
+ /dev/ubi0_0     /system		    ubifs 	ro                                      wait
+ /dev/ubi0_3     /data           ubifs   nosuid,nodev,nodiratime,noatime         wait
+ /dev/ubi0_1     /cache          ubifs   nosuid,nodev                            wait
+diff --git a/sabreauto_6q/overlay/frameworks/base/core/res/res/xml/storage_list.xml b/sabreauto_6q/overlay/frameworks/base/core/res/res/xml/storage_list.xml
+deleted file mode 100644
+index 3639bdc..0000000
+--- a/sabreauto_6q/overlay/frameworks/base/core/res/res/xml/storage_list.xml
++++ /dev/null
+@@ -1,49 +0,0 @@
+-<?xml version="1.0" encoding="utf-8"?>
+-<!--
+-**
+-** Copyright 2011, The Android Open Source Project
+-**
+-** Licensed under the Apache License, Version 2.0 (the "License")
+-** you may not use this file except in compliance with the License.
+-** You may obtain a copy of the License at
+-**
+-**     http://www.apache.org/licenses/LICENSE-2.0
+-**
+-** Unless required by applicable law or agreed to in writing, software
+-** distributed under the License is distributed on an "AS IS" BASIS,
+-** WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+-** See the License for the specific language governing permissions and
+-** limitations under the License.
+-*/
+--->
+-
+-<!-- The <device> element should contain one or more <storage> elements.
+-     Exactly one of these should have the attribute primary="true".
+-     This storage will be the primary external storage and should have path="/mnt/sdcard".
+-     Each storage should have both a path and description attribute set.
+-     The following boolean attributes are optional:
+-
+-        primary:    this storage is the primary external storage
+-        removable:  this is removable storage (for example, a real SD card)
+-        emulated:   the storage is emulated via the FUSE sdcard daemon
+-        mtp-reserve: number of megabytes of storage MTP should reserve for free storage
+-                     (used for emulated storage that is shared with system's data partition)
+-
+-      A storage should not have both emulated and removable set to true
+--->
+-
+-<StorageList xmlns:android="http://schemas.android.com/apk/res/android">
+-    <storage android:storageDescription="@string/storage_internal"
+-             android:primary="true"
+-             android:emulated="true"
+-             android:mtpReserve="100" />
+-    <storage android:mountPoint="/storage/extsd"
+-             android:storageDescription="@string/storage_sd_card"
+-             android:primary="false"
+-             android:removable="true" />
+-    <storage android:mountPoint="/storage/udisk"
+-             android:storageDescription="@string/storage_usb"
+-             android:primary="false"
+-             android:removable="true" />
+-</StorageList>
+-
+diff --git a/sabreauto_6sx/fstab-f2fs.freescale b/sabreauto_6sx/fstab-f2fs.freescale
+index f8ad696..c5eadf6 100644
+--- a/sabreauto_6sx/fstab-f2fs.freescale
++++ b/sabreauto_6sx/fstab-f2fs.freescale
+@@ -3,8 +3,8 @@
+ # The filesystem that contains the filesystem checker binary (typically /system) cannot
+ # specify MF_CHECK, and must come before any filesystems that do specify MF_CHECK
+ 
+-/devices/soc0/soc.0/2100000.aips-bus/219c000.usdhc/mmc_host /mnt/media_rw/extsd vfat defaults voldmanaged=extsd:auto
+-/devices/soc0/soc.0/2100000.aips-bus/2184000.usb/ci_hdrc.0  /mnt/media_rw/udisk vfat defaults voldmanaged=udisk:auto
++/devices/soc0/soc.0/2100000.aips-bus/219c000.usdhc/mmc_host* auto auto defaults voldmanaged=extsd:auto,encryptable=userdata
++/devices/soc0/soc.0/2100000.aips-bus/2184000.usb/ci_hdrc.0*  auto auto defaults voldmanaged=udisk:auto
+ /dev/block/mmcblk2p5    /system      ext4    ro                                                                               wait
+ /dev/block/mmcblk2p4    /data        f2fs    nosuid,nodev,noatime    wait,encryptable=/dev/block/mmcblk2p9
+ /dev/block/mmcblk2p4    /data        ext4    nosuid,nodev,nodiratime,noatime,nomblk_io_submit,noauto_da_alloc,errors=panic    wait,encryptable=/dev/block/mmcblk2p9
+diff --git a/sabreauto_6sx/fstab.freescale b/sabreauto_6sx/fstab.freescale
+index 5b57950..6c3a37f 100644
+--- a/sabreauto_6sx/fstab.freescale
++++ b/sabreauto_6sx/fstab.freescale
+@@ -3,8 +3,8 @@
+ # The filesystem that contains the filesystem checker binary (typically /system) cannot
+ # specify MF_CHECK, and must come before any filesystems that do specify MF_CHECK
+ 
+-/devices/soc0/soc.0/2100000.aips-bus/219c000.usdhc/mmc_host /mnt/media_rw/extsd vfat defaults voldmanaged=extsd:auto
+-/devices/soc0/soc.0/2100000.aips-bus/2184000.usb/ci_hdrc.0  /mnt/media_rw/udisk vfat defaults voldmanaged=udisk:auto
++/devices/soc0/soc.0/2100000.aips-bus/219c000.usdhc/mmc_host* auto auto defaults voldmanaged=extsd:auto,encryptable=userdata
++/devices/soc0/soc.0/2100000.aips-bus/2184000.usb/ci_hdrc.0*  auto auto defaults voldmanaged=udisk:auto
+ /dev/block/mmcblk2p5    /system      ext4    ro,barrier=1                                                                               wait,verify
+ /dev/block/mmcblk2p4    /data        ext4    nosuid,nodev,nodiratime,noatime,nomblk_io_submit,noauto_da_alloc,errors=panic    wait,encryptable=/dev/block/mmcblk2p9
+ /dev/block/mmcblk2p6    /cache       ext4    nosuid,nodev,nomblk_io_submit                                                    wait
+diff --git a/sabreauto_6sx/fstab_nand.freescale b/sabreauto_6sx/fstab_nand.freescale
+index b9e3394..aa1d633 100644
+--- a/sabreauto_6sx/fstab_nand.freescale
++++ b/sabreauto_6sx/fstab_nand.freescale
+@@ -5,8 +5,8 @@
+ 
+ # below is for ubi support, uncomment to support ubifs(NAND)
+ 
+-/devices/soc0/soc.0/2100000.aips-bus/219c000.usdhc/mmc_host /mnt/media_rw/extsd vfat defaults voldmanaged=extsd:auto
+-/devices/soc0/soc.0/2100000.aips-bus/2184000.usb/ci_hdrc.0 /mnt/media_rw/udisk vfat defaults voldmanaged=udisk:auto
++/devices/soc0/soc.0/2100000.aips-bus/219c000.usdhc/mmc_host* auto auto defaults voldmanaged=extsd:auto,encryptable=userdata
++/devices/soc0/soc.0/2100000.aips-bus/2184000.usb/ci_hdrc.0*  auto auto defaults voldmanaged=udisk:auto
+ /dev/ubi0_0     /system		    ubifs 	ro                                      wait
+ /dev/ubi0_3     /data           ubifs   nosuid,nodev,nodiratime,noatime         wait
+ /dev/ubi0_1     /cache          ubifs   nosuid,nodev                            wait
+diff --git a/sabreauto_6sx/overlay/frameworks/base/core/res/res/xml/storage_list.xml b/sabreauto_6sx/overlay/frameworks/base/core/res/res/xml/storage_list.xml
+deleted file mode 100644
+index 3639bdc..0000000
+--- a/sabreauto_6sx/overlay/frameworks/base/core/res/res/xml/storage_list.xml
++++ /dev/null
+@@ -1,49 +0,0 @@
+-<?xml version="1.0" encoding="utf-8"?>
+-<!--
+-**
+-** Copyright 2011, The Android Open Source Project
+-**
+-** Licensed under the Apache License, Version 2.0 (the "License")
+-** you may not use this file except in compliance with the License.
+-** You may obtain a copy of the License at
+-**
+-**     http://www.apache.org/licenses/LICENSE-2.0
+-**
+-** Unless required by applicable law or agreed to in writing, software
+-** distributed under the License is distributed on an "AS IS" BASIS,
+-** WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+-** See the License for the specific language governing permissions and
+-** limitations under the License.
+-*/
+--->
+-
+-<!-- The <device> element should contain one or more <storage> elements.
+-     Exactly one of these should have the attribute primary="true".
+-     This storage will be the primary external storage and should have path="/mnt/sdcard".
+-     Each storage should have both a path and description attribute set.
+-     The following boolean attributes are optional:
+-
+-        primary:    this storage is the primary external storage
+-        removable:  this is removable storage (for example, a real SD card)
+-        emulated:   the storage is emulated via the FUSE sdcard daemon
+-        mtp-reserve: number of megabytes of storage MTP should reserve for free storage
+-                     (used for emulated storage that is shared with system's data partition)
+-
+-      A storage should not have both emulated and removable set to true
+--->
+-
+-<StorageList xmlns:android="http://schemas.android.com/apk/res/android">
+-    <storage android:storageDescription="@string/storage_internal"
+-             android:primary="true"
+-             android:emulated="true"
+-             android:mtpReserve="100" />
+-    <storage android:mountPoint="/storage/extsd"
+-             android:storageDescription="@string/storage_sd_card"
+-             android:primary="false"
+-             android:removable="true" />
+-    <storage android:mountPoint="/storage/udisk"
+-             android:storageDescription="@string/storage_usb"
+-             android:primary="false"
+-             android:removable="true" />
+-</StorageList>
+-
+diff --git a/sabresd_6dq/fstab-f2fs.freescale b/sabresd_6dq/fstab-f2fs.freescale
+index 9047a4e..ec77a5d 100644
+--- a/sabresd_6dq/fstab-f2fs.freescale
++++ b/sabresd_6dq/fstab-f2fs.freescale
+@@ -3,8 +3,8 @@
+ # The filesystem that contains the filesystem checker binary (typically /system) cannot
+ # specify MF_CHECK, and must come before any filesystems that do specify MF_CHECK
+ 
+-/devices/soc0/soc.0/2100000.aips-bus/2198000.usdhc/mmc_host /mnt/media_rw/extsd vfat defaults voldmanaged=extsd:auto
+-/devices/soc0/soc.0/2100000.aips-bus/2184000.usb/ci_hdrc.0  /mnt/media_rw/udisk vfat defaults voldmanaged=udisk:auto
++/devices/soc0/soc.0/2100000.aips-bus/2198000.usdhc/mmc_host* auto auto defaults voldmanaged=extsd:auto,encryptable=userdata
++/devices/soc0/soc.0/2100000.aips-bus/2184000.usb/ci_hdrc.0*  auto auto defaults voldmanaged=udisk:auto
+ /dev/block/mmcblk3p5    /system      ext4    ro                                                                               wait
+ /dev/block/mmcblk3p4    /data        f2fs    nosuid,nodev,noatime    wait,encryptable=/dev/block/mmcblk3p9
+ /dev/block/mmcblk3p4    /data        ext4    nosuid,nodev,nodiratime,noatime,nomblk_io_submit,noauto_da_alloc,errors=panic    wait,encryptable=/dev/block/mmcblk3p9
+diff --git a/sabresd_6dq/fstab.freescale b/sabresd_6dq/fstab.freescale
+index 7f23edb..d3e46e5 100644
+--- a/sabresd_6dq/fstab.freescale
++++ b/sabresd_6dq/fstab.freescale
+@@ -3,8 +3,8 @@
+ # The filesystem that contains the filesystem checker binary (typically /system) cannot
+ # specify MF_CHECK, and must come before any filesystems that do specify MF_CHECK
+ 
+-/devices/soc0/soc.0/2100000.aips-bus/2198000.usdhc/mmc_host /mnt/media_rw/extsd vfat defaults voldmanaged=extsd:auto
+-/devices/soc0/soc.0/2100000.aips-bus/2184000.usb/ci_hdrc.0  /mnt/media_rw/udisk vfat defaults voldmanaged=udisk:auto
++/devices/soc0/soc.0/2100000.aips-bus/2198000.usdhc/mmc_host* auto auto defaults voldmanaged=extsd:auto,encryptable=userdata
++/devices/soc0/soc.0/2100000.aips-bus/2184000.usb/ci_hdrc.0*  auto auto defaults voldmanaged=udisk:auto
+ /dev/block/mmcblk3p5    /system      ext4    ro,barrier=1                                                                               wait,verify
+ /dev/block/mmcblk3p4    /data        ext4    nosuid,nodev,nodiratime,noatime,nomblk_io_submit,noauto_da_alloc,errors=panic    wait,encryptable=/dev/block/mmcblk3p9
+ /dev/block/mmcblk3p6    /cache       ext4    nosuid,nodev,nomblk_io_submit                                                    wait
+diff --git a/sabresd_6dq/fstab_sd-f2fs.freescale b/sabresd_6dq/fstab_sd-f2fs.freescale
+index 2b0dfd3..c800d93 100644
+--- a/sabresd_6dq/fstab_sd-f2fs.freescale
++++ b/sabresd_6dq/fstab_sd-f2fs.freescale
+@@ -3,8 +3,8 @@
+ # The filesystem that contains the filesystem checker binary (typically /system) cannot
+ # specify MF_CHECK, and must come before any filesystems that do specify MF_CHECK
+ 
+-/devices/soc0/soc.0/2100000.aips-bus/2194000.usdhc/mmc_host /mnt/media_rw/extsd vfat defaults voldmanaged=extsd:auto
+-/devices/soc0/soc.0/2100000.aips-bus/2184000.usb/ci_hdrc.0  /mnt/media_rw/udisk vfat defaults voldmanaged=udisk:auto
++/devices/soc0/soc.0/2100000.aips-bus/2194000.usdhc/mmc_host* auto auto defaults voldmanaged=extsd:auto,encryptable=userdata
++/devices/soc0/soc.0/2100000.aips-bus/2184000.usb/ci_hdrc.0*  auto auto defaults voldmanaged=udisk:auto
+ /dev/block/mmcblk2p5    /system      ext4    ro                                                                               wait
+ /dev/block/mmcblk2p4    /data        f2fs    nosuid,nodev,noatime    wait,encryptable=/dev/block/mmcblk2p9
+ /dev/block/mmcblk2p4    /data        ext4    nosuid,nodev,nodiratime,noatime,nomblk_io_submit,noauto_da_alloc,errors=panic    wait,encryptable=/dev/block/mmcblk2p9
+diff --git a/sabresd_6dq/fstab_sd.freescale b/sabresd_6dq/fstab_sd.freescale
+index 802314e..5a9bdc8 100644
+--- a/sabresd_6dq/fstab_sd.freescale
++++ b/sabresd_6dq/fstab_sd.freescale
+@@ -3,8 +3,8 @@
+ # The filesystem that contains the filesystem checker binary (typically /system) cannot
+ # specify MF_CHECK, and must come before any filesystems that do specify MF_CHECK
+ 
+-/devices/soc0/soc.0/2100000.aips-bus/2194000.usdhc/mmc_host /mnt/media_rw/extsd vfat defaults voldmanaged=extsd:auto
+-/devices/soc0/soc.0/2100000.aips-bus/2184000.usb/ci_hdrc.0  /mnt/media_rw/udisk vfat defaults voldmanaged=udisk:auto
++/devices/soc0/soc.0/2100000.aips-bus/2194000.usdhc/mmc_host* auto auto defaults voldmanaged=extsd:auto,encryptable=userdata
++/devices/soc0/soc.0/2100000.aips-bus/2184000.usb/ci_hdrc.0*  auto auto defaults voldmanaged=udisk:auto
+ /dev/block/mmcblk2p5    /system      ext4    ro,barrier=1                                                                               wait,verify
+ /dev/block/mmcblk2p4    /data        ext4    nosuid,nodev,nodiratime,noatime,nomblk_io_submit,noauto_da_alloc,errors=panic    wait,encryptable=/dev/block/mmcblk2p9
+ /dev/block/mmcblk2p6    /cache       ext4    nosuid,nodev,nomblk_io_submit                                                    wait
+diff --git a/sabresd_6dq/overlay/frameworks/base/core/res/res/xml/storage_list.xml b/sabresd_6dq/overlay/frameworks/base/core/res/res/xml/storage_list.xml
+deleted file mode 100644
+index 3639bdc..0000000
+--- a/sabresd_6dq/overlay/frameworks/base/core/res/res/xml/storage_list.xml
++++ /dev/null
+@@ -1,49 +0,0 @@
+-<?xml version="1.0" encoding="utf-8"?>
+-<!--
+-**
+-** Copyright 2011, The Android Open Source Project
+-**
+-** Licensed under the Apache License, Version 2.0 (the "License")
+-** you may not use this file except in compliance with the License.
+-** You may obtain a copy of the License at
+-**
+-**     http://www.apache.org/licenses/LICENSE-2.0
+-**
+-** Unless required by applicable law or agreed to in writing, software
+-** distributed under the License is distributed on an "AS IS" BASIS,
+-** WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+-** See the License for the specific language governing permissions and
+-** limitations under the License.
+-*/
+--->
+-
+-<!-- The <device> element should contain one or more <storage> elements.
+-     Exactly one of these should have the attribute primary="true".
+-     This storage will be the primary external storage and should have path="/mnt/sdcard".
+-     Each storage should have both a path and description attribute set.
+-     The following boolean attributes are optional:
+-
+-        primary:    this storage is the primary external storage
+-        removable:  this is removable storage (for example, a real SD card)
+-        emulated:   the storage is emulated via the FUSE sdcard daemon
+-        mtp-reserve: number of megabytes of storage MTP should reserve for free storage
+-                     (used for emulated storage that is shared with system's data partition)
+-
+-      A storage should not have both emulated and removable set to true
+--->
+-
+-<StorageList xmlns:android="http://schemas.android.com/apk/res/android">
+-    <storage android:storageDescription="@string/storage_internal"
+-             android:primary="true"
+-             android:emulated="true"
+-             android:mtpReserve="100" />
+-    <storage android:mountPoint="/storage/extsd"
+-             android:storageDescription="@string/storage_sd_card"
+-             android:primary="false"
+-             android:removable="true" />
+-    <storage android:mountPoint="/storage/udisk"
+-             android:storageDescription="@string/storage_usb"
+-             android:primary="false"
+-             android:removable="true" />
+-</StorageList>
+-
+diff --git a/sabresd_6sx/fstab-f2fs.freescale b/sabresd_6sx/fstab-f2fs.freescale
+index 4c05671..750655a 100644
+--- a/sabresd_6sx/fstab-f2fs.freescale
++++ b/sabresd_6sx/fstab-f2fs.freescale
+@@ -3,8 +3,8 @@
+ # The filesystem that contains the filesystem checker binary (typically /system) cannot
+ # specify MF_CHECK, and must come before any filesystems that do specify MF_CHECK
+ 
+-/devices/soc0/soc.0/2100000.aips-bus/2198000.usdhc/mmc_host /mnt/media_rw/extsd vfat defaults voldmanaged=extsd:auto
+-/devices/soc0/soc.0/2100000.aips-bus/2184200.usb/ci_hdrc.1  /mnt/media_rw/udisk vfat defaults voldmanaged=udisk:auto
++/devices/soc0/soc.0/2100000.aips-bus/2198000.usdhc/mmc_host* auto auto defaults voldmanaged=extsd:auto,encryptable=userdata
++/devices/soc0/soc.0/2100000.aips-bus/2184200.usb/ci_hdrc.1*  auto auto defaults voldmanaged=udisk:auto
+ /dev/block/mmcblk3p5    /system      ext4    ro                                                                               wait
+ /dev/block/mmcblk3p4    /data        f2fs    nosuid,nodev,noatime    wait,encryptable=/dev/block/mmcblk3p9
+ /dev/block/mmcblk3p4    /data        ext4    nosuid,nodev,nodiratime,noatime,nomblk_io_submit,noauto_da_alloc,errors=panic    wait,encryptable=/dev/block/mmcblk3p9
+diff --git a/sabresd_6sx/fstab.freescale b/sabresd_6sx/fstab.freescale
+index 3da03ec..196641e 100644
+--- a/sabresd_6sx/fstab.freescale
++++ b/sabresd_6sx/fstab.freescale
+@@ -3,8 +3,8 @@
+ # The filesystem that contains the filesystem checker binary (typically /system) cannot
+ # specify MF_CHECK, and must come before any filesystems that do specify MF_CHECK
+ 
+-/devices/soc0/soc.0/2100000.aips-bus/2198000.usdhc/mmc_host /mnt/media_rw/extsd vfat defaults voldmanaged=extsd:auto
+-/devices/soc0/soc.0/2100000.aips-bus/2184200.usb/ci_hdrc.1  /mnt/media_rw/udisk vfat defaults voldmanaged=udisk:auto
++/devices/soc0/soc.0/2100000.aips-bus/2198000.usdhc/mmc_host* auto auto defaults voldmanaged=extsd:auto,encryptable=userdata
++/devices/soc0/soc.0/2100000.aips-bus/2184200.usb/ci_hdrc.1*  auto auto defaults voldmanaged=udisk:auto
+ /dev/block/mmcblk3p5    /system      ext4    ro,barrier=1                                                                               wait,verify
+ /dev/block/mmcblk3p4    /data        ext4    nosuid,nodev,nodiratime,noatime,nomblk_io_submit,noauto_da_alloc,errors=panic    wait,encryptable=/dev/block/mmcblk3p9
+ /dev/block/mmcblk3p6    /cache       ext4    nosuid,nodev,nomblk_io_submit                                                    wait
+diff --git a/sabresd_6sx/overlay/frameworks/base/core/res/res/xml/storage_list.xml b/sabresd_6sx/overlay/frameworks/base/core/res/res/xml/storage_list.xml
+deleted file mode 100644
+index 3639bdc..0000000
+--- a/sabresd_6sx/overlay/frameworks/base/core/res/res/xml/storage_list.xml
++++ /dev/null
+@@ -1,49 +0,0 @@
+-<?xml version="1.0" encoding="utf-8"?>
+-<!--
+-**
+-** Copyright 2011, The Android Open Source Project
+-**
+-** Licensed under the Apache License, Version 2.0 (the "License")
+-** you may not use this file except in compliance with the License.
+-** You may obtain a copy of the License at
+-**
+-**     http://www.apache.org/licenses/LICENSE-2.0
+-**
+-** Unless required by applicable law or agreed to in writing, software
+-** distributed under the License is distributed on an "AS IS" BASIS,
+-** WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+-** See the License for the specific language governing permissions and
+-** limitations under the License.
+-*/
+--->
+-
+-<!-- The <device> element should contain one or more <storage> elements.
+-     Exactly one of these should have the attribute primary="true".
+-     This storage will be the primary external storage and should have path="/mnt/sdcard".
+-     Each storage should have both a path and description attribute set.
+-     The following boolean attributes are optional:
+-
+-        primary:    this storage is the primary external storage
+-        removable:  this is removable storage (for example, a real SD card)
+-        emulated:   the storage is emulated via the FUSE sdcard daemon
+-        mtp-reserve: number of megabytes of storage MTP should reserve for free storage
+-                     (used for emulated storage that is shared with system's data partition)
+-
+-      A storage should not have both emulated and removable set to true
+--->
+-
+-<StorageList xmlns:android="http://schemas.android.com/apk/res/android">
+-    <storage android:storageDescription="@string/storage_internal"
+-             android:primary="true"
+-             android:emulated="true"
+-             android:mtpReserve="100" />
+-    <storage android:mountPoint="/storage/extsd"
+-             android:storageDescription="@string/storage_sd_card"
+-             android:primary="false"
+-             android:removable="true" />
+-    <storage android:mountPoint="/storage/udisk"
+-             android:storageDescription="@string/storage_usb"
+-             android:primary="false"
+-             android:removable="true" />
+-</StorageList>
+-
+diff --git a/sabresd_7d/fstab-f2fs.freescale b/sabresd_7d/fstab-f2fs.freescale
+index ed2c0c9..5e6a260 100644
+--- a/sabresd_7d/fstab-f2fs.freescale
++++ b/sabresd_7d/fstab-f2fs.freescale
+@@ -2,7 +2,7 @@
+ #<src>                                                  <mnt_point>         <type>    <mnt_flags and options>                       <fs_mgr_flags>
+ # The filesystem that contains the filesystem checker binary (typically /system) cannot
+ # specify MF_CHECK, and must come before any filesystems that do specify MF_CHECK
+-/devices/soc.3/30800000.aips-bus/30b20000.usb/ci_hdrc.1 /mnt/media_rw/udisk vfat defaults voldmanaged=udisk:auto
++/devices/soc.3/30800000.aips-bus/30b20000.usb/ci_hdrc.1* auto auto defaults voldmanaged=udisk:auto
+ /dev/block/mmcblk0p5    /system      ext4    ro                                                                               wait
+ /dev/block/mmcblk0p4    /data        f2fs    nosuid,nodev,noatime    wait,encryptable=/dev/block/mmcblk0p9
+ /dev/block/mmcblk0p4    /data        ext4    nosuid,nodev,nodiratime,noatime,nomblk_io_submit,noauto_da_alloc,errors=panic    wait,encryptable=/dev/block/mmcblk0p9
+diff --git a/sabresd_7d/fstab.freescale b/sabresd_7d/fstab.freescale
+index 64239e3..2a97f7e 100644
+--- a/sabresd_7d/fstab.freescale
++++ b/sabresd_7d/fstab.freescale
+@@ -3,7 +3,7 @@
+ # The filesystem that contains the filesystem checker binary (typically /system) cannot
+ # specify MF_CHECK, and must come before any filesystems that do specify MF_CHECK
+ 
+-/devices/soc.3/30800000.aips-bus/30b20000.usb/ci_hdrc.1 /mnt/media_rw/udisk vfat defaults voldmanaged=udisk:auto
++/devices/soc.3/30800000.aips-bus/30b20000.usb/ci_hdrc.1* auto auto defaults voldmanaged=udisk:auto
+ /dev/block/mmcblk0p5    /system      ext4    ro,barrier=1                                                                     wait,verify
+ /dev/block/mmcblk0p4    /data        ext4    nosuid,nodev,nodiratime,noatime,nomblk_io_submit,noauto_da_alloc,errors=panic    wait,encryptable=/dev/block/mmcblk0p9
+ /dev/block/mmcblk0p6    /cache       ext4    nosuid,nodev,nomblk_io_submit                                                    wait
+diff --git a/sabresd_7d/overlay/frameworks/base/core/res/res/xml/storage_list.xml b/sabresd_7d/overlay/frameworks/base/core/res/res/xml/storage_list.xml
+deleted file mode 100644
+index 3639bdc..0000000
+--- a/sabresd_7d/overlay/frameworks/base/core/res/res/xml/storage_list.xml
++++ /dev/null
+@@ -1,49 +0,0 @@
+-<?xml version="1.0" encoding="utf-8"?>
+-<!--
+-**
+-** Copyright 2011, The Android Open Source Project
+-**
+-** Licensed under the Apache License, Version 2.0 (the "License")
+-** you may not use this file except in compliance with the License.
+-** You may obtain a copy of the License at
+-**
+-**     http://www.apache.org/licenses/LICENSE-2.0
+-**
+-** Unless required by applicable law or agreed to in writing, software
+-** distributed under the License is distributed on an "AS IS" BASIS,
+-** WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+-** See the License for the specific language governing permissions and
+-** limitations under the License.
+-*/
+--->
+-
+-<!-- The <device> element should contain one or more <storage> elements.
+-     Exactly one of these should have the attribute primary="true".
+-     This storage will be the primary external storage and should have path="/mnt/sdcard".
+-     Each storage should have both a path and description attribute set.
+-     The following boolean attributes are optional:
+-
+-        primary:    this storage is the primary external storage
+-        removable:  this is removable storage (for example, a real SD card)
+-        emulated:   the storage is emulated via the FUSE sdcard daemon
+-        mtp-reserve: number of megabytes of storage MTP should reserve for free storage
+-                     (used for emulated storage that is shared with system's data partition)
+-
+-      A storage should not have both emulated and removable set to true
+--->
+-
+-<StorageList xmlns:android="http://schemas.android.com/apk/res/android">
+-    <storage android:storageDescription="@string/storage_internal"
+-             android:primary="true"
+-             android:emulated="true"
+-             android:mtpReserve="100" />
+-    <storage android:mountPoint="/storage/extsd"
+-             android:storageDescription="@string/storage_sd_card"
+-             android:primary="false"
+-             android:removable="true" />
+-    <storage android:mountPoint="/storage/udisk"
+-             android:storageDescription="@string/storage_usb"
+-             android:primary="false"
+-             android:removable="true" />
+-</StorageList>
+-
+-- 
+1.8.0
+

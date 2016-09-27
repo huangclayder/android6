@@ -1,0 +1,29 @@
+From 4b78babd12a6279a5237197f9b35a0d4dcdd462f Mon Sep 17 00:00:00 2001
+From: "guoyin.chen" <guoyin.chen@freescale.com>
+Date: Thu, 3 Jul 2014 14:43:10 +0800
+Subject: [PATCH 339/602] ENGR00312292 UI: takes around 10s to create a user
+ and occur Launcher stop
+
+Remove the multi user feature for SX since it is low end product
+
+Signed-off-by: guoyin.chen <guoyin.chen@freescale.com>
+---
+ sabresd_6sx/overlay/frameworks/base/core/res/res/values/config.xml | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/sabresd_6sx/overlay/frameworks/base/core/res/res/values/config.xml b/sabresd_6sx/overlay/frameworks/base/core/res/res/values/config.xml
+index 17a281f..b9d0d9b 100755
+--- a/sabresd_6sx/overlay/frameworks/base/core/res/res/values/config.xml
++++ b/sabresd_6sx/overlay/frameworks/base/core/res/res/values/config.xml
+@@ -175,7 +175,7 @@
+     <dimen name="config_viewConfigurationTouchSlop">24dp</dimen>
+ 
+     <!--  Maximum number of supported users -->
+-    <integer name="config_multiuserMaximumUsers">8</integer>
++    <integer name="config_multiuserMaximumUsers">1</integer>
+ 
+     <!-- Whether a software navigation bar should be shown. NOTE: in the future this may be
+          autodetected from the Configuration. -->
+-- 
+1.8.0
+

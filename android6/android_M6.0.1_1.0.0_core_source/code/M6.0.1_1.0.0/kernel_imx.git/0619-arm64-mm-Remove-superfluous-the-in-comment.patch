@@ -1,0 +1,31 @@
+From 4f9ae8016af240b3939178262e313462d2a6667a Mon Sep 17 00:00:00 2001
+From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+Date: Tue, 11 Mar 2014 11:23:39 +0100
+Subject: [PATCH] arm64: mm: Remove superfluous "the" in comment
+
+Signed-off-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+Cc: Catalin Marinas <catalin.marinas@arm.com>
+Cc: linux-arm-kernel@lists.infradead.org
+Signed-off-by: Jiri Kosina <jkosina@suse.cz>
+(cherry picked from commit aad9061bf37e05d29a2a94ae8fe1e12d8808a0dd)
+Signed-off-by: Mark Brown <broonie@linaro.org>
+---
+ arch/arm64/include/asm/pgtable.h | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/arch/arm64/include/asm/pgtable.h b/arch/arm64/include/asm/pgtable.h
+index cb63d93..797e26b 100644
+--- a/arch/arm64/include/asm/pgtable.h
++++ b/arch/arm64/include/asm/pgtable.h
+@@ -409,7 +409,7 @@ extern pgd_t idmap_pg_dir[PTRS_PER_PGD];
+ 
+ /*
+  * Ensure that there are not more swap files than can be encoded in the kernel
+- * the PTEs.
++ * PTEs.
+  */
+ #define MAX_SWAPFILES_CHECK() BUILD_BUG_ON(MAX_SWAPFILES_SHIFT > __SWP_TYPE_BITS)
+ 
+-- 
+1.8.0
+

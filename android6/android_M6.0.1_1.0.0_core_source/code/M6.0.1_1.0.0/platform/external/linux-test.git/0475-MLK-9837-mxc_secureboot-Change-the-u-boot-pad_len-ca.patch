@@ -1,0 +1,37 @@
+From e2d59c8ad0b44458fc1af9b044d4660766e8438b Mon Sep 17 00:00:00 2001
+From: "Ye.Li" <B37916@freescale.com>
+Date: Thu, 13 Nov 2014 14:28:51 +0800
+Subject: [PATCH 475/505] MLK-9837 mxc_secureboot: Change the u-boot pad_len
+ calculation
+
+Change the pad_len calculation to parsing the IVT head and
+set the pad_len = ivt.csf - ivt.self. Aligning to 0x1000 can work for
+v2013 u-boot which is already aligned to 0x1000, but causes problem to
+v2014.04 u-boot whose the &CSF - &IVT_head is not aligned to 0x1000.
+
+Signed-off-by: Ye.Li <B37916@freescale.com>
+---
+ test/mxc_secureboot/V2012/u-boot/mk_secure_uboot | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
+
+diff --git a/test/mxc_secureboot/V2012/u-boot/mk_secure_uboot b/test/mxc_secureboot/V2012/u-boot/mk_secure_uboot
+index 5458178..2791a3a 100755
+--- a/test/mxc_secureboot/V2012/u-boot/mk_secure_uboot
++++ b/test/mxc_secureboot/V2012/u-boot/mk_secure_uboot
+@@ -18,10 +18,12 @@ printf "Make Sure Your \"u-boot.imx\" is up to date...\n"
+ 
+ 
+ let ddr_addr=$(hexdump -n 4 -s 32 -e '/4 "0x%08x\t" "\n"' u-boot.imx)
++let ivt_self=$(hexdump -n 4 -s 20 -e '/4 "0x%08x\t" "\n"' u-boot.imx)
++let ivt_csf=$(hexdump -n 4 -s 24 -e '/4 "0x%08x\t" "\n"' u-boot.imx)
+ 
+ # Calculate the size
+ let uboot_size=$(ls -lct u-boot.imx | awk '{print $5}')
+-let pad_len=$(((uboot_size + 0xfff) & 0xfffff000)) # align to 0x1000
++let pad_len=$((ivt_csf - ivt_self))
+ let sig_len=$((pad_len + 0x2000))
+ let ivt_offset=0x0
+ let auth_len=$((pad_len - ivt_offset))
+-- 
+1.8.0
+

@@ -1,0 +1,35 @@
+From 905ed14a09d9478123f9ecfef47c2d91cd77587d Mon Sep 17 00:00:00 2001
+From: Mark Brown <broonie@linaro.org>
+Date: Thu, 8 May 2014 12:09:03 +0100
+Subject: [PATCH] dtc: Use general include directory
+
+Since newer DT bindings include references to include/dt-bindings we need
+to make this available to build DTs using them. Upstream has a number of
+reworkings which are much more invasive but featureful, just include a
+minimal fix.
+
+Signed-off-by: Mark Brown <broonie@linaro.org>
+(cherry picked from lsk commit 17b540de3606cf13203bb5c993477b851bdc9485)
+Signed-off-by: Alex Shi <alex.shi@linaro.org>
+
+Conflicts:
+	scripts/Makefile.lib
+---
+ scripts/Makefile.lib | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/scripts/Makefile.lib b/scripts/Makefile.lib
+index 79c059e..5ce9d7d 100644
+--- a/scripts/Makefile.lib
++++ b/scripts/Makefile.lib
+@@ -153,6 +153,7 @@ dtc_cpp_flags  = -Wp,-MD,$(depfile).pre.tmp -nostdinc                    \
+ 		 -I$(srctree)/arch/$(SRCARCH)/boot/dts                   \
+ 		 -I$(srctree)/arch/$(SRCARCH)/boot/dts/include           \
+ 		 -I$(srctree)/drivers/of/testcase-data                   \
++		 -I$(srctree)/include                                    \
+ 		 -undef -D__DTS__
+ 
+ # Finds the multi-part object the current object will be linked into
+-- 
+1.8.0
+

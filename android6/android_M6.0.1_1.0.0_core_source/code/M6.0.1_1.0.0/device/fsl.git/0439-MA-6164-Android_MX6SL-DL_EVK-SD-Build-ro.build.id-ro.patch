@@ -1,0 +1,81 @@
+From ca5b272701dd28eb6d4af70d2c2ab24b6f434f87 Mon Sep 17 00:00:00 2001
+From: zhang sanshan <b51434@freescale.com>
+Date: Mon, 9 Feb 2015 13:28:36 +0800
+Subject: [PATCH 439/602] MA-6164 [Android_MX6SL/DL_EVK/SD] Build:
+ ro.build.id, ro.build.version.incremental is out of
+ date. 100%
+
+change ro.build.version.incremental and ro.build.id
+
+Signed-off-by: zhang sanshan <b51434@freescale.com>
+---
+ evk_6sl/build_id.mk       | 4 ++--
+ sabreauto_6q/build_id.mk  | 4 ++--
+ sabreauto_6sx/build_id.mk | 4 ++--
+ sabresd_6dq/build_id.mk   | 4 ++--
+ sabresd_6sx/build_id.mk   | 4 ++--
+ 5 files changed, 10 insertions(+), 10 deletions(-)
+
+diff --git a/evk_6sl/build_id.mk b/evk_6sl/build_id.mk
+index 5b9d9d2..2a6698a 100755
+--- a/evk_6sl/build_id.mk
++++ b/evk_6sl/build_id.mk
+@@ -18,5 +18,5 @@
+ # (like "CRB01").  It must be a single word, and is
+ # capitalized by convention.
+ 
+-export BUILD_ID=1.0.0-alpha-rc1
+-export BUILD_NUMBER=20141213
++export BUILD_ID=1.0.0-beta-rc3
++export BUILD_NUMBER=20150323
+diff --git a/sabreauto_6q/build_id.mk b/sabreauto_6q/build_id.mk
+index 5b9d9d2..2a6698a 100644
+--- a/sabreauto_6q/build_id.mk
++++ b/sabreauto_6q/build_id.mk
+@@ -18,5 +18,5 @@
+ # (like "CRB01").  It must be a single word, and is
+ # capitalized by convention.
+ 
+-export BUILD_ID=1.0.0-alpha-rc1
+-export BUILD_NUMBER=20141213
++export BUILD_ID=1.0.0-beta-rc3
++export BUILD_NUMBER=20150323
+diff --git a/sabreauto_6sx/build_id.mk b/sabreauto_6sx/build_id.mk
+index 5b9d9d2..2a6698a 100644
+--- a/sabreauto_6sx/build_id.mk
++++ b/sabreauto_6sx/build_id.mk
+@@ -18,5 +18,5 @@
+ # (like "CRB01").  It must be a single word, and is
+ # capitalized by convention.
+ 
+-export BUILD_ID=1.0.0-alpha-rc1
+-export BUILD_NUMBER=20141213
++export BUILD_ID=1.0.0-beta-rc3
++export BUILD_NUMBER=20150323
+diff --git a/sabresd_6dq/build_id.mk b/sabresd_6dq/build_id.mk
+index 5b9d9d2..2a6698a 100644
+--- a/sabresd_6dq/build_id.mk
++++ b/sabresd_6dq/build_id.mk
+@@ -18,5 +18,5 @@
+ # (like "CRB01").  It must be a single word, and is
+ # capitalized by convention.
+ 
+-export BUILD_ID=1.0.0-alpha-rc1
+-export BUILD_NUMBER=20141213
++export BUILD_ID=1.0.0-beta-rc3
++export BUILD_NUMBER=20150323
+diff --git a/sabresd_6sx/build_id.mk b/sabresd_6sx/build_id.mk
+index 5b9d9d2..2a6698a 100644
+--- a/sabresd_6sx/build_id.mk
++++ b/sabresd_6sx/build_id.mk
+@@ -18,5 +18,5 @@
+ # (like "CRB01").  It must be a single word, and is
+ # capitalized by convention.
+ 
+-export BUILD_ID=1.0.0-alpha-rc1
+-export BUILD_NUMBER=20141213
++export BUILD_ID=1.0.0-beta-rc3
++export BUILD_NUMBER=20150323
+-- 
+1.8.0
+

@@ -1,0 +1,85 @@
+From 893aaa6bc57173bb64deab3041700c9a0da68dfc Mon Sep 17 00:00:00 2001
+From: Zhang Sanshan <b51434@freescale.com>
+Date: Wed, 14 Oct 2015 09:56:04 +0800
+Subject: [PATCH] MA-7051 7d cannot enter recovery mode(0915 daily lp5.1)
+
+Snvs clock manager is added for save power on 7D sdb board.
+Need to enable snvs clock before access SNVS register.
+
+Signed-off-by: Zhang Sanshan <b51434@freescale.com>
+---
+ arch/arm/mach-imx/clk-imx7d.c | 1 +
+ arch/arm/mach-imx/system.c    | 8 ++++++++
+ 2 files changed, 9 insertions(+)
+
+diff --git a/arch/arm/mach-imx/clk-imx7d.c b/arch/arm/mach-imx/clk-imx7d.c
+index 4fe3610..7507671 100644
+--- a/arch/arm/mach-imx/clk-imx7d.c
++++ b/arch/arm/mach-imx/clk-imx7d.c
+@@ -877,6 +877,7 @@ static void __init imx7d_clocks_init(struct device_node *ccm_node)
+ 
+ 	clk_register_clkdev(clks[IMX7D_GPT1_ROOT_CLK], "ipg", "imx-gpt.0");
+ 	clk_register_clkdev(clks[IMX7D_GPT_3M_CLK], "gpt_3m", "imx-gpt.0");
++	clk_register_clkdev(clks[IMX7D_SNVS_ROOT_CLK], "snvs", "imx-snvs.0");
+ 
+ 	for (i = 0; i < ARRAY_SIZE(clks_init_on); i++)
+ 		clk_prepare_enable(clks[clks_init_on[i]]);
+diff --git a/arch/arm/mach-imx/system.c b/arch/arm/mach-imx/system.c
+index a7e2e9a..b73fabe 100644
+--- a/arch/arm/mach-imx/system.c
++++ b/arch/arm/mach-imx/system.c
+@@ -61,6 +61,7 @@ void do_switch_recovery(void)
+ {
+ 	u32 reg;
+ 	void *addr;
++	struct clk *snvs_root;
+ 	if(cpu_is_imx6()){
+ 		addr = ioremap(MX6_SNVS_BASE_ADDR, MX6_SNVS_SIZE);
+ 		if (!addr) {
+@@ -71,14 +72,17 @@ void do_switch_recovery(void)
+ 		reg |= ANDROID_RECOVERY_BOOT;
+ 		__raw_writel(reg, (addr + MX6_SNVS_LPGPR));
+ 	}else{
++		snvs_root = clk_get_sys("imx-snvs.0", "snvs");
+ 		addr = ioremap(MX7_SNVS_BASE_ADDR, MX7_SNVS_SIZE);	
+ 		if (!addr) {
+ 			pr_warn("SNVS ioremap failed!\n");
+ 			return;
+ 		}
++		clk_enable(snvs_root);
+ 		reg = __raw_readl(addr + MX7_SNVS_LPGPR);
+ 		reg |= ANDROID_RECOVERY_BOOT;
+ 		__raw_writel(reg, (addr + MX7_SNVS_LPGPR));
++		clk_disable(snvs_root);
+ 	}
+ 	iounmap(addr);
+ }
+@@ -87,6 +91,7 @@ void do_switch_fastboot(void)
+ {
+ 	u32 reg;
+ 	void *addr;
++	struct clk *snvs_root;
+ 	if(cpu_is_imx6()){
+ 		addr = ioremap(MX6_SNVS_BASE_ADDR, MX6_SNVS_SIZE);
+ 		if (!addr) {
+@@ -97,14 +102,17 @@ void do_switch_fastboot(void)
+ 		reg |= ANDROID_FASTBOOT_BOOT;
+ 		__raw_writel(reg, addr + MX6_SNVS_LPGPR);
+ 	}else{
++		snvs_root = clk_get_sys("imx-snvs.0", "snvs");
+ 		addr = ioremap(MX7_SNVS_BASE_ADDR, MX7_SNVS_SIZE);	
+ 		if (!addr) {
+ 			pr_warn("SNVS ioremap failed!\n");
+ 			return;
+ 		}
++		clk_enable(snvs_root);
+ 		reg = __raw_readl(addr + MX7_SNVS_LPGPR);
+ 		reg |= ANDROID_FASTBOOT_BOOT;
+ 		__raw_writel(reg, addr + MX7_SNVS_LPGPR);
++		clk_disable(snvs_root);
+ 	}
+ 	iounmap(addr);
+ }
+-- 
+1.8.0
+

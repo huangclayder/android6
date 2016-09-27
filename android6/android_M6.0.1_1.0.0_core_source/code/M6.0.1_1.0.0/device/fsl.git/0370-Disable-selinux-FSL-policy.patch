@@ -1,0 +1,72 @@
+From bec9930231922e77834a248488f19d32cff4fef8 Mon Sep 17 00:00:00 2001
+From: Ke Qinghua <qinghua.ke@freescale.com>
+Date: Tue, 29 Jul 2014 16:33:39 +0800
+Subject: [PATCH 370/602] Disable selinux FSL policy
+
+Change-Id: I9d9a66bb7d11a83fbb3745d698c07f4bfefdfa64
+Signed-off-by: Ke Qinghua <qinghua.ke@freescale.com>
+---
+ evk_6sl/BoardConfig.mk      | 2 --
+ sabreauto_6q/BoardConfig.mk | 2 --
+ sabresd_6dq/BoardConfig.mk  | 2 --
+ sabresd_6sx/BoardConfig.mk  | 2 --
+ 4 files changed, 8 deletions(-)
+
+diff --git a/evk_6sl/BoardConfig.mk b/evk_6sl/BoardConfig.mk
+index fdff9b7..d4fb86f 100644
+--- a/evk_6sl/BoardConfig.mk
++++ b/evk_6sl/BoardConfig.mk
+@@ -85,8 +85,6 @@ TARGET_BOARD_DTS_CONFIG := imx6sl:imx6sl-evk-csi.dtb
+ BOARD_SEPOLICY_DIRS := \
+        device/fsl/evk_6sl/sepolicy
+ BOARD_SEPOLICY_UNION := \
+-       app.te \
+        file_contexts \
+        fs_use \
+-       untrusted_app.te \
+        genfs_contexts
+diff --git a/sabreauto_6q/BoardConfig.mk b/sabreauto_6q/BoardConfig.mk
+index 421eb43..9382358 100644
+--- a/sabreauto_6q/BoardConfig.mk
++++ b/sabreauto_6q/BoardConfig.mk
+@@ -110,8 +110,6 @@ BOARD_SEPOLICY_DIRS := \
+        device/fsl/sabreauto_6q/sepolicy
+ 
+ BOARD_SEPOLICY_UNION := \
+-       app.te \
+        file_contexts \
+        fs_use \
+-       untrusted_app.te \
+        genfs_contexts
+diff --git a/sabresd_6dq/BoardConfig.mk b/sabresd_6dq/BoardConfig.mk
+index 0d2442c..02deecd 100644
+--- a/sabresd_6dq/BoardConfig.mk
++++ b/sabresd_6dq/BoardConfig.mk
+@@ -114,10 +114,8 @@ BOARD_SEPOLICY_DIRS := \
+        device/fsl/sabresd_6dq/sepolicy
+ 
+ BOARD_SEPOLICY_UNION := \
+-       app.te \
+        file_contexts \
+        fs_use \
+-       untrusted_app.te \
+        genfs_contexts
+ 
+ 
+diff --git a/sabresd_6sx/BoardConfig.mk b/sabresd_6sx/BoardConfig.mk
+index 1b56767..ffd173c 100644
+--- a/sabresd_6sx/BoardConfig.mk
++++ b/sabresd_6sx/BoardConfig.mk
+@@ -112,9 +112,7 @@ BOARD_SEPOLICY_DIRS := \
+        device/fsl/sabresd_6sx/sepolicy
+ 
+ BOARD_SEPOLICY_UNION := \
+-       app.te \
+        file_contexts \
+        fs_use \
+-       untrusted_app.te \
+        genfs_contexts
+ 
+-- 
+1.8.0
+

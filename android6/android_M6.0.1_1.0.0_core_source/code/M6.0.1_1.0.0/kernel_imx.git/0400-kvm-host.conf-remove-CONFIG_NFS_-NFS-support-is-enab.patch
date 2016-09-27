@@ -1,0 +1,38 @@
+From 93778fb43736dbad24fa6df3f4dc17e6070c82da Mon Sep 17 00:00:00 2001
+From: Fathi Boudra <fathi.boudra@linaro.org>
+Date: Fri, 21 Jun 2013 12:51:35 +0300
+Subject: [PATCH] kvm-host.conf: remove CONFIG_NFS_*, NFS support is enabled
+ from linaro-base.conf
+
+Signed-off-by: Fathi Boudra <fathi.boudra@linaro.org>
+---
+ linaro/configs/kvm-host.conf | 15 ---------------
+ 1 file changed, 15 deletions(-)
+
+diff --git a/linaro/configs/kvm-host.conf b/linaro/configs/kvm-host.conf
+index 54b272e..21a40e0 100644
+--- a/linaro/configs/kvm-host.conf
++++ b/linaro/configs/kvm-host.conf
+@@ -8,19 +8,4 @@ CONFIG_KVM_ARM_TIMER=y
+ CONFIG_KVM_ARM_VGIC=y
+ CONFIG_KVM_MMIO=y
+ CONFIG_KVM=y
+-CONFIG_NFS_FS=m
+-CONFIG_NFS_V2=m
+-CONFIG_NFS_V3=m
+-CONFIG_NFS_V3_ACL=y
+-CONFIG_NFS_V4=m
+-CONFIG_NFS_SWAP=y
+-CONFIG_NFS_USE_KERNEL_DNS=y
+-CONFIG_NFSD=m
+-CONFIG_NFSD_V2_ACL=y
+-CONFIG_NFSD_V3=y
+-CONFIG_NFSD_V3_ACL=y
+-CONFIG_NFSD_V4=y
+-CONFIG_NFS_ACL_SUPPORT=m
+-CONFIG_NFS_COMMON=y
+ CONFIG_BLK_DEV_NBD=m
+-
+-- 
+1.8.0
+

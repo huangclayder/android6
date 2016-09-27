@@ -1,0 +1,38 @@
+From 03994a01961bd0b87cccbf10d6025f0cd3ee0739 Mon Sep 17 00:00:00 2001
+From: Liu Ying <Ying.Liu@freescale.com>
+Date: Thu, 23 Apr 2015 17:40:00 +0800
+Subject: [PATCH] MLK-10733 imx: imx6qpsabreauto: Update IPU QoS settings
+
+Update IPU QoS settings from 0x007f007f to 0x77177717
+according to the SoC team's recommendation.  This change
+should be able to balance AXI ID0/2/3 priority and set
+AXI ID1 priority relatively lower, which matches the way
+we use AXI ID0/1/2/3 for IDMAC23(0), regular IDMACs,
+IDMAC27 and IDMAC28 respectively in kernel.  The specific
+priority values for each AXI ID are supposed to be picked
+for the sake of an overall good system performance.
+
+Signed-off-by: Liu Ying <Ying.Liu@freescale.com>
+(cherry picked from commit 7c4bee613dc47c9e2fb147a159236bca04b8618b)
+---
+ board/freescale/mx6qsabreauto/mx6qp.cfg | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/board/freescale/mx6qsabreauto/mx6qp.cfg b/board/freescale/mx6qsabreauto/mx6qp.cfg
+index 3f9f50f..5d55bcc 100644
+--- a/board/freescale/mx6qsabreauto/mx6qp.cfg
++++ b/board/freescale/mx6qsabreauto/mx6qp.cfg
+@@ -152,7 +152,7 @@ DATA 4, 0x020c4080, 0x00000FFF
+ 
+ /* enable AXI cache for VDOA/VPU/IPU */
+ DATA 4, 0x020e0010, 0xF00000CF
+-/* set IPU AXI-id0 Qos=0xf(bypass) AXI-id1 Qos=0x7 */
+-DATA 4, 0x020e0018, 0x007F007F
+-DATA 4, 0x020e001c, 0x007F007F
++/* set IPU AXI-id1 Qos=0x1 AXI-id0/2/3 Qos=0x7 */
++DATA 4, 0x020e0018, 0x77177717
++DATA 4, 0x020e001c, 0x77177717
+ #endif
+-- 
+1.8.0
+

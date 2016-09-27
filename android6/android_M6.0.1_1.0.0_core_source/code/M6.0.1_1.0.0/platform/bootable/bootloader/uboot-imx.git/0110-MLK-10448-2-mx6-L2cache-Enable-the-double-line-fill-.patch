@@ -1,0 +1,32 @@
+From fc806c30a55abfdfaed9f653064b600601cc9836 Mon Sep 17 00:00:00 2001
+From: "Ye.Li" <B37916@freescale.com>
+Date: Mon, 23 Mar 2015 04:56:48 +0800
+Subject: [PATCH] MLK-10448-2 mx6: L2cache: Enable the double line fill for
+ i.MX6DQP
+
+Since i.MX6DQP has fixed the L2 cache issue, enable the double line
+fill feature to provide better performance.
+
+Signed-off-by: Ye.Li <B37916@freescale.com>
+(cherry picked from commit aa8a38edb67d4d1375d10bee9bf46557369fb5c4)
+---
+ arch/arm/cpu/armv7/mx6/soc.c | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/arch/arm/cpu/armv7/mx6/soc.c b/arch/arm/cpu/armv7/mx6/soc.c
+index 2ee0ce7..507f152 100644
+--- a/arch/arm/cpu/armv7/mx6/soc.c
++++ b/arch/arm/cpu/armv7/mx6/soc.c
+@@ -970,6 +970,9 @@ void v7_outer_cache_enable(void)
+ 
+ #ifndef CONFIG_MX6Q
+ 	val |= 0x40800000;
++#else
++	if (is_mx6dqp())
++		val |= 0x40800000;
+ #endif
+ 	writel(val, &pl310->pl310_prefetch_ctrl);
+ 
+-- 
+1.8.0
+

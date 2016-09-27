@@ -1,0 +1,6 @@
+0001-ENGR00256988-wifi-load-diff-exec-in-start-softap.patch
+0002-ENGR00284562-NFS-workaround-one-bug.patch
+0003-MA-5963-Upgrade-kernel-version-from-3.10.y-to-3.14.y.patch
+0004-MA-6859-Use-broadcom-vendor-hostapd-for-bcm4339.patch
+0005-MA-7102-fix-netd-build-error-on-android-6.0-Mashmall.patch
+0006-MA-7250-bcmdhd-use-hostapd-in-Softap.patch

@@ -1,0 +1,99 @@
+From a587a48d81ed7e9217fb957ed948754b1b4e8957 Mon Sep 17 00:00:00 2001
+From: "Ye.Li" <B37916@freescale.com>
+Date: Wed, 30 Sep 2015 16:23:58 +0800
+Subject: [PATCH] MLK-11662-1 imx: mx6ul: Change 14x14 LPDDR2 ARM2 memory size
+ to 256MB
+
+The actual memory size is 256MB not 512MB, otherwise it has a wrap
+problem in memory and will cause memtester failed.
+
+Signed-off-by: Ye.Li <B37916@freescale.com>
+---
+ board/freescale/mx6ul_14x14_lpddr2_arm2/imximage.cfg | 2 +-
+ include/configs/mx6ul_14x14_ddr3_arm2.h              | 2 ++
+ include/configs/mx6ul_14x14_lpddr2_arm2.h            | 4 +++-
+ include/configs/mx6ul_arm2.h                         | 4 ++++
+ 4 files changed, 10 insertions(+), 2 deletions(-)
+
+diff --git a/board/freescale/mx6ul_14x14_lpddr2_arm2/imximage.cfg b/board/freescale/mx6ul_14x14_lpddr2_arm2/imximage.cfg
+index 8075edf..90eb8c4 100644
+--- a/board/freescale/mx6ul_14x14_lpddr2_arm2/imximage.cfg
++++ b/board/freescale/mx6ul_14x14_lpddr2_arm2/imximage.cfg
+@@ -105,7 +105,7 @@ DATA 4 0x021B0018 0x00001748
+ DATA 4 0x021B001C 0x00008000
+ DATA 4 0x021B002C 0x0F9F0682
+ DATA 4 0x021B0030 0x009F0010
+-DATA 4 0x021B0040 0x0000004F
++DATA 4 0x021B0040 0x00000047
+ DATA 4 0x021B0000 0x83100000
+ DATA 4 0x021B001C 0x003F8030
+ DATA 4 0x021B001C 0xFF0A8030
+diff --git a/include/configs/mx6ul_14x14_ddr3_arm2.h b/include/configs/mx6ul_14x14_ddr3_arm2.h
+index 30e074f..8b0b4ba 100644
+--- a/include/configs/mx6ul_14x14_ddr3_arm2.h
++++ b/include/configs/mx6ul_14x14_ddr3_arm2.h
+@@ -29,6 +29,8 @@
+ 
+ #define CONFIG_VIDEO
+ #define CONFIG_FSL_USDHC
++#define CONFIG_BOOTARGS_CMA_SIZE   ""
++
+ #include "mx6ul_arm2.h"
+ 
+ #define PHYS_SDRAM_SIZE			SZ_1G
+diff --git a/include/configs/mx6ul_14x14_lpddr2_arm2.h b/include/configs/mx6ul_14x14_lpddr2_arm2.h
+index 5b29688..30bad9c 100644
+--- a/include/configs/mx6ul_14x14_lpddr2_arm2.h
++++ b/include/configs/mx6ul_14x14_lpddr2_arm2.h
+@@ -40,9 +40,11 @@
+ #undef CONFIG_VIDEO
+ #endif
+ 
++#define CONFIG_BOOTARGS_CMA_SIZE   "cma=96M "
++
+ #include "mx6ul_arm2.h"
+ 
+-#define PHYS_SDRAM_SIZE			SZ_512M
++#define PHYS_SDRAM_SIZE			SZ_256M
+ 
+ #ifdef CONFIG_SYS_USE_SPINOR
+ #define CONFIG_CMD_SF
+diff --git a/include/configs/mx6ul_arm2.h b/include/configs/mx6ul_arm2.h
+index 076cabf..4b4d53a 100644
+--- a/include/configs/mx6ul_arm2.h
++++ b/include/configs/mx6ul_arm2.h
+@@ -108,6 +108,7 @@
+ 
+ #define CONFIG_MFG_ENV_SETTINGS \
+ 	"mfgtool_args=setenv bootargs console=${console},${baudrate} " \
++	    CONFIG_BOOTARGS_CMA_SIZE \
+ 		"rdinit=/linuxrc " \
+ 		"g_mass_storage.stall=0 g_mass_storage.removable=1 " \
+ 		"g_mass_storage.idVendor=0x066F g_mass_storage.idProduct=0x37FF "\
+@@ -128,6 +129,7 @@
+ 	"console=ttymxc0\0" \
+ 	"bootargs=console=ttymxc0,115200 ubi.mtd=3 "  \
+ 		"root=ubi0:rootfs rootfstype=ubifs "		     \
++		CONFIG_BOOTARGS_CMA_SIZE \
+ 		"mtdparts=gpmi-nand:64m(boot),16m(kernel),16m(dtb),-(rootfs)\0"\
+ 	"bootcmd=nand read ${loadaddr} 0x4000000 0x800000;"\
+ 		"nand read ${fdt_addr} 0x5000000 0x100000;"\
+@@ -151,6 +153,7 @@
+ 	"mmcroot=" CONFIG_MMCROOT " rootwait rw\0" \
+ 	"mmcautodetect=yes\0" \
+ 	"mmcargs=setenv bootargs console=${console},${baudrate} " \
++	    CONFIG_BOOTARGS_CMA_SIZE \
+ 		"root=${mmcroot}\0" \
+ 	"loadbootscript=" \
+ 		"fatload mmc ${mmcdev}:${mmcpart} ${loadaddr} ${script};\0" \
+@@ -174,6 +177,7 @@
+ 			"bootz; " \
+ 		"fi;\0" \
+ 	"netargs=setenv bootargs console=${console},${baudrate} " \
++	    CONFIG_BOOTARGS_CMA_SIZE \
+ 		"root=/dev/nfs " \
+ 	"ip=dhcp nfsroot=${serverip}:${nfsroot},v3,tcp\0" \
+ 		"netboot=echo Booting from net ...; " \
+-- 
+1.8.0
+

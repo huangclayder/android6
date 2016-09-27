@@ -1,0 +1,28 @@
+From b1b3479a6d75c0e4625d7d6a5f83e5a8c551f70c Mon Sep 17 00:00:00 2001
+From: Xiaowen Liu <xiaowen.liu@freescale.com>
+Date: Sat, 10 Oct 2015 11:48:52 -0400
+Subject: [PATCH 33/95] ENGR00284852 Make dropping frame as ALOGV log
+
+Avoid too much log for this frame dropping in WFD user case
+
+Signed-off-by: Xiaowen Liu <xiaowen.liu@freescale.com>
+---
+ services/camera/libcameraservice/api1/client2/StreamingProcessor.cpp | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/services/camera/libcameraservice/api1/client2/StreamingProcessor.cpp b/services/camera/libcameraservice/api1/client2/StreamingProcessor.cpp
+index 521a775..6bff7f4 100644
+--- a/services/camera/libcameraservice/api1/client2/StreamingProcessor.cpp
++++ b/services/camera/libcameraservice/api1/client2/StreamingProcessor.cpp
+@@ -807,7 +807,7 @@ status_t StreamingProcessor::processRecordingFrame() {
+         }
+ 
+         if (mRecordingHeapFree == 0) {
+-            ALOGE("%s: Camera %d: No free recording buffers, dropping frame",
++            ALOGV("%s: Camera %d: No free recording buffers, dropping frame",
+                     __FUNCTION__, mId);
+             mRecordingConsumer->releaseBuffer(imgBuffer);
+             return NO_MEMORY;
+-- 
+1.8.0
+

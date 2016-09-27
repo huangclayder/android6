@@ -1,0 +1,32 @@
+From 7e386271c3518426650895aa16bc42d60e1d2fd6 Mon Sep 17 00:00:00 2001
+From: Richard Zhu <r65037@freescale.com>
+Date: Tue, 30 Sep 2014 16:11:57 +0800
+Subject: [PATCH] MLK-10009-6 PCI: designware: Fix one potential assignment
+ error of cfg start
+
+if va_cfg0_base/va_cfg1_base are initialized by
+designware core, the pp->cfg.start is not initialized
+properly, when IORESOURCE_MEM "config" is represented
+as cfg space resource.
+solution: assign cfg_res->start to pp->cfg.start.
+
+Signed-off-by: Richard Zhu <richard.zhu@freescale.com>
+---
+ drivers/pci/host/pcie-designware.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/drivers/pci/host/pcie-designware.c b/drivers/pci/host/pcie-designware.c
+index 1a2b477..3edd94d 100644
+--- a/drivers/pci/host/pcie-designware.c
++++ b/drivers/pci/host/pcie-designware.c
+@@ -450,6 +450,7 @@ int __init dw_pcie_host_init(struct pcie_port *pp)
+ 	if (cfg_res) {
+ 		pp->config.cfg0_size = resource_size(cfg_res)/2;
+ 		pp->config.cfg1_size = resource_size(cfg_res)/2;
++		pp->cfg.start = cfg_res->start;
+ 		pp->cfg0_base = cfg_res->start;
+ 		pp->cfg1_base = cfg_res->start + pp->config.cfg0_size;
+ 
+-- 
+1.8.0
+

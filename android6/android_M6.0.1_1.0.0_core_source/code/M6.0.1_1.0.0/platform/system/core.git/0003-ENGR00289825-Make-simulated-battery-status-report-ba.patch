@@ -1,0 +1,49 @@
+From 396bfc80239230d54dee4ddca3313f32df41249e Mon Sep 17 00:00:00 2001
+From: "guoyin.chen" <guoyin.chen@freescale.com>
+Date: Wed, 27 Nov 2013 13:45:16 +0800
+Subject: [PATCH 03/22] ENGR00289825 Make simulated battery status report
+ based on sys.emulated.battery
+
+Fake a battery status based on sys.emulated.battery property setting
+Boards without battery support should have this property set, due to some
+function like data encryption need to check battery status.
+
+Signed-off-by: guoyin.chen <guoyin.chen@freescale.com>
+---
+ healthd/BatteryMonitor.cpp | 13 +++++++++++++
+ 1 file changed, 13 insertions(+)
+
+diff --git a/healthd/BatteryMonitor.cpp b/healthd/BatteryMonitor.cpp
+index 396dfef..5f11918 100644
+--- a/healthd/BatteryMonitor.cpp
++++ b/healthd/BatteryMonitor.cpp
+@@ -14,6 +14,10 @@
+  * limitations under the License.
+  */
+ 
++/*
++ * Copyright (C) 2013 Freescale Semiconductor, Inc.
++ */
++
+ #define LOG_TAG "healthd"
+ 
+ #include "healthd.h"
+@@ -315,6 +319,15 @@ bool BatteryMonitor::update(void) {
+         KLOG_WARNING(LOG_TAG, "%s\n", dmesgline);
+     }
+ 
++    char prop[PROP_VALUE_MAX];
++    // always report AC plug-in and capacity 100% if emulated.battery is set to 1
++    property_get("sys.emulated.battery", prop, "0");
++    if (!strcmp(prop, "1")){
++        props.chargerAcOnline = true;
++        props.batteryLevel = 100;
++        props.chargerWirelessOnline = false;
++    }
++
+     healthd_mode_ops->battery_update(&props);
+     return props.chargerAcOnline | props.chargerUsbOnline |
+             props.chargerWirelessOnline;
+-- 
+1.8.0
+

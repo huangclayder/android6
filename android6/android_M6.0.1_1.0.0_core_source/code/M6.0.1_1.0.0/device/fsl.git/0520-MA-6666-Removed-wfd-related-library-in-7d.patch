@@ -1,0 +1,33 @@
+From bf9e22b792e6a0e9e80c391d5a7a5fd5bbd03eab Mon Sep 17 00:00:00 2001
+From: Haoran Wang <b50027@freescale.com>
+Date: Wed, 5 Aug 2015 15:51:56 +0800
+Subject: [PATCH 520/602] MA-6666 Removed wfd related library in 7d
+
+Removed wfd sink related library and binary for
+sabresd_7d.
+
+Signed-off-by: Haoran Wang <b50027@freescale.com>
+---
+ imx7/imx7.mk | 4 ----
+ 1 file changed, 4 deletions(-)
+
+diff --git a/imx7/imx7.mk b/imx7/imx7.mk
+index beb4302..6191df4 100644
+--- a/imx7/imx7.mk
++++ b/imx7/imx7.mk
+@@ -18,12 +18,8 @@ PRODUCT_PACKAGES += \
+ 	Email					\
+ 	FSLOta					\
+ 	CactusPlayer                            \
+-	WfdSink                                 \
+-	wfd                                     \
+     A2dpSinkApp                             \
+ 	ethernet                                \
+-	libfsl_wfd.so                           \
+-	fsl.imx.jar                             \
+ 	VideoEditor				\
+ 	FSLProfileApp				\
+ 	FSLProfileService			\
+-- 
+1.8.0
+

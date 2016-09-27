@@ -1,0 +1,99 @@
+From c65895511200804b38b8fed08b7bcea3295716df Mon Sep 17 00:00:00 2001
+From: Ke Qinghua <qinghua.ke@freescale.com>
+Date: Thu, 20 Feb 2014 15:52:18 +0800
+Subject: [PATCH 13/34] ENGR00293354-3 Support build for 3.10 kernel
+
+Enable OTA image generate for 3.10 kernel
+
+Signed-off-by: Ke Qinghua <qinghua.ke@freescale.com>
+
+Conflicts:
+	core/Makefile
+---
+ core/Makefile                | 24 +++++++++++++++++++++---
+ tools/releasetools/common.py |  5 +++++
+ 2 files changed, 26 insertions(+), 3 deletions(-)
+
+diff --git a/core/Makefile b/core/Makefile
+index 60d88dd..1233a9e 100644
+--- a/core/Makefile
++++ b/core/Makefile
+@@ -543,7 +543,7 @@ $(INSTALLED_BOOTIMAGE_TARGET): $(MKBOOTIMG) $(INTERNAL_BOOTIMAGE_FILES)
+ 		DTS_PLATFORM=`echo $$dtsplat | cut -d':' -f1`; \
+ 		DTS_BOARD=`echo $$dtsplat | cut -d':' -f2`; \
+ 		BOOT_IMAGE_BOARD=$(patsubst %.img,%-$$DTS_PLATFORM.img,$@); \
+-		$(MKBOOTIMG) $(INTERNAL_BOOTIMAGE_ARGS) --second kernel_imx/arch/arm/boot/dts/$$DTS_BOARD $(BOARD_MKBOOTIMG_ARGS) --output $@; \
++		$(MKBOOTIMG) $(INTERNAL_BOOTIMAGE_ARGS) --second $(PRODUCT_OUT)/$$DTS_BOARD $(BOARD_MKBOOTIMG_ARGS) --output $@; \
+ 		$(call assert-max-image-size,$@,$(BOARD_BOOTIMAGE_PARTITION_SIZE),raw); \
+ 		cp -f $@ $$BOOT_IMAGE_BOARD; \
+ 	done
+@@ -932,7 +932,7 @@ define build-recoveryimage-target
+ 	DTS_PLATFORM=`echo $$dtsplat | cut -d':' -f1`; \
+ 	DTS_BOARD=`echo $$dtsplat | cut -d':' -f2`; \
+ 	RECOVERY_IMAGE_BOARD=$(patsubst %.img,%-$$DTS_PLATFORM.img,$(1)); \
+-    $(MKBOOTIMG) $(INTERNAL_RECOVERYIMAGE_ARGS) --second kernel_imx/arch/arm/boot/dts/$$DTS_BOARD $(BOARD_MKBOOTIMG_ARGS) --output $(1); \
++	$(MKBOOTIMG) $(INTERNAL_RECOVERYIMAGE_ARGS) --second $(PRODUCT_OUT)/$$DTS_BOARD $(BOARD_MKBOOTIMG_ARGS) --output $(1); \
+     $(call assert-max-image-size,$(1),$(BOARD_RECOVERYIMAGE_PARTITION_SIZE),raw); \
+     cp -f $@ $$RECOVERY_IMAGE_BOARD; \
+   done
+@@ -1586,6 +1586,9 @@ endif
+ ifdef BOARD_KERNEL_PAGESIZE
+ 	$(hide) echo "$(BOARD_KERNEL_PAGESIZE)" > $(zip_root)/RECOVERY/pagesize
+ endif
++ifdef BOARD_KERNEL_DTS
++	$(hide) echo "$(BOARD_KERNEL_DTS)" > $(zip_root)/RECOVERY/dtb
++endif
+ 	@# Components of the boot image
+ 	$(hide) mkdir -p $(zip_root)/BOOT
+ 	$(hide) $(call package_files-copy-root, \
+@@ -1606,6 +1609,9 @@ endif
+ ifdef BOARD_KERNEL_PAGESIZE
+ 	$(hide) echo "$(BOARD_KERNEL_PAGESIZE)" > $(zip_root)/BOOT/pagesize
+ endif
++ifdef BOARD_KERNEL_DTS
++	$(hide) echo "$(BOARD_KERNEL_DTS)" > $(zip_root)/BOOT/dtb
++endif
+ 	$(hide) $(foreach t,$(INSTALLED_RADIOIMAGE_TARGET),\
+ 	            mkdir -p $(zip_root)/RADIO; \
+ 	            $(ACP) $(t) $(zip_root)/RADIO/$(notdir $(t));)
+@@ -1714,8 +1720,20 @@ $(INTERNAL_OTA_PACKAGE_TARGET): $(BUILT_TARGET_FILES_PACKAGE) $(DISTTOOLS)
+ 	   $(if $(OEM_OTA_CONFIG), -o $(OEM_OTA_CONFIG)) \
+ 	   $(BUILT_TARGET_FILES_PACKAGE) $@
+ 
++otagenerate: $(INTERNAL_OTA_PACKAGE_TARGET)
++
+ .PHONY: otapackage
+-otapackage: $(INTERNAL_OTA_PACKAGE_TARGET)
++otapackage:
++	@echo "Package OTA Start...: $@"
++	for dtsplat in $(TARGET_BOARD_DTS_CONFIG); do \
++		DTS_PLATFORM=`echo $$dtsplat | cut -d':' -f1`; \
++		DTS_BOARD=`echo $$dtsplat | cut -d':' -f2`; \
++		export BOARD_KERNEL_DTS="$(PRODUCT_OUT)/$$DTS_BOARD" ; \
++		make otagenerate; \
++		OTA_PACKAGE_BOARD=$(patsubst %.zip,%-$$DTS_PLATFORM.zip,$(INTERNAL_OTA_PACKAGE_TARGET)); \
++		cp -f $(INTERNAL_OTA_PACKAGE_TARGET) $$OTA_PACKAGE_BOARD; \
++	done
++
+ 
+ endif    # recovery_fstab is defined
+ endif    # TARGET_NO_KERNEL != true
+diff --git a/tools/releasetools/common.py b/tools/releasetools/common.py
+index e8a8e9d..a691522 100644
+--- a/tools/releasetools/common.py
++++ b/tools/releasetools/common.py
+@@ -351,6 +351,11 @@ def BuildBootableImage(sourcedir, fs_config_file, info_dict=None):
+     cmd.append("--base")
+     cmd.append(open(fn).read().rstrip("\n"))
+ 
++  fn = os.path.join(sourcedir, "dtb")
++  if os.access(fn, os.F_OK):
++    cmd.append("--second")
++    cmd.append(open(fn).read().rstrip("\n"))
++
+   fn = os.path.join(sourcedir, "pagesize")
+   if os.access(fn, os.F_OK):
+     cmd.append("--pagesize")
+-- 
+1.8.0
+

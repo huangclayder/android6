@@ -1,0 +1,31 @@
+From 3db94d9384235231aa966357049570d35b22af35 Mon Sep 17 00:00:00 2001
+From: Richard Zhu <Richard.Zhu@freescale.com>
+Date: Mon, 26 Jan 2015 14:35:14 +0800
+Subject: [PATCH] MLK-10146 arm: mcc: fix one compile error when DYNAMIC_DEBUG
+ is set
+
+When CONFIG_DYNAMIC_DEBUG is configured, there is one
+compile error in mcc_linux.c file, the memcpy() is not
+defined.
+Fix it by including the linux/string.h header explicitly.
+
+Signed-off-by: Richard Zhu <Richard.Zhu@freescale.com>
+---
+ arch/arm/mach-imx/mcc_linux.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/arch/arm/mach-imx/mcc_linux.c b/arch/arm/mach-imx/mcc_linux.c
+index dee5958..948d64a 100644
+--- a/arch/arm/mach-imx/mcc_linux.c
++++ b/arch/arm/mach-imx/mcc_linux.c
+@@ -14,6 +14,7 @@
+  */
+ 
+ #include <linux/io.h>
++#include <linux/string.h>
+ #include <linux/wait.h>
+ #include <linux/imx_sema4.h>
+ #include "mcc_config.h"
+-- 
+1.8.0
+

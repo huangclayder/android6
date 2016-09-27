@@ -1,0 +1,81 @@
+From ed8fa5dabf062d73a0be00f092d807f0e3d69895 Mon Sep 17 00:00:00 2001
+From: Peng Fan <Peng.Fan@freescale.com>
+Date: Mon, 9 Mar 2015 13:36:51 +0800
+Subject: [PATCH] MLK-10774-27 imx:mx6 fix `Can't find sensor device` for
+ temperature
+
+Add CONFIG_SYS_MALLOC_F and CONFIG_SYS_MALLOC_F_LEN to support
+correctly detect temperature sensor.
+
+Signed-off-by: Peng Fan <Peng.Fan@freescale.com>
+---
+ configs/mx6dlarm2_defconfig           | 2 ++
+ configs/mx6dlarm2_lpddr2_defconfig    | 2 ++
+ configs/mx6qarm2_defconfig            | 2 ++
+ configs/mx6qarm2_lpddr2_defconfig     | 2 ++
+ configs/mx6qarm2_pop_lpddr2_defconfig | 2 ++
+ 5 files changed, 10 insertions(+)
+
+diff --git a/configs/mx6dlarm2_defconfig b/configs/mx6dlarm2_defconfig
+index 31efc3b..25fd21d 100644
+--- a/configs/mx6dlarm2_defconfig
++++ b/configs/mx6dlarm2_defconfig
+@@ -1,5 +1,7 @@
+ CONFIG_SYS_EXTRA_OPTIONS="IMX_CONFIG=board/freescale/mx6qarm2/imximage_mx6dl.cfg,MX6DL,DDR_MB=2048"
+ CONFIG_ARM=y
+ CONFIG_TARGET_MX6QARM2=y
++CONFIG_SYS_MALLOC_F=y
++CONFIG_SYS_MALLOC_F_LEN=0x400
+ CONFIG_DM=y
+ CONFIG_DM_THERMAL=y
+diff --git a/configs/mx6dlarm2_lpddr2_defconfig b/configs/mx6dlarm2_lpddr2_defconfig
+index f0afa7a..edeebb6 100644
+--- a/configs/mx6dlarm2_lpddr2_defconfig
++++ b/configs/mx6dlarm2_lpddr2_defconfig
+@@ -1,5 +1,7 @@
+ CONFIG_SYS_EXTRA_OPTIONS="IMX_CONFIG=board/freescale/mx6qarm2/imximage_mx6dl.cfg,MX6DL,MX6DL_LPDDR2,DDR_MB=512"
+ CONFIG_ARM=y
+ CONFIG_TARGET_MX6QARM2=y
++CONFIG_SYS_MALLOC_F=y
++CONFIG_SYS_MALLOC_F_LEN=0x400
+ CONFIG_DM=y
+ CONFIG_DM_THERMAL=y
+diff --git a/configs/mx6qarm2_defconfig b/configs/mx6qarm2_defconfig
+index 0dab860..cb0f218 100644
+--- a/configs/mx6qarm2_defconfig
++++ b/configs/mx6qarm2_defconfig
+@@ -1,5 +1,7 @@
+ CONFIG_SYS_EXTRA_OPTIONS="IMX_CONFIG=board/freescale/mx6qarm2/imximage.cfg,MX6Q,DDR_MB=2048"
+ CONFIG_ARM=y
+ CONFIG_TARGET_MX6QARM2=y
++CONFIG_SYS_MALLOC_F=y
++CONFIG_SYS_MALLOC_F_LEN=0x400
+ CONFIG_DM=y
+ CONFIG_DM_THERMAL=y
+diff --git a/configs/mx6qarm2_lpddr2_defconfig b/configs/mx6qarm2_lpddr2_defconfig
+index c7bfc64..dc17e0f 100644
+--- a/configs/mx6qarm2_lpddr2_defconfig
++++ b/configs/mx6qarm2_lpddr2_defconfig
+@@ -1,5 +1,7 @@
+ CONFIG_SYS_EXTRA_OPTIONS="IMX_CONFIG=board/freescale/mx6qarm2/imximage.cfg,MX6Q,MX6DQ_LPDDR2,DDR_MB=512"
+ CONFIG_ARM=y
+ CONFIG_TARGET_MX6QARM2=y
++CONFIG_SYS_MALLOC_F=y
++CONFIG_SYS_MALLOC_F_LEN=0x400
+ CONFIG_DM=y
+ CONFIG_DM_THERMAL=y
+diff --git a/configs/mx6qarm2_pop_lpddr2_defconfig b/configs/mx6qarm2_pop_lpddr2_defconfig
+index 8ad41bb..af6d668 100644
+--- a/configs/mx6qarm2_pop_lpddr2_defconfig
++++ b/configs/mx6qarm2_pop_lpddr2_defconfig
+@@ -1,5 +1,7 @@
+ CONFIG_SYS_EXTRA_OPTIONS="IMX_CONFIG=board/freescale/mx6qarm2/imximage.cfg,MX6Q,MX6DQ_POP_LPDDR2,DDR_MB=256"
+ CONFIG_ARM=y
+ CONFIG_TARGET_MX6QARM2=y
++CONFIG_SYS_MALLOC_F=y
++CONFIG_SYS_MALLOC_F_LEN=0x400
+ CONFIG_DM=y
+ CONFIG_DM_THERMAL=y
+-- 
+1.8.0
+

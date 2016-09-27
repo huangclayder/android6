@@ -1,0 +1,35 @@
+From 4b243999378415f707c79e720b76f2caab622e80 Mon Sep 17 00:00:00 2001
+From: lijian <jian.li@freescale.com>
+Date: Sat, 10 Oct 2015 15:52:50 +0800
+Subject: [PATCH] ENGR00133115 Add one audio format for pass through
+
+Add AUDIO_FORMAT_IEC937 definition
+
+Signed-off-by: lijian <jian.li@freescale.com>
+---
+ audio/include/system/audio.h | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/audio/include/system/audio.h b/audio/include/system/audio.h
+index 2f33b2b..a33ec17 100644
+--- a/audio/include/system/audio.h
++++ b/audio/include/system/audio.h
+@@ -262,6 +262,7 @@ typedef enum {
+     AUDIO_FORMAT_E_AC3               = 0x0A000000UL,
+     AUDIO_FORMAT_DTS                 = 0x0B000000UL,
+     AUDIO_FORMAT_DTS_HD              = 0x0C000000UL,
++    AUDIO_FORMAT_IEC937              = 0x0D000000UL,
+     AUDIO_FORMAT_MAIN_MASK           = 0xFF000000UL,
+     AUDIO_FORMAT_SUB_MASK            = 0x00FFFFFFUL,
+ 
+@@ -1363,6 +1364,7 @@ static inline bool audio_is_valid_format(audio_format_t format)
+     case AUDIO_FORMAT_OPUS:
+     case AUDIO_FORMAT_AC3:
+     case AUDIO_FORMAT_E_AC3:
++    case AUDIO_FORMAT_IEC937:
+     case AUDIO_FORMAT_DTS:
+     case AUDIO_FORMAT_DTS_HD:
+         return true;
+-- 
+1.8.0
+

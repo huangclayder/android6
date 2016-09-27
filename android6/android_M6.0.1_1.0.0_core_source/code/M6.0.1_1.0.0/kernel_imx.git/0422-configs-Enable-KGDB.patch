@@ -1,0 +1,23 @@
+From 5f950b39c8719176a03e9a2dbf562fadc9f4f526 Mon Sep 17 00:00:00 2001
+From: Mark Brown <broonie@linaro.org>
+Date: Thu, 22 May 2014 19:43:20 +0100
+Subject: [PATCH] configs: Enable KGDB
+
+Signed-off-by: Mark Brown <broonie@linaro.org>
+---
+ linaro/configs/linaro-base.conf | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/linaro/configs/linaro-base.conf b/linaro/configs/linaro-base.conf
+index 30670cb..34ed2db 100644
+--- a/linaro/configs/linaro-base.conf
++++ b/linaro/configs/linaro-base.conf
+@@ -94,3 +94,5 @@ CONFIG_ENABLE_DEFAULT_TRACERS=y
+ CONFIG_PROC_DEVICETREE=y
+ CONFIG_JUMP_LABEL=y
+ CONFIG_STRICT_DEVMEM=y
++CONFIG_KGDB=y
++CONFIG_KGDB_TESTS=y
+-- 
+1.8.0
+

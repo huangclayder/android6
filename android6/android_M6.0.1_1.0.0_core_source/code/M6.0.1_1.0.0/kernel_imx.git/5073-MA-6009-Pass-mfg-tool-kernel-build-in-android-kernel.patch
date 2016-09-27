@@ -1,0 +1,173 @@
+From c7a7f1c939af031031a20044df333f206a8d9fe6 Mon Sep 17 00:00:00 2001
+From: Zhang Sanshan <b51434@freescale.com>
+Date: Tue, 19 May 2015 09:00:10 +0800
+Subject: [PATCH] MA-6009 Pass mfg tool kernel build in android kernel
+
+This patch pass the building with imx_v7_mfg_defconfig in android project.
+You can use the zImage as the firmware in MFGtool. It refine the kernel code.
+
+Signed-off-by: Zhang Sanshan <b51434@freescale.com>
+---
+ drivers/video/mxc/mxc_hdmi.c      | 14 ++++++++------
+ drivers/video/mxc/mxc_ipuv3_fb.c  |  1 -
+ drivers/video/mxc/mxsfb_sii902x.c | 12 ++++++++----
+ sound/soc/fsl/imx-wm8962.c        |  9 ++++++++-
+ 4 files changed, 24 insertions(+), 12 deletions(-)
+
+diff --git a/drivers/video/mxc/mxc_hdmi.c b/drivers/video/mxc/mxc_hdmi.c
+index 5c476ef..3214444 100644
+--- a/drivers/video/mxc/mxc_hdmi.c
++++ b/drivers/video/mxc/mxc_hdmi.c
+@@ -2024,11 +2024,11 @@ static void hotplug_worker(struct work_struct *work)
+ 			hdmi_writeb(val, HDMI_PHY_POL0);
+ 
+ 			hdmi_set_cable_state(1);
+-
++#ifdef CONFIG_SWITCH
+ 			if (!hdmi->hdmi_data.video_mode.mDVI)
+ 				switch_set_state(&hdmi->sdev_audio, 1);
+ 			switch_set_state(&hdmi->sdev_display, 1);
+-
++#endif
+ 			sprintf(event_string, "EVENT=plugin");
+ 			kobject_uevent_env(&hdmi->pdev->dev.kobj, KOBJ_CHANGE, envp);
+ #ifdef CONFIG_MXC_HDMI_CEC
+@@ -2037,9 +2037,10 @@ static void hotplug_worker(struct work_struct *work)
+ 		} else if (!(phy_int_pol & HDMI_PHY_HPD)) {
+ 			/* Plugout event */
+ 			dev_dbg(&hdmi->pdev->dev, "EVENT=plugout\n");
++#ifdef CONFIG_SWITCH
+ 			switch_set_state(&hdmi->sdev_audio, 0);
+ 			switch_set_state(&hdmi->sdev_display, 0);
+-
++#endif
+ 			hdmi_set_cable_state(0);
+ 			mxc_hdmi_abort_stream();
+ 			mxc_hdmi_cable_disconnected(hdmi);
+@@ -2848,9 +2849,10 @@ static int mxc_hdmi_probe(struct platform_device *pdev)
+ 
+ 	hdmi->sdev_audio.name = "hdmi_audio";
+ 	hdmi->sdev_display.name = "hdmi";
++#ifdef CONFIG_SWITCH
+ 	switch_dev_register(&hdmi->sdev_audio);
+ 	switch_dev_register(&hdmi->sdev_display);
+-
++#endif
+ 	mxc_dispdrv_setdata(hdmi->disp_mxc_hdmi, hdmi);
+ 
+ 	platform_set_drvdata(pdev, hdmi);
+@@ -2879,10 +2881,10 @@ static int mxc_hdmi_remove(struct platform_device *pdev)
+ 	int irq = platform_get_irq(pdev, 0);
+ 
+ 	fb_unregister_client(&hdmi->nb);
+-
++#ifdef CONFIG_SWITCH
+ 	switch_dev_unregister(&hdmi->sdev_audio);
+ 	switch_dev_unregister(&hdmi->sdev_display);
+-
++#endif
+ 	mxc_dispdrv_puthandle(hdmi->disp_mxc_hdmi);
+ 	mxc_dispdrv_unregister(hdmi->disp_mxc_hdmi);
+ 	iounmap(hdmi->gpr_base);
+diff --git a/drivers/video/mxc/mxc_ipuv3_fb.c b/drivers/video/mxc/mxc_ipuv3_fb.c
+index 731fe48..cf2ba9d 100644
+--- a/drivers/video/mxc/mxc_ipuv3_fb.c
++++ b/drivers/video/mxc/mxc_ipuv3_fb.c
+@@ -2671,7 +2671,6 @@ static int mxcfb_suspend(struct platform_device *pdev, pm_message_t state)
+ #ifdef CONFIG_FB_MXC_LOW_PWR_DISPLAY
+ 	void *fbmem;
+ #endif
+-
+ 	if (mxc_fbi->ovfbi) {
+ 		struct mxcfb_info *mxc_fbi_fg =
+ 			(struct mxcfb_info *)mxc_fbi->ovfbi->par;
+diff --git a/drivers/video/mxc/mxsfb_sii902x.c b/drivers/video/mxc/mxsfb_sii902x.c
+index b2721e3..d841f12 100644
+--- a/drivers/video/mxc/mxsfb_sii902x.c
++++ b/drivers/video/mxc/mxsfb_sii902x.c
+@@ -308,15 +308,17 @@ static void det_worker(struct work_struct *work)
+ 		dev_dbg(&sii902x.client->dev, "EVENT=plugin\n");
+ 		sprintf(event_string, "EVENT=plugin");
+ 		sii902x_cable_connected();
+-
++#ifdef CONFIG_SWITCH
+ 		switch_set_state(&sii902x.sdev_audio, 1);
+-
++#endif
+ 	} else {
+ 		sii902x.cable_plugin = 0;
+ 		dev_dbg(&sii902x.client->dev, "EVENT=plugout\n");
+ 		sprintf(event_string, "EVENT=plugout");
+ 		/* Power off sii902x */
++#ifdef CONFIG_SWITCH
+ 		switch_set_state(&sii902x.sdev_audio, 0);
++#endif
+ 		sii902x_poweroff();
+ 	}
+ 	kobject_uevent_env(&sii902x.client->dev.kobj, KOBJ_CHANGE, envp);
+@@ -479,15 +481,17 @@ static int sii902x_probe(struct i2c_client *client,
+ 	fb_register_client(&nb);
+ 
+ 	sii902x.sdev_audio.name = "hdmi_audio";
++#ifdef CONFIG_SWITCH
+ 	switch_dev_register(&sii902x.sdev_audio);
+-
++#endif
+ 	return 0;
+ }
+ 
+ static int sii902x_remove(struct i2c_client *client)
+ {
++#ifdef CONFIG_SWITCH
+ 	switch_dev_unregister(&sii902x.sdev_audio);
+-
++#endif
+ 	fb_unregister_client(&nb);
+ 	sii902x_poweroff();
+ 
+diff --git a/sound/soc/fsl/imx-wm8962.c b/sound/soc/fsl/imx-wm8962.c
+index 7d4088e..d6298a3 100644
+--- a/sound/soc/fsl/imx-wm8962.c
++++ b/sound/soc/fsl/imx-wm8962.c
+@@ -111,13 +111,17 @@ static int hpjack_status_check(void)
+ 
+ 	if (hp_status != priv->hp_active_low) {
+ 		snprintf(buf, 32, "STATE=%d", 2);
++#ifdef CONFIG_SWITCH
+ 		switch_set_state(&priv->sdev, 2);
++#endif
+ 		snd_soc_dapm_disable_pin(&priv->codec->dapm, "Ext Spk");
+ 		ret = imx_hp_jack_gpio.report;
+ 		snd_kctl_jack_report(priv->snd_card, priv->headphone_kctl, 1);
+ 	} else {
+ 		snprintf(buf, 32, "STATE=%d", 0);
++#ifdef CONFIG_SWITCH
+ 		switch_set_state(&priv->sdev, 0);
++#endif
+ 		snd_soc_dapm_enable_pin(&priv->codec->dapm, "Ext Spk");
+ 		ret = 0;
+ 		snd_kctl_jack_report(priv->snd_card, priv->headphone_kctl, 0);
+@@ -632,7 +636,9 @@ audmux_bypass:
+ 	snd_soc_card_set_drvdata(&data->card, data);
+ 
+ 	priv->sdev.name = "h2w";
++#ifdef CONFIG_SWITCH
+ 	ret = switch_dev_register(&priv->sdev);
++#endif
+ 	if (ret < 0) {
+ 		ret = -EINVAL;
+ 		goto fail;
+@@ -689,8 +695,9 @@ static int imx_wm8962_remove(struct platform_device *pdev)
+ 
+ 	driver_remove_file(pdev->dev.driver, &driver_attr_microphone);
+ 	driver_remove_file(pdev->dev.driver, &driver_attr_headphone);
+-
++#ifdef CONFIG_SWITCH
+ 	switch_dev_unregister(&priv->sdev);
++#endif
+ 	return 0;
+ }
+ 
+-- 
+1.8.0
+

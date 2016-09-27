@@ -1,0 +1,28 @@
+From e20790cdd69e8c490bc4799c7d0e8f5112b0db89 Mon Sep 17 00:00:00 2001
+From: Mark Brown <broonie@linaro.org>
+Date: Fri, 22 Aug 2014 13:27:20 -0500
+Subject: [PATCH] mailbox: Fix unneeded backport
+
+v3.14 has reinit_completion()
+
+Signed-off-by: Mark Brown <broonie@linaro.org>
+---
+ drivers/mailbox/mailbox.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/mailbox/mailbox.c b/drivers/mailbox/mailbox.c
+index 9a937ef..63ecc17 100644
+--- a/drivers/mailbox/mailbox.c
++++ b/drivers/mailbox/mailbox.c
+@@ -252,7 +252,7 @@ int mbox_send_message(struct mbox_chan *chan, void *mssg)
+ 
+ 	msg_submit(chan);
+ 
+-	INIT_COMPLETION(chan->tx_complete);
++	reinit_completion(&chan->tx_complete);
+ 
+ 	if (chan->txdone_method	== TXDONE_BY_POLL)
+ 		poll_txdone((unsigned long)chan->mbox);
+-- 
+1.8.0
+

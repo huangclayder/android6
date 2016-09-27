@@ -1,0 +1,55 @@
+From 2ddfba90a86f0ba283171cfd86f9c496fad08eef Mon Sep 17 00:00:00 2001
+From: Fang Hui <b31070@freescale.com>
+Date: Tue, 10 Feb 2015 10:29:59 +0800
+Subject: [PATCH 28/45] MA-6248 - [sabreauto_6dq]: If plug in usb camera, play
+ music,
+
+no audio is heard from ESAI.
+
+When usb camera plug in, besides AUDIO_DEVICE_IN_USB_DEVICE.
+another AUDIO_DEVICE_OUT_DGTL_DOCK_HEADSET is added to audio policy.
+
+For lp, there's two path to detect a usb audio device.
+one is WiredAccessoryManager.java via uevent system call.
+another is UsbHostManager.java via inotify system call.
+
+The usb audio device is handled well in UsbHostManager.java,
+no need handle again in WiredAccessoryManager.java.
+
+In KK, UsbHostManager.java does not report audio device to audio system.
+
+Signed-off-by: Fang Hui <b31070@freescale.com>
+---
+ services/core/java/com/android/server/WiredAccessoryManager.java | 6 ++++--
+ 1 file changed, 4 insertions(+), 2 deletions(-)
+
+diff --git a/services/core/java/com/android/server/WiredAccessoryManager.java b/services/core/java/com/android/server/WiredAccessoryManager.java
+index e0e6070..306abf0 100644
+--- a/services/core/java/com/android/server/WiredAccessoryManager.java
++++ b/services/core/java/com/android/server/WiredAccessoryManager.java
+@@ -1,5 +1,6 @@
+ /*
+  * Copyright (C) 2008 The Android Open Source Project
++ * Copyright (C) 2015 Freescale Semiconductor, Inc.
+  *
+  * Licensed under the Apache License, Version 2.0 (the "License");
+  * you may not use this file except in compliance with the License.
+@@ -368,12 +369,13 @@ final class WiredAccessoryManager implements WiredAccessoryCallbacks {
+             }
+ 
+             // Monitor USB
+-            uei = new UEventInfo(NAME_USB_AUDIO, BIT_USB_HEADSET_ANLG, BIT_USB_HEADSET_DGTL, 0);
++            //usb audio device is handled well by UsbHostManager.java
++           /* uei = new UEventInfo(NAME_USB_AUDIO, BIT_USB_HEADSET_ANLG, BIT_USB_HEADSET_DGTL, 0);
+             if (uei.checkSwitchExists()) {
+                 retVal.add(uei);
+             } else {
+                 Slog.w(TAG, "This kernel does not have usb audio support");
+-            }
++            }*/
+ 
+             // Monitor HDMI
+             //
+-- 
+1.8.0
+

@@ -1,0 +1,49 @@
+From 154355a871b49dac5b57f232a017c924cdcd5813 Mon Sep 17 00:00:00 2001
+From: Sudeep KarkadaNagesha <sudeep.karkadanagesha@arm.com>
+Date: Tue, 25 Sep 2012 17:26:50 +0100
+Subject: [PATCH] ARM: perf: register CPU PMUs with idr types
+
+In order to support multiple, heterogeneous CPU PMUs and distinguish
+them, they cannot be registered as PERF_TYPE_RAW type. Instead we can
+get perf core to allocate a new idr type id for each PMU.
+Userspace applications can refer sysfs entried to find a PMU's type,
+which can then be used in tracking events on individual PMUs.
+
+Signed-off-by: Sudeep KarkadaNagesha <sudeep.karkadanagesha@arm.com>
+(cherry picked from commit be596295d8f906d7626508ad8f9f12687feebde2)
+Signed-off-by: Alex Shi <alex.shi@linaro.org>
+---
+ arch/arm/kernel/perf_event.c     | 3 +++
+ arch/arm/kernel/perf_event_cpu.c | 2 +-
+ 2 files changed, 4 insertions(+), 1 deletion(-)
+
+diff --git a/arch/arm/kernel/perf_event.c b/arch/arm/kernel/perf_event.c
+index 789d846..f37b57c 100644
+--- a/arch/arm/kernel/perf_event.c
++++ b/arch/arm/kernel/perf_event.c
+@@ -86,6 +86,9 @@ armpmu_map_event(struct perf_event *event,
+ 		return armpmu_map_cache_event(cache_map, config);
+ 	case PERF_TYPE_RAW:
+ 		return armpmu_map_raw_event(raw_event_mask, config);
++	default:
++		if (event->attr.type >= PERF_TYPE_MAX)
++			return armpmu_map_raw_event(raw_event_mask, config);
+ 	}
+ 
+ 	return -ENOENT;
+diff --git a/arch/arm/kernel/perf_event_cpu.c b/arch/arm/kernel/perf_event_cpu.c
+index 25c6681..f5eba97 100644
+--- a/arch/arm/kernel/perf_event_cpu.c
++++ b/arch/arm/kernel/perf_event_cpu.c
+@@ -286,7 +286,7 @@ static int cpu_pmu_device_probe(struct platform_device *pdev)
+ 
+ 	pmu->plat_device = pdev;
+ 	cpu_pmu_init(pmu);
+-	ret = armpmu_register(pmu, PERF_TYPE_RAW);
++	ret = armpmu_register(pmu, -1);
+ 
+ 	if (!ret)
+ 		return 0;
+-- 
+1.8.0
+

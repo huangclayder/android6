@@ -1,0 +1,32 @@
+From 719ac2ad7be659d357a995eea01149f109a8e250 Mon Sep 17 00:00:00 2001
+From: fang hui <hui.fang@nxp.com>
+Date: Fri, 26 Feb 2016 10:39:15 +0800
+Subject: [PATCH 633/635] MA-7678 - [sabresd_6dl]: cts
+ testAudioRecordLocalMono16Bit failed
+
+Failed on "updatePeriods 60 <= updatePeriodsReceived 62 <= updatePeriodsMax 61"
+Change capture period size from 1024 to 192,
+So decrease cold start time(when first data received),
+Then the updatePeriodsMax has chance to be 62.
+
+Signed-off-by: fang hui <hui.fang@nxp.com>
+---
+ alsa/tinyalsa_hal.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/alsa/tinyalsa_hal.c b/alsa/tinyalsa_hal.c
+index 45f97dd..787c1cd 100644
+--- a/alsa/tinyalsa_hal.c
++++ b/alsa/tinyalsa_hal.c
+@@ -96,7 +96,7 @@
+ /* number of periods for low power playback */
+ #define PLAYBACK_LONG_PERIOD_COUNT  8
+ /* number of periods for capture */
+-#define CAPTURE_PERIOD_SIZE  1024
++#define CAPTURE_PERIOD_SIZE  192
+ /* number of periods for capture */
+ #define CAPTURE_PERIOD_COUNT 4
+ /* minimum sleep time in out_write() when write threshold is not reached */
+-- 
+1.8.0
+

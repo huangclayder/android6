@@ -1,0 +1,31 @@
+From 8262c1174730f973c2e4467d2cae73012c20b0bd Mon Sep 17 00:00:00 2001
+From: Dong Aisheng <b29396@freescale.com>
+Date: Tue, 9 Dec 2014 18:19:55 +0800
+Subject: [PATCH] MLK-9975-1 doc: flexcan: add trx_wakeup_gpio optional
+ property
+
+This property is used to wakeup transceiver if it's in
+sleep mode.
+
+Signed-off-by: Dong Aisheng <b29396@freescale.com>
+(cherry picked from commit 9fa3b150ae0c4249ca1b6a7aba57d844540aa383)
+(cherry picked from commit b492b7ca89bf8826a3cd5b2513b3235be63101d8)
+---
+ Documentation/devicetree/bindings/net/can/fsl-flexcan.txt | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/Documentation/devicetree/bindings/net/can/fsl-flexcan.txt b/Documentation/devicetree/bindings/net/can/fsl-flexcan.txt
+index d8ffe34..edecb78 100644
+--- a/Documentation/devicetree/bindings/net/can/fsl-flexcan.txt
++++ b/Documentation/devicetree/bindings/net/can/fsl-flexcan.txt
+@@ -26,6 +26,7 @@ Optional properties:
+ - trx_en_gpio : enable gpio
+ - trx_stby_gpio : standby gpio
+ - trx_nerr_gpio : NERR gpio
++- trx_wakeup_gpio : local wakeup gpio
+ 
+ Example:
+ 
+-- 
+1.8.0
+

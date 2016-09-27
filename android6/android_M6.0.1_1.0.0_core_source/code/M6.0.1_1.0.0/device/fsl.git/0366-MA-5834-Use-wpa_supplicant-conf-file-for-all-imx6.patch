@@ -1,0 +1,29 @@
+From 8732ce70ab60346f4c808a8afeec6c1f3222dba8 Mon Sep 17 00:00:00 2001
+From: Wang Haoran <b50027@freescale.com>
+Date: Tue, 4 Nov 2014 13:24:43 +0800
+Subject: [PATCH 366/602] MA-5834 Use wpa_supplicant conf file for all imx6
+
+Use wpa_supplicant configuration files for all
+of the imx6 platforms.
+
+Signed-off-by: Wang Haoran <b50027@freescale.com>
+---
+ common/wifi/Android.mk | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/common/wifi/Android.mk b/common/wifi/Android.mk
+index 60a11fc..71bcb85 100644
+--- a/common/wifi/Android.mk
++++ b/common/wifi/Android.mk
+@@ -23,7 +23,7 @@
+ # *not* include it on all devices, so it is safe even with hardware-specific
+ # components.
+ 
+-ifneq ($(filter sabresd_6dq sabreauto_6q evk_6sl arm2_6sl arm2_6dq sabresd_6sx,$(TARGET_DEVICE)),)
++ifeq ($(TARGET_BOARD_PLATFORM),imx6)
+ 
+ LOCAL_PATH := $(call my-dir)
+ 
+-- 
+1.8.0
+

@@ -1,0 +1,31 @@
+From fd8faeb7a40fc2f9fb331d6ca6a60b64c95d7ee6 Mon Sep 17 00:00:00 2001
+From: Adrian Alonso <aalonso@freescale.com>
+Date: Thu, 10 Dec 2015 13:17:28 -0600
+Subject: [PATCH] MLK-12023-1: ARM: dts: imx: imx6q add busfreq device node
+ label
+
+Add busfreq device node label to allow override busfreq
+properties on machine device tree descriptor
+
+Signed-off-by: Adrian Alonso <aalonso@freescale.com>
+Signed-off-by: Anson Huang <b20788@freescale.com>
+---
+ arch/arm/boot/dts/imx6q.dtsi | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/arch/arm/boot/dts/imx6q.dtsi b/arch/arm/boot/dts/imx6q.dtsi
+index 0298709..9889973 100644
+--- a/arch/arm/boot/dts/imx6q.dtsi
++++ b/arch/arm/boot/dts/imx6q.dtsi
+@@ -81,7 +81,7 @@
+ 	};
+ 
+ 	soc {
+-		busfreq {
++		busfreq: busfreq {
+ 			compatible = "fsl,imx_busfreq";
+ 			clocks = <&clks 171>, <&clks 6>, <&clks 11>, <&clks 104>, <&clks 172>, <&clks 58>,
+ 				<&clks 18>, <&clks 60>, <&clks 20>, <&clks 3>;
+-- 
+1.8.0
+

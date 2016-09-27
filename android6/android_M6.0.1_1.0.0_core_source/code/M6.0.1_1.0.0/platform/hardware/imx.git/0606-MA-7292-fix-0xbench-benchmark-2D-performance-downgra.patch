@@ -1,0 +1,42 @@
+From 69848a34b21e8873c18a3c1719258af017695825 Mon Sep 17 00:00:00 2001
+From: "xuegang.liu" <xuegang.liu@freescale.com>
+Date: Fri, 20 Nov 2015 10:16:47 +0800
+Subject: [PATCH 606/635] MA-7292 fix 0xbench benchmark 2D performance
+ downgrade
+
+0xbench 2D performance downgrade on KK4.4.3 and Lollipop comparing
+with KK4.4.2 release.
+
+The downgrade can be fixed with "MGS-1146" fix in gpu driver and revert
+"MA-6784" workaround. Actually "MGS-1146" fix is the root cause for "MA-6784"
+issue, so with MGS-1146 fix in GPU driver "MA-6784" workaround is not needed
+anymore.
+
+Revert "MA-6784 workaround cache memory allocation."
+
+This reverts commit 5757dc120824d4aa1d08fce0a48b9f9d6bc68311.
+
+Signed-off-by: Richard Liu <r66033@freescale.com>
+---
+ mx6/libgralloc_wrapper/BufferManager.cpp | 5 -----
+ 1 file changed, 5 deletions(-)
+
+diff --git a/mx6/libgralloc_wrapper/BufferManager.cpp b/mx6/libgralloc_wrapper/BufferManager.cpp
+index 4fcd54b..2878077 100755
+--- a/mx6/libgralloc_wrapper/BufferManager.cpp
++++ b/mx6/libgralloc_wrapper/BufferManager.cpp
+@@ -162,11 +162,6 @@ bool BufferManager::useFSLGralloc(int format, int usage)
+ {
+     bool bUseFSLGralloc = true;
+ 
+-    if (((usage & GRALLOC_USAGE_SW_WRITE_OFTEN) == GRALLOC_USAGE_SW_WRITE_OFTEN) ||
+-            ((usage & GRALLOC_USAGE_SW_READ_OFTEN) == GRALLOC_USAGE_SW_READ_OFTEN)) {
+-        return true;
+-    }
+-
+     //RGB format and without video encoder flag
+     if ((format >= HAL_PIXEL_FORMAT_RGBA_8888 && format <= HAL_PIXEL_FORMAT_RGBA_4444)
+        && !(usage & GRALLOC_USAGE_HW_VIDEO_ENCODER)) {
+-- 
+1.8.0
+

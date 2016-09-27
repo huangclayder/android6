@@ -1,0 +1,63 @@
+From 33d8f7cae8f16aecfe461039e42a1ad0b499b46b Mon Sep 17 00:00:00 2001
+From: Xiaowen Liu <xiaowen.liu@freescale.com>
+Date: Wed, 20 Jan 2016 08:07:02 -0500
+Subject: [PATCH 628/635] MA-7543 testBurstVideoSnapshot failed on android
+ mm6.0.
+
+When capture type is snapshot, keep fps value.
+When taking picture, width, height and format are not changed,
+don't stop/start camera to improve camera performance.
+Remove clear messages function when do configure.
+
+Signed-off-by: Xiaowen Liu <xiaowen.liu@freescale.com>
+---
+ mx6/libcamera3/Camera.cpp      | 6 ++++--
+ mx6/libcamera3/VideoStream.cpp | 3 +--
+ 2 files changed, 5 insertions(+), 4 deletions(-)
+
+diff --git a/mx6/libcamera3/Camera.cpp b/mx6/libcamera3/Camera.cpp
+index d27f321..05cd5db 100644
+--- a/mx6/libcamera3/Camera.cpp
++++ b/mx6/libcamera3/Camera.cpp
+@@ -1,5 +1,5 @@
+ /*
+- * Copyright (C) 2015 Freescale Semiconductor, Inc.
++ * Copyright (C) 2015-2016 Freescale Semiconductor, Inc.
+  *
+  * Licensed under the Apache License, Version 2.0 (the "License");
+  * you may not use this file except in compliance with the License.
+@@ -460,7 +460,9 @@ int32_t Camera::processCaptureRequest(camera3_capture_request_t *request)
+             devStream->configure(stillcap);
+         }
+         else {
+-            preview->setFps(fps);
++            if (meta->getRequestType() != TYPE_SNAPSHOT) {
++                preview->setFps(fps);
++            }
+             devStream->configure(preview);
+         }
+     }
+diff --git a/mx6/libcamera3/VideoStream.cpp b/mx6/libcamera3/VideoStream.cpp
+index 7fa5859..271547c 100644
+--- a/mx6/libcamera3/VideoStream.cpp
++++ b/mx6/libcamera3/VideoStream.cpp
+@@ -89,7 +89,7 @@ int32_t VideoStream::configure(sp<Stream> stream)
+     Mutex::Autolock lock(mLock);
+     // when width&height&format are same, keep it to reduce start/stop time.
+     if ((mWidth == stream->width()) && (mHeight == stream->height())
+-         && (mFormat == sensorFormat) && (mFps == stream->fps())) {
++         && (mFormat == sensorFormat) && (stream->isJpeg() || (mFps == stream->fps()))) {
+         return 0;
+     }
+ 
+@@ -102,7 +102,6 @@ int32_t VideoStream::configure(sp<Stream> stream)
+ 
+     ALOGI("%s: w:%d, h:%d, sensor format:0x%x, stream format:0x%x, fps:%d, num:%d",
+            __func__, mWidth, mHeight, mFormat, stream->format(), mFps, mNumBuffers);
+-    mMessageQueue.clearMessages();
+     mMessageQueue.postMessage(new CMessage(MSG_CONFIG, 0), 0);
+ 
+     return 0;
+-- 
+1.8.0
+

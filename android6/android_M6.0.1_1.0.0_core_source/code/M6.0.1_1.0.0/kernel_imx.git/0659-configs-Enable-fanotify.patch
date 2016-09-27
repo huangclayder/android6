@@ -1,0 +1,24 @@
+From 3c922482f4cc14f211bf678512a14b1cc62c49ed Mon Sep 17 00:00:00 2001
+From: Mark Brown <broonie@linaro.org>
+Date: Mon, 18 Aug 2014 11:54:38 -0500
+Subject: [PATCH] configs: Enable fanotify
+
+Some LTP tests use it.
+
+Signed-off-by: Mark Brown <broonie@linaro.org>
+---
+ linaro/configs/linaro-base.conf | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/linaro/configs/linaro-base.conf b/linaro/configs/linaro-base.conf
+index 0620d5e..bbd0f16 100644
+--- a/linaro/configs/linaro-base.conf
++++ b/linaro/configs/linaro-base.conf
+@@ -115,3 +115,4 @@ CONFIG_SECURITY_SELINUX=y
+ CONFIG_EXT4_FS_SECURITY=y
+ CONFIG_BLK_DEV_LOOP=y
+ CONFIG_DEBUG_INFO=y
++CONFIG_FANOTIFY=y
+-- 
+1.8.0
+

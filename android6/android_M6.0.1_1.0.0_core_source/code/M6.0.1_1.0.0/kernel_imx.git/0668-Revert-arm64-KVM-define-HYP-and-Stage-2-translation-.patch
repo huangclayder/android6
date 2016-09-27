@@ -1,0 +1,39 @@
+From 85bd7bbb016e0c91c4c670250c9014be5fefbd52 Mon Sep 17 00:00:00 2001
+From: Alex Shi <alex.shi@linaro.org>
+Date: Thu, 28 Aug 2014 15:23:00 +0800
+Subject: [PATCH] Revert "arm64: KVM: define HYP and Stage-2 translation page
+ flags"
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+This reverts commit 3d20c4a5ebffee4924c20972aea3e68e22ec8ec9 to resolve
+the following build error:
+
+In file included from arch/arm64/kvm/handle_exit.c:26:0:
+arch/arm64/include/asm/kvm_mmu.h: In function ‘kvm_set_s2pmd_writable’:
+arch/arm64/include/asm/kvm_mmu.h:122:19: error: ‘PMD_S2_RDWR’ undeclared (first use in this function)
+  pmd_val(*pmd) |= PMD_S2_RDWR;
+                   ^
+
+Signed-off-by: Alex Shi <alex.shi@linaro.org>
+---
+ arch/arm64/include/asm/pgtable-hwdef.h | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/arch/arm64/include/asm/pgtable-hwdef.h b/arch/arm64/include/asm/pgtable-hwdef.h
+index 2e9d836..b1d2e26 100644
+--- a/arch/arm64/include/asm/pgtable-hwdef.h
++++ b/arch/arm64/include/asm/pgtable-hwdef.h
+@@ -85,6 +85,8 @@
+ #define PTE_S2_RDONLY		(_AT(pteval_t, 1) << 6)   /* HAP[2:1] */
+ #define PTE_S2_RDWR		(_AT(pteval_t, 3) << 6)   /* HAP[2:1] */
+ 
++#define PMD_S2_RDWR		(_AT(pmdval_t, 3) << 6)   /* HAP[2:1] */
++
+ /*
+  * Memory Attribute override for Stage-2 (MemAttr[3:0])
+  */
+-- 
+1.8.0
+

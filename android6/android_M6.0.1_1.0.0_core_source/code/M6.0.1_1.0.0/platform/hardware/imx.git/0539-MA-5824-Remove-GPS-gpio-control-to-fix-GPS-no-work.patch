@@ -1,0 +1,92 @@
+From ac007e8b809ea1324962db7abaef5103b01a54f7 Mon Sep 17 00:00:00 2001
+From: Wang Haoran <b50027@freescale.com>
+Date: Tue, 4 Nov 2014 17:10:16 +0800
+Subject: [PATCH 539/635] MA-5824 Remove GPS gpio control to fix GPS no work
+
+Operating the GPS power here is not correct. As the
+GPS is controlled by the Orini lib which will send
+command to start GPS.
+
+This reverts commit 0633792ea96249a0279dd7b49f46d23c22573952.
+
+Signed-off-by: Wang Haoran <b50027@freescale.com>
+---
+ libgps/athr_gps.c | 27 +++------------------------
+ 1 file changed, 3 insertions(+), 24 deletions(-)
+
+diff --git a/libgps/athr_gps.c b/libgps/athr_gps.c
+index 922aa20..abafed4 100755
+--- a/libgps/athr_gps.c
++++ b/libgps/athr_gps.c
+@@ -1,7 +1,7 @@
+ /*
+ * Copyright (C) 2011 The Android Open Source Project
+ * Copyright (C) 2011 Atheros Communications, Inc.
+-* Copyright (C) 2011-2013 Freescale Semiconductor, Inc.
++* Copyright (C) 2011-2014 Freescale Semiconductor, Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+@@ -41,9 +41,6 @@
+ #define ATHR_GPS
+ #define ATHR_GPSXtra
+ #define ATHR_GPSNi
+-#define GPS_DEVICE_NODE "/sys/class/gpio/gpio64/value"
+-#define GPS_ENABLE 1
+-#define GPS_DISABLE 0
+ 
+ //#define  GPS_DEBUG
+ #undef	 GPS_DEBUG_TOKEN	/* print out NMEA tokens */
+@@ -140,24 +137,6 @@ void gps_state_unlock_fix(GpsState *state) {
+ 	}
+ }
+ 
+-int gps_enable_hardware(int enable) {
+-    ALOGI("%s the GPS", (enable) ? "enabled" : "disabled");
+-    FILE * f = fopen(GPS_DEVICE_NODE, "w");
+-    if (f != NULL) {
+-        if (GPS_ENABLE == enable) {
+-            fwrite("1", 1, 1, f);
+-        }
+-        else {
+-            fwrite("0", 1, 1, f);
+-        }
+-        fclose(f);
+-        return 0;
+-    }
+-    else
+-        ALOGW("GPS node file %s cannot be opened :(", GPS_DEVICE_NODE);
+-    return -1;
+-}
+-
+ int 	gps_opentty(GpsState *state);
+ void 	gps_closetty(GpsState *state);
+ void 	gps_wakeup(GpsState *state);
+@@ -1635,7 +1614,7 @@ Fail:
+ static int athr_gps_init(GpsCallbacks* callbacks)
+ {
+     GpsState*  s = _gps_state;
+-    gps_enable_hardware(GPS_ENABLE);
++
+ 	D("gps state initializing %d",s->init);
+ 
+     s->callbacks = *callbacks;
+@@ -1657,7 +1636,6 @@ athr_gps_cleanup(void)
+ 
+     if (s->init)
+         gps_state_done(s);
+-    gps_enable_hardware(GPS_DISABLE);
+ }
+ 
+ static int athr_gps_start()
+@@ -1696,6 +1674,7 @@ athr_gps_stop()
+ 	D("Try to change state to init");
+ 	//change state to INIT
+ 	GPS_STATUS_CB(s->callbacks, GPS_STATUS_SESSION_END);
++
+     return 0;
+ }
+ 
+-- 
+1.8.0
+

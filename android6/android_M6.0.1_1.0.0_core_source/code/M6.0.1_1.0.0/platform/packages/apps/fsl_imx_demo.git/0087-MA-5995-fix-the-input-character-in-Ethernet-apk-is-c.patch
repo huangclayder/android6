@@ -1,0 +1,82 @@
+From aec8fc66cab848cd1c26419254b027c86fb70b03 Mon Sep 17 00:00:00 2001
+From: Yu Zhen <b53395@freescale.com>
+Date: Wed, 4 Mar 2015 15:12:35 +0800
+Subject: [PATCH 087/115] MA-5995 fix the input character in Ethernet apk is
+ close to the border of app.
+
+add some padding on EditText to make the input character be same as KK's
+GUI aligned with the displayed options.
+
+Signed-off-by: Yu Zhen <b53395@freescale.com>
+---
+ Ethernet/res/layout/advanced_setting.xml | 3 +++
+ Ethernet/res/layout/eth_configure.xml    | 4 ++++
+ 2 files changed, 7 insertions(+)
+
+diff --git a/Ethernet/res/layout/advanced_setting.xml b/Ethernet/res/layout/advanced_setting.xml
+index b6379cd..951e049 100644
+--- a/Ethernet/res/layout/advanced_setting.xml
++++ b/Ethernet/res/layout/advanced_setting.xml
+@@ -52,6 +52,7 @@
+                       android:layout_width="match_parent"
+                       android:layout_height="wrap_content"
+                       android:textSize="18sp"
++                      android:paddingLeft="10dip"
+                       android:textAlignment="viewStart"
+                       android:singleLine="true" />
+ 
+@@ -68,6 +69,7 @@
+                       android:layout_width="match_parent"
+                       android:layout_height="wrap_content"
+                       android:textSize="18sp"
++                      android:paddingLeft="10dip"
+                       android:textAlignment="viewStart"
+                       android:singleLine="true"
+                       android:inputType="number" />
+@@ -85,6 +87,7 @@
+                       android:layout_width="match_parent"
+                       android:layout_height="wrap_content"
+                       android:textSize="18sp"
++                      android:paddingLeft="10dip"
+                       android:textAlignment="viewStart"
+                       android:hint="@string/bypass_hint"
+                       android:singleLine="true"/>
+diff --git a/Ethernet/res/layout/eth_configure.xml b/Ethernet/res/layout/eth_configure.xml
+index 973b8c5..c5478a0 100644
+--- a/Ethernet/res/layout/eth_configure.xml
++++ b/Ethernet/res/layout/eth_configure.xml
+@@ -88,6 +88,7 @@
+                       android:layout_width="match_parent"
+                       android:layout_height="wrap_content"
+                       android:textSize="18sp"
++                      android:paddingLeft="10dip"
+                       android:textAlignment="viewStart"
+                       android:singleLine="true"
+                       android:inputType="phone" />
+@@ -104,6 +105,7 @@
+                       android:layout_width="match_parent"
+                       android:layout_height="wrap_content"
+                       android:textSize="18sp"
++                      android:paddingLeft="10dip"
+                       android:textAlignment="viewStart"
+                       android:singleLine="true"
+                       android:inputType="none" />
+@@ -120,6 +122,7 @@
+                       android:layout_width="match_parent"
+                       android:layout_height="wrap_content"
+                       android:textSize="18sp"
++                      android:paddingLeft="10dip"
+                       android:textAlignment="viewStart"
+                       android:singleLine="true"
+                       android:text="@string/eth_mask_pre"
+@@ -137,6 +140,7 @@
+                       android:layout_width="match_parent"
+                       android:layout_height="wrap_content"
+                       android:textSize="18sp"
++                      android:paddingLeft="10dip"
+                       android:textAlignment="viewStart"
+                       android:singleLine="true"
+                       android:inputType="phone" />
+-- 
+1.8.0
+

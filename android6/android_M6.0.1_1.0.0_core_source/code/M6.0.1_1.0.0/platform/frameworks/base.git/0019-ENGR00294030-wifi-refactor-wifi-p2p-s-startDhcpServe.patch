@@ -1,0 +1,49 @@
+From 64ba2dd625fd9715d7071b9736cb2e5c9965d560 Mon Sep 17 00:00:00 2001
+From: Jianzheng Zhou <jianzheng.zhou@freescale.com>
+Date: Sat, 8 Feb 2014 12:43:07 +0800
+Subject: [PATCH 19/45] ENGR00294030 wifi:refactor wifi p2p's startDhcpServer
+ function
+
+Change to call tethering interface instead of calling
+mNwService.startTethering directly. This will allow p2p app to run
+well concurrently with other tethering app(e.g. usb tethering).
+
+Change-Id: I5e8ffeb5d2d396f48b897cd9396f133e25ecca57
+Signed-off-by: Jianzheng Zhou <jianzheng.zhou@freescale.com>
+---
+ services/core/java/com/android/server/connectivity/Tethering.java | 6 ++++++
+ 1 file changed, 6 insertions(+)
+
+diff --git a/services/core/java/com/android/server/connectivity/Tethering.java b/services/core/java/com/android/server/connectivity/Tethering.java
+index c1aaf07..f01b540 100644
+--- a/services/core/java/com/android/server/connectivity/Tethering.java
++++ b/services/core/java/com/android/server/connectivity/Tethering.java
+@@ -1,5 +1,6 @@
+ /*
+  * Copyright (C) 2010 The Android Open Source Project
++ * Copyright (C) 2014 Freescale Semiconductor, Inc.
+  *
+  * Licensed under the Apache License, Version 2.0 (the "License");
+  * you may not use this file except in compliance with the License.
+@@ -112,6 +113,7 @@ public class Tethering extends BaseNetworkObserver {
+ 
+     // USB is  192.168.42.1 and 255.255.255.0
+     // Wifi is 192.168.43.1 and 255.255.255.0
++    // Wifi P2P is 192.168.49.1 and 255.255.255.0
+     // BT is limited to max default of 5 connections. 192.168.44.1 to 192.168.48.1
+     // with 255.255.255.0
+     // P2P is 192.168.49.1 and 255.255.255.0
+@@ -267,6 +269,10 @@ public class Tethering extends BaseNetworkObserver {
+             for (String regex : mTetherableWifiRegexs) {
+                 if (iface.matches(regex)) return true;
+             }
++            String regex = "p2p0";
++            if (iface.matches(".*" + regex + ".*")) {
++                return true;
++            }
+             return false;
+         }
+     }
+-- 
+1.8.0
+

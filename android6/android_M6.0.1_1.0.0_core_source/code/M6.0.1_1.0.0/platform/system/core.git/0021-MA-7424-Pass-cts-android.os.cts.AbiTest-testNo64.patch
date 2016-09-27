@@ -1,0 +1,29 @@
+From c38fd089825a1a7ea1074c3bb1c81ea313da32a8 Mon Sep 17 00:00:00 2001
+From: Zhang Sanshan <b51434@freescale.com>
+Date: Tue, 29 Dec 2015 14:33:05 +0800
+Subject: [PATCH 21/22] MA-7424 Pass cts android.os.cts.AbiTest#testNo64
+
+testNo64 will check the permission of /mnt/media_rw.
+Keep the permission of media_rw align with AOSP.
+
+Signed-off-by: Zhang Sanshan <b51434@freescale.com>
+---
+ rootdir/init.rc | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/rootdir/init.rc b/rootdir/init.rc
+index d926637..002d1ad 100644
+--- a/rootdir/init.rc
++++ b/rootdir/init.rc
+@@ -64,7 +64,7 @@ on init
+     mkdir /mnt/secure/asec 0700 root root
+     mkdir /mnt/asec 0755 root system
+     mkdir /mnt/obb 0755 root system
+-    mkdir /mnt/media_rw 0751 root media_rw
++    mkdir /mnt/media_rw 0750 root media_rw
+     mkdir /mnt/user 0755 root root
+     mkdir /mnt/user/0 0755 root root
+     mkdir /mnt/expand 0771 system system
+-- 
+1.8.0
+

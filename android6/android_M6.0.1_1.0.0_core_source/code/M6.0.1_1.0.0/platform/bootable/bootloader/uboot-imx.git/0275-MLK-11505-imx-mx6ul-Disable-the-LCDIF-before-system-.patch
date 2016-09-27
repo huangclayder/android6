@@ -1,0 +1,46 @@
+From 8775d76a5b062b13c31267b9ddf2045381b92c4d Mon Sep 17 00:00:00 2001
+From: "Ye.Li" <B37916@freescale.com>
+Date: Tue, 8 Sep 2015 18:00:43 +0800
+Subject: [PATCH] MLK-11505 imx: mx6ul: Disable the LCDIF before system reset
+
+We meet reset failure on mx6ul 9x9 evk. The internal reset logic between MMDC and
+functional modules seems relate with the issue.
+Turn off the LCDIF to stop DDR access before reset to avoid this possible internal
+reset problem.
+
+Signed-off-by: Peng Fan <Peng.Fan@freescale.com>
+Signed-off-by: Ye.Li <B37916@freescale.com>
+---
+ arch/arm/cpu/armv7/mx6/soc.c | 9 +++++++++
+ 1 file changed, 9 insertions(+)
+
+diff --git a/arch/arm/cpu/armv7/mx6/soc.c b/arch/arm/cpu/armv7/mx6/soc.c
+index 7266d10..79b99b2 100644
+--- a/arch/arm/cpu/armv7/mx6/soc.c
++++ b/arch/arm/cpu/armv7/mx6/soc.c
+@@ -24,6 +24,7 @@
+ #include <asm/arch/crm_regs.h>
+ #include <dm.h>
+ #include <imx_thermal.h>
++#include <mxsfb.h>
+ #ifdef CONFIG_FSL_FASTBOOT
+ #ifdef CONFIG_ANDROID_RECOVERY
+ #include <recovery.h>
+@@ -784,6 +785,14 @@ void set_wdog_reset(struct wdog_regs *wdog)
+ 	writew(reg, &wdog->wcr);
+ }
+ 
++void reset_misc(void)
++{    
++#ifdef CONFIG_VIDEO_MXS
++    if (is_cpu_type(MXC_CPU_MX6UL))
++        lcdif_power_down();
++#endif
++}
++
+ #ifdef CONFIG_LDO_BYPASS_CHECK
+ DECLARE_GLOBAL_DATA_PTR;
+ static int ldo_bypass;
+-- 
+1.8.0
+

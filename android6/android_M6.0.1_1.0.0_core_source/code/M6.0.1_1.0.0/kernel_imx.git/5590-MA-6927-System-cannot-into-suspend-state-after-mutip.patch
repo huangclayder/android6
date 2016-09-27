@@ -1,0 +1,58 @@
+From a259e8b771408413045985a118174b54af7da08d Mon Sep 17 00:00:00 2001
+From: "guoyin.chen" <guoyin.chen@freescale.com>
+Date: Thu, 30 Jul 2015 16:46:19 +0800
+Subject: [PATCH] MA-6927 System cannot into suspend state after mutiple
+ suspend/resume test
+
+More than 2 mmc controller, which have one with NONREMOVEABLE flag. Let's assume mmc0
+as normal sd card, mmc1 with internal emmc of NONREMOVEABLE flag
+1.  System into resume for 1st time
+    a)  mmc_schedule_delayed_work for mmc0, and wake_lock on mmc_delayed_work
+    b)  mmc_schedule_delayed_work for mmc1, and wake_lock on mmc_delayed_work
+    c)  mmc_rescan for mmc0, and wake_unlock on mmc_delayed_work
+    d)  mmc_rescan for mmc1, and wake_unlock on mmc_delayed_work, set
+        host->rescan_entered to 1.
+    e)  There is no wake_lock been held since the last call on mmc_delayed_work is wake_unlock.
+2.  System into resume for 2nd time
+    a)  mmc_schedule_delayed_work for mmc0, and wake_lock on mmc_delayed_work
+    b)  mmc_rescan for mmc0, and wake_unlock on mmc_delayed_work
+    c)  mmc_schedule_delayed_work for mmc1, and wake_lock on mmc_delayed_work
+    d)  mmc_rescan for mmc1, and return directly due to host->rescan_entered been set
+        to 1 in 1st time mmc_rescan on the mmc1. So there is no wake_unlock on mmc_delayed_work
+    e)  if ((host->caps & MMC_CAP_NONREMOVABLE) && host->rescan_entered)
+    f)  return;
+    g)  System always have a active wakelock of mmc_delayed_work, since the last
+        call for mmc_delayed_work is mmc_lock()
+If 2.b is scheduled behind 2.c, there is no such issue. If not, the issue will happen.
+
+Signed-off-by: guoyin.chen <guoyin.chen@freescale.com>
+---
+ drivers/mmc/core/core.c | 8 ++++++--
+ 1 file changed, 6 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/mmc/core/core.c b/drivers/mmc/core/core.c
+index 228b95b..dd35162 100644
+--- a/drivers/mmc/core/core.c
++++ b/drivers/mmc/core/core.c
+@@ -2440,12 +2440,16 @@ void mmc_rescan(struct work_struct *work)
+ 	int i;
+ 	bool extend_wakelock = false;
+ 
+-	if (host->rescan_disable)
++	if (host->rescan_disable) {
++		wake_unlock(&mmc_delayed_work_wake_lock);
+ 		return;
++	}
+ 
+ 	/* If there is a non-removable card registered, only scan once */
+-	if ((host->caps & MMC_CAP_NONREMOVABLE) && host->rescan_entered)
++	if ((host->caps & MMC_CAP_NONREMOVABLE) && host->rescan_entered) {
++		wake_unlock(&mmc_delayed_work_wake_lock);
+ 		return;
++	}
+ 	host->rescan_entered = 1;
+ 
+ 	mmc_bus_get(host);
+-- 
+1.8.0
+

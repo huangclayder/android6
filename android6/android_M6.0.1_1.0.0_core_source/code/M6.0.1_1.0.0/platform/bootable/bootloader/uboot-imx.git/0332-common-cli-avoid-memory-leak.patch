@@ -1,0 +1,35 @@
+From d39dc0cda9e0e0788386abd8ad54ed3b49e43d6e Mon Sep 17 00:00:00 2001
+From: Peng Fan <peng.fan@nxp.com>
+Date: Tue, 22 Dec 2015 17:14:13 +0800
+Subject: [PATCH] common: cli: avoid memory leak
+
+Whether CONFIG_SYS_HUSH_PARSER is defined or not, should always
+check to free 'buff' to avoid memory leak.
+
+Signed-off-by: Peng Fan <peng.fan@nxp.com>
+Cc: Tom Rini <trini@konsulko.com>
+Cc: Masahiro Yamada <yamada.masahiro@socionext.com>
+Cc: Simon Glass <sjg@chromium.org>
+(cherry picked from commit 09a788624dbe32aeeb0d74c97c0965303eb96d8c)
+---
+ common/cli.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/common/cli.c b/common/cli.c
+index 075ae9d..5bfb180 100644
+--- a/common/cli.c
++++ b/common/cli.c
+@@ -102,9 +102,9 @@ int run_command_list(const char *cmd, int len, int flag)
+ 	 * is pretty rare.
+ 	 */
+ 	rcode = cli_simple_run_command_list(buff, flag);
++#endif
+ 	if (need_buff)
+ 		free(buff);
+-#endif
+ 
+ 	return rcode;
+ }
+-- 
+1.8.0
+

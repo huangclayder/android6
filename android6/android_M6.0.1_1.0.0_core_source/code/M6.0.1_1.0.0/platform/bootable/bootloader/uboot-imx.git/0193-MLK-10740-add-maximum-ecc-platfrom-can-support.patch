@@ -1,0 +1,43 @@
+From 334303d35a348f39609bf84c13f445dba80810cb Mon Sep 17 00:00:00 2001
+From: Han Xu <b45815@freescale.com>
+Date: Thu, 30 Apr 2015 14:41:28 -0500
+Subject: [PATCH] MLK-10740: add maximum ecc platfrom can support
+
+Add maximum ecc strength for each platfrom to avoid the calculated ecc
+exceed the limitation.
+
+Signed-off-by: Han Xu <b45815@freescale.com>
+(cherry picked from commit fdc5bac6ae8b699924c4e84b86e38aa73f694827)
+---
+ drivers/mtd/nand/mxs_nand.c | 8 +++++++-
+ 1 file changed, 7 insertions(+), 1 deletion(-)
+
+diff --git a/drivers/mtd/nand/mxs_nand.c b/drivers/mtd/nand/mxs_nand.c
+index 3f8d223..f17a691 100644
+--- a/drivers/mtd/nand/mxs_nand.c
++++ b/drivers/mtd/nand/mxs_nand.c
+@@ -41,6 +41,12 @@
+ 
+ #define	MXS_NAND_BCH_TIMEOUT			10000
+ 
++#if (defined(CONFIG_MX6SX) || defined(CONFIG_MX7))
++#define MXS_NAND_MAX_ECC_STRENGTH 62
++#else
++#define MXS_NAND_MAX_ECC_STRENGTH 40
++#endif
++
+ int chunk_data_chunk_size = MXS_NAND_CHUNK_DATA_CHUNK_SIZE;
+ int galois_field = 13;
+ 
+@@ -156,7 +162,7 @@ static inline uint32_t mxs_nand_get_ecc_strength(uint32_t page_data_size,
+ 
+ 	/* We need the minor even number. */
+ 	ecc_strength -= ecc_strength & 1;
+-	return ecc_strength;
++	return min(ecc_strength, MXS_NAND_MAX_ECC_STRENGTH);
+ }
+ 
+ static inline uint32_t mxs_nand_get_mark_offset(uint32_t page_data_size,
+-- 
+1.8.0
+

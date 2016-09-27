@@ -1,0 +1,31 @@
+From 4a70589cbf9ce6dbde5c5650df18a173cb18e0df Mon Sep 17 00:00:00 2001
+From: "guoyin.chen" <guoyin.chen@freescale.com>
+Date: Tue, 20 Aug 2013 11:09:43 +0800
+Subject: [PATCH 10/34] ENGR00273616 Merge recovery.fstab into fstab.freescale
+
+Refer TARGET_RECOVERY_FSTAB for TARGET_USERIMAGES_USE_UBIFS
+
+Signed-off-by: guoyin.chen <guoyin.chen@freescale.com>
+---
+ core/Makefile | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/core/Makefile b/core/Makefile
+index cfa756c..ff46300 100644
+--- a/core/Makefile
++++ b/core/Makefile
+@@ -825,7 +825,11 @@ recovery_resource_deps := $(shell find $(recovery_resources_common) \
+   $(recovery_resources_private) -type f)
+ 
+ ifeq ($(TARGET_USERIMAGES_USE_UBIFS),true)
++ifdef TARGET_RECOVERY_FSTAB
++recovery_fstab := $(TARGET_RECOVERY_FSTAB)
++else
+ recovery_fstab := $(strip $(wildcard $(TARGET_DEVICE_DIR)/recovery_nand.fstab))
++endif
+ else
+ ifdef TARGET_RECOVERY_FSTAB
+ recovery_fstab := $(TARGET_RECOVERY_FSTAB)
+-- 
+1.8.0
+

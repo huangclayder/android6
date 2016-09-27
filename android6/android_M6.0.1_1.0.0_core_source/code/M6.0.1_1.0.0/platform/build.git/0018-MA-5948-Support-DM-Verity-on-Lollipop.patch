@@ -1,0 +1,40 @@
+From cafcf808dc09d31f55a177b60fd8f1062740919c Mon Sep 17 00:00:00 2001
+From: zhang sanshan <b51434@freescale.com>
+Date: Thu, 11 Dec 2014 16:29:56 +0800
+Subject: [PATCH 18/34] MA-5948 Support DM-Verity on Lollipop
+
+the default environment can only build out boot.img when open
+dm-verity. With this change it can build out different platform
+boot images, such as boot-imx6q.img boot-imx6dl.img
+
+Signed-off-by: zhang sanshan <b51434@freescale.com>
+---
+ core/Makefile | 11 ++++++++---
+ 1 file changed, 8 insertions(+), 3 deletions(-)
+
+diff --git a/core/Makefile b/core/Makefile
+index 3e75298..6be04ed 100644
+--- a/core/Makefile
++++ b/core/Makefile
+@@ -507,10 +507,15 @@ else ifeq (true,$(PRODUCTS.$(INTERNAL_PRODUCT).PRODUCT_SUPPORTS_BOOT_SIGNER)) #
+ 
+ $(INSTALLED_BOOTIMAGE_TARGET): $(MKBOOTIMG) $(INTERNAL_BOOTIMAGE_FILES) $(BOOT_SIGNER)
+ 	$(call pretty,"Target boot image: $@")
+-	$(hide) $(MKBOOTIMG) $(INTERNAL_BOOTIMAGE_ARGS) $(BOARD_MKBOOTIMG_ARGS) --output $@
++	for dtsplat in $(TARGET_BOARD_DTS_CONFIG); do \
++		DTS_PLATFORM=`echo $$dtsplat | cut -d':' -f1`; \
++		DTS_BOARD=`echo $$dtsplat | cut -d':' -f2`; \
++		BOOT_IMAGE_BOARD=$(patsubst %.img,%-$$DTS_PLATFORM.img,$@); \
++		$(MKBOOTIMG) $(INTERNAL_BOOTIMAGE_ARGS) --second $(PRODUCT_OUT)/$$DTS_BOARD $(BOARD_MKBOOTIMG_ARGS) --output $@; \
+ 	$(BOOT_SIGNER) /boot $@ $(PRODUCTS.$(INTERNAL_PRODUCT).PRODUCT_VERITY_SIGNING_KEY).pk8 $(PRODUCTS.$(INTERNAL_PRODUCT).PRODUCT_VERITY_SIGNING_KEY).x509.pem $@
+-	$(hide) $(call assert-max-image-size,$@,$(BOARD_BOOTIMAGE_PARTITION_SIZE))
+-
++	        $(call assert-max-image-size,$@,$(BOARD_BOOTIMAGE_PARTITION_SIZE)); \
++		cp -f $@ $$BOOT_IMAGE_BOARD; \
++	done
+ .PHONY: bootimage-nodeps
+ bootimage-nodeps: $(MKBOOTIMG) $(BOOT_SIGNER)
+ 	@echo "make $@: ignoring dependencies"
+-- 
+1.8.0
+

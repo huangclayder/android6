@@ -1,0 +1,26 @@
+From 99527b911cc8ac6bf7ae96ae938085f9e959795b Mon Sep 17 00:00:00 2001
+From: Fathi Boudra <fathi.boudra@linaro.org>
+Date: Tue, 2 Jul 2013 09:05:39 +0300
+Subject: [PATCH] linaro-base.conf: remove CONFIG_MTD_CHAR=y - it doesn't
+ exist anymore.
+
+Signed-off-by: Fathi Boudra <fathi.boudra@linaro.org>
+---
+ linaro/configs/linaro-base.conf | 1 -
+ 1 file changed, 1 deletion(-)
+
+diff --git a/linaro/configs/linaro-base.conf b/linaro/configs/linaro-base.conf
+index bf5812c..947ca1f 100644
+--- a/linaro/configs/linaro-base.conf
++++ b/linaro/configs/linaro-base.conf
+@@ -45,7 +45,6 @@ CONFIG_UEVENT_HELPER_PATH="/sbin/hotplug"
+ CONFIG_CONNECTOR=y
+ CONFIG_MTD=y
+ CONFIG_MTD_CMDLINE_PARTS=y
+-CONFIG_MTD_CHAR=y
+ CONFIG_MTD_BLOCK=y
+ CONFIG_MTD_OOPS=y
+ CONFIG_MTD_CFI=y
+-- 
+1.8.0
+

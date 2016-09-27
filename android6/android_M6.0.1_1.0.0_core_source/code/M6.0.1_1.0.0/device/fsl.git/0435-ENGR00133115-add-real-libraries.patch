@@ -1,0 +1,47 @@
+From 5f299e468918293be815e2cfd584a7259812234c Mon Sep 17 00:00:00 2001
+From: Ming Zhou <b42586@freescale.com>
+Date: Wed, 19 Nov 2014 10:08:47 +0800
+Subject: [PATCH 435/602] ENGR00133115: add real libraries.
+
+add real audio & parser.
+
+Signed-off-by: Ming Zhou <b42586@freescale.com>
+---
+ imx5x/imx5x.mk | 4 ++++
+ imx6/imx6.mk   | 5 +++++
+ 2 files changed, 9 insertions(+)
+
+diff --git a/imx5x/imx5x.mk b/imx5x/imx5x.mk
+index d83a703..c108cd3 100644
+--- a/imx5x/imx5x.mk
++++ b/imx5x/imx5x.mk
+@@ -245,6 +245,10 @@ omx_libs := \
+ 	libavcodec-55 \
+ 	libavutil-53 \
+ 	lib_omx_libav_audio_dec_arm11_elinux \
++    lib_realad_wrap_arm11_elinux_android \
++    lib_realaudio_dec_v2_arm11_elinux \
++    lib_rm_parser_arm11_elinux.3.0 \
++    lib_omx_ra_dec_v2_arm11_elinux \
+ 
+ 
+ 
+diff --git a/imx6/imx6.mk b/imx6/imx6.mk
+index 9cd475e..fc35f5c 100644
+--- a/imx6/imx6.mk
++++ b/imx6/imx6.mk
+@@ -287,6 +287,11 @@ omx_excluded_libs :=					\
+ 	lib_ac3d_wrap_arm11_elinux_android \
+         lib_ddpd_wrap_arm12_elinux_android \
+         lib_ddplus_dec_v2_arm12_elinux \
++    lib_realad_wrap_arm11_elinux_android \
++    lib_realaudio_dec_v2_arm11_elinux \
++    lib_rm_parser_arm11_elinux.3.0 \
++    lib_omx_ra_dec_v2_arm11_elinux \
++
+ 
+ 
+ PRODUCT_PACKAGES += $(omx_libs) $(omx_excluded_libs)
+-- 
+1.8.0
+

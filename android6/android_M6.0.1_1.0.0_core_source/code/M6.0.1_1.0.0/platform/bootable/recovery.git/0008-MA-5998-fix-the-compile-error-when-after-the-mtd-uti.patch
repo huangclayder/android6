@@ -1,0 +1,83 @@
+From 1dfc4d9cf7237c819c7f138828aa1d8266a02444 Mon Sep 17 00:00:00 2001
+From: zhang sanshan <b51434@freescale.com>
+Date: Fri, 26 Dec 2014 14:32:01 +0800
+Subject: [PATCH 08/21] MA-5998 fix the compile error when after the mtd-utils
+
+fix the issue of lacking *.h after change mtd-utils.
+The new libubi_open don't need the parameter.
+delete ubi_node_type which check whether it is a ubi volume.
+The new mtd-utils don't have ubi_node_type().
+There are codes which check  ubi volume after ubi_node_type.
+
+Signed-off-by: zhang sanshan <b51434@freescale.com>
+---
+ Android.mk         |  2 +-
+ ubi.cpp            | 14 ++------------
+ updater/Android.mk |  2 +-
+ 3 files changed, 4 insertions(+), 14 deletions(-)
+
+diff --git a/Android.mk b/Android.mk
+index 9b299b2..879ef48 100644
+--- a/Android.mk
++++ b/Android.mk
+@@ -88,7 +88,7 @@ endif
+ 
+ LOCAL_MODULE_PATH := $(TARGET_RECOVERY_ROOT_OUT)/sbin
+ LOCAL_CFLAGS += -DUSE_UBIFS
+-LOCAL_C_INCLUDES += external/mtd-utils/new-utils/include/ system/vold
++LOCAL_C_INCLUDES += external/mtd-utils/ubi-utils/include external/mtd-utils/include system/vold
+ LOCAL_STATIC_LIBRARIES += libubi
+ LOCAL_SRC_FILES += ubi.cpp
+ 
+diff --git a/ubi.cpp b/ubi.cpp
+index bb37fad..6ae72fc 100644
+--- a/ubi.cpp
++++ b/ubi.cpp
+@@ -1,5 +1,5 @@
+ /*
+- * Copyright (C) 2013 Freescale Semiconductor, Inc.
++ * Copyright (C) 2014 Freescale Semiconductor, Inc.
+  *
+  * Licensed under the Apache License, Version 2.0 (the "License");
+  * you may not use this file except in compliance with the License.
+@@ -26,23 +26,13 @@ extern "C" int ubiVolumeFormat(char *location)
+     libubi_t libubi;
+     struct ubi_vol_info vol_info;
+     int fd;
+-    libubi = libubi_open(1);
++    libubi = libubi_open();
+ 
+     if (libubi == NULL) {
+         fprintf(stderr, "can not open libubi");
+         goto done;
+     }
+ 
+-    ret = ubi_node_type(libubi, location);
+-    if (ret == 1) {
+-        fprintf(stderr, "%s is a ubi device node, not a ubi volume node",
+-                location);
+-        goto done;
+-    } else if (ret < 0) {
+-        fprintf(stderr, "%s is not a UBI volume node", location);
+-        goto done;
+-    }
+-
+     ret = ubi_get_vol_info(libubi, location, &vol_info);
+     if (ret) {
+         fprintf(stderr, "can not get information about UBI volume %s", location);
+diff --git a/updater/Android.mk b/updater/Android.mk
+index 154b6cf..ae9786e 100644
+--- a/updater/Android.mk
++++ b/updater/Android.mk
+@@ -81,7 +81,7 @@ $(call intermediates-dir-for,EXECUTABLES,updater,,,$(TARGET_PREFER_32_BIT))/upda
+ LOCAL_C_INCLUDES += $(dir $(inc))
+ 
+ LOCAL_CFLAGS += -DUSE_UBIFS
+-LOCAL_C_INCLUDES += external/mtd-utils/new-utils/include/
++LOCAL_C_INCLUDES += external/mtd-utils/ubi-utils/include/ ./external/mtd-utils/include/
+ LOCAL_STATIC_LIBRARIES += libubi
+ LOCAL_SRC_FILES += ../ubi.cpp
+ 
+-- 
+1.8.0
+

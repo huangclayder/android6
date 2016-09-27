@@ -1,0 +1,44 @@
+From 7fce4237ba9a728bc1a4e3284abd73a7cdbc9444 Mon Sep 17 00:00:00 2001
+From: Song Bing <b06498@freescale.com>
+Date: Thu, 19 Jun 2014 16:53:46 +0800
+Subject: [PATCH 323/602] ENGR00133115 Add libav library.
+
+Add libav library.
+
+Signed-off-by: Song Bing b06498@freescale.com
+---
+ imx5x/imx5x.mk | 3 +++
+ imx6/imx6.mk   | 3 +++
+ 2 files changed, 6 insertions(+)
+
+diff --git a/imx5x/imx5x.mk b/imx5x/imx5x.mk
+index 3e83500..17e2b2e 100644
+--- a/imx5x/imx5x.mk
++++ b/imx5x/imx5x.mk
+@@ -240,6 +240,9 @@ omx_libs := \
+ 	lib_wav_parser_arm11_elinux.3.0 \
+ 	lib_omx_ac3toiec937_arm11_elinux \
+         lib_omx_ec3_dec_v2_arm11_elinux \
++		lib_omx_libav_video_dec_arm11_elinux.so \
++        libavcodec-55.so \
++        libavutil-53.so \
+ 
+ 
+ 
+diff --git a/imx6/imx6.mk b/imx6/imx6.mk
+index 74f5772..524eb57 100644
+--- a/imx6/imx6.mk
++++ b/imx6/imx6.mk
+@@ -259,6 +259,9 @@ omx_libs := \
+ 	lib_wav_parser_arm11_elinux.3.0 \
+ 	lib_omx_ac3toiec937_arm11_elinux \
+         lib_omx_ec3_dec_v2_arm11_elinux \
++		lib_omx_libav_video_dec_arm11_elinux.so \
++        libavcodec-55.so \
++        libavutil-53.so \
+ 
+ 
+ 
+-- 
+1.8.0
+

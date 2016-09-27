@@ -1,0 +1,36 @@
+From 418ebdaae2fb074e7eb75fea22365f498eb7adf8 Mon Sep 17 00:00:00 2001
+From: Shengjiu Wang <shengjiu.wang@freescale.com>
+Date: Tue, 24 Mar 2015 10:42:46 +0800
+Subject: [PATCH 570/635] MA-6446: audio hal: change the threshold for times
+ of writing fail
+
+After HDMI plugout, there are a lot of print log from kernel which
+may block the process in the user space. The log is caused by reopen
+HDMI audio device, everytime open the HDMI device, there are about 120
+character printed, which cost 120*64us= 7.68ms, which is too long.
+
+The threshold for error number is 20, after this threshold, the hal will
+try to open the HDMI device. so enlarge the threshold, then the times of
+open will be reduced.
+
+Signed-off-by: Shengjiu Wang <shengjiu.wang@freescale.com>
+---
+ alsa/tinyalsa_hal.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/alsa/tinyalsa_hal.c b/alsa/tinyalsa_hal.c
+index a4644ac..096223f 100644
+--- a/alsa/tinyalsa_hal.c
++++ b/alsa/tinyalsa_hal.c
+@@ -1283,7 +1283,7 @@ static ssize_t out_write_primary(struct audio_stream_out *stream, const void* bu
+ 
+     //If continue fail, probably th fd is invalid.
+     for (i = 0; i < PCM_TOTAL; i++) {
+-        if(out->writeContiFailCount[i] > 20) {
++        if(out->writeContiFailCount[i] > 100) {
+             ALOGW("pcm_write_wrapper continues failed for pcm %d, standby", i);
+             do_output_standby(out);
+             break;
+-- 
+1.8.0
+

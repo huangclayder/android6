@@ -1,0 +1,31 @@
+From fedae5de06ac2c91952981f14303315c818d679d Mon Sep 17 00:00:00 2001
+From: Winter Wang <b55847@freescale.com>
+Date: Fri, 9 Oct 2015 10:18:50 +0800
+Subject: [PATCH 540/602] MA-7084 Add imx6qp/dp sabresd boards support in
+ Android
+
+add imx6qp sabresd support
+
+Signed-off-by: Winter Wang <b55847@freescale.com>
+---
+ sabresd_6dq/BoardConfig.mk | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/sabresd_6dq/BoardConfig.mk b/sabresd_6dq/BoardConfig.mk
+index e17231c..0e6932c 100644
+--- a/sabresd_6dq/BoardConfig.mk
++++ b/sabresd_6dq/BoardConfig.mk
+@@ -122,8 +122,8 @@ IMX_CAMERA_HAL_V2 := true
+ #define consumer IR HAL support
+ IMX6_CONSUMER_IR_HAL := false
+ 
+-TARGET_BOOTLOADER_CONFIG := imx6q:mx6qsabresdandroid_config imx6dl:mx6dlsabresdandroid_config
+-TARGET_BOARD_DTS_CONFIG := imx6q:imx6q-sabresd.dtb imx6dl:imx6dl-sabresd.dtb imx6q-ldo:imx6q-sabresd-ldo.dtb
++TARGET_BOOTLOADER_CONFIG := imx6q:mx6qsabresdandroid_config imx6dl:mx6dlsabresdandroid_config imx6qp:mx6qpsabresdandroid_config
++TARGET_BOARD_DTS_CONFIG := imx6q:imx6q-sabresd.dtb imx6dl:imx6dl-sabresd.dtb imx6q-ldo:imx6q-sabresd-ldo.dtb imx6qp:imx6qp-sabresd.dtb
+ 
+ BOARD_SEPOLICY_DIRS := \
+        device/fsl/imx6/sepolicy \
+-- 
+1.8.0
+

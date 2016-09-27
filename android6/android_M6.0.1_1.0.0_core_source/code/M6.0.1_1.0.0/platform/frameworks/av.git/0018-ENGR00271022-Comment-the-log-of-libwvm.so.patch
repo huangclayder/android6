@@ -1,0 +1,31 @@
+From 312d0919d95ed09b9331fa52f5bdb874c3c2bc5d Mon Sep 17 00:00:00 2001
+From: Huang Chenyi <b44402@freescale.com>
+Date: Mon, 15 Jul 2013 16:09:24 +0800
+Subject: [PATCH 18/95] ENGR00271022 Comment the log of libwvm.so
+
+Libwvm.so does not exist in our platform
+
+Signed-off-by: Huang Chenyi <b44402@freescale.com>
+---
+ media/libstagefright/WVMExtractor.cpp | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/media/libstagefright/WVMExtractor.cpp b/media/libstagefright/WVMExtractor.cpp
+index bc48272..21060ba 100644
+--- a/media/libstagefright/WVMExtractor.cpp
++++ b/media/libstagefright/WVMExtractor.cpp
+@@ -75,9 +75,11 @@ WVMExtractor::WVMExtractor(const sp<DataSource> &source)
+ static void init_routine()
+ {
+     gVendorLibHandle = dlopen("libwvm.so", RTLD_NOW);
++    /*
+     if (gVendorLibHandle == NULL) {
+         ALOGE("Failed to open libwvm.so: %s", dlerror());
+     }
++    */
+ }
+ 
+ bool WVMExtractor::getVendorLibHandle()
+-- 
+1.8.0
+

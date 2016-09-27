@@ -1,0 +1,39 @@
+From 00430f5922c92d8a092a2e9241490a0eefc11eb5 Mon Sep 17 00:00:00 2001
+From: Fang Hui <b31070@freescale.com>
+Date: Mon, 4 Nov 2013 13:52:56 +0800
+Subject: [PATCH 34/95] ENGR00285701 - [Android_MX6SL_EVK] Camera: Recorded
+ video by UVC for 75s,
+
+no image found for the last 22s. 100%
+
+SoftAVCEncoder will drop frame duto biterate control, but forget to drop
+
+related time stamp
+
+Signed-off-by: Fang Hui <b31070@freescale.com>
+---
+ media/libstagefright/codecs/avc/enc/SoftAVCEncoder.cpp | 8 ++++++++
+ 1 file changed, 8 insertions(+)
+
+diff --git a/media/libstagefright/codecs/avc/enc/SoftAVCEncoder.cpp b/media/libstagefright/codecs/avc/enc/SoftAVCEncoder.cpp
+index 89fbe2e..a9b86da 100644
+--- a/media/libstagefright/codecs/avc/enc/SoftAVCEncoder.cpp
++++ b/media/libstagefright/codecs/avc/enc/SoftAVCEncoder.cpp
+@@ -613,6 +613,14 @@ void SoftAVCEncoder::onQueueFilled(OMX_U32 /* portIndex */) {
+                         return;
+                     } else {
+                         ALOGV("encoderStatus = %d at line %d", encoderStatus, __LINE__);
++
++                       //If skip this frame, del mInputBufferInfoVec,
++                       //or will cause video time stamp drift, and memory leakage
++                       if(AVCENC_SKIPPED_PICTURE == encoderStatus) {
++                           CHECK(!mInputBufferInfoVec.empty());
++                           mInputBufferInfoVec.erase(mInputBufferInfoVec.end() - 1);
++                       }
++
+                         inQueue.erase(inQueue.begin());
+                         inInfo->mOwnedByUs = false;
+                         notifyEmptyBufferDone(inHeader);
+-- 
+1.8.0
+

@@ -1,0 +1,42 @@
+From baef5633f9c6b69c3b358b709cb2d34257bcea01 Mon Sep 17 00:00:00 2001
+From: "guoyin.chen" <guoyin.chen@freescale.com>
+Date: Mon, 10 Aug 2015 15:39:15 +0800
+Subject: [PATCH 523/602] MA-6975-3 Fix the build error for fsl.git in
+ m-preview
+
+Remove consumeir feature as no HAL built
+
+Signed-off-by: guoyin.chen <guoyin.chen@freescale.com>
+---
+ imx6/sabresd_6dq.mk        | 1 -
+ sabresd_6dq/BoardConfig.mk | 2 +-
+ 2 files changed, 1 insertion(+), 2 deletions(-)
+
+diff --git a/imx6/sabresd_6dq.mk b/imx6/sabresd_6dq.mk
+index 7e6551c..8aec301 100644
+--- a/imx6/sabresd_6dq.mk
++++ b/imx6/sabresd_6dq.mk
+@@ -56,7 +56,6 @@ PRODUCT_COPY_FILES += \
+ 	frameworks/native/data/etc/android.hardware.usb.host.xml:system/etc/permissions/android.hardware.usb.host.xml \
+ 	frameworks/native/data/etc/android.hardware.usb.accessory.xml:system/etc/permissions/android.hardware.usb.accessory.xml \
+ 	frameworks/native/data/etc/android.hardware.bluetooth_le.xml:system/etc/permissions/android.hardware.bluetooth_le.xml \
+-	frameworks/native/data/etc/android.hardware.consumerir.xml:system/etc/permissions/android.hardware.consumerir.xml \
+ 	frameworks/native/data/etc/android.hardware.ethernet.xml:system/etc/permissions/android.hardware.ethernet.xml \
+ 	device/fsl/sabresd_6dq/required_hardware.xml:system/etc/permissions/required_hardware.xml
+ PRODUCT_PACKAGES += AudioRoute
+diff --git a/sabresd_6dq/BoardConfig.mk b/sabresd_6dq/BoardConfig.mk
+index 18dbdac..28dfad7 100644
+--- a/sabresd_6dq/BoardConfig.mk
++++ b/sabresd_6dq/BoardConfig.mk
+@@ -120,7 +120,7 @@ USE_GPU_ALLOCATOR := true
+ IMX_CAMERA_HAL_V2 := true
+ 
+ #define consumer IR HAL support
+-IMX6_CONSUMER_IR_HAL := true
++IMX6_CONSUMER_IR_HAL := false
+ 
+ TARGET_BOOTLOADER_CONFIG := imx6q:mx6qsabresdandroid_config imx6dl:mx6dlsabresdandroid_config
+ TARGET_BOARD_DTS_CONFIG := imx6q:imx6q-sabresd.dtb imx6dl:imx6dl-sabresd.dtb imx6q-ldo:imx6q-sabresd-ldo.dtb
+-- 
+1.8.0
+

@@ -1,0 +1,53 @@
+From 21b913b54ff4f2a394f92fce0f3160d9d1205269 Mon Sep 17 00:00:00 2001
+From: ZhongWen <b47623@freescale.com>
+Date: Fri, 18 Oct 2013 16:21:56 +0800
+Subject: [PATCH 03/12] ENGR00281805 fix system time didn't show after reboot
+
+Add updateSystemTimeOptions() and modify writeCpuUsageOptions()
+
+Signed-off-by: ZhongWen <b47623@freescale.com>
+---
+ src/com/android/settings/DevelopmentSettings.java | 13 +++++++++++++
+ 1 file changed, 13 insertions(+)
+
+diff --git a/src/com/android/settings/DevelopmentSettings.java b/src/com/android/settings/DevelopmentSettings.java
+index d0aacbf..1b42f20 100644
+--- a/src/com/android/settings/DevelopmentSettings.java
++++ b/src/com/android/settings/DevelopmentSettings.java
+@@ -599,6 +599,7 @@ public class DevelopmentSettings extends SettingsPreferenceFragment
+         updateShowTouchesOptions();
+         updateFlingerOptions();
+         updateCpuUsageOptions();
++        updateSystemTimeOptions();
+         updateHardwareUiOptions();
+         updateMsaaOptions();
+         updateTrackFrameTimeOptions();
+@@ -1344,6 +1345,15 @@ public class DevelopmentSettings extends SettingsPreferenceFragment
+         updateSwitchPreference(mShowCpuUsage,
+                 Settings.Global.getInt(getActivity().getContentResolver(),
+                 Settings.Global.SHOW_PROCESSES, 0) != 0);
++        Log.i(TAG, "updateCpuUsageOptions:" + Settings.Global.getInt(getActivity().getContentResolver(),
++                Settings.Global.SHOW_PROCESSES, 0));
++    }
++	
++    private void updateSystemTimeOptions() {
++        updateCheckBox(mShowSystemTime, Settings.Global.getInt(getActivity().getContentResolver(),
++                Settings.Global.SHOW_SYSTEM_TIME, 0) != 0);
++        Log.i(TAG, "updateSystemTimeOptions:" + Settings.Global.getInt(getActivity().getContentResolver(),
++                Settings.Global.SHOW_PROCESSES, 0));
+     }
+ 
+     private void writeCpuUsageOptions() {
+@@ -1361,6 +1371,9 @@ public class DevelopmentSettings extends SettingsPreferenceFragment
+ 
+     private void writeSystemTimeOptions(){
+        boolean value = mShowSystemTime.isChecked();
++       Log.i(TAG, "writeSystemTimeOptions: " + value);
++       Settings.Global.putInt(getActivity().getContentResolver(),
++               Settings.Global.SHOW_SYSTEM_TIME, value ? 1 : 0);
+        Intent service = (new Intent())
+                 .setClassName("com.android.systemui", "com.android.systemui.LoadSystemTime");
+         if (value) {
+-- 
+1.8.0
+

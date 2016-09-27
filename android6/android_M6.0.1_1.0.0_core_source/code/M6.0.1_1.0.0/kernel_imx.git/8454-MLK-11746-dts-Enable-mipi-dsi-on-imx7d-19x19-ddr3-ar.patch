@@ -1,0 +1,66 @@
+From dbf58f146c3f8260f078b6e6bdfd4d11204819ef Mon Sep 17 00:00:00 2001
+From: Sandor Yu <R01008@freescale.com>
+Date: Wed, 21 Oct 2015 16:57:17 +0800
+Subject: [PATCH] MLK-11746: dts: Enable mipi dsi on imx7d 19x19 ddr3 arm
+ board
+
+Add mipi dsi to imx7d 19x19 ddr3 arm board dts file.
+
+Signed-off-by: Sandor Yu <R01008@freescale.com>
+---
+ arch/arm/boot/dts/imx7d-19x19-ddr3-arm2-mipi.dts | 20 ++++++++++++++++++++
+ arch/arm/boot/dts/imx7d-19x19-ddr3-arm2.dts      |  7 +++++++
+ 2 files changed, 27 insertions(+)
+
+diff --git a/arch/arm/boot/dts/imx7d-19x19-ddr3-arm2-mipi.dts b/arch/arm/boot/dts/imx7d-19x19-ddr3-arm2-mipi.dts
+index 6f3a2096..a2e9d08 100644
+--- a/arch/arm/boot/dts/imx7d-19x19-ddr3-arm2-mipi.dts
++++ b/arch/arm/boot/dts/imx7d-19x19-ddr3-arm2-mipi.dts
+@@ -8,6 +8,26 @@
+ 
+ #include "imx7d-19x19-ddr3-arm2.dts"
+ 
++/ {
++	mipi_dsi_reset: mipi-dsi-reset {
++		compatible = "gpio-reset";
++		reset-gpios = <&gpio4 17 GPIO_ACTIVE_LOW>;
++		reset-delay-us = <50>;
++		#reset-cells = <0>;
++	};
++};
++
++&lcdif {
++	disp-dev = "mipi_dsi_samsung";
++};
++
++&mipi_dsi {
++	lcd_panel = "TRULY-WVGA";
++	disp-power-on-supply = <&reg_mipi_dsi_pwr_on>;
++	resets = <&mipi_dsi_reset>;
++	status = "okay";
++};
++
+ &csi1 {
+ 	csi-mux-mipi = <&gpr 0x14 4>;
+ 	status = "okay";
+diff --git a/arch/arm/boot/dts/imx7d-19x19-ddr3-arm2.dts b/arch/arm/boot/dts/imx7d-19x19-ddr3-arm2.dts
+index d1cb4a4..82cbb1a 100644
+--- a/arch/arm/boot/dts/imx7d-19x19-ddr3-arm2.dts
++++ b/arch/arm/boot/dts/imx7d-19x19-ddr3-arm2.dts
+@@ -125,6 +125,13 @@
+ 			gpio = <&gpio6 10 GPIO_ACTIVE_HIGH>;
+ 			enable-active-high;
+ 		};
++
++		reg_mipi_dsi_pwr_on: mipi_dsi_pwr_on {
++			compatible = "regulator-fixed";
++			regulator-name = "mipi_dsi_pwr_on";
++			gpio = <&gpio4 16 GPIO_ACTIVE_HIGH>;
++			enable-active-high;
++		};
+ 	};
+ 
+ 	pxp_v4l2_out {
+-- 
+1.8.0
+

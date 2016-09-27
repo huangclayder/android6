@@ -1,0 +1,94 @@
+From 4f0d623b2c3e9613879134a331cb4e84e46aad04 Mon Sep 17 00:00:00 2001
+From: Marc Zyngier <marc.zyngier@arm.com>
+Date: Tue, 4 Jun 2013 11:36:38 +0100
+Subject: [PATCH] KVM: ARM: vgic: introduce vgic_enable
+
+Move the code dealing with enabling the VGIC on to vgic_ops.
+
+Acked-by: Catalin Marinas <catalin.marinas@arm.com>
+Reviewed-by: Christoffer Dall <christoffer.dall@linaro.org>
+Signed-off-by: Marc Zyngier <marc.zyngier@arm.com>
+(cherry picked from commit da8dafd1777cdd93091207952297d221a88e6479)
+Signed-off-by: Christoffer Dall <christoffer.dall@linaro.org>
+---
+ include/kvm/arm_vgic.h |  1 +
+ virt/kvm/arm/vgic.c    | 29 +++++++++++++++++++++--------
+ 2 files changed, 22 insertions(+), 8 deletions(-)
+
+diff --git a/include/kvm/arm_vgic.h b/include/kvm/arm_vgic.h
+index f515800..2228973 100644
+--- a/include/kvm/arm_vgic.h
++++ b/include/kvm/arm_vgic.h
+@@ -99,6 +99,7 @@ struct vgic_ops {
+ 	void	(*disable_underflow)(struct kvm_vcpu *vcpu);
+ 	void	(*get_vmcr)(struct kvm_vcpu *vcpu, struct vgic_vmcr *vmcr);
+ 	void	(*set_vmcr)(struct kvm_vcpu *vcpu, struct vgic_vmcr *vmcr);
++	void	(*enable)(struct kvm_vcpu *vcpu);
+ };
+ 
+ struct vgic_dist {
+diff --git a/virt/kvm/arm/vgic.c b/virt/kvm/arm/vgic.c
+index 7d6bd61..02a0bd5 100644
+--- a/virt/kvm/arm/vgic.c
++++ b/virt/kvm/arm/vgic.c
+@@ -1097,6 +1097,19 @@ static void vgic_v2_set_vmcr(struct kvm_vcpu *vcpu, struct vgic_vmcr *vmcrp)
+ 	vcpu->arch.vgic_cpu.vgic_v2.vgic_vmcr = vmcr;
+ }
+ 
++static void vgic_v2_enable(struct kvm_vcpu *vcpu)
++{
++	/*
++	 * By forcing VMCR to zero, the GIC will restore the binary
++	 * points to their reset values. Anything else resets to zero
++	 * anyway.
++	 */
++	vcpu->arch.vgic_cpu.vgic_v2.vgic_vmcr = 0;
++
++	/* Get the show on the road... */
++	vcpu->arch.vgic_cpu.vgic_v2.vgic_hcr = GICH_HCR_EN;
++}
++
+ static const struct vgic_ops vgic_ops = {
+ 	.get_lr			= vgic_v2_get_lr,
+ 	.set_lr			= vgic_v2_set_lr,
+@@ -1108,6 +1121,7 @@ static const struct vgic_ops vgic_ops = {
+ 	.disable_underflow	= vgic_v2_disable_underflow,
+ 	.get_vmcr		= vgic_v2_get_vmcr,
+ 	.set_vmcr		= vgic_v2_set_vmcr,
++	.enable			= vgic_v2_enable,
+ };
+ 
+ static struct vgic_lr vgic_get_lr(const struct kvm_vcpu *vcpu, int lr)
+@@ -1162,6 +1176,11 @@ static void vgic_set_vmcr(struct kvm_vcpu *vcpu, struct vgic_vmcr *vmcr)
+ 	vgic_ops.set_vmcr(vcpu, vmcr);
+ }
+ 
++static inline void vgic_enable(struct kvm_vcpu *vcpu)
++{
++	vgic_ops.enable(vcpu);
++}
++
+ static void vgic_retire_lr(int lr_nr, int irq, struct kvm_vcpu *vcpu)
+ {
+ 	struct vgic_cpu *vgic_cpu = &vcpu->arch.vgic_cpu;
+@@ -1624,15 +1643,9 @@ int kvm_vgic_vcpu_init(struct kvm_vcpu *vcpu)
+ 		vgic_cpu->vgic_irq_lr_map[i] = LR_EMPTY;
+ 	}
+ 
+-	/*
+-	 * By forcing VMCR to zero, the GIC will restore the binary
+-	 * points to their reset values. Anything else resets to zero
+-	 * anyway.
+-	 */
+-	vgic_cpu->vgic_v2.vgic_vmcr = 0;
+-
+ 	vgic_cpu->nr_lr = vgic_nr_lr;
+-	vgic_cpu->vgic_v2.vgic_hcr = GICH_HCR_EN; /* Get the show on the road... */
++
++	vgic_enable(vcpu);
+ 
+ 	return 0;
+ }
+-- 
+1.8.0
+

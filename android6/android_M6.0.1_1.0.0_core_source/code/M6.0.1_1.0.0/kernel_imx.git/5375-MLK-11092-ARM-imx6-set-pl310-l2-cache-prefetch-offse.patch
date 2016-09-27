@@ -1,0 +1,30 @@
+From 62fc4d7e4da59bde63b6128848caaa721f028fed Mon Sep 17 00:00:00 2001
+From: Bai Ping <b51503@freescale.com>
+Date: Fri, 12 Jun 2015 01:02:43 +0800
+Subject: [PATCH] MLK-11092 ARM: imx6: set pl310 l2 cache prefetch offset to
+ zero
+
+Set the L2 cache prefetch offset to zero due to the
+system instability issue.
+
+Signed-off-by: Bai Ping <b51503@freescale.com>
+---
+ arch/arm/mach-imx/system.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/arch/arm/mach-imx/system.c b/arch/arm/mach-imx/system.c
+index fc398b5..d446f7d 100644
+--- a/arch/arm/mach-imx/system.c
++++ b/arch/arm/mach-imx/system.c
+@@ -156,7 +156,7 @@ void __init imx_init_l2cache(void)
+ 	/* Configure the L2 PREFETCH and POWER registers */
+ 	/* Set prefetch offset with any value except 23 as per errata 765569 */
+ 	val = readl_relaxed(l2x0_base + L2X0_PREFETCH_CTRL);
+-	val |= 0x7000000f;
++	val |= 0x70000000;
+ 	/*
+ 	 * The L2 cache controller(PL310) version on the i.MX6D/Q is r3p1-50rel0
+ 	 * The L2 cache controller(PL310) version on the i.MX6DL/SOLO/SL/SX/DQP
+-- 
+1.8.0
+

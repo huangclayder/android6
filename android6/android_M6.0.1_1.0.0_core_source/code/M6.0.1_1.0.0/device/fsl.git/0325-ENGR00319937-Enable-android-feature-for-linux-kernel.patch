@@ -1,0 +1,31 @@
+From dea849e22e4962c988aadea221a9b05f306b2185 Mon Sep 17 00:00:00 2001
+From: Ke Qinghua <qinghua.ke@freescale.com>
+Date: Wed, 25 Jun 2014 09:39:13 +0800
+Subject: [PATCH 325/602] ENGR00319937 Enable android feature for linux kernel
+ 3.10.y
+
+Enable NAND chip MT29F8G08ABACAWP
+
+Signed-off-by: Ke Qinghua <qinghua.ke@freescale.com>
+---
+ sabreauto_6q/BoardConfig.mk | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/sabreauto_6q/BoardConfig.mk b/sabreauto_6q/BoardConfig.mk
+index 3f68a7a..51ffce7 100644
+--- a/sabreauto_6q/BoardConfig.mk
++++ b/sabreauto_6q/BoardConfig.mk
+@@ -89,8 +89,8 @@ BOARD_KERNEL_CMDLINE := console=ttymxc3,115200 init=/init video=mxcfb0:dev=ldb,b
+ ifeq ($(TARGET_USERIMAGES_USE_UBIFS),true)
+ #UBI boot command line.
+ UBI_ROOT_INI := device/fsl/sabreauto_6q/ubi/ubinize.ini
+-TARGET_MKUBIFS_ARGS := -m 4096 -e 516096 -c 4096 -x none
+-TARGET_UBIRAW_ARGS := -m 4096 -p 512KiB $(UBI_ROOT_INI)
++TARGET_MKUBIFS_ARGS := -m 4096 -e 253952 -c 4096 -x none
++TARGET_UBIRAW_ARGS := -m 4096 -p 256KiB $(UBI_ROOT_INI)
+ 
+ # Note: this NAND partition table must align with MFGTool's config.
+ BOARD_KERNEL_CMDLINE +=  mtdparts=gpmi-nand:16m(bootloader),16m(bootimg),16m(recovery),-(root) ubi.mtd=4
+-- 
+1.8.0
+

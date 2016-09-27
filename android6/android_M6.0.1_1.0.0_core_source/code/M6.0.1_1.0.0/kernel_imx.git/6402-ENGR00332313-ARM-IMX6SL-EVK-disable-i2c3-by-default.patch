@@ -1,0 +1,29 @@
+From 156b196f34f28e55e78d9fe4d84e1bbb19cd5794 Mon Sep 17 00:00:00 2001
+From: Fancy Fang <chen.fang@freescale.com>
+Date: Fri, 19 Sep 2014 17:02:04 +0800
+Subject: [PATCH] ENGR00332313 ARM: IMX6SL-EVK: disable i2c3 by default
+
+Disable I2C3 by default, since the pins are conflicted
+with EPDC's pins.
+
+Signed-off-by: Fancy Fang <chen.fang@freescale.com>
+---
+ arch/arm/boot/dts/imx6sl-evk.dts | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/arch/arm/boot/dts/imx6sl-evk.dts b/arch/arm/boot/dts/imx6sl-evk.dts
+index 302b9d2..7a31292 100644
+--- a/arch/arm/boot/dts/imx6sl-evk.dts
++++ b/arch/arm/boot/dts/imx6sl-evk.dts
+@@ -317,7 +317,7 @@
+ 	clock-frequency = <100000>;
+ 	pinctrl-names = "default";
+ 	pinctrl-0 = <&pinctrl_i2c3>;
+-	status = "okay";
++	status = "disabled";
+ };
+ 
+ &iomuxc {
+-- 
+1.8.0
+

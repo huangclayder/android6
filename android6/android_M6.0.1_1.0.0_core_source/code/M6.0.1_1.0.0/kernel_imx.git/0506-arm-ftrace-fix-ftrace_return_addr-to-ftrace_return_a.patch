@@ -1,0 +1,42 @@
+From 9b6993a091eafce71acb040b2006f35d6418c9e9 Mon Sep 17 00:00:00 2001
+From: Steven Rostedt <rostedt@goodmis.org>
+Date: Mon, 16 Jun 2014 15:25:29 +0100
+Subject: [PATCH] arm/ftrace: fix ftrace_return_addr() to
+ ftrace_return_address()
+
+The clean up of CALLER_ADDR*() functions required the archs to either
+use the default __builtin_return_address(X) (where X > 0) or override
+it with something the arch can use. To override it, the arch would
+define ftrace_return_address(x).
+
+The arm architecture requires this to be redefined but instead of
+defining ftrace_return_address(x) it defined ftrace_return_addr(x).
+
+Fixes: eed542d6962b (ftrace: Make CALLER_ADDRx macros more generic)
+Reported-by: Geert Uytterhoeven <geert@linux-m68k.org>
+Tested-by: Geert Uytterhoeven <geert@linux-m68k.org>
+Signed-off-by: Steven Rostedt <rostedt@goodmis.org>
+Signed-off-by: Will Deacon <will.deacon@arm.com>
+Signed-off-by: Catalin Marinas <catalin.marinas@arm.com>
+(cherry picked from commit 1712ef43af71b0a0498ad370f0829d6b85fa2dca)
+Signed-off-by: Mark Brown <broonie@linaro.org>
+---
+ arch/arm/include/asm/ftrace.h | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/arch/arm/include/asm/ftrace.h b/arch/arm/include/asm/ftrace.h
+index eb577f4..39eb16b 100644
+--- a/arch/arm/include/asm/ftrace.h
++++ b/arch/arm/include/asm/ftrace.h
+@@ -52,7 +52,7 @@ extern inline void *return_address(unsigned int level)
+ 
+ #endif
+ 
+-#define ftrace_return_addr(n) return_address(n)
++#define ftrace_return_address(n) return_address(n)
+ 
+ #endif /* ifndef __ASSEMBLY__ */
+ 
+-- 
+1.8.0
+

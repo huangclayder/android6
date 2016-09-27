@@ -1,0 +1,33 @@
+From 312e7fef8e92112a4d2ff30ec571eb1543d704b8 Mon Sep 17 00:00:00 2001
+From: Ming Zhou <b42586@freescale.com>
+Date: Wed, 27 May 2015 10:18:12 +0800
+Subject: [PATCH 2/2] MA-6636: video jitter when start because animation run
+ too slow on imx7d, hide the video view first to avoid
+ this.
+
+Signed-off-by: Ming Zhou <b42586@freescale.com>
+---
+ src/com/android/camera/MovieViewControl.java | 7 +++++++
+ 1 file changed, 7 insertions(+)
+
+diff --git a/src/com/android/camera/MovieViewControl.java b/src/com/android/camera/MovieViewControl.java
+index 012134c..b15cd9e 100644
+--- a/src/com/android/camera/MovieViewControl.java
++++ b/src/com/android/camera/MovieViewControl.java
+@@ -98,6 +98,13 @@ public class MovieViewControl implements MediaPlayer.OnErrorListener,
+         mVideoView.setVideoURI(mUri);
+         mMediaController = new MediaController(context);
+         mVideoView.setMediaController(mMediaController);
++        mVideoView.setVisibility(View.INVISIBLE);
++        mVideoView.postDelayed(new Runnable() {
++            @Override
++            public void run() {
++                mVideoView.setVisibility(View.VISIBLE);
++            }
++        }, 500);
+ 
+         // make the video view handle keys for seeking and pausing
+         mVideoView.requestFocus();
+-- 
+1.8.0
+

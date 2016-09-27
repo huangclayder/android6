@@ -1,0 +1,53 @@
+From 04bb328b9e8f76cd76780d18b886b6adbf059abe Mon Sep 17 00:00:00 2001
+From: Haoran Wang <b50027@freescale.com>
+Date: Tue, 20 Oct 2015 11:05:37 +0800
+Subject: [PATCH 548/602] MA-6450-2 Added bcm4339 bluetooth for i.mx6.
+
+Use specific bt vendor lib module name.
+Copy the bt firmware to image.
+
+Signed-off-by: Haoran Wang <b50027@freescale.com>
+---
+ imx6/imx6.mk               | 4 ++++
+ sabresd_6dq/BoardConfig.mk | 3 +++
+ 2 files changed, 7 insertions(+)
+
+diff --git a/imx6/imx6.mk b/imx6/imx6.mk
+index 7dcc43e..2e4fa72 100644
+--- a/imx6/imx6.mk
++++ b/imx6/imx6.mk
+@@ -61,6 +61,8 @@ PRODUCT_PACKAGES += freescale-extended 		\
+ 
+ # Broadcom firmwares
+ PRODUCT_PACKAGES += \
++	Type_ZP.hcd   	\
++	bt_vendor.conf	\
+ 	bcmdhd.cal		\
+ 	fw_bcmdhd.bin	\
+ 	fw_bcmdhd_apsta.bin
+@@ -113,6 +115,8 @@ PRODUCT_PACKAGES += \
+ 	power.imx6				\
+ 	audio.r_submix.default			\
+ 	libbt-vendor				\
++	libbt-vendor-ar3k			\
++	libbt-vendor-broadcom		\
+ 	magd                                    \
+ 	consumerir.imx6
+ 
+diff --git a/sabresd_6dq/BoardConfig.mk b/sabresd_6dq/BoardConfig.mk
+index e43e35f..b0d4936 100644
+--- a/sabresd_6dq/BoardConfig.mk
++++ b/sabresd_6dq/BoardConfig.mk
+@@ -120,6 +120,9 @@ endif
+ 
+ # atheros 3k BT
+ BOARD_USE_AR3K_BLUETOOTH := true
++
++# Broadcom BCM4339 BT
++BOARD_HAVE_BLUETOOTH_BCM := true
+ BOARD_BLUETOOTH_BDROID_BUILDCFG_INCLUDE_DIR := device/fsl/sabresd_6dq/bluetooth
+ 
+ USE_ION_ALLOCATOR := false
+-- 
+1.8.0
+

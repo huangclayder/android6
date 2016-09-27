@@ -1,0 +1,218 @@
+From dc0b43564e57dc792d0b815336dc2d72398b2aaa Mon Sep 17 00:00:00 2001
+From: Russell King <rmk+kernel@arm.linux.org.uk>
+Date: Tue, 24 Jun 2014 19:43:15 +0100
+Subject: [PATCH] ARM: make it easier to check the CPU part number correctly
+
+Ensure that platform maintainers check the CPU part number in the right
+manner: the CPU part number is meaningless without also checking the
+CPU implement(e|o)r (choose your preferred spelling!)  Provide an
+interface which returns both the implementer and part number together,
+and update the definitions to include the implementer.
+
+Mark the old function as being deprecated... indeed, using the old
+function with the definitions will now always evaluate as false, so
+people must update their un-merged code to the new function.  While
+this could be avoided by adding new definitions, we'd also have to
+create new names for them which would be awkward.
+
+Acked-by: Nicolas Pitre <nico@linaro.org>
+Signed-off-by: Russell King <rmk+kernel@arm.linux.org.uk>
+(cherry picked from commit af040ffc9ba1e079ee4c0748aff64fa3d4716fa5)
+Signed-off-by: Christoffer Dall <christoffer.dall@linaro.org>
+---
+ arch/arm/include/asm/cputype.h         | 35 +++++++++++++------
+ arch/arm/include/asm/smp_scu.h         |  2 +-
+ arch/arm/kernel/perf_event_cpu.c       | 64 ++++++++++++++--------------------
+ arch/arm/kvm/guest.c                   |  8 +----
+ drivers/clocksource/arm_global_timer.c |  3 +-
+ 5 files changed, 55 insertions(+), 57 deletions(-)
+
+diff --git a/arch/arm/include/asm/cputype.h b/arch/arm/include/asm/cputype.h
+index acdde76..43bd224 100644
+--- a/arch/arm/include/asm/cputype.h
++++ b/arch/arm/include/asm/cputype.h
+@@ -62,15 +62,18 @@
+ #define ARM_CPU_IMP_ARM			0x41
+ #define ARM_CPU_IMP_INTEL		0x69
+ 
+-#define ARM_CPU_PART_ARM1136		0xB360
+-#define ARM_CPU_PART_ARM1156		0xB560
+-#define ARM_CPU_PART_ARM1176		0xB760
+-#define ARM_CPU_PART_ARM11MPCORE	0xB020
+-#define ARM_CPU_PART_CORTEX_A8		0xC080
+-#define ARM_CPU_PART_CORTEX_A9		0xC090
+-#define ARM_CPU_PART_CORTEX_A5		0xC050
+-#define ARM_CPU_PART_CORTEX_A15		0xC0F0
+-#define ARM_CPU_PART_CORTEX_A7		0xC070
++/* ARM implemented processors */
++#define ARM_CPU_PART_ARM1136		0x4100b360
++#define ARM_CPU_PART_ARM1156		0x4100b560
++#define ARM_CPU_PART_ARM1176		0x4100b760
++#define ARM_CPU_PART_ARM11MPCORE	0x4100b020
++#define ARM_CPU_PART_CORTEX_A8		0x4100c080
++#define ARM_CPU_PART_CORTEX_A9		0x4100c090
++#define ARM_CPU_PART_CORTEX_A5		0x4100c050
++#define ARM_CPU_PART_CORTEX_A7		0x4100c070
++#define ARM_CPU_PART_CORTEX_A12		0x4100c0d0
++#define ARM_CPU_PART_CORTEX_A17		0x4100c0e0
++#define ARM_CPU_PART_CORTEX_A15		0x4100c0f0
+ 
+ #define ARM_CPU_XSCALE_ARCH_MASK	0xe000
+ #define ARM_CPU_XSCALE_ARCH_V1		0x2000
+@@ -169,14 +172,24 @@ static inline unsigned int __attribute_const__ read_cpuid_implementor(void)
+ 	return (read_cpuid_id() & 0xFF000000) >> 24;
+ }
+ 
+-static inline unsigned int __attribute_const__ read_cpuid_part_number(void)
++/*
++ * The CPU part number is meaningless without referring to the CPU
++ * implementer: implementers are free to define their own part numbers
++ * which are permitted to clash with other implementer part numbers.
++ */
++static inline unsigned int __attribute_const__ read_cpuid_part(void)
++{
++	return read_cpuid_id() & 0xff00fff0;
++}
++
++static inline unsigned int __attribute_const__ __deprecated read_cpuid_part_number(void)
+ {
+ 	return read_cpuid_id() & 0xFFF0;
+ }
+ 
+ static inline unsigned int __attribute_const__ xscale_cpu_arch_version(void)
+ {
+-	return read_cpuid_part_number() & ARM_CPU_XSCALE_ARCH_MASK;
++	return read_cpuid_id() & ARM_CPU_XSCALE_ARCH_MASK;
+ }
+ 
+ static inline unsigned int __attribute_const__ read_cpuid_cachetype(void)
+diff --git a/arch/arm/include/asm/smp_scu.h b/arch/arm/include/asm/smp_scu.h
+index 0393fba..bfe163c 100644
+--- a/arch/arm/include/asm/smp_scu.h
++++ b/arch/arm/include/asm/smp_scu.h
+@@ -11,7 +11,7 @@
+ 
+ static inline bool scu_a9_has_base(void)
+ {
+-	return read_cpuid_part_number() == ARM_CPU_PART_CORTEX_A9;
++	return read_cpuid_part() == ARM_CPU_PART_CORTEX_A9;
+ }
+ 
+ static inline unsigned long scu_a9_get_base(void)
+diff --git a/arch/arm/kernel/perf_event_cpu.c b/arch/arm/kernel/perf_event_cpu.c
+index 20d553c..97d21a9 100644
+--- a/arch/arm/kernel/perf_event_cpu.c
++++ b/arch/arm/kernel/perf_event_cpu.c
+@@ -202,49 +202,39 @@ static struct platform_device_id cpu_pmu_plat_device_ids[] = {
+ static int probe_current_pmu(struct arm_pmu *pmu)
+ {
+ 	int cpu = get_cpu();
+-	unsigned long implementor = read_cpuid_implementor();
+-	unsigned long part_number = read_cpuid_part_number();
+ 	int ret = -ENODEV;
+ 
+ 	pr_info("probing PMU on CPU %d\n", cpu);
+ 
++	switch (read_cpuid_part()) {
+ 	/* ARM Ltd CPUs. */
+-	if (implementor == ARM_CPU_IMP_ARM) {
+-		switch (part_number) {
+-		case ARM_CPU_PART_ARM1136:
+-		case ARM_CPU_PART_ARM1156:
+-		case ARM_CPU_PART_ARM1176:
+-			ret = armv6pmu_init(pmu);
+-			break;
+-		case ARM_CPU_PART_ARM11MPCORE:
+-			ret = armv6mpcore_pmu_init(pmu);
+-			break;
+-		case ARM_CPU_PART_CORTEX_A8:
+-			ret = armv7_a8_pmu_init(pmu);
+-			break;
+-		case ARM_CPU_PART_CORTEX_A9:
+-			ret = armv7_a9_pmu_init(pmu);
+-			break;
+-		case ARM_CPU_PART_CORTEX_A5:
+-			ret = armv7_a5_pmu_init(pmu);
+-			break;
+-		case ARM_CPU_PART_CORTEX_A15:
+-			ret = armv7_a15_pmu_init(pmu);
+-			break;
+-		case ARM_CPU_PART_CORTEX_A7:
+-			ret = armv7_a7_pmu_init(pmu);
+-			break;
+-		}
+-	/* Intel CPUs [xscale]. */
+-	} else if (implementor == ARM_CPU_IMP_INTEL) {
+-		switch (xscale_cpu_arch_version()) {
+-		case ARM_CPU_XSCALE_ARCH_V1:
+-			ret = xscale1pmu_init(pmu);
+-			break;
+-		case ARM_CPU_XSCALE_ARCH_V2:
+-			ret = xscale2pmu_init(pmu);
+-			break;
++	case ARM_CPU_PART_ARM1136:
++	case ARM_CPU_PART_ARM1156:
++	case ARM_CPU_PART_ARM1176:
++		ret = armv6pmu_init(pmu);
++		break;
++	case ARM_CPU_PART_ARM11MPCORE:
++		ret = armv6mpcore_pmu_init(pmu);
++		break;
++	case ARM_CPU_PART_CORTEX_A8:
++		ret = armv7_a8_pmu_init(pmu);
++		break;
++	case ARM_CPU_PART_CORTEX_A9:
++		ret = armv7_a9_pmu_init(pmu);
++		break;
++
++	default:
++		if (read_cpuid_implementor() == ARM_CPU_IMP_INTEL) {
++			switch (xscale_cpu_arch_version()) {
++			case ARM_CPU_XSCALE_ARCH_V1:
++				ret = xscale1pmu_init(pmu);
++				break;
++			case ARM_CPU_XSCALE_ARCH_V2:
++				ret = xscale2pmu_init(pmu);
++				break;
++			}
+ 		}
++		break;
+ 	}
+ 
+ 	put_cpu();
+diff --git a/arch/arm/kvm/guest.c b/arch/arm/kvm/guest.c
+index 986e625..813e492 100644
+--- a/arch/arm/kvm/guest.c
++++ b/arch/arm/kvm/guest.c
+@@ -264,13 +264,7 @@ int kvm_arch_vcpu_ioctl_set_sregs(struct kvm_vcpu *vcpu,
+ 
+ int __attribute_const__ kvm_target_cpu(void)
+ {
+-	unsigned long implementor = read_cpuid_implementor();
+-	unsigned long part_number = read_cpuid_part_number();
+-
+-	if (implementor != ARM_CPU_IMP_ARM)
+-		return -EINVAL;
+-
+-	switch (part_number) {
++	switch (read_cpuid_part()) {
+ 	case ARM_CPU_PART_CORTEX_A7:
+ 		return KVM_ARM_TARGET_CORTEX_A7;
+ 	case ARM_CPU_PART_CORTEX_A15:
+diff --git a/drivers/clocksource/arm_global_timer.c b/drivers/clocksource/arm_global_timer.c
+index 0fc31d0..351c564 100644
+--- a/drivers/clocksource/arm_global_timer.c
++++ b/drivers/clocksource/arm_global_timer.c
+@@ -250,7 +250,8 @@ static void __init global_timer_of_register(struct device_node *np)
+ 	 * fire when the timer value is greater than or equal to. In previous
+ 	 * revisions the comparators fired when the timer value was equal to.
+ 	 */
+-	if ((read_cpuid_id() & 0xf0000f) < 0x200000) {
++	if (read_cpuid_part() == ARM_CPU_PART_CORTEX_A9
++	    && (read_cpuid_id() & 0xf0000f) < 0x200000) {
+ 		pr_warn("global-timer: non support for this cpu version.\n");
+ 		return;
+ 	}
+-- 
+1.8.0
+

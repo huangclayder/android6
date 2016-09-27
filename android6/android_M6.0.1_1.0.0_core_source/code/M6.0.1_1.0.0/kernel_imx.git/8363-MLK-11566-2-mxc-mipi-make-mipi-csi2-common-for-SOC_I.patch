@@ -1,0 +1,30 @@
+From 2e2025df741a79620be9b96fa6fb0f2e2e40fdea Mon Sep 17 00:00:00 2001
+From: Anson Huang <b20788@freescale.com>
+Date: Fri, 18 Sep 2015 23:52:21 +0800
+Subject: [PATCH] MLK-11566-2 mxc: mipi: make mipi csi2 common for SOC_IMX6
+ and SOC_IMX7
+
+MIPI_CSI2 is necessary for modules build, enable it for all
+i.MX6 and i.MX7 SOC.
+
+Signed-off-by: Anson Huang <b20788@freescale.com>
+---
+ drivers/mxc/mipi/Kconfig | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/mxc/mipi/Kconfig b/drivers/mxc/mipi/Kconfig
+index a6a3c33..4c85da3 100644
+--- a/drivers/mxc/mipi/Kconfig
++++ b/drivers/mxc/mipi/Kconfig
+@@ -6,7 +6,7 @@ menu "MXC MIPI Support"
+ 
+ config MXC_MIPI_CSI2
+ 	tristate "MIPI CSI2 support"
+-	depends on SOC_IMX6Q
++	depends on (SOC_IMX6 || SOC_IMX7)
+ 	default n
+ 	---help---
+ 	Say Y to get the MIPI CSI2 support.
+-- 
+1.8.0
+

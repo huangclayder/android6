@@ -1,0 +1,100 @@
+From de732af53dab8252353d5d4aeafcc5a8df99968d Mon Sep 17 00:00:00 2001
+From: Ye Li <ye.li@nxp.com>
+Date: Thu, 14 Jan 2016 13:26:23 +0800
+Subject: [PATCH] MLK-12329-2 imx7d: Add build target for TO1.0
+
+Since only DDR script changed, create build target for SD boot as example
+to use TO1.0.
+All default build target for 7D platforms are for TO1.1.
+
+Signed-off-by: Ye Li <ye.li@nxp.com>
+---
+ configs/mx7d_12x12_ddr3_arm2_TO_1_0_defconfig   | 7 +++++++
+ configs/mx7d_12x12_lpddr3_arm2_TO_1_0_defconfig | 7 +++++++
+ configs/mx7d_19x19_ddr3_arm2_TO_1_0_defconfig   | 7 +++++++
+ configs/mx7d_19x19_lpddr2_arm2_TO_1_0_defconfig | 7 +++++++
+ configs/mx7d_19x19_lpddr3_arm2_TO_1_0_defconfig | 7 +++++++
+ configs/mx7dsabresd_TO_1_0_defconfig            | 7 +++++++
+ 6 files changed, 42 insertions(+)
+
+diff --git a/configs/mx7d_12x12_ddr3_arm2_TO_1_0_defconfig b/configs/mx7d_12x12_ddr3_arm2_TO_1_0_defconfig
+new file mode 100644
+index 0000000..86cd006
+--- /dev/null
++++ b/configs/mx7d_12x12_ddr3_arm2_TO_1_0_defconfig
+@@ -0,0 +1,7 @@
++CONFIG_SYS_EXTRA_OPTIONS="IMX_CONFIG=board/freescale/mx7d_12x12_ddr3_arm2/imximage_TO_1_0.cfg,MX7D,DEFAULT_FDT_FILE=\"imx7d-12x12-ddr3-arm2.dtb\""
++CONFIG_ARM=y
++CONFIG_TARGET_MX7D_12X12_DDR3_ARM2=y
++CONFIG_SYS_MALLOC_F=y
++CONFIG_SYS_MALLOC_F_LEN=0x400
++CONFIG_DM=y
++CONFIG_DM_THERMAL=y
+diff --git a/configs/mx7d_12x12_lpddr3_arm2_TO_1_0_defconfig b/configs/mx7d_12x12_lpddr3_arm2_TO_1_0_defconfig
+new file mode 100644
+index 0000000..841f4a2
+--- /dev/null
++++ b/configs/mx7d_12x12_lpddr3_arm2_TO_1_0_defconfig
+@@ -0,0 +1,7 @@
++CONFIG_SYS_EXTRA_OPTIONS="IMX_CONFIG=board/freescale/mx7d_12x12_lpddr3_arm2/imximage_TO_1_0.cfg,MX7D,DEFAULT_FDT_FILE=\"imx7d-12x12-lpddr3-arm2.dtb\""
++CONFIG_ARM=y
++CONFIG_TARGET_MX7D_12X12_LPDDR3_ARM2=y
++CONFIG_SYS_MALLOC_F=y
++CONFIG_SYS_MALLOC_F_LEN=0x400
++CONFIG_DM=y
++CONFIG_DM_THERMAL=y
+diff --git a/configs/mx7d_19x19_ddr3_arm2_TO_1_0_defconfig b/configs/mx7d_19x19_ddr3_arm2_TO_1_0_defconfig
+new file mode 100644
+index 0000000..bdb6aba
+--- /dev/null
++++ b/configs/mx7d_19x19_ddr3_arm2_TO_1_0_defconfig
+@@ -0,0 +1,7 @@
++CONFIG_SYS_EXTRA_OPTIONS="IMX_CONFIG=board/freescale/mx7d_19x19_ddr3_arm2/imximage_TO_1_0.cfg,MX7D,DEFAULT_FDT_FILE=\"imx7d-19x19-ddr3-arm2.dtb\""
++CONFIG_ARM=y
++CONFIG_TARGET_MX7D_19X19_DDR3_ARM2=y
++CONFIG_SYS_MALLOC_F=y
++CONFIG_SYS_MALLOC_F_LEN=0x400
++CONFIG_DM=y
++CONFIG_DM_THERMAL=y
+diff --git a/configs/mx7d_19x19_lpddr2_arm2_TO_1_0_defconfig b/configs/mx7d_19x19_lpddr2_arm2_TO_1_0_defconfig
+new file mode 100644
+index 0000000..e4aca28
+--- /dev/null
++++ b/configs/mx7d_19x19_lpddr2_arm2_TO_1_0_defconfig
+@@ -0,0 +1,7 @@
++CONFIG_SYS_EXTRA_OPTIONS="IMX_CONFIG=board/freescale/mx7d_19x19_lpddr3_arm2/imximage_lpddr2_TO_1_0.cfg,MX7D,MX7D_LPDDR2,DEFAULT_FDT_FILE=\"imx7d-19x19-lpddr2-arm2.dtb\""
++CONFIG_ARM=y
++CONFIG_TARGET_MX7D_19X19_LPDDR3_ARM2=y
++CONFIG_SYS_MALLOC_F=y
++CONFIG_SYS_MALLOC_F_LEN=0x400
++CONFIG_DM=y
++CONFIG_DM_THERMAL=y
+diff --git a/configs/mx7d_19x19_lpddr3_arm2_TO_1_0_defconfig b/configs/mx7d_19x19_lpddr3_arm2_TO_1_0_defconfig
+new file mode 100644
+index 0000000..11813f0
+--- /dev/null
++++ b/configs/mx7d_19x19_lpddr3_arm2_TO_1_0_defconfig
+@@ -0,0 +1,7 @@
++CONFIG_SYS_EXTRA_OPTIONS="IMX_CONFIG=board/freescale/mx7d_19x19_lpddr3_arm2/imximage_TO_1_0.cfg,MX7D,DEFAULT_FDT_FILE=\"imx7d-19x19-lpddr3-arm2.dtb\""
++CONFIG_ARM=y
++CONFIG_TARGET_MX7D_19X19_LPDDR3_ARM2=y
++CONFIG_SYS_MALLOC_F=y
++CONFIG_SYS_MALLOC_F_LEN=0x400
++CONFIG_DM=y
++CONFIG_DM_THERMAL=y
+diff --git a/configs/mx7dsabresd_TO_1_0_defconfig b/configs/mx7dsabresd_TO_1_0_defconfig
+new file mode 100644
+index 0000000..c0541c0
+--- /dev/null
++++ b/configs/mx7dsabresd_TO_1_0_defconfig
+@@ -0,0 +1,7 @@
++CONFIG_SYS_EXTRA_OPTIONS="IMX_CONFIG=board/freescale/mx7dsabresd/imximage_TO_1_0.cfg,MX7D"
++CONFIG_ARM=y
++CONFIG_TARGET_MX7DSABRESD=y
++CONFIG_SYS_MALLOC_F=y
++CONFIG_SYS_MALLOC_F_LEN=0x400
++CONFIG_DM=y
++CONFIG_DM_THERMAL=y
+-- 
+1.8.0
+

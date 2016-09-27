@@ -1,0 +1,613 @@
+From 2a14e6d9e288b5847b7197c0367d0a9262b1b233 Mon Sep 17 00:00:00 2001
+From: Fang Hui <b31070@freescale.com>
+Date: Mon, 10 Nov 2014 14:49:18 +0800
+Subject: [PATCH 543/635] MA-5839-3 Update android to Lollipop
+
+comment unused parameters;
+use new atomic func for mRefCount;
+remove GEOMETRIC tag
+
+Signed-off-by: Fang Hui <b31070@freescale.com>
+---
+ mx6/libcamera2/Android.mk           |  7 ++++---
+ mx6/libcamera2/CameraHal.cpp        | 20 ++++++++++----------
+ mx6/libcamera2/CameraModule.cpp     | 33 +++++++++++++++++----------------
+ mx6/libcamera2/CameraUtil.cpp       | 16 +++++++---------
+ mx6/libcamera2/CameraUtil.h         |  3 ++-
+ mx6/libcamera2/DeviceAdapter.cpp    |  2 +-
+ mx6/libcamera2/DeviceAdapter.h      |  2 +-
+ mx6/libcamera2/MetadaManager.cpp    |  8 ++------
+ mx6/libcamera2/Ov5640Csi.cpp        |  2 +-
+ mx6/libcamera2/Ov5640Mipi.cpp       |  4 ++--
+ mx6/libcamera2/Ov5642Csi.cpp        |  2 +-
+ mx6/libcamera2/OvDevice.cpp         |  4 ++--
+ mx6/libcamera2/PreviewStream.cpp    |  6 +++---
+ mx6/libcamera2/StreamAdapter.cpp    | 16 ++++++++--------
+ mx6/libcamera2/StreamAdapter.h      |  4 ++--
+ mx6/libcamera2/TVINDevice.cpp       |  6 +++---
+ mx6/libcamera2/UvcDevice.cpp        |  4 ++--
+ mx6/libcamera2/UvcMJPGDevice.cpp    |  4 ++--
+ mx6/libcamera2/UvcMJPGDevice.h      |  2 +-
+ mx6/libcamera2/YuvToJpegEncoder.cpp |  4 ++--
+ mx6/libcamera2/messageQueue.cpp     |  4 ++--
+ 21 files changed, 75 insertions(+), 78 deletions(-)
+
+diff --git a/mx6/libcamera2/Android.mk b/mx6/libcamera2/Android.mk
+index 3d0d7fb..943a607 100644
+--- a/mx6/libcamera2/Android.mk
++++ b/mx6/libcamera2/Android.mk
+@@ -69,9 +69,10 @@ LOCAL_C_INCLUDES += \
+ 	system/media/camera/include \
+ 	external/jpeg \
+ 	external/jhead \
+-        device/fsl-proprietary/include \
+-        external/fsl_vpu_omx/OpenMAXIL/src/component/vpu_wrapper \
+-        external/fsl_imx_omx/OpenMAXIL/src/component/vpu_wrapper
++    device/fsl-proprietary/include \
++    external/fsl_vpu_omx/OpenMAXIL/src/component/vpu_wrapper \
++    external/fsl_imx_omx/OpenMAXIL/src/component/vpu_wrapper \
++    system/core/libion/include
+ 
+ ifeq ($(HAVE_FSL_IMX_CODEC),true)
+     #LOCAL_SHARED_LIBRARIES += libfsl_jpeg_enc_arm11_elinux
+diff --git a/mx6/libcamera2/CameraHal.cpp b/mx6/libcamera2/CameraHal.cpp
+index 8766843..1b3cec5 100755
+--- a/mx6/libcamera2/CameraHal.cpp
++++ b/mx6/libcamera2/CameraHal.cpp
+@@ -1,5 +1,5 @@
+ /*
+- * Copyright (C) 2009-2013 Freescale Semiconductor, Inc.
++ * Copyright (C) 2009-2014 Freescale Semiconductor, Inc.
+  *
+  * Licensed under the Apache License, Version 2.0 (the "License");
+  * you may not use this file except in compliance with the License.
+@@ -103,18 +103,18 @@ int CameraHal::release_stream(uint32_t stream_id)
+ }
+ 
+ int CameraHal::allocate_reprocess_stream(
+-    uint32_t width,
+-    uint32_t height,
+-    uint32_t format,
+-    const camera2_stream_in_ops_t *reprocess_stream_ops,
+-    uint32_t *stream_id,
+-    uint32_t *consumer_usage,
+-    uint32_t *max_buffers)
++    uint32_t /*width*/,
++    uint32_t /*height*/,
++    uint32_t /*format*/,
++    const camera2_stream_in_ops_t * /*reprocess_stream_ops*/,
++    uint32_t * /*stream_id*/,
++    uint32_t * /*consumer_usage*/,
++    uint32_t * /*max_buffers*/)
+ {
+     return INVALID_OPERATION;
+ }
+ 
+-int CameraHal::release_reprocess_stream(uint32_t stream_id)
++int CameraHal::release_reprocess_stream(uint32_t /*stream_id*/)
+ {
+     return INVALID_OPERATION;
+ }
+@@ -176,7 +176,7 @@ void CameraHal::UnLockWakeLock()
+     }
+ }
+ 
+-status_t CameraHal::dump(int fd) const
++status_t CameraHal::dump(int /*fd*/) const
+ {
+     return NO_ERROR;
+ }
+diff --git a/mx6/libcamera2/CameraModule.cpp b/mx6/libcamera2/CameraModule.cpp
+index d7631e4..bc4cc6d 100755
+--- a/mx6/libcamera2/CameraModule.cpp
++++ b/mx6/libcamera2/CameraModule.cpp
+@@ -1,6 +1,6 @@
+ /*
+  * Copyright (C) Freescale - http://www.Freescale.com/
+- * Copyright (C) 2012-2013 Freescale Semiconductor, Inc.
++ * Copyright (C) 2012-2014 Freescale Semiconductor, Inc.
+  *
+  * Licensed under the Apache License, Version 2.0 (the "License");
+  * you may not use this file except in compliance with the License.
+@@ -60,6 +60,7 @@ camera_module_t HAL_MODULE_INFO_SYM = {
+     get_camera_info: camera_get_camera_info,
+     set_callbacks: NULL,
+     get_vendor_tag_ops: NULL,
++    open_legacy: NULL,
+     reserved: {0}
+ };
+ 
+@@ -197,36 +198,36 @@ int release_stream(
+ }
+ 
+ int allocate_reprocess_stream(const struct camera2_device *,
+-        uint32_t width,
+-        uint32_t height,
+-        uint32_t format,
+-        const camera2_stream_in_ops_t *reprocess_stream_ops,
+-        uint32_t *stream_id,
+-        uint32_t *consumer_usage,
+-        uint32_t *max_buffers)
++        uint32_t /*width*/,
++        uint32_t /*height*/,
++        uint32_t /*format*/,
++        const camera2_stream_in_ops_t * /*reprocess_stream_ops*/,
++        uint32_t * /*stream_id*/,
++        uint32_t * /*consumer_usage*/,
++        uint32_t * /*max_buffers*/)
+ {
+     return INVALID_OPERATION;
+ }
+ 
+ int allocate_reprocess_stream_from_stream(const struct camera2_device *,
+-        uint32_t output_stream_id,
+-        const camera2_stream_in_ops_t *reprocess_stream_ops,
+-        uint32_t *stream_id)
++        uint32_t  /*output_stream_id*/,
++        const camera2_stream_in_ops_t * /*reprocess_stream_ops*/,
++        uint32_t * /*stream_id*/ )
+ {
+     return INVALID_OPERATION;
+ }
+ 
+ int release_reprocess_stream(
+         const struct camera2_device *,
+-        uint32_t stream_id)
++        uint32_t /*stream_id*/)
+ {
+     return INVALID_OPERATION;
+ }
+ 
+ int trigger_action(const struct camera2_device *,
+-        uint32_t trigger_id,
+-        int32_t ext1,
+-        int32_t ext2)
++        uint32_t /*trigger_id*/,
++        int32_t /*ext1*/,
++        int32_t /*ext2*/)
+ {
+     return INVALID_OPERATION;
+ }
+@@ -256,7 +257,7 @@ int get_metadata_vendor_tag_ops(const struct camera2_device *device,
+     return ret;
+ }
+ 
+-int camera_dump(const struct camera2_device *, int fd)
++int camera_dump(const struct camera2_device *, int /*fd*/)
+ {
+     return INVALID_OPERATION;
+ }
+diff --git a/mx6/libcamera2/CameraUtil.cpp b/mx6/libcamera2/CameraUtil.cpp
+index a682346..7d0ee9b 100755
+--- a/mx6/libcamera2/CameraUtil.cpp
++++ b/mx6/libcamera2/CameraUtil.cpp
+@@ -15,7 +15,6 @@
+  */
+ 
+ #include "CameraUtil.h"
+-#include <sys/atomics.h>
+ 
+ int convertPixelFormatToV4L2Format(PixelFormat format)
+ {
+@@ -129,7 +128,7 @@ void CameraFrame::initialize(buffer_handle_t  buf_h,
+     mFormat    = handle->format;
+ 
+     mObserver  = NULL;
+-    mRefCount  = 0;
++    atomic_init(&mRefCount, 0);
+     mBufState  = BUFS_CREATE;
+     mFrameType = INVALID_FRAME;
+     mIndex     = index;
+@@ -163,19 +162,18 @@ void CameraFrame::removeState(CAMERA_BUFS_STATE state)
+ 
+ void CameraFrame::ZeroRefCount()
+ {
+-    mRefCount = 0;
++    atomic_init(&mRefCount, 0);
+ }
+ 
+ void CameraFrame::addReference()
+ {
+-    __atomic_inc(&mRefCount);
++    atomic_fetch_add(&mRefCount, 1);
+ }
+ 
+ void CameraFrame::release()
+ {
+-    fAssert(mRefCount > 0);
+-
+-    int prevCount = __atomic_dec(&mRefCount);
++    int prevCount = atomic_fetch_sub(&mRefCount, 1);
++    fAssert(prevCount > 0);
+     if ((prevCount == 1) && (mObserver != NULL)) {
+         mObserver->handleFrameRelease(this);
+     }
+@@ -183,7 +181,7 @@ void CameraFrame::release()
+ 
+ int CameraFrame::getRefCount()
+ {
+-    return mRefCount;
++    return atomic_load(&mRefCount);
+ }
+ 
+ void CameraFrame::setObserver(CameraFrameObserver *observer)
+@@ -197,7 +195,7 @@ void CameraFrame::reset()
+     mVirtAddr  = NULL;
+     mPhyAddr   = 0;
+     mObserver  = NULL;
+-    mRefCount  = 0;
++    atomic_init(&mRefCount, 0);
+     mBufState  = BUFS_CREATE;
+     mFrameType = INVALID_FRAME;
+ 
+diff --git a/mx6/libcamera2/CameraUtil.h b/mx6/libcamera2/CameraUtil.h
+index 5d57e9f..81ac119 100755
+--- a/mx6/libcamera2/CameraUtil.h
++++ b/mx6/libcamera2/CameraUtil.h
+@@ -50,6 +50,7 @@
+ #include <linux/videodev2.h>
+ #include <hardware/camera2.h>
+ #include "MetadaManager.h"
++#include <stdatomic.h>
+ 
+ using namespace android;
+ 
+@@ -229,7 +230,7 @@ public:
+     int mIndex;
+ 
+ private:
+-    int mRefCount;
++    atomic_int mRefCount;
+     int mBufState;
+     CameraFrameObserver *mObserver;
+ };
+diff --git a/mx6/libcamera2/DeviceAdapter.cpp b/mx6/libcamera2/DeviceAdapter.cpp
+index 3df7f83..16870c6 100755
+--- a/mx6/libcamera2/DeviceAdapter.cpp
++++ b/mx6/libcamera2/DeviceAdapter.cpp
+@@ -599,7 +599,7 @@ CameraFrame * DeviceAdapter::acquireCameraFrame()
+ }
+ 
+ // #define FSL_CAMERAHAL_DUMP
+-static void bufferDump(CameraFrame *frame)
++static void bufferDump(CameraFrame * /*frame*/)
+ {
+ #ifdef FSL_CAMERAHAL_DUMP
+ 
+diff --git a/mx6/libcamera2/DeviceAdapter.h b/mx6/libcamera2/DeviceAdapter.h
+index 680748c..3f5de9a 100755
+--- a/mx6/libcamera2/DeviceAdapter.h
++++ b/mx6/libcamera2/DeviceAdapter.h
+@@ -54,7 +54,7 @@ public:
+     }
+ 
+     virtual status_t initSensorInfo(const CameraInfo& info) = 0;
+-    virtual int getCaptureMode(int width, int height) {return 0;}
++    virtual int getCaptureMode(int /*width*/, int /*height*/) {return 0;}
+     PixelFormat getMatchFormat(int *sfmt, int  slen,
+                                int *dfmt, int  dlen);
+     void setMetadaManager(sp<MetadaManager> &metadaManager);
+diff --git a/mx6/libcamera2/MetadaManager.cpp b/mx6/libcamera2/MetadaManager.cpp
+index 76176dc..9c9b657 100755
+--- a/mx6/libcamera2/MetadaManager.cpp
++++ b/mx6/libcamera2/MetadaManager.cpp
+@@ -1,5 +1,5 @@
+ /*
+- * Copyright (C) 2012-2013 Freescale Semiconductor, Inc.
++ * Copyright (C) 2012-2014 Freescale Semiconductor, Inc.
+  *
+  * Licensed under the Apache License, Version 2.0 (the "License");
+  * you may not use this file except in compliance with the License.
+@@ -153,7 +153,6 @@ status_t MetadaManager::createDefaultRequest(
+     uint8_t demosaicMode = 0;
+     uint8_t noiseMode = 0;
+     uint8_t shadingMode = 0;
+-    uint8_t geometricMode = 0;
+     uint8_t colorMode = 0;
+     uint8_t tonemapMode = 0;
+     uint8_t edgeMode = 0;
+@@ -175,7 +174,6 @@ status_t MetadaManager::createDefaultRequest(
+         demosaicMode = ANDROID_DEMOSAIC_MODE_HIGH_QUALITY;
+         noiseMode = ANDROID_NOISE_REDUCTION_MODE_HIGH_QUALITY;
+         shadingMode = ANDROID_SHADING_MODE_HIGH_QUALITY;
+-        geometricMode = ANDROID_GEOMETRIC_MODE_HIGH_QUALITY;
+         colorMode = ANDROID_COLOR_CORRECTION_MODE_HIGH_QUALITY;
+         tonemapMode = ANDROID_TONEMAP_MODE_HIGH_QUALITY;
+         edgeMode = ANDROID_EDGE_MODE_HIGH_QUALITY;
+@@ -185,7 +183,6 @@ status_t MetadaManager::createDefaultRequest(
+         demosaicMode = ANDROID_DEMOSAIC_MODE_FAST;
+         noiseMode = ANDROID_NOISE_REDUCTION_MODE_FAST;
+         shadingMode = ANDROID_SHADING_MODE_FAST;
+-        geometricMode = ANDROID_GEOMETRIC_MODE_FAST;
+         colorMode = ANDROID_COLOR_CORRECTION_MODE_FAST;
+         tonemapMode = ANDROID_TONEMAP_MODE_FAST;
+         edgeMode = ANDROID_EDGE_MODE_FAST;
+@@ -195,7 +192,6 @@ status_t MetadaManager::createDefaultRequest(
+     ADD_OR_SIZE(ANDROID_DEMOSAIC_MODE, &demosaicMode, 1);
+     ADD_OR_SIZE(ANDROID_NOISE_REDUCTION_MODE, &noiseMode, 1);
+     ADD_OR_SIZE(ANDROID_SHADING_MODE, &shadingMode, 1);
+-    ADD_OR_SIZE(ANDROID_GEOMETRIC_MODE, &geometricMode, 1);
+     ADD_OR_SIZE(ANDROID_COLOR_CORRECTION_MODE, &colorMode, 1);
+     ADD_OR_SIZE(ANDROID_TONEMAP_MODE, &tonemapMode, 1);
+     ADD_OR_SIZE(ANDROID_EDGE_MODE, &edgeMode, 1);
+@@ -303,7 +299,7 @@ status_t MetadaManager::createDefaultRequest(
+     static const uint8_t effectMode = ANDROID_CONTROL_EFFECT_MODE_OFF;
+     ADD_OR_SIZE(ANDROID_CONTROL_EFFECT_MODE, &effectMode, 1);
+ 
+-    static const uint8_t sceneMode = ANDROID_CONTROL_SCENE_MODE_UNSUPPORTED;
++    static const uint8_t sceneMode = ANDROID_CONTROL_SCENE_MODE_DISABLED;
+     ADD_OR_SIZE(ANDROID_CONTROL_SCENE_MODE, &sceneMode, 1);
+ 
+     static const uint8_t aeMode = ANDROID_CONTROL_AE_MODE_ON;
+diff --git a/mx6/libcamera2/Ov5640Csi.cpp b/mx6/libcamera2/Ov5640Csi.cpp
+index 1fed6f1..ef94949 100755
+--- a/mx6/libcamera2/Ov5640Csi.cpp
++++ b/mx6/libcamera2/Ov5640Csi.cpp
+@@ -16,7 +16,7 @@
+ 
+ #include "Ov5640Csi.h"
+ 
+-status_t Ov5640Csi::initSensorInfo(const CameraInfo& info)
++status_t Ov5640Csi::initSensorInfo(const CameraInfo& info __unused)
+ {
+     if (mCameraHandle < 0) {
+         FLOGE("OvDevice: initParameters sensor has not been opened");
+diff --git a/mx6/libcamera2/Ov5640Mipi.cpp b/mx6/libcamera2/Ov5640Mipi.cpp
+index 091fa30..c094862 100755
+--- a/mx6/libcamera2/Ov5640Mipi.cpp
++++ b/mx6/libcamera2/Ov5640Mipi.cpp
+@@ -1,5 +1,5 @@
+ /*
+- * Copyright (C) 2012-2013 Freescale Semiconductor, Inc.
++ * Copyright (C) 2012-2014 Freescale Semiconductor, Inc.
+  *
+  * Licensed under the Apache License, Version 2.0 (the "License");
+  * you may not use this file except in compliance with the License.
+@@ -17,7 +17,7 @@
+ #include "Ov5640Mipi.h"
+ 
+ 
+-status_t Ov5640Mipi::initSensorInfo(const CameraInfo& info)
++status_t Ov5640Mipi::initSensorInfo(const CameraInfo& /*info*/)
+ {
+     if (mCameraHandle < 0) {
+         FLOGE("OvDevice: initParameters sensor has not been opened");
+diff --git a/mx6/libcamera2/Ov5642Csi.cpp b/mx6/libcamera2/Ov5642Csi.cpp
+index cbf76b1..d65de0f 100755
+--- a/mx6/libcamera2/Ov5642Csi.cpp
++++ b/mx6/libcamera2/Ov5642Csi.cpp
+@@ -16,7 +16,7 @@
+ 
+ #include "Ov5642Csi.h"
+ 
+-status_t Ov5642Csi::initSensorInfo(const CameraInfo& info)
++status_t Ov5642Csi::initSensorInfo(const CameraInfo& /*info*/)
+ {
+     if (mCameraHandle < 0) {
+         FLOGE("OvDevice: initParameters sensor has not been opened");
+diff --git a/mx6/libcamera2/OvDevice.cpp b/mx6/libcamera2/OvDevice.cpp
+index 8dfb0be..9c8999a 100755
+--- a/mx6/libcamera2/OvDevice.cpp
++++ b/mx6/libcamera2/OvDevice.cpp
+@@ -1,5 +1,5 @@
+ /*
+- * Copyright (C) 2012-2013 Freescale Semiconductor, Inc.
++ * Copyright (C) 2012-2014 Freescale Semiconductor, Inc.
+  *
+  * Licensed under the Apache License, Version 2.0 (the "License");
+  * you may not use this file except in compliance with the License.
+@@ -55,7 +55,7 @@ status_t OvDevice::changeSensorFormats(int *src, int len)
+     return 0;
+ }
+ 
+-status_t OvDevice::initSensorInfo(const CameraInfo& info)
++status_t OvDevice::initSensorInfo(const CameraInfo& /*info*/)
+ {
+     if (mCameraHandle < 0) {
+         FLOGE("OvDevice: initParameters sensor has not been opened");
+diff --git a/mx6/libcamera2/PreviewStream.cpp b/mx6/libcamera2/PreviewStream.cpp
+index 50452b4..5be6d70 100755
+--- a/mx6/libcamera2/PreviewStream.cpp
++++ b/mx6/libcamera2/PreviewStream.cpp
+@@ -17,7 +17,7 @@
+ #include "StreamAdapter.h"
+ 
+ 
+-int PreviewStream::configure(int fps, bool videoSnapshot)
++int PreviewStream::configure(int fps, bool /*videoSnapshot*/)
+ {
+     FLOG_TRACE("PreviewStream %s running", __FUNCTION__);
+     int ret = NO_ERROR;
+@@ -53,8 +53,8 @@ fail:
+     return BAD_VALUE;
+ }
+ 
+-int PreviewStream::allocateBuffers(int width, int height,
+-                        int format, int numBufs)
++int PreviewStream::allocateBuffers(int /*width*/, int /*height*/,
++                        int /*format*/, int /*numBufs*/ )
+ {
+     int index = -1;
+     int ret = NO_ERROR;
+diff --git a/mx6/libcamera2/StreamAdapter.cpp b/mx6/libcamera2/StreamAdapter.cpp
+index bca4dc5..928b075 100755
+--- a/mx6/libcamera2/StreamAdapter.cpp
++++ b/mx6/libcamera2/StreamAdapter.cpp
+@@ -17,7 +17,7 @@
+ #include "StreamAdapter.h"
+ #include "RequestManager.h"
+ 
+-static void convertUV(u8 *pbySrcColor, u8 *pbyDstColor, u32 width, u32 height) //StreamBuffer *dst, StreamBuffer *src)
++static void convertUV(unsigned char *pbySrcColor, unsigned char *pbyDstColor, unsigned int width, unsigned int height) //StreamBuffer *dst, StreamBuffer *src)
+ {
+  //   FLOGI("convertUV\n");
+ 
+@@ -76,14 +76,14 @@ static void convertUV(u8 *pbySrcColor, u8 *pbyDstColor, u32 width, u32 height) /
+     }
+ }
+ 
+-static void YUV422ToYUV420Interleave(u8* pbySrcY, u8* pbySrcC,
+-            u32 dwSrcYStide, u32 dwSrcCStride, u32 dwSrcHeight,
+-            u8 *pbyDstY, u8 *pbyDstC,
+-            u32 dwDstYStide, u32 dwDstCStide, u32 dwDstHeight) {
++static void YUV422ToYUV420Interleave(unsigned char* pbySrcY, unsigned char* pbySrcC,
++            unsigned int dwSrcYStide, unsigned int /*dwSrcCStride*/, unsigned int dwSrcHeight,
++            unsigned char *pbyDstY, unsigned char *pbyDstC,
++            unsigned int dwDstYStide, unsigned int /*dwDstCStide*/, unsigned int dwDstHeight) {
+     //convert Y
+-    u8 *pInY = pbySrcY;
+-    u8 *pOutY = pbyDstY;
+-    u32 nDstLine;
++    unsigned char *pInY = pbySrcY;
++    unsigned char *pOutY = pbyDstY;
++    unsigned int nDstLine;
+ 
+     for(nDstLine = 0; nDstLine < dwDstHeight; nDstLine++) {
+         memcpy(pOutY, pInY, dwDstYStide);
+diff --git a/mx6/libcamera2/StreamAdapter.h b/mx6/libcamera2/StreamAdapter.h
+index 7b7b587..701cdbd 100755
+--- a/mx6/libcamera2/StreamAdapter.h
++++ b/mx6/libcamera2/StreamAdapter.h
+@@ -36,9 +36,9 @@ public:
+     virtual int initialize(int width, int height, int format,
+                            int usage, int bufferNum);
+     virtual int setPreviewWindow(const camera2_stream_ops_t* window);
+-    virtual int registerBuffers(int num_buffers, buffer_handle_t *buffers) {return 0;}
++    virtual int registerBuffers(int /*num_buffers*/, buffer_handle_t * /*buffers*/) {return 0;}
+ 
+-    virtual int configure(int fps, bool videoSnapshot)
++    virtual int configure(int /*fps*/, bool /*videoSnapshot*/)
+     {
+         FLOG_TRACE("StreamAdapter::configure");
+         mPrepared = true;
+diff --git a/mx6/libcamera2/TVINDevice.cpp b/mx6/libcamera2/TVINDevice.cpp
+index 0f6990d..4f2c24c 100755
+--- a/mx6/libcamera2/TVINDevice.cpp
++++ b/mx6/libcamera2/TVINDevice.cpp
+@@ -1,5 +1,5 @@
+ /*
+- * Copyright (C) 2012-2013 Freescale Semiconductor, Inc.
++ * Copyright (C) 2012-2014 Freescale Semiconductor, Inc.
+  *
+  * Licensed under the Apache License, Version 2.0 (the "License");
+  * you may not use this file except in compliance with the License.
+@@ -55,7 +55,7 @@ status_t TVINDevice::changeSensorFormats(int *src, int len)
+     return 0;
+ }
+ 
+-status_t TVINDevice::initSensorInfo(const CameraInfo& info)
++status_t TVINDevice::initSensorInfo(const CameraInfo& /*info*/)
+ {
+     if (mCameraHandle < 0) {
+         FLOGE("TVINDevice: initParameters sensor has not been opened");
+@@ -201,7 +201,7 @@ status_t TVINDevice::initSensorInfo(const CameraInfo& info)
+     return NO_ERROR;
+ }
+ 
+-int TVINDevice::getCaptureMode(int width, int height)
++int TVINDevice::getCaptureMode(int /*width*/, int /*height*/)
+ {
+     return 0;
+ }
+diff --git a/mx6/libcamera2/UvcDevice.cpp b/mx6/libcamera2/UvcDevice.cpp
+index d24f336..7df2235 100644
+--- a/mx6/libcamera2/UvcDevice.cpp
++++ b/mx6/libcamera2/UvcDevice.cpp
+@@ -1,5 +1,5 @@
+ /*
+- * Copyright (C) 2012-2013 Freescale Semiconductor, Inc.
++ * Copyright (C) 2012-2014 Freescale Semiconductor, Inc.
+  *
+  * Licensed under the Apache License, Version 2.0 (the "License");
+  * you may not use this file except in compliance with the License.
+@@ -70,7 +70,7 @@ void UvcDevice::adjustSensorFormats(int *src, int len)
+ 
+ status_t UvcDevice::setDeviceConfig(int         width,
+                                     int         height,
+-                                    PixelFormat format,
++                                    PixelFormat /*format*/,
+                                     int         fps)
+ {
+     if (mCameraHandle <= 0) {
+diff --git a/mx6/libcamera2/UvcMJPGDevice.cpp b/mx6/libcamera2/UvcMJPGDevice.cpp
+index 322b1b6..9392fad 100755
+--- a/mx6/libcamera2/UvcMJPGDevice.cpp
++++ b/mx6/libcamera2/UvcMJPGDevice.cpp
+@@ -847,7 +847,7 @@ int UvcMJPGDevice::VPUExit()
+ 	return 0;
+ }
+ 
+-CameraFrame *UvcMJPGDevice::VPUDec(CameraFrame **ppDeviceBuf, unsigned int BufNum, u8 *InVirAddr, u32 inLen, unsigned int nUVCBufIdx, unsigned int w, unsigned int h)
++CameraFrame *UvcMJPGDevice::VPUDec(CameraFrame **ppDeviceBuf, unsigned int BufNum, u8 *InVirAddr, u32 inLen, unsigned int nUVCBufIdx, unsigned int /*w*/, unsigned int /*h*/)
+ {
+ DecLogic:
+ 	VpuDecRetCode ret; 
+@@ -931,7 +931,7 @@ DecLogic:
+ 	//return ret;
+ }
+ 
+-int UvcMJPGDevice::ProcessInitInfo(VpuDecInitInfo* pInitInfo, DecMemInfo* pDecMemInfo, int*pOutFrmNum,
++int UvcMJPGDevice::ProcessInitInfo(VpuDecInitInfo* pInitInfo, DecMemInfo* /*pDecMemInfo*/, int*pOutFrmNum,
+     unsigned char **pPhyAddr, unsigned char **pVirtAddr, unsigned int registerNum)
+ {
+ 	VpuDecRetCode ret;
+diff --git a/mx6/libcamera2/UvcMJPGDevice.h b/mx6/libcamera2/UvcMJPGDevice.h
+index ae2e64a..8d74c2b 100755
+--- a/mx6/libcamera2/UvcMJPGDevice.h
++++ b/mx6/libcamera2/UvcMJPGDevice.h
+@@ -127,7 +127,7 @@ private:
+     int VPUInit();
+     int VPUExit();
+     //CameraFrame *VPUDec(CameraFrame **ppDeviceBuf, unsigned int BufNum, void *OutVirBuf, void *InVirBuf, unsigned int outSize, unsigned int w, unsigned int h);
+-    CameraFrame *VPUDec(CameraFrame **ppDeviceBuf, unsigned int BufNum, u8 *InVirAddr, u32 inLen, unsigned int nUVCBufIdx, unsigned int w, unsigned int h);
++    CameraFrame *VPUDec(CameraFrame **ppDeviceBuf, unsigned int BufNum, unsigned char *InVirAddr, unsigned int inLen, unsigned int nUVCBufIdx, unsigned int w, unsigned int h);
+     int ProcessInitInfo(VpuDecInitInfo* pInitInfo, DecMemInfo* pDecMemInfo, int*pOutFrmNum,
+          unsigned char **pPhyAddr, unsigned char **pVirtAddr, unsigned int registerNum);
+     int FreeMemBlock(DecMemInfo* pDecMem);
+diff --git a/mx6/libcamera2/YuvToJpegEncoder.cpp b/mx6/libcamera2/YuvToJpegEncoder.cpp
+index d8914cc..e2a9f2e 100755
+--- a/mx6/libcamera2/YuvToJpegEncoder.cpp
++++ b/mx6/libcamera2/YuvToJpegEncoder.cpp
+@@ -268,7 +268,7 @@ int vpu_encode(void *inYuv,
+                              void* inYuvPhy,
+                              int   Width,
+                              int   Height,
+-                             int   quality,
++                             int   /*quality*/,
+                              int   color,
+                              void *outBuf,
+                              int   outSize)
+@@ -695,7 +695,7 @@ void Yuv422IToJpegEncoder::deinterleave(uint8_t *yuv,
+                                         uint8_t *vRows,
+                                         int      rowIndex,
+                                         int      width,
+-                                        int      height) {
++                                        int      /*height*/) {
+     for (int row = 0; row < 16; ++row) {
+         uint8_t *yuvSeg = yuv + (rowIndex + row) * width * 2;
+         for (int i = 0; i < (width >> 1); ++i) {
+diff --git a/mx6/libcamera2/messageQueue.cpp b/mx6/libcamera2/messageQueue.cpp
+index b90acba..1efda71 100755
+--- a/mx6/libcamera2/messageQueue.cpp
++++ b/mx6/libcamera2/messageQueue.cpp
+@@ -130,7 +130,7 @@ status_t CMessageQueue::postSyncMessage(const sp<SyncMessage>& message,
+ }
+ 
+ status_t CMessageQueue::queueMessage(const sp<CMessage>& message,
+-                                     int32_t             flags)
++                                     int32_t             /*flags*/)
+ {
+     Mutex::Autolock _l(mLock);
+ 
+@@ -140,7 +140,7 @@ status_t CMessageQueue::queueMessage(const sp<CMessage>& message,
+ }
+ 
+ status_t CMessageQueue::queueSyncMessage(const sp<SyncMessage>& message,
+-                                         int32_t                flags)
++                                         int32_t                /*flags*/)
+ {
+     Mutex::Autolock _l(mLock);
+ 
+-- 
+1.8.0
+

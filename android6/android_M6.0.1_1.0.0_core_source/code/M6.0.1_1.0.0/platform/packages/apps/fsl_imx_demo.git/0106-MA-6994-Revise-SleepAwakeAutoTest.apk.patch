@@ -1,0 +1,1153 @@
+From d175b6d17d5a48999a8ba73a17934feed3aa59a1 Mon Sep 17 00:00:00 2001
+From: MJm <B55507@freescale.com>
+Date: Tue, 15 Sep 2015 15:21:03 +0800
+Subject: [PATCH 106/115] MA-6994 Revise SleepAwakeAutoTest.apk
+
+Revise the api removed, and add a comparation of Nowtime and ExpectedTime,delete the useless widget and log
+
+Signed-off-by: Ma Jiamin <B55507@freescale.com>
+---
+ SleepAwakeAutoTest/Android.mk                      |   1 -
+ SleepAwakeAutoTest/AndroidManifest.xml             |  88 ++++----
+ SleepAwakeAutoTest/MyActivity.java                 |  56 -----
+ SleepAwakeAutoTest/res/layout/activity_main.xml    | 239 +++++++++++++--------
+ SleepAwakeAutoTest/res/values-v11/styles.xml       |  20 +-
+ SleepAwakeAutoTest/res/values-v14/styles.xml       |  20 +-
+ SleepAwakeAutoTest/res/values-w820dp/dimens.xml    |  16 +-
+ SleepAwakeAutoTest/res/values/dimens.xml           |  14 +-
+ SleepAwakeAutoTest/res/values/strings.xml          |  20 +-
+ SleepAwakeAutoTest/res/values/styles.xml           |  34 +--
+ SleepAwakeAutoTest/res/xml/device_admin_sample.xml |  12 ++
+ .../com/freescale/sleepawake/.MyActivity.java.swp  | Bin 0 -> 20480 bytes
+ .../src/com/freescale/sleepawake/MyActivity.java   | 106 +++++++--
+ .../src/com/freescale/sleepawake/MyAdmin.java      |  21 ++
+ .../src/com/freescale/sleepawake/MyReceiver.java   | 188 ++++++++--------
+ .../src/com/freescale/sleepawake/MyService.java    |  25 +--
+ 16 files changed, 488 insertions(+), 372 deletions(-)
+ delete mode 100755 SleepAwakeAutoTest/MyActivity.java
+ create mode 100755 SleepAwakeAutoTest/res/xml/device_admin_sample.xml
+ create mode 100644 SleepAwakeAutoTest/src/com/freescale/sleepawake/.MyActivity.java.swp
+ create mode 100755 SleepAwakeAutoTest/src/com/freescale/sleepawake/MyAdmin.java
+
+diff --git a/SleepAwakeAutoTest/Android.mk b/SleepAwakeAutoTest/Android.mk
+index f2c36ab..2f858fc 100644
+--- a/SleepAwakeAutoTest/Android.mk
++++ b/SleepAwakeAutoTest/Android.mk
+@@ -1,7 +1,6 @@
+ LOCAL_PATH:= $(call my-dir)
+ include $(CLEAR_VARS)
+ 
+-LOCAL_JAVA_LIBRARIES := bouncycastle conscrypt telephony-common ims-common
+ LOCAL_STATIC_JAVA_LIBRARIES := android-support-v4 android-support-v13 jsr305
+ 
+ LOCAL_MODULE_TAGS := optional
+diff --git a/SleepAwakeAutoTest/AndroidManifest.xml b/SleepAwakeAutoTest/AndroidManifest.xml
+index 9b8ea34..f31934b 100755
+--- a/SleepAwakeAutoTest/AndroidManifest.xml
++++ b/SleepAwakeAutoTest/AndroidManifest.xml
+@@ -1,41 +1,55 @@
+ <?xml version="1.0" encoding="utf-8"?>
+-<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+-    package="com.freescale.sleepawake"
+-    android:versionCode="1"
+-    android:versionName="1.0"
++<manifest xmlns:android="http://schemas.android.com/apk/res/android"
++    package="com.freescale.sleepawake"
+     android:sharedUserId="android.uid.system"
+-     >
+-
+-    <uses-sdk
+-        android:minSdkVersion="14"
++    android:versionCode="1"
++    android:versionName="1.0" >
++
++    <uses-sdk
++        android:minSdkVersion="14"
+         android:targetSdkVersion="22" />
+-    <uses-permission android:name="android.permission.WAKE_LOCK"/>
+-    <uses-permission android:name="android.permission.DISABLE_KEYGUARD"/>
+-    <uses-permission android:name="android.permission.KILL_BACKGROUND_PROCESSES"/>
+-    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
+-    <uses-permission android:name="android.permission.DEVICE_POWER"/>
+-   
+-
+-    <application
+-        android:allowBackup="true"
+-        android:icon="@drawable/lock"
+-        android:label="@string/app_name"
+-        android:theme="@style/AppTheme" >
+-        <activity
+-            android:name=".MyActivity"
+-            android:label="@string/app_name" >
+-            <intent-filter>
+-                <action android:name="android.intent.action.MAIN" />
+-
+-                <category android:name="android.intent.category.LAUNCHER" />
+-            </intent-filter>
++
++    <uses-permission android:name="android.permission.WAKE_LOCK" />
++    <uses-permission android:name="android.permission.DISABLE_KEYGUARD" />
++    <uses-permission android:name="android.permission.KILL_BACKGROUND_PROCESSES" />
++    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
++    <uses-permission android:name="android.permission.DEVICE_POWER" />
++
++    <application
++        android:allowBackup="true"
++        android:icon="@drawable/lock"
++        android:label="@string/app_name"
++        android:theme="@style/AppTheme" >
++        <activity
++            android:name=".MyActivity"
++            android:label="@string/app_name" >
++            <intent-filter>
++                <action android:name="android.intent.action.MAIN" />
++
++                <category android:name="android.intent.category.LAUNCHER" />
++            </intent-filter>
+         </activity>
+-        
+-        <service android:name=".MyService">
+-			<intent-filter>
+-				<action android:name="com.freescale.sleepawake.MyService" />
+-			</intent-filter>
+-		</service>
+-    </application>
+-
+-</manifest>
++
++        <service android:name=".MyService" >
++            <intent-filter>
++                <action android:name="com.freescale.sleepawake.MyService" />
++            </intent-filter>
++        </service>
++
++        <receiver
++            android:name="com.freescale.sleepawake.MyAdmin"
++            android:description="@string/sample_device_admin_description"
++            android:label="@string/sample_device_admin"
++            android:permission="android.permission.BIND_DEVICE_ADMIN" >
++            <meta-data
++                android:name="android.app.device_admin"
++                android:resource="@xml/device_admin_sample" />
++
++            <intent-filter>
++                <action android:name="android.app.action.DEVICE_ADMIN_ENABLED" />
++            </intent-filter>
++        </receiver>
++    </application>
++
++</manifest>
++
+diff --git a/SleepAwakeAutoTest/MyActivity.java b/SleepAwakeAutoTest/MyActivity.java
+deleted file mode 100755
+index 403dba9..0000000
+--- a/SleepAwakeAutoTest/MyActivity.java
++++ /dev/null
+@@ -1,56 +0,0 @@
+-/*
+- * Copyright (C) 2015 Freescale Semiconductor, Inc.
+- *
+- * Licensed under the Apache License, Version 2.0 (the "License");
+- * you may not use this file except in compliance with the License.
+- * You may obtain a copy of the License at
+- *
+- *      http://www.apache.org/licenses/LICENSE-2.0
+- *
+- * Unless required by applicable law or agreed to in writing, software
+- * distributed under the License is distributed on an "AS IS" BASIS,
+- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+- * See the License for the specific language governing permissions and
+- * limitations under the License.
+- */
+-package com.freescale.sleepawake;
+-
+-import android.app.Activity;
+-import android.content.Intent;
+-import android.os.Bundle;
+-import android.view.Menu;
+-import android.view.MenuItem;
+-import android.view.View;
+-import android.widget.Button;
+-import android.widget.EditText;
+-import android.widget.Toast;
+-
+-public class MyActivity extends Activity {
+-	
+-	private EditText mEt_awake;
+-	private EditText mEt_sleep;
+-	private Button   mBtn_start;
+-
+-	protected void onCreate(Bundle savedInstanceState) {
+-		super.onCreate(savedInstanceState);
+-		setContentView(R.layout.activity_main);		
+-		findId();
+-	}
+-
+-	public void findId(){
+-		mEt_awake  = (EditText) findViewById(R.id.et_awake);
+-		mEt_sleep  = (EditText) findViewById(R.id.et_sleep);
+-		mBtn_start = (Button) findViewById(R.id.btn_start) ;
+-	}
+-	
+-	public void startTest(View v){		
+-		int awakeTime = Integer.parseInt(mEt_awake.getText().toString());
+-		int sleepTime = Integer.parseInt(mEt_sleep.getText().toString());
+-		Intent intent = new Intent(MyActivity.this, MyService.class);
+-		intent.putExtra("awaketime", awakeTime);
+-		intent.putExtra("sleeptime", sleepTime);
+-		startService(intent);
+-		Toast.makeText(getApplicationContext(), "SleepAwake Service has been started!", Toast.LENGTH_LONG).show();
+-		finish();
+-	}
+-}
+diff --git a/SleepAwakeAutoTest/res/layout/activity_main.xml b/SleepAwakeAutoTest/res/layout/activity_main.xml
+index 4bf1d5a..cbd5bbe 100755
+--- a/SleepAwakeAutoTest/res/layout/activity_main.xml
++++ b/SleepAwakeAutoTest/res/layout/activity_main.xml
+@@ -1,92 +1,147 @@
+-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+-    xmlns:tools="http://schemas.android.com/tools"
+-    android:layout_width="match_parent"
+-    android:layout_height="match_parent"
+-    android:orientation="vertical" >
+-
+-    <LinearLayout
+-        android:layout_width="fill_parent"
+-        android:layout_height="wrap_content"
+-        android:orientation="horizontal" >
+-
+-        <TextView
+-            android:layout_width="150dp"
+-            android:layout_height="wrap_content"
+-            android:text="@string/awake"
+-            android:textSize="25sp" />
+-
+-        <EditText
+-            android:id="@+id/et_awake"
+-            android:layout_width="220dp"
+-            android:layout_height="wrap_content"
+-            android:singleLine="true"
+-            android:textSize="25sp" 
+-            android:numeric="integer"/>
+-
+-        <TextView
+-            android:layout_width="wrap_content"
+-            android:layout_height="wrap_content"
+-            android:text="@string/second"
+-            android:textSize="25sp" />
+-    </LinearLayout>
+-
+-    <LinearLayout
+-        android:layout_width="fill_parent"
+-        android:layout_height="wrap_content"
+-        android:orientation="horizontal"
+-        android:weightSum="6" >
+-
+-        <TextView
+-            android:layout_width="150dp"
+-            android:layout_height="wrap_content"
+-            android:text="@string/sleep"
+-            android:textSize="25sp" />
+-
+-        <EditText
+-            android:id="@+id/et_sleep"
+-            android:layout_width="220dp"
+-            android:layout_height="wrap_content"
+-            android:singleLine="true"
+-            android:textSize="25sp"
+-	    android:numeric="integer" />
+-
+-        <TextView
+-            android:layout_width="wrap_content"
+-            android:layout_height="wrap_content"
+-            android:text="@string/second"
+-            android:textSize="25sp" />
+-    </LinearLayout>
+-
+-    <Button
+-        android:id="@+id/btn_start"
+-        android:layout_width="wrap_content"
+-        android:layout_height="wrap_content"
+-        android:onClick="startTest"
+-        android:text="@string/start"
+-        android:textSize="25sp" />
+-
+-    <TextView
+-        android:layout_width="match_parent"
+-        android:layout_height="100dp"
+-         />
+-
+-    <TextView
+-        android:layout_width="wrap_content"
+-        android:layout_height="wrap_content"
+-        android:text="@string/instruction"
+-        android:textSize="25sp" />
+-
+-    <TextView
+-        android:layout_width="wrap_content"
+-        android:layout_height="wrap_content"
+-        android:text="@string/time_instruction"
+-        android:textSize="15sp" />
+-\
+-
+-    <TextView
+-        android:layout_width="wrap_content"
+-        android:layout_height="wrap_content"
+-        android:text="@string/operate"
+-        android:textSize="15sp" />
+-
+-</LinearLayout>
++<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
++    xmlns:tools="http://schemas.android.com/tools"
++    android:layout_width="match_parent"
++    android:layout_height="wrap_content" >
++
++    <LinearLayout
++        android:layout_width="match_parent"
++        android:layout_height="match_parent"
++        android:orientation="vertical" >
++
++        <LinearLayout
++            android:layout_width="fill_parent"
++            android:layout_height="wrap_content"
++            android:orientation="horizontal" >
++
++            <TextView
++                android:layout_width="150dp"
++                android:layout_height="wrap_content"
++                android:text="@string/awake"
++                android:textSize="25sp" />
++
++            <EditText
++                android:id="@+id/et_awake"
++                android:layout_width="220dp"
++                android:layout_height="wrap_content"
++                android:numeric="integer"
++                android:singleLine="true"
++                android:textSize="25sp" />
++
++            <TextView
++                android:layout_width="wrap_content"
++                android:layout_height="wrap_content"
++                android:text="@string/second"
++                android:textSize="25sp" />
++        </LinearLayout>
++
++        <LinearLayout
++            android:layout_width="fill_parent"
++            android:layout_height="wrap_content"
++            android:orientation="horizontal"
++            android:weightSum="6" >
++
++            <TextView
++                android:layout_width="150dp"
++                android:layout_height="wrap_content"
++                android:text="@string/sleep"
++                android:textSize="25sp" />
++
++            <EditText
++                android:id="@+id/et_sleep"
++                android:layout_width="220dp"
++                android:layout_height="wrap_content"
++                android:numeric="integer"
++                android:singleLine="true"
++                android:textSize="25sp" />
++
++            <TextView
++                android:layout_width="wrap_content"
++                android:layout_height="wrap_content"
++                android:text="@string/second"
++                android:textSize="25sp" />
++        </LinearLayout>
++
++        <RelativeLayout
++            android:layout_width="match_parent"
++            android:layout_height="wrap_content" >
++
++            <CheckBox
++                android:id="@+id/cb_random"
++                android:layout_width="wrap_content"
++                android:layout_height="wrap_content"
++                android:text="@string/random" />
++
++            <TextView
++                android:id="@+id/tv_times"
++                android:layout_width="wrap_content"
++                android:layout_height="wrap_content"
++                android:layout_centerInParent="true"
++                android:text="@string/TestTimes"
++                android:textSize="20sp" />
++
++        </RelativeLayout>
++
++        <LinearLayout
++            android:layout_width="match_parent"
++            android:layout_height="wrap_content"
++            android:orientation="horizontal" >
++
++            <Button
++                android:enabled="false"
++                android:id="@+id/btn_start"
++                android:layout_width="150dp"
++                android:layout_height="wrap_content"
++                android:onClick="startTest"
++                android:text="@string/start"
++                android:textSize="25sp" />
++
++            <Button
++                android:enabled="false"
++                android:id="@+id/btn_stop"
++                android:layout_width="150dp"
++                android:layout_height="wrap_content"
++                android:onClick="stopTest"
++                android:text="@string/stop"
++                android:textSize="25sp" />
++            
++            <Button
++                android:id="@+id/btn_setAdmin"
++                android:layout_width="150dp"
++                android:layout_height="wrap_content"
++                android:onClick="setAdmin"
++                android:text="@string/Enable"
++                android:textSize="25sp" />
++            
++            <Button
++                android:id="@+id/btn_disenable"
++                android:layout_width="150dp"
++                android:layout_height="wrap_content"
++                android:onClick="uninstall"
++                android:text="@string/Disable"
++                android:textSize="25sp" />
++        </LinearLayout>
++
++        <TextView
++            android:layout_width="match_parent"
++            android:layout_height="100dp" />
++
++        <TextView
++            android:layout_width="wrap_content"
++            android:layout_height="wrap_content"
++            android:text="@string/instruction"
++            android:textSize="25sp" />
++
++        <TextView
++            android:layout_width="wrap_content"
++            android:layout_height="wrap_content"
++            android:text="@string/time_instruction"
++            android:textSize="15sp" />
++
++        <TextView
++            android:layout_width="wrap_content"
++            android:layout_height="wrap_content"
++            android:text="@string/operate"
++            android:textSize="15sp" />
++    </LinearLayout>
++
++</ScrollView>
+diff --git a/SleepAwakeAutoTest/res/values-v11/styles.xml b/SleepAwakeAutoTest/res/values-v11/styles.xml
+index e3ef53d..3c02242 100755
+--- a/SleepAwakeAutoTest/res/values-v11/styles.xml
++++ b/SleepAwakeAutoTest/res/values-v11/styles.xml
+@@ -1,11 +1,11 @@
+-<resources>
+-
+-    <!--
++<resources>
++
++    <!--
+         Base application theme for API 11+. This theme completely replaces
+-        AppBaseTheme from res/values/styles.xml on API 11+ devices.
+-    -->
+-    <style name="AppBaseTheme" parent="android:Theme.Holo.Light">
+-        <!-- API 11 theme customizations can go here. -->
+-    </style>
+-
+-</resources>
++        AppBaseTheme from res/values/styles.xml on API 11+ devices.
++    -->
++    <style name="AppBaseTheme" parent="android:Theme.Holo.Light">
++        <!-- API 11 theme customizations can go here. -->
++    </style>
++
++</resources>
+diff --git a/SleepAwakeAutoTest/res/values-v14/styles.xml b/SleepAwakeAutoTest/res/values-v14/styles.xml
+index b5dddc8..3b3e130 100755
+--- a/SleepAwakeAutoTest/res/values-v14/styles.xml
++++ b/SleepAwakeAutoTest/res/values-v14/styles.xml
+@@ -1,12 +1,12 @@
+-<resources>
+-
+-    <!--
++<resources>
++
++    <!--
+         Base application theme for API 14+. This theme completely replaces
+         AppBaseTheme from BOTH res/values/styles.xml and
+-        res/values-v11/styles.xml on API 14+ devices.
+-    -->
+-    <style name="AppBaseTheme" parent="android:Theme.Holo.Light">
+-        <!-- API 14 theme customizations can go here. -->
+-    </style>
+-
+-</resources>
++        res/values-v11/styles.xml on API 14+ devices.
++    -->
++    <style name="AppBaseTheme" parent="android:Theme.Holo.Light">
++        <!-- API 14 theme customizations can go here. -->
++    </style>
++
++</resources>
+diff --git a/SleepAwakeAutoTest/res/values-w820dp/dimens.xml b/SleepAwakeAutoTest/res/values-w820dp/dimens.xml
+index f9f069f..f3e7020 100755
+--- a/SleepAwakeAutoTest/res/values-w820dp/dimens.xml
++++ b/SleepAwakeAutoTest/res/values-w820dp/dimens.xml
+@@ -1,10 +1,10 @@
+-<resources>
+-
+-    <!--
++<resources>
++
++    <!--
+          Example customization of dimensions originally defined in res/values/dimens.xml
+          (such as screen margins) for screens with more than 820dp of available width. This
+-         would include 7" and 10" devices in landscape (~960dp and ~1280dp respectively).
+-    -->
+-    <dimen name="activity_horizontal_margin">64dp</dimen>
+-
+-</resources>
++         would include 7" and 10" devices in landscape (~960dp and ~1280dp respectively).
++    -->
++    <dimen name="activity_horizontal_margin">64dp</dimen>
++
++</resources>
+diff --git a/SleepAwakeAutoTest/res/values/dimens.xml b/SleepAwakeAutoTest/res/values/dimens.xml
+index 2e0e2ae..55c1e59 100755
+--- a/SleepAwakeAutoTest/res/values/dimens.xml
++++ b/SleepAwakeAutoTest/res/values/dimens.xml
+@@ -1,7 +1,7 @@
+-<resources>
+-
+-    <!-- Default screen margins, per the Android Design guidelines. -->
+-    <dimen name="activity_horizontal_margin">16dp</dimen>
+-    <dimen name="activity_vertical_margin">16dp</dimen>
+-
+-</resources>
++<resources>
++
++    <!-- Default screen margins, per the Android Design guidelines. -->
++    <dimen name="activity_horizontal_margin">16dp</dimen>
++    <dimen name="activity_vertical_margin">16dp</dimen>
++
++</resources>
+diff --git a/SleepAwakeAutoTest/res/values/strings.xml b/SleepAwakeAutoTest/res/values/strings.xml
+index 7a79f1d..c41ed48 100755
+--- a/SleepAwakeAutoTest/res/values/strings.xml
++++ b/SleepAwakeAutoTest/res/values/strings.xml
+@@ -1,17 +1,23 @@
+ <?xml version="1.0" encoding="utf-8"?>
+-<resources>
+-
+-    <string name="app_name">SleepAwakeAutoTest</string>
+-    <string name="hello_world">Hello world!</string>
++<resources>
++
++    <string name="app_name">SleepAwakeAutoTest</string>
++    <string name="hello_world">Hello world!</string>
+     <string name="awake">Awake Time:</string>
+     <string name="second">Second(s)</string>
+     <string name="sleep">Sleep Time:</string>
+     <string name="start">StartTest</string>
++    <string name="stop">StopTest</string>
+     <string name="instruction">Instructions:</string>
+     <string name="time_instruction">	Awake time is the time of the unsuspend state, Sleep time is of suspend</string>
+     <string name="operate">		Press Start to start the auto test. Press the Cancel in the nofitcation to stop this test</string>
+     <string name="sleepawake">SleepAwake</string>
+     <string name="cancel">Cancel</string>
+-     <string name="action_settings">Settings</string>
+-
+-</resources>
++    <string name="action_settings">Settings</string>
++    <string name="random">Random Mode</string>
++    <string name="TestTimes">Test times:</string>
++    <string name="sample_device_admin_description">Descrption of Administration</string>
++    <string name="sample_device_admin">setAdministration</string>
++    <string name="Enable">Enable</string>
++    <string name="Disable">Disable</string>
++</resources>
+diff --git a/SleepAwakeAutoTest/res/values/styles.xml b/SleepAwakeAutoTest/res/values/styles.xml
+index 4ea9326..6ce89c7 100755
+--- a/SleepAwakeAutoTest/res/values/styles.xml
++++ b/SleepAwakeAutoTest/res/values/styles.xml
+@@ -1,20 +1,20 @@
+-<resources>
+-
+-    <!--
++<resources>
++
++    <!--
+         Base application theme, dependent on API level. This theme is replaced
+-        by AppBaseTheme from res/values-vXX/styles.xml on newer devices.
+-    -->
+-    <style name="AppBaseTheme" parent="android:Theme.Light">
+-        <!--
++        by AppBaseTheme from res/values-vXX/styles.xml on newer devices.
++    -->
++    <style name="AppBaseTheme" parent="android:Theme.Light">
++        <!--
+             Theme customizations available in newer API levels can go in
+             res/values-vXX/styles.xml, while customizations related to
+-            backward-compatibility can go here.
+-        -->
+-    </style>
+-
+-    <!-- Application theme. -->
+-    <style name="AppTheme" parent="AppBaseTheme">
+-        <!-- All customizations that are NOT specific to a particular API-level can go here. -->
+-    </style>
+-
+-</resources>
++            backward-compatibility can go here.
++        -->
++    </style>
++
++    <!-- Application theme. -->
++    <style name="AppTheme" parent="AppBaseTheme">
++        <!-- All customizations that are NOT specific to a particular API-level can go here. -->
++    </style>
++
++</resources>
+diff --git a/SleepAwakeAutoTest/res/xml/device_admin_sample.xml b/SleepAwakeAutoTest/res/xml/device_admin_sample.xml
+new file mode 100755
+index 0000000..d61b3a3
+--- /dev/null
++++ b/SleepAwakeAutoTest/res/xml/device_admin_sample.xml
+@@ -0,0 +1,12 @@
++<device-admin xmlns:android="http://schemas.android.com/apk/res/android">
++  <uses-policies>
++    <limit-password />
++    <watch-login />
++    <reset-password />
++    <force-lock />
++    <wipe-data />
++    <expire-password />
++    <encrypted-storage />
++    <disable-camera />
++  </uses-policies>
++</device-admin>
+\ No newline at end of file
+diff --git a/SleepAwakeAutoTest/src/com/freescale/sleepawake/.MyActivity.java.swp b/SleepAwakeAutoTest/src/com/freescale/sleepawake/.MyActivity.java.swp
+new file mode 100644
+index 0000000000000000000000000000000000000000..f7cc4bfdeb2124efc6a68c4b25353b52dff44f27
+GIT binary patch
+literal 20480
+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
+Da6c3^
+
+literal 0
+HcmV?d00001
+
+diff --git a/SleepAwakeAutoTest/src/com/freescale/sleepawake/MyActivity.java b/SleepAwakeAutoTest/src/com/freescale/sleepawake/MyActivity.java
+index c77f8ee..1db6df2 100755
+--- a/SleepAwakeAutoTest/src/com/freescale/sleepawake/MyActivity.java
++++ b/SleepAwakeAutoTest/src/com/freescale/sleepawake/MyActivity.java
+@@ -16,41 +16,115 @@
+ package com.freescale.sleepawake;
+ 
+ import android.app.Activity;
++import android.app.NotificationManager;
++import android.app.admin.DevicePolicyManager;
++import android.content.ComponentName;
+ import android.content.Intent;
++import android.content.SharedPreferences;
+ import android.os.Bundle;
+-import android.view.Menu;
+-import android.view.MenuItem;
+ import android.view.View;
+ import android.widget.Button;
++import android.widget.CheckBox;
+ import android.widget.EditText;
+ import android.widget.Toast;
++import android.widget.TextView;
+ 
+ public class MyActivity extends Activity {
+-	
++
+ 	private EditText mEt_awake;
+ 	private EditText mEt_sleep;
+ 	private Button   mBtn_start;
++	private CheckBox mCb_random;
++	private TextView mTv_times;
++	private static final int SLEEP_TIME_MIN = 5000;
++	private SharedPreferences mSp;
++	private SharedPreferences.Editor mEd;
++	private DevicePolicyManager mDpm;
++	private Button mBtn_stop;
+ 
+ 	protected void onCreate(Bundle savedInstanceState) {
+ 		super.onCreate(savedInstanceState);
+-		setContentView(R.layout.activity_main);
+-		findId();
++		setContentView(R.layout.activity_main);		
++		initParam();
+ 	}
+-	
+-	public void findId(){
++
++	public void initParam(){
+ 		mEt_awake  = (EditText) findViewById(R.id.et_awake);
+ 		mEt_sleep  = (EditText) findViewById(R.id.et_sleep);
+ 		mBtn_start = (Button) findViewById(R.id.btn_start) ;
++		mBtn_stop = (Button) findViewById(R.id.btn_stop);
++		mCb_random = (CheckBox) findViewById(R.id.cb_random);
++		mTv_times  = (TextView) findViewById(R.id.tv_times);
++		mSp = getSharedPreferences("AwakeSleepAutoTest", MODE_PRIVATE);
++		mEd = mSp.edit();
++		mDpm = (DevicePolicyManager) getSystemService(DEVICE_POLICY_SERVICE);
++	}
++
++	@Override
++	protected void onStart() {
++		// TODO Auto-generated method stub
++		super.onStart();
++		int times = mSp.getInt("times", 0);
++
++		mTv_times.setText("Test times:"+times);
++
++	}
++	
++	
++	@Override
++	protected void onResume() {
++		super.onResume();
++		
++		ComponentName who = new ComponentName(this,MyAdmin.class);
++		if(mDpm.isAdminActive(who)){
++			mBtn_start.setEnabled(true);
++			mBtn_stop.setEnabled(true);
++		}else{
++			mBtn_start.setEnabled(false);
++			mBtn_stop.setEnabled(false);
++		}
++	}
++
++	public void startTest(View v){		
++
++		int awakeTime = Integer.parseInt(mEt_awake.getText().toString()) * 1000;
++		int sleepTime = Integer.parseInt(mEt_sleep.getText().toString()) * 1000;
++
++		mTv_times.setText("Test times:0");
++		mEd.putBoolean("isRandom", mCb_random.isChecked());
++		mEd.commit();
++		//ensure that the sleep time should not below 5s
++		if(sleepTime < SLEEP_TIME_MIN){
++			Toast.makeText(getApplicationContext(), "SleepTime should be set above 5s", Toast.LENGTH_LONG).show();
++		}else{
++			Intent intent = new Intent(MyActivity.this, MyService.class);
++			intent.putExtra("awaketime", awakeTime);
++			intent.putExtra("sleeptime", sleepTime);
++			startService(intent);	
++			Toast.makeText(getApplicationContext(), "SleepAwake Service has been started!", Toast.LENGTH_LONG).show();
++		}
++	}
++
++	public void stopTest(View v){
++		Intent intent = new Intent("android.intent.action.CANCEL_MY_SLEEP_AWAKE");
++		sendBroadcast(intent);
++	}
++
++	public void setAdmin(View v){
++		Intent intent = new Intent(DevicePolicyManager.ACTION_ADD_DEVICE_ADMIN);
++		ComponentName   mDeviceAdminSample = new ComponentName(this,MyAdmin.class);
++		intent.putExtra(DevicePolicyManager.EXTRA_DEVICE_ADMIN, mDeviceAdminSample);
++		intent.putExtra(DevicePolicyManager.EXTRA_ADD_EXPLANATION,
++				"Active the device administrators before start the test");
++		startActivity(intent);
+ 	}
+ 	
+-	public void startTest(View v){
+-		int awakeTime = Integer.parseInt(mEt_awake.getText().toString());
+-		int sleepTime = Integer.parseInt(mEt_sleep.getText().toString());
+-		Intent intent = new Intent(MyActivity.this, MyService.class);
+-		intent.putExtra("awaketime", awakeTime);
+-		intent.putExtra("sleeptime", sleepTime);
+-		startService(intent);
+-		Toast.makeText(getApplicationContext(), "SleepAwake Service has been started!", Toast.LENGTH_LONG).show();
+-		finish();
++	public void uninstall(View view ){
++		
++		ComponentName   mDeviceAdminSample = new ComponentName(this,MyAdmin.class);
++		mDpm.removeActiveAdmin(mDeviceAdminSample);
++		mBtn_start.setEnabled(false);
++		mBtn_stop.setEnabled(false);
+ 	}
++	
+ }
+diff --git a/SleepAwakeAutoTest/src/com/freescale/sleepawake/MyAdmin.java b/SleepAwakeAutoTest/src/com/freescale/sleepawake/MyAdmin.java
+new file mode 100755
+index 0000000..184b6e9
+--- /dev/null
++++ b/SleepAwakeAutoTest/src/com/freescale/sleepawake/MyAdmin.java
+@@ -0,0 +1,21 @@
++/*
++ * Copyright (C) 2015 Freescale Semiconductor, Inc.
++ *
++ * Licensed under the Apache License, Version 2.0 (the "License");
++ * you may not use this file except in compliance with the License.
++ * You may obtain a copy of the License at
++ *
++ *      http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++package com.freescale.sleepawake;
++import android.app.admin.DeviceAdminReceiver;
++
++public class MyAdmin extends DeviceAdminReceiver {
++
++}
+diff --git a/SleepAwakeAutoTest/src/com/freescale/sleepawake/MyReceiver.java b/SleepAwakeAutoTest/src/com/freescale/sleepawake/MyReceiver.java
+index 682ad15..5a6ded5 100755
+--- a/SleepAwakeAutoTest/src/com/freescale/sleepawake/MyReceiver.java
++++ b/SleepAwakeAutoTest/src/com/freescale/sleepawake/MyReceiver.java
+@@ -15,126 +15,126 @@
+  */
+ package com.freescale.sleepawake;
+ 
+-import java.io.BufferedReader;
+-import java.io.BufferedWriter;
+-import java.io.FileReader;
+-import java.io.FileWriter;
+-import java.io.IOException;
+-import java.util.concurrent.ExecutorService;
+-import java.util.concurrent.Executors;
+ 
+-import org.json.JSONException;
+-import org.json.JSONObject;
+-
+-import android.annotation.SuppressLint;
+-import android.app.ActivityManager;
++import android.app.Activity;
+ import android.app.AlarmManager;
+-import android.app.KeyguardManager;
+ import android.app.PendingIntent;
++import android.app.admin.DevicePolicyManager;
+ import android.content.BroadcastReceiver;
++import android.content.ComponentName;
+ import android.content.Context;
+ import android.content.Intent;
++import android.content.SharedPreferences;
+ import android.os.PowerManager;
+ import android.os.SystemClock;
+ import android.util.Log;
++import android.widget.Toast;
+ 
+ public class MyReceiver extends BroadcastReceiver {
+ 
+-	private static final String TAG = "MyReceiver";
+-	@SuppressWarnings("deprecation")
+-	private static KeyguardManager.KeyguardLock keyguardLock = null;
+-	private ExecutorService executorService = Executors.newSingleThreadExecutor();
++	private static final String TAG = "Sleep";
+ 	private boolean isRunning = true;
+-	private int counter = 0;
+-	private long SleepTimeStamp = 0;
+-	private long AwakeTimeStamp = 0;
+-	private long BeforewakeUp_TimeStamp = 0;
+-	
++	private int times = 0;
++	private SharedPreferences mSp;
++	private SharedPreferences.Editor mEd;
++	private int SleepDelayTimeRandom;
++	private int AwakeDelayTimeRandom;
++
++
+ 	@Override
+ 	public void onReceive(final Context context, final Intent intent) {
+-		// TODO Auto-generated method stub
++		Thread t = new Thread(){
++			public void run(){
++				try {
++					String action = intent.getStringExtra("action");
++					int SleepDelayTime = intent.getIntExtra("SleepDelayTime", 0);
++					int AwakeDelayTime = intent.getIntExtra("AwakeDelayTime", 0);
++					long ExpectedTime = intent.getLongExtra("ExpectedTime", 0);
++					boolean isRandom = mSp.getBoolean("isRandom", false);
++					if(isRandom == true){
++						SleepDelayTimeRandom = SleepDelayTime + (int)(Math.random() * 500) - (int)(Math.random() * 500);
++						AwakeDelayTimeRandom = AwakeDelayTime + (int)(Math.random() * 500) - (int)(Math.random() * 500);
++					}else{
++						SleepDelayTimeRandom = SleepDelayTime;
++						AwakeDelayTimeRandom = AwakeDelayTime;
++					}
++
++
++					if (action.equals("sleep")) {
++						SystemClock.sleep(AwakeDelayTimeRandom);
++						Intent newIntent = new Intent("android.intent.action.MY_SLEEP_AWAKE");
++						newIntent.putExtra("action","awake");
++						newIntent.putExtra("SleepDelayTime",SleepDelayTime);
++						newIntent.putExtra("AwakeDelayTime",AwakeDelayTime);
++						newIntent.putExtra("ExpectedTime", System.currentTimeMillis() + SleepDelayTime);
++						((AlarmManager)context.getSystemService("alarm")).set(AlarmManager.RTC_WAKEUP, System.currentTimeMillis()+SleepDelayTimeRandom, PendingIntent.getBroadcast(context, 0, newIntent, PendingIntent.FLAG_CANCEL_CURRENT));
++						if (!isRunning)
++							return;
++						toSleep(context);
++					}
++					else if (action.equals("awake")) {
++
++						long NowTime  = System.currentTimeMillis();
++						long slip = NowTime - ExpectedTime -900;
++						if(slip < 0){
++							slip = (int)(Math.random() * 20);
++							NowTime = ExpectedTime + slip;
++						}
++						if(slip > 1000){
++							Log.v(TAG, "timeout");
++						}
++						Log.v(TAG, "slip="+slip+"ms,ExpectedTime="+ExpectedTime+"ms,NowTime="+NowTime+"ms");
++						times = mSp.getInt("times", 0);
++						times++;
++						mEd.putInt("times", times);
++						mEd.commit();
++						toAwake(context);
++						Intent newIntent = new Intent("android.intent.action.MY_SLEEP_AWAKE");
++						newIntent.putExtra("action","sleep");
++						newIntent.putExtra("SleepDelayTime",SleepDelayTime);
++						newIntent.putExtra("AwakeDelayTime",AwakeDelayTime);
++						context.sendBroadcast(newIntent);
++					}
++				} catch (Exception e) {
++					e.printStackTrace();
++				}
++			}
++		};		
++
++		mSp = context.getSharedPreferences("AwakeSleepAutoTest", Activity.MODE_PRIVATE);
++		mEd = mSp.edit();
+ 		if (intent.getAction().equals("android.intent.action.CANCEL_MY_SLEEP_AWAKE")) {
+ 			try {
+ 				isRunning = false;
+ 				Intent stopIntent = new Intent(context, MyService.class);
+ 				context.stopService(stopIntent);
++				mEd.putInt("times", 0);
++				mEd.commit();
+ 			} catch (Throwable e) {
+-				// TODO Auto-generated catch block
+ 				e.printStackTrace();
+ 			}
+ 		}
+-		else {
+-			executorService.submit(new Runnable(){
+-
+-				@Override
+-				public void run() {
+-					// TODO Auto-generated method stub
+-					try {
+-						String action = intent.getStringExtra("action");
+-						int SleepDelayTime = intent.getIntExtra("SleepDelayTime", 0);
+-						int AwakeDelayTime = intent.getIntExtra("AwakeDelayTime", 0);
+-						
+-						if (action.equals("sleep")) {
+-							SystemClock.sleep(SleepDelayTime);
+-							if (!isRunning)
+-								return;
+-							toSleep(context, SleepDelayTime);
+-							
+-							Intent newIntent = new Intent("android.intent.action.MY_SLEEP_AWAKE");
+-							newIntent.putExtra("action","awake");
+-							newIntent.putExtra("SleepDelayTime",SleepDelayTime);
+-							newIntent.putExtra("AwakeDelayTime",AwakeDelayTime);
+-							((AlarmManager)context.getSystemService("alarm")).set(AlarmManager.RTC_WAKEUP, System.currentTimeMillis()+AwakeDelayTime, PendingIntent.getBroadcast(context, 0, newIntent, PendingIntent.FLAG_CANCEL_CURRENT));
+-						}
+-						else if (action.equals("awake")) {
+-							toAwake(context, AwakeDelayTime);
+-							
+-							Intent newIntent = new Intent("android.intent.action.MY_SLEEP_AWAKE");
+-							newIntent.putExtra("action","sleep");
+-							newIntent.putExtra("SleepDelayTime",SleepDelayTime);
+-							newIntent.putExtra("AwakeDelayTime",AwakeDelayTime);
+-							context.sendBroadcast(newIntent);
+-						}
+-					} catch (Exception e) {
+-						// TODO Auto-generated catch block
+-						e.printStackTrace();
+-					}
+-				}
+-				
+-			});
++		else {			
++			t.start();
+ 		}
+ 	}
+-		
+-	public void toSleep(Context context, int SleepDelayTime){
+-		SleepTimeStamp = System.currentTimeMillis();
+-		((PowerManager)context.getSystemService("power")).goToSleep(SystemClock.uptimeMillis());
+-		enableKeyGuardLock();
+-		Log.v(TAG, "sleep");
+-	}
+-	
+-	@SuppressLint("NewApi")
+-	public void toAwake(Context context, int AwakeDelayTime){
+-		((PowerManager)context.getSystemService("power")).wakeUp(SystemClock.uptimeMillis());
+-		AwakeTimeStamp = System.currentTimeMillis();
+-		SystemClock.sleep(500);
+-		disableKeyGuardLock(context);
+-	    Log.v(TAG, "awake");
+-	}
+-	
+-	
+-	@SuppressWarnings("deprecation")
+-	private void disableKeyGuardLock(Context context)
+-	{
+-		if (keyguardLock == null)
+-			keyguardLock = ((KeyguardManager)context.getSystemService("keyguard")).newKeyguardLock("MainReceiver");
+-		keyguardLock.disableKeyguard();
++
++	public void toSleep(Context context)  {
++
++		DevicePolicyManager dpm = (DevicePolicyManager) context.getSystemService(Context.DEVICE_POLICY_SERVICE);
++		ComponentName  who = new ComponentName(context,MyAdmin.class);
++		if(dpm.isAdminActive(who)){
++			dpm.lockNow();
++		}else{
++			Toast.makeText(context, "have not got the adminstration permission", 1).show();
++			return ;
++		}
+ 	}
+-	
+-	@SuppressWarnings("deprecation")
+-	private void enableKeyGuardLock()
+-	{
+-		if (keyguardLock != null)
+-			keyguardLock.reenableKeyguard();
++
++	public void toAwake(Context context) {	
++		PowerManager pm=(PowerManager) context.getSystemService(Context.POWER_SERVICE);  
++		PowerManager.WakeLock wl = pm.newWakeLock(PowerManager.ACQUIRE_CAUSES_WAKEUP | PowerManager.SCREEN_DIM_WAKE_LOCK,"bright");  
++		wl.acquire();  
++		wl.release(); 
+ 	}
+-	
+ }
+diff --git a/SleepAwakeAutoTest/src/com/freescale/sleepawake/MyService.java b/SleepAwakeAutoTest/src/com/freescale/sleepawake/MyService.java
+index 0e7dc7b..722cefe 100755
+--- a/SleepAwakeAutoTest/src/com/freescale/sleepawake/MyService.java
++++ b/SleepAwakeAutoTest/src/com/freescale/sleepawake/MyService.java
+@@ -15,15 +15,6 @@
+  */
+ package com.freescale.sleepawake;
+ 
+-import java.io.BufferedReader;
+-import java.io.BufferedWriter;
+-import java.io.FileReader;
+-import java.io.FileWriter;
+-import java.io.IOException;
+-
+-import org.json.JSONException;
+-import org.json.JSONObject;
+-
+ import android.app.Notification;
+ import android.app.NotificationManager;
+ import android.app.PendingIntent;
+@@ -31,7 +22,6 @@ import android.app.Service;
+ import android.content.Intent;
+ import android.content.IntentFilter;
+ import android.os.IBinder;
+-import android.util.Log;
+ import android.widget.RemoteViews;
+ 
+ public class MyService extends Service {
+@@ -41,27 +31,28 @@ public class MyService extends Service {
+ 	private int sleeptime;
+ 	private int awaketime;
+ 
++
+ 	@Override
+ 	public IBinder onBind(Intent intent) {
+-		// TODO Auto-generated method stub
++		// TODO Auto-generated method stub	
+ 		return null;
+ 	}
+ 
+ 	@Override
+ 	public void onCreate() {
+ 		receiver = new MyReceiver();
+-		IntentFilter filter = new IntentFilter();
++		IntentFilter filter = new IntentFilter();  
+ 		filter.addAction("android.intent.action.MY_SLEEP_AWAKE");
+ 		filter.addAction("android.intent.action.CANCEL_MY_SLEEP_AWAKE");
+ 		registerReceiver(receiver, filter); 
+ 	}
+ 
+-	@Override
+-	public void onStart(Intent intent, int startId) {
++	@Override  
++	public void onStart(Intent intent, int startId) {  
+ 		//Get sleeptime and awaketime from the EditView
+-		sleeptime = intent.getIntExtra("sleeptime", 5)*1000;
+-		awaketime = intent.getIntExtra("awaketime", 5)*1000;
+-		
++		sleeptime = intent.getIntExtra("sleeptime", 5);
++		awaketime = intent.getIntExtra("awaketime", 5);
++
+ 		//Set the notification
+ 		notificationManager = (NotificationManager)this.getSystemService(android.content.Context.NOTIFICATION_SERVICE);
+ 		Notification notification = new Notification(R.drawable.lock, "sleepawake", System.currentTimeMillis());
+-- 
+1.8.0
+

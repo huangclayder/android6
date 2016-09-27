@@ -1,0 +1,34 @@
+From 7bc7bd9faf1ec541e92952b2f11f482865c7fc0a Mon Sep 17 00:00:00 2001
+From: Anson Huang <b20788@freescale.com>
+Date: Mon, 6 Jan 2014 15:57:37 -0500
+Subject: [PATCH] ARM: dts: imx6sl: add ocram device support
+
+Add ocram device support on i.MX6SL.
+
+Signed-off-by: Anson Huang <b20788@freescale.com>
+Signed-off-by: Shawn Guo <shawn.guo@linaro.org>
+[shawn.guo: cherry-pick commit 248f15a36024 from upstream]
+---
+ arch/arm/boot/dts/imx6sl.dtsi | 6 ++++++
+ 1 file changed, 6 insertions(+)
+
+diff --git a/arch/arm/boot/dts/imx6sl.dtsi b/arch/arm/boot/dts/imx6sl.dtsi
+index d097f76..8c341f2 100644
+--- a/arch/arm/boot/dts/imx6sl.dtsi
++++ b/arch/arm/boot/dts/imx6sl.dtsi
+@@ -94,6 +94,12 @@
+ 		interrupt-parent = <&intc>;
+ 		ranges;
+ 
++		ocram: sram@00900000 {
++			compatible = "mmio-sram";
++			reg = <0x00900000 0x20000>;
++			clocks = <&clks IMX6SL_CLK_OCRAM>;
++		};
++
+ 		L2: l2-cache@00a02000 {
+ 			compatible = "arm,pl310-cache";
+ 			reg = <0x00a02000 0x1000>;
+-- 
+1.8.0
+

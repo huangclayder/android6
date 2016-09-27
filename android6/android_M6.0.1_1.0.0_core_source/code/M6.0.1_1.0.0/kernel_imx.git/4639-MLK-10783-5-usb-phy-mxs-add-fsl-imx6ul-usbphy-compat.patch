@@ -1,0 +1,28 @@
+From dba30c6e41a9380b41715eca54792bfaa64693d0 Mon Sep 17 00:00:00 2001
+From: Peter Chen <peter.chen@freescale.com>
+Date: Thu, 30 Apr 2015 11:43:13 +0800
+Subject: [PATCH] MLK-10783-5 usb: phy: mxs: add "fsl,imx6ul-usbphy"
+ compatible string
+
+Add "fsl,imx6ul-usbphy" compatible string
+
+Signed-off-by: Peter Chen <peter.chen@freescale.com>
+---
+ drivers/usb/phy/phy-mxs-usb.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/drivers/usb/phy/phy-mxs-usb.c b/drivers/usb/phy/phy-mxs-usb.c
+index d5ae0af..24df7e5 100644
+--- a/drivers/usb/phy/phy-mxs-usb.c
++++ b/drivers/usb/phy/phy-mxs-usb.c
+@@ -161,6 +161,7 @@ static const struct mxs_phy_data imx6sx_phy_data = {
+ };
+ 
+ static const struct of_device_id mxs_phy_dt_ids[] = {
++	{ .compatible = "fsl,imx6ul-usbphy", .data = &imx6sx_phy_data, },
+ 	{ .compatible = "fsl,imx6sx-usbphy", .data = &imx6sx_phy_data, },
+ 	{ .compatible = "fsl,imx6sl-usbphy", .data = &imx6sl_phy_data, },
+ 	{ .compatible = "fsl,imx6q-usbphy", .data = &imx6q_phy_data, },
+-- 
+1.8.0
+

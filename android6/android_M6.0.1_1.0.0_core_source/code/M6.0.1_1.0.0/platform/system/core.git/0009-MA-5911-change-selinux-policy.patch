@@ -1,0 +1,30 @@
+From dd6639e1a083b33852adbeee104a881c3319a439 Mon Sep 17 00:00:00 2001
+From: zhang sanshan <b51434@freescale.com>
+Date: Mon, 1 Dec 2014 15:09:35 +0800
+Subject: [PATCH 09/22] MA-5911 change selinux policy
+
+allow disable selinux in user mode
+
+Signed-off-by: zhang sanshan <b51434@freescale.com>
+
+Conflicts:
+	init/Android.mk
+---
+ init/Android.mk | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/init/Android.mk b/init/Android.mk
+index de065dc..0fbfbec 100644
+--- a/init/Android.mk
++++ b/init/Android.mk
+@@ -9,6 +9,7 @@ init_options += -DALLOW_LOCAL_PROP_OVERRIDE=1 -DALLOW_DISABLE_SELINUX=1
+ else
+ init_options += -DALLOW_LOCAL_PROP_OVERRIDE=0 -DALLOW_DISABLE_SELINUX=0
+ endif
++LOCAL_CFLAGS +=  -DALLOW_DISABLE_SELINUX=1
+ 
+ init_options += -DLOG_UEVENTS=0
+ 
+-- 
+1.8.0
+

@@ -1,0 +1,30 @@
+From e2939afb26e31cab5a1479a2eea8a877eede221a Mon Sep 17 00:00:00 2001
+From: Jianzheng Zhou <jianzheng.zhou@freescale.com>
+Date: Fri, 26 Jul 2013 15:32:06 +0800
+Subject: [PATCH 10/25] ENGR00272735 wifi: add default compile object in rule
+
+If no board wlan device is defined, it should also has a default
+wifi.c be compiled.
+
+Signed-off-by: Jianzheng Zhou <jianzheng.zhou@freescale.com>
+---
+ wifi/Android.mk | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/wifi/Android.mk b/wifi/Android.mk
+index b189e03..d7dc5fa 100644
+--- a/wifi/Android.mk
++++ b/wifi/Android.mk
+@@ -65,6 +65,9 @@ ifeq ($(BOARD_WLAN_DEVICE),UNITE)
+ else ifeq ($(BOARD_WLAN_VENDOR), INTEL)
+   LOCAL_SRC_FILES += wifi/wifi_intel.c
+   LOCAL_C_INCLUDES += $(LOCAL_PATH)/../../external/wpa_supplicant_8/src/common
++else
++  LOCAL_SRC_FILES += wifi/wifi.c
++  LOCAL_C_INCLUDES += $(LOCAL_PATH)/../../external/wpa_supplicant_8/src/common
+ endif
+ 
+ ifdef WPA_SUPPLICANT_VERSION
+-- 
+1.8.0
+

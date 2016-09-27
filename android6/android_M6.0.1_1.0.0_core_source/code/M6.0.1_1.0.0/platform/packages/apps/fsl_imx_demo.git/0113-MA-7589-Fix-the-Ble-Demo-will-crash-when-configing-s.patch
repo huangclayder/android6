@@ -1,0 +1,132 @@
+From b0e7abefa797fd2e516f27e5bb044c03887b2f44 Mon Sep 17 00:00:00 2001
+From: Ma Jiamin <b55507@freescale.com>
+Date: Wed, 3 Feb 2016 10:52:37 +0800
+Subject: [PATCH 113/115] MA-7589 Fix the Ble Demo will crash when configing
+ serveral BluetoothGattService
+
+Add a delay when configing bluetoothGattService to prevent the crash and the service cannot broadcast
+
+Signed-off-by: Ma Jiamin<b55507@freescale.com>
+---
+ .../src/com/freescale/bleserver/MockServerCallBack.java    | 14 +++++++-------
+ .../src/com/freescale/bleserver/ble/BleServerManager.java  | 10 +++++++---
+ .../src/com/freescale/bleserver/pager/HomePager.java       |  3 ++-
+ 3 files changed, 16 insertions(+), 11 deletions(-)
+
+diff --git a/BleServerEmulator/src/com/freescale/bleserver/MockServerCallBack.java b/BleServerEmulator/src/com/freescale/bleserver/MockServerCallBack.java
+index 7cce360..534ddf0 100755
+--- a/BleServerEmulator/src/com/freescale/bleserver/MockServerCallBack.java
++++ b/BleServerEmulator/src/com/freescale/bleserver/MockServerCallBack.java
+@@ -112,7 +112,7 @@ public class MockServerCallBack extends BluetoothGattServerCallback {
+ 	private BluetoothGattCharacteristic mModuleNumberChar;
+ 	private BluetoothGattCharacteristic mSerialNumberChar;
+ 
+-	public void setupServices(BluetoothGattServer gattServer) {
++	public void setupServices(BluetoothGattServer gattServer) throws InterruptedException{
+ 		if (gattServer == null) {
+ 			throw new IllegalArgumentException("gattServer is null");
+ 		}
+@@ -132,7 +132,7 @@ public class MockServerCallBack extends BluetoothGattServerCallback {
+ 			if(mGattServer!=null && ias!=null)
+ 				mGattServer.addService(ias);
+ 		}
+-
++		Thread.sleep(100);
+ 		{ 
+ 			BluetoothGattDescriptor descriptor = new BluetoothGattDescriptor(
+ 					UUID.fromString(IMXUuid.CLIENT_CHARACTERISTIC_CONFIG), 
+@@ -166,7 +166,7 @@ public class MockServerCallBack extends BluetoothGattServerCallback {
+ 			if(mGattServer!=null && dis!=null)
+ 				mGattServer.addService(dis);
+ 		}
+-
++		Thread.sleep(100);
+ 		{
+ 			//batery information
+ 			BluetoothGattService bis = new BluetoothGattService(
+@@ -187,7 +187,7 @@ public class MockServerCallBack extends BluetoothGattServerCallback {
+ 			if(mGattServer!=null && bis!=null)
+ 				mGattServer.addService(bis);
+ 		}
+-
++		Thread.sleep(100);
+ 		{
+ 			//heart rate information
+ 			BluetoothGattService hris = new BluetoothGattService(
+@@ -208,7 +208,7 @@ public class MockServerCallBack extends BluetoothGattServerCallback {
+ 			if(mGattServer!=null && hris!=null)
+ 				mGattServer.addService(hris);
+ 		}
+-
++		Thread.sleep(100);
+ 		{
+ 			//cpu temperature
+ 			BluetoothGattService cts = new BluetoothGattService(
+@@ -229,7 +229,7 @@ public class MockServerCallBack extends BluetoothGattServerCallback {
+ 			if(mGattServer!=null && cts!=null)
+ 				mGattServer.addService(cts);
+ 		}
+-
++		Thread.sleep(100);
+ 		{
+ 			//Date Information
+ 			BluetoothGattService dates = new BluetoothGattService(
+@@ -251,7 +251,7 @@ public class MockServerCallBack extends BluetoothGattServerCallback {
+ 			if(mGattServer!=null && dates!=null)
+ 				mGattServer.addService(dates);
+ 		}
+-
++		Thread.sleep(100);
+ 		{
+ 			//Message Information
+ 			BluetoothGattService mis = new BluetoothGattService(
+diff --git a/BleServerEmulator/src/com/freescale/bleserver/ble/BleServerManager.java b/BleServerEmulator/src/com/freescale/bleserver/ble/BleServerManager.java
+index 40863f0..48aa9cb 100755
+--- a/BleServerEmulator/src/com/freescale/bleserver/ble/BleServerManager.java
++++ b/BleServerEmulator/src/com/freescale/bleserver/ble/BleServerManager.java
+@@ -107,7 +107,7 @@ public class BleServerManager {
+ 	}
+ 
+ 	//start and stop Advertise as Immediate Alert Service
+-	public void startIASAdvertise() {
++	public void startIASAdvertise(){
+ 		
+ 		initBle();
+ 		if (mBluetoothAdapter == null) {
+@@ -122,8 +122,12 @@ public class BleServerManager {
+ 			if(mGattServer == null){
+ 				Log.d(TAG , "BleServerManger:gatt is null");
+ 			}
+-			mMockServerCallBack.setupServices(mGattServer);
+-			mBluetoothAdvertiser.startAdvertising(createAdvSettings(true, 0), createFMPAdvertiseData(),mAdvCallback);
++			try{
++				mMockServerCallBack.setupServices(mGattServer);
++				mBluetoothAdvertiser.startAdvertising(createAdvSettings(true, 0), createFMPAdvertiseData(),mAdvCallback);
++			}catch(InterruptedException e){
++				Log.v(TAG, "Fail to setup BleService");
++			}
+ 		}
+ 	}
+ 
+diff --git a/BleServerEmulator/src/com/freescale/bleserver/pager/HomePager.java b/BleServerEmulator/src/com/freescale/bleserver/pager/HomePager.java
+index c0c4bbd..7ea21b9 100755
+--- a/BleServerEmulator/src/com/freescale/bleserver/pager/HomePager.java
++++ b/BleServerEmulator/src/com/freescale/bleserver/pager/HomePager.java
+@@ -198,12 +198,13 @@ public class HomePager extends BasePager implements OnClickListener{
+ 		case R.id.btn_on_off:
+ 			if(mIsBleOn){
+ 				mIsBleOn = false;
++				refreshState(mIsBleOn);
+ 				homeUI.mBleServerManager.stopAdvertise();
+ 			}else{
+ 				mIsBleOn = true;
++				refreshState(mIsBleOn);
+ 				homeUI.mBleServerManager.startIASAdvertise();
+ 			}
+-			refreshState(mIsBleOn);
+ 			PrefUtils.setBoolean(mActivity, PrefUtils.BLE_STATE, mIsBleOn);
+ 			break;
+ 		case R.id.rl_cpu_temp:
+-- 
+1.8.0
+

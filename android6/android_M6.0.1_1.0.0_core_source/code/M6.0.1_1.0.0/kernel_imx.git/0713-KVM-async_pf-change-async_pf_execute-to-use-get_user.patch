@@ -1,0 +1,35 @@
+From a96fd4326a9952dac624c4a0539859c5d714cf0d Mon Sep 17 00:00:00 2001
+From: Oleg Nesterov <oleg@redhat.com>
+Date: Mon, 28 Apr 2014 17:03:00 +0200
+Subject: [PATCH] KVM: async_pf: change async_pf_execute() to use
+ get_user_pages(tsk => NULL)
+
+async_pf_execute() passes tsk == current to gup(), this is doesn't
+hurt but unnecessary and misleading. "tsk" is only used to account
+the number of faults and current is the random workqueue thread.
+
+Signed-off-by: Oleg Nesterov <oleg@redhat.com>
+Suggested-by: Andrea Arcangeli <aarcange@redhat.com>
+Signed-off-by: Paolo Bonzini <pbonzini@redhat.com>
+(cherry picked from commit e9545b9f8aeb63e05818e4b3250057260bc072aa)
+Signed-off-by: Christoffer Dall <christoffer.dall@linaro.org>
+---
+ virt/kvm/async_pf.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/virt/kvm/async_pf.c b/virt/kvm/async_pf.c
+index cda703e..d6a3d09 100644
+--- a/virt/kvm/async_pf.c
++++ b/virt/kvm/async_pf.c
+@@ -81,7 +81,7 @@ static void async_pf_execute(struct work_struct *work)
+ 	might_sleep();
+ 
+ 	down_read(&mm->mmap_sem);
+-	get_user_pages(current, mm, addr, 1, 1, 0, NULL, NULL);
++	get_user_pages(NULL, mm, addr, 1, 1, 0, NULL, NULL);
+ 	up_read(&mm->mmap_sem);
+ 	kvm_async_page_present_sync(vcpu, apf);
+ 
+-- 
+1.8.0
+

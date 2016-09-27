@@ -1,0 +1,30 @@
+From 0f123c3b09d0a6388fae5cb6ce8575fdf63b2caa Mon Sep 17 00:00:00 2001
+From: Wenbo Zhu <b52619@freescale.com>
+Date: Wed, 24 Jun 2015 16:00:19 +0800
+Subject: [PATCH 100/115] MA-6822  [Android_MX7D_SD]APK: It shows 'Playin' at
+ the left top when choose a .wav to play at
+ AudioTimestamp.apk. 100%
+
+enlarge the value of TextView about 'Playing'
+
+Signed-off-by: Wenbo Zhu <b52619@freescale.com>
+---
+ AudioTimeStampTest/res/layout-ldpi/main.xml | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/AudioTimeStampTest/res/layout-ldpi/main.xml b/AudioTimeStampTest/res/layout-ldpi/main.xml
+index 565390b..fa93742 100755
+--- a/AudioTimeStampTest/res/layout-ldpi/main.xml
++++ b/AudioTimeStampTest/res/layout-ldpi/main.xml
+@@ -11,7 +11,7 @@
+                 android:background="#ffffff"/>
+       <TextView
+           android:id="@+id/textview01"
+-          android:layout_width="53dp"
++          android:layout_width="80dp"
+           android:layout_height="25dp"
+           android:layout_below="@+id/Spinner"
+           android:layout_marginLeft="2dp"
+-- 
+1.8.0
+

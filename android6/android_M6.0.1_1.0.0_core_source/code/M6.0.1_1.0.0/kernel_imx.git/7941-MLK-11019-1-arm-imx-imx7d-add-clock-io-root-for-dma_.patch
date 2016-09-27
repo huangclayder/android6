@@ -1,0 +1,31 @@
+From ba778bacb90f553bcd5a0eb8fc81a8df479061b1 Mon Sep 17 00:00:00 2001
+From: Adrian Alonso <aalonso@freescale.com>
+Date: Fri, 29 May 2015 15:27:12 -0500
+Subject: [PATCH] MLK-11019-1: arm: imx: imx7d: add clock io root for dma_apbh
+
+* Add root clock io dependency for dma_apbh ip module
+  Clocks expected: dma_apbh_bch dma_apbh_io
+
+Signed-off-by: Adrian Alonso <aalonso@freescale.com>
+---
+ arch/arm/boot/dts/imx7d.dtsi | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
+
+diff --git a/arch/arm/boot/dts/imx7d.dtsi b/arch/arm/boot/dts/imx7d.dtsi
+index 39bb5af..9a835e3 100644
+--- a/arch/arm/boot/dts/imx7d.dtsi
++++ b/arch/arm/boot/dts/imx7d.dtsi
+@@ -373,7 +373,9 @@
+ 			interrupt-names = "gpmi0", "gpmi1", "gpmi2", "gpmi3";
+ 			#dma-cells = <1>;
+ 			dma-channels = <4>;
+-			clocks = <&clks IMX7D_NAND_ROOT_CLK>;
++			clocks = <&clks IMX7D_NAND_USDHC_BUS_ROOT_CLK>,
++				<&clks IMX7D_NAND_ROOT_CLK>;
++			clock-names = "dma_apbh_bch", "dma_apbh_io";
+ 		};
+ 
+         gpmi: gpmi-nand@33002000{
+-- 
+1.8.0
+

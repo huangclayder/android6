@@ -1,0 +1,33 @@
+From 667c8969c694726c3320fa38719515ffbd683e20 Mon Sep 17 00:00:00 2001
+From: Haoran Wang <b50027@freescale.com>
+Date: Thu, 19 Nov 2015 20:25:33 +0800
+Subject: [PATCH 20/22] MA-7125-2 Revert "MA-5881 P2p use 2.4G only"
+
+This reverts commit b653ef4887cfd619ab314e67ba118b80aea3a6b4.
+As the 5G p2p channel has been fixed in lp5.0 wpa_supplicant.
+Try to remove this channel limit in mashmallow and validate
+the WiFi P2P's quality.
+
+Signed-off-by: Haoran Wang <b50027@freescale.com>
+---
+ wpa_supplicant/p2p_supplicant.c | 4 +---
+ 1 file changed, 1 insertion(+), 3 deletions(-)
+
+diff --git a/wpa_supplicant/p2p_supplicant.c b/wpa_supplicant/p2p_supplicant.c
+index 5fe7922..01401ac 100644
+--- a/wpa_supplicant/p2p_supplicant.c
++++ b/wpa_supplicant/p2p_supplicant.c
+@@ -3270,9 +3270,7 @@ static int wpas_p2p_setup_channels(struct wpa_supplicant *wpa_s,
+ 	cla = cli_cla = 0;
+ 
+ 	for (op = 0; op_class[op].op_class; op++) {
+-		struct p2p_oper_class_map *o = &op_class[op];
+-        if (o->op_class != 81)
+-                continue;
++		const struct p2p_oper_class_map *o = &op_class[op];
+ 		u8 ch;
+ 		struct p2p_reg_class *reg = NULL, *cli_reg = NULL;
+ 
+-- 
+1.8.0
+

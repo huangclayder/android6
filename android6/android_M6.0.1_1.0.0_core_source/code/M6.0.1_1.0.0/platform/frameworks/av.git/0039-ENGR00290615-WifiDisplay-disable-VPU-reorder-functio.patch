@@ -1,0 +1,124 @@
+From 0e13dce8bfe3b9706539797b7db19efc97bfc3bf Mon Sep 17 00:00:00 2001
+From: Jianzheng Zhou <jianzheng.zhou@freescale.com>
+Date: Wed, 18 Dec 2013 17:33:45 +0800
+Subject: [PATCH 39/95] ENGR00290615 WifiDisplay:disable VPU reorder function
+
+Test with some none Nexus devices as source, our board as sink will freeze
+in the first screen. If disable our discard packets change, it will also OK.
+Once droping queue buffer will have such issue. Root cause is related with
+received AVC packets.Maybe kind of difference with orginal Nexus device.If
+enable reorder in VPU,this will cause stream timestamp over big if dropping
+in upper layer. In fact,reorder feature should be disabled in wifi display
+case. This commit will disable it from NuPlayer.
+
+Signed-off-by: Jianzheng Zhou <jianzheng.zhou@freescale.com>
+
+Conflicts:
+	media/libmediaplayerservice/nuplayer/NuPlayer.cpp
+---
+ media/libmediaplayerservice/nuplayer/NuPlayer.cpp  |  5 +++++
+ .../nuplayer/NuPlayerSource.h                      |  4 ++++
+ .../nuplayer/StreamingSource.cpp                   |  4 ++++
+ .../nuplayer/StreamingSource.h                     |  2 ++
+ media/libstagefright/ACodec.cpp                    | 26 ++++++++++++++++++++++
+ 5 files changed, 41 insertions(+)
+
+diff --git a/media/libmediaplayerservice/nuplayer/NuPlayer.cpp b/media/libmediaplayerservice/nuplayer/NuPlayer.cpp
+index 26532d7..c58ab4d 100644
+--- a/media/libmediaplayerservice/nuplayer/NuPlayer.cpp
++++ b/media/libmediaplayerservice/nuplayer/NuPlayer.cpp
+@@ -1511,6 +1511,11 @@ status_t NuPlayer::instantiateDecoder(bool audio, sp<DecoderBase> *decoder) {
+     if (!audio) {
+         AString mime;
+         CHECK(format->findString("mime", &mime));
++        bool bVideoIsAVC = !strcasecmp(MEDIA_MIMETYPE_VIDEO_AVC, mime.c_str());
++        if (bVideoIsAVC && mSource->isAVCReorderDisabled())
++            format->setString("disreorder", "1");
++        else
++            format->setString("disreorder", "0");
+ 
+         sp<AMessage> ccNotify = new AMessage(kWhatClosedCaptionNotify, this);
+         if (mCCDecoder == NULL) {
+diff --git a/media/libmediaplayerservice/nuplayer/NuPlayerSource.h b/media/libmediaplayerservice/nuplayer/NuPlayerSource.h
+index 11a6a9f..0d8f028 100644
+--- a/media/libmediaplayerservice/nuplayer/NuPlayerSource.h
++++ b/media/libmediaplayerservice/nuplayer/NuPlayerSource.h
+@@ -114,6 +114,10 @@ struct NuPlayer::Source : public AHandler {
+         return INVALID_OPERATION;
+     }
+ 
++    virtual bool isAVCReorderDisabled() const {
++        return false;
++    }
++
+     virtual bool isRealTime() const {
+         return false;
+     }
+diff --git a/media/libmediaplayerservice/nuplayer/StreamingSource.cpp b/media/libmediaplayerservice/nuplayer/StreamingSource.cpp
+index 0246b59..c4bf144 100644
+--- a/media/libmediaplayerservice/nuplayer/StreamingSource.cpp
++++ b/media/libmediaplayerservice/nuplayer/StreamingSource.cpp
+@@ -255,6 +255,10 @@ status_t NuPlayer::StreamingSource::dequeueAccessUnit(
+     return err;
+ }
+ 
++bool NuPlayer::StreamingSource::isAVCReorderDisabled() const {
++    return mSource->flags() & IStreamSource::kFlagKeepLowLatency;
++}
++
+ bool NuPlayer::StreamingSource::isRealTime() const {
+     return mSource->flags() & IStreamSource::kFlagIsRealTimeData;
+ }
+diff --git a/media/libmediaplayerservice/nuplayer/StreamingSource.h b/media/libmediaplayerservice/nuplayer/StreamingSource.h
+index 1f95f3c..1315de5 100644
+--- a/media/libmediaplayerservice/nuplayer/StreamingSource.h
++++ b/media/libmediaplayerservice/nuplayer/StreamingSource.h
+@@ -41,6 +41,8 @@ struct NuPlayer::StreamingSource : public NuPlayer::Source {
+ 
+     virtual bool isRealTime() const;
+ 
++    virtual bool isAVCReorderDisabled() const;
++
+ protected:
+     virtual ~StreamingSource();
+ 
+diff --git a/media/libstagefright/ACodec.cpp b/media/libstagefright/ACodec.cpp
+index 3b6f021..0bb977a 100644
+--- a/media/libstagefright/ACodec.cpp
++++ b/media/libstagefright/ACodec.cpp
+@@ -1745,6 +1745,32 @@ status_t ACodec::configureCodec(
+             mCreateInputBuffersSuspended = false;
+         }
+     }
++    if (video && (!encoder)) {
++        OMX_INDEXTYPE index;
++        err = mOMX->getExtensionIndex(
++                mNode,
++                "OMX.google.android.index.disableAVCReorder",
++                &index);
++
++        if (err == OK) {
++            AString temp;
++            if (!strcasecmp(MEDIA_MIMETYPE_VIDEO_AVC, mime)) {
++                CHECK(msg->findString("disreorder", &temp));
++            }
++
++            DisableAVCReorderParams params;
++            InitOMXParams(&params);
++            params.bDisable = (!strcmp(temp.c_str(), "1")) ? OMX_TRUE : OMX_FALSE;
++            ALOGI("Send reorder config(%d) to VPU",params.bDisable);
++            err = mOMX->setParameter(
++                    mNode, index, &params, sizeof(params));
++            if (err != OK) {
++                ALOGE("disable AVC reorder failed");
++                // allow failure
++                err = OK;
++            }
++        }
++    }
+ 
+     // NOTE: we only use native window for video decoders
+     sp<RefBase> obj;
+-- 
+1.8.0
+

@@ -1,0 +1,46 @@
+From 4209e0a4d324a99511a85dfe1fb3107518ff02c4 Mon Sep 17 00:00:00 2001
+From: Peng Fan <Peng.Fan@freescale.com>
+Date: Fri, 19 Jun 2015 10:34:16 +0800
+Subject: [PATCH] MLK-11134-2 imx: mx7d_12x12_ddr3_arm2 update spi nor code
+
+We should use board_spi_cs_gpio and remove the GPIO from
+CONFIG_SF_DEFAULT_CS.
+
+Signed-off-by: Peng Fan <Peng.Fan@freescale.com>
+---
+ board/freescale/mx7d_12x12_ddr3_arm2/mx7d_12x12_ddr3_arm2.c | 5 +++++
+ include/configs/mx7d_12x12_ddr3_arm2.h                      | 2 +-
+ 2 files changed, 6 insertions(+), 1 deletion(-)
+
+diff --git a/board/freescale/mx7d_12x12_ddr3_arm2/mx7d_12x12_ddr3_arm2.c b/board/freescale/mx7d_12x12_ddr3_arm2/mx7d_12x12_ddr3_arm2.c
+index 3f5dcf5..91fa798 100644
+--- a/board/freescale/mx7d_12x12_ddr3_arm2/mx7d_12x12_ddr3_arm2.c
++++ b/board/freescale/mx7d_12x12_ddr3_arm2/mx7d_12x12_ddr3_arm2.c
+@@ -252,6 +252,11 @@ void setup_spinor(void)
+ 					 ARRAY_SIZE(ecspi1_pads));
+ 	gpio_direction_output(IMX_GPIO_NR(5, 3), 0);
+ }
++
++int board_spi_cs_gpio(unsigned bus, unsigned cs)
++{
++	return (bus == 3 && cs == 0) ? (IMX_GPIO_NR(5, 3)) : -1;
++}
+ #endif
+ 
+ int board_early_init_f(void)
+diff --git a/include/configs/mx7d_12x12_ddr3_arm2.h b/include/configs/mx7d_12x12_ddr3_arm2.h
+index 5ff3625..f65df50 100644
+--- a/include/configs/mx7d_12x12_ddr3_arm2.h
++++ b/include/configs/mx7d_12x12_ddr3_arm2.h
+@@ -47,7 +47,7 @@
+ #define CONFIG_SF_DEFAULT_BUS  3
+ #define CONFIG_SF_DEFAULT_SPEED 20000000
+ #define CONFIG_SF_DEFAULT_MODE (SPI_MODE_0)
+-#define CONFIG_SF_DEFAULT_CS   (0|(IMX_GPIO_NR(5, 3)<<8))
++#define CONFIG_SF_DEFAULT_CS   0
+ #endif
+ 
+ #include "mx7d_arm2.h"
+-- 
+1.8.0
+

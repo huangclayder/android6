@@ -1,0 +1,131 @@
+From 90bb670a129723c77bc3dbfe60fc81d0a8d3b625 Mon Sep 17 00:00:00 2001
+From: Peng Fan <Peng.Fan@freescale.com>
+Date: Wed, 6 May 2015 18:13:04 +0800
+Subject: [PATCH] MLK-10829-2 imx:mx6 support thermal for all mx6
+
+Move CONFIG_IMX_THERMAL to mx6_common.h
+Make CONFIG_MXC_OCOTP only depends on CONFIG_CMD_FUSE, since when
+THERMAL is not implemented, we may use fuse.
+
+Signed-off-by: Peng Fan <Peng.Fan@freescale.com>
+---
+ include/configs/mx6_common.h      | 3 +++
+ include/configs/mx6qarm2.h        | 6 +++---
+ include/configs/mx6sabre_common.h | 4 +---
+ include/configs/mx6slevk.h        | 4 +---
+ include/configs/mx6sxsabresd.h    | 4 +---
+ include/configs/mx6ulevk.h        | 3 +--
+ 6 files changed, 10 insertions(+), 14 deletions(-)
+
+diff --git a/include/configs/mx6_common.h b/include/configs/mx6_common.h
+index d7ce792..c2c3c50 100644
+--- a/include/configs/mx6_common.h
++++ b/include/configs/mx6_common.h
+@@ -1,4 +1,5 @@
+ /*
++ * Copyright (C) 2012-2015 Freescale Semiconductor, Inc.
+  * Copyright (c) 2013, NVIDIA CORPORATION.  All rights reserved.
+  *
+  * This program is free software; you can redistribute it and/or modify it
+@@ -46,4 +47,6 @@ defined(CONFIG_MX6DL)) && !defined(CONFIG_MX6SOLO)
+ #define CONFIG_MX6Q
+ #endif
+ 
++#define CONFIG_IMX_THERMAL
++
+ #endif
+diff --git a/include/configs/mx6qarm2.h b/include/configs/mx6qarm2.h
+index f6f01c1..9d5cc0f 100644
+--- a/include/configs/mx6qarm2.h
++++ b/include/configs/mx6qarm2.h
+@@ -1,5 +1,5 @@
+ /*
+- * Copyright (C) 2010-2011 Freescale Semiconductor, Inc.
++ * Copyright (C) 2010-2015 Freescale Semiconductor, Inc.
+  *
+  * Configuration settings for the Freescale i.MX6Q Armadillo2 board.
+  *
+@@ -39,9 +39,9 @@
+ 
+ #define CONFIG_MXC_UART
+ #define CONFIG_MXC_UART_BASE		UART4_BASE
+-#define CONFIG_IMX_THERMAL
++
+ #define CONFIG_CMD_FUSE
+-#if defined(CONFIG_CMD_FUSE) || defined(CONFIG_IMX_THERMAL)
++#if defined(CONFIG_CMD_FUSE)
+ #define CONFIG_MXC_OCOTP
+ #endif
+ 
+diff --git a/include/configs/mx6sabre_common.h b/include/configs/mx6sabre_common.h
+index ecf2df0..6812cb4 100644
+--- a/include/configs/mx6sabre_common.h
++++ b/include/configs/mx6sabre_common.h
+@@ -35,8 +35,6 @@
+ #define CONFIG_INITRD_TAG
+ #define CONFIG_REVISION_TAG
+ 
+-#define CONFIG_IMX_THERMAL
+-
+ #define CONFIG_SYS_GENERIC_BOARD
+ 
+ /* Size of malloc() pool */
+@@ -49,7 +47,7 @@
+ #define CONFIG_MXC_UART
+ 
+ #define CONFIG_CMD_FUSE
+-#if defined(CONFIG_CMD_FUSE) || defined(CONFIG_IMX_THERMAL)
++#ifdef CONFIG_CMD_FUSE
+ #define CONFIG_MXC_OCOTP
+ #endif
+ 
+diff --git a/include/configs/mx6slevk.h b/include/configs/mx6slevk.h
+index 05e6f47..5afcaea 100644
+--- a/include/configs/mx6slevk.h
++++ b/include/configs/mx6slevk.h
+@@ -280,10 +280,8 @@
+ #define CONFIG_SYS_MMC_ENV_DEV		1	/* SDHC2*/
+ #endif
+ 
+-#define CONFIG_IMX6_THERMAL
+-
+ #define CONFIG_CMD_FUSE
+-#if defined(CONFIG_CMD_FUSE) || defined(CONFIG_IMX6_THERMAL)
++#if defined(CONFIG_CMD_FUSE)
+ #define CONFIG_MXC_OCOTP
+ #endif
+ 
+diff --git a/include/configs/mx6sxsabresd.h b/include/configs/mx6sxsabresd.h
+index 23192b1..5ab4573 100644
+--- a/include/configs/mx6sxsabresd.h
++++ b/include/configs/mx6sxsabresd.h
+@@ -396,10 +396,8 @@
+ #define CONFIG_PCIE_IMX_POWER_GPIO	IMX_GPIO_NR(2, 1)
+ #endif
+ 
+-#define CONFIG_IMX_THERMAL
+-
+ #define CONFIG_CMD_FUSE
+-#if defined(CONFIG_CMD_FUSE) || defined(CONFIG_IMX_THERMAL)
++#ifdef CONFIG_CMD_FUSE
+ #define CONFIG_MXC_OCOTP
+ #endif
+ 
+diff --git a/include/configs/mx6ulevk.h b/include/configs/mx6ulevk.h
+index ac37751..7fea922 100644
+--- a/include/configs/mx6ulevk.h
++++ b/include/configs/mx6ulevk.h
+@@ -49,9 +49,8 @@
+ #define CONFIG_CONS_INDEX		1
+ #define CONFIG_BAUDRATE			115200
+ 
+-#define CONFIG_IMX_THERMAL
+ #define CONFIG_CMD_FUSE
+-#if defined(CONFIG_CMD_FUSE) || defined(CONFIG_IMX_THERMAL)
++#ifdef CONFIG_CMD_FUSE
+ #define CONFIG_MXC_OCOTP
+ #endif
+ 
+-- 
+1.8.0
+

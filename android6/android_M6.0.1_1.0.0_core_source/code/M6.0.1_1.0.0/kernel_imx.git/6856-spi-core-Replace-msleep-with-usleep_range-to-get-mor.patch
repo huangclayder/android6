@@ -1,0 +1,34 @@
+From a8a2cc9f6f52e5776721d538bd8a61ed1c8772a2 Mon Sep 17 00:00:00 2001
+From: Axel Lin <axel.lin@ingics.com>
+Date: Fri, 21 Feb 2014 09:15:18 +0800
+Subject: [PATCH] spi: core: Replace msleep with usleep_range to get more
+ accurate sleep time
+
+Fixes below checkpatch warning:
+WARNING: msleep < 20ms can sleep for up to 20ms; see Documentation/timers/timers-howto.txt
++               msleep(10);
+
+Signed-off-by: Axel Lin <axel.lin@ingics.com>
+Signed-off-by: Mark Brown <broonie@linaro.org>
+(cherry picked from commit f97b26b05b1dcd307b2f79d1f9e9d99551987dbb)
+(cherry picked from commit 658bc13e4a2d204479ee1978f32eb0e8f06ef643)
+---
+ drivers/spi/spi.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/spi/spi.c b/drivers/spi/spi.c
+index 5ef0e97..acf7e23 100644
+--- a/drivers/spi/spi.c
++++ b/drivers/spi/spi.c
+@@ -1085,7 +1085,7 @@ static int spi_stop_queue(struct spi_master *master)
+ 	 */
+ 	while ((!list_empty(&master->queue) || master->busy) && limit--) {
+ 		spin_unlock_irqrestore(&master->queue_lock, flags);
+-		msleep(10);
++		usleep_range(10000, 11000);
+ 		spin_lock_irqsave(&master->queue_lock, flags);
+ 	}
+ 
+-- 
+1.8.0
+

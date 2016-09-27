@@ -1,0 +1,30 @@
+From e4bbfbd51932ea089cb006b58ca27e44a11e6ed8 Mon Sep 17 00:00:00 2001
+From: Han Xu <b45815@freescale.com>
+Date: Wed, 9 Dec 2015 16:26:01 -0600
+Subject: [PATCH] MLK-11991 arm: config: change imx7d arm2 nand rootfs mtd
+ partition index
+
+change the imx7d arm2 nand rootfs partition index from 3 to 4 since the
+weim nor was enabled by default and took the first mtd partition.
+
+Signed-off-by: Han Xu <b45815@freescale.com>
+---
+ include/configs/mx7d_arm2.h | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/include/configs/mx7d_arm2.h b/include/configs/mx7d_arm2.h
+index dc8c0be..7a1262f 100644
+--- a/include/configs/mx7d_arm2.h
++++ b/include/configs/mx7d_arm2.h
+@@ -162,7 +162,7 @@
+ 	"fdt_addr=0x83000000\0" \
+ 	"fdt_high=0xffffffff\0"	  \
+ 	"console=ttymxc0\0" \
+-	"bootargs=console=ttymxc0,115200 ubi.mtd=3 "  \
++	"bootargs=console=ttymxc0,115200 ubi.mtd=4 "  \
+ 		"root=ubi0:rootfs rootfstype=ubifs "		     \
+ 		"mtdparts=gpmi-nand:64m(boot),16m(kernel),16m(dtb),-(rootfs)\0"\
+ 	"bootcmd=nand read ${loadaddr} 0x4000000 0x800000;"\
+-- 
+1.8.0
+

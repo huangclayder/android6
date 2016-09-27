@@ -1,0 +1,38 @@
+From 5856aebe5fce1b5154399c0481c5bebf67f8151f Mon Sep 17 00:00:00 2001
+From: Richard Zhu <r65037@freescale.com>
+Date: Thu, 24 Jul 2014 12:54:14 +0800
+Subject: [PATCH 456/505] ENGR00324189 mcc:test app is not generated properly
+
+Fix the mcc tty test app is not generated properly bug.
+Rootcause:
+the OBJS is set wrong.
+
+Signed-off-by: Richard Zhu <r65037@freescale.com>
+---
+ test/mxc_mcc_tty_test/Makefile | 8 ++------
+ 1 file changed, 2 insertions(+), 6 deletions(-)
+
+diff --git a/test/mxc_mcc_tty_test/Makefile b/test/mxc_mcc_tty_test/Makefile
+index 2bf7920..6bb271c 100644
+--- a/test/mxc_mcc_tty_test/Makefile
++++ b/test/mxc_mcc_tty_test/Makefile
+@@ -5,14 +5,10 @@
+ # list of platforms which want this test case
+ INCLUDE_LIST:= IMX6SX
+ 
+-OBJS = mxc_mcc_tty_test.o
+-
+-CFLAGS += $(INC)
+-
+ ifeq ($(PLATFORM),$(findstring $(PLATFORM),$(INCLUDE_LIST)))
+-TARGET = $(OBJDIR)/mxc_mcc_tty_test.out
++OBJS = $(OBJDIR)/mxc_mcc_tty_test.out
+ else
+-TARGET =
++OBJS =
+ endif
+ 
+ all : $(OBJS)
+-- 
+1.8.0
+

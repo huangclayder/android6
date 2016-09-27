@@ -1,0 +1,71 @@
+From 93e01750558e1ba2a1dfdb0cca24ed38326db091 Mon Sep 17 00:00:00 2001
+From: Peng Fan <Peng.Fan@freescale.com>
+Date: Mon, 13 Jul 2015 11:33:26 +0800
+Subject: [PATCH] MLK-11237 imx: mx6qpsabreauto update ddr script to 1.07
+
+Update ddr script to version 1.07:
+1. Change MDCCR from default value to 0x24912492,
+   it will improve DDR duty cycle
+2. The MMDC reorder bypass option, which has better DRAM performance
+
+URL:
+http://compass.freescale.net/livelink/livelink?func=ll&objId=234335046&objAction=browse&viewType=1
+
+Test Results:
+3 boards passed 48 hours memtester stress test.
+
+Signed-off-by: Peng Fan <Peng.Fan@freescale.com>
+---
+ board/freescale/mx6qsabreauto/mx6qp.cfg | 4 +++-
+ board/freescale/mx6qsabreauto/plugin.S  | 6 +++++-
+ 2 files changed, 8 insertions(+), 2 deletions(-)
+
+diff --git a/board/freescale/mx6qsabreauto/mx6qp.cfg b/board/freescale/mx6qsabreauto/mx6qp.cfg
+index 0fef4b8..8c65a70 100644
+--- a/board/freescale/mx6qsabreauto/mx6qp.cfg
++++ b/board/freescale/mx6qsabreauto/mx6qp.cfg
+@@ -109,6 +109,8 @@ DATA 4 0x021b481c 0x33333333
+ DATA 4 0x021b4820 0x33333333
+ DATA 4 0x021b4824 0x33333333
+ DATA 4 0x021b4828 0x33333333
++DATA 4 0x021b08c0 0x24912492
++DATA 4 0x021b48c0 0x24912492
+ DATA 4 0x021b08b8 0x00000800
+ DATA 4 0x021b48b8 0x00000800
+ DATA 4 0x021b0004 0x00020036
+@@ -122,7 +124,7 @@ DATA 4 0x021b001c 0x00008000
+ DATA 4 0x021b002c 0x000026d2
+ DATA 4 0x021b0030 0x008E1023
+ DATA 4 0x021b0040 0x00000047
+-DATA 4 0x021b0400 0x12420000
++DATA 4 0x021b0400 0x14420000
+ DATA 4 0x021b0000 0x841A0000
+ DATA 4 0x00bb0008 0x00000004
+ DATA 4 0x00bb000c 0x2891E41A
+diff --git a/board/freescale/mx6qsabreauto/plugin.S b/board/freescale/mx6qsabreauto/plugin.S
+index c0d09b8..ee13dfc 100644
+--- a/board/freescale/mx6qsabreauto/plugin.S
++++ b/board/freescale/mx6qsabreauto/plugin.S
+@@ -108,6 +108,10 @@
+ 	str r2, [r1, #0x824]
+ 	str r2, [r1, #0x828]
+ 
++	ldr r2, =0x24912492
++	str r2, [r0, #0x8c0]
++	str r2, [r1, #0x8c0]
++
+ 	ldr r2, =0x00000800
+ 	str r2, [r0, #0x8b8]
+ 	str r2, [r1, #0x8b8]
+@@ -136,7 +140,7 @@
+ 	ldr r2, =0x00000047
+ 	str r2, [r0, #0x040]
+ 
+-	ldr r2, =0x12420000
++	ldr r2, =0x14420000
+ 	str r2, [r0, #0x400]
+ 	ldr r2, =0x841A0000
+ 	str r2, [r0, #0x000]
+-- 
+1.8.0
+

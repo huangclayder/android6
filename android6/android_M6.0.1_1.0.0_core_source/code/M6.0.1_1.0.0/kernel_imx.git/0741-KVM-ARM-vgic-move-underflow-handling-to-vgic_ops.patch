@@ -1,0 +1,102 @@
+From 0236bc25e086d4aaf89c486aab94597382984e10 Mon Sep 17 00:00:00 2001
+From: Marc Zyngier <marc.zyngier@arm.com>
+Date: Tue, 4 Jun 2013 11:24:17 +0100
+Subject: [PATCH] KVM: ARM: vgic: move underflow handling to vgic_ops
+
+Move the code dealing with LR underflow handling to its own functions,
+and make them accessible through vgic_ops.
+
+Acked-by: Catalin Marinas <catalin.marinas@arm.com>
+Reviewed-by: Christoffer Dall <christoffer.dall@linaro.org>
+Signed-off-by: Marc Zyngier <marc.zyngier@arm.com>
+(cherry picked from commit 909d9b5025f149af6cfc304a76ad6218e6622cc0)
+Signed-off-by: Christoffer Dall <christoffer.dall@linaro.org>
+---
+ include/kvm/arm_vgic.h |  2 ++
+ virt/kvm/arm/vgic.c    | 28 +++++++++++++++++++++++++---
+ 2 files changed, 27 insertions(+), 3 deletions(-)
+
+diff --git a/include/kvm/arm_vgic.h b/include/kvm/arm_vgic.h
+index 4857508..cdfa5d9 100644
+--- a/include/kvm/arm_vgic.h
++++ b/include/kvm/arm_vgic.h
+@@ -88,6 +88,8 @@ struct vgic_ops {
+ 	u64	(*get_elrsr)(const struct kvm_vcpu *vcpu);
+ 	u64	(*get_eisr)(const struct kvm_vcpu *vcpu);
+ 	u32	(*get_interrupt_status)(const struct kvm_vcpu *vcpu);
++	void	(*enable_underflow)(struct kvm_vcpu *vcpu);
++	void	(*disable_underflow)(struct kvm_vcpu *vcpu);
+ };
+ 
+ struct vgic_dist {
+diff --git a/virt/kvm/arm/vgic.c b/virt/kvm/arm/vgic.c
+index 023f97e..b5cd797 100644
+--- a/virt/kvm/arm/vgic.c
++++ b/virt/kvm/arm/vgic.c
+@@ -1063,6 +1063,16 @@ static u32 vgic_v2_get_interrupt_status(const struct kvm_vcpu *vcpu)
+ 	return ret;
+ }
+ 
++static void vgic_v2_enable_underflow(struct kvm_vcpu *vcpu)
++{
++	vcpu->arch.vgic_cpu.vgic_v2.vgic_hcr |= GICH_HCR_UIE;
++}
++
++static void vgic_v2_disable_underflow(struct kvm_vcpu *vcpu)
++{
++	vcpu->arch.vgic_cpu.vgic_v2.vgic_hcr &= ~GICH_HCR_UIE;
++}
++
+ static const struct vgic_ops vgic_ops = {
+ 	.get_lr			= vgic_v2_get_lr,
+ 	.set_lr			= vgic_v2_set_lr,
+@@ -1070,6 +1080,8 @@ static const struct vgic_ops vgic_ops = {
+ 	.get_elrsr		= vgic_v2_get_elrsr,
+ 	.get_eisr		= vgic_v2_get_eisr,
+ 	.get_interrupt_status	= vgic_v2_get_interrupt_status,
++	.enable_underflow	= vgic_v2_enable_underflow,
++	.disable_underflow	= vgic_v2_disable_underflow,
+ };
+ 
+ static struct vgic_lr vgic_get_lr(const struct kvm_vcpu *vcpu, int lr)
+@@ -1104,6 +1116,16 @@ static inline u32 vgic_get_interrupt_status(struct kvm_vcpu *vcpu)
+ 	return vgic_ops.get_interrupt_status(vcpu);
+ }
+ 
++static inline void vgic_enable_underflow(struct kvm_vcpu *vcpu)
++{
++	vgic_ops.enable_underflow(vcpu);
++}
++
++static inline void vgic_disable_underflow(struct kvm_vcpu *vcpu)
++{
++	vgic_ops.disable_underflow(vcpu);
++}
++
+ static void vgic_retire_lr(int lr_nr, int irq, struct kvm_vcpu *vcpu)
+ {
+ 	struct vgic_cpu *vgic_cpu = &vcpu->arch.vgic_cpu;
+@@ -1285,9 +1307,9 @@ static void __kvm_vgic_flush_hwstate(struct kvm_vcpu *vcpu)
+ 
+ epilog:
+ 	if (overflow) {
+-		vgic_cpu->vgic_v2.vgic_hcr |= GICH_HCR_UIE;
++		vgic_enable_underflow(vcpu);
+ 	} else {
+-		vgic_cpu->vgic_v2.vgic_hcr &= ~GICH_HCR_UIE;
++		vgic_disable_underflow(vcpu);
+ 		/*
+ 		 * We're about to run this VCPU, and we've consumed
+ 		 * everything the distributor had in store for
+@@ -1340,7 +1362,7 @@ static bool vgic_process_maintenance(struct kvm_vcpu *vcpu)
+ 	}
+ 
+ 	if (status & INT_STATUS_UNDERFLOW)
+-		vgic_cpu->vgic_v2.vgic_hcr &= ~GICH_HCR_UIE;
++		vgic_disable_underflow(vcpu);
+ 
+ 	return level_pending;
+ }
+-- 
+1.8.0
+

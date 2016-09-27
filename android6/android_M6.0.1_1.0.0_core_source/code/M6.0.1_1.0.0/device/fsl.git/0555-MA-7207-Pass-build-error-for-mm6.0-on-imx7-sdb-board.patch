@@ -1,0 +1,67 @@
+From 1574f165c13a38318cf24d417bffc0d319354426 Mon Sep 17 00:00:00 2001
+From: zhang sanshan <b51434@freescale.com>
+Date: Tue, 3 Nov 2015 17:46:23 +0800
+Subject: [PATCH 555/602] MA-7207 Pass build error for mm6.0 on imx7 sdb board
+
+Some fsl imx7 selinux policy is conflict with google's.
+Change the fsl selinux policy.
+
+Signed-off-by: zhang sanshan <b51434@freescale.com>
+---
+ imx7/sepolicy/dnsmasq.te       | 1 -
+ imx7/sepolicy/domain.te        | 5 ++---
+ imx7/sepolicy/netd.te          | 1 -
+ imx7/sepolicy/system_server.te | 1 -
+ 4 files changed, 2 insertions(+), 6 deletions(-)
+
+diff --git a/imx7/sepolicy/dnsmasq.te b/imx7/sepolicy/dnsmasq.te
+index 5c8f411..08f2e04 100644
+--- a/imx7/sepolicy/dnsmasq.te
++++ b/imx7/sepolicy/dnsmasq.te
+@@ -1,6 +1,5 @@
+ allow dnsmasq property_socket:sock_file rw_file_perms;
+ allow dnsmasq properties_device:file rwx_file_perms;
+ allow dnsmasq init:unix_stream_socket connectto;
+-allow dnsmasq default_prop:property_service set;
+ allow dnsmasq net_radio_prop:property_service set;
+ 
+diff --git a/imx7/sepolicy/domain.te b/imx7/sepolicy/domain.te
+index dc078a8..2ff3da3 100644
+--- a/imx7/sepolicy/domain.te
++++ b/imx7/sepolicy/domain.te
+@@ -8,13 +8,12 @@ allow gpsd apk_data_file:dir rw_dir_perms;
+ allow gpsd apk_data_file:file create_file_perms;
+ allow gpsd properties_device:file rwx_file_perms;
+ allow gpsd init:unix_stream_socket connectto;
+-allow gpsd default_prop:property_service set;
+ allow gpsd device:dir rw_dir_perms;
+ allow gpsd device:notdevfile_class_set create_file_perms;
+ allow gpsd devpts:chr_file create_file_perms;
+ allow {domain -untrusted_app -shell -isolated_app} graphics_device:chr_file rw_file_perms;
+ allow {domain -untrusted_app -shell -isolated_app} graphics_device:dir rw_dir_perms;
+ allow domain self:process execmem;
+-allow domain unlabeled:file { setattr getattr rename link unlink rw_file_perms };
+-allow domain unlabeled:dir { setattr getattr rename link unlink rw_dir_perms };
++allow domain unlabeled:file { setattr getattr rename rw_file_perms };
++allow domain unlabeled:dir { setattr getattr rename rw_dir_perms };
+ allow domain ashmem_device:chr_file {execute};
+diff --git a/imx7/sepolicy/netd.te b/imx7/sepolicy/netd.te
+index 767edb8..f1bf0e7 100644
+--- a/imx7/sepolicy/netd.te
++++ b/imx7/sepolicy/netd.te
+@@ -1,2 +1 @@
+ allow netd kernel:system { module_request };
+-dontaudit netd self:capability sys_module;
+diff --git a/imx7/sepolicy/system_server.te b/imx7/sepolicy/system_server.te
+index 7f6bd16..f73cd54 100644
+--- a/imx7/sepolicy/system_server.te
++++ b/imx7/sepolicy/system_server.te
+@@ -2,5 +2,4 @@ allow system_server unlabeled:dir {relabelfrom rw_dir_perms};
+ allow system_server unlabeled:sock_file {link unlink rw_file_perms};
+ allow system_server system_data_file:file {relabelto rw_file_perms};
+ allow system_server system_data_file:dir {relabelto rw_dir_perms};
+-allow system_server default_prop:property_service { set };
+ allow system_server system_file:file {execmod};
+-- 
+1.8.0
+

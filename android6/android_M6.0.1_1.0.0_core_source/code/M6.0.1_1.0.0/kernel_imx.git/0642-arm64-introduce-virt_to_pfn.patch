@@ -1,0 +1,32 @@
+From 9824dcc233d663c0685f632e0ef03c29d85798ea Mon Sep 17 00:00:00 2001
+From: Stefano Stabellini <stefano.stabellini@eu.citrix.com>
+Date: Thu, 8 May 2014 15:48:13 +0000
+Subject: [PATCH] arm64: introduce virt_to_pfn
+
+virt_to_pfn has been defined in arch/arm/include/asm/memory.h by commit
+e26a9e0 "ARM: Better virt_to_page() handling" and Xen has come to rely
+on it.  Introduce virt_to_pfn on arm64 too.
+
+Signed-off-by: Stefano Stabellini <stefano.stabellini@eu.citrix.com>
+Acked-by: Catalin Marinas <catalin.marinas@arm.com>
+(cherry picked from commit 1f53ba6e81749a420226e5502c49ab83ba85c81d)
+Signed-off-by: Mark Brown <broonie@linaro.org>
+---
+ arch/arm64/include/asm/memory.h | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/arch/arm64/include/asm/memory.h b/arch/arm64/include/asm/memory.h
+index e94f945..993bce5 100644
+--- a/arch/arm64/include/asm/memory.h
++++ b/arch/arm64/include/asm/memory.h
+@@ -138,6 +138,7 @@ static inline void *phys_to_virt(phys_addr_t x)
+ #define __pa(x)			__virt_to_phys((unsigned long)(x))
+ #define __va(x)			((void *)__phys_to_virt((phys_addr_t)(x)))
+ #define pfn_to_kaddr(pfn)	__va((pfn) << PAGE_SHIFT)
++#define virt_to_pfn(x)      __phys_to_pfn(__virt_to_phys(x))
+ 
+ /*
+  *  virt_to_page(k)	convert a _valid_ virtual address to struct page *
+-- 
+1.8.0
+

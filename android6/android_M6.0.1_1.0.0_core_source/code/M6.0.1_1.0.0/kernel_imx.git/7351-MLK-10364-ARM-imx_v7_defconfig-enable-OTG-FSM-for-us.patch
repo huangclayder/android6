@@ -1,0 +1,30 @@
+From 8c903fc71d892321f3b451cd042b7920506e8a11 Mon Sep 17 00:00:00 2001
+From: Li Jun <B47624@freescale.com>
+Date: Wed, 4 Mar 2015 10:24:32 +0800
+Subject: [PATCH] MLK-10364 ARM: imx_v7_defconfig: enable OTG FSM for usb
+ driver
+
+Enable CONFIG_USB_OTG_FSM, which selects USB_OTG, then we have unified
+menuconfig to support OTG port all usages: device-only ,host-only, role
+switch by ID pin detection, standard USB OTG HNP&SRP.
+
+Signed-off-by: Li Jun <jun.li@freescale.com>
+---
+ arch/arm/configs/imx_v7_defconfig | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/arch/arm/configs/imx_v7_defconfig b/arch/arm/configs/imx_v7_defconfig
+index 27d7545..3644010 100644
+--- a/arch/arm/configs/imx_v7_defconfig
++++ b/arch/arm/configs/imx_v7_defconfig
+@@ -273,6 +273,7 @@ CONFIG_SND_SOC_IMX_MC13783=y
+ CONFIG_SND_SOC_IMX_HDMI=y
+ CONFIG_SND_SOC_IMX_SI476X=y
+ CONFIG_USB=y
++CONFIG_USB_OTG_FSM=y
+ CONFIG_USB_EHCI_HCD=y
+ CONFIG_USB_EHCI_MXC=y
+ CONFIG_USB_ACM=m
+-- 
+1.8.0
+

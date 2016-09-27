@@ -1,0 +1,28 @@
+From 082b1a82caad5141de34b77e78e719cb311d13db Mon Sep 17 00:00:00 2001
+From: Zidan Wang <zidan.wang@freescale.com>
+Date: Thu, 25 Jun 2015 16:24:16 +0800
+Subject: [PATCH] MLK-11168-2 ARM: dtsi: imx7d: enable OCRAM node to support
+ internal SRAM
+
+By doing this, we can allocate memory from iram when using i.MX7D SoC.
+
+Signed-off-by: Zidan Wang <zidan.wang@freescale.com>
+---
+ arch/arm/boot/dts/imx7d.dtsi | 1 -
+ 1 file changed, 1 deletion(-)
+
+diff --git a/arch/arm/boot/dts/imx7d.dtsi b/arch/arm/boot/dts/imx7d.dtsi
+index 95c4057..99b750e 100644
+--- a/arch/arm/boot/dts/imx7d.dtsi
++++ b/arch/arm/boot/dts/imx7d.dtsi
+@@ -347,7 +347,6 @@
+ 			compatible = "mmio-sram";
+ 			reg = <0x00901000 0x1f000>;
+ 			clocks = <&clks IMX7D_OCRAM_CLK>;
+-			status = "disabled";
+ 		};
+ 
+ 		ocrams: sram@00180000 {
+-- 
+1.8.0
+

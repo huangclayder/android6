@@ -1,0 +1,111 @@
+From 7c6654bf5b5d2b0953747801f8ffa74203723d1f Mon Sep 17 00:00:00 2001
+From: "guoyin.chen" <guoyin.chen@freescale.com>
+Date: Wed, 7 May 2014 17:41:20 +0800
+Subject: [PATCH 315/602] ENGR00242365 Update BUILD_ID for KK4.4.2_2.0.0-Alpha
+ release
+
+Update the BUILD_ID to rc2
+
+Signed-off-by: guoyin.chen <guoyin.chen@freescale.com>
+---
+ arm2_6dq/build_id.mk       | 2 +-
+ arm2_6sl/build_id.mk       | 2 +-
+ evk_6sl/build_id.mk        | 2 +-
+ hdmidongle_6dq/build_id.mk | 2 +-
+ imx5x/build_id.mk          | 2 +-
+ sabreauto_6q/build_id.mk   | 2 +-
+ sabresd_6dq/build_id.mk    | 2 +-
+ sabresd_6sx/build_id.mk    | 2 +-
+ 8 files changed, 8 insertions(+), 8 deletions(-)
+
+diff --git a/arm2_6dq/build_id.mk b/arm2_6dq/build_id.mk
+index 8ee7cd7..1548422 100644
+--- a/arm2_6dq/build_id.mk
++++ b/arm2_6dq/build_id.mk
+@@ -18,5 +18,5 @@
+ # (like "CRB01").  It must be a single word, and is
+ # capitalized by convention.
+ 
+-export BUILD_ID=2.0.0-alpha-rc1
++export BUILD_ID=2.0.0-alpha-rc2
+ export BUILD_NUMBER=20140520
+diff --git a/arm2_6sl/build_id.mk b/arm2_6sl/build_id.mk
+index 8ee7cd7..1548422 100644
+--- a/arm2_6sl/build_id.mk
++++ b/arm2_6sl/build_id.mk
+@@ -18,5 +18,5 @@
+ # (like "CRB01").  It must be a single word, and is
+ # capitalized by convention.
+ 
+-export BUILD_ID=2.0.0-alpha-rc1
++export BUILD_ID=2.0.0-alpha-rc2
+ export BUILD_NUMBER=20140520
+diff --git a/evk_6sl/build_id.mk b/evk_6sl/build_id.mk
+index 8ee7cd7..1548422 100755
+--- a/evk_6sl/build_id.mk
++++ b/evk_6sl/build_id.mk
+@@ -18,5 +18,5 @@
+ # (like "CRB01").  It must be a single word, and is
+ # capitalized by convention.
+ 
+-export BUILD_ID=2.0.0-alpha-rc1
++export BUILD_ID=2.0.0-alpha-rc2
+ export BUILD_NUMBER=20140520
+diff --git a/hdmidongle_6dq/build_id.mk b/hdmidongle_6dq/build_id.mk
+index 8ee7cd7..1548422 100644
+--- a/hdmidongle_6dq/build_id.mk
++++ b/hdmidongle_6dq/build_id.mk
+@@ -18,5 +18,5 @@
+ # (like "CRB01").  It must be a single word, and is
+ # capitalized by convention.
+ 
+-export BUILD_ID=2.0.0-alpha-rc1
++export BUILD_ID=2.0.0-alpha-rc2
+ export BUILD_NUMBER=20140520
+diff --git a/imx5x/build_id.mk b/imx5x/build_id.mk
+index 8ee7cd7..1548422 100644
+--- a/imx5x/build_id.mk
++++ b/imx5x/build_id.mk
+@@ -18,5 +18,5 @@
+ # (like "CRB01").  It must be a single word, and is
+ # capitalized by convention.
+ 
+-export BUILD_ID=2.0.0-alpha-rc1
++export BUILD_ID=2.0.0-alpha-rc2
+ export BUILD_NUMBER=20140520
+diff --git a/sabreauto_6q/build_id.mk b/sabreauto_6q/build_id.mk
+index 8ee7cd7..1548422 100644
+--- a/sabreauto_6q/build_id.mk
++++ b/sabreauto_6q/build_id.mk
+@@ -18,5 +18,5 @@
+ # (like "CRB01").  It must be a single word, and is
+ # capitalized by convention.
+ 
+-export BUILD_ID=2.0.0-alpha-rc1
++export BUILD_ID=2.0.0-alpha-rc2
+ export BUILD_NUMBER=20140520
+diff --git a/sabresd_6dq/build_id.mk b/sabresd_6dq/build_id.mk
+index 8ee7cd7..1548422 100644
+--- a/sabresd_6dq/build_id.mk
++++ b/sabresd_6dq/build_id.mk
+@@ -18,5 +18,5 @@
+ # (like "CRB01").  It must be a single word, and is
+ # capitalized by convention.
+ 
+-export BUILD_ID=2.0.0-alpha-rc1
++export BUILD_ID=2.0.0-alpha-rc2
+ export BUILD_NUMBER=20140520
+diff --git a/sabresd_6sx/build_id.mk b/sabresd_6sx/build_id.mk
+index 8ee7cd7..1548422 100644
+--- a/sabresd_6sx/build_id.mk
++++ b/sabresd_6sx/build_id.mk
+@@ -18,5 +18,5 @@
+ # (like "CRB01").  It must be a single word, and is
+ # capitalized by convention.
+ 
+-export BUILD_ID=2.0.0-alpha-rc1
++export BUILD_ID=2.0.0-alpha-rc2
+ export BUILD_NUMBER=20140520
+-- 
+1.8.0
+

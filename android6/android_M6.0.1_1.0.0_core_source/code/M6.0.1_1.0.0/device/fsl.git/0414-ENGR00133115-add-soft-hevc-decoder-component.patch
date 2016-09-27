@@ -1,0 +1,27 @@
+From 7c5f12adc4a7ed45e982f7213a6145b9d31e663a Mon Sep 17 00:00:00 2001
+From: Ming Zhou <b42586@freescale.com>
+Date: Mon, 22 Dec 2014 11:23:17 +0800
+Subject: [PATCH 414/602] ENGR00133115: add soft hevc decoder component.
+
+add soft hevc decoder component
+
+Signed-off-by: Ming Zhou <b42586@freescale.com>
+---
+ imx6/imx6.mk | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/imx6/imx6.mk b/imx6/imx6.mk
+index 5bc23b6..ae705f7 100644
+--- a/imx6/imx6.mk
++++ b/imx6/imx6.mk
+@@ -265,6 +265,7 @@ omx_libs := \
+ 	libavcodec \
+ 	libavutil \
+ 	lib_omx_libav_audio_dec_arm11_elinux \
++    lib_omx_soft_hevc_dec_arm11_elinux \
+ 
+ 
+ 
+-- 
+1.8.0
+

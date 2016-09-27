@@ -1,0 +1,1537 @@
+From 5c23d841c4f7db46ba2f7692509ceef29a327393 Mon Sep 17 00:00:00 2001
+From: Ma Jiamin <b55507@freescale.com>
+Date: Tue, 19 Jan 2016 13:38:25 +0800
+Subject: [PATCH 110/115] MA-7535 Add Some Activities in Ble Demo
+
+Add CpuInfoActivity, EditActivity, GuideActivity, HeartRateActivity in BleServer app.
+Change the layout of BleClient to adapt different size screen.
+Add getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON) to let the screen on.
+Add some judgement to prevent the null pointer.
+
+Signed-off-by: Ma Jiamin <b55507@freescale.com>
+---
+ BleClient/res/layout/activity_controller.xml       | 126 +++++++++++++--------
+ BleClient/res/values/strings.xml                   |   4 +-
+ .../freescale/bleclient/DeviceControlActivity.java |  94 +++++++++++----
+ .../src/com/freescale/bleclient/ScanActivity.java  |   3 +-
+ .../com/freescale/bleclient/global/IMXUuid.java    |   1 -
+ .../bleclient/service/BluetoothLeService.java      |   2 +-
+ .../freescale/bleclient/utils/ListViewUtil.java    |  44 +++++++
+ BleServerEmulator/Android.mk                       |   3 -
+ BleServerEmulator/res/drawable-hdpi/guide.png      | Bin 0 -> 392 bytes
+ BleServerEmulator/res/layout/activity_cpuinfo.xml  |  50 ++++++++
+ BleServerEmulator/res/layout/activity_guide.xml    |  48 ++++++++
+ .../res/layout/activity_heartrate.xml              |  57 ++++++++++
+ BleServerEmulator/res/layout/activity_message.xml  |  52 +++++++++
+ BleServerEmulator/res/layout/pager_home.xml        |   6 +-
+ BleServerEmulator/res/layout/pager_setting.xml     |  12 ++
+ BleServerEmulator/res/values/strings.xml           |  21 +++-
+ .../com/freescale/bleserver/CpuInfoActivity.java   |  88 ++++++++++++++
+ .../com/freescale/bleserver/GuideAcitivity.java    |  40 +++++++
+ .../freescale/bleserver/HeartRateAcitivity.java    | 108 ++++++++++++++++++
+ .../src/com/freescale/bleserver/HomeActivity.java  |  17 ++-
+ .../freescale/bleserver/ImmediateAlertService.java |  36 +++---
+ .../com/freescale/bleserver/MessageAcitivity.java  |  56 +++++++++
+ .../com/freescale/bleserver/global/Attributes.java |   2 +-
+ .../com/freescale/bleserver/pager/HomePager.java   |  65 +++++++----
+ 24 files changed, 808 insertions(+), 127 deletions(-)
+ create mode 100755 BleClient/src/com/freescale/bleclient/utils/ListViewUtil.java
+ create mode 100755 BleServerEmulator/res/drawable-hdpi/guide.png
+ create mode 100755 BleServerEmulator/res/layout/activity_cpuinfo.xml
+ create mode 100755 BleServerEmulator/res/layout/activity_guide.xml
+ create mode 100755 BleServerEmulator/res/layout/activity_heartrate.xml
+ create mode 100755 BleServerEmulator/res/layout/activity_message.xml
+ create mode 100755 BleServerEmulator/src/com/freescale/bleserver/CpuInfoActivity.java
+ create mode 100755 BleServerEmulator/src/com/freescale/bleserver/GuideAcitivity.java
+ create mode 100755 BleServerEmulator/src/com/freescale/bleserver/HeartRateAcitivity.java
+ create mode 100755 BleServerEmulator/src/com/freescale/bleserver/MessageAcitivity.java
+
+diff --git a/BleClient/res/layout/activity_controller.xml b/BleClient/res/layout/activity_controller.xml
+index 4408e10..620ef9d 100755
+--- a/BleClient/res/layout/activity_controller.xml
++++ b/BleClient/res/layout/activity_controller.xml
+@@ -40,63 +40,93 @@
+             android:textSize="22sp" />
+     </LinearLayout>
+ 
+-    <LinearLayout
++    <ScrollView
++        android:id="@+id/sv_controller"
+         android:layout_width="match_parent"
+-        android:layout_height="wrap_content"
+-        android:layout_marginBottom="10dp"
+-        android:layout_marginLeft="60dp"
+-        android:layout_marginTop="10dp"
+-        android:orientation="horizontal" >
++        android:layout_height="wrap_content" >
+ 
+-        <TextView
+-            android:layout_width="wrap_content"
++        <LinearLayout
++            android:layout_width="match_parent"
+             android:layout_height="wrap_content"
+-            android:text="@string/label_device_address"
+-            android:textSize="18sp" />
++            android:orientation="vertical" >
+ 
+-        <Space
+-            android:layout_width="5dp"
+-            android:layout_height="wrap_content" />
++            <LinearLayout
++                android:layout_width="match_parent"
++                android:layout_height="wrap_content"
++                android:layout_marginBottom="10dp"
++                android:layout_marginLeft="60dp"
++                android:layout_marginTop="10dp"
++                android:orientation="horizontal" >
+ 
+-        <TextView
+-            android:id="@+id/tv_device_address"
+-            android:layout_width="match_parent"
+-            android:layout_height="wrap_content"
+-            android:textSize="18sp" />
+-    </LinearLayout>
++                <TextView
++                    android:layout_width="wrap_content"
++                    android:layout_height="wrap_content"
++                    android:text="@string/label_device_address"
++                    android:textSize="18sp" />
+ 
+-    <LinearLayout
+-        android:layout_width="match_parent"
+-        android:layout_height="wrap_content"
+-        android:layout_marginBottom="10dp"
+-        android:layout_marginLeft="60dp"
+-        android:layout_marginTop="10dp"
+-        android:orientation="horizontal" >
++                <Space
++                    android:layout_width="5dp"
++                    android:layout_height="wrap_content" />
+ 
+-        <TextView
+-            android:layout_width="wrap_content"
+-            android:layout_height="wrap_content"
+-            android:text="@string/label_state"
+-            android:textSize="18sp" />
++                <TextView
++                    android:id="@+id/tv_device_address"
++                    android:layout_width="match_parent"
++                    android:layout_height="wrap_content"
++                    android:textSize="18sp" />
++            </LinearLayout>
+ 
+-        <Space
+-            android:layout_width="5dp"
+-            android:layout_height="wrap_content" />
++            <LinearLayout
++                android:layout_width="match_parent"
++                android:layout_height="wrap_content"
++                android:layout_marginBottom="10dp"
++                android:layout_marginLeft="60dp"
++                android:layout_marginTop="10dp"
++                android:orientation="horizontal" >
+ 
+-        <TextView
+-            android:id="@+id/tv_connection_state"
+-            android:layout_width="match_parent"
+-            android:layout_height="wrap_content"
+-            android:text="@string/disconnected"
+-            android:textSize="18sp" />
+-    </LinearLayout>
++                <TextView
++                    android:layout_width="wrap_content"
++                    android:layout_height="wrap_content"
++                    android:text="@string/label_state"
++                    android:textSize="18sp" />
+ 
+-    <ExpandableListView
+-        android:id="@+id/lv_gatt_services_list"
+-        android:layout_width="match_parent"
+-        android:layout_height="wrap_content"
+-        android:layout_marginBottom="10dp"
+-        android:layout_marginLeft="60dp"
+-        android:layout_marginTop="10dp" />
++                <Space
++                    android:layout_width="5dp"
++                    android:layout_height="wrap_content" />
++
++                <TextView
++                    android:id="@+id/tv_connection_state"
++                    android:layout_width="match_parent"
++                    android:layout_height="wrap_content"
++                    android:text="@string/disconnected"
++                    android:textSize="18sp" />
++            </LinearLayout>
++
++            <EditText
++                android:id="@+id/et_message"
++                android:layout_width="400dp"
++                android:layout_height="wrap_content"
++                android:layout_marginLeft="60dp"
++                android:hint="@string/message"
++                android:singleLine="true"
++                android:textSize="15sp" />
++
++            <Button
++                android:id="@+id/btn_send"
++                android:layout_width="wrap_content"
++                android:layout_height="wrap_content"
++                android:layout_marginLeft="60dp"
++                android:onClick="AlarmTheServer"
++                android:text="@string/send"
++                android:textSize="15sp" />
++
++            <ExpandableListView
++                android:id="@+id/lv_gatt_services_list"
++                android:layout_width="match_parent"
++                android:layout_height="wrap_content"
++                android:layout_marginBottom="10dp"
++                android:layout_marginLeft="60dp"
++                android:layout_marginTop="10dp" />
++        </LinearLayout>
++    </ScrollView>
+ 
+ </LinearLayout>
+\ No newline at end of file
+diff --git a/BleClient/res/values/strings.xml b/BleClient/res/values/strings.xml
+index c225e5a..561fdf3 100755
+--- a/BleClient/res/values/strings.xml
++++ b/BleClient/res/values/strings.xml
+@@ -1,7 +1,7 @@
+ <?xml version="1.0" encoding="utf-8"?>
+ <resources>
+ 
+-    <string name="app_name">BleServer</string>
++    <string name="app_name">BleClient</string>
+     <string name="hello_world">Hello world!</string>
+     <string name="action_settings">Settings</string>
+     <string name="ble_scanner">BLE SCANNER</string>
+@@ -13,6 +13,7 @@
+     <string name="label_data">Data:</string>
+     <string name="label_device_address">Device address:</string>
+     <string name="label_state">State:</string>
++    <string name="message">send your message here(no more 20 letters)</string>
+     <string name="no_data">No data</string>
+     <string name="connected">Connected</string>
+     <string name="disconnected">Disconnected</string>
+@@ -22,4 +23,5 @@
+     <string name="unknown_characteristic">Unknown characteristic</string>
+     <string name="unknown_service">Unknown service</string>
+     <string name="Alarm">Alarm</string>
++     <string name="send">Send</string>
+ </resources>
+\ No newline at end of file
+diff --git a/BleClient/src/com/freescale/bleclient/DeviceControlActivity.java b/BleClient/src/com/freescale/bleclient/DeviceControlActivity.java
+index 20be5c4..cb8f4e4 100755
+--- a/BleClient/src/com/freescale/bleclient/DeviceControlActivity.java
++++ b/BleClient/src/com/freescale/bleclient/DeviceControlActivity.java
+@@ -20,10 +20,10 @@ import java.util.HashMap;
+ import java.util.List;
+ import java.util.UUID;
+ 
++import android.Manifest;
+ import android.app.Activity;
+ import android.bluetooth.BluetoothGatt;
+ import android.bluetooth.BluetoothGattCharacteristic;
+-import android.bluetooth.BluetoothGattDescriptor;
+ import android.bluetooth.BluetoothGattService;
+ import android.content.BroadcastReceiver;
+ import android.content.ComponentName;
+@@ -38,15 +38,22 @@ import android.view.View;
+ import android.view.View.OnClickListener;
+ import android.view.ViewGroup;
+ import android.view.Window;
++import android.view.WindowManager;
+ import android.widget.BaseExpandableListAdapter;
++import android.widget.Button;
++import android.widget.EditText;
+ import android.widget.ExpandableListView;
++import android.widget.ExpandableListView.OnGroupExpandListener;
++import android.widget.ScrollView;
+ import android.widget.TextView;
++import android.widget.Toast;
+ 
+ import com.freescale.bleclient.global.GlobalContacts;
+ import com.freescale.bleclient.global.IMXUuid;
+ import com.freescale.bleclient.global.SampleGattAttributes;
+ import com.freescale.bleclient.service.BluetoothLeInterface;
+ import com.freescale.bleclient.service.BluetoothLeService;
++import com.freescale.bleclient.utils.ListViewUtil;
+ import com.freescale.bleclient.R;
+ 
+ public class DeviceControlActivity extends Activity implements OnClickListener{
+@@ -119,7 +126,6 @@ public class DeviceControlActivity extends Activity implements OnClickListener{
+ 	@Override
+ 	protected void onResume() {
+ 		super.onResume();
+-
+ 		registerReceiver(mGattUpdateReceiver, makeGattUpdateIntentFilter());
+ 		if (mBluetoothLeInterface != null) {
+ 			final boolean result = mBluetoothLeInterface.connect(mDeviceAddress);
+@@ -131,9 +137,11 @@ public class DeviceControlActivity extends Activity implements OnClickListener{
+ 	private void initViews() {
+ 
+ 		requestWindowFeature(Window.FEATURE_NO_TITLE);
++		getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+ 		setContentView(R.layout.activity_controller);
+ 		//Get the device name and address
+ 		final Intent intent = getIntent();
++
+ 		mDeviceName = intent.getStringExtra(GlobalContacts.EXTRAS_DEVICE_NAME);
+ 		mDeviceAddress = intent.getStringExtra(GlobalContacts.EXTRAS_DEVICE_ADDRESS);
+ 		//Initial the UI compoments
+@@ -142,10 +150,24 @@ public class DeviceControlActivity extends Activity implements OnClickListener{
+ 		mTvState = (TextView) findViewById(R.id.tv_connection_state);
+ 		mTvConnect = (TextView) findViewById(R.id.tv_connect_state);
+ 		mLvService = (ExpandableListView) findViewById(R.id.lv_gatt_services_list);
+-
++		mEtMessage = (EditText)findViewById(R.id.et_message);
++		mBtnSend = (Button)findViewById(R.id.btn_send);
++		mSvController = (ScrollView) findViewById(R.id.sv_controller);
++		
+ 		mTvDevName.setText(mDeviceName);
+ 		mTvAddress.setText(mDeviceAddress);
++		mEtMessage.setVisibility(View.GONE);
++		mBtnSend.setVisibility(View.GONE);
+ 
++		mLvService.setOnGroupExpandListener(new OnGroupExpandListener() {
++			
++			@Override
++			public void onGroupExpand(int groupPosition) {
++				ListViewUtil.setListViewHeight(mLvService);
++			}
++		});
++		
++		
+ 		if(mDeviceName.equals("i.MX Device")){
+ 			mTvConnect.setOnClickListener(this);
+ 			//bind service
+@@ -162,13 +184,15 @@ public class DeviceControlActivity extends Activity implements OnClickListener{
+ 		public void onServiceConnected(ComponentName name, IBinder service) {
+ 			Log.e(TAG, "connect it");
+ 			mBluetoothLeInterface = (BluetoothLeInterface) service;
+-			mGatt = mBluetoothLeInterface.getGatt();
++			
+ 			if (!mBluetoothLeInterface.initialize()) {
+ 				Log.e(TAG, "Unable to initialize Bluetooth");
+ 				finish();
+ 			}
+ 			// Automatically connects to the device upon successful start-up initialization.
+ 			mBluetoothLeInterface.connect(mDeviceAddress);
++			mGatt = mBluetoothLeInterface.getGatt();
++			
+ 		}
+ 		@Override
+ 		public void onServiceDisconnected(ComponentName name) {
+@@ -287,6 +311,7 @@ public class DeviceControlActivity extends Activity implements OnClickListener{
+ 					mCharToRead.put(GlobalContacts.REMOTE_DATE, gattCharacteristic);
+ 				}else if(gattCharacteristic.getUuid().toString().equals(IMXUuid.CHAR_MESSAGE)){
+ 					mCharToRead.put(GlobalContacts.CUSTOM_MESSAGE, gattCharacteristic);
++				}else{
+ 				}
+ 
+ 				charas.add(gattCharacteristic);
+@@ -308,7 +333,10 @@ public class DeviceControlActivity extends Activity implements OnClickListener{
+ 		}
+ 		mDevAdapter = new DeviceInfoAdapter();
+ 		mLvService.setAdapter(mDevAdapter);
++		ListViewUtil.setListViewHeight(mLvService);
+ 		//After update the UI, start the read thread
++		mEtMessage.setVisibility(View.VISIBLE);
++		mBtnSend.setVisibility(View.VISIBLE);
+ 		if(mCharToRead.size() > 0){
+ 			new ReadThread().start();
+ 		}
+@@ -460,21 +488,31 @@ public class DeviceControlActivity extends Activity implements OnClickListener{
+ 	private boolean mIsHeartRead = true;
+ 	private boolean mIsTempRead = true;
+ 	private boolean mIsDateRead = true;
++	private EditText mEtMessage;
++	private Button mBtnSend;
++	private ScrollView mSvController;
+ 
+ 	class ReadThread extends Thread{
+ 		@Override
+ 		public void run() {
+ 			try {
+-				while((!mGatt.readCharacteristic(mCharToRead.get(GlobalContacts.MANFACTURER_NAME))) && mIsRead);
+-				while((!mGatt.readCharacteristic(mCharToRead.get(GlobalContacts.MODEL_NAME))) && mIsRead);
+-				while((!mGatt.readCharacteristic(mCharToRead.get(GlobalContacts.SERIAL_NUMBER))) && mIsRead);
+-				new BatteryReadThread().start();
++				if(mCharToRead.get(GlobalContacts.MANFACTURER_NAME) != null)
++					while((!mGatt.readCharacteristic(mCharToRead.get(GlobalContacts.MANFACTURER_NAME))) && mIsRead);
++				if(mCharToRead.get(GlobalContacts.MODEL_NAME) != null)
++					while((!mGatt.readCharacteristic(mCharToRead.get(GlobalContacts.MODEL_NAME))) && mIsRead);
++				if(mCharToRead.get(GlobalContacts.SERIAL_NUMBER) != null)
++					while((!mGatt.readCharacteristic(mCharToRead.get(GlobalContacts.SERIAL_NUMBER))) && mIsRead);
++				if(mCharToRead.get(GlobalContacts.BATTERY_LEVEL) != null)
++					new BatteryReadThread().start();
+ 				sleep(2000);
+-				new HeartRateThread().start();
++				if(mCharToRead.get(GlobalContacts.HEART_RATE) != null)
++					new HeartRateThread().start();
+ 				sleep(2000);
+-				new TemperatureThread().start();
++				if(mCharToRead.get(GlobalContacts.CPU_TEMPERATURE) != null)
++					new TemperatureThread().start();
+ 				sleep(2000);
+-				new DateThread().start();
++				if(mCharToRead.get(GlobalContacts.REMOTE_DATE) != null)
++					new DateThread().start();
+ 			} catch (InterruptedException e1) {
+ 				e1.printStackTrace();
+ 			}
+@@ -486,7 +524,6 @@ public class DeviceControlActivity extends Activity implements OnClickListener{
+ 		public void run() {
+ 			while(mIsBatteryRead){
+ 				try {
+-					while(!mGatt.readCharacteristic(mCharToRead.get(GlobalContacts.BATTERY_LEVEL)));
+ 					sleep(30000);
+ 				} catch (InterruptedException e) {
+ 					e.printStackTrace();
+@@ -501,7 +538,7 @@ public class DeviceControlActivity extends Activity implements OnClickListener{
+ 			while(mIsHeartRead){
+ 				try {
+ 					while(!mGatt.readCharacteristic(mCharToRead.get(GlobalContacts.HEART_RATE)));
+-					sleep(30000);
++					sleep(10000);
+ 				} catch (InterruptedException e) {
+ 					e.printStackTrace();
+ 				}
+@@ -528,7 +565,12 @@ public class DeviceControlActivity extends Activity implements OnClickListener{
+ 		public void run() {
+ 			while(mIsDateRead){
+ 				try {
+-					while(!mGatt.readCharacteristic(mCharToRead.get(GlobalContacts.REMOTE_DATE)));
++					boolean isSuccess = false;
++					do{
++						isSuccess = mGatt.readCharacteristic(mCharToRead.get(GlobalContacts.REMOTE_DATE));
++						Log.e(TAG,"dateRead:" + isSuccess);
++					}
++					while(!isSuccess);
+ 					sleep(1000);
+ 				} catch (InterruptedException e) {
+ 					e.printStackTrace();
+@@ -538,12 +580,22 @@ public class DeviceControlActivity extends Activity implements OnClickListener{
+ 	}
+ 	
+ 	public void AlarmTheServer(View view){
+-		BluetoothGattCharacteristic charAlarm= mCharToRead.get(GlobalContacts.ALERT_LEVEL);
+-		charAlarm.setValue("alarm");
+-		boolean isSuccess = false;
+-		do{
+-			isSuccess = mGatt.writeCharacteristic(charAlarm);
+-			Log.e(TAG, "isSuccess:" + isSuccess);
+-		}while(!isSuccess);
++		BluetoothGattCharacteristic charMessage = mCharToRead.get(GlobalContacts.CUSTOM_MESSAGE);
++		if(charMessage == null){
++			return;
++		}
++		String message = mEtMessage.getText().toString();
++		if(message.length() > 20){
++			Toast.makeText(this, "no more than 20 letters", Toast.LENGTH_SHORT).show();
++		}else{
++			charMessage.setValue( message);
++			boolean isSuccess = false;
++			isSuccess = mGatt.writeCharacteristic(charMessage);
++			if(isSuccess){
++				Toast.makeText(this, "Send Successfully", Toast.LENGTH_SHORT).show();
++			}else{
++				Toast.makeText(this, "Send Unsuccessfully", Toast.LENGTH_SHORT).show();	
++			}
++		}
+ 	}
+ }
+diff --git a/BleClient/src/com/freescale/bleclient/ScanActivity.java b/BleClient/src/com/freescale/bleclient/ScanActivity.java
+index f0937e7..c70f5f5 100755
+--- a/BleClient/src/com/freescale/bleclient/ScanActivity.java
++++ b/BleClient/src/com/freescale/bleclient/ScanActivity.java
+@@ -27,11 +27,11 @@ import android.content.Intent;
+ import android.content.pm.PackageManager;
+ import android.os.Bundle;
+ import android.os.Handler;
+-import android.util.Log;
+ import android.view.View;
+ import android.view.View.OnClickListener;
+ import android.view.ViewGroup;
+ import android.view.Window;
++import android.view.WindowManager;
+ import android.widget.AdapterView;
+ import android.widget.AdapterView.OnItemClickListener;
+ import android.widget.BaseAdapter;
+@@ -139,6 +139,7 @@ public class ScanActivity extends Activity implements OnClickListener{
+ 
+ 	private void initView() {
+ 		requestWindowFeature(Window.FEATURE_NO_TITLE);
++		getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+ 		setContentView(R.layout.activity_main);
+ 		mPbScan = (ProgressBar) findViewById(R.id.pb_scan);
+ 		mTvScan = (TextView) findViewById(R.id.tv_scan_flag);
+diff --git a/BleClient/src/com/freescale/bleclient/global/IMXUuid.java b/BleClient/src/com/freescale/bleclient/global/IMXUuid.java
+index c2e2838..b737849 100755
+--- a/BleClient/src/com/freescale/bleclient/global/IMXUuid.java
++++ b/BleClient/src/com/freescale/bleclient/global/IMXUuid.java
+@@ -17,7 +17,6 @@ package com.freescale.bleclient.global;
+ 
+ // BLE UUID Strings 
+ public class IMXUuid {
+-	
+ 	public static final String SERVICE_DEVICE_INFORMATION = "aaaabbbb-0000-1000-8000-cccccccccccc";
+ 	public static final String CHAR_MANUFACTURER_NAME_STRING = "00002a29-0000-1000-8000-00805f9b34fb";
+ 	public static final String CHAR_MODEL_NUMBER_STRING = "00002a24-0000-1000-8000-00805f9b34fb";
+diff --git a/BleClient/src/com/freescale/bleclient/service/BluetoothLeService.java b/BleClient/src/com/freescale/bleclient/service/BluetoothLeService.java
+index 1036222..a8fe53b 100755
+--- a/BleClient/src/com/freescale/bleclient/service/BluetoothLeService.java
++++ b/BleClient/src/com/freescale/bleclient/service/BluetoothLeService.java
+@@ -106,7 +106,7 @@ public class BluetoothLeService extends Service {
+ 		@Override
+ 		public void onCharacteristicChanged(BluetoothGatt gatt,
+ 				BluetoothGattCharacteristic characteristic) {
+-			Log.e("aa", "onCharacteristicChanged");
++			Log.e(TAG, "onCharacteristicChanged");
+ 			broadcastUpdate(ACTION_DATA_AVAILABLE, characteristic);
+ 		}
+ 	};
+diff --git a/BleClient/src/com/freescale/bleclient/utils/ListViewUtil.java b/BleClient/src/com/freescale/bleclient/utils/ListViewUtil.java
+new file mode 100755
+index 0000000..63c2ebd
+--- /dev/null
++++ b/BleClient/src/com/freescale/bleclient/utils/ListViewUtil.java
+@@ -0,0 +1,44 @@
++/*
++ * Copyright (C) 2016 Freescale Semiconductor, Inc.
++ *
++ * Licensed under the Apache License, Version 2.0 (the "License");
++ * you may not use this file except in compliance with the License.
++ * You may obtain a copy of the License at
++ *
++ *      http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++package com.freescale.bleclient.utils;
++
++import android.view.View;
++import android.view.ViewGroup;
++import android.widget.ListAdapter;
++import android.widget.ListView;
++
++public class ListViewUtil {
++	
++	public static void setListViewHeight(ListView listView) {    
++
++
++		ListAdapter listAdapter = listView.getAdapter();    
++
++		if (listAdapter == null) {    
++			return;    
++		}    
++		int totalHeight = 0;    
++		for (int i = 0, len = listAdapter.getCount(); i < len; i++) { 
++			View listItem = listAdapter.getView(i, null, listView);    
++			listItem.measure(0, 0); 
++			totalHeight += listItem.getMeasuredHeight(); 
++		}    
++
++		ViewGroup.LayoutParams params = listView.getLayoutParams();    
++		params.height = totalHeight + (listView.getDividerHeight() * (listAdapter.getCount() - 1));    
++		listView.setLayoutParams(params);    
++	} 
++}
+diff --git a/BleServerEmulator/Android.mk b/BleServerEmulator/Android.mk
+index 692775e..af4f7e8 100644
+--- a/BleServerEmulator/Android.mk
++++ b/BleServerEmulator/Android.mk
+@@ -20,6 +20,3 @@ include $(BUILD_PACKAGE)
+ 
+ # Use the following include to make our test apk.
+ endif
+-ifeq (,$(ONE_SHOT_MAKEFILE))
+-include $(call all-makefiles-under,$(LOCAL_PATH))
+-endif
+diff --git a/BleServerEmulator/res/drawable-hdpi/guide.png b/BleServerEmulator/res/drawable-hdpi/guide.png
+new file mode 100755
+index 0000000000000000000000000000000000000000..670cb3f8d4857debf78f1b4de59a63d1edb221ed
+GIT binary patch
+literal 392
+zcmeAS@N?(olHy`uVBq!ia0vp^CLqkg3?x4-dwml~g$MYAxc>kDKaB?9QtcicpcS$u
+zL4Lsu3~YJFKmWh2B7MI2PVP^k{0r>mKklj)l?h%v{Uv8tNe58jVNVyw5Rc<;uN~xT
+zG7w-1*rwaO;6hWE(x3n3QBF=CV!OU1*_8CPOc#1)aMnm(X{m4DVG;3D5i8aRoGE43
+zJb34u->OEpXs%XeW{X80R~XEsex6^p-*HZUz>24LGPbranYMb8^2*c&ZzZ_4=WKny
+zEX^b9C!a*yl4-gh5<LEV|JT|g<fXCD_(i9Z+}HJXa=G*8x@r5pc>dyu-BTV<?;rPc
+z9(H}%v-7Z^<g>F^c}mxAc{jgL@uS?uX-5P#&Hdbyr0y0a|76my6gNJ4cMc!WI}Dz#
+KelF{r5}E)@{-@Od
+
+literal 0
+HcmV?d00001
+
+diff --git a/BleServerEmulator/res/layout/activity_cpuinfo.xml b/BleServerEmulator/res/layout/activity_cpuinfo.xml
+new file mode 100755
+index 0000000..c190555
+--- /dev/null
++++ b/BleServerEmulator/res/layout/activity_cpuinfo.xml
+@@ -0,0 +1,50 @@
++<?xml version="1.0" encoding="utf-8"?>
++<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
++    android:layout_width="match_parent"
++    android:layout_height="match_parent"
++    android:orientation="vertical" >
++
++    <RelativeLayout
++        android:layout_width="match_parent"
++        android:layout_height="wrap_content"
++        android:background="@color/title_bar_bg"
++        android:padding="10dp" >
++
++        <ImageView
++            android:layout_width="35dp"
++            android:layout_height="35dp"
++            android:layout_centerVertical="true"
++            android:src="@drawable/bluetooth_default" />
++
++        <TextView
++            android:id="@+id/tv_home_title"
++            android:layout_width="wrap_content"
++            android:layout_height="wrap_content"
++            android:layout_centerInParent="true"
++            android:text="@string/device_info"
++            android:textColor="@color/text_color"
++            android:textSize="22sp" />
++    </RelativeLayout>
++
++    <TextView
++        android:id="@+id/tv_edit_cpu"
++        style="@style/EditDataText"
++        android:text="@string/temperature" />
++
++    <View style="@style/HorLine" />
++
++    <TextView
++        android:id="@+id/tv_battery"
++        style="@style/EditDataText"
++        android:text="@string/battery" />
++
++    <View style="@style/HorLine" />
++
++    <TextView
++        android:id="@+id/tv_edit_date"
++        style="@style/EditDataText"
++        android:text="@string/Date" />
++
++    <View style="@style/HorLine" />
++
++</LinearLayout>
+\ No newline at end of file
+diff --git a/BleServerEmulator/res/layout/activity_guide.xml b/BleServerEmulator/res/layout/activity_guide.xml
+new file mode 100755
+index 0000000..7122e60
+--- /dev/null
++++ b/BleServerEmulator/res/layout/activity_guide.xml
+@@ -0,0 +1,48 @@
++<?xml version="1.0" encoding="utf-8"?>
++<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
++    android:layout_width="match_parent"
++    android:layout_height="match_parent"
++    android:orientation="vertical" >
++
++    <RelativeLayout
++        android:layout_width="match_parent"
++        android:layout_height="wrap_content"
++        android:background="@color/title_bar_bg"
++        android:padding="10dp" >
++
++        <ImageView
++            android:layout_width="35dp"
++            android:layout_height="35dp"
++            android:layout_centerVertical="true"
++            android:src="@drawable/bluetooth_default" />
++
++        <TextView
++            android:id="@+id/tv_home_title"
++            android:layout_width="wrap_content"
++            android:layout_height="wrap_content"
++            android:layout_centerInParent="true"
++            android:text="@string/how_to_use_it"
++            android:textColor="@color/text_color"
++            android:textSize="22sp" />
++    </RelativeLayout>
++
++    <TextView
++        android:id="@+id/tv_edit_cpu"
++        style="@style/EditDataText"
++        android:text="@string/guide_text" />
++
++    <RelativeLayout
++        android:layout_width="match_parent"
++        android:layout_height="wrap_content" >
++
++        <TextView
++            android:textColor="@color/text_dark_gray"
++            android:layout_marginRight="20dp"
++            android:layout_alignParentRight="true"
++            android:layout_width="wrap_content"
++            android:layout_height="wrap_content"
++            android:text="@string/copyright"
++            android:textSize="12sp" />
++    </RelativeLayout>
++
++</LinearLayout>
+\ No newline at end of file
+diff --git a/BleServerEmulator/res/layout/activity_heartrate.xml b/BleServerEmulator/res/layout/activity_heartrate.xml
+new file mode 100755
+index 0000000..836e1d1
+--- /dev/null
++++ b/BleServerEmulator/res/layout/activity_heartrate.xml
+@@ -0,0 +1,57 @@
++<?xml version="1.0" encoding="utf-8"?>
++<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
++    android:layout_width="match_parent"
++    android:layout_height="match_parent"
++    android:orientation="vertical" >
++
++    <RelativeLayout
++        android:layout_width="match_parent"
++        android:layout_height="wrap_content"
++        android:background="@color/title_bar_bg"
++        android:padding="10dp" >
++
++        <ImageView
++            android:layout_width="35dp"
++            android:layout_height="35dp"
++            android:layout_centerVertical="true"
++            android:src="@drawable/bluetooth_default" />
++
++        <TextView
++            android:id="@+id/tv_home_title"
++            android:layout_width="wrap_content"
++            android:layout_height="wrap_content"
++            android:layout_centerInParent="true"
++            android:text="@string/heart_title"
++            android:textColor="@color/text_color"
++            android:textSize="22sp" />
++    </RelativeLayout>
++
++    <TextView
++        android:id="@+id/tv_heart_rate"
++        style="@style/EditDataText"
++        android:text="@string/heart" />
++
++    <View style="@style/HorLine" />
++
++    <EditText
++        android:id="@+id/et_heart_rate"
++        android:layout_width="match_parent"
++        android:layout_height="wrap_content"
++        android:layout_marginLeft="20dp"
++        android:layout_marginTop="10dp"
++        android:singleLine="true"
++        android:hint="@string/change_heart" >
++    </EditText>
++
++    <Button
++        android:id="@+id/btn_modify"
++        android:padding="5dp"
++        android:layout_width="wrap_content"
++        android:layout_height="wrap_content"
++        android:layout_marginLeft="20dp"
++        android:layout_marginTop="10dp"
++        android:background="@drawable/btn_ok_selector"
++        android:text="@string/change"
++        android:textSize="15sp" />
++
++</LinearLayout>
+\ No newline at end of file
+diff --git a/BleServerEmulator/res/layout/activity_message.xml b/BleServerEmulator/res/layout/activity_message.xml
+new file mode 100755
+index 0000000..cb23b87
+--- /dev/null
++++ b/BleServerEmulator/res/layout/activity_message.xml
+@@ -0,0 +1,52 @@
++<?xml version="1.0" encoding="utf-8"?>
++<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
++    android:layout_width="match_parent"
++    android:layout_height="match_parent"
++    android:orientation="vertical" >
++
++    <RelativeLayout
++        android:layout_width="match_parent"
++        android:layout_height="wrap_content"
++        android:background="@color/title_bar_bg"
++        android:padding="10dp" >
++
++        <ImageView
++            android:layout_width="35dp"
++            android:layout_height="35dp"
++            android:layout_centerVertical="true"
++            android:src="@drawable/bluetooth_default" />
++
++        <TextView
++            android:id="@+id/tv_home_title"
++            android:layout_width="wrap_content"
++            android:layout_height="wrap_content"
++            android:layout_centerInParent="true"
++            android:text="@string/Custom_Message"
++            android:textColor="@color/text_color"
++            android:textSize="22sp" />
++    </RelativeLayout>
++
++    <LinearLayout
++        android:layout_width="match_parent"
++        android:layout_height="wrap_content"
++        android:orientation="horizontal" >
++
++        <TextView
++            android:layout_width="wrap_content"
++            android:layout_height="wrap_content"
++            android:padding="20dp"
++            android:text="@string/your_messager"
++            android:textColor="@color/text_dark_gray"
++            android:textSize="22sp" />
++
++    </LinearLayout>
++
++    <TextView
++        android:id="@+id/tv_message_content"
++        android:singleLine="true"
++        android:layout_marginLeft="20dp"
++        android:layout_width="match_parent"
++        android:layout_height="wrap_content"
++        android:hint="@string/default_message" />
++
++</LinearLayout>
+\ No newline at end of file
+diff --git a/BleServerEmulator/res/layout/pager_home.xml b/BleServerEmulator/res/layout/pager_home.xml
+index 115598d..5b74747 100755
+--- a/BleServerEmulator/res/layout/pager_home.xml
++++ b/BleServerEmulator/res/layout/pager_home.xml
+@@ -100,7 +100,7 @@
+             <TextView
+                 style="@style/TextContentHome"
+                 android:layout_toRightOf="@id/iv_home_message"
+-                android:text="@string/edit" />
++                android:text="@string/check_message" />
+         </RelativeLayout>
+     </LinearLayout>
+ 
+@@ -143,13 +143,13 @@
+             android:background="#44000000" />
+ 
+         <RelativeLayout
+-            android:id="@+id/rl_cpu_setting"
++            android:id="@+id/rl_cpu_guide"
+             style="@style/RelativeHomeContent" >
+ 
+             <ImageView
+                 android:id="@+id/iv_setting"
+                 style="@style/ImageViewHome"
+-                android:src="@drawable/found_setting" />
++                android:src="@drawable/guide" />
+ 
+             <TextView
+                 style="@style/TextTitelHome"
+diff --git a/BleServerEmulator/res/layout/pager_setting.xml b/BleServerEmulator/res/layout/pager_setting.xml
+index cd9c1e4..a2439c9 100755
+--- a/BleServerEmulator/res/layout/pager_setting.xml
++++ b/BleServerEmulator/res/layout/pager_setting.xml
+@@ -33,6 +33,18 @@
+ 
+     <View style="@style/HorLine" />
+ 
++    <TextView
++        style="@style/EditDataText"
++        android:text="@string/manufacturer" />
++
++    <View style="@style/HorLine" />
++
++    <TextView
++        style="@style/EditDataText"
++        android:text="@string/serial_number" />
++
++    <View style="@style/HorLine" />
++
+     <LinearLayout
+         android:layout_width="match_parent"
+         android:layout_height="wrap_content"
+diff --git a/BleServerEmulator/res/values/strings.xml b/BleServerEmulator/res/values/strings.xml
+index a4d73e3..10434de 100755
+--- a/BleServerEmulator/res/values/strings.xml
++++ b/BleServerEmulator/res/values/strings.xml
+@@ -6,10 +6,10 @@
+     <string name="action_settings">Settings</string>
+     <string name="home">Home</string>
+     <string name="setting">Setting</string>
+-    <string name="temperature">CPU Temperature</string>
++    <string name="temperature">Device Info</string>
+     <string name="default_string">Default Value</string>
+-    <string name="Message">Message</string>
+-    <string name="edit">Edit Message Here</string>
++    <string name="Message">Message Box</string>
++    <string name="check_message">Check Message Here</string>
+     <string name="heart">Heart Rate</string>
+     <string name="ble_off">BLE OFF</string>
+     <string name="ble_on">BLE ON</string>
+@@ -17,7 +17,7 @@
+     <string name="editData">Edit Simulation Data</string>
+     <string name="Date">Date</string>
+     <string name="your_messager">Message:</string>
+-    <string name="default_message">no more than 20 letters(include space)</string>
++    <string name="default_message">your custom message</string>
+     <string name="send">Send</string>
+     <string name="config">Config Device</string>
+     <string name="device">Device Name: i.MX Device</string>
+@@ -26,5 +26,16 @@
+     <string name="label_ibeacon_button">Advertise as iBeacon</string>
+     <string name="label_ias_button">Adv. as Immediate Alert Service</string>
+     <string name="label_stop_button">Stop Advertising</string>
+-    <string name="space"> </string>   
++    <string name="how_to_use_it">How To Use It</string>
++    <string name="guide_text">      This apk is to simulate the ble peripheral device, it can read the battery info, cpu temperature, device information 
++        system time, and simulate the heart rate and notify the centeral device to read it. You can set the info by every child view.</string>
++    <string name="copyright"> Copyright (C) 2015 Freescale Semiconductor, Inc.</string>
++    <string name="change_heart">you can simulate the heart rate manually here</string>
++    <string name="change">Simulate</string>
++    <string name="device_info">Device Info</string>
++    <string name="heart_title">Heart Rate Simulater</string>
++    <string name="Custom_Message">Custom Message</string>
++    <string name="manufacturer">Manufacturer:Freescale</string>
++    <string name="serial_number">Serial Number:000-000-000</string>
++    <string name="space"> </string>
+ </resources>
+diff --git a/BleServerEmulator/src/com/freescale/bleserver/CpuInfoActivity.java b/BleServerEmulator/src/com/freescale/bleserver/CpuInfoActivity.java
+new file mode 100755
+index 0000000..8023b29
+--- /dev/null
++++ b/BleServerEmulator/src/com/freescale/bleserver/CpuInfoActivity.java
+@@ -0,0 +1,88 @@
++/*
++ * Copyright (C) 2016 Freescale Semiconductor, Inc.
++ *
++ * Licensed under the Apache License, Version 2.0 (the "License");
++ * you may not use this file except in compliance with the License.
++ * You may obtain a copy of the License at
++ *
++ *      http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++package com.freescale.bleserver;
++
++import android.app.Activity;
++import android.os.Bundle;
++import android.os.Handler;
++import android.view.Window;
++import android.view.WindowManager;
++import android.widget.TextView;
++
++import com.freescale.bleserver.R;
++import com.freescale.bleserver.global.Attributes;
++
++public class CpuInfoActivity extends Activity{
++
++	private TextView mTvCpuTemp;
++	private TextView mTvBattery;
++	private TextView mTvDate;
++
++	@Override
++	protected void onCreate(Bundle savedInstanceState) {
++		super.onCreate(savedInstanceState);
++		initView();
++		initData();
++	}
++	private void initData() {
++		new FillTextThread().start();
++	}
++
++	private void initView() {
++		requestWindowFeature(Window.FEATURE_NO_TITLE);
++		getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
++		setContentView(R.layout.activity_cpuinfo);
++		mTvCpuTemp = (TextView) findViewById(R.id.tv_edit_cpu);
++		mTvBattery = (TextView) findViewById(R.id.tv_battery);
++		mTvDate = (TextView) findViewById(R.id.tv_edit_date);
++	}
++	
++	@Override
++	protected void onDestroy() {
++		super.onDestroy();
++	}
++	
++	@Override
++	public void finish() {
++		super.finish();
++		overridePendingTransition(R.anim.pre_tran_in, R.anim.pre_tran_out);
++	}
++	
++	private Handler mHandler = new Handler(){
++		public void handleMessage(android.os.Message msg) {
++			mTvCpuTemp.setText("CPU Temperature:" + Attributes.cpuTemp + "C");
++			mTvBattery.setText("Battery:" + Attributes.battery + "%");
++			mTvDate.setText("Date:" + Attributes.Date);
++		};
++	};
++	
++	private boolean isRunning = true;
++	class FillTextThread extends Thread{
++		@Override
++		public void run() {
++			while(isRunning){
++				try {
++					mHandler.sendEmptyMessage(0);
++					sleep(1000);
++				} catch (InterruptedException e) {
++					e.printStackTrace();
++				}
++			}
++		}
++	}
++	
++	
++}
+diff --git a/BleServerEmulator/src/com/freescale/bleserver/GuideAcitivity.java b/BleServerEmulator/src/com/freescale/bleserver/GuideAcitivity.java
+new file mode 100755
+index 0000000..192715e
+--- /dev/null
++++ b/BleServerEmulator/src/com/freescale/bleserver/GuideAcitivity.java
+@@ -0,0 +1,40 @@
++/*
++ * Copyright (C) 2016 Freescale Semiconductor, Inc.
++ *
++ * Licensed under the Apache License, Version 2.0 (the "License");
++ * you may not use this file except in compliance with the License.
++ * You may obtain a copy of the License at
++ *
++ *      http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++package com.freescale.bleserver;
++
++import com.freescale.bleserver.R;
++
++import android.app.Activity;
++import android.os.Bundle;
++import android.view.Window;
++import android.view.WindowManager;
++
++public class GuideAcitivity extends Activity {
++
++	@Override
++	protected void onCreate(Bundle savedInstanceState) {
++		super.onCreate(savedInstanceState);
++		requestWindowFeature(Window.FEATURE_NO_TITLE);
++		getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
++		setContentView(R.layout.activity_guide);
++	}
++	
++	@Override
++	public void finish() {
++		super.finish();
++		overridePendingTransition(R.anim.pre_tran_in, R.anim.pre_tran_out);
++	}
++}
+diff --git a/BleServerEmulator/src/com/freescale/bleserver/HeartRateAcitivity.java b/BleServerEmulator/src/com/freescale/bleserver/HeartRateAcitivity.java
+new file mode 100755
+index 0000000..fbaa0c3
+--- /dev/null
++++ b/BleServerEmulator/src/com/freescale/bleserver/HeartRateAcitivity.java
+@@ -0,0 +1,108 @@
++/*
++ * Copyright (C) 2016 Freescale Semiconductor, Inc.
++ *
++ * Licensed under the Apache License, Version 2.0 (the "License");
++ * you may not use this file except in compliance with the License.
++ * You may obtain a copy of the License at
++ *
++ *      http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++package com.freescale.bleserver;
++
++import android.app.Activity;
++import android.os.Bundle;
++import android.util.Log;
++import android.view.View;
++import android.view.View.OnClickListener;
++import android.view.Window;
++import android.view.WindowManager;
++import android.widget.Button;
++import android.widget.EditText;
++import android.widget.TextView;
++
++import com.freescale.bleserver.R;
++import com.freescale.bleserver.global.Attributes;
++
++public class HeartRateAcitivity extends Activity implements OnClickListener{
++
++	private EditText mEtHeartRate;
++	private TextView mTvHeartRate;
++	private boolean mIsRunHeart = true;
++	
++	@Override
++	protected void onCreate(Bundle savedInstanceState) {
++		super.onCreate(savedInstanceState);
++		initView();
++	}
++
++	private void initView() {
++		requestWindowFeature(Window.FEATURE_NO_TITLE);
++		getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
++		setContentView(R.layout.activity_heartrate);
++		mEtHeartRate = (EditText) findViewById(R.id.et_heart_rate);
++		mTvHeartRate = (TextView) findViewById(R.id.tv_heart_rate);
++		Button mBtnModify = (Button) findViewById(R.id.btn_modify);
++		
++		mBtnModify.setOnClickListener(this);
++		new HeartRateThread().start();
++	}
++
++	private void modifyHeartRate(){
++		String heartRate = mEtHeartRate.getText().toString();
++		Log.e("aa", heartRate);
++		Attributes.heartRate = Integer.parseInt(heartRate);
++		mTvHeartRate.setText("Heart Rate:"+ Attributes.heartRate);
++	}
++	
++	
++	class HeartRateThread extends Thread{
++		
++		@Override
++		public void run() {
++			super.run();
++			while(mIsRunHeart){
++				runOnUiThread(new Runnable() {
++					public void run() {
++						mTvHeartRate.setText("Heart Rate:"+ Attributes.heartRate);
++					}
++				});
++				try {
++					sleep(10000);
++				} catch (InterruptedException e) {
++					e.printStackTrace();
++				}
++			}
++		}
++	}
++	
++	@Override
++	public void finish() {
++		super.finish();
++		overridePendingTransition(R.anim.pre_tran_in, R.anim.pre_tran_out);
++	}
++	
++	@Override
++	protected void onDestroy() {
++		super.onDestroy();
++		mIsRunHeart = false;
++	}
++
++	@Override
++	public void onClick(View v) {
++		switch (v.getId()) {
++		case R.id.btn_modify:
++			modifyHeartRate();
++			break;
++
++		default:
++			break;
++		}
++	}
++	
++}
+diff --git a/BleServerEmulator/src/com/freescale/bleserver/HomeActivity.java b/BleServerEmulator/src/com/freescale/bleserver/HomeActivity.java
+index 52417fb..f1c3d77 100755
+--- a/BleServerEmulator/src/com/freescale/bleserver/HomeActivity.java
++++ b/BleServerEmulator/src/com/freescale/bleserver/HomeActivity.java
+@@ -15,6 +15,7 @@
+  */
+ package com.freescale.bleserver;
+ import java.util.ArrayList;
++
+ import android.bluetooth.BluetoothAdapter;
+ import android.bluetooth.BluetoothGattServer;
+ import android.bluetooth.BluetoothManager;
+@@ -32,6 +33,7 @@ import android.util.Log;
+ import android.view.View;
+ import android.view.ViewGroup;
+ import android.view.Window;
++import android.view.WindowManager;
+ import android.widget.RadioGroup;
+ import android.widget.RadioGroup.OnCheckedChangeListener;
+ import android.widget.TextView;
+@@ -76,18 +78,26 @@ public class HomeActivity extends FragmentActivity{
+ 		initData();
+ 
+ 	}
++	
++	@Override
++	protected void onResume() {
++		super.onResume();
++		mHomePager.refreshView();
++	}
+ 
+ 	@Override
+ 	public void onDestroy() {
+ 		super.onDestroy();
+ 		mHomePager.stopThread();
+ 		unregisterReceiver(mBatReceiver);
++		stopAdvertise();
+ 		PrefUtils.setBoolean(this, PrefUtils.BLE_STATE, false);
+ 	}
+ 
+ 	private void initView() {
+ 		//find view
+ 		requestWindowFeature(Window.FEATURE_NO_TITLE);
++		getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+ 		setContentView(R.layout.activity_home);
+ 		mRgHome = (RadioGroup) findViewById(R.id.rg_group);
+ 		mTitle = (TextView)findViewById(R.id.tv_home_title);
+@@ -158,8 +168,8 @@ public class HomeActivity extends FragmentActivity{
+ 	private class BatteryReceiver extends BroadcastReceiver{
+ 		@Override
+ 		public void onReceive(Context context, Intent intent) {
+-			int rawlevel = intent.getIntExtra("level", -1);//获得当前电量  
+-			int scale = intent.getIntExtra("scale", -1);  //获得总电量  
++			int rawlevel = intent.getIntExtra("level", -1);
++			int scale = intent.getIntExtra("scale", -1); 
+ 			int level = -1;  
+ 			if (rawlevel >= 0 && scale > 0) {  
+ 				level = (rawlevel * 100) / scale;  
+@@ -206,6 +216,9 @@ public class HomeActivity extends FragmentActivity{
+ 		if (mBTAdvertiser != null) {
+ 			ImmediateAlertService ias = new ImmediateAlertService(this);
+ 			mGattServer = BleUtil.getManager(this).openGattServer(this, ias);
++			if(mGattServer == null){
++				Log.e("aa" , "gatt is null");
++			}
+ 			ias.setupServices(mGattServer);
+ 			mBTAdvertiser.startAdvertising(BleUtil.createAdvSettings(true, 0),BleUtil.createFMPAdvertiseData(),mAdvCallback);
+ 		}
+diff --git a/BleServerEmulator/src/com/freescale/bleserver/ImmediateAlertService.java b/BleServerEmulator/src/com/freescale/bleserver/ImmediateAlertService.java
+index e4f7777..0b65658 100755
+--- a/BleServerEmulator/src/com/freescale/bleserver/ImmediateAlertService.java
++++ b/BleServerEmulator/src/com/freescale/bleserver/ImmediateAlertService.java
+@@ -45,7 +45,7 @@ public class ImmediateAlertService extends BluetoothGattServerCallback {
+ 			throw new IllegalArgumentException("gattServer is null");
+ 		}
+ 		mGattServer = gattServer;
+-
++		
+ 		// setup services
+ 		{ 
+ 			//immediate alert
+@@ -58,7 +58,8 @@ public class ImmediateAlertService extends BluetoothGattServerCallback {
+ 					BluetoothGattCharacteristic.PERMISSION_READ |BluetoothGattCharacteristic.PERMISSION_WRITE);
+ 			alc.setValue("");
+ 			ias.addCharacteristic(alc);
+-			mGattServer.addService(ias);
++			if(mGattServer!=null && ias!=null)
++				mGattServer.addService(ias);
+ 		}
+ 
+ 		{ 
+@@ -87,7 +88,8 @@ public class ImmediateAlertService extends BluetoothGattServerCallback {
+ 			dis.addCharacteristic(mansc);
+ 			dis.addCharacteristic(monsc);
+ 			dis.addCharacteristic(snsc);
+-			mGattServer.addService(dis);
++			if(mGattServer!=null && dis!=null)
++				mGattServer.addService(dis);
+ 		}
+ 
+ 		{
+@@ -102,7 +104,8 @@ public class ImmediateAlertService extends BluetoothGattServerCallback {
+ 					BluetoothGattCharacteristic.PERMISSION_READ);
+ 			blChar.setValue(Attributes.battery+"");
+ 			bis.addCharacteristic(blChar);
+-			mGattServer.addService(bis);
++			if(mGattServer!=null && bis!=null)
++				mGattServer.addService(bis);
+ 		}
+ 
+ 		{
+@@ -117,7 +120,8 @@ public class ImmediateAlertService extends BluetoothGattServerCallback {
+ 					BluetoothGattCharacteristic.PERMISSION_READ);
+ 			batc.setValue(Attributes.heartRate+"");
+ 			hris.addCharacteristic(batc);
+-			mGattServer.addService(hris);
++			if(mGattServer!=null && hris!=null)
++				mGattServer.addService(hris);
+ 		}
+ 
+ 		{
+@@ -131,7 +135,8 @@ public class ImmediateAlertService extends BluetoothGattServerCallback {
+ 					BluetoothGattCharacteristic.PERMISSION_READ);
+ 			TemperatureChar.setValue(Attributes.cpuTemp+"");
+ 			cts.addCharacteristic(TemperatureChar);
+-			mGattServer.addService(cts);
++			if(mGattServer!=null && cts!=null)
++				mGattServer.addService(cts);
+ 		}
+ 
+ 		{
+@@ -148,7 +153,8 @@ public class ImmediateAlertService extends BluetoothGattServerCallback {
+ 				dateChar.setValue(Attributes.Date);
+ 			}
+ 			dates.addCharacteristic(dateChar);
+-			mGattServer.addService(dates);
++			if(mGattServer!=null && dates!=null)
++				mGattServer.addService(dates);
+ 		}
+ 
+ 		{
+@@ -165,7 +171,8 @@ public class ImmediateAlertService extends BluetoothGattServerCallback {
+ 				messageChar.setValue(Attributes.Message);
+ 			}
+ 			mis.addCharacteristic(messageChar);
+-			mGattServer.addService(mis);
++			if(mGattServer!=null && mis!=null)
++				mGattServer.addService(mis);
+ 		}
+ 	}
+ 
+@@ -227,23 +234,16 @@ public class ImmediateAlertService extends BluetoothGattServerCallback {
+ 	public void onCharacteristicWriteRequest(android.bluetooth.BluetoothDevice device,
+ 			int requestId, BluetoothGattCharacteristic characteristic, boolean preparedWrite,
+ 			boolean responseNeeded, int offset, byte[] value) {
+-		Log.d(TAG, "onCharacteristicWriteRequest requestId=" + requestId + " preparedWrite="+ Boolean.toString(preparedWrite) + " responseNeeded="+ Boolean.toString(responseNeeded) + " offset=" + offset);
+ 		if (characteristic.getUuid().equals(UUID.fromString(IMXUuid.CHAR_ALERT_LEVEL))) {
+-			Log.d(TAG, "CHAR_ALERT_LEVEL");
+ 			if (value != null && value.length > 0) {
+-				Log.d(TAG, "value.length=" + value.length);
+ 				mAlertLevel[0] = value[0];
+ 			} else {
+-				Log.d(TAG, "invalid value written");
+ 			}
+ 			mGattServer.sendResponse(device, requestId, BluetoothGatt.GATT_SUCCESS, offset, null);
+ 		}if(characteristic.getUuid().equals(UUID.fromString(IMXUuid.CHAR_MESSAGE))){
+-			Log.e(TAG, "alarm it:" + value);
+-			if(value.equals("alarm")){
+-				characteristic.setValue("stop alarm");
+-				Toast.makeText(mActivity, "Alarm time is on", Toast.LENGTH_SHORT).show();
+-			}
+-			
++			String messageValue = new String(value);
++			Attributes.Message = messageValue;
++			MessageAcitivity.mMessageHandler.sendEmptyMessage(0);
+ 		}
+ 	}
+ }
+diff --git a/BleServerEmulator/src/com/freescale/bleserver/MessageAcitivity.java b/BleServerEmulator/src/com/freescale/bleserver/MessageAcitivity.java
+new file mode 100755
+index 0000000..3f73820
+--- /dev/null
++++ b/BleServerEmulator/src/com/freescale/bleserver/MessageAcitivity.java
+@@ -0,0 +1,56 @@
++/*
++ * Copyright (C) 2016 Freescale Semiconductor, Inc.
++ *
++ * Licensed under the Apache License, Version 2.0 (the "License");
++ * you may not use this file except in compliance with the License.
++ * You may obtain a copy of the License at
++ *
++ *      http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++package com.freescale.bleserver;
++
++import com.freescale.bleserver.R;
++import com.freescale.bleserver.global.Attributes;
++
++import android.app.Activity;
++import android.os.Bundle;
++import android.os.Handler;
++import android.view.Window;
++import android.view.WindowManager;
++import android.widget.TextView;
++
++public class MessageAcitivity extends Activity {
++
++	private static TextView mTvMesCon;
++	public static Handler mMessageHandler = new Handler(){
++		
++		public void handleMessage(android.os.Message msg) {
++			if(mTvMesCon != null){
++				mTvMesCon.setText(Attributes.Message);
++			}
++		};
++	};
++
++	@Override
++	protected void onCreate(Bundle savedInstanceState) {
++		super.onCreate(savedInstanceState);
++		requestWindowFeature(Window.FEATURE_NO_TITLE);
++		getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
++		setContentView(R.layout.activity_message);
++		
++		mTvMesCon = (TextView) findViewById(R.id.tv_message_content);
++		mTvMesCon.setText(Attributes.Message);
++	}
++	
++	@Override
++	public void finish() {
++		super.finish();
++		overridePendingTransition(R.anim.pre_tran_in, R.anim.pre_tran_out);
++	}
++}
+diff --git a/BleServerEmulator/src/com/freescale/bleserver/global/Attributes.java b/BleServerEmulator/src/com/freescale/bleserver/global/Attributes.java
+index 0979511..a2a6c36 100755
+--- a/BleServerEmulator/src/com/freescale/bleserver/global/Attributes.java
++++ b/BleServerEmulator/src/com/freescale/bleserver/global/Attributes.java
+@@ -21,5 +21,5 @@ public class Attributes {
+ 	public static int battery;
+ 	public static int heartRate;
+ 	public static String Date;
+-	public static String Message;
++	public static String Message = "No Message";
+ }
+diff --git a/BleServerEmulator/src/com/freescale/bleserver/pager/HomePager.java b/BleServerEmulator/src/com/freescale/bleserver/pager/HomePager.java
+index 657327b..b969779 100755
+--- a/BleServerEmulator/src/com/freescale/bleserver/pager/HomePager.java
++++ b/BleServerEmulator/src/com/freescale/bleserver/pager/HomePager.java
+@@ -29,8 +29,11 @@ import android.widget.RelativeLayout;
+ import android.widget.TextView;
+ 
+ import com.freescale.bleserver.R;
+-import com.freescale.bleserver.EditActivity;
++import com.freescale.bleserver.CpuInfoActivity;
++import com.freescale.bleserver.GuideAcitivity;
++import com.freescale.bleserver.HeartRateAcitivity;
+ import com.freescale.bleserver.HomeActivity;
++import com.freescale.bleserver.MessageAcitivity;
+ import com.freescale.bleserver.global.Attributes;
+ import com.freescale.bleserver.utils.PrefUtils;
+ import com.freescale.bleserver.utils.StreamUtil;
+@@ -56,7 +59,7 @@ public class HomePager extends BasePager implements OnClickListener{
+ 	//handler of refreshing the temperature
+ 	private Handler mTempHandler = new Handler(){
+ 		public void handleMessage(android.os.Message msg) {
+-			mTvTemp.setText(Attributes.cpuTemp + "'C");
++			mTvTemp.setText(Attributes.cpuTemp+"");
+ 		};
+ 	};
+ 
+@@ -83,7 +86,7 @@ public class HomePager extends BasePager implements OnClickListener{
+ 		mRlCpuTempl = (RelativeLayout) mRootView.findViewById(R.id.rl_cpu_temp);
+ 		mRlMessage = (RelativeLayout) mRootView.findViewById(R.id.rl_cpu_message);
+ 		mRlHeart = (RelativeLayout) mRootView.findViewById(R.id.rl_cpu_heart);
+-		mRlSetting = (RelativeLayout) mRootView.findViewById(R.id.rl_cpu_setting);
++		mRlSetting = (RelativeLayout) mRootView.findViewById(R.id.rl_cpu_guide);
+ 
+ 		//setListener
+ 		mTvBleState.setOnClickListener(this);
+@@ -97,7 +100,7 @@ public class HomePager extends BasePager implements OnClickListener{
+ 
+ 	@Override
+ 	public void initData() {
+-		new ScanTimeThread().start();
++		new ScanTempThread().start();
+ 		new HeartRateThread().start();
+ 		new DateThread().start();
+ 
+@@ -118,7 +121,7 @@ public class HomePager extends BasePager implements OnClickListener{
+ 		}
+ 	}
+ 
+-	class ScanTimeThread extends Thread{
++	class ScanTempThread extends Thread{
+ 		@Override
+ 		public void run() {
+ 			while(mIsRunTemp){
+@@ -139,20 +142,7 @@ public class HomePager extends BasePager implements OnClickListener{
+ 		}
+ 	}
+ 
+-	class HeartRateThread extends Thread{
+-		@Override
+-		public void run() {
+-			while(mIsRunHeart){
+-				Attributes.heartRate = (int) Math.floor(Math.random()*30 + 50);
+-				mHeartRateHandler.sendEmptyMessage(0);
+-				try {
+-					sleep(60000);
+-				} catch (InterruptedException e) {
+-					e.printStackTrace();
+-				}
+-			}
+-		}
+-	}
++	
+ 
+ 	class DateThread extends Thread{
+ 		@Override
+@@ -191,16 +181,47 @@ public class HomePager extends BasePager implements OnClickListener{
+ 			PrefUtils.setBoolean(mActivity, PrefUtils.BLE_STATE, mIsBleOn);
+ 			break;
+ 		case R.id.rl_cpu_temp:
+-		case R.id.rl_cpu_setting:
++			Intent cpuInfo = new Intent(mActivity, CpuInfoActivity.class);
++			mActivity.startActivity(cpuInfo);
++			mActivity.overridePendingTransition(R.anim.tran_in, R.anim.tran_out);
++			break;
++		case R.id.rl_cpu_guide:
++			Intent guide = new Intent(mActivity, GuideAcitivity.class);
++			mActivity.startActivity(guide);
++			mActivity.overridePendingTransition(R.anim.tran_in, R.anim.tran_out);
++			break;
+ 		case R.id.rl_cpu_heart:
++			Intent heartRate = new Intent(mActivity, HeartRateAcitivity.class);
++			mActivity.startActivity(heartRate);
++			mActivity.overridePendingTransition(R.anim.tran_in, R.anim.tran_out);
++			break;
+ 		case R.id.rl_cpu_message:
+-			Intent intent = new Intent(mActivity, EditActivity.class);
+-			mActivity.startActivity(intent);
++			Intent message = new Intent(mActivity, MessageAcitivity.class);
++			mActivity.startActivity(message);
+ 			mActivity.overridePendingTransition(R.anim.tran_in, R.anim.tran_out);
+ 			break;
+ 		default:
+ 			break;
+ 		}
+ 	}
++	
++	class HeartRateThread extends Thread{
++		@Override
++		public void run() {
++			while(mIsRunHeart){
++				Attributes.heartRate = (int) Math.floor(Math.random()*30 + 50);
++				mHeartRateHandler.sendEmptyMessage(0);
++				try {
++					sleep(60000);
++				} catch (InterruptedException e) {
++					e.printStackTrace();
++				}
++			}
++		}
++	}
++	
++	public void refreshView(){
++		mTvHeartRate.setText(Attributes.heartRate+"");
++	}
+ }
+ 
+-- 
+1.8.0
+

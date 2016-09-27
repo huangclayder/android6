@@ -1,0 +1,36 @@
+From 0d631cb912e3c75b8c140cc483c40c3c5984d2d6 Mon Sep 17 00:00:00 2001
+From: "Ye.Li" <B37916@freescale.com>
+Date: Mon, 23 Mar 2015 16:08:46 +0800
+Subject: [PATCH] MLK-10448-5 imx: mx6qp: Enable PRG clock for IPU
+
+The i.MX6QP has a PRG module, need to enable its clock for using
+IPU.
+
+Signed-off-by: Peng Fan <Peng.Fan@freescale.com>
+Signed-off-by: Brown Oliver <B37094@freescale.com>
+Signed-off-by: Ye.Li <B37916@freescale.com>
+(cherry picked from commit 089f399ea07db79d6bca8fdc08b442b59eb55feb)
+---
+ arch/arm/cpu/armv7/mx6/clock.c | 6 ++++++
+ 1 file changed, 6 insertions(+)
+
+diff --git a/arch/arm/cpu/armv7/mx6/clock.c b/arch/arm/cpu/armv7/mx6/clock.c
+index fadb73b..49feff3 100644
+--- a/arch/arm/cpu/armv7/mx6/clock.c
++++ b/arch/arm/cpu/armv7/mx6/clock.c
+@@ -1105,6 +1105,12 @@ void enable_ipu_clock(void)
+ 	reg = readl(&mxc_ccm->CCGR3);
+ 	reg |= MXC_CCM_CCGR3_IPU1_IPU_MASK;
+ 	writel(reg, &mxc_ccm->CCGR3);
++
++#ifdef CONFIG_MX6QP
++	reg = readl(&mxc_ccm->CCGR6);
++	reg |= MXC_CCM_CCGR6_PRG_CLK0_MASK;
++	writel(reg, &mxc_ccm->CCGR6);
++#endif
+ }
+ #endif
+ /***************************************************/
+-- 
+1.8.0
+

@@ -1,0 +1,295 @@
+From 129e786c0dc1fcafb19c3cacee243175bed56143 Mon Sep 17 00:00:00 2001
+From: "Ye.Li" <B37916@freescale.com>
+Date: Tue, 15 Dec 2015 11:27:45 +0800
+Subject: [PATCH] MLK-12017 imx: mx6ulevk: Update DDR script for new DDR
+ MT41K256M16TW-107
+
+Current Micron DDR MT41K256M16HA-125 on i.MX6UL will be EOL. Plan is i.MX6UL
+will use the new 20nm litho 4Gb DDR3L MT41K256M16TW-107.
+
+Update DDR script of mx6ul evk board for this new DDR, and use it as default.
+http://compass.freescale.net/livelink/livelink?func=ll&objId=234910940&objAction=browse&viewType=1
+
+Test result:
+Stress test passed.
+
+Meanwhile add build targets below for old DDR support:
+mx6ul_14x14_evk_ddr_eol_android_defconfig
+mx6ul_14x14_evk_ddr_eol_brillo_defconfig
+mx6ul_14x14_evk_ddr_eol_defconfig
+mx6ul_14x14_evk_ddr_eol_qspi1_defconfig
+
+Signed-off-by: Ye.Li <B37916@freescale.com>
+---
+ board/freescale/mx6ul_14x14_evk/imximage.cfg      |  73 ++++++++++++++
+ board/freescale/mx6ul_14x14_evk/plugin.S          | 110 ++++++++++++++++++++++
+ configs/mx6ul_14x14_evk_ddr_eol_android_defconfig |   5 +
+ configs/mx6ul_14x14_evk_ddr_eol_brillo_defconfig  |   5 +
+ configs/mx6ul_14x14_evk_ddr_eol_defconfig         |   5 +
+ configs/mx6ul_14x14_evk_ddr_eol_qspi1_defconfig   |   5 +
+ 6 files changed, 203 insertions(+)
+
+diff --git a/board/freescale/mx6ul_14x14_evk/imximage.cfg b/board/freescale/mx6ul_14x14_evk/imximage.cfg
+index 8283673..5d2711f 100644
+--- a/board/freescale/mx6ul_14x14_evk/imximage.cfg
++++ b/board/freescale/mx6ul_14x14_evk/imximage.cfg
+@@ -50,6 +50,10 @@ CSF CONFIG_CSF_SIZE
+  *	value	  value to be stored in the register
+  */
+ 
++#ifdef CONFIG_DDR3L_MT41K256M16HA
++
++/* DDR type MT41K256M16HA-125 which is EOL */
++
+ /* Enable all clocks */
+ DATA 4 0x020c4068 0xffffffff
+ DATA 4 0x020c406c 0xffffffff
+@@ -111,4 +115,73 @@ DATA 4 0x021B0818 0x00000227
+ DATA 4 0x021B0004 0x0002552D
+ DATA 4 0x021B0404 0x00011006
+ DATA 4 0x021B001C 0x00000000
++
++#else 
++
++/* New DDR type MT41K256M16TW-107 */
++
++/* Enable all clocks */
++DATA 4 0x020c4068 0xffffffff
++DATA 4 0x020c406c 0xffffffff
++DATA 4 0x020c4070 0xffffffff
++DATA 4 0x020c4074 0xffffffff
++DATA 4 0x020c4078 0xffffffff
++DATA 4 0x020c407c 0xffffffff
++DATA 4 0x020c4080 0xffffffff
++
++DATA 4 0x020E04B4 0x000C0000
++DATA 4 0x020E04AC 0x00000000
++DATA 4 0x020E027C 0x00000030
++DATA 4 0x020E0250 0x00000030
++DATA 4 0x020E024C 0x00000030
++DATA 4 0x020E0490 0x00000030
++DATA 4 0x020E0288 0x00000030
++DATA 4 0x020E0270 0x00000000
++DATA 4 0x020E0260 0x00000030
++DATA 4 0x020E0264 0x00000030
++DATA 4 0x020E04A0 0x00000030
++DATA 4 0x020E0494 0x00020000
++DATA 4 0x020E0280 0x00000030
++DATA 4 0x020E0284 0x00000030
++DATA 4 0x020E04B0 0x00020000
++DATA 4 0x020E0498 0x00000030
++DATA 4 0x020E04A4 0x00000030
++DATA 4 0x020E0244 0x00000030
++DATA 4 0x020E0248 0x00000030
++DATA 4 0x021B001C 0x00008000
++DATA 4 0x021B0800 0xA1390003
++DATA 4 0x021B080C 0x00000000
++DATA 4 0x021B083C 0x41570155
++DATA 4 0x021B0848 0x4040474A
++DATA 4 0x021B0850 0x40405550
++DATA 4 0x021B081C 0x33333333
++DATA 4 0x021B0820 0x33333333
++DATA 4 0x021B082C 0xf3333333
++DATA 4 0x021B0830 0xf3333333
++DATA 4 0x021B08C0 0x00921012
++DATA 4 0x021B08b8 0x00000800
++DATA 4 0x021B0004 0x0002002D
++DATA 4 0x021B0008 0x1B333030
++DATA 4 0x021B000C 0x676B52F3
++DATA 4 0x021B0010 0xB66D0B63
++DATA 4 0x021B0014 0x01FF00DB
++DATA 4 0x021B0018 0x00201740
++DATA 4 0x021B001C 0x00008000
++DATA 4 0x021B002C 0x000026D2
++DATA 4 0x021B0030 0x006B1023
++DATA 4 0x021B0040 0x0000004F
++DATA 4 0x021B0000 0x84180000
++DATA 4 0x021B0890 0x23400A38
++DATA 4 0x021B001C 0x02008032
++DATA 4 0x021B001C 0x00008033
++DATA 4 0x021B001C 0x00048031
++DATA 4 0x021B001C 0x15208030
++DATA 4 0x021B001C 0x04008040
++DATA 4 0x021B0020 0x00000800
++DATA 4 0x021B0818 0x00000227
++DATA 4 0x021B0004 0x0002552D
++DATA 4 0x021B0404 0x00011006
++DATA 4 0x021B001C 0x00000000
++#endif
++
+ #endif
+diff --git a/board/freescale/mx6ul_14x14_evk/plugin.S b/board/freescale/mx6ul_14x14_evk/plugin.S
+index 2c9df7e..bf6784c 100644
+--- a/board/freescale/mx6ul_14x14_evk/plugin.S
++++ b/board/freescale/mx6ul_14x14_evk/plugin.S
+@@ -53,6 +53,114 @@
+ 	str r1, [r0, #0x800]
+ 	ldr r1, =0x00000000
+ 	str r1, [r0, #0x80C]
++	ldr r1, =0x41570155
++	str r1, [r0, #0x83C]
++	ldr r1, =0x4040474A
++	str r1, [r0, #0x848]
++	ldr r1, =0x40405550
++	str r1, [r0, #0x850]
++	ldr r1, =0x33333333
++	str r1, [r0, #0x81C]
++	str r1, [r0, #0x820]
++	ldr r1, =0xF3333333
++	str r1, [r0, #0x82C]
++	str r1, [r0, #0x830]
++	ldr r1, =0x00921012
++	str r1, [r0, #0x8C0]
++	ldr r1, =0x00000800
++	str r1, [r0, #0x8B8]
++	ldr r1, =0x0002002D
++	str r1, [r0, #0x004]
++	ldr r1, =0x1B333030
++	str r1, [r0, #0x008]
++	ldr r1, =0x676B52F3
++	str r1, [r0, #0x00C]
++	ldr r1, =0xB66D0B63
++	str r1, [r0, #0x010]
++	ldr r1, =0x01FF00DB
++	str r1, [r0, #0x014]
++	ldr r1, =0x00201740
++	str r1, [r0, #0x018]
++	ldr r1, =0x00008000
++	str r1, [r0, #0x01C]
++	ldr r1, =0x000026D2
++	str r1, [r0, #0x02C]
++	ldr r1, =0x006B1023
++	str r1, [r0, #0x030]
++	ldr r1, =0x0000004F
++	str r1, [r0, #0x040]
++	ldr r1, =0x84180000
++	str r1, [r0, #0x000]
++	ldr r1, =0x23400A38
++	str r1, [r0, #0x890]
++	ldr r1, =0x02008032
++	str r1, [r0, #0x01C]
++	ldr r1, =0x00008033
++	str r1, [r0, #0x01C]
++	ldr r1, =0x00048031
++	str r1, [r0, #0x01C]
++	ldr r1, =0x15208030
++	str r1, [r0, #0x01C]
++	ldr r1, =0x04008040
++	str r1, [r0, #0x01C]
++	ldr r1, =0x00000800
++	str r1, [r0, #0x020]
++	ldr r1, =0x00000227
++	str r1, [r0, #0x818]
++	ldr r1, =0x0002552D
++	str r1, [r0, #0x004]
++	ldr r1, =0x00011006
++	str r1, [r0, #0x404]
++	ldr r1, =0x00000000
++	str r1, [r0, #0x01C]
++.endm
++
++.macro imx6ul_ddr3_eol_evk_setting
++	ldr r0, =IOMUXC_BASE_ADDR
++	ldr r1, =0x000C0000
++	str r1, [r0, #0x4B4]
++	ldr r1, =0x00000000
++	str r1, [r0, #0x4AC]
++	ldr r1, =0x00000030
++	str r1, [r0, #0x27C]
++	ldr r1, =0x00000030
++	str r1, [r0, #0x250]
++	str r1, [r0, #0x24C]
++	str r1, [r0, #0x490]
++	str r1, [r0, #0x288]
++
++	ldr r1, =0x00000000
++	str r1, [r0, #0x270]
++
++	ldr r1, =0x00000030
++	str r1, [r0, #0x260]
++	str r1, [r0, #0x264]
++	str r1, [r0, #0x4A0]
++
++	ldr r1, =0x00020000
++	str r1, [r0, #0x494]
++
++	ldr r1, =0x00000030
++	str r1, [r0, #0x280]
++	ldr r1, =0x00000030
++	str r1, [r0, #0x284]
++
++	ldr r1, =0x00020000
++	str r1, [r0, #0x4B0]
++
++	ldr r1, =0x00000030
++	str r1, [r0, #0x498]
++	str r1, [r0, #0x4A4]
++	str r1, [r0, #0x244]
++	str r1, [r0, #0x248]
++
++	ldr r0, =MMDC_P0_BASE_ADDR
++	ldr r1, =0x00008000
++	str r1, [r0, #0x1C]
++	ldr r1, =0xA1390003
++	str r1, [r0, #0x800]
++	ldr r1, =0x00000000
++	str r1, [r0, #0x80C]
+ 	ldr r1, =0x41490145
+ 	str r1, [r0, #0x83C]
+ 	ldr r1, =0x40404546
+@@ -245,6 +353,8 @@
+ .macro imx6_ddr_setting
+ #if defined (CONFIG_MX6UL_9X9_LPDDR2)
+ 	imx6ul_lpddr2_evk_setting
++#elif defined(CONFIG_DDR3L_MT41K256M16HA)
++	imx6ul_ddr3_eol_evk_setting
+ #else
+ 	imx6ul_ddr3_evk_setting
+ #endif
+diff --git a/configs/mx6ul_14x14_evk_ddr_eol_android_defconfig b/configs/mx6ul_14x14_evk_ddr_eol_android_defconfig
+new file mode 100644
+index 0000000..8654c04
+--- /dev/null
++++ b/configs/mx6ul_14x14_evk_ddr_eol_android_defconfig
+@@ -0,0 +1,5 @@
++CONFIG_SYS_EXTRA_OPTIONS="IMX_CONFIG=board/freescale/mx6ul_14x14_evk/imximage.cfg,MX6UL,ANDROID_SUPPORT,DDR3L_MT41K256M16HA"
++CONFIG_ARM=y
++CONFIG_TARGET_MX6UL_14X14_EVK=y
++CONFIG_DM=y
++CONFIG_DM_THERMAL=y
+diff --git a/configs/mx6ul_14x14_evk_ddr_eol_brillo_defconfig b/configs/mx6ul_14x14_evk_ddr_eol_brillo_defconfig
+new file mode 100644
+index 0000000..73c143f
+--- /dev/null
++++ b/configs/mx6ul_14x14_evk_ddr_eol_brillo_defconfig
+@@ -0,0 +1,5 @@
++CONFIG_SYS_EXTRA_OPTIONS="IMX_CONFIG=board/freescale/mx6ul_14x14_evk/imximage.cfg,MX6UL,ANDROID_SUPPORT,BRILLO_SUPPORT,DDR3L_MT41K256M16HA"
++CONFIG_ARM=y
++CONFIG_TARGET_MX6UL_14X14_EVK=y
++CONFIG_DM=y
++CONFIG_DM_THERMAL=y
+diff --git a/configs/mx6ul_14x14_evk_ddr_eol_defconfig b/configs/mx6ul_14x14_evk_ddr_eol_defconfig
+new file mode 100644
+index 0000000..d6c5b0d
+--- /dev/null
++++ b/configs/mx6ul_14x14_evk_ddr_eol_defconfig
+@@ -0,0 +1,5 @@
++CONFIG_SYS_EXTRA_OPTIONS="IMX_CONFIG=board/freescale/mx6ul_14x14_evk/imximage.cfg,MX6UL,DDR3L_MT41K256M16HA"
++CONFIG_ARM=y
++CONFIG_TARGET_MX6UL_14X14_EVK=y
++CONFIG_DM=y
++CONFIG_DM_THERMAL=y
+diff --git a/configs/mx6ul_14x14_evk_ddr_eol_qspi1_defconfig b/configs/mx6ul_14x14_evk_ddr_eol_qspi1_defconfig
+new file mode 100644
+index 0000000..0191cbd
+--- /dev/null
++++ b/configs/mx6ul_14x14_evk_ddr_eol_qspi1_defconfig
+@@ -0,0 +1,5 @@
++CONFIG_SYS_EXTRA_OPTIONS="IMX_CONFIG=board/freescale/mx6ul_14x14_evk/imximage.cfg,MX6UL,SYS_BOOT_QSPI,DDR3L_MT41K256M16HA"
++CONFIG_ARM=y
++CONFIG_TARGET_MX6UL_14X14_EVK=y
++CONFIG_DM=y
++CONFIG_DM_THERMAL=y
+-- 
+1.8.0
+

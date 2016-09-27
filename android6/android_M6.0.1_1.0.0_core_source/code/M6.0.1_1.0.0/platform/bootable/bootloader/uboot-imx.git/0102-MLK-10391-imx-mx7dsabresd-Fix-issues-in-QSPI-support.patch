@@ -1,0 +1,50 @@
+From e790e3fce568d233458ed73b03ebba484229ccf2 Mon Sep 17 00:00:00 2001
+From: "Ye.Li" <B37916@freescale.com>
+Date: Tue, 10 Mar 2015 14:27:36 +0800
+Subject: [PATCH] MLK-10391 imx: mx7dsabresd: Fix issues in QSPI support
+
+Change QSPI FLASH vendor config from to MACRONIX, otherwise the flash
+device can't be recognized.
+Also change default sf probe parameter to 0:0 which means bus 0, cs 0.
+
+Signed-off-by: Ye.Li <B37916@freescale.com>
+(cherry picked from commit f250cf69571851eb092252275418daf8de11a68e)
+Signed-off-by: Peng Fan <Peng.Fan@freescale.com>
+---
+ include/configs/mx7dsabresd.h | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/include/configs/mx7dsabresd.h b/include/configs/mx7dsabresd.h
+index f5f2f1c..014e86a 100644
+--- a/include/configs/mx7dsabresd.h
++++ b/include/configs/mx7dsabresd.h
+@@ -122,7 +122,7 @@
+ 	"m4image=m4_qspi.bin\0" \
+ 	"loadm4image=fatload mmc ${mmcdev}:${mmcpart} ${loadaddr} ${m4image}\0" \
+ 	"update_m4_from_sd=" \
+-		"if sf probe 1:0; then " \
++		"if sf probe 0:0; then " \
+ 			"if run loadm4image; then " \
+ 				"setexpr fw_sz ${filesize} + 0xffff; " \
+ 				"setexpr fw_sz ${fw_sz} / 0x10000; "	\
+@@ -131,7 +131,7 @@
+ 				"sf write ${loadaddr} 0x0 ${filesize}; " \
+ 			"fi; " \
+ 		"fi\0" \
+-	"m4boot=sf probe 1:0; bootaux "__stringify(CONFIG_SYS_AUXCORE_BOOTDATA)"\0"
++	"m4boot=sf probe 0:0; bootaux "__stringify(CONFIG_SYS_AUXCORE_BOOTDATA)"\0"
+ #else
+ #define UPDATE_M4_ENV ""
+ #endif
+@@ -331,7 +331,7 @@
+ 
+ #define CONFIG_CMD_SF
+ #define	CONFIG_SPI_FLASH
+-#define	CONFIG_SPI_FLASH_STMICRO
++#define	CONFIG_SPI_FLASH_MACRONIX
+ #define	CONFIG_SPI_FLASH_BAR
+ #define	CONFIG_SF_DEFAULT_BUS		0
+ #define	CONFIG_SF_DEFAULT_CS		0
+-- 
+1.8.0
+

@@ -1,0 +1,29 @@
+From aa13f4a43af67069b03269c621e0c34b76088d3b Mon Sep 17 00:00:00 2001
+From: zhang sanshan <b51434@freescale.com>
+Date: Tue, 27 Jan 2015 14:52:03 +0800
+Subject: [PATCH] MA-6160 [Android_MX6SX_ARD]NAND: Many 'UBIFS assert failed
+ in ubifs_jnl_update at 556' print when boot up with NAND
+ for the first time. 100%
+
+delete the show_stack() in ubifs_jnl_update.
+
+Signed-off-by: zhang sanshan <b51434@freescale.com>
+---
+ fs/ubifs/journal.c | 1 -
+ 1 file changed, 1 deletion(-)
+
+diff --git a/fs/ubifs/journal.c b/fs/ubifs/journal.c
+index e9213b5..f6ac3f2 100644
+--- a/fs/ubifs/journal.c
++++ b/fs/ubifs/journal.c
+@@ -553,7 +553,6 @@ int ubifs_jnl_update(struct ubifs_info *c, const struct inode *dir,
+ 
+ 	dbg_jnl("ino %lu, dent '%.*s', data len %d in dir ino %lu",
+ 		inode->i_ino, nm->len, nm->name, ui->data_len, dir->i_ino);
+-	ubifs_assert(host_ui->data_len == 0);
+ 	ubifs_assert(mutex_is_locked(&host_ui->ui_mutex));
+ 
+ 	dlen = UBIFS_DENT_NODE_SZ + nm->len + 1;
+-- 
+1.8.0
+

@@ -1,0 +1,48 @@
+From 917055b375b83ef9754bf9422394a5e015a5ea23 Mon Sep 17 00:00:00 2001
+From: Anson Huang <b20788@freescale.com>
+Date: Wed, 28 Jan 2015 22:14:59 +0800
+Subject: [PATCH] MLK-10167-10 ARM: imx: enable SOC_IMX7D by default
+
+Enable i.MX7D by default in defconfig.
+
+Signed-off-by: Peng Fan <Peng.Fan@freescale.com>
+Signed-off-by: Anson Huang <b20788@freescale.com>
+---
+ arch/arm/configs/imx_v7_defconfig     | 2 ++
+ arch/arm/configs/imx_v7_mfg_defconfig | 2 ++
+ 2 files changed, 4 insertions(+)
+
+diff --git a/arch/arm/configs/imx_v7_defconfig b/arch/arm/configs/imx_v7_defconfig
+index 4fc0d99..d3d9316 100644
+--- a/arch/arm/configs/imx_v7_defconfig
++++ b/arch/arm/configs/imx_v7_defconfig
+@@ -28,9 +28,11 @@ CONFIG_SOC_IMX53=y
+ CONFIG_SOC_IMX6Q=y
+ CONFIG_SOC_IMX6SL=y
+ CONFIG_SOC_IMX6SX=y
++CONFIG_SOC_IMX7D=y
+ CONFIG_SOC_VF610=y
+ # CONFIG_SWP_EMULATE is not set
+ CONFIG_SMP=y
++CONFIG_HAVE_ARM_ARCH_TIMER=y
+ CONFIG_VMSPLIT_2G=y
+ CONFIG_PREEMPT=y
+ CONFIG_AEABI=y
+diff --git a/arch/arm/configs/imx_v7_mfg_defconfig b/arch/arm/configs/imx_v7_mfg_defconfig
+index 17598b1..f813e26 100644
+--- a/arch/arm/configs/imx_v7_mfg_defconfig
++++ b/arch/arm/configs/imx_v7_mfg_defconfig
+@@ -29,8 +29,10 @@ CONFIG_SOC_IMX53=y
+ CONFIG_SOC_IMX6Q=y
+ CONFIG_SOC_IMX6SL=y
+ CONFIG_SOC_IMX6SX=y
++CONFIG_SOC_IMX7D=y
+ CONFIG_SOC_VF610=y
+ CONFIG_SMP=y
++CONFIG_HAVE_ARM_ARCH_TIMER=y
+ CONFIG_VMSPLIT_2G=y
+ CONFIG_PREEMPT=y
+ CONFIG_AEABI=y
+-- 
+1.8.0
+

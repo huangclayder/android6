@@ -1,0 +1,117 @@
+From 6cc0b49b6ba7ed1f4fd183d82739131a5559a701 Mon Sep 17 00:00:00 2001
+From: Haoran Wang <b50027@freescale.com>
+Date: Tue, 22 Dec 2015 19:16:44 +0800
+Subject: [PATCH 583/602] MA-7403 Remove wifi_mac service
+
+The wifi_mac service is not used in mm6.0.
+So remove it.
+
+Signed-off-by: Haoran Wang <b50027@freescale.com>
+---
+ evk_6sl/init.rc       | 5 -----
+ sabreauto_6q/init.rc  | 5 -----
+ sabreauto_6sx/init.rc | 5 -----
+ sabresd_6dq/init.rc   | 5 -----
+ sabresd_6sx/init.rc   | 5 -----
+ sabresd_7d/init.rc    | 5 -----
+ 6 files changed, 30 deletions(-)
+
+diff --git a/evk_6sl/init.rc b/evk_6sl/init.rc
+index 03e1b18..ea53695 100644
+--- a/evk_6sl/init.rc
++++ b/evk_6sl/init.rc
+@@ -291,11 +291,6 @@ service pppd_gprs /etc/ppp/init.gprs-pppd
+     disabled
+     oneshot
+ 
+-service wifi_mac /system/bin/sh /system/etc/check_wifi_mac.sh
+-    class late_start
+-    oneshot
+-
+-
+ on fs
+ # mount ext4 partitions
+     mount_all /fstab.freescale
+diff --git a/sabreauto_6q/init.rc b/sabreauto_6q/init.rc
+index 809129a..e0c763f 100644
+--- a/sabreauto_6q/init.rc
++++ b/sabreauto_6q/init.rc
+@@ -300,11 +300,6 @@ service pppd_gprs /etc/ppp/init.gprs-pppd
+     disabled
+     oneshot
+ 
+-service wifi_mac /system/bin/sh /system/etc/check_wifi_mac.sh
+-    class late_start
+-    oneshot
+-
+-
+ on fs
+ # mount ext4 partitions
+     mount_all /fstab.freescale
+diff --git a/sabreauto_6sx/init.rc b/sabreauto_6sx/init.rc
+index 66c3007..627eb18 100755
+--- a/sabreauto_6sx/init.rc
++++ b/sabreauto_6sx/init.rc
+@@ -305,11 +305,6 @@ service pppd_gprs /etc/ppp/init.gprs-pppd
+     disabled
+     oneshot
+ 
+-service wifi_mac /system/bin/sh /system/etc/check_wifi_mac.sh
+-    class late_start
+-    oneshot
+-
+-
+ on fs
+ # mount ext4 partitions
+     mount_all /fstab.freescale
+diff --git a/sabresd_6dq/init.rc b/sabresd_6dq/init.rc
+index 25ff265..eb73160 100755
+--- a/sabresd_6dq/init.rc
++++ b/sabresd_6dq/init.rc
+@@ -315,11 +315,6 @@ service pppd_gprs /etc/ppp/init.gprs-pppd
+     disabled
+     oneshot
+ 
+-service wifi_mac /system/bin/sh /system/etc/check_wifi_mac.sh
+-    class late_start
+-    oneshot
+-
+-
+ on fs
+ # mount ext4 partitions
+     mount_all /fstab.freescale
+diff --git a/sabresd_6sx/init.rc b/sabresd_6sx/init.rc
+index 8bb4c85..32e33b2 100755
+--- a/sabresd_6sx/init.rc
++++ b/sabresd_6sx/init.rc
+@@ -315,11 +315,6 @@ service pppd_gprs /etc/ppp/init.gprs-pppd
+     disabled
+     oneshot
+ 
+-service wifi_mac /system/bin/sh /system/etc/check_wifi_mac.sh
+-    class late_start
+-    oneshot
+-
+-
+ on fs
+ # mount ext4 partitions
+     mount_all /fstab.freescale
+diff --git a/sabresd_7d/init.rc b/sabresd_7d/init.rc
+index a41f59f..f01f683 100644
+--- a/sabresd_7d/init.rc
++++ b/sabresd_7d/init.rc
+@@ -304,11 +304,6 @@ service pppd_gprs /etc/ppp/init.gprs-pppd
+     disabled
+     oneshot
+ 
+-service wifi_mac /system/bin/sh /system/etc/check_wifi_mac.sh
+-    class late_start
+-    oneshot
+-
+-
+ on fs
+ # mount ext4 partitions
+     mount_all /fstab.freescale
+-- 
+1.8.0
+

@@ -1,0 +1,477 @@
+From d6d1666c68edd93c1c1bc9b738850f6eeba01bdb Mon Sep 17 00:00:00 2001
+From: "Ye.Li" <B37916@freescale.com>
+Date: Thu, 26 Mar 2015 15:41:52 +0800
+Subject: [PATCH] MLK-10478 mx6: EPDC: Improve EPDC usage and configuration
+
+Change to load EPDC waveform from FAT partition and allocate waveform
+buffer, framebuffer and working buffer in dynamic manner not static.
+So many EPDC configurations are removed.
+
+To enable the EPDC feature, must define CONFIG_MXC_EPDC and CONFIG_SPLASH_SCREEN.
+
+Signed-off-by: Ye.Li <B37916@freescale.com>
+(cherry picked from commit 4d55a4124be3a3a6288c3c845d17fd9d4f2b8b43)
+
+Conflicts:
+	include/configs/mx6slevk.h
+---
+ board/freescale/mx6sabresd/mx6sabresd.c | 100 +++++++++-----------------------
+ board/freescale/mx6slevk/mx6slevk.c     |  98 +++++++++----------------------
+ drivers/video/mxc_epdc_fb.c             |  24 +++++++-
+ include/configs/mx6sabre_common.h       |   3 +-
+ include/configs/mx6sabresd.h            |  12 +---
+ include/configs/mx6slevk.h              |  19 ++----
+ 6 files changed, 81 insertions(+), 175 deletions(-)
+
+diff --git a/board/freescale/mx6sabresd/mx6sabresd.c b/board/freescale/mx6sabresd/mx6sabresd.c
+index c3d8408..03f6805 100644
+--- a/board/freescale/mx6sabresd/mx6sabresd.c
++++ b/board/freescale/mx6sabresd/mx6sabresd.c
+@@ -483,50 +483,6 @@ void board_late_mmc_env_init(void)
+ }
+ 
+ #if defined(CONFIG_MX6DL) && defined(CONFIG_MXC_EPDC)
+-#ifdef CONFIG_SPLASH_SCREEN
+-extern int mmc_get_env_devno(void);
+-int setup_splash_img(void)
+-{
+-#ifdef CONFIG_SPLASH_IS_IN_MMC
+-	int mmc_dev = mmc_get_env_devno();
+-	ulong offset = CONFIG_SPLASH_IMG_OFFSET;
+-	ulong size = CONFIG_SPLASH_IMG_SIZE;
+-	ulong addr = 0;
+-	char *s = NULL;
+-	struct mmc *mmc = find_mmc_device(mmc_dev);
+-	uint blk_start, blk_cnt, n;
+-
+-	s = getenv("splashimage");
+-
+-	if (NULL == s) {
+-		puts("env splashimage not found!\n");
+-		return -1;
+-	}
+-	addr = simple_strtoul(s, NULL, 16);
+-
+-	if (!mmc) {
+-		printf("MMC Device %d not found\n", mmc_dev);
+-		return -1;
+-	}
+-
+-	if (mmc_init(mmc)) {
+-		puts("MMC init failed\n");
+-		return -1;
+-	}
+-
+-	blk_start = ALIGN(offset, mmc->read_bl_len) / mmc->read_bl_len;
+-	blk_cnt   = ALIGN(size, mmc->read_bl_len) / mmc->read_bl_len;
+-	n = mmc->block_dev.block_read(mmc_dev, blk_start,
+-					blk_cnt, (u_char *)addr);
+-	flush_cache((ulong)addr, blk_cnt * mmc->read_bl_len);
+-
+-	return (n == blk_cnt) ? 0 : -1;
+-#endif
+-
+-	return 0;
+-}
+-#endif
+-
+ vidinfo_t panel_info = {
+ 	.vl_refresh = 85,
+ 	.vl_col = 800,
+@@ -588,36 +544,40 @@ static void setup_epdc_power(void)
+ 	gpio_direction_output(IMX_GPIO_NR(2, 20), 1);
+ }
+ 
+-int setup_waveform_file(void)
++int setup_waveform_file(ulong waveform_buf)
+ {
+-#ifdef CONFIG_WAVEFORM_FILE_IN_MMC
+-	int mmc_dev = mmc_get_env_devno();
+-	ulong offset = CONFIG_WAVEFORM_FILE_OFFSET;
+-	ulong size = CONFIG_WAVEFORM_FILE_SIZE;
+-	ulong addr = CONFIG_WAVEFORM_BUF_ADDR;
+-	struct mmc *mmc = find_mmc_device(mmc_dev);
+-	uint blk_start, blk_cnt, n;
+-
+-	if (!mmc) {
+-		printf("MMC Device %d not found\n", mmc_dev);
++	char *fs_argv[5];
++	char addr[17];
++	ulong file_len, mmc_dev;
++
++	if (!check_mmc_autodetect())
++		mmc_dev = getenv_ulong("mmcdev", 10, 0);
++	else
++		mmc_dev = mmc_get_env_devno();
++
++	sprintf(addr, "%lx", waveform_buf);
++
++	fs_argv[0] = "fatload";
++	fs_argv[1] = "mmc";
++	fs_argv[2] = simple_itoa(mmc_dev);
++	fs_argv[3] = addr;
++	fs_argv[4] = getenv("epdc_waveform");
++
++	if (!fs_argv[4])
++		fs_argv[4] = "epdc_splash.bin";
++
++	if (do_fat_fsload(NULL, 0, 5, fs_argv)) {
++		printf("MMC Device %lu not found\n", mmc_dev);
+ 		return -1;
+ 	}
+ 
+-	if (mmc_init(mmc)) {
+-		puts("MMC init failed\n");
++	file_len = getenv_hex("filesize", 0);
++	if (!file_len)
+ 		return -1;
+-	}
+ 
+-	blk_start = ALIGN(offset, mmc->read_bl_len) / mmc->read_bl_len;
+-	blk_cnt   = ALIGN(size, mmc->read_bl_len) / mmc->read_bl_len;
+-	n = mmc->block_dev.block_read(mmc_dev, blk_start,
+-				      blk_cnt, (u_char *)addr);
+-	flush_cache((ulong)addr, blk_cnt * mmc->read_bl_len);
++	flush_cache((ulong)addr, file_len);
+ 
+-	return (n == blk_cnt) ? 0 : -1;
+-#else
+-	return -1;
+-#endif
++	return 0;
+ }
+ 
+ static void epdc_enable_pins(void)
+@@ -687,9 +647,6 @@ static void setup_epdc(void)
+ 	reg |= 0x0C00;
+ 	writel(reg, &ccm_regs->CCGR3);
+ 
+-	panel_info.epdc_data.working_buf_addr = CONFIG_WORKING_BUF_ADDR;
+-	panel_info.epdc_data.waveform_buf_addr = CONFIG_WAVEFORM_BUF_ADDR;
+-
+ 	panel_info.epdc_data.wv_modes.mode_init = 0;
+ 	panel_info.epdc_data.wv_modes.mode_du = 1;
+ 	panel_info.epdc_data.wv_modes.mode_gc4 = 3;
+@@ -700,9 +657,6 @@ static void setup_epdc(void)
+ 	panel_info.epdc_data.epdc_timings = panel_timings;
+ 
+ 	setup_epdc_power();
+-
+-	/* Assign fb_base */
+-	gd->fb_base = CONFIG_FB_BASE;
+ }
+ 
+ void epdc_power_on(void)
+diff --git a/board/freescale/mx6slevk/mx6slevk.c b/board/freescale/mx6slevk/mx6slevk.c
+index 3d3c55d..65aceb2 100644
+--- a/board/freescale/mx6slevk/mx6slevk.c
++++ b/board/freescale/mx6slevk/mx6slevk.c
+@@ -513,50 +513,6 @@ int board_early_init_f(void)
+ }
+ 
+ #ifdef CONFIG_MXC_EPDC
+-#ifdef CONFIG_SPLASH_SCREEN
+-extern int mmc_get_env_devno(void);
+-int setup_splash_img(void)
+-{
+-#ifdef CONFIG_SPLASH_IS_IN_MMC
+-	int mmc_dev = mmc_get_env_devno();
+-	ulong offset = CONFIG_SPLASH_IMG_OFFSET;
+-	ulong size = CONFIG_SPLASH_IMG_SIZE;
+-	ulong addr = 0;
+-	char *s = NULL;
+-	struct mmc *mmc = find_mmc_device(mmc_dev);
+-	uint blk_start, blk_cnt, n;
+-
+-	s = getenv("splashimage");
+-
+-	if (NULL == s) {
+-		puts("env splashimage not found!\n");
+-		return -1;
+-	}
+-	addr = simple_strtoul(s, NULL, 16);
+-
+-	if (!mmc) {
+-		printf("MMC Device %d not found\n", mmc_dev);
+-		return -1;
+-	}
+-
+-	if (mmc_init(mmc)) {
+-		puts("MMC init failed\n");
+-		return -1;
+-	}
+-
+-	blk_start = ALIGN(offset, mmc->read_bl_len) / mmc->read_bl_len;
+-	blk_cnt = ALIGN(size, mmc->read_bl_len) / mmc->read_bl_len;
+-	n = mmc->block_dev.block_read(mmc_dev, blk_start,
+-				      blk_cnt, (u_char *)addr);
+-	flush_cache((ulong)addr, blk_cnt * mmc->read_bl_len);
+-
+-	return (n == blk_cnt) ? 0 : -1;
+-#endif
+-
+-	return 0;
+-}
+-#endif
+-
+ vidinfo_t panel_info = {
+ 	.vl_refresh = 85,
+ 	.vl_col = 800,
+@@ -617,36 +573,40 @@ static void setup_epdc_power(void)
+ 	gpio_direction_output(IMX_GPIO_NR(2, 7), 1);
+ }
+ 
+-int setup_waveform_file(void)
++int setup_waveform_file(ulong waveform_buf)
+ {
+-#ifdef CONFIG_WAVEFORM_FILE_IN_MMC
+-	int mmc_dev = mmc_get_env_devno();
+-	ulong offset = CONFIG_WAVEFORM_FILE_OFFSET;
+-	ulong size = CONFIG_WAVEFORM_FILE_SIZE;
+-	ulong addr = CONFIG_WAVEFORM_BUF_ADDR;
+-	struct mmc *mmc = find_mmc_device(mmc_dev);
+-	uint blk_start, blk_cnt, n;
++	char *fs_argv[5];
++	char addr[17];
++	ulong file_len, mmc_dev;
++
++	if (!check_mmc_autodetect())
++		mmc_dev = getenv_ulong("mmcdev", 10, 0);
++	else
++		mmc_dev = mmc_get_env_devno();
++
++	sprintf(addr, "%lx", waveform_buf);
++
++	fs_argv[0] = "fatload";
++	fs_argv[1] = "mmc";
++	fs_argv[2] = simple_itoa(mmc_dev);
++	fs_argv[3] = addr;
++	fs_argv[4] = getenv("epdc_waveform");
+ 
+-	if (!mmc) {
+-		printf("MMC Device %d not found\n", mmc_dev);
++	if (!fs_argv[4])
++		fs_argv[4] = "epdc_splash.bin";
++
++	if (do_fat_fsload(NULL, 0, 5, fs_argv)) {
++		printf("MMC Device %lu not found\n", mmc_dev);
+ 		return -1;
+ 	}
+ 
+-	if (mmc_init(mmc)) {
+-		puts("MMC init failed\n");
++	file_len = getenv_hex("filesize", 0);
++	if (!file_len)
+ 		return -1;
+-	}
+ 
+-	blk_start = ALIGN(offset, mmc->read_bl_len) / mmc->read_bl_len;
+-	blk_cnt = ALIGN(size, mmc->read_bl_len) / mmc->read_bl_len;
+-	n = mmc->block_dev.block_read(mmc_dev, blk_start,
+-				      blk_cnt, (u_char *)addr);
+-	flush_cache((ulong)addr, blk_cnt * mmc->read_bl_len);
++	flush_cache((ulong)addr, file_len);
+ 
+-	return (n == blk_cnt) ? 0 : -1;
+-#else
+-	return -1;
+-#endif
++	return 0;
+ }
+ 
+ static void epdc_enable_pins(void)
+@@ -714,9 +674,6 @@ static void setup_epdc(void)
+ 	reg |= 0x0C00;
+ 	writel(reg, CCM_BASE_ADDR + CLKCTL_CCGR3);
+ 
+-	panel_info.epdc_data.working_buf_addr = CONFIG_WORKING_BUF_ADDR;
+-	panel_info.epdc_data.waveform_buf_addr = CONFIG_WAVEFORM_BUF_ADDR;
+-
+ 	panel_info.epdc_data.wv_modes.mode_init = 0;
+ 	panel_info.epdc_data.wv_modes.mode_du = 1;
+ 	panel_info.epdc_data.wv_modes.mode_gc4 = 3;
+@@ -727,9 +684,6 @@ static void setup_epdc(void)
+ 	panel_info.epdc_data.epdc_timings = panel_timings;
+ 
+ 	setup_epdc_power();
+-
+-	/* Assign fb_base */
+-	gd->fb_base = CONFIG_FB_BASE;
+ }
+ 
+ void epdc_power_on(void)
+diff --git a/drivers/video/mxc_epdc_fb.c b/drivers/video/mxc_epdc_fb.c
+index 5a400e1..cd18058 100644
+--- a/drivers/video/mxc_epdc_fb.c
++++ b/drivers/video/mxc_epdc_fb.c
+@@ -1,5 +1,5 @@
+ /*
+- * Copyright (C) 2010-2014 Freescale Semiconductor, Inc. All Rights Reserved.
++ * Copyright (C) 2010-2015 Freescale Semiconductor, Inc. All Rights Reserved.
+  *
+  * SPDX-License-Identifier:	GPL-2.0+
+  */
+@@ -13,6 +13,7 @@
+ #include <linux/list.h>
+ #include <linux/err.h>
+ #include <linux/types.h>
++#include <malloc.h>
+ 
+ #include <mxc_epdc_fb.h>
+ 
+@@ -353,7 +354,6 @@ void lcd_enable(void)
+ 
+ 	epdc_power_on();
+ 
+-	lcd_base = (void *)CONFIG_FB_BASE;
+ 	/* Draw black border around framebuffer*/
+ 	memset(lcd_base, 0xFF, panel_info.vl_col * panel_info.vl_row);
+ 	memset(lcd_base, 0x0, 24 * panel_info.vl_col);
+@@ -397,6 +397,22 @@ void lcd_ctrl_init(void *lcdbase)
+ 	if (!lcdbase)
+ 		return;
+ 
++	panel_info.epdc_data.working_buf_addr = (u_long)memalign(ARCH_DMA_MINALIGN,
++		panel_info.vl_col * panel_info.vl_row * 2);
++
++	if (!panel_info.epdc_data.working_buf_addr) {
++		printf("EPDC: Error allocating working buffer!\n");
++		return;
++	}
++
++	panel_info.epdc_data.waveform_buf_addr = (u_long)memalign(ARCH_DMA_MINALIGN,
++		CONFIG_WAVEFORM_BUF_SIZE);
++
++	if (!panel_info.epdc_data.waveform_buf_addr) {
++		printf("EPDC: Error allocating waveform buffer!\n");
++		return;
++	}
++
+ 	lcd_color_fg = 0xFF;
+ 	lcd_color_bg = 0xFF;
+ 
+@@ -431,7 +447,7 @@ void lcd_ctrl_init(void *lcdbase)
+ 		REG_WR(EPDC_BASE, EPDC_WB_ADDR_TCE, panel_info.epdc_data.working_buf_addr);
+ 
+ 	/* Get waveform data address and offset */
+-	if (setup_waveform_file()) {
++	if (setup_waveform_file(panel_info.epdc_data.waveform_buf_addr)) {
+ 		printf("Can't load waveform data!\n");
+ 		return;
+ 	}
+@@ -443,6 +459,8 @@ void lcd_ctrl_init(void *lcdbase)
+ 	/* Initialize EPDC, passing pointer to EPDC registers */
+ 	epdc_init_settings();
+ 
++	lcd_base = lcdbase;
++
+ 	return;
+ }
+ 
+diff --git a/include/configs/mx6sabre_common.h b/include/configs/mx6sabre_common.h
+index c8fffb4..ecf2df0 100644
+--- a/include/configs/mx6sabre_common.h
++++ b/include/configs/mx6sabre_common.h
+@@ -40,7 +40,7 @@
+ #define CONFIG_SYS_GENERIC_BOARD
+ 
+ /* Size of malloc() pool */
+-#define CONFIG_SYS_MALLOC_LEN		(10 * SZ_1M)
++#define CONFIG_SYS_MALLOC_LEN		(16 * SZ_1M)
+ 
+ #define CONFIG_BOARD_EARLY_INIT_F
+ #define CONFIG_BOARD_LATE_INIT
+@@ -180,6 +180,7 @@
+ #else
+ #define CONFIG_EXTRA_ENV_SETTINGS \
+ 	CONFIG_MFG_ENV_SETTINGS \
++	"epdc_waveform=epdc_splash.bin\0" \
+ 	"script=boot.scr\0" \
+ 	"image=zImage\0" \
+ 	"fdt_file=" CONFIG_DEFAULT_FDT_FILE "\0" \
+diff --git a/include/configs/mx6sabresd.h b/include/configs/mx6sabresd.h
+index a37873e..d9a699d 100644
+--- a/include/configs/mx6sabresd.h
++++ b/include/configs/mx6sabresd.h
+@@ -96,23 +96,13 @@
+ 	 */
+ 	#define CONFIG_CMD_BMP
+ 	#define CONFIG_LCD
+-	#define CONFIG_FB_BASE				(CONFIG_SYS_TEXT_BASE + 0x300000)
+ 	#define CONFIG_SYS_CONSOLE_IS_IN_ENV
+ 	#undef LCD_TEST_PATTERN
+ 	/* #define CONFIG_SPLASH_IS_IN_MMC			1 */
+ 	#define LCD_BPP					LCD_MONOCHROME
+ 	/* #define CONFIG_SPLASH_SCREEN_ALIGN		1 */
+ 
+-	#define CONFIG_WORKING_BUF_ADDR			(CONFIG_SYS_TEXT_BASE + 0x100000)
+-	#define CONFIG_WAVEFORM_BUF_ADDR		(CONFIG_SYS_TEXT_BASE + 0x200000)
+-	#define CONFIG_WAVEFORM_FILE_OFFSET		0x600000
+-	#define CONFIG_WAVEFORM_FILE_SIZE		0xF0A00
+-	#define CONFIG_WAVEFORM_FILE_IN_MMC
+-
+-#ifdef CONFIG_SPLASH_IS_IN_MMC
+-	#define CONFIG_SPLASH_IMG_OFFSET		0x4c000
+-	#define CONFIG_SPLASH_IMG_SIZE			0x19000
+-#endif
++	#define CONFIG_WAVEFORM_BUF_SIZE		0x200000
+ #endif /* CONFIG_SPLASH_SCREEN && CONFIG_MXC_EPDC */
+ 
+ #endif                         /* __MX6QSABRESD_CONFIG_H */
+diff --git a/include/configs/mx6slevk.h b/include/configs/mx6slevk.h
+index 8d770b1..05e6f47 100644
+--- a/include/configs/mx6slevk.h
++++ b/include/configs/mx6slevk.h
+@@ -1,5 +1,5 @@
+ /*
+- * Copyright 2013 Freescale Semiconductor, Inc.
++ * Copyright (C) 2013-2015 Freescale Semiconductor, Inc.
+  *
+  * Configuration settings for the Freescale i.MX6SL EVK board.
+  *
+@@ -35,7 +35,7 @@
+ #define CONFIG_SYS_GENERIC_BOARD
+ 
+ /* Size of malloc() pool */
+-#define CONFIG_SYS_MALLOC_LEN		(3 * SZ_1M)
++#define CONFIG_SYS_MALLOC_LEN		(16 * SZ_1M)
+ 
+ #define CONFIG_BOARD_EARLY_INIT_F
+ #define CONFIG_BOARD_LATE_INIT
+@@ -113,6 +113,7 @@
+ 
+ #define CONFIG_EXTRA_ENV_SETTINGS \
+ 	CONFIG_MFG_ENV_SETTINGS \
++	"epdc_waveform=epdc_splash.bin\0" \
+ 	"script=boot.scr\0" \
+ 	"image=zImage\0" \
+ 	"console=ttymxc0\0" \
+@@ -298,24 +299,12 @@
+ 	#define CONFIG_CMD_BMP
+ 	#define CONFIG_MXC_EPDC				1
+ 	#define CONFIG_LCD
+-	#define CONFIG_FB_BASE				(CONFIG_SYS_TEXT_BASE + 0x300000)
+ 	#define CONFIG_SYS_CONSOLE_IS_IN_ENV
+ #ifdef CONFIG_MXC_EPDC
+ 	#undef LCD_TEST_PATTERN
+-	/* #define CONFIG_SPLASH_IS_IN_MMC			1 */
+ 	#define LCD_BPP					LCD_MONOCHROME
+-	/* #define CONFIG_SPLASH_SCREEN_ALIGN		1 */
+ 
+-	#define CONFIG_WORKING_BUF_ADDR			(CONFIG_SYS_TEXT_BASE + 0x100000)
+-	#define CONFIG_WAVEFORM_BUF_ADDR		(CONFIG_SYS_TEXT_BASE + 0x200000)
+-	#define CONFIG_WAVEFORM_FILE_OFFSET		0x600000
+-	#define CONFIG_WAVEFORM_FILE_SIZE		0xF0A00
+-	#define CONFIG_WAVEFORM_FILE_IN_MMC
+-
+-#ifdef CONFIG_SPLASH_IS_IN_MMC
+-	#define CONFIG_SPLASH_IMG_OFFSET		0x4c000
+-	#define CONFIG_SPLASH_IMG_SIZE			0x19000
+-#endif
++	#define CONFIG_WAVEFORM_BUF_SIZE		0x200000
+ #endif
+ #endif /* CONFIG_SPLASH_SCREEN */
+ 
+-- 
+1.8.0
+

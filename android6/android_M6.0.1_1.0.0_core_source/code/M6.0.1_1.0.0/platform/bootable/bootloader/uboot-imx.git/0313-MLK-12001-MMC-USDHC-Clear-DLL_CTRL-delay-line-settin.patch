@@ -1,0 +1,36 @@
+From 05a7a07a92a98e6388b349b79033bd151a14938f Mon Sep 17 00:00:00 2001
+From: "Ye.Li" <B37916@freescale.com>
+Date: Mon, 14 Dec 2015 17:07:46 +0800
+Subject: [PATCH] MLK-12001 MMC:USDHC: Clear DLL_CTRL delay line settings at
+ driver init
+
+Clear DLL_CTRL delay line settings at USDHC initialization to eliminate the
+pre-settings from boot rom. U-boot should re-init the USDHC not reply on the
+value set by boot from.
+
+On MX6DL, the ROM has set the default delay line(DLLCTRL) to 0x1000021,
+when eMMC works on DDR mode in kernel, it will possibly cause data CRC errors.
+Even u-boot always use eMMC in SDR mode, for safety sake, it is better to clear it too.
+
+Signed-off-by: Ye.Li <B37916@freescale.com>
+---
+ drivers/mmc/fsl_esdhc.c | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/drivers/mmc/fsl_esdhc.c b/drivers/mmc/fsl_esdhc.c
+index 6356bc5..7d002b5 100644
+--- a/drivers/mmc/fsl_esdhc.c
++++ b/drivers/mmc/fsl_esdhc.c
+@@ -530,6 +530,9 @@ static int esdhc_init(struct mmc *mmc)
+ 
+ 	/* Put VEND_SPEC to default value */
+ 	esdhc_write32(&regs->vendorspec, VENDORSPEC_INIT);
++
++	/* Disable DLL_CTRL delay line */
++	esdhc_write32(&regs->dllctrl, 0x0);
+ #endif
+ 
+ #ifndef ARCH_MXC
+-- 
+1.8.0
+

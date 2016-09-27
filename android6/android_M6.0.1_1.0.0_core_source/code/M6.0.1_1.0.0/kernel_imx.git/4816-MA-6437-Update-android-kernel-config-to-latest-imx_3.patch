@@ -1,0 +1,46 @@
+From 328fdd661bcf3dad5aba3722717607988244abf4 Mon Sep 17 00:00:00 2001
+From: "guoyin.chen" <guoyin.chen@freescale.com>
+Date: Mon, 23 Mar 2015 15:12:30 +0800
+Subject: [PATCH] MA-6437 Update android kernel config to latest imx_3.14.y
+ bsp config
+
+Use "make savedefconfig" to update imx_v7_android_defconfig to
+align with imx_v7_defconfig
+
+Signed-off-by: guoyin.chen <guoyin.chen@freescale.com>
+---
+ arch/arm/configs/imx_v7_android_defconfig | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
+
+diff --git a/arch/arm/configs/imx_v7_android_defconfig b/arch/arm/configs/imx_v7_android_defconfig
+index 06b1cbc..9fd7339f 100644
+--- a/arch/arm/configs/imx_v7_android_defconfig
++++ b/arch/arm/configs/imx_v7_android_defconfig
+@@ -310,8 +310,10 @@ CONFIG_I2C_ALGOPCF=y
+ CONFIG_I2C_ALGOPCA=y
+ CONFIG_I2C_IMX=y
+ CONFIG_SPI=y
++CONFIG_SPI_GPIO=y
+ CONFIG_SPI_IMX=y
+ CONFIG_GPIO_SYSFS=y
++CONFIG_GPIO_74X164=y
+ CONFIG_SABRESD_MAX8903=y
+ CONFIG_IMX6_USB_CHARGER=y
+ CONFIG_SENSORS_MAX17135=y
+@@ -323,12 +325,12 @@ CONFIG_DEVICE_THERMAL=y
+ CONFIG_WATCHDOG=y
+ CONFIG_IMX2_WDT=y
+ CONFIG_MFD_DA9052_I2C=y
++CONFIG_MFD_MXC_HDMI_ANDROID=y
+ CONFIG_MFD_MC13XXX_SPI=y
+ CONFIG_MFD_MC13XXX_I2C=y
+ CONFIG_MFD_MAX17135=y
+ CONFIG_MFD_SI476X_CORE=y
+ CONFIG_MFD_STMPE=y
+-CONFIG_MFD_MXC_HDMI_ANDROID=y
+ CONFIG_REGULATOR=y
+ CONFIG_REGULATOR_FIXED_VOLTAGE=y
+ CONFIG_REGULATOR_ANATOP=y
+-- 
+1.8.0
+

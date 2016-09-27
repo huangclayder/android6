@@ -1,0 +1,115 @@
+From d4134f422ce1a89322be5c060ae9339cc15cc813 Mon Sep 17 00:00:00 2001
+From: Peng Fan <Peng.Fan@freescale.com>
+Date: Thu, 5 Mar 2015 10:12:37 +0800
+Subject: [PATCH] MLK-10774-12 imx:mx6 update hab
+
+Update hab with imx_v2014.04
+
+Signed-off-by: Peng Fan <Peng.Fan@freescale.com>
+---
+ arch/arm/cpu/armv7/mx6/hab.c        | 19 ++++++++++++-------
+ arch/arm/include/asm/arch-mx6/hab.h |  6 ++++--
+ 2 files changed, 16 insertions(+), 9 deletions(-)
+
+diff --git a/arch/arm/cpu/armv7/mx6/hab.c b/arch/arm/cpu/armv7/mx6/hab.c
+index 8dee595..a360386 100644
+--- a/arch/arm/cpu/armv7/mx6/hab.c
++++ b/arch/arm/cpu/armv7/mx6/hab.c
+@@ -1,5 +1,5 @@
+ /*
+- * Copyright (C) 2010-2014 Freescale Semiconductor, Inc.
++ * Copyright (C) 2010-2015 Freescale Semiconductor, Inc.
+  *
+  * SPDX-License-Identifier:    GPL-2.0+
+  */
+@@ -19,7 +19,8 @@
+ 	  is_cpu_type(MXC_CPU_MX6D)) &&				\
+ 	  (soc_rev() >= CHIP_REV_1_5)) ?			\
+ 	((hab_rvt_report_event_t *)HAB_RVT_REPORT_EVENT_NEW) :	\
+-	(is_cpu_type(MXC_CPU_MX6DL) &&				\
++	((is_cpu_type(MXC_CPU_MX6DL) ||				\
++	  is_cpu_type(MXC_CPU_MX6SOLO)) &&			\
+ 	 (soc_rev() >= CHIP_REV_1_2)) ?				\
+ 	((hab_rvt_report_event_t *)HAB_RVT_REPORT_EVENT_NEW) :	\
+ 	((hab_rvt_report_event_t *)HAB_RVT_REPORT_EVENT)	\
+@@ -31,7 +32,8 @@
+ 	  is_cpu_type(MXC_CPU_MX6D)) &&				\
+ 	  (soc_rev() >= CHIP_REV_1_5)) ?			\
+ 	((hab_rvt_report_status_t *)HAB_RVT_REPORT_STATUS_NEW) :\
+-	(is_cpu_type(MXC_CPU_MX6DL) &&				\
++	((is_cpu_type(MXC_CPU_MX6DL) ||				\
++	  is_cpu_type(MXC_CPU_MX6SOLO)) &&			\
+ 	 (soc_rev() >= CHIP_REV_1_2)) ?				\
+ 	((hab_rvt_report_status_t *)HAB_RVT_REPORT_STATUS_NEW) :\
+ 	((hab_rvt_report_status_t *)HAB_RVT_REPORT_STATUS)	\
+@@ -43,7 +45,8 @@
+ 	  is_cpu_type(MXC_CPU_MX6D)) &&				\
+ 	  (soc_rev() >= CHIP_REV_1_5)) ?			\
+ 	((hab_rvt_authenticate_image_t *)HAB_RVT_AUTHENTICATE_IMAGE_NEW) : \
+-	(is_cpu_type(MXC_CPU_MX6DL) &&				\
++	((is_cpu_type(MXC_CPU_MX6DL) ||				\
++	  is_cpu_type(MXC_CPU_MX6SOLO)) &&			\
+ 	 (soc_rev() >= CHIP_REV_1_2)) ?				\
+ 	((hab_rvt_authenticate_image_t *)HAB_RVT_AUTHENTICATE_IMAGE_NEW) : \
+ 	((hab_rvt_authenticate_image_t *)HAB_RVT_AUTHENTICATE_IMAGE)	\
+@@ -55,7 +58,8 @@
+ 	  is_cpu_type(MXC_CPU_MX6D)) &&				\
+ 	  (soc_rev() >= CHIP_REV_1_5)) ?			\
+ 	((hab_rvt_entry_t *)HAB_RVT_ENTRY_NEW) :		\
+-	(is_cpu_type(MXC_CPU_MX6DL) &&				\
++	((is_cpu_type(MXC_CPU_MX6DL) ||				\
++	 is_cpu_type(MXC_CPU_MX6SOLO)) &&			\
+ 	 (soc_rev() >= CHIP_REV_1_2)) ?				\
+ 	((hab_rvt_entry_t *)HAB_RVT_ENTRY_NEW) :		\
+ 	((hab_rvt_entry_t *)HAB_RVT_ENTRY)			\
+@@ -67,7 +71,8 @@
+ 	  is_cpu_type(MXC_CPU_MX6D)) &&				\
+ 	  (soc_rev() >= CHIP_REV_1_5)) ?			\
+ 	((hab_rvt_exit_t *)HAB_RVT_EXIT_NEW) :			\
+-	(is_cpu_type(MXC_CPU_MX6DL) &&				\
++	((is_cpu_type(MXC_CPU_MX6DL) ||				\
++	 is_cpu_type(MXC_CPU_MX6SOLO)) &&			\
+ 	 (soc_rev() >= CHIP_REV_1_2)) ?				\
+ 	((hab_rvt_exit_t *)HAB_RVT_EXIT_NEW) :			\
+ 	((hab_rvt_exit_t *)HAB_RVT_EXIT)			\
+@@ -322,7 +327,7 @@ U_BOOT_CMD(
+ 	  );
+ 
+ U_BOOT_CMD(
+-		hab_auth_img, 3, 0, do_authenticate_image,
++		hab_auth_img, 3, 1, do_authenticate_image,
+ 		"authenticate image via HAB",
+ 		"addr ivt_offset\n"
+ 		"addr - image hex address\n"
+diff --git a/arch/arm/include/asm/arch-mx6/hab.h b/arch/arm/include/asm/arch-mx6/hab.h
+index c9e5318..57f6cba 100644
+--- a/arch/arm/include/asm/arch-mx6/hab.h
++++ b/arch/arm/include/asm/arch-mx6/hab.h
+@@ -1,5 +1,5 @@
+ /*
+- * Copyright (C) 2012 Freescale Semiconductor, Inc. All Rights Reserved.
++ * Copyright (C) 2012-2015 Freescale Semiconductor, Inc. All Rights Reserved.
+  *
+  * SPDX-License-Identifier:    GPL-2.0+
+  *
+@@ -53,7 +53,7 @@ typedef void *hab_rvt_authenticate_image_t(uint8_t, ptrdiff_t,
+ 		void **, size_t *, hab_loader_callback_f_t);
+ typedef void hapi_clock_init_t(void);
+ 
+-#ifdef CONFIG_MX6SX
++#if defined(CONFIG_MX6SX)
+ #define HAB_RVT_BASE			0x00000100
+ #else
+ #define HAB_RVT_BASE			0x00000094
+@@ -71,6 +71,8 @@ typedef void hapi_clock_init_t(void);
+ #define HAB_RVT_ENTRY_NEW                      (*(uint32_t *)0x0000009C)
+ #define HAB_RVT_EXIT_NEW                       (*(uint32_t *)0x000000A0)
+ 
++#define HAB_RVT_CLOCK_INIT ((hapi_clock_init_t *)0x0000024D)
++
+ #define HAB_CID_ROM 0 /**< ROM Caller ID */
+ #define HAB_CID_UBOOT 1 /**< UBOOT Caller ID*/
+ /* ----------- end of HAB API updates ------------*/
+-- 
+1.8.0
+

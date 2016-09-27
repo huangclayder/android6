@@ -1,0 +1,103 @@
+From c73c93a598365d0d9e16927ad1671917ca8dc67e Mon Sep 17 00:00:00 2001
+From: zhang sanshan <b51434@freescale.com>
+Date: Mon, 14 Dec 2015 12:25:59 +0800
+Subject: [PATCH 578/602] MA-7012-2 Build failure with 'make
+ WITH_DEXPREOPT=true' in mm6.0
+
+enable option WITH_DEXPREOPT by default in mm6.0.
+Enlarge the max size of sparse system.img to 600M.
+Enlarge the size of nand system volume to 800M.
+
+Signed-off-by: zhang sanshan <b51434@freescale.com>
+---
+ imx6/BoardConfigCommon.mk     | 10 +++++++++-
+ imx7/BoardConfigCommon.mk     | 10 +++++++++-
+ sabreauto_6q/ubi/ubinize.ini  |  2 +-
+ sabreauto_6sx/ubi/ubinize.ini |  2 +-
+ 4 files changed, 20 insertions(+), 4 deletions(-)
+
+diff --git a/imx6/BoardConfigCommon.mk b/imx6/BoardConfigCommon.mk
+index 94ee082..b0a0ea1 100644
+--- a/imx6/BoardConfigCommon.mk
++++ b/imx6/BoardConfigCommon.mk
+@@ -42,6 +42,14 @@ TARGET_USERIMAGES_BLOCKS := 204800
+ 
+ BUILD_WITH_GST := false
+ 
++# Enable dex-preoptimization to speed up first boot sequence
++ifeq ($(HOST_OS),linux)
++   ifeq ($(TARGET_BUILD_VARIANT),user)
++	ifeq ($(WITH_DEXPREOPT),)
++	    WITH_DEXPREOPT := true
++	endif
++   endif
++endif
+ # for ums config, only export one partion instead of the whole disk
+ UMS_ONEPARTITION_PER_DISK := true
+ 
+@@ -60,7 +68,7 @@ ARCH_ARM_USE_NON_NEON_MEMCPY := true
+ BOARD_BOOTIMAGE_PARTITION_SIZE := 16777216
+ BOARD_RECOVERYIMAGE_PARTITION_SIZE := 16777216
+ 
+-BOARD_SYSTEMIMAGE_PARTITION_SIZE := 444596224
++BOARD_SYSTEMIMAGE_PARTITION_SIZE := 629145600
+ BOARD_CACHEIMAGE_PARTITION_SIZE := 444596224
+ BOARD_FLASH_BLOCK_SIZE := 4096
+ TARGET_RECOVERY_UI_LIB := librecovery_ui_imx
+diff --git a/imx7/BoardConfigCommon.mk b/imx7/BoardConfigCommon.mk
+index 2bb3157..7c6c640 100644
+--- a/imx7/BoardConfigCommon.mk
++++ b/imx7/BoardConfigCommon.mk
+@@ -42,6 +42,14 @@ TARGET_USERIMAGES_BLOCKS := 204800
+ 
+ BUILD_WITH_GST := false
+ 
++# Enable dex-preoptimization to speed up first boot sequence
++ifeq ($(HOST_OS),linux)
++   ifeq ($(TARGET_BUILD_VARIANT),user)
++	ifeq ($(WITH_DEXPREOPT),)
++	   WITH_DEXPREOPT := true
++        endif
++   endif
++endif
+ # for ums config, only export one partion instead of the whole disk
+ UMS_ONEPARTITION_PER_DISK := true
+ 
+@@ -60,7 +68,7 @@ ARCH_ARM_USE_NON_NEON_MEMCPY := true
+ BOARD_BOOTIMAGE_PARTITION_SIZE :=  16777216 
+ BOARD_RECOVERYIMAGE_PARTITION_SIZE := 16777216
+ 
+-BOARD_SYSTEMIMAGE_PARTITION_SIZE := 444596224
++BOARD_SYSTEMIMAGE_PARTITION_SIZE := 629145600
+ BOARD_CACHEIMAGE_PARTITION_SIZE := 444596224
+ BOARD_FLASH_BLOCK_SIZE := 4096
+ TARGET_RECOVERY_UI_LIB := librecovery_ui_imx
+diff --git a/sabreauto_6q/ubi/ubinize.ini b/sabreauto_6q/ubi/ubinize.ini
+index abc5514..1e6de09 100644
+--- a/sabreauto_6q/ubi/ubinize.ini
++++ b/sabreauto_6q/ubi/ubinize.ini
+@@ -2,7 +2,7 @@
+ mode=ubi
+ image=./out/target/product/sabreauto_6q/system.img
+ vol_id=0
+-vol_size=424MiB
++vol_size=800MiB
+ vol_type=dynamic
+ vol_name=system
+ vol_alignment=1
+diff --git a/sabreauto_6sx/ubi/ubinize.ini b/sabreauto_6sx/ubi/ubinize.ini
+index 4acf6a8..5ccec29 100644
+--- a/sabreauto_6sx/ubi/ubinize.ini
++++ b/sabreauto_6sx/ubi/ubinize.ini
+@@ -2,7 +2,7 @@
+ mode=ubi
+ image=./out/target/product/sabreauto_6sx/system.img
+ vol_id=0
+-vol_size=424MiB
++vol_size=800MiB
+ vol_type=dynamic
+ vol_name=system
+ vol_alignment=1
+-- 
+1.8.0
+

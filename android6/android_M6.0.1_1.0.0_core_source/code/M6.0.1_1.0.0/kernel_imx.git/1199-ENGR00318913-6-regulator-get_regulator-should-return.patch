@@ -1,0 +1,30 @@
+From a1ddb5cb4a2e4ef86eb941beaf2093c50231e362 Mon Sep 17 00:00:00 2001
+From: Anson Huang <b20788@freescale.com>
+Date: Thu, 19 Jun 2014 10:34:31 +0800
+Subject: [PATCH] ENGR00318913-6 regulator: get_regulator should return fail
+ if no device found
+
+If there is no device matched, get_regulator should just return
+fail instead of using a dummy regulator.
+
+Signed-off-by: Anson Huang <b20788@freescale.com>
+---
+ drivers/regulator/core.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/regulator/core.c b/drivers/regulator/core.c
+index afca1bc..0def2c0 100644
+--- a/drivers/regulator/core.c
++++ b/drivers/regulator/core.c
+@@ -1342,7 +1342,7 @@ static struct regulator *_regulator_get(struct device *dev, const char *id,
+ 	 * If we have return value from dev_lookup fail, we do not expect to
+ 	 * succeed, so, quit with appropriate error value
+ 	 */
+-	if (ret && ret != -ENODEV)
++	if (ret && ret == -ENODEV)
+ 		goto out;
+ 
+ 	if (!devname)
+-- 
+1.8.0
+

@@ -1,0 +1,46 @@
+From 9951f8ef35240c4d8d76f11a1d80888203e6e9df Mon Sep 17 00:00:00 2001
+From: zhang sanshan <b51434@freescale.com>
+Date: Mon, 9 Nov 2015 16:44:51 +0800
+Subject: [PATCH 19/21] MA-7218-3 [Android_imx6_auto]factoryreset:do factory
+ reset with binay ubiupdatevol in recovery
+
+remove the redundant header file.
+
+Signed-off-by: zhang sanshan <b51434@freescale.com>
+---
+ Android.mk | 3 +--
+ ubi.cpp    | 2 +-
+ 2 files changed, 2 insertions(+), 3 deletions(-)
+
+diff --git a/Android.mk b/Android.mk
+index a1d542e..8b9f686 100644
+--- a/Android.mk
++++ b/Android.mk
+@@ -88,8 +88,7 @@ endif
+ 
+ LOCAL_MODULE_PATH := $(TARGET_RECOVERY_ROOT_OUT)/sbin
+ LOCAL_CFLAGS += -DUSE_UBIFS
+-LOCAL_C_INCLUDES += external/mtd-utils/ubi-utils/include external/mtd-utils/include system/vold
+-LOCAL_STATIC_LIBRARIES += libubi
++LOCAL_C_INCLUDES +=  system/vold
+ LOCAL_SRC_FILES += ubi.cpp
+ 
+ LOCAL_REQUIRED_MODULES := ubiupdatevol
+diff --git a/ubi.cpp b/ubi.cpp
+index 9595184..f8c3352 100644
+--- a/ubi.cpp
++++ b/ubi.cpp
+@@ -20,9 +20,9 @@
+ #include <sys/stat.h>
+ #include <sys/types.h>
+ #include <sys/wait.h>
+-#include <libubi.h>
+ #include <cutils/log.h>
+ #include<unistd.h>
++#include <errno.h>
+ 
+ 
+ static int exec_cmd(const char* path, char* const argv[]) {
+-- 
+1.8.0
+

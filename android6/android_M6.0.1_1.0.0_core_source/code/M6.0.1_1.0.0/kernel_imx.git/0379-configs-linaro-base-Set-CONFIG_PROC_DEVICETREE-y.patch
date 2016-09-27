@@ -1,0 +1,42 @@
+From 9b301be6aa66001d7d709771266f00a6c02f97be Mon Sep 17 00:00:00 2001
+From: Jon Medhurst <tixy@linaro.org>
+Date: Fri, 7 Dec 2012 13:04:15 +0000
+Subject: [PATCH] configs: linaro-base: Set CONFIG_PROC_DEVICETREE=y
+
+Both the Android and Ubuntu have QA tests which expect to be able to
+validate device-tree booting by looking in /proc/device-tree, so we
+should enable this for all Linaro builds.
+
+At the same time we can remove this option from ubuntu.conf as it's not
+an Ubuntu specific requirement.
+
+Signed-off-by: Jon Medhurst <tixy@linaro.org>
+---
+ linaro/configs/linaro-base.conf | 1 +
+ linaro/configs/ubuntu.conf      | 1 -
+ 2 files changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/linaro/configs/linaro-base.conf b/linaro/configs/linaro-base.conf
+index eaf0196..23638c3 100644
+--- a/linaro/configs/linaro-base.conf
++++ b/linaro/configs/linaro-base.conf
+@@ -87,3 +87,4 @@ CONFIG_CRC7=y
+ CONFIG_HW_PERF_EVENTS=y
+ CONFIG_FUNCTION_TRACER=y
+ CONFIG_ENABLE_DEFAULT_TRACERS=y
++CONFIG_PROC_DEVICETREE=y
+diff --git a/linaro/configs/ubuntu.conf b/linaro/configs/ubuntu.conf
+index fafabe1..b65be64 100644
+--- a/linaro/configs/ubuntu.conf
++++ b/linaro/configs/ubuntu.conf
+@@ -721,7 +721,6 @@ CONFIG_MTD_LPDDR=m
+ CONFIG_MTD_QINFO_PROBE=m
+ CONFIG_DTC=y
+ CONFIG_OF=y
+-CONFIG_PROC_DEVICETREE=y
+ CONFIG_OF_FLATTREE=y
+ CONFIG_OF_EARLY_FLATTREE=y
+ CONFIG_OF_ADDRESS=y
+-- 
+1.8.0
+

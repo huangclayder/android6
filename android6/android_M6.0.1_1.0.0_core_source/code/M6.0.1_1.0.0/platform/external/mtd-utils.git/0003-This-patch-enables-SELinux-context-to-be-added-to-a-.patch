@@ -1,0 +1,572 @@
+From 3310bc708461083527e9365456e0c6ee3bf2ec04 Mon Sep 17 00:00:00 2001
+From: Aaron Sierra <asierra at xes-inc.com>
+Date: Thu, 8 Jan 2015 09:32:06 +0800
+Subject: [PATCH 3/7] This patch enables SELinux context to be added to a
+ UBIFS image with mkfs.ubifs. The patch was based off
+ the following commit in mtd-utils master branch.
+
+The approach attempts to mirror that of Stephen Smalley with YAFFS2 in the
+AOSP circa January 2012.  The context file is supplied/enabled by an
+optional command line argument.  The following is a brief description of the
+files changed:
+Makefile: link to libselinux
+mkfs.ubifs/key.h: added xent_key_init() from linux kernel
+mkfs.ubifs/ubifs.h: added size macros from linux kernel
+mkfs.ubifs/mkfs.ubifs.c: added SELinux context file support, mirrored
+   add_inode_with_data() in add_inode_with_xattr() to add XENT node and
+xattr
+   inode.
+
+This code has been tested on a Freescale p2040 processor (powerpc), linux
+kernel 3.8.13+ with a 1GB Micron MT29F8G NAND flash chip.
+---
+ Android.mk              |   6 +-
+ mkfs.ubifs/key.h        |  19 ++-
+ mkfs.ubifs/mkfs.ubifs.c | 299 ++++++++++++++++++++++++++++++++++++++++++++----
+ mkfs.ubifs/ubifs.h      |   9 ++
+ 4 files changed, 306 insertions(+), 27 deletions(-)
+
+diff --git a/Android.mk b/Android.mk
+index 10ab298..c452e05 100644
+--- a/Android.mk
++++ b/Android.mk
+@@ -7,8 +7,8 @@ include $(CLEAR_VARS)
+ include $(CLEAR_VARS)
+ 
+ LOCAL_CFLAGS += -O2 -Wall
+-LOCAL_LDLIBS += -lz -lm
+-
++LOCAL_LDLIBS += -lz -lm 
++ 
+ LOCAL_SRC_FILES := \
+        ubi-utils/src/libubi.c \
+        mkfs.ubifs/mkfs.ubifs.c \
+@@ -32,7 +32,7 @@ LOCAL_C_INCLUDES += \
+         $(LOCAL_PATH)/ubi-utils/include \
+         $(LOCAL_PATH)/ubi-utils/src \
+         $(LOCAL_PATH)/lzo-2.03/include \
+-        $(LOCAL_PATH)/uuid/
++        $(LOCAL_PATH)/uuid/  
+ 
+ LOCAL_MODULE := mkfs_ubifs
+ 
+diff --git a/mkfs.ubifs/key.h b/mkfs.ubifs/key.h
+index d3a02d4..b34681f 100644
+--- a/mkfs.ubifs/key.h
++++ b/mkfs.ubifs/key.h
+@@ -107,7 +107,8 @@ static inline void ino_key_init(union ubifs_key *key, ino_t inum)
+  * @inum: parent inode number
+  * @nm: direntry name and length
+  */
+-static inline void dent_key_init(const struct ubifs_info *c,
++static inline void dent_key_init(const struct 
++ubifs_info *c,
+ 				 union ubifs_key *key, ino_t inum,
+ 				 const struct qstr *nm)
+ {
+@@ -117,7 +118,23 @@ static inline void dent_key_init(const struct ubifs_info *c,
+ 	key->u32[0] = inum;
+ 	key->u32[1] = hash | (UBIFS_DENT_KEY << UBIFS_S_KEY_HASH_BITS);
+ }
++ /**
+++ * xent_key_init - initialize extended attribute entry key.
+++ * @c: UBIFS file-system description object
+++ * @key: key to initialize
+++ * @inum: host inode number
+++ * @nm: extended attribute entry name and length
+++ */
++static inline void xent_key_init(const struct ubifs_info *c,
++             union ubifs_key *key, ino_t inum,
++             const struct qstr *nm)
++{
++   uint32_t hash = c->key_hash(nm->name, nm->len);
+ 
++   ubifs_assert(!(hash & ~UBIFS_S_KEY_HASH_MASK));
++   key->u32[0] = inum;
++   key->u32[1] = hash | (UBIFS_XENT_KEY << UBIFS_S_KEY_HASH_BITS);
++}
+ /**
+  * data_key_init - initialize data key.
+  * @c: UBIFS file-system description object
+diff --git a/mkfs.ubifs/mkfs.ubifs.c b/mkfs.ubifs/mkfs.ubifs.c
+index 741c37c..90f51ab 100644
+--- a/mkfs.ubifs/mkfs.ubifs.c
++++ b/mkfs.ubifs/mkfs.ubifs.c
+@@ -35,7 +35,13 @@
+ 
+ /* Default time granularity in nanoseconds */
+ #define DEFAULT_TIME_GRAN 1000000000
++#define XATTR_NAME_SELINUX "security.selinux"
++#include <selinux/selinux.h>
++#include <selinux/label.h>
+ 
++static struct selabel_handle *sehnd;
++static unsigned int seprefixlen;
++static char *secontext = NULL;
+ /**
+  * struct idx_entry - index entry.
+  * @next: next index entry (NULL at end of list)
+@@ -112,6 +118,9 @@ static char *output;
+ static int out_fd;
+ static int out_ubi;
+ static int squash_owner;
++static char *context;
++static int context_len;
++static struct stat context_st;
+ 
+ /* The 'head' (position) which nodes are written */
+ static int head_lnum;
+@@ -157,6 +166,7 @@ static const struct option longopts[] = {
+ 	{"orph-lebs",     1, NULL, 'p'},
+ 	{"squash-uids" ,  0, NULL, 'U'},
+         {"fixstats",      0, NULL, 'F'},
++	{"selinux",       1, NULL, 's'},
+ 	{NULL, 0, NULL, 0}
+ };
+ 
+@@ -658,6 +668,21 @@ static int get_options(int argc, char**argv)
+ 		case 'U':
+ 			squash_owner = 1;
+ 			break;
++		case 's':
++			printf("enter ths s opption\n");
++			context_len = strlen(optarg);
++			printf("the context_len is %d \n",context_len);
++			context = malloc(context_len + 1);
++			if (!context)
++				return err_msg("cannot allocate memory");
++
++			memcpy(context, optarg, context_len);
++
++			/* Make sure the root directory exists */
++			if (stat(context, &context_st))
++				return sys_err_msg("bad file context '%s'",
++						   context);
++			break;
+ 		}
+ 	}
+ 
+@@ -1104,7 +1129,166 @@ static int add_inode_with_data(struct stat *st, ino_t inum, void *data,
+ 	return add_node(&key, NULL, ino, len);
+ }
+ 
++static int add_dent_node(ino_t dir_inum, const char *name, ino_t inum,
++			 unsigned char type);
++
+ /**
++ * add_inode_with_xattr - write an inode with xattr support.  much like the
++ *    with_data function above but creates 3 nodes: The inode for the file/
++ *    directory with xattr size set, the xent node with the same inum as the
++ *    previous inode and finally the inode with the actual context data and
++ *    a new unique inum value.
++ * @st: stat information of source inode
++ * @inum: target inode number
++ * @data: inode data (for special inodes e.g. symlink path etc)
++ * @data_len: inode data length
++ * @flags: source inode flags
++ */
++static int add_inode_with_xattr(struct stat *st, ino_t inum, void *data,
++			       unsigned int data_len, int flags)
++{
++	struct ubifs_ino_node *ino = node_buf;
++	struct ubifs_dent_node *xent = node_buf;
++	union ubifs_key key, xkey, nkey;
++	int len, use_flags = 0, ret;
++	char *name;
++	struct qstr nm;
++
++	if (c->default_compr != UBIFS_COMPR_NONE)
++		use_flags |= UBIFS_COMPR_FL;
++	if (flags & FS_COMPR_FL)
++		use_flags |= UBIFS_COMPR_FL;
++	if (flags & FS_SYNC_FL)
++		use_flags |= UBIFS_SYNC_FL;
++	if (flags & FS_IMMUTABLE_FL)
++		use_flags |= UBIFS_IMMUTABLE_FL;
++	if (flags & FS_APPEND_FL)
++		use_flags |= UBIFS_APPEND_FL;
++	if (flags & FS_DIRSYNC_FL && S_ISDIR(st->st_mode))
++		use_flags |= UBIFS_DIRSYNC_FL;
++   
++	// file inode
++	memset(ino, 0, UBIFS_INO_NODE_SZ);
++
++	ino_key_init(&key, inum);
++	ino->ch.node_type = UBIFS_INO_NODE;
++	key_write(&key, &ino->key);
++	ino->creat_sqnum = cpu_to_le64(creat_sqnum);
++	ino->size       = cpu_to_le64(st->st_size);
++	ino->nlink      = cpu_to_le32(st->st_nlink);
++	/*
++	 * The time fields are updated assuming the default time granularity
++	 * of 1 second. To support finer granularities, utime() would be needed.
++ 	*/
++	ino->atime_sec  = cpu_to_le64(st->st_atime);
++	ino->ctime_sec  = cpu_to_le64(st->st_ctime);
++	ino->mtime_sec  = cpu_to_le64(st->st_mtime);
++	ino->atime_nsec = 0;
++	ino->ctime_nsec = 0;
++	ino->mtime_nsec = 0;
++	ino->uid        = cpu_to_le32(st->st_uid);
++	ino->gid        = cpu_to_le32(st->st_gid);
++	ino->mode       = cpu_to_le32(st->st_mode);
++	ino->flags      = cpu_to_le32(use_flags);
++	ino->data_len   = 0;
++	ino->compr_type = cpu_to_le16(c->default_compr);
++ 
++	name = strdup(XATTR_NAME_SELINUX);
++	if ( name == NULL ) printf("alloc failed\n");
++	nm.name = (void *)name;
++	nm.len = strlen(name);
++
++	ino->xattr_cnt = 1;
++	ino->xattr_size += CALC_DENT_SIZE(strlen(name));
++	ino->xattr_size += CALC_XATTR_BYTES(data_len);
++	ino->xattr_names += strlen(name);
++
++	len = UBIFS_INO_NODE_SZ;
++ 
++	ret = add_node(&key, name, ino, len) ;
++	if (ret) {
++		printf("host inode add failed\n");
++		return ret;
++	}
++
++	/* do xattr node */
++	memset(xent, 0, UBIFS_XENT_NODE_SZ);
++
++	xent_key_init(c, &xkey, inum, &nm);
++	xent->ch.node_type = UBIFS_XENT_NODE;
++	key_write(&xkey, &xent->key);
++	
++	len = UBIFS_XENT_NODE_SZ + strlen(name) + 1;
++   
++	xent->ch.len       = len;
++	xent->padding1 = 0;
++	xent->type = UBIFS_ITYPE_DIR;
++	xent->nlen = cpu_to_le16(strlen(name));
++ 
++	memcpy(xent->name, name, strlen(name) + 1);
++ 
++	/* unique inum for inode with xattr */
++	inum = ++c->highest_inum;
++	creat_sqnum = ++c->max_sqnum;
++	
++	xent->inum = cpu_to_le64(inum);
++	ret = add_node(&xkey, name, xent, len);
++	if (ret) {
++		printf("xent inode add failed\n");
++		return ret;
++	}
++
++    /* add inode with xattr data */
++	memset(ino, 0, UBIFS_INO_NODE_SZ);
++
++	ino_key_init(&nkey, inum);
++	ino->ch.node_type = UBIFS_INO_NODE;
++	key_write(&nkey, &ino->key);
++	ino->creat_sqnum = cpu_to_le64(creat_sqnum);
++	ino->size       = cpu_to_le64(data_len);	/*
++	 * The time fields are updated assuming the default time granularity
++	 * of 1 second. To support finer granularities, utime() would be
++	   needed.
++	 */
++	ino->atime_sec  = cpu_to_le64(st->st_atime);
++	ino->ctime_sec  = cpu_to_le64(st->st_ctime);
++	ino->mtime_sec  = cpu_to_le64(st->st_mtime);
++	ino->atime_nsec = 0;
++	ino->ctime_nsec = 0;
++	ino->mtime_nsec = 0;
++	ino->uid        = cpu_to_le32(st->st_uid);
++	ino->gid        = cpu_to_le32(st->st_gid);
++	ino->mode       = cpu_to_le32((st->st_mode & (~S_IFDIR)) |
++(S_IFREG));
++	ino->flags      = cpu_to_le32(UBIFS_XATTR_FL);
++	ino->data_len   = cpu_to_le32(data_len);
++	ino->compr_type = cpu_to_le16(c->default_compr);
++ 
++	name = strdup(XATTR_NAME_SELINUX);
++	if ( name == NULL ) printf("alloc failed\n");
++	nm.name = (void *)name;
++	nm.len = strlen(name);
++
++	ino->xattr_cnt = 1;
++	ino->xattr_size += CALC_DENT_SIZE(strlen(name));
++	ino->xattr_size += CALC_XATTR_BYTES(data_len);
++	ino->xattr_names += strlen(name);
++
++	if (data_len)
++		memcpy(&ino->data, data, data_len);
++	
++	len = UBIFS_INO_NODE_SZ + data_len;
++
++	ret = add_node(&nkey, name, ino, len) ;
++	if (ret) {
++		printf("new inode add failed\n");
++		return ret;
++	}
++
++	return ret;
++}
++
++ /**
+  * add_inode - write an inode.
+  * @st: stat information of source inode
+  * @inum: target inode number
+@@ -1129,9 +1313,9 @@ static int add_inode(struct stat *st, ino_t inum, int flags)
+  * the device table.
+  */
+ static int add_dir_inode(DIR *dir, ino_t inum, loff_t size, unsigned int nlink,
+-			 struct stat *st)
++			 struct stat *st,const char *path_name)
+ {
+-	int fd, flags = 0;
++	int fd, flags = 0, con_size;
+ 
+ 	st->st_size = size;
+ 	st->st_nlink = nlink;
+@@ -1143,8 +1327,38 @@ static int add_dir_inode(DIR *dir, ino_t inum, loff_t size, unsigned int nlink,
+ 		if (ioctl(fd, FS_IOC_GETFLAGS, &flags) == -1)
+ 			flags = 0;
+ 	}
+-
+-	return add_inode(st, inum, flags);
++   // special case for root inode, no xattr
++   if( inum == UBIFS_ROOT_INO)
++	   return add_inode(st, inum, flags);
++   
++   if ( context ) {
++      char *sepath = NULL;
++      if (path_name[0] == '/')
++              sepath = strdup(&path_name[strlen(root)]);
++      else if (asprintf(&sepath, "/system/%s", &path_name[strlen(root)]) < 0)
++                                       sepath = NULL;
++
++      if (!sepath) {
++         return sys_err_msg("malloc");
++      }
++      if (selabel_lookup(sehnd, &secontext,
++               sepath,
++               st->st_mode) < 0) {
++
++         /* failed to lookup context, assume undefined */
++         secontext = strdup("system_u:object_r:undefined_t");
++         printf("missing context: %s\t%s\t%d\n", secontext, sepath,
++st->st_mode);
++      }
++      free(sepath);
++
++      con_size = strlen(secontext)+1;
++	printf("the sepath is %s, the  path_name is %s, the secontext is %s \n",sepath,path_name,secontext);
++   } else {
++      secontext = NULL;
++      con_size = 0;
++   }
++	return add_inode_with_xattr(st, inum, secontext, con_size, flags);
+ }
+ 
+ /**
+@@ -1289,7 +1503,7 @@ static int add_file(const char *path_name, struct stat *st, ino_t inum,
+ 	loff_t file_size = 0;
+ 	ssize_t ret, bytes_read;
+ 	union ubifs_key key;
+-	int fd, dn_len, err, compr_type, use_compr;
++	int fd, dn_len, err, compr_type, use_compr, con_size;
+ 	unsigned int block_no = 0;
+ 	size_t out_len;
+ 
+@@ -1346,7 +1560,35 @@ static int add_file(const char *path_name, struct stat *st, ino_t inum,
+ 	if (file_size != st->st_size)
+ 		return err_msg("file size changed during writing file '%s'",
+ 			       path_name);
+-	return add_inode(st, inum, flags);
++   if ( context ) {
++      char *sepath = NULL;
++      if (path_name[0] == '/')
++              sepath = strdup(&path_name[strlen(root)]);
++      else if (asprintf(&sepath, "/system/%s", &path_name[strlen(root)]) < 0)
++                                       sepath = NULL;
++
++      if (!sepath) {
++         return sys_err_msg("malloc");
++      }
++
++      if (selabel_lookup(sehnd, &secontext,
++               sepath,
++               st->st_mode) < 0) {
++
++         /* failed to lookup context, assume undefined */
++         secontext = strdup("system_u:object_r:undefined_t");
++         printf("missing context: %s\t%s\t%d\n", secontext, sepath,
++st->st_mode);
++      }
++      free(sepath);
++
++      con_size = strlen(secontext)+1;
++printf("the sepath is %s, the  path_name is %s, the secontext is %s \n",sepath,path_name,secontext);
++   } else {
++      secontext = NULL;
++      con_size = 0;
++   }
++	return add_inode_with_xattr(st, inum, secontext, con_size, flags);
+ }
+ 
+ /**
+@@ -1358,7 +1600,7 @@ static int add_file(const char *path_name, struct stat *st, ino_t inum,
+  * @st: struct stat object containing inode attributes which should be use when
+  *      creating the UBIFS inode
+  */
+-static int add_non_dir(const char *path_name, ino_t *inum, unsigned int nlink,
++static int add_non_dir(const char *path_name, ino_t inum, unsigned int nlink,
+ 		       unsigned char *type, struct stat *st)
+ {
+ 	int fd, flags = 0;
+@@ -1404,7 +1646,7 @@ static int add_non_dir(const char *path_name, ino_t *inum, unsigned int nlink,
+ 			return err_msg("out of memory");
+ 		if (im->use_nlink == 0) {
+ 			/* New entry */
+-			im->use_inum = *inum;
++			im->use_inum = inum;
+ 			im->use_nlink = 1;
+ 			im->path_name = malloc(strlen(path_name) + 1);
+ 			if (!im->path_name)
+@@ -1412,10 +1654,8 @@ static int add_non_dir(const char *path_name, ino_t *inum, unsigned int nlink,
+ 			strcpy(im->path_name, path_name);
+ 		} else {
+ 			/* Existing entry */
+-			*inum = im->use_inum;
++			inum = im->use_inum;
+ 			im->use_nlink += 1;
+-			/* Return unused inode number */
+-			c->highest_inum -= 1;
+ 		}
+ 
+ 		memcpy(&im->st, st, sizeof(struct stat));
+@@ -1426,17 +1666,17 @@ static int add_non_dir(const char *path_name, ino_t *inum, unsigned int nlink,
+ 	creat_sqnum = ++c->max_sqnum;
+ 
+ 	if (S_ISREG(st->st_mode))
+-		return add_file(path_name, st, *inum, flags);
++		return add_file(path_name, st, inum, flags);
+ 	if (S_ISCHR(st->st_mode))
+-		return add_dev_inode(st, *inum, flags);
++		return add_dev_inode(st, inum, flags);
+ 	if (S_ISBLK(st->st_mode))
+-		return add_dev_inode(st, *inum, flags);
++		return add_dev_inode(st, inum, flags);
+ 	if (S_ISLNK(st->st_mode))
+-		return add_symlink_inode(path_name, st, *inum, flags);
++		return add_symlink_inode(path_name, st, inum, flags);
+ 	if (S_ISSOCK(st->st_mode))
+-		return add_inode(st, *inum, flags);
++		return add_inode(st, inum, flags);
+ 	if (S_ISFIFO(st->st_mode))
+-		return add_inode(st, *inum, flags);
++		return add_inode(st, inum, flags);
+ 
+ 	return err_msg("file '%s' has unknown inode type", path_name);
+ }
+@@ -1480,7 +1720,6 @@ static int add_directory(const char *dir_name, ino_t dir_inum, struct stat *st,
+ 	 * @ph_elt will be non-zero if yes.
+ 	 */
+ 	ph_elt = devtbl_find_path(dir_name + root_len - 1);
+-
+ 	/*
+ 	 * Before adding the directory itself, we have to iterate over all the
+ 	 * entries the device table adds to this directory and create them.
+@@ -1552,7 +1791,7 @@ static int add_directory(const char *dir_name, ino_t dir_inum, struct stat *st,
+ 			nlink += 1;
+ 			type = UBIFS_ITYPE_DIR;
+ 		} else {
+-			err = add_non_dir(name, &inum, 0, &type, &dent_st);
++			err = add_non_dir(name, inum, 0, &type, &dent_st);
+ 			if (err)
+ 				goto out_free;
+ 		}
+@@ -1619,7 +1858,7 @@ static int add_directory(const char *dir_name, ino_t dir_inum, struct stat *st,
+ 
+ 	creat_sqnum = dir_creat_sqnum;
+ 
+-	err = add_dir_inode(dir, dir_inum, size, nlink, st);
++	err = add_dir_inode(dir, dir_inum, size, nlink, st, dir_name);
+ 	if (err)
+ 		goto out_free;
+ 
+@@ -1649,7 +1888,7 @@ static int add_multi_linked_files(void)
+ 
+ 		for (im = hash_table[i]; im; im = im->next) {
+ 			dbg_msg(2, "%s", im->path_name);
+-			err = add_non_dir(im->path_name, &im->use_inum,
++			err = add_non_dir(im->path_name, im->use_inum,
+ 					  im->use_nlink, &type, &im->st);
+ 			if (err)
+ 				return err;
+@@ -1664,7 +1903,6 @@ static int add_multi_linked_files(void)
+ static int write_data(void)
+ {
+ 	int err;
+-
+ 	if (root) {
+ 		err = stat(root, &root_st);
+ 		if (err)
+@@ -2259,6 +2497,20 @@ static int init(void)
+ 	err = init_compression();
+ 	if (err)
+ 		return err;
++   if( context ) {
++      seprefixlen = strlen(root);
++      struct selinux_opt seopts[] = {
++         { SELABEL_OPT_PATH, context }
++      };
++
++      sehnd = selabel_open(SELABEL_CTX_FILE, seopts, 1);
++
++      if (!sehnd)
++      {
++         return err_msg("could not open context");
++      }
++
++  }
+ 
+ 	return 0;
+ }
+@@ -2284,6 +2536,8 @@ static void destroy_hash_table(void)
+  */
+ static void deinit(void)
+ {
++	if ( sehnd )
++   	      selabel_close(sehnd);
+ 	free(c->lpt);
+ 	free(c->ltab);
+ 	free(leb_buf);
+@@ -2358,7 +2612,6 @@ int main(int argc, char *argv[])
+ 	err = get_options(argc, argv);
+ 	if (err)
+ 		return err;
+-
+ 	err = open_target();
+ 	if (err)
+ 		return err;
+diff --git a/mkfs.ubifs/ubifs.h b/mkfs.ubifs/ubifs.h
+index 5c29046..fb5e039 100644
+--- a/mkfs.ubifs/ubifs.h
++++ b/mkfs.ubifs/ubifs.h
+@@ -38,6 +38,15 @@
+  * %UBIFS_TRUN_KEY type.
+  */
+ #define UBIFS_TRUN_KEY UBIFS_KEY_TYPES_CNT
++/*
++ * How much a directory entry/extended attribute entry adds to the
++parent/host
++ * inode.
++ */
++#define CALC_DENT_SIZE(name_len) ALIGN(UBIFS_DENT_NODE_SZ + (name_len) + 1,8)
++
++/* How much an extended attribute adds to the host inode */
++#define CALC_XATTR_BYTES(data_len) ALIGN(UBIFS_INO_NODE_SZ + (data_len) + 1, 8)
+ 
+ /* The below union makes it easier to deal with keys */
+ union ubifs_key
+-- 
+1.8.0
+

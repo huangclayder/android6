@@ -1,0 +1,41 @@
+From f8c22758249bcb8f144aec27414a1a2f17ea75e0 Mon Sep 17 00:00:00 2001
+From: Mark Brown <broonie@linaro.org>
+Date: Thu, 29 May 2014 16:02:15 +0100
+Subject: [PATCH] arm64: Add __ASSEMBLY__ guards to insn.h
+
+Signed-off-by: Mark Brown <broonie@linaro.org>
+(cherry picked from LSK commit d10fbc12d0c4c6e872de2a342b88b896e430cea3)
+Signed-off-by: Alex Shi <alex.shi@linaro.org>
+---
+ arch/arm64/include/asm/insn.h | 5 +++++
+ 1 file changed, 5 insertions(+)
+
+diff --git a/arch/arm64/include/asm/insn.h b/arch/arm64/include/asm/insn.h
+index c44ad39..62e7b8b 100644
+--- a/arch/arm64/include/asm/insn.h
++++ b/arch/arm64/include/asm/insn.h
+@@ -16,11 +16,14 @@
+  */
+ #ifndef	__ASM_INSN_H
+ #define	__ASM_INSN_H
++
+ #include <linux/types.h>
+ 
+ /* A64 instructions are always 32 bits. */
+ #define	AARCH64_INSN_SIZE		4
+ 
++#ifndef __ASSEMBLY__
++
+ /*
+  * ARM Architecture Reference Manual for ARMv8 Profile-A, Issue A.a
+  * Section C3.1 "A64 instruction index by encoding":
+@@ -105,4 +108,6 @@ int aarch64_insn_patch_text_nosync(void *addr, u32 insn);
+ int aarch64_insn_patch_text_sync(void *addrs[], u32 insns[], int cnt);
+ int aarch64_insn_patch_text(void *addrs[], u32 insns[], int cnt);
+ 
++#endif  /* __ASSEMBLY__ */
++
+ #endif	/* __ASM_INSN_H */
+-- 
+1.8.0
+

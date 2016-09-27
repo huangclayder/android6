@@ -1,0 +1,37 @@
+From e37e824f4a85cf72a22a2a29cc8ccfdf74c6cfd2 Mon Sep 17 00:00:00 2001
+From: Hongzhang Yang <Hongzhang.Yang@freescale.com>
+Date: Fri, 13 Feb 2015 10:00:52 +0800
+Subject: [PATCH 267/280] MLK-10265:  Update version after removing EULA
+
+vpu lib v5.4.28
+
+Signed-off-by: Hongzhang Yang <Hongzhang.Yang@freescale.com>
+---
+ vpu/vpu_lib.h | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/vpu/vpu_lib.h b/vpu/vpu_lib.h
+index 7e71485..e1ee39e 100644
+--- a/vpu/vpu_lib.h
++++ b/vpu/vpu_lib.h
+@@ -1,7 +1,7 @@
+ /*
+  * Copyright (c) 2006, Chips & Media.  All rights reserved.
+  *
+- * Copyright (C) 2004-2014 Freescale Semiconductor, Inc.
++ * Copyright (C) 2004-2015 Freescale Semiconductor, Inc.
+  */
+ 
+ /* The following programs are the sole property of Freescale Semiconductor Inc.,
+@@ -707,7 +707,7 @@ static const SocInfo soc_info[] = {
+  * v4.2.2 [2008.09.03] support encoder on MX51
+  * v4.0.2 [2008.08.21] add the IOClkGateSet() for power saving.
+  */
+-#define VPU_LIB_VERSION_CODE	VPU_LIB_VERSION(5, 4, 27)
++#define VPU_LIB_VERSION_CODE	VPU_LIB_VERSION(5, 4, 28)
+ 
+ extern unsigned int system_rev;
+ 
+-- 
+1.8.0
+

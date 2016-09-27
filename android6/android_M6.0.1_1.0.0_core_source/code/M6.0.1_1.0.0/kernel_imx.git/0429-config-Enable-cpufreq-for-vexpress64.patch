@@ -1,0 +1,25 @@
+From 3ffd19b15dab94000623ac19d38a4bd28a7fcacc Mon Sep 17 00:00:00 2001
+From: Mark Brown <broonie@linaro.org>
+Date: Tue, 27 May 2014 17:26:21 +0100
+Subject: [PATCH] config: Enable cpufreq for vexpress64
+
+Signed-off-by: Mark Brown <broonie@linaro.org>
+---
+ linaro/configs/vexpress64.conf | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/linaro/configs/vexpress64.conf b/linaro/configs/vexpress64.conf
+index 8d5c85a..e6deb16 100644
+--- a/linaro/configs/vexpress64.conf
++++ b/linaro/configs/vexpress64.conf
+@@ -47,3 +47,7 @@ CONFIG_USB_EHCI_HCD=y
+ CONFIG_USB_EHCI_HCD_SYNOPSYS=y
+ CONFIG_USB_OHCI_HCD=y
+ CONFIG_USB_PHY=y
++CONFIG_PM_OPP=y
++CONFIG_GENERIC_CPUFREQ_CPU0=y
++CONFIG_ARM_BIG_LITTLE_CPUFREQ=y
++CONFIG_ARM_DT_BL_CPUFREQ=y
+-- 
+1.8.0
+

@@ -1,0 +1,29 @@
+From f5b7d12626f2fd36c676881cc26130144b289534 Mon Sep 17 00:00:00 2001
+From: fang hui <b31070@freescale.com>
+Date: Tue, 11 Aug 2015 10:46:49 +0800
+Subject: [PATCH 528/602] MA-6977 - [sabresd_7d] : support basic firmware epdc
+ in ga release
+
+include external/linux-firmware-imx/firmware/epdc/fsl-epdc.mk to copy
+epdc firmware
+
+Signed-off-by: fang hui <b31070@freescale.com>
+---
+ sabresd_7d/BoardConfig.mk | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/sabresd_7d/BoardConfig.mk b/sabresd_7d/BoardConfig.mk
+index 77272d9..ddc662f 100644
+--- a/sabresd_7d/BoardConfig.mk
++++ b/sabresd_7d/BoardConfig.mk
+@@ -5,6 +5,7 @@
+ include device/fsl/imx7/soc/imx7d.mk
+ include device/fsl/sabresd_7d/build_id.mk
+ include device/fsl/imx7/BoardConfigCommon.mk
++include external/linux-firmware-imx/firmware/epdc/fsl-epdc.mk
+ -include device/fsl-proprietary/gpu-viv/fsl-gpu.mk
+ # sabresd_mx7d default target for EXT4
+ BUILD_TARGET_FS ?= ext4
+-- 
+1.8.0
+

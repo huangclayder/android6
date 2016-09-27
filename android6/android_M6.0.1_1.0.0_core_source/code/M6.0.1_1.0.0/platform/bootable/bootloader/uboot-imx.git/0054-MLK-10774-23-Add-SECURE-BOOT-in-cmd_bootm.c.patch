@@ -1,0 +1,51 @@
+From d2ca1e24701a6a10578a133209c8233645a5755f Mon Sep 17 00:00:00 2001
+From: Peng Fan <Peng.Fan@freescale.com>
+Date: Sat, 7 Mar 2015 20:53:50 +0800
+Subject: [PATCH] MLK-10774-23 Add SECURE BOOT in cmd_bootm.c
+
+Add SECURE BOOT in bootm
+
+Signed-off-by: Peng Fan <Peng.Fan@freescale.com>
+---
+ common/cmd_bootm.c | 18 ++++++++++++++++++
+ 1 file changed, 18 insertions(+)
+
+diff --git a/common/cmd_bootm.c b/common/cmd_bootm.c
+index 1825d70..6c5b600 100644
+--- a/common/cmd_bootm.c
++++ b/common/cmd_bootm.c
+@@ -127,6 +127,16 @@ int do_bootm(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
+ 			return do_bootm_subcommand(cmdtp, flag, argc, argv);
+ 	}
+ 
++#ifdef CONFIG_SECURE_BOOT
++	extern uint32_t authenticate_image(
++			uint32_t ddr_start, uint32_t image_size);
++	if (authenticate_image(load_addr,
++		image_get_image_size((image_header_t *)load_addr)) == 0) {
++		printf("Authenticate uImage Fail, Please check\n");
++		return 1;
++	}
++#endif
++
+ 	return do_bootm_states(cmdtp, flag, argc, argv, BOOTM_STATE_START |
+ 		BOOTM_STATE_FINDOS | BOOTM_STATE_FINDOTHER |
+ 		BOOTM_STATE_LOADOS |
+@@ -582,6 +592,14 @@ static int bootz_start(cmd_tbl_t *cmdtp, int flag, int argc,
+ 	if (bootm_find_ramdisk_fdt(flag, argc, argv))
+ 		return 1;
+ 
++#ifdef CONFIG_SECURE_BOOT
++	extern uint32_t authenticate_image(
++			uint32_t ddr_start, uint32_t image_size);
++	if (authenticate_image(images->ep, zi_end - zi_start) == 0) {
++		printf("Authenticate zImage Fail, Please check\n");
++		return 1;
++	}
++#endif
+ 	return 0;
+ }
+ 
+-- 
+1.8.0
+

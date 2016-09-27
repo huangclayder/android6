@@ -1,0 +1,349 @@
+From dd842f32b6d8d770e844790643ece352f92b8c5e Mon Sep 17 00:00:00 2001
+From: Peng Fan <Peng.Fan@freescale.com>
+Date: Wed, 29 Apr 2015 10:52:52 +0800
+Subject: [PATCH] MLK-10774-53 imx: update setting pmic volatage
+
+We should not rely on pfuze_common_init to set the voltage,
+may be we should remove the voltage settings in pfuze_common_init.
+This patch is to setting the voltages in power_init_board.
+
+Signed-off-by: Peng Fan <Peng.Fan@freescale.com>
+---
+ board/freescale/common/pfuze.c                     |  4 +--
+ board/freescale/mx6qsabreauto/mx6qsabreauto.c      | 32 ++++++++++++++++++++--
+ board/freescale/mx6sabresd/mx6sabresd.c            | 24 ++++++++++++++++
+ board/freescale/mx6slevk/mx6slevk.c                | 32 +++++++++++++++++++++-
+ .../freescale/mx6sx_17x17_arm2/mx6sx_17x17_arm2.c  | 31 ++++++++++++++++++++-
+ .../freescale/mx6sx_19x19_arm2/mx6sx_19x19_arm2.c  | 32 +++++++++++++++++++++-
+ board/freescale/mx6sxsabreauto/mx6sxsabreauto.c    | 18 ++++++++++++
+ board/freescale/mx6sxsabresd/mx6sxsabresd.c        | 12 ++++++++
+ include/power/pfuze100_pmic.h                      |  2 +-
+ 9 files changed, 179 insertions(+), 8 deletions(-)
+
+diff --git a/board/freescale/common/pfuze.c b/board/freescale/common/pfuze.c
+index 4980bf7..d6a209e 100644
+--- a/board/freescale/common/pfuze.c
++++ b/board/freescale/common/pfuze.c
+@@ -71,10 +71,10 @@ struct pmic *pfuze_common_init(unsigned char i2cbus)
+ 	pmic_reg_write(p, PFUZE100_SW1ABSTBY, reg);
+ 
+ 	/* Set SW1AB/VDDARM step ramp up time from 16us to 4us/25mV */
+-	pmic_reg_read(p, PUZE_100_SW1ABCONF, &reg);
++	pmic_reg_read(p, PFUZE100_SW1ABCONF, &reg);
+ 	reg &= ~SW1xCONF_DVSSPEED_MASK;
+ 	reg |= SW1xCONF_DVSSPEED_4US;
+-	pmic_reg_write(p, PUZE_100_SW1ABCONF, reg);
++	pmic_reg_write(p, PFUZE100_SW1ABCONF, reg);
+ 
+ 	/* Set SW1C standby voltage to 0.975V */
+ 	pmic_reg_read(p, PFUZE100_SW1CSTBY, &reg);
+diff --git a/board/freescale/mx6qsabreauto/mx6qsabreauto.c b/board/freescale/mx6qsabreauto/mx6qsabreauto.c
+index 2ee8210..e20cd91 100644
+--- a/board/freescale/mx6qsabreauto/mx6qsabreauto.c
++++ b/board/freescale/mx6qsabreauto/mx6qsabreauto.c
+@@ -768,12 +768,40 @@ int board_init(void)
+ static struct pmic *pfuze;
+ int power_init_board(void)
+ {
+-	unsigned int value;
++	unsigned int value, ret;
+ 
+ 	pfuze = pfuze_common_init(I2C_PMIC);
+ 	if (!pfuze)
+ 		return -ENODEV;
+ 
++	ret = pfuze_mode_init(pfuze, APS_PFM);
++	if (ret < 0)
++		return ret;
++
++	/* set SW1AB staby volatage 0.975V*/
++	pmic_reg_read(pfuze, PFUZE100_SW1ABSTBY, &value);
++	value &= ~0x3f;
++	value |= 0x1b;
++	pmic_reg_write(pfuze, PFUZE100_SW1ABSTBY, value);
++
++	/* set SW1AB/VDDARM step ramp up time from 16us to 4us/25mV */
++	pmic_reg_read(pfuze, PFUZE100_SW1ABCONF, &value);
++	value &= ~0xc0;
++	value |= 0x40;
++	pmic_reg_write(pfuze, PFUZE100_SW1ABCONF, value);
++
++	/* set SW1C staby volatage 0.975V*/
++	pmic_reg_read(pfuze, PFUZE100_SW1CSTBY, &value);
++	value &= ~0x3f;
++	value |= 0x1b;
++	pmic_reg_write(pfuze, PFUZE100_SW1CSTBY, value);
++
++	/* set SW1C/VDDSOC step ramp up time to from 16us to 4us/25mV */
++	pmic_reg_read(pfuze, PFUZE100_SW1CCONF, &value);
++	value &= ~0xc0;
++	value |= 0x40;
++	pmic_reg_write(pfuze, PFUZE100_SW1CCONF, value);
++
+ 	if (is_mx6dqp()) {
+ 		/* set SW2 staby volatage 0.975V*/
+ 		pmic_reg_read(pfuze, PFUZE100_SW2STBY, &value);
+@@ -782,7 +810,7 @@ int power_init_board(void)
+ 		pmic_reg_write(pfuze, PFUZE100_SW2STBY, value);
+ 	}
+ 
+-	return pfuze_mode_init(pfuze, APS_PFM);
++	return 0;
+ }
+ 
+ #ifdef CONFIG_LDO_BYPASS_CHECK
+diff --git a/board/freescale/mx6sabresd/mx6sabresd.c b/board/freescale/mx6sabresd/mx6sabresd.c
+index 03f6805..eedeb94 100644
+--- a/board/freescale/mx6sabresd/mx6sabresd.c
++++ b/board/freescale/mx6sabresd/mx6sabresd.c
+@@ -1025,6 +1025,30 @@ int power_init_board(void)
+ 	reg |= LDOB_3_00V;
+ 	pmic_reg_write(pfuze, PFUZE100_VGEN5VOL, reg);
+ 
++	/* set SW1AB staby volatage 0.975V*/
++	pmic_reg_read(pfuze, PFUZE100_SW1ABSTBY, &reg);
++	reg &= ~0x3f;
++	reg |= 0x1b;
++	pmic_reg_write(pfuze, PFUZE100_SW1ABSTBY, reg);
++
++	/* set SW1AB/VDDARM step ramp up time from 16us to 4us/25mV */
++	pmic_reg_read(pfuze, PFUZE100_SW1ABCONF, &reg);
++	reg &= ~0xc0;
++	reg |= 0x40;
++	pmic_reg_write(pfuze, PFUZE100_SW1ABCONF, reg);
++
++	/* set SW1C staby volatage 0.975V*/
++	pmic_reg_read(pfuze, PFUZE100_SW1CSTBY, &reg);
++	reg &= ~0x3f;
++	reg |= 0x1b;
++	pmic_reg_write(pfuze, PFUZE100_SW1CSTBY, reg);
++
++	/* set SW1C/VDDSOC step ramp up time to from 16us to 4us/25mV */
++	pmic_reg_read(pfuze, PFUZE100_SW1CCONF, &reg);
++	reg &= ~0xc0;
++	reg |= 0x40;
++	pmic_reg_write(pfuze, PFUZE100_SW1CCONF, reg);
++
+ 	return 0;
+ }
+ 
+diff --git a/board/freescale/mx6slevk/mx6slevk.c b/board/freescale/mx6slevk/mx6slevk.c
+index c721055..76a991f 100644
+--- a/board/freescale/mx6slevk/mx6slevk.c
++++ b/board/freescale/mx6slevk/mx6slevk.c
+@@ -380,11 +380,41 @@ struct i2c_pads_info i2c_pad_info1 = {
+ static struct pmic *pfuze;
+ int power_init_board(void)
+ {
++	unsigned int reg, ret;
++
+ 	pfuze = pfuze_common_init(I2C_PMIC);
+ 	if (!pfuze)
+ 		return -ENODEV;
+ 
+-	return pfuze_mode_init(pfuze, APS_PFM);
++	ret = pfuze_mode_init(pfuze, APS_PFM);
++	if (ret < 0)
++		return ret;
++
++	/* set SW1AB staby volatage 0.975V */
++	pmic_reg_read(pfuze, PFUZE100_SW1ABSTBY, &reg);
++	reg &= ~0x3f;
++	reg |= 0x1b;
++	pmic_reg_write(pfuze, PFUZE100_SW1ABSTBY, reg);
++
++	/* set SW1AB/VDDARM step ramp up time from 16us to 4us/25mV */
++	pmic_reg_read(pfuze, PFUZE100_SW1ABCONF, &reg);
++	reg &= ~0xc0;
++	reg |= 0x40;
++	pmic_reg_write(pfuze, PFUZE100_SW1ABCONF, reg);
++
++	/* set SW1C staby volatage 0.975V */
++	pmic_reg_read(pfuze, PFUZE100_SW1CSTBY, &reg);
++	reg &= ~0x3f;
++	reg |= 0x1b;
++	pmic_reg_write(pfuze, PFUZE100_SW1CSTBY, reg);
++
++	/* set SW1C/VDDSOC step ramp up time to from 16us to 4us/25mV */
++	pmic_reg_read(pfuze, PFUZE100_SW1CCONF, &reg);
++	reg &= ~0xc0;
++	reg |= 0x40;
++	pmic_reg_write(pfuze, PFUZE100_SW1CCONF, reg);
++
++	return 0;
+ }
+ 
+ #ifdef CONFIG_LDO_BYPASS_CHECK
+diff --git a/board/freescale/mx6sx_17x17_arm2/mx6sx_17x17_arm2.c b/board/freescale/mx6sx_17x17_arm2/mx6sx_17x17_arm2.c
+index db0de6e..3d23408 100644
+--- a/board/freescale/mx6sx_17x17_arm2/mx6sx_17x17_arm2.c
++++ b/board/freescale/mx6sx_17x17_arm2/mx6sx_17x17_arm2.c
+@@ -107,11 +107,40 @@ struct i2c_pads_info i2c_pad_info2 = {
+ static struct pmic *pfuze;
+ int power_init_board(void)
+ {
++	unsigned int reg, ret;
+ 	pfuze = pfuze_common_init(I2C_PMIC);
+ 	if (!pfuze)
+ 		return -ENODEV;
+ 
+-	return pfuze_mode_init(pfuze, APS_PFM);
++	ret = pfuze_mode_init(pfuze, APS_PFM);
++	if (ret < 0)
++		return ret;
++
++	/* set SW1AB staby volatage 0.975V */
++	pmic_reg_read(pfuze, PFUZE100_SW1ABSTBY, &reg);
++	reg &= ~0x3f;
++	reg |= PFUZE100_SW1ABC_SETP(9750);
++	pmic_reg_write(pfuze, PFUZE100_SW1ABSTBY, reg);
++
++	/* set SW1AB/VDDARM step ramp up time from 16us to 4us/25mV */
++	pmic_reg_read(pfuze, PFUZE100_SW1ABCONF, &reg);
++	reg &= ~0xc0;
++	reg |= 0x40;
++	pmic_reg_write(pfuze, PFUZE100_SW1ABCONF, reg);
++
++	/* set SW1C staby volatage 0.975V */
++	pmic_reg_read(pfuze, PFUZE100_SW1CSTBY, &reg);
++	reg &= ~0x3f;
++	reg |= PFUZE100_SW1ABC_SETP(9750);
++	pmic_reg_write(pfuze, PFUZE100_SW1CSTBY, reg);
++
++	/* set SW1C/VDDSOC step ramp up time to from 16us to 4us/25mV */
++	pmic_reg_read(pfuze, PFUZE100_SW1CCONF, &reg);
++	reg &= ~0xc0;
++	reg |= 0x40;
++	pmic_reg_write(pfuze, PFUZE100_SW1CCONF, reg);
++
++	return 0;
+ }
+ 
+ #ifdef CONFIG_LDO_BYPASS_CHECK
+diff --git a/board/freescale/mx6sx_19x19_arm2/mx6sx_19x19_arm2.c b/board/freescale/mx6sx_19x19_arm2/mx6sx_19x19_arm2.c
+index 7236d57..88318ed 100644
+--- a/board/freescale/mx6sx_19x19_arm2/mx6sx_19x19_arm2.c
++++ b/board/freescale/mx6sx_19x19_arm2/mx6sx_19x19_arm2.c
+@@ -112,11 +112,41 @@ struct i2c_pads_info i2c_pad_info2 = {
+ static struct pmic *pfuze;
+ int power_init_board(void)
+ {
++	unsigned int ret, reg;
++
+ 	pfuze = pfuze_common_init(I2C_PMIC);
+ 	if (!pfuze)
+ 		return -ENODEV;
+ 
+-	return pfuze_mode_init(pfuze, APS_PFM);
++	ret = pfuze_mode_init(pfuze, APS_PFM);
++	if (ret < 0)
++		return ret;
++
++	/* set SW1AB staby volatage 0.975V */
++	pmic_reg_read(pfuze, PFUZE100_SW1ABSTBY, &reg);
++	reg &= ~0x3f;
++	reg |= PFUZE100_SW1ABC_SETP(9750);
++	pmic_reg_write(pfuze, PFUZE100_SW1ABSTBY, reg);
++
++	/* set SW1AB/VDDARM step ramp up time from 16us to 4us/25mV */
++	pmic_reg_read(pfuze, PFUZE100_SW1ABCONF, &reg);
++	reg &= ~0xc0;
++	reg |= 0x40;
++	pmic_reg_write(pfuze, PFUZE100_SW1ABCONF, reg);
++
++	/* set SW1C staby volatage 0.975V */
++	pmic_reg_read(pfuze, PFUZE100_SW1CSTBY, &reg);
++	reg &= ~0x3f;
++	reg |= PFUZE100_SW1ABC_SETP(9750);
++	pmic_reg_write(pfuze, PFUZE100_SW1CSTBY, reg);
++
++	/* set SW1C/VDDSOC step ramp up time to from 16us to 4us/25mV */
++	pmic_reg_read(pfuze, PFUZE100_SW1CCONF, &reg);
++	reg &= ~0xc0;
++	reg |= 0x40;
++	pmic_reg_write(pfuze, PFUZE100_SW1CCONF, reg);
++
++	return 0;
+ }
+ 
+ #ifdef CONFIG_LDO_BYPASS_CHECK
+diff --git a/board/freescale/mx6sxsabreauto/mx6sxsabreauto.c b/board/freescale/mx6sxsabreauto/mx6sxsabreauto.c
+index 6a026d4..6019dde 100644
+--- a/board/freescale/mx6sxsabreauto/mx6sxsabreauto.c
++++ b/board/freescale/mx6sxsabreauto/mx6sxsabreauto.c
+@@ -132,12 +132,30 @@ int power_init_board(void)
+ 	if (ret < 0)
+ 		return ret;
+ 
++	/* set SW1AB standby volatage 0.975V */
++	pmic_reg_read(pfuze, PFUZE100_SW1ABSTBY, &reg);
++	reg &= ~0x3f;
++	reg |= PFUZE100_SW1ABC_SETP(9750);
++	pmic_reg_write(pfuze, PFUZE100_SW1ABSTBY, reg);
++
++	/* set SW1AB/VDDARM step ramp up time from 16us to 4us/25mV */
++	pmic_reg_read(pfuze, PFUZE100_SW1ABCONF, &reg);
++	reg &= ~0xc0;
++	reg |= 0x40;
++	pmic_reg_write(pfuze, PFUZE100_SW1ABCONF, reg);
++
+ 	/* set SW1C standby volatage 1.10V */
+ 	pmic_reg_read(pfuze, PFUZE100_SW1CSTBY, &reg);
+ 	reg &= ~0x3f;
+ 	reg |= PFUZE100_SW1ABC_SETP(11000);
+ 	pmic_reg_write(pfuze, PFUZE100_SW1CSTBY, reg);
+ 
++	/* set SW1C/VDDSOC step ramp up time to from 16us to 4us/25mV */
++	pmic_reg_read(pfuze, PFUZE100_SW1CCONF, &reg);
++	reg &= ~0xc0;
++	reg |= 0x40;
++	pmic_reg_write(pfuze, PFUZE100_SW1CCONF, reg);
++
+ 	/* Enable power of VGEN5 3V3, needed for SD3 */
+ 	pmic_reg_read(pfuze, PFUZE100_VGEN5VOL, &reg);
+ 	reg &= ~LDO_VOL_MASK;
+diff --git a/board/freescale/mx6sxsabresd/mx6sxsabresd.c b/board/freescale/mx6sxsabresd/mx6sxsabresd.c
+index 621f205..4e545b5 100644
+--- a/board/freescale/mx6sxsabresd/mx6sxsabresd.c
++++ b/board/freescale/mx6sxsabresd/mx6sxsabresd.c
+@@ -475,12 +475,24 @@ int power_init_board(void)
+ 	reg |= PFUZE100_SW1ABC_SETP(11000);
+ 	pmic_reg_write(pfuze, PFUZE100_SW1ABSTBY, reg);
+ 
++	/* set SW1AB/VDDARM step ramp up time from 16us to 4us/25mV */
++	pmic_reg_read(pfuze, PFUZE100_SW1ABCONF, &reg);
++	reg &= ~0xc0;
++	reg |= 0x40;
++	pmic_reg_write(pfuze, PFUZE100_SW1ABCONF, reg);
++
+ 	/* set SW1C standby volatage 1.10V */
+ 	pmic_reg_read(pfuze, PFUZE100_SW1CSTBY, &reg);
+ 	reg &= ~0x3f;
+ 	reg |= PFUZE100_SW1ABC_SETP(11000);
+ 	pmic_reg_write(pfuze, PFUZE100_SW1CSTBY, reg);
+ 
++	/* set SW1C/VDDSOC step ramp up time to from 16us to 4us/25mV */
++	pmic_reg_read(pfuze, PFUZE100_SW1CCONF, &reg);
++	reg &= ~0xc0;
++	reg |= 0x40;
++	pmic_reg_write(pfuze, PFUZE100_SW1CCONF, reg);
++
+ 	/* Enable power of VGEN5 3V3, needed for SD3 */
+ 	pmic_reg_read(pfuze, PFUZE100_VGEN5VOL, &reg);
+ 	reg &= ~LDO_VOL_MASK;
+diff --git a/include/power/pfuze100_pmic.h b/include/power/pfuze100_pmic.h
+index 07199b4..fc32d50 100644
+--- a/include/power/pfuze100_pmic.h
++++ b/include/power/pfuze100_pmic.h
+@@ -18,7 +18,7 @@ enum {
+ 	PFUZE100_SW1ABSTBY	= 0x21,
+ 	PFUZE100_SW1ABOFF	= 0x22,
+ 	PFUZE100_SW1ABMODE	= 0x23,
+-	PUZE_100_SW1ABCONF	= 0x24,
++	PFUZE100_SW1ABCONF	= 0x24,
+ 	PFUZE100_SW1CVOL	= 0x2e,
+ 	PFUZE100_SW1CSTBY	= 0x2f,
+ 	PFUZE100_SW1COFF	= 0x30,
+-- 
+1.8.0
+

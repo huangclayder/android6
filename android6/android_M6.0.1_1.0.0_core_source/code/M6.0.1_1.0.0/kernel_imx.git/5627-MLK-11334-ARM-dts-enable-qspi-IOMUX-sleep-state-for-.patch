@@ -1,0 +1,31 @@
+From f08e3a596ffec565fc2a74dff332ca5713f8f60a Mon Sep 17 00:00:00 2001
+From: Han Xu <b45815@freescale.com>
+Date: Thu, 30 Jul 2015 16:33:53 -0500
+Subject: [PATCH] MLK-11334: ARM: dts: enable qspi IOMUX sleep state for
+ imx7d-12x12-lpddr3-arm2
+
+Enable qspi IOMUX sleep state for imx7d-12x12-lpddr3-arm2.
+
+Signed-off-by: Han Xu <b45815@freescale.com>
+---
+ arch/arm/boot/dts/imx7d-12x12-lpddr3-arm2-qspi.dts | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/arch/arm/boot/dts/imx7d-12x12-lpddr3-arm2-qspi.dts b/arch/arm/boot/dts/imx7d-12x12-lpddr3-arm2-qspi.dts
+index ede6df2..3a7af2e 100644
+--- a/arch/arm/boot/dts/imx7d-12x12-lpddr3-arm2-qspi.dts
++++ b/arch/arm/boot/dts/imx7d-12x12-lpddr3-arm2-qspi.dts
+@@ -39,8 +39,9 @@
+ };
+ 
+ &qspi1 {
+-	pinctrl-names = "default";
++	pinctrl-names = "default", "sleep";
+ 	pinctrl-0 = <&pinctrl_qspi1_1>;
++	pinctrl-1 = <&pinctrl_qspi1_1>;
+ 	status = "okay";
+ 	fsl,qspi-has-second-chip = <1>;
+ 	ddrsmp=<0>;
+-- 
+1.8.0
+

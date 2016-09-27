@@ -1,0 +1,34 @@
+From ba25bc35dc2167046d82e63f3598a7655a032bee Mon Sep 17 00:00:00 2001
+From: zhang sanshan <b51434@freescale.com>
+Date: Thu, 12 Feb 2015 10:26:44 +0800
+Subject: [PATCH 23/34] MA-6257 [Compile] 'mm snod' cannot work on Lollipop
+ development environment.
+
+'mm snod' is used to package /system directly.
+'mm snod' fails,That was because build_image.py can't recognize system_sparse.img.
+When compile ext format system image, INSTALLED_SYSTEMIMAGE is changed to system_sparse.img
+
+Signed-off-by: zhang sanshan <b51434@freescale.com>
+
+Conflicts:
+	tools/releasetools/build_image.py
+---
+ tools/releasetools/build_image.py | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/tools/releasetools/build_image.py b/tools/releasetools/build_image.py
+index 1ee9483..003613b 100755
+--- a/tools/releasetools/build_image.py
++++ b/tools/releasetools/build_image.py
+@@ -504,7 +504,7 @@ def main(argv):
+   else:
+     image_filename = os.path.basename(out_file)
+     mount_point = ""
+-    if image_filename == "system.img":
++    if image_filename == "system.img" or image_filename == "system_sparse.img" :
+       mount_point = "system"
+     elif image_filename == "userdata.img":
+       mount_point = "data"
+-- 
+1.8.0
+

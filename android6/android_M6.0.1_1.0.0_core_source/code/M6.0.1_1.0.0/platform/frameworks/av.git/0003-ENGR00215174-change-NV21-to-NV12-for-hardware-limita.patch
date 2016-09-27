@@ -1,0 +1,102 @@
+From 6ec2c03cce7fca9676a72b73d8a3f2f9c7d224c3 Mon Sep 17 00:00:00 2001
+From: Xiaowen Liu <b37945@freescale.com>
+Date: Sat, 5 Jan 2013 15:32:44 +0800
+Subject: [PATCH 03/95] ENGR00215174 change NV21 to NV12 for hardware
+ limitation.
+
+make camera service support NV12 other than NV21 for VPU limitation.
+
+Signed-off-by: Xiaowen Liu <b37945@freescale.com>
+
+Conflicts:
+	services/camera/libcameraservice/api1/client2/Parameters.cpp
+---
+ camera/CameraParameters.cpp                        |  4 ++--
+ .../camera/libcameraservice/api1/Camera2Client.cpp |  1 +
+ .../libcameraservice/api1/client2/Parameters.cpp   | 26 +++++++++++++++++++---
+ 3 files changed, 26 insertions(+), 5 deletions(-)
+
+diff --git a/camera/CameraParameters.cpp b/camera/CameraParameters.cpp
+index 68969cf..8eeb3fd 100644
+--- a/camera/CameraParameters.cpp
++++ b/camera/CameraParameters.cpp
+@@ -512,11 +512,11 @@ void CameraParameters::getSupportedPreviewFormats(Vector<int>& formats) const {
+ int CameraParameters::previewFormatToEnum(const char* format) {
+     return
+         !format ?
+-            HAL_PIXEL_FORMAT_YCrCb_420_SP :
++            HAL_PIXEL_FORMAT_YCbCr_420_SP :
+         !strcmp(format, PIXEL_FORMAT_YUV422SP) ?
+             HAL_PIXEL_FORMAT_YCbCr_422_SP : // NV16
+         !strcmp(format, PIXEL_FORMAT_YUV420SP) ?
+-            HAL_PIXEL_FORMAT_YCrCb_420_SP : // NV21
++            HAL_PIXEL_FORMAT_YCbCr_420_SP : // NV21
+         !strcmp(format, PIXEL_FORMAT_YUV422I) ?
+             HAL_PIXEL_FORMAT_YCbCr_422_I :  // YUY2
+         !strcmp(format, PIXEL_FORMAT_YUV420P) ?
+diff --git a/services/camera/libcameraservice/api1/Camera2Client.cpp b/services/camera/libcameraservice/api1/Camera2Client.cpp
+index 4338d64..2cda0a4 100644
+--- a/services/camera/libcameraservice/api1/Camera2Client.cpp
++++ b/services/camera/libcameraservice/api1/Camera2Client.cpp
+@@ -2047,6 +2047,7 @@ size_t Camera2Client::calculateBufferSize(int width, int height,
+         case HAL_PIXEL_FORMAT_YCbCr_422_SP: // NV16
+             return width * height * 2;
+         case HAL_PIXEL_FORMAT_YCrCb_420_SP: // NV21
++        case HAL_PIXEL_FORMAT_YCbCr_420_SP: // NV12
+             return width * height * 3 / 2;
+         case HAL_PIXEL_FORMAT_YCbCr_422_I: // YUY2
+             return width * height * 2;
+diff --git a/services/camera/libcameraservice/api1/client2/Parameters.cpp b/services/camera/libcameraservice/api1/client2/Parameters.cpp
+index 44447b4..9f6f91e 100644
+--- a/services/camera/libcameraservice/api1/client2/Parameters.cpp
++++ b/services/camera/libcameraservice/api1/client2/Parameters.cpp
+@@ -149,7 +149,27 @@ status_t Parameters::initialize(const CameraMetadata *info, int deviceVersion) {
+         staticInfo(ANDROID_CONTROL_AE_AVAILABLE_TARGET_FPS_RANGES, 2);
+     if (!availableFpsRanges.count) return NO_INIT;
+ 
+-    previewFormat = HAL_PIXEL_FORMAT_YCrCb_420_SP;
++    previewFpsRange[0] = availableFpsRanges.data.i32[0];
++    previewFpsRange[1] = availableFpsRanges.data.i32[1];
++
++    params.set(CameraParameters::KEY_PREVIEW_FPS_RANGE,
++            String8::format("%d,%d",
++                    previewFpsRange[0] * kFpsToApiScale,
++                    previewFpsRange[1] * kFpsToApiScale));
++
++    {
++        String8 supportedPreviewFpsRange;
++        for (size_t i=0; i < availableFpsRanges.count; i += 2) {
++            if (i != 0) supportedPreviewFpsRange += ",";
++            supportedPreviewFpsRange += String8::format("(%d,%d)",
++                    availableFpsRanges.data.i32[i] * kFpsToApiScale,
++                    availableFpsRanges.data.i32[i+1] * kFpsToApiScale);
++        }
++        params.set(CameraParameters::KEY_SUPPORTED_PREVIEW_FPS_RANGE,
++                supportedPreviewFpsRange);
++    }
++
++    previewFormat = HAL_PIXEL_FORMAT_YCbCr_420_SP;
+     params.set(CameraParameters::KEY_PREVIEW_FORMAT,
+             formatEnumToString(previewFormat)); // NV21
+ 
+@@ -168,7 +188,7 @@ status_t Parameters::initialize(const CameraMetadata *info, int deviceVersion) {
+                 supportedPreviewFormats +=
+                     CameraParameters::PIXEL_FORMAT_YUV422SP;
+                 break;
+-            case HAL_PIXEL_FORMAT_YCrCb_420_SP:
++            case HAL_PIXEL_FORMAT_YCbCr_420_SP:
+                 supportedPreviewFormats +=
+                     CameraParameters::PIXEL_FORMAT_YUV420SP;
+                 break;
+@@ -2262,7 +2282,7 @@ const char* Parameters::formatEnumToString(int format) {
+         case HAL_PIXEL_FORMAT_YCbCr_422_SP: // NV16
+             fmt = CameraParameters::PIXEL_FORMAT_YUV422SP;
+             break;
+-        case HAL_PIXEL_FORMAT_YCrCb_420_SP: // NV21
++        case HAL_PIXEL_FORMAT_YCbCr_420_SP: // NV21
+             fmt = CameraParameters::PIXEL_FORMAT_YUV420SP;
+             break;
+         case HAL_PIXEL_FORMAT_YCbCr_422_I: // YUY2
+-- 
+1.8.0
+

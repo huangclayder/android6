@@ -1,0 +1,200 @@
+From 65056e1589363704cda3bc8710329e2a7f9d1139 Mon Sep 17 00:00:00 2001
+From: Mathieu Poirier <mathieu.poirier@linaro.org>
+Date: Wed, 8 Oct 2014 12:02:38 -0600
+Subject: [PATCH] of: back-porting v4l2 graph bindings
+
+This patch is back-porting the generic _portion_ of
+fd9fdb78a9bf85b94fb2190c82ff280c8f8375cc to 3.14
+
+Signed-off-by: Mathieu Poirier <mathieu.poirier@linaro.org>
+
+Conflicts:
+	drivers/of/base.c
+---
+ drivers/of/base.c        | 120 +++++++++++++++++++++++++++++++++++++++++++++++
+ include/linux/of_graph.h |  46 ++++++++++++++++++
+ 2 files changed, 166 insertions(+)
+
+diff --git a/drivers/of/base.c b/drivers/of/base.c
+index 89e888a..5a00afe 100644
+--- a/drivers/of/base.c
++++ b/drivers/of/base.c
+@@ -1982,3 +1982,123 @@ struct device_node *of_find_next_cache_node(const struct device_node *np)
+ 
+ 	return NULL;
+ }
++
++/**
++ * of_graph_get_next_endpoint() - get next endpoint node
++ * @parent: pointer to the parent device node
++ * @prev: previous endpoint node, or NULL to get first
++ *
++ * Return: An 'endpoint' node pointer with refcount incremented. Refcount
++ * of the passed @prev node is not decremented, the caller have to use
++ * of_node_put() on it when done.
++ */
++struct device_node *of_graph_get_next_endpoint(const struct device_node *parent,
++					struct device_node *prev)
++{
++	struct device_node *endpoint;
++	struct device_node *port;
++
++	if (!parent)
++		return NULL;
++
++	/*
++	 * Start by locating the port node. If no previous endpoint is specified
++	 * search for the first port node, otherwise get the previous endpoint
++	 * parent port node.
++	 */
++	if (!prev) {
++		struct device_node *node;
++
++		node = of_get_child_by_name(parent, "ports");
++		if (node)
++			parent = node;
++
++		port = of_get_child_by_name(parent, "port");
++		of_node_put(node);
++
++		if (!port) {
++			pr_err("%s(): no port node found in %s\n",
++			       __func__, parent->full_name);
++			return NULL;
++		}
++	} else {
++		port = of_get_parent(prev);
++		if (WARN_ONCE(!port, "%s(): endpoint %s has no parent node\n",
++			      __func__, prev->full_name))
++			return NULL;
++
++		/*
++		 * Avoid dropping prev node refcount to 0 when getting the next
++		 * child below.
++		 */
++		of_node_get(prev);
++	}
++
++	while (1) {
++		/*
++		 * Now that we have a port node, get the next endpoint by
++		 * getting the next child. If the previous endpoint is NULL this
++		 * will return the first child.
++		 */
++		endpoint = of_get_next_child(port, prev);
++		if (endpoint) {
++			of_node_put(port);
++			return endpoint;
++		}
++
++		/* No more endpoints under this port, try the next one. */
++		prev = NULL;
++
++		do {
++			port = of_get_next_child(parent, port);
++			if (!port)
++				return NULL;
++		} while (of_node_cmp(port->name, "port"));
++	}
++}
++EXPORT_SYMBOL(of_graph_get_next_endpoint);
++
++/**
++ * of_graph_get_remote_port_parent() - get remote port's parent node
++ * @node: pointer to a local endpoint device_node
++ *
++ * Return: Remote device node associated with remote endpoint node linked
++ *	   to @node. Use of_node_put() on it when done.
++ */
++struct device_node *of_graph_get_remote_port_parent(
++			       const struct device_node *node)
++{
++	struct device_node *np;
++	unsigned int depth;
++
++	/* Get remote endpoint node. */
++	np = of_parse_phandle(node, "remote-endpoint", 0);
++
++	/* Walk 3 levels up only if there is 'ports' node. */
++	for (depth = 3; depth && np; depth--) {
++		np = of_get_next_parent(np);
++		if (depth == 2 && of_node_cmp(np->name, "ports"))
++			break;
++	}
++	return np;
++}
++EXPORT_SYMBOL(of_graph_get_remote_port_parent);
++
++/**
++ * of_graph_get_remote_port() - get remote port node
++ * @node: pointer to a local endpoint device_node
++ *
++ * Return: Remote port node associated with remote endpoint node linked
++ *	   to @node. Use of_node_put() on it when done.
++ */
++struct device_node *of_graph_get_remote_port(const struct device_node *node)
++{
++	struct device_node *np;
++
++	/* Get remote endpoint node. */
++	np = of_parse_phandle(node, "remote-endpoint", 0);
++	if (!np)
++		return NULL;
++	return of_get_next_parent(np);
++}
++EXPORT_SYMBOL(of_graph_get_remote_port);
+diff --git a/include/linux/of_graph.h b/include/linux/of_graph.h
+new file mode 100644
+index 0000000..3bbeb60
+--- /dev/null
++++ b/include/linux/of_graph.h
+@@ -0,0 +1,46 @@
++/*
++ * OF graph binding parsing helpers
++ *
++ * Copyright (C) 2012 - 2013 Samsung Electronics Co., Ltd.
++ * Author: Sylwester Nawrocki <s.nawrocki@samsung.com>
++ *
++ * Copyright (C) 2012 Renesas Electronics Corp.
++ * Author: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of version 2 of the GNU General Public License as
++ * published by the Free Software Foundation.
++ */
++#ifndef __LINUX_OF_GRAPH_H
++#define __LINUX_OF_GRAPH_H
++
++#ifdef CONFIG_OF
++struct device_node *of_graph_get_next_endpoint(const struct device_node *parent,
++					struct device_node *previous);
++struct device_node *of_graph_get_remote_port_parent(
++					const struct device_node *node);
++struct device_node *of_graph_get_remote_port(const struct device_node *node);
++#else
++
++static inline struct device_node *of_graph_get_next_endpoint(
++					const struct device_node *parent,
++					struct device_node *previous)
++{
++	return NULL;
++}
++
++static inline struct device_node *of_graph_get_remote_port_parent(
++					const struct device_node *node)
++{
++	return NULL;
++}
++
++static inline struct device_node *of_graph_get_remote_port(
++					const struct device_node *node)
++{
++	return NULL;
++}
++
++#endif /* CONFIG_OF */
++
++#endif /* __LINUX_OF_GRAPH_H */
+-- 
+1.8.0
+

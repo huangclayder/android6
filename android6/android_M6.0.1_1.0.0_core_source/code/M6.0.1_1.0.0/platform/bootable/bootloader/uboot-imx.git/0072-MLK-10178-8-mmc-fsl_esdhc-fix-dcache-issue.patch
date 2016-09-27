@@ -1,0 +1,66 @@
+From fcbde55a890d42bbfac92b3b8e7b93fb59bee6b3 Mon Sep 17 00:00:00 2001
+From: Peng Fan <Peng.Fan@freescale.com>
+Date: Mon, 2 Feb 2015 15:36:43 +0800
+Subject: [PATCH] MLK-10178-8 mmc:fsl_esdhc fix dcache issue
+
+DCIMVAC is upgraded to DCCIMVAC for the individual processor
+(Cortex-A7) that the DCIMVAC is executed on.
+
+We should follow the linux dma follow. Before DMA read, first
+invalidate dcache then after DMA read, invalidate dcache again.
+
+With the DMA direction DMA_FROM_DEVICE, the dcache need be
+invalidated again after the DMA completion. The reason is
+that we need explicity make sure the dcache been invalidated
+thus to get the DMA'ed memory correctly from the physical memory.
+Any cache-line fill during the DMA operations such as the
+pre-fetching can cause the DMA coherency issue, thus CPU get the stale data.
+
+Signed-off-by: Peng Fan <Peng.Fan@freescale.com>
+Signed-off-by: Ye.Li <B37916@freescale.com>
+Signed-off-by: Nitin Garg <nitin.garg@freescale.com>
+Signed-off-by: Jason Liu <r64343@freescale.com>
+(cherry picked from commit 13cdb96bc52b3079ba91a08c1704307e5598ee59)
+
+Conflicts:
+	drivers/mmc/fsl_esdhc.c
+---
+ drivers/mmc/fsl_esdhc.c | 10 +++++++++-
+ 1 file changed, 9 insertions(+), 1 deletion(-)
+
+diff --git a/drivers/mmc/fsl_esdhc.c b/drivers/mmc/fsl_esdhc.c
+index db4d251..9daceab 100644
+--- a/drivers/mmc/fsl_esdhc.c
++++ b/drivers/mmc/fsl_esdhc.c
+@@ -1,5 +1,5 @@
+ /*
+- * Copyright 2007, 2010-2011 Freescale Semiconductor, Inc
++ * Copyright 2007, 2010-2015 Freescale Semiconductor, Inc.
+  * Andy Fleming
+  *
+  * Based vaguely on the pxa mmc code:
+@@ -309,6 +309,9 @@ esdhc_send_cmd(struct mmc *mmc, struct mmc_cmd *cmd, struct mmc_data *data)
+ 		err = esdhc_setup_data(mmc, data);
+ 		if(err)
+ 			return err;
++
++		if (data->flags & MMC_DATA_READ)
++			check_and_invalidate_dcache_range(cmd, data);
+ 	}
+ 
+ 	/* Figure out the transfer arguments */
+@@ -405,6 +408,11 @@ esdhc_send_cmd(struct mmc *mmc, struct mmc_cmd *cmd, struct mmc_data *data)
+ 			}
+ 		} while ((irqstat & DATA_COMPLETE) != DATA_COMPLETE);
+ 
++		/*
++		 * Need invalidate the dcache here again to avoid any
++		 * cache-fill during the DMA operations such as the
++		 * speculative pre-fetching etc.
++		 */
+ 		if (data->flags & MMC_DATA_READ)
+ 			check_and_invalidate_dcache_range(cmd, data);
+ #endif
+-- 
+1.8.0
+

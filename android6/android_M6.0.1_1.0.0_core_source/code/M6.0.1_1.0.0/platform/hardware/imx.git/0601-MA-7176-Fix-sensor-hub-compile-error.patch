@@ -1,0 +1,40 @@
+From 5cff42226edccdf1536ced6dbcaebeac56c50343 Mon Sep 17 00:00:00 2001
+From: Haoran Wang <b50027@freescale.com>
+Date: Thu, 29 Oct 2015 11:01:58 +0800
+Subject: [PATCH 601/635] MA-7176 Fix sensor hub compile error
+
+Added missed "string.h".
+
+Signed-off-by: Haoran Wang <b50027@freescale.com>
+---
+ libsensors_sensorhub/InputEventReader.h | 1 +
+ libsensors_sensorhub/sensors.h          | 1 +
+ 2 files changed, 2 insertions(+)
+
+diff --git a/libsensors_sensorhub/InputEventReader.h b/libsensors_sensorhub/InputEventReader.h
+index 59377b9..d61db5a 100755
+--- a/libsensors_sensorhub/InputEventReader.h
++++ b/libsensors_sensorhub/InputEventReader.h
+@@ -20,6 +20,7 @@
+ 
+ #include <stdint.h>
+ #include <errno.h>
++#include <string.h>
+ #include <sys/cdefs.h>
+ #include <sys/types.h>
+ 
+diff --git a/libsensors_sensorhub/sensors.h b/libsensors_sensorhub/sensors.h
+index f5aedde..f7bb07f 100755
+--- a/libsensors_sensorhub/sensors.h
++++ b/libsensors_sensorhub/sensors.h
+@@ -22,6 +22,7 @@
+ #include <errno.h>
+ #include <sys/cdefs.h>
+ #include <sys/types.h>
++#include <string.h>
+ 
+ #include <linux/input.h>
+ 
+-- 
+1.8.0
+

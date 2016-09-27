@@ -1,0 +1,50 @@
+From 39507258d36f45143f6841b86c79a89d9d296de4 Mon Sep 17 00:00:00 2001
+From: Fang Hui <b31070@freescale.com>
+Date: Mon, 22 Dec 2014 14:40:18 +0800
+Subject: [PATCH 551/635] MA-6019 - [Android_MX6SX_ARD]USBAudio: Sometimes no
+ audio output after hotplug
+
+USB Audio headset multiple times. 10%
+
+Last time plug out/in headset dose not lead to fd close/open operation.
+BTW, if enlarge standby time in AudioFlinger, the issue can reproduce easily.
+This also heppends on HDMI output.
+
+When usb headset is pluged in, setDeviceConnectionState is called.
+If startOutput has not called before, the mRefCount for streams is zero.
+Although the available include UsbHeadset(0x1000), getNewDevice will return 0
+since currently no stream type.
+
+In HAL, when routing device is 0, should call do_output_standby to close fd.
+So next time output pcm data, the fd will open again.
+
+Signed-off-by: Fang Hui <b31070@freescale.com>
+---
+ alsa/tinyalsa_hal.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/alsa/tinyalsa_hal.c b/alsa/tinyalsa_hal.c
+index 949680b..b7b26fd 100644
+--- a/alsa/tinyalsa_hal.c
++++ b/alsa/tinyalsa_hal.c
+@@ -926,7 +926,7 @@ static int out_set_parameters(struct audio_stream *stream, const char *kvpairs)
+         val = atoi(value);
+         pthread_mutex_lock(&adev->lock);
+         pthread_mutex_lock(&out->lock);
+-        if ((adev->out_device != val) && (val != 0)) {
++        if (adev->out_device != val) {
+             if (out == adev->active_output[OUTPUT_PRIMARY] && !out->standby) {
+                 /* a change in output device may change the microphone selection */
+                 if (adev->active_input &&
+@@ -945,7 +945,7 @@ static int out_set_parameters(struct audio_stream *stream, const char *kvpairs)
+                         (adev->mode == AUDIO_MODE_IN_CALL))
+                     do_output_standby(out);
+             }
+-            if (out != adev->active_output[OUTPUT_HDMI]) {
++            if ((out != adev->active_output[OUTPUT_HDMI]) && val) {
+                 adev->out_device = val;
+                 out->device    = val;
+                 if(out->device & AUDIO_DEVICE_OUT_DGTL_DOCK_HEADSET) {
+-- 
+1.8.0
+

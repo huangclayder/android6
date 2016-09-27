@@ -1,0 +1,30 @@
+From ea2b55f5ebedbe430b51b8b9efc5db75752296a4 Mon Sep 17 00:00:00 2001
+From: zhang sanshan <b51434@freescale.com>
+Date: Thu, 15 Jan 2015 16:14:44 +0800
+Subject: [PATCH 6/8] MA-5952 Add NTFS support in Lollipop
+
+When plug in ntfs u disk,ntfsfix will fail.it can't call vfprintf and fprintf in logging.c
+The root cause is that it define off_t as "long long" rather than "long int"
+
+Signed-off-by: Fang Hui <b31070@freescale.com>
+Signed-off-by: zhang sanshan <b51434@freescale.com>
+---
+ config.h | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/config.h b/config.h
+index 36e8ff0..a0974bd 100644
+--- a/config.h
++++ b/config.h
+@@ -361,7 +361,7 @@
+ /* Define to `long int' if <sys/types.h> does not define. */
+ #ifndef _OFF_T_DEFINED_
+ #define _OFF_T_DEFINED_
+-typedef long long off_t;
++typedef long int off_t;
+ #endif
+ 
+ /* Define to `unsigned int' if <sys/types.h> does not define. */
+-- 
+1.8.0
+

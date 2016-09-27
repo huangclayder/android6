@@ -1,0 +1,39 @@
+From 615820812e7b370f402036890f6d90095ace2727 Mon Sep 17 00:00:00 2001
+From: David Mosberger <davidm@egauge.net>
+Date: Fri, 21 Mar 2014 16:05:10 -0600
+Subject: [PATCH] mtd: nand: fix GET/SET_FEATURES address on 16-bit devices
+
+GET_FEATURES and SET_FEATURES also need byte-addressing on 16-bit devices.
+
+Signed-off-by: David Mosberger <davidm@egauge.net>
+Signed-off-by: Brian Norris <computersforpeace@gmail.com>
+Signed-off-by: Huang Shijie <b32955@freescale.com>
+---
+ include/linux/mtd/nand.h | 11 ++++++++++-
+ 1 file changed, 10 insertions(+), 1 deletion(-)
+
+diff --git a/include/linux/mtd/nand.h b/include/linux/mtd/nand.h
+index 0747fef..450d61e 100644
+--- a/include/linux/mtd/nand.h
++++ b/include/linux/mtd/nand.h
+@@ -925,7 +925,16 @@ static inline bool nand_is_slc(struct nand_chip *chip)
+  */
+ static inline int nand_opcode_8bits(unsigned int command)
+ {
+-	return command == NAND_CMD_READID || command == NAND_CMD_PARAM;
++	switch (command) {
++	case NAND_CMD_READID:
++	case NAND_CMD_PARAM:
++	case NAND_CMD_GET_FEATURES:
++	case NAND_CMD_SET_FEATURES:
++		return 1;
++	default:
++		break;
++	}
++	return 0;
+ }
+ 
+ /* return the supported JEDEC features. */
+-- 
+1.8.0
+

@@ -1,0 +1,31 @@
+From 0559703ecc0c35701418c7898a414fb0604d2359 Mon Sep 17 00:00:00 2001
+From: Anson Huang <b20788@freescale.com>
+Date: Thu, 19 Dec 2013 13:17:23 -0500
+Subject: [PATCH] ARM: dts: imx6qdl: add necessary thermal clk
+
+Thermal sensor needs pll3_usb_otg when measuring temperature,
+so we need to pass clk info to thermal driver.
+
+Signed-off-by: Anson Huang <b20788@freescale.com>
+Signed-off-by: Shawn Guo <shawn.guo@linaro.org>
+[shawn.guo: cherry-pick commit f430d19c371f from upstream]
+Signed-off-by: Shawn Guo <shawn.guo@freescale.com>
+---
+ arch/arm/boot/dts/imx6qdl.dtsi | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/arch/arm/boot/dts/imx6qdl.dtsi b/arch/arm/boot/dts/imx6qdl.dtsi
+index ab6d0cc2..8a7713a 100644
+--- a/arch/arm/boot/dts/imx6qdl.dtsi
++++ b/arch/arm/boot/dts/imx6qdl.dtsi
+@@ -568,6 +568,7 @@
+ 				interrupts = <0 49 IRQ_TYPE_LEVEL_HIGH>;
+ 				fsl,tempmon = <&anatop>;
+ 				fsl,tempmon-data = <&ocotp>;
++				clocks = <&clks 172>;
+ 			};
+ 
+ 			usbphy1: usbphy@020c9000 {
+-- 
+1.8.0
+

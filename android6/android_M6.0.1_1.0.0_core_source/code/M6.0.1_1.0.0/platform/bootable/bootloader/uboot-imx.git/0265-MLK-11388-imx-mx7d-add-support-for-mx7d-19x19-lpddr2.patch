@@ -1,0 +1,365 @@
+From b437ce19ce71f670942183f70985ce123ab5140c Mon Sep 17 00:00:00 2001
+From: "Ye.Li" <B37916@freescale.com>
+Date: Thu, 20 Aug 2015 11:10:53 +0800
+Subject: [PATCH] MLK-11388 imx: mx7d: add support for mx7d 19x19 lpddr2 arm2
+ board
+
+This mx7d 19x19 lpddr2 arm2 board is based on 19x19 lpddr3 arm2 board
+with DDR changed to 512M LPDDR2. We added DDR script for LPDDR2 and
+a new u-boot build target: mx7d_19x19_lpddr2_arm2_config
+
+LPDDR2 script source: lpddr2_0_1.ds
+
+Signed-off-by: Ye.Li <B37916@freescale.com>
+---
+ .../mx7d_19x19_lpddr3_arm2/imximage_lpddr2.cfg     | 119 ++++++++++++++++
+ .../mx7d_19x19_lpddr3_arm2.c                       |   5 +-
+ board/freescale/mx7d_19x19_lpddr3_arm2/plugin.S    | 151 +++++++++++++++++++++
+ configs/mx7d_19x19_lpddr2_arm2_defconfig           |   7 +
+ include/configs/mx7d_19x19_lpddr3_arm2.h           |   4 +
+ 5 files changed, 285 insertions(+), 1 deletion(-)
+
+diff --git a/board/freescale/mx7d_19x19_lpddr3_arm2/imximage_lpddr2.cfg b/board/freescale/mx7d_19x19_lpddr3_arm2/imximage_lpddr2.cfg
+new file mode 100644
+index 0000000..85e935c
+--- /dev/null
++++ b/board/freescale/mx7d_19x19_lpddr3_arm2/imximage_lpddr2.cfg
+@@ -0,0 +1,119 @@
++/*
++ * Copyright (C) 2015 Freescale Semiconductor, Inc.
++ *
++ * SPDX-License-Identifier:	GPL-2.0+
++ *
++ * Refer docs/README.imxmage for more details about how-to configure
++ * and create imximage boot image
++ *
++ * The syntax is taken as close as possible with the kwbimage
++ */
++
++#define __ASSEMBLY__
++#include <config.h>
++
++/* image version */
++
++IMAGE_VERSION 2
++
++/*
++ * Boot Device : one of
++ * spi/sd/nand/onenand, qspi/nor
++ */
++
++#ifdef CONFIG_SYS_BOOT_QSPI
++BOOT_FROM	qspi
++#elif defined(CONFIG_SYS_BOOT_EIMNOR)
++BOOT_FROM	nor
++#else
++BOOT_FROM	sd
++#endif
++
++#ifdef CONFIG_USE_PLUGIN
++/*PLUGIN    plugin-binary-file    IRAM_FREE_START_ADDR*/
++PLUGIN	board/freescale/mx7d_19x19_lpddr3_arm2/plugin.bin 0x00910000
++#else
++
++#ifdef CONFIG_SECURE_BOOT
++CSF CONFIG_CSF_SIZE
++#endif
++
++/*
++ * Device Configuration Data (DCD)
++ *
++ * Each entry must have the format:
++ * Addr-type           Address        Value
++ *
++ * where:
++ *	Addr-type register length (1,2 or 4 bytes)
++ *	Address	  absolute address of the register
++ *	value	  value to be stored in the register
++ */
++
++DATA 4 0x30340004 0x4F400005
++
++DATA 4 0x30391000 0x00000002
++DATA 4 0x307a0000 0x03020004
++DATA 4 0x307a01a0 0x80400003
++DATA 4 0x307a01a4 0x00100020
++DATA 4 0x307a01a8 0x80100004
++DATA 4 0x307a0064 0x00200023
++DATA 4 0x307a0490 0x00000001
++DATA 4 0x307a00d0 0x00350001
++DATA 4 0x307a00d8 0x00001105
++DATA 4 0x307a00dc 0x00c20006
++DATA 4 0x307a00e0 0x00020000
++DATA 4 0x307a00e4 0x00110006
++DATA 4 0x307a00f4 0x0000033f
++DATA 4 0x307a0100 0x080e110b
++DATA 4 0x307a0104 0x00020211
++DATA 4 0x307a0108 0x02040706
++DATA 4 0x307a010c 0x00504000
++DATA 4 0x307a0110 0x05010307
++DATA 4 0x307a0114 0x02020404
++DATA 4 0x307a0118 0x02020003
++DATA 4 0x307a011c 0x00000202
++DATA 4 0x307a0120 0x00000202
++
++DATA 4 0x307a0180 0x00600018
++DATA 4 0x307a0184 0x00e00100
++DATA 4 0x307a0190 0x02098203
++DATA 4 0x307a0194 0x00060303
++
++DATA 4 0x307a0200 0x00000015
++DATA 4 0x307a0204 0x00161616
++DATA 4 0x307a0210 0x00000f0f
++DATA 4 0x307a0214 0x04040404
++DATA 4 0x307a0218 0x0f0f0404
++
++DATA 4 0x307a0240 0x06000600
++DATA 4 0x307a0244 0x00000000
++DATA 4 0x30391000 0x00000000
++DATA 4 0x30790000 0x17421640
++DATA 4 0x30790004 0x10210100
++DATA 4 0x30790008 0x00010000
++DATA 4 0x30790010 0x00050408
++DATA 4 0x307900b0 0x1010007e
++
++DATA 4 0x3079001C 0x01010000
++DATA 4 0x3079009C 0x00000d6e
++DATA 4 0x30790018 0x0000000f
++
++DATA 4 0x30790030 0x06060606
++DATA 4 0x30790020 0x0a0a0a0a
++DATA 4 0x30790050 0x01000008
++DATA 4 0x30790050 0x00000008
++DATA 4 0x307900c0 0x0e487304
++DATA 4 0x307900c0 0x0e4c7304
++DATA 4 0x307900c0 0x0e4c7306
++CHECK_BITS_SET 4 0x307900c4 0x1
++
++DATA 4 0x307900c0 0x0e4c7304
++DATA 4 0x307900c0 0x0e487304
++
++DATA 4 0x30384130 0x00000000
++DATA 4 0x30340020 0x000001f8
++DATA 4 0x30384130 0x00000002
++
++CHECK_BITS_SET 4 0x307a0004 0x1
++#endif
+diff --git a/board/freescale/mx7d_19x19_lpddr3_arm2/mx7d_19x19_lpddr3_arm2.c b/board/freescale/mx7d_19x19_lpddr3_arm2/mx7d_19x19_lpddr3_arm2.c
+index 442c356..3e77951 100644
+--- a/board/freescale/mx7d_19x19_lpddr3_arm2/mx7d_19x19_lpddr3_arm2.c
++++ b/board/freescale/mx7d_19x19_lpddr3_arm2/mx7d_19x19_lpddr3_arm2.c
+@@ -647,8 +647,11 @@ u32 get_board_rev(void)
+ 
+ int checkboard(void)
+ {
++#ifdef CONFIG_MX7D_LPDDR2
++	puts("Board: MX7D 19x19 LPDDR2 ARM2\n");
++#else
+ 	puts("Board: MX7D 19x19 LPDDR3 ARM2\n");
+-
++#endif
+ 	return 0;
+ }
+ 
+diff --git a/board/freescale/mx7d_19x19_lpddr3_arm2/plugin.S b/board/freescale/mx7d_19x19_lpddr3_arm2/plugin.S
+index 406a846..f60315d 100644
+--- a/board/freescale/mx7d_19x19_lpddr3_arm2/plugin.S
++++ b/board/freescale/mx7d_19x19_lpddr3_arm2/plugin.S
+@@ -152,6 +152,153 @@ wait_stat:
+ 	beq wait_stat
+ .endm
+ 
++.macro imx7d_19x19_lpddr2_arm2_setting
++	/* Configure ocram_epdc */
++	ldr r0, =IOMUXC_GPR_BASE_ADDR
++	ldr r1, =0x4f400005
++	str r1, [r0, #0x4]
++
++	ldr r0, =SRC_BASE_ADDR
++	ldr r1, =0x2
++	ldr r2, =0x1000
++	str r1, [r0, r2]
++
++	ldr r0, =DDRC_IPS_BASE_ADDR
++	ldr r1, =0x03020004
++	str r1, [r0]
++	ldr r1, =0x80400003
++	str r1, [r0, #0x1a0]
++	ldr r1, =0x00100020
++	str r1, [r0, #0x1a4]
++	ldr r1, =0x80100004
++	str r1, [r0, #0x1a8]
++	ldr r1, =0x00200023
++	str r1, [r0, #0x64]
++	ldr r1, =0x1
++	str r1, [r0, #0x490]
++	ldr r1, =0x00350001
++	str r1, [r0, #0xd0]
++	ldr r1, =0x00001105
++	str r1, [r0, #0xd8]
++	ldr r1, =0x00c20006
++	str r1, [r0, #0xdc]
++	ldr r1, =0x00020000
++	str r1, [r0, #0xe0]
++	ldr r1, =0x00110006
++	str r1, [r0, #0xe4]
++	ldr r1, =0x33f
++	str r1, [r0, #0xf4]
++	ldr r1, =0x080e110b
++	str r1, [r0, #0x100]
++	ldr r1, =0x00020211
++	str r1, [r0, #0x104]
++	ldr r1, =0x02040706
++	str r1, [r0, #0x108]
++	ldr r1, =0x00504000
++	str r1, [r0, #0x10c]
++	ldr r1, =0x05010307
++	str r1, [r0, #0x110]
++	ldr r1, =0x02020404
++	str r1, [r0, #0x114]
++	ldr r1, =0x02020003
++	str r1, [r0, #0x118]
++	ldr r1, =0x00000202
++	str r1, [r0, #0x11c]
++	ldr r1, =0x00000202
++	str r1, [r0, #0x120]
++	ldr r1, =0x00600018
++	str r1, [r0, #0x180]
++	ldr r1, =0x00e00100
++	str r1, [r0, #0x184]
++	ldr r1, =0x02098203
++	str r1, [r0, #0x190]
++	ldr r1, =0x00060303
++	str r1, [r0, #0x194]
++
++	ldr r1, =0x00000015
++	str r1, [r0, #0x200]
++	ldr r1, =0x00161616
++	str r1, [r0, #0x204]
++	ldr r1, =0x00000f0f
++	str r1, [r0, #0x210]
++	ldr r1, =0x04040404
++	str r1, [r0, #0x214]
++	ldr r1, =0x0f0f0404
++	str r1, [r0, #0x218]
++
++	ldr r1, =0x06000600
++	str r1, [r0, #0x240]
++	mov r1, #0x0
++	str r1, [r0, #0x244]
++
++	ldr r0, =SRC_BASE_ADDR
++	mov r1, #0x0
++	ldr r2, =0x1000
++	str r1, [r0, r2]
++
++	ldr r0, =DDRPHY_IPS_BASE_ADDR
++	ldr r1, =0x17421640
++	str r1, [r0]
++	ldr r1, =0x10210100
++	str r1, [r0, #0x4]
++	ldr r1, =0x00010000
++	str r1, [r0, #0x8]
++	ldr r1, =0x00050408
++	str r1, [r0, #0x10]
++	ldr r1, =0x1010007e
++	str r1, [r0, #0xb0]
++	ldr r1, =0x01010000
++	str r1, [r0, #0x1c]
++	ldr r1, =0x00000d6e
++	str r1, [r0, #0x9c]
++	ldr r1, =0x0000000f
++	str r1, [r0, #0x18]
++
++	ldr r1, =0x06060606
++	str r1, [r0, #0x30]
++	ldr r1, =0x0a0a0a0a
++	str r1, [r0, #0x20]
++	ldr r1, =0x01000008
++	str r1, [r0, #0x50]
++	ldr r1, =0x00000008
++	str r1, [r0, #0x50]
++
++	ldr r1, =0x0e487304
++	str r1, [r0, #0xc0]
++	ldr r1, =0x0e4c7304
++	str r1, [r0, #0xc0]
++	ldr r1, =0x0e4c7306
++	str r1, [r0, #0xc0]
++
++wait_zq:
++	ldr r1, [r0, #0xc4]
++	tst r1, #0x1
++	beq wait_zq
++
++	ldr r1, =0x0e4c7304
++	str r1, [r0, #0xc0]
++	ldr r1, =0x0e487304
++	str r1, [r0, #0xc0]
++
++	ldr r0, =CCM_BASE_ADDR
++	mov r1, #0x0
++	ldr r2, =0x4130
++	str r1, [r0, r2]
++	ldr r0, =IOMUXC_GPR_BASE_ADDR
++	mov r1, #0x1f8
++	str r1, [r0, #0x20]
++	ldr r0, =CCM_BASE_ADDR
++	mov r1, #0x2
++	ldr r2, =0x4130
++	str r1, [r0, r2]
++
++	ldr r0, =DDRC_IPS_BASE_ADDR
++wait_stat:
++	ldr r1, [r0, #0x4]
++	tst r1, #0x1
++	beq wait_stat
++.endm
++
+ .macro imx7_clock_gating
+ .endm
+ 
+@@ -159,7 +306,11 @@ wait_stat:
+ .endm
+ 
+ .macro imx7_ddr_setting
++#if defined (CONFIG_MX7D_LPDDR2)
++	imx7d_19x19_lpddr2_arm2_setting
++#else
+ 	imx7d_19x19_lpddr3_arm2_setting
++#endif
+ .endm
+ 
+ /* include the common plugin code here */
+diff --git a/configs/mx7d_19x19_lpddr2_arm2_defconfig b/configs/mx7d_19x19_lpddr2_arm2_defconfig
+new file mode 100644
+index 0000000..6b3d984
+--- /dev/null
++++ b/configs/mx7d_19x19_lpddr2_arm2_defconfig
+@@ -0,0 +1,7 @@
++CONFIG_SYS_EXTRA_OPTIONS="IMX_CONFIG=board/freescale/mx7d_19x19_lpddr3_arm2/imximage_lpddr2.cfg,MX7D,MX7D_LPDDR2,DEFAULT_FDT_FILE=\"imx7d-19x19-lpddr2-arm2.dtb\""
++CONFIG_ARM=y
++CONFIG_TARGET_MX7D_19X19_LPDDR3_ARM2=y
++CONFIG_SYS_MALLOC_F=y
++CONFIG_SYS_MALLOC_F_LEN=0x400
++CONFIG_DM=y
++CONFIG_DM_THERMAL=y
+diff --git a/include/configs/mx7d_19x19_lpddr3_arm2.h b/include/configs/mx7d_19x19_lpddr3_arm2.h
+index 1c68ee1..303a081 100644
+--- a/include/configs/mx7d_19x19_lpddr3_arm2.h
++++ b/include/configs/mx7d_19x19_lpddr3_arm2.h
+@@ -14,7 +14,11 @@
+ #define CONFIG_SYS_MMC_ENV_PART		0	/* user area */
+ #define CONFIG_MMCROOT			"/dev/mmcblk0p2"  /* USDHC1 */
+ 
++#ifdef CONFIG_MX7D_LPDDR2
++#define PHYS_SDRAM_SIZE			SZ_512M
++#else
+ #define PHYS_SDRAM_SIZE			SZ_2G
++#endif
+ 
+ #define CONFIG_CMD_PING
+ #define CONFIG_CMD_DHCP
+-- 
+1.8.0
+

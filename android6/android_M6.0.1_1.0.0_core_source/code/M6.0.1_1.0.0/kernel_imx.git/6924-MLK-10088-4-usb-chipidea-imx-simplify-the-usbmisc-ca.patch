@@ -1,0 +1,89 @@
+From f8cfaa8829a95c95d87b6adf9895f33cf9e8e30a Mon Sep 17 00:00:00 2001
+From: Peter Chen <peter.chen@freescale.com>
+Date: Fri, 12 Dec 2014 14:53:32 +0800
+Subject: [PATCH] MLK-10088-4 usb: chipidea: imx: simplify the usbmisc callers
+
+Move struct imx_usbmisc_data NULL pointer judgement from caller to
+each API, it can simplify the caller.
+
+Signed-off-by: Peter Chen <peter.chen@freescale.com>
+---
+ drivers/usb/chipidea/ci_hdrc_imx.c | 22 ++++++++--------------
+ drivers/usb/chipidea/usbmisc_imx.c | 12 ++++++++++--
+ 2 files changed, 18 insertions(+), 16 deletions(-)
+
+diff --git a/drivers/usb/chipidea/ci_hdrc_imx.c b/drivers/usb/chipidea/ci_hdrc_imx.c
+index 76a3dc0..5bdd49e 100644
+--- a/drivers/usb/chipidea/ci_hdrc_imx.c
++++ b/drivers/usb/chipidea/ci_hdrc_imx.c
+@@ -149,13 +149,10 @@ static int ci_hdrc_imx_probe(struct platform_device *pdev)
+ 	if (ret)
+ 		goto err_clk;
+ 
+-	if (data->usbmisc_data) {
+-		ret = imx_usbmisc_init(data->usbmisc_data);
+-		if (ret) {
+-			dev_err(&pdev->dev, "usbmisc init failed, ret=%d\n",
+-					ret);
+-			goto err_clk;
+-		}
++	ret = imx_usbmisc_init(data->usbmisc_data);
++	if (ret) {
++		dev_err(&pdev->dev, "usbmisc init failed, ret=%d\n", ret);
++		goto err_clk;
+ 	}
+ 
+ 	data->ci_pdev = ci_hdrc_add_device(&pdev->dev,
+@@ -169,13 +166,10 @@ static int ci_hdrc_imx_probe(struct platform_device *pdev)
+ 		goto err_clk;
+ 	}
+ 
+-	if (data->usbmisc_data) {
+-		ret = imx_usbmisc_init_post(data->usbmisc_data);
+-		if (ret) {
+-			dev_err(&pdev->dev, "usbmisc post failed, ret=%d\n",
+-					ret);
+-			goto disable_device;
+-		}
++	ret = imx_usbmisc_init_post(data->usbmisc_data);
++	if (ret) {
++		dev_err(&pdev->dev, "usbmisc post failed, ret=%d\n", ret);
++		goto disable_device;
+ 	}
+ 
+ 	platform_set_drvdata(pdev, data);
+diff --git a/drivers/usb/chipidea/usbmisc_imx.c b/drivers/usb/chipidea/usbmisc_imx.c
+index e91e64a..6dd4243 100644
+--- a/drivers/usb/chipidea/usbmisc_imx.c
++++ b/drivers/usb/chipidea/usbmisc_imx.c
+@@ -265,8 +265,12 @@ static const struct usbmisc_ops vf610_usbmisc_ops = {
+ 
+ int imx_usbmisc_init(struct imx_usbmisc_data *data)
+ {
+-	struct imx_usbmisc *usbmisc = dev_get_drvdata(data->dev);
++	struct imx_usbmisc *usbmisc;
++
++	if (!data)
++		return 0;
+ 
++	usbmisc = dev_get_drvdata(data->dev);
+ 	if (!usbmisc->ops->init)
+ 		return 0;
+ 	return usbmisc->ops->init(data);
+@@ -275,8 +279,12 @@ EXPORT_SYMBOL_GPL(imx_usbmisc_init);
+ 
+ int imx_usbmisc_init_post(struct imx_usbmisc_data *data)
+ {
+-	struct imx_usbmisc *usbmisc = dev_get_drvdata(data->dev);
++	struct imx_usbmisc *usbmisc;
++
++	if (!data)
++		return 0;
+ 
++	usbmisc = dev_get_drvdata(data->dev);
+ 	if (!usbmisc->ops->post)
+ 		return 0;
+ 	return usbmisc->ops->post(data);
+-- 
+1.8.0
+

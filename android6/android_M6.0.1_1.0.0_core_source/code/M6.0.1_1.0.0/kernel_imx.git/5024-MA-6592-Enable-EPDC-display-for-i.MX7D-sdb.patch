@@ -1,0 +1,42 @@
+From 68496ca26e8263cad9ae880e40000e8ff26ae84f Mon Sep 17 00:00:00 2001
+From: "guoyin.chen" <guoyin.chen@freescale.com>
+Date: Mon, 4 May 2015 13:44:17 +0800
+Subject: [PATCH] MA-6592 Enable EPDC display for i.MX7D sdb
+
+Disable lcdif framebuffer to make sure epdc fb as fb0
+Change buffer number for epdc fb to be 3, which aligned with android hal
+
+Signed-off-by: guoyin.chen <guoyin.chen@freescale.com>
+---
+ arch/arm/boot/dts/imx7d-sdb-epdc.dts | 4 ++++
+ drivers/video/mxc/mxc_epdc_v2_fb.c   | 2 +-
+ 2 files changed, 5 insertions(+), 1 deletion(-)
+
+diff --git a/arch/arm/boot/dts/imx7d-sdb-epdc.dts b/arch/arm/boot/dts/imx7d-sdb-epdc.dts
+index 983b4f8..cde0c58 100644
+--- a/arch/arm/boot/dts/imx7d-sdb-epdc.dts
++++ b/arch/arm/boot/dts/imx7d-sdb-epdc.dts
+@@ -27,3 +27,7 @@
+ &sii902x {
+ 	status = "disabled";
+ };
++
++&lcdif {
++	status = "disabled";
++};
+diff --git a/drivers/video/mxc/mxc_epdc_v2_fb.c b/drivers/video/mxc/mxc_epdc_v2_fb.c
+index 403a502..639eef3 100644
+--- a/drivers/video/mxc/mxc_epdc_v2_fb.c
++++ b/drivers/video/mxc/mxc_epdc_v2_fb.c
+@@ -71,7 +71,7 @@
+ /*#define DEFAULT_PANEL_HW_INIT*/
+ 
+ #define SG_NUM				14 /* 2+4+4+4  */
+-#define NUM_SCREENS_MIN	2
++#define NUM_SCREENS_MIN	3
+ 
+ #define EPDC_V1_NUM_LUTS	16
+ #define EPDC_V1_MAX_NUM_UPDATES 20
+-- 
+1.8.0
+

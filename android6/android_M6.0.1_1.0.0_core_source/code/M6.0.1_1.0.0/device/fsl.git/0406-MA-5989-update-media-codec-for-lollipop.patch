@@ -1,0 +1,48 @@
+From ff307e7676ffc3a2384c6aa80ca2ca254c0d21b8 Mon Sep 17 00:00:00 2001
+From: Ming Zhou <b42586@freescale.com>
+Date: Thu, 11 Dec 2014 09:55:00 +0800
+Subject: [PATCH 406/602] MA-5989 update media codec for lollipop.
+
+copy media_codecs_google_audio.xml & media_codecs_google_video.xml to /system/etc
+
+Signed-off-by: Ming Zhou <b42586@freescale.com>
+---
+ imx5x/imx5x.mk | 5 ++++-
+ imx6/imx6.mk   | 5 ++++-
+ 2 files changed, 8 insertions(+), 2 deletions(-)
+
+diff --git a/imx5x/imx5x.mk b/imx5x/imx5x.mk
+index a55065a..d83a703 100644
+--- a/imx5x/imx5x.mk
++++ b/imx5x/imx5x.mk
+@@ -292,7 +292,10 @@ PRODUCT_COPY_FILES +=	\
+ 	device/fsl/imx5x/init.freescale.usb.rc:root/init.freescale.usb.rc \
+ 	device/fsl/imx5x/ueventd.freescale.rc:root/ueventd.freescale.rc \
+ 	device/fsl/imx5x/init.gprs-pppd:system/etc/ppp/init.gprs-pppd \
+-	device/fsl/imx5x/initlogo.rle:root/initlogo.rle
++	device/fsl/imx5x/initlogo.rle:root/initlogo.rle \
++    device/fsl/fsl-proprietary/media-profile/media_codecs_google_audio.xml:system/etc/media_codecs_google_audio.xml \
++    device/fsl/fsl-proprietary/media-profile/media_codecs_google_video.xml:system/etc/media_codecs_google_video.xml \
++
+ 
+ # VPU firmware
+ PRODUCT_COPY_FILES +=	\
+diff --git a/imx6/imx6.mk b/imx6/imx6.mk
+index 1f2787b..5bc23b6 100644
+--- a/imx6/imx6.mk
++++ b/imx6/imx6.mk
+@@ -340,7 +340,10 @@ PRODUCT_COPY_FILES +=	\
+ 	device/fsl/imx6/etc/ota.conf:system/etc/ota.conf \
+ 	device/fsl/common/display/display_mode_fb0.conf:system/etc/display_mode_fb0.conf \
+ 	device/fsl/common/display/display_mode_fb2.conf:system/etc/display_mode_fb2.conf \
+-	device/fsl/common/display/display_mode_fb4.conf:system/etc/display_mode_fb4.conf
++	device/fsl/common/display/display_mode_fb4.conf:system/etc/display_mode_fb4.conf \
++    device/fsl-proprietary/media-profile/media_codecs_google_audio.xml:system/etc/media_codecs_google_audio.xml \
++    device/fsl-proprietary/media-profile/media_codecs_google_video.xml:system/etc/media_codecs_google_video.xml \
++
+ 
+ # we have enough storage space to hold precise GC data
+ PRODUCT_TAGS += dalvik.gc.type-precise
+-- 
+1.8.0
+

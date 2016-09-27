@@ -1,0 +1,50 @@
+From badd1c2dfd7122be1d5b9f0cb0f6898c290c4ba4 Mon Sep 17 00:00:00 2001
+From: Jon Medhurst <tixy@linaro.org>
+Date: Wed, 7 Nov 2012 15:37:28 +0000
+Subject: [PATCH] configs: linaro-base: set CONFIG_AEABI=y
+
+We already have CONFIG_THUMB2_KERNEL=y which also selects CONFIG_AEABI
+however if someone wanted to disable Thumb2 for debugging or other
+reasons then they may try simply removing the Thumb2 config entry. This
+however would then default to the old ABI and it seems there are some
+obscure bugs in this little tested kernel variant. So, to save wasting
+people's time let's make sure CONFIG_AEABI is explicitly selected.
+
+As we are adding this to linaro-base.conf we can remove it from
+android.conf (which probably had it as a leftover from when we
+had Thumb2 disabled).
+
+Signed-off-by: Jon Medhurst <tixy@linaro.org>
+---
+ linaro/configs/android.conf     | 1 -
+ linaro/configs/linaro-base.conf | 2 ++
+ 2 files changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/linaro/configs/android.conf b/linaro/configs/android.conf
+index 1518036..4bc2150 100644
+--- a/linaro/configs/android.conf
++++ b/linaro/configs/android.conf
+@@ -6,7 +6,6 @@ CONFIG_WAKELOCK=y
+ CONFIG_USER_WAKELOCK=y
+ CONFIG_BLK_DEV_LOOP=y
+ CONFIG_DM_CRYPT=y
+-CONFIG_AEABI=y
+ CONFIG_POWER_SUPPLY=y
+ CONFIG_ANDROID_PARANOID_NETWORK=y
+ CONFIG_NET_ACTIVITY_STATS=y
+diff --git a/linaro/configs/linaro-base.conf b/linaro/configs/linaro-base.conf
+index a0fa9d5..9269c8e 100644
+--- a/linaro/configs/linaro-base.conf
++++ b/linaro/configs/linaro-base.conf
+@@ -19,6 +19,8 @@ CONFIG_SMP=y
+ CONFIG_SCHED_MC=y
+ CONFIG_SCHED_SMT=y
+ CONFIG_THUMB2_KERNEL=y
++CONFIG_AEABI=y
++# CONFIG_OABI_COMPAT is not set
+ CONFIG_CPU_FREQ=y
+ CONFIG_CPU_FREQ_DEFAULT_GOV_ONDEMAND=y
+ CONFIG_CPU_IDLE=y
+-- 
+1.8.0
+

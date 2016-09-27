@@ -1,0 +1,58 @@
+From 27a03a84aca1ed9b771c7bcbef88f6252fdb7e6b Mon Sep 17 00:00:00 2001
+From: Haoran Wang <b50027@freescale.com>
+Date: Tue, 21 Apr 2015 21:56:50 +0800
+Subject: [PATCH] MA-6568 Enable BCM4339 Bluetooth on sabresd_7d
+
+Modify DTS and added BCM4339 bluetooth .config.
+
+Signed-off-by: Haoran Wang <b50027@freescale.com>
+---
+ arch/arm/boot/dts/imx7d-sdb.dts           | 5 +++++
+ arch/arm/configs/imx_v7_android_defconfig | 6 +++++-
+ 2 files changed, 10 insertions(+), 1 deletion(-)
+
+diff --git a/arch/arm/boot/dts/imx7d-sdb.dts b/arch/arm/boot/dts/imx7d-sdb.dts
+index c20d78c8..ddc9c43 100644
+--- a/arch/arm/boot/dts/imx7d-sdb.dts
++++ b/arch/arm/boot/dts/imx7d-sdb.dts
+@@ -178,6 +178,11 @@
+ 		dump_oops = <1>;
+ 		status = "okay";
+ 	};
++    bt_rfkill {
++        compatible = "fsl,mxc_bt_rfkill";
++        bt-power-gpios = <&gpio4 23 0>;
++        status ="okay";
++    };
+ };
+ 
+ &cpu0 {
+diff --git a/arch/arm/configs/imx_v7_android_defconfig b/arch/arm/configs/imx_v7_android_defconfig
+index b212ad5..4e4ad8b 100644
+--- a/arch/arm/configs/imx_v7_android_defconfig
++++ b/arch/arm/configs/imx_v7_android_defconfig
+@@ -181,16 +181,20 @@ CONFIG_BT_BNEP_MC_FILTER=y
+ CONFIG_BT_BNEP_PROTO_FILTER=y
+ CONFIG_BT_HIDP=y
+ CONFIG_BT_HCIBTUSB=y
++CONFIG_BT_HCIBTSDIO=y
+ CONFIG_BT_HCIUART=y
+ CONFIG_BT_HCIUART_BCSP=y
+ CONFIG_BT_HCIUART_ATH3K=y
+ CONFIG_BT_HCIBCM203X=y
+-CONFIG_BT_ATH3K=y
++CONFIG_BT_L2CAP=y
++CONFIG_BT_SCO=y
++CONFIG_BT_HCIUART_H4=y
+ CONFIG_CFG80211=m
+ CONFIG_CFG80211_WEXT=y
+ CONFIG_MAC80211=m
+ CONFIG_RFKILL=y
+ CONFIG_RFKILL_INPUT=y
++CONFIG_RFKILL_GPIO=y
+ CONFIG_DEVTMPFS=y
+ CONFIG_DEVTMPFS_MOUNT=y
+ # CONFIG_STANDALONE is not set
+-- 
+1.8.0
+

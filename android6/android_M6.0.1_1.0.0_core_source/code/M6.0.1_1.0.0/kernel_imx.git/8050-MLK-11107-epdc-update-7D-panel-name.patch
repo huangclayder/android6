@@ -1,0 +1,39 @@
+From c017a6444b1e1e093ead0597aa852f525a4753fa Mon Sep 17 00:00:00 2001
+From: Evan Kotara <evan.kotara@freescale.com>
+Date: Fri, 12 Jun 2015 11:14:39 -0500
+Subject: [PATCH] MLK-11107 epdc: update 7D panel name
+
+Update the name of the panel used on the 7D DC4 ebook board from development name to ED060XH2C1.
+
+Signed-off-by: Evan Kotara <evan.kotara@freescale.com>
+---
+ drivers/video/mxc/mxc_epdc_v2_fb.c | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/drivers/video/mxc/mxc_epdc_v2_fb.c b/drivers/video/mxc/mxc_epdc_v2_fb.c
+index 54b2fd9..49fb6d2 100644
+--- a/drivers/video/mxc/mxc_epdc_v2_fb.c
++++ b/drivers/video/mxc/mxc_epdc_v2_fb.c
+@@ -281,8 +281,8 @@ struct mxcfb_waveform_data_file {
+ 	u32 *data;	/* Temperature Range Table + Waveform Data */
+ };
+ 
+-static struct fb_videomode ed060xc8mode = {
+-	.name = "ED060XC8",
++static struct fb_videomode ed060xh2c1mode = {
++	.name = "ED060XH2C1",
+ 	.refresh = 85,
+ 	.xres = 1024,
+ 	.yres = 758,
+@@ -368,7 +368,7 @@ static struct fb_videomode e97_v110_mode = {
+ 
+ static struct imx_epdc_fb_mode panel_modes[] = {
+ 	{
+-		&ed060xc8mode, 	/* struct fb_videomode *mode */
++		&ed060xh2c1mode,	/* struct fb_videomode *mode */
+ 		4, 	/* vscan_holdoff */
+ 		10, 	/* sdoed_width */
+ 		20, 	/* sdoed_delay */
+-- 
+1.8.0
+

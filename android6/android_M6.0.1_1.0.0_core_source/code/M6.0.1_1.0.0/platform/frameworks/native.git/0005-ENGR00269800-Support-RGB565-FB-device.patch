@@ -1,0 +1,64 @@
+From 61d297fa6f00d024e15d27db8d8167a54bea50c8 Mon Sep 17 00:00:00 2001
+From: "guoyin.chen" <guoyin.chen@freescale.com>
+Date: Fri, 5 Jul 2013 12:51:55 +0800
+Subject: [PATCH 05/43] ENGR00269800 Support RGB565 FB device
+
+Add HWC_DISPLAY_FORMAT query to hwc hal to get FB's format
+Return FB0's format as VisualID to SurfaceFlinger
+
+Signed-off-by: guoyin.chen <guoyin.chen@freescale.com>
+
+Conflicts:
+	services/surfaceflinger/DisplayHardware/HWComposer.cpp
+---
+ services/surfaceflinger/DisplayHardware/HWComposer.cpp | 12 ++++++++++--
+ 1 file changed, 10 insertions(+), 2 deletions(-)
+
+diff --git a/services/surfaceflinger/DisplayHardware/HWComposer.cpp b/services/surfaceflinger/DisplayHardware/HWComposer.cpp
+index 0859149..280cb7a 100644
+--- a/services/surfaceflinger/DisplayHardware/HWComposer.cpp
++++ b/services/surfaceflinger/DisplayHardware/HWComposer.cpp
+@@ -347,6 +347,7 @@ static const uint32_t PRE_HWC15_DISPLAY_ATTRIBUTES[] = {
+     HWC_DISPLAY_HEIGHT,
+     HWC_DISPLAY_DPI_X,
+     HWC_DISPLAY_DPI_Y,
++    HWC_DISPLAY_FORMAT,
+     HWC_DISPLAY_NO_ATTRIBUTE,
+ };
+ 
+@@ -405,6 +406,9 @@ status_t HWComposer::queryDisplayProperties(int disp) {
+                 case HWC_DISPLAY_COLOR_TRANSFORM:
+                     config.colorTransform = values[i];
+                     break;
++                case HWC_DISPLAY_FORMAT:
++                    config.format = values[i];
++                    break;
+                 default:
+                     ALOG_ASSERT(false, "unknown display attribute[%zu] %#x",
+                             i, DISPLAY_ATTRIBUTES[i]);
+@@ -422,7 +426,10 @@ status_t HWComposer::queryDisplayProperties(int disp) {
+     }
+ 
+     // FIXME: what should we set the format to?
+-    mDisplayData[disp].format = HAL_PIXEL_FORMAT_RGBA_8888;
++    if ((mDisplayData[disp].format != HAL_PIXEL_FORMAT_RGB_565) &&
++        (mDisplayData[disp].format != HAL_PIXEL_FORMAT_RGBA_8888))
++        mDisplayData[disp].format = HAL_PIXEL_FORMAT_RGBA_8888;
++
+     mDisplayData[disp].connected = true;
+     return NO_ERROR;
+ }
+@@ -846,8 +853,9 @@ int HWComposer::getVisualID() const {
+         // FIXME: temporary hack until HAL_PIXEL_FORMAT_IMPLEMENTATION_DEFINED
+         // is supported by the implementation. we can only be in this case
+         // if we have HWC 1.1
+-        return HAL_PIXEL_FORMAT_RGBA_8888;
++        //return HAL_PIXEL_FORMAT_RGBA_8888;
+         //return HAL_PIXEL_FORMAT_IMPLEMENTATION_DEFINED;
++        return mDisplayData[0].format;
+     } else {
+         return mFbDev->format;
+     }
+-- 
+1.8.0
+

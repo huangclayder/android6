@@ -1,0 +1,111 @@
+From da3c0b6dbba8dbf6fa1800af58af7e5031566167 Mon Sep 17 00:00:00 2001
+From: Xiaowen Liu <xiaowen.liu@freescale.com>
+Date: Fri, 25 Dec 2015 12:41:41 -0500
+Subject: [PATCH 622/635] MA-7414 Camera CTS failed issue on IMX6 Platform.
+
+Add ANDROID_CONTROL_AE_AVAILABLE_ANTIBANDING_MODES support.
+Change sensor FPS range configuration.
+
+Signed-off-by: Xiaowen Liu <xiaowen.liu@freescale.com>
+---
+ mx6/libcamera3/Metadata.cpp   | 4 ++++
+ mx6/libcamera3/Ov5640Csi.cpp  | 4 ++--
+ mx6/libcamera3/Ov5640Mipi.cpp | 4 ++--
+ mx6/libcamera3/Ov5642Csi.cpp  | 4 ++--
+ mx6/libcamera3/TVINDevice.cpp | 4 ++--
+ mx6/libcamera3/UvcDevice.cpp  | 4 ++--
+ 6 files changed, 14 insertions(+), 10 deletions(-)
+
+diff --git a/mx6/libcamera3/Metadata.cpp b/mx6/libcamera3/Metadata.cpp
+index 6e47723..0f7a5ed 100644
+--- a/mx6/libcamera3/Metadata.cpp
++++ b/mx6/libcamera3/Metadata.cpp
+@@ -193,6 +193,10 @@ camera_metadata_t* Metadata::createStaticInfo(SensorData& sensor)
+             ARRAY_SIZE(sensor.mTargetFpsRange),
+             sensor.mTargetFpsRange);
+ 
++    static const uint8_t aeAntibandingMode =
++            ANDROID_CONTROL_AE_ANTIBANDING_MODE_AUTO;
++    m.addUInt8(ANDROID_CONTROL_AE_AVAILABLE_ANTIBANDING_MODES, 1, &aeAntibandingMode);
++
+     int32_t android_control_ae_compensation_range[] = {-3, 3};
+     m.addInt32(ANDROID_CONTROL_AE_COMPENSATION_RANGE,
+             ARRAY_SIZE(android_control_ae_compensation_range),
+diff --git a/mx6/libcamera3/Ov5640Csi.cpp b/mx6/libcamera3/Ov5640Csi.cpp
+index 3e0c153..d93e6ba 100644
+--- a/mx6/libcamera3/Ov5640Csi.cpp
++++ b/mx6/libcamera3/Ov5640Csi.cpp
+@@ -157,8 +157,8 @@ status_t Ov5640Csi::initSensorStaticData()
+ 
+     i = 0;
+     mTargetFpsRange[i++] = 10;
+-    mTargetFpsRange[i++] = 15;
+-    mTargetFpsRange[i++] = 23;
++    mTargetFpsRange[i++] = 30;
++    mTargetFpsRange[i++] = 30;
+     mTargetFpsRange[i++] = 30;
+ 
+     setMaxPictureResolutions();
+diff --git a/mx6/libcamera3/Ov5640Mipi.cpp b/mx6/libcamera3/Ov5640Mipi.cpp
+index 29906eb..c2c0c6f 100644
+--- a/mx6/libcamera3/Ov5640Mipi.cpp
++++ b/mx6/libcamera3/Ov5640Mipi.cpp
+@@ -151,8 +151,8 @@ status_t Ov5640Mipi::initSensorStaticData()
+ 
+     i = 0;
+     mTargetFpsRange[i++] = 10;
+-    mTargetFpsRange[i++] = 15;
+-    mTargetFpsRange[i++] = 23;
++    mTargetFpsRange[i++] = 30;
++    mTargetFpsRange[i++] = 30;
+     mTargetFpsRange[i++] = 30;
+ 
+     setMaxPictureResolutions();
+diff --git a/mx6/libcamera3/Ov5642Csi.cpp b/mx6/libcamera3/Ov5642Csi.cpp
+index e2ab51b..2302805 100644
+--- a/mx6/libcamera3/Ov5642Csi.cpp
++++ b/mx6/libcamera3/Ov5642Csi.cpp
+@@ -153,8 +153,8 @@ status_t Ov5642Csi::initSensorStaticData()
+ 
+     i = 0;
+     mTargetFpsRange[i++] = 10;
+-    mTargetFpsRange[i++] = 15;
+-    mTargetFpsRange[i++] = 23;
++    mTargetFpsRange[i++] = 30;
++    mTargetFpsRange[i++] = 30;
+     mTargetFpsRange[i++] = 30;
+ 
+     setMaxPictureResolutions();
+diff --git a/mx6/libcamera3/TVINDevice.cpp b/mx6/libcamera3/TVINDevice.cpp
+index ca9f3d7..ab90857 100644
+--- a/mx6/libcamera3/TVINDevice.cpp
++++ b/mx6/libcamera3/TVINDevice.cpp
+@@ -162,8 +162,8 @@ status_t TVINDevice::initSensorStaticData()
+ 
+     i = 0;
+     mTargetFpsRange[i++] = 10;
+-    mTargetFpsRange[i++] = 15;
+-    mTargetFpsRange[i++] = 23;
++    mTargetFpsRange[i++] = 30;
++    mTargetFpsRange[i++] = 30;
+     mTargetFpsRange[i++] = 30;
+ 
+     setMaxPictureResolutions();
+diff --git a/mx6/libcamera3/UvcDevice.cpp b/mx6/libcamera3/UvcDevice.cpp
+index 05ad8b9..ef3a9a6 100644
+--- a/mx6/libcamera3/UvcDevice.cpp
++++ b/mx6/libcamera3/UvcDevice.cpp
+@@ -152,8 +152,8 @@ status_t UvcDevice::initSensorStaticData()
+ 
+     i = 0;
+     mTargetFpsRange[i++] = 10;
+-    mTargetFpsRange[i++] = 15;
+-    mTargetFpsRange[i++] = 25;
++    mTargetFpsRange[i++] = 30;
++    mTargetFpsRange[i++] = 30;
+     mTargetFpsRange[i++] = 30;
+ 
+     setMaxPictureResolutions();
+-- 
+1.8.0
+

@@ -1,0 +1,33 @@
+From 2ef65faecdf8855f77188129b7026fadf4baf353 Mon Sep 17 00:00:00 2001
+From: Li Jun <jun.li@freescale.com>
+Date: Mon, 23 Nov 2015 16:30:31 +0800
+Subject: [PATCH] MLK-11891-2 usb: chipidea: usb kmalloc for HNP polling
+ request flag buffer
+
+Use devm_kzalloc for DMA buffer of host request flag transfer when init
+otg fsm.
+
+Signed-off-by: Li Jun <jun.li@freescale.com>
+(cherry picked from commit a6477a9c1e1cc29a7f5b23d9425c34284a32ccd9)
+---
+ drivers/usb/chipidea/otg_fsm.c | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/drivers/usb/chipidea/otg_fsm.c b/drivers/usb/chipidea/otg_fsm.c
+index 58f7433..f0f30de 100644
+--- a/drivers/usb/chipidea/otg_fsm.c
++++ b/drivers/usb/chipidea/otg_fsm.c
+@@ -1112,6 +1112,10 @@ int ci_hdrc_otg_fsm_init(struct ci_hdrc *ci)
+ 
+ 	INIT_WORK(&ci->hnp_polling_work, ci_hnp_polling_work);
+ 
++	ci->fsm.host_req_flag = devm_kzalloc(ci->dev, 1, GFP_KERNEL);
++	if (!ci->fsm.host_req_flag)
++		return -ENOMEM;
++
+ 	/* Enable A vbus valid irq */
+ 	hw_write_otgsc(ci, OTGSC_AVVIE, OTGSC_AVVIE);
+ 
+-- 
+1.8.0
+

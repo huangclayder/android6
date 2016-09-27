@@ -1,0 +1,28 @@
+From c3b27e1e5747784c127ab991cce725ddac24414a Mon Sep 17 00:00:00 2001
+From: Shengjiu Wang <shengjiu.wang@freescale.com>
+Date: Wed, 3 Sep 2014 15:59:34 +0800
+Subject: [PATCH] ENGR00331085-3: ARM: dts: imx6qdl: enable hdmi audio
+
+The HDMI audio's DMA type is changed to 24. So need to update the dts.
+
+Signed-off-by: Shengjiu Wang <shengjiu.wang@freescale.com>
+---
+ arch/arm/boot/dts/imx6qdl.dtsi | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/arch/arm/boot/dts/imx6qdl.dtsi b/arch/arm/boot/dts/imx6qdl.dtsi
+index e506fb8..0c97517 100644
+--- a/arch/arm/boot/dts/imx6qdl.dtsi
++++ b/arch/arm/boot/dts/imx6qdl.dtsi
+@@ -182,7 +182,7 @@
+ 					<&clks IMX6QDL_CLK_HDMI_IAHB>,
+ 					<&clks IMX6QDL_CLK_HSI_TX>;
+ 			clock-names = "hdmi_isfr", "hdmi_iahb", "mipi_core";
+-			dmas = <&sdma 2 22 0>;
++			dmas = <&sdma 2 24 0>;
+ 			dma-names = "tx";
+ 			status = "disabled";
+ 		};
+-- 
+1.8.0
+

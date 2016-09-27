@@ -1,0 +1,498 @@
+From 3428d78d0f0b64ab73a78b5f5acafcd522053b48 Mon Sep 17 00:00:00 2001
+From: fang hui <b31070@freescale.com>
+Date: Tue, 24 Nov 2015 18:24:51 +0800
+Subject: [PATCH 611/635] MA-7298 - [audioHAL]: unite code with brillo
+
+To keep tinyalsa on brillo as original, modify HAL codes.
+use macro BRILLO to distinguish.
+
+Signed-off-by: fang hui <b31070@freescale.com>
+---
+ alsa/Android.mk      |  20 ++++
+ alsa/config_wm8960.h |  35 ++++++-
+ alsa/control.c       | 273 +++++++++++++++++++++++++++++++++++++++++++++++++++
+ alsa/tinyalsa_hal.c  |  52 +++++++++-
+ 4 files changed, 374 insertions(+), 6 deletions(-)
+ create mode 100755 alsa/control.c
+
+diff --git a/alsa/Android.mk b/alsa/Android.mk
+index fd7d473..5c64bba 100755
+--- a/alsa/Android.mk
++++ b/alsa/Android.mk
+@@ -31,3 +31,23 @@ LOCAL_MODULE_TAGS := optional
+ include $(BUILD_SHARED_LIBRARY)
+ 
+ endif
++
++
++ifeq ($(findstring imx, $(soc_name)), imx)
++
++LOCAL_PATH := $(call my-dir)
++
++include $(CLEAR_VARS)
++LOCAL_MODULE := audio.primary.$(soc_name)
++LOCAL_MODULE_RELATIVE_PATH := hw
++LOCAL_SRC_FILES := tinyalsa_hal.c control.c
++LOCAL_C_INCLUDES += \
++	external/tinyalsa/include \
++	system/media/audio_utils/include \
++	system/media/audio_effects/include
++LOCAL_SHARED_LIBRARIES := liblog libcutils libtinyalsa libaudioutils libdl
++LOCAL_MODULE_TAGS := optional
++LOCAL_CPPFLAGS += -DBRILLO
++include $(BUILD_SHARED_LIBRARY)
++
++endif
+\ No newline at end of file
+diff --git a/alsa/config_wm8960.h b/alsa/config_wm8960.h
+index 66185f4..37a5424 100644
+--- a/alsa/config_wm8960.h
++++ b/alsa/config_wm8960.h
+@@ -35,7 +35,14 @@
+ #define MIXER_WM8960_LEFT_INPUT_SWITCH              "Left Input Mixer Boost Switch"
+ #define MIXER_WM8960_ADC_PCM_CAPTURE_VOLUME         "ADC PCM Capture Volume"
+ 
+-
++#ifdef BRILLO
++#define	MIXER_WM8960_LEFT_INPUT1_SWITCH  			"Left Boost Mixer LINPUT1 Switch"
++#define	MIXER_WM8960_LEFT_INPUT2_SWITCH  			"Left Boost Mixer LINPUT2 Switch"
++#define	MIXER_WM8960_LEFT_INPUT3_SWITCH  			"Left Boost Mixer LINPUT3 Switch"
++#define MIXER_WM8960_RIGHT_INPUT_SWITCH             "Right Input Mixer Boost Switch"
++#define	MIXER_WM8960_RIGHT_INPUT1_SWITCH  			"Right Boost Mixer LINPUT1 Switch"
++#define	MIXER_WM8960_RIGHT_INPUT2_SWITCH  			"Right Boost Mixer LINPUT2 Switch"
++#endif
+ 
+ 
+ static struct route_setting speaker_output_wm8960[] = {
+@@ -82,6 +89,32 @@ static struct route_setting mm_main_mic_input_wm8960[] = {
+         .ctl_name = MIXER_WM8960_CAPTURE_VOLUME,
+         .intval = 60,
+     },
++#ifdef BRILLO
++    {
++        .ctl_name = MIXER_WM8960_LEFT_INPUT1_SWITCH,
++        .intval = 1,
++    },
++    {
++        .ctl_name = MIXER_WM8960_LEFT_INPUT2_SWITCH,
++        .intval = 1,
++    },
++    {
++        .ctl_name = MIXER_WM8960_LEFT_INPUT3_SWITCH,
++        .intval = 1,
++    },
++    {
++        .ctl_name = MIXER_WM8960_RIGHT_INPUT_SWITCH,
++        .intval = 1,
++    },
++    {
++        .ctl_name = MIXER_WM8960_RIGHT_INPUT1_SWITCH,
++        .intval = 1,
++    },
++    {
++        .ctl_name = MIXER_WM8960_RIGHT_INPUT2_SWITCH,
++        .intval = 1,
++    },
++#endif
+     {
+         .ctl_name = NULL,
+     },
+diff --git a/alsa/control.c b/alsa/control.c
+new file mode 100755
+index 0000000..165392e
+--- /dev/null
++++ b/alsa/control.c
+@@ -0,0 +1,273 @@
++/*
++** Copyright 2011, The Android Open Source Project
++** Copyright (C) 2012-2015 Freescale Semiconductor, Inc.
++**
++** Redistribution and use in source and binary forms, with or without
++** modification, are permitted provided that the following conditions are met:
++**     * Redistributions of source code must retain the above copyright
++**       notice, this list of conditions and the following disclaimer.
++**     * Redistributions in binary form must reproduce the above copyright
++**       notice, this list of conditions and the following disclaimer in the
++**       documentation and/or other materials provided with the distribution.
++**     * Neither the name of The Android Open Source Project nor the names of
++**       its contributors may be used to endorse or promote products derived
++**       from this software without specific prior written permission.
++**
++** THIS SOFTWARE IS PROVIDED BY The Android Open Source Project ``AS IS'' AND
++** ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
++** IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
++** ARE DISCLAIMED. IN NO EVENT SHALL The Android Open Source Project BE LIABLE
++** FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
++** DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
++** SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
++** CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
++** LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
++** OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
++** DAMAGE.
++*/
++
++#include <stdio.h>
++#include <stdlib.h>
++#include <string.h>
++#include <unistd.h>
++#include <fcntl.h>
++#include <errno.h>
++#include <ctype.h>
++
++#include <linux/ioctl.h>
++#define __force
++#define __bitwise
++#define __user
++#include <sound/asound.h>
++
++#include <tinyalsa/asoundlib.h>
++
++struct ctl_pcm_info {
++    struct snd_pcm_info      *info;
++    struct ctl_pcm_info      *next;
++};
++
++
++struct control {
++    int fd;
++    struct snd_ctl_card_info *card_info;
++    struct ctl_pcm_info      *pcm_info_p;
++    unsigned int count_p;
++    struct ctl_pcm_info      *pcm_info_c;
++    unsigned int count_c;
++};
++
++struct control *control_open(unsigned int card)
++{
++    struct snd_ctl_card_info tmp;
++    struct control *control = NULL;
++    unsigned int n, m;
++    int fd;
++    char fn[256];
++    int device = -1;
++    struct ctl_pcm_info      *current;
++
++    snprintf(fn, sizeof(fn), "/dev/snd/controlC%u", card);
++    fd = open(fn, O_RDWR);
++    if (fd < 0)
++        return 0;
++
++    control = calloc(1, sizeof(*control));
++    if (!control)
++        goto fail;
++
++    control->count_p   = 0;
++    control->count_c   = 0;
++    control->fd        = fd;
++    control->card_info = calloc(1, sizeof(struct snd_ctl_card_info));
++    if (!control->card_info)
++        goto fail;
++
++    if (ioctl(fd, SNDRV_CTL_IOCTL_CARD_INFO, control->card_info) < 0)
++        goto fail;
++
++    control->pcm_info_p = calloc(1, sizeof(struct ctl_pcm_info));
++    if (!control->pcm_info_p)
++        goto fail;
++
++    current = control->pcm_info_p;
++    device = -1;
++    while(1)
++    {
++        if (ioctl(fd, SNDRV_CTL_IOCTL_PCM_NEXT_DEVICE, &device) < 0)
++            break;
++        if(device < 0)
++            break;
++
++        control->count_p           += 1;
++        current->info = calloc(1, sizeof(struct snd_pcm_info));
++        if (!current->info)
++            goto fail;
++
++        current->info->device       = device;
++        current->info->subdevice    = 0;
++        current->info->stream       = SNDRV_PCM_STREAM_PLAYBACK;
++
++        if (ioctl(fd, SNDRV_CTL_IOCTL_PCM_INFO, current->info) < 0)
++            break;
++
++        current->next = calloc(1, sizeof(struct ctl_pcm_info));
++        if (!current->next)
++            goto fail;
++        current = current->next;
++    }
++
++    control->pcm_info_c = calloc(1, sizeof(struct ctl_pcm_info));
++    if (!control->pcm_info_c)
++        goto fail;
++
++    current = control->pcm_info_c;
++    device = -1;
++    while(1)
++    {
++        if (ioctl(fd, SNDRV_CTL_IOCTL_PCM_NEXT_DEVICE, &device) < 0)
++            break;
++        if(device < 0)
++            break;
++
++        control->count_c           += 1;
++        current->info = calloc(1, sizeof(struct snd_pcm_info));
++        if (!current->info)
++            goto fail;
++
++        current->info->device       = device;
++        current->info->subdevice    = 0;
++        current->info->stream       = SNDRV_PCM_STREAM_CAPTURE;
++
++        if (ioctl(fd, SNDRV_CTL_IOCTL_PCM_INFO, current->info) < 0)
++            break;
++
++        current->next = calloc(1, sizeof(struct ctl_pcm_info));
++        if (!current->next)
++            goto fail;
++        current = current->next;
++    }
++    return control;
++
++fail:
++    if (control)
++        control_close(control);
++    else if (fd >= 0)
++        close(fd);
++    return 0;
++}
++
++void control_close(struct control *control)
++{
++    unsigned int n,m;
++    struct ctl_pcm_info      *current;
++    struct ctl_pcm_info      *p;
++
++    if (!control)
++        return;
++
++    if (control->fd >= 0)
++        close(control->fd);
++
++    if (control->card_info)
++        free(control->card_info);
++
++    current = control->pcm_info_p;
++    while(!current)
++    {
++        if(!current->info)
++            free(current->info);
++        p = current;
++        current = current->next;
++        free(p);
++    }
++
++    current = control->pcm_info_c;
++    while(!current)
++    {
++        if(!current->info)
++            free(current->info);
++        p = current;
++        current = current->next;
++        free(p);
++    }
++    free(control);
++}
++
++const char *control_card_info_get_id(struct control *control)
++{
++    if (!control)
++        return "";
++
++    return (const char *)control->card_info->id;
++}
++
++const char *control_card_info_get_driver(struct control *control)
++{
++    if (!control)
++        return "";
++
++    return (const char *)control->card_info->driver;
++}
++
++const char *control_card_info_get_name(struct control *control)
++{
++    if (!control)
++        return "";
++
++    return (const char *)control->card_info->name;
++}
++
++
++int control_pcm_next_device(struct control *control, int *device, int stream)
++{
++    struct ctl_pcm_info      *current;
++    if (!control)
++        return -EINVAL;
++
++    if(stream == SNDRV_PCM_STREAM_PLAYBACK)   current = control->pcm_info_p;
++    else                                      current = control->pcm_info_c;
++
++    while(!current->info)
++        if((int)current->info->device > *device)
++        {
++            *device = current->info->device;
++            return 0;
++        }
++    return -1;
++}
++
++
++const char *control_pcm_info_get_id(struct control *control, unsigned int device, int stream)
++{
++    struct ctl_pcm_info      *current;
++    if (!control)
++        return "";
++
++    if(stream == SNDRV_PCM_STREAM_PLAYBACK)   current = control->pcm_info_p;
++    else                                    current = control->pcm_info_c;
++
++    while(!current->info)
++        if(current->info->device == device)
++            return (const char *)current->info->id;
++
++    return "";
++}
++
++const char *control_pcm_info_get_name(struct control *control, unsigned int device, int stream)
++{
++    struct ctl_pcm_info      *current;
++    if (!control)
++        return "";
++
++    if(stream == SNDRV_PCM_STREAM_PLAYBACK)   current = control->pcm_info_p;
++    else                                    current = control->pcm_info_c;
++
++    while(!current->info)
++        if(current->info->device == device)
++            return (const char *)current->info->name;
++
++    return "";
++}
++
++
+diff --git a/alsa/tinyalsa_hal.c b/alsa/tinyalsa_hal.c
+index 579b470..83ae4b0 100644
+--- a/alsa/tinyalsa_hal.c
++++ b/alsa/tinyalsa_hal.c
+@@ -49,6 +49,29 @@
+ #include "config_wm8960.h"
+ #include "config_sii902x.h"
+ 
++#ifdef BRILLO
++#define PCM_HW_PARAM_ACCESS 0
++#define PCM_HW_PARAM_FORMAT 1
++#define PCM_HW_PARAM_SUBFORMAT 2
++#define PCM_HW_PARAM_FIRST_MASK PCM_HW_PARAM_ACCESS
++#define PCM_HW_PARAM_LAST_MASK PCM_HW_PARAM_SUBFORMAT
++#define PCM_HW_PARAM_SAMPLE_BITS 8
++#define PCM_HW_PARAM_FRAME_BITS 9
++#define PCM_HW_PARAM_CHANNELS 10
++#define PCM_HW_PARAM_RATE 11
++#define PCM_HW_PARAM_PERIOD_TIME 12
++#define PCM_HW_PARAM_PERIOD_SIZE 13
++#define PCM_HW_PARAM_PERIOD_BYTES 14
++#define PCM_HW_PARAM_PERIODS 15
++#define PCM_HW_PARAM_BUFFER_TIME 16
++#define PCM_HW_PARAM_BUFFER_SIZE 17
++#define PCM_HW_PARAM_BUFFER_BYTES 18
++#define PCM_HW_PARAM_TICK_TIME 19
++#define PCM_HW_PARAM_FIRST_INTERVAL PCM_HW_PARAM_SAMPLE_BITS
++#define PCM_HW_PARAM_LAST_INTERVAL PCM_HW_PARAM_TICK_TIME
++#define PCM_HW_PARAMS_NORESAMPLE (1<<0)
++#endif
++
+ 
+ /* ALSA ports for IMX */
+ #define PORT_MM     0
+@@ -2271,7 +2294,7 @@ static ssize_t in_read(struct audio_stream_in *stream, void* buffer,
+         ret = read_frames(in, buffer, frames_rq);
+     else
+         ret = pcm_read_convert(in, in->pcm, buffer, bytes);
+- 
++
+     if(ret < 0) ALOGW("ret %d, pcm read error %s.", ret, pcm_get_error(in->pcm));
+ 
+     if (ret > 0)
+@@ -2306,7 +2329,11 @@ static uint32_t in_get_input_frames_lost(struct audio_stream_in *stream)
+     int times, diff;
+     struct imx_stream_in *in = (struct imx_stream_in *)stream;
+     if (in->pcm == NULL)  return 0;
++#ifdef BRILLO
++    times = 0;
++#else
+     times = pcm_get_time_of_xrun(in->pcm);
++#endif
+     diff = times - in->last_time_of_xrun;
+     ALOGW_IF((diff != 0), "in_get_input_frames_lost %d ms total %d ms\n",diff, times);
+     in->last_time_of_xrun = times;
+@@ -3225,6 +3252,16 @@ static int adev_get_format_for_device(struct imx_audio_device *adev, uint32_t de
+      return 0;
+ }
+ 
++static int pcm_get_near_param_wrap(unsigned int card, unsigned int device,
++                     unsigned int flags, int type, int *data)
++{
++#ifdef BRILLO
++    return 0;
++#else
++    return pcm_get_near_param(card, device, flags, type, data);
++#endif
++}
++
+ static int scan_available_device(struct imx_audio_device *adev, bool rescanusb, bool queryInput, bool queryOutput)
+ {
+     int i,j,k;
+@@ -3293,7 +3330,7 @@ static int scan_available_device(struct imx_audio_device *adev, bool rescanusb,
+ 
+                 if(queryOutput) {
+                     rate = 44100;
+-                    if( pcm_get_near_param(i, 0, PCM_OUT, PCM_HW_PARAM_RATE, &rate) == 0)
++                    if( pcm_get_near_param_wrap(i, 0, PCM_OUT, PCM_HW_PARAM_RATE, &rate) == 0)
+                             adev->card_list[n]->out_rate = rate;
+                     ALOGW("out rate %d",adev->card_list[n]->out_rate);
+ 
+@@ -3301,20 +3338,24 @@ static int scan_available_device(struct imx_audio_device *adev, bool rescanusb,
+                         adev->mm_rate = adev->card_list[n]->out_rate;
+ 
+                     channels = 2;
+-                    if( pcm_get_near_param(i, 0, PCM_OUT, PCM_HW_PARAM_CHANNELS, &channels) == 0)
++                    if( pcm_get_near_param_wrap(i, 0, PCM_OUT, PCM_HW_PARAM_CHANNELS, &channels) == 0)
+                             adev->card_list[n]->out_channels = channels;
+                 }
+ 
+                 if(queryInput) {
+                     rate = 44100;
+-                    if( pcm_get_near_param(i, 0, PCM_IN, PCM_HW_PARAM_RATE, &rate) == 0)
++                    if( pcm_get_near_param_wrap(i, 0, PCM_IN, PCM_HW_PARAM_RATE, &rate) == 0)
+                             adev->card_list[n]->in_rate = rate;
+ 
+                     channels = 1;
+-                    if( pcm_get_near_param(i, 0, PCM_IN, PCM_HW_PARAM_CHANNELS, &channels) == 0)
++                    if( pcm_get_near_param_wrap(i, 0, PCM_IN, PCM_HW_PARAM_CHANNELS, &channels) == 0)
+                             adev->card_list[n]->in_channels = channels;
+ 
+                     format = PCM_FORMAT_S16_LE;
++
++#ifdef BRILLO
++                    adev->card_list[n]->in_format = format;
++#else
+                     if( pcm_check_param_mask(i, 0, PCM_IN, PCM_HW_PARAM_FORMAT, format))
+                             adev->card_list[n]->in_format = format;
+                     else {
+@@ -3322,6 +3363,7 @@ static int scan_available_device(struct imx_audio_device *adev, bool rescanusb,
+                         if( pcm_check_param_mask(i, 0, PCM_IN, PCM_HW_PARAM_FORMAT, format))
+                             adev->card_list[n]->in_format = format;
+                     }
++#endif
+ 
+                     ALOGW("in rate %d, channels %d format %d",adev->card_list[n]->in_rate, adev->card_list[n]->in_channels, adev->card_list[n]->in_format);
+                 }
+-- 
+1.8.0
+

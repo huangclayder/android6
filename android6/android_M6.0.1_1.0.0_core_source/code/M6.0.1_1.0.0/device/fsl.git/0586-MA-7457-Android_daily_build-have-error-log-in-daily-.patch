@@ -1,0 +1,49 @@
+From ec74458bac5f2a21d8aaaf6781ed18dc68228fd5 Mon Sep 17 00:00:00 2001
+From: zhang sanshan <b51434@freescale.com>
+Date: Tue, 5 Jan 2016 09:36:01 +0800
+Subject: [PATCH 586/602] MA-7457 [Android_daily_build] have error log in
+ daily build log when compile the ota sometimes
+
+1 When compile ota package, it need copy uboot-'board'.imx to RADIO/bootloader.img.
+  The name of 'board' is from TARGET_BOOTLOADER_CONFIG
+2 delete imx6solo-nand in sabreauto-6q
+
+Signed-off-by: zhang sanshan <b51434@freescale.com>
+---
+ sabreauto_6q/BoardConfig.mk | 4 ++--
+ sabresd_6dq/BoardConfig.mk  | 2 +-
+ 2 files changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/sabreauto_6q/BoardConfig.mk b/sabreauto_6q/BoardConfig.mk
+index 2609468..8d1cf40 100644
+--- a/sabreauto_6q/BoardConfig.mk
++++ b/sabreauto_6q/BoardConfig.mk
+@@ -106,10 +106,10 @@ endif
+ 
+ ifeq ($(TARGET_USERIMAGES_USE_UBIFS),true)
+ TARGET_BOARD_DTS_CONFIG := imx6q-nand:imx6q-sabreauto-gpmi-weim.dtb  imx6dl-nand:imx6dl-sabreauto-gpmi-weim.dtb imx6qp-nand:imx6qp-sabreauto-gpmi-weim.dtb
+-TARGET_BOOTLOADER_CONFIG := imx6q-nand:mx6qsabreautoandroid_nand_config imx6dl-nand:mx6dlsabreautoandroid_nand_config imx6solo-nand:mx6solosabreauto_nand_config imx6qp-nand:mx6qpsabreautoandroid_nand_config
++TARGET_BOOTLOADER_CONFIG := imx6q-nand:mx6qsabreautoandroid_nand_config imx6dl-nand:mx6dlsabreautoandroid_nand_config  imx6qp-nand:mx6qpsabreautoandroid_nand_config
+ else 
+ TARGET_BOARD_DTS_CONFIG := imx6q:imx6q-sabreauto.dtb imx6dl:imx6dl-sabreauto.dtb imx6qp:imx6qp-sabreauto.dtb
+-TARGET_BOOTLOADER_CONFIG := imx6q:mx6qsabreautoandroid_config imx6dl:mx6dlsabreautoandroid_config imx6solo:mx6solosabresdandroid_config imx6qp:mx6qpsabreautoandroid_config
++TARGET_BOOTLOADER_CONFIG := imx6q:mx6qsabreautoandroid_config imx6dl:mx6dlsabreautoandroid_config imx6qp:mx6qpsabreautoandroid_config
+ endif
+ 
+ BOARD_SEPOLICY_DIRS := \
+diff --git a/sabresd_6dq/BoardConfig.mk b/sabresd_6dq/BoardConfig.mk
+index ee8c0e9..29d27b8 100644
+--- a/sabresd_6dq/BoardConfig.mk
++++ b/sabresd_6dq/BoardConfig.mk
+@@ -128,7 +128,7 @@ IMX_CAMERA_HAL_V3 := true
+ #define consumer IR HAL support
+ IMX6_CONSUMER_IR_HAL := false
+ 
+-TARGET_BOOTLOADER_CONFIG := imx6q:mx6qsabresdandroid_config imx6dl:mx6dlsabresdandroid_config imx6qp:mx6qpsabresdandroid_config
++TARGET_BOOTLOADER_CONFIG := imx6q:mx6qsabresdandroid_config imx6dl:mx6dlsabresdandroid_config imx6q-ldo:mx6qsabresdandroid_config imx6qp:mx6qpsabresdandroid_config
+ TARGET_BOARD_DTS_CONFIG := imx6q:imx6q-sabresd.dtb imx6dl:imx6dl-sabresd.dtb imx6q-ldo:imx6q-sabresd-ldo.dtb imx6qp:imx6qp-sabresd.dtb
+ 
+ BOARD_SEPOLICY_DIRS := \
+-- 
+1.8.0
+

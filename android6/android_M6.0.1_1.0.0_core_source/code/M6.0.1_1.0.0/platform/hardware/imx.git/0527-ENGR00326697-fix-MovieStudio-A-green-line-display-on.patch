@@ -1,0 +1,67 @@
+From a4f2c934b711542223572785072c74a003096970 Mon Sep 17 00:00:00 2001
+From: b37945 <b37945@freescale.com>
+Date: Wed, 17 Sep 2014 14:15:45 +0800
+Subject: [PATCH 527/635] ENGR00326697 fix MovieStudio: A green line display
+ on right during playback.
+
+remove width asigned to stride relevant code.
+record stride and usage in private handle.
+
+Signed-off-by: b37945 <b37945@freescale.com>
+---
+ mx6/libgralloc_wrapper/BufferManager.cpp    | 1 -
+ mx6/libgralloc_wrapper/CPUBufferManager.cpp | 5 ++---
+ mx6/libgralloc_wrapper/GPUBufferManager.cpp | 5 ++---
+ 3 files changed, 4 insertions(+), 7 deletions(-)
+
+diff --git a/mx6/libgralloc_wrapper/BufferManager.cpp b/mx6/libgralloc_wrapper/BufferManager.cpp
+index 235da19..f6d41d8 100755
+--- a/mx6/libgralloc_wrapper/BufferManager.cpp
++++ b/mx6/libgralloc_wrapper/BufferManager.cpp
+@@ -130,7 +130,6 @@ int BufferManager::alloc(int w, int h, int format, int usage,
+             alignedh = ALIGN_PIXEL_4(h);
+             int c_stride = (alignedw/2+15)/16*16;
+             size = alignedw * alignedh + c_stride * h;
+-            w = alignedw;
+             } break;
+ 
+         case HAL_PIXEL_FORMAT_YCbCr_422_SP:
+diff --git a/mx6/libgralloc_wrapper/CPUBufferManager.cpp b/mx6/libgralloc_wrapper/CPUBufferManager.cpp
+index 08f6f1e..8d509c0 100755
+--- a/mx6/libgralloc_wrapper/CPUBufferManager.cpp
++++ b/mx6/libgralloc_wrapper/CPUBufferManager.cpp
+@@ -93,11 +93,10 @@ int CPUBufferManager::allocBuffer(int w, int h, int format, int usage,
+     hnd->width = w;
+     hnd->height = h;
+     hnd->format = format;
+-//    hnd->usage = usage;
+-//    hnd->stride = alignedw;
++    hnd->usage = usage;
++    hnd->stride = alignW;
+     //becaue private_handle_t doesn't contains stride.
+     //hack it to set stride in flags high 16bit.
+-    hnd->flags |= (alignW & 0xffff) << 16;
+     hnd->pid = getpid();
+     *handle = hnd;
+     *stride = alignW;
+diff --git a/mx6/libgralloc_wrapper/GPUBufferManager.cpp b/mx6/libgralloc_wrapper/GPUBufferManager.cpp
+index 1770215..d4e28f5 100755
+--- a/mx6/libgralloc_wrapper/GPUBufferManager.cpp
++++ b/mx6/libgralloc_wrapper/GPUBufferManager.cpp
+@@ -102,11 +102,10 @@ int GPUBufferManager::allocBuffer(int w, int h, int format, int usage,
+         hnd->width = w;
+         hnd->height = h;
+         hnd->format = format;
+-    //    hnd->usage = usage;
+-    //    hnd->stride = alignW;
++        hnd->usage = usage;
++        hnd->stride = alignW;
+         //becaue private_handle_t doesn't contains stride.
+         //hack it to set stride in flags high 16bit.
+-        hnd->flags |= (alignW & 0xffff) << 16;
+         hnd->pid = getpid();
+         *handle = hnd;
+         *stride = alignW;
+-- 
+1.8.0
+

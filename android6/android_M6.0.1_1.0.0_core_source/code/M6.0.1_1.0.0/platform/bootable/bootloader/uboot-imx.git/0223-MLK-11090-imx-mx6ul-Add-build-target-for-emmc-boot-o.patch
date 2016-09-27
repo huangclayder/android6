@@ -1,0 +1,32 @@
+From 4b27bdc4a8311f3234e1e91e3858e8a1c19d1cf2 Mon Sep 17 00:00:00 2001
+From: "Ye.Li" <B37916@freescale.com>
+Date: Thu, 11 Jun 2015 16:17:59 +0800
+Subject: [PATCH] MLK-11090 imx: mx6ul: Add build target for emmc boot on ddr3
+ arm2 board
+
+The mx6ul ddr3 arm2 board needs rework to enable the emmc. Since the pin
+used by emmc are multiplexed with SD1 and QSPI, the SD1 and QSPI can't work.
+
+The u-boot build target for emmc is:  mx6ul_14x14_ddr3_arm2_emmc_config
+
+Signed-off-by: Ye.Li <B37916@freescale.com>
+---
+ configs/mx6ul_14x14_ddr3_arm2_emmc_defconfig | 7 +++++++
+ 1 file changed, 7 insertions(+)
+
+diff --git a/configs/mx6ul_14x14_ddr3_arm2_emmc_defconfig b/configs/mx6ul_14x14_ddr3_arm2_emmc_defconfig
+new file mode 100644
+index 0000000..b975dcc
+--- /dev/null
++++ b/configs/mx6ul_14x14_ddr3_arm2_emmc_defconfig
+@@ -0,0 +1,7 @@
++CONFIG_SYS_EXTRA_OPTIONS="IMX_CONFIG=board/freescale/mx6ul_14x14_ddr3_arm2/imximage.cfg,MX6UL,MX6UL_DDR3_ARM2_EMMC_REWORK"
++CONFIG_ARM=y
++CONFIG_TARGET_MX6UL_14X14_DDR3_ARM2=y
++CONFIG_SYS_MALLOC_F=y
++CONFIG_SYS_MALLOC_F_LEN=0x400
++CONFIG_DM=y
++CONFIG_DM_THERMAL=y
+-- 
+1.8.0
+

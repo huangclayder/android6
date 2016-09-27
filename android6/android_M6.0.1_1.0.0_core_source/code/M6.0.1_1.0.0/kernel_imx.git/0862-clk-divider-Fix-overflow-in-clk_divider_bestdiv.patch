@@ -1,0 +1,41 @@
+From d9a7c7c743772b1205de554aa92fe5e5afe49d58 Mon Sep 17 00:00:00 2001
+From: Tomasz Figa <t.figa@samsung.com>
+Date: Wed, 7 May 2014 18:24:10 +0200
+Subject: [PATCH] clk: divider: Fix overflow in clk_divider_bestdiv
+
+Commit c686078 ("clk: divider: Add round to closest divider") introduced
+a helper function to check whether given divisor is the best one instead
+of direct check. However due to int type used instead of unsigned long
+for passing calculated rates to this function in certain cases an
+overflow could occur, for example when trying to obtain maximum possible
+clock rate by calling clk_round_rate(..., UINT_MAX).
+
+This patch fixes this issue by changing the type of rate, now and best
+arguments of the function to unsigned long, which is the type that
+should be used for clock rates.
+
+Signed-off-by: Tomasz Figa <t.figa@samsung.com>
+Acked-by: Maxime Coquelin <maxime.coquelin@st.com>
+Signed-off-by: Mike Turquette <mturquette@linaro.org>
+(cherry picked from commit 3c17296f28820d2a9fa23e549a1e808a4df5dfc6)
+Signed-off-by: Mark Brown <broonie@kernel.org>
+---
+ drivers/clk/clk-divider.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/clk/clk-divider.c b/drivers/clk/clk-divider.c
+index 6226e5c..d95f120 100644
+--- a/drivers/clk/clk-divider.c
++++ b/drivers/clk/clk-divider.c
+@@ -232,7 +232,7 @@ static int _div_round(struct clk_divider *divider, unsigned long parent_rate,
+ }
+ 
+ static bool _is_best_div(struct clk_divider *divider,
+-		int rate, int now, int best)
++		unsigned long rate, unsigned long now, unsigned long best)
+ {
+ 	if (divider->flags & CLK_DIVIDER_ROUND_CLOSEST)
+ 		return abs(rate - now) < abs(rate - best);
+-- 
+1.8.0
+

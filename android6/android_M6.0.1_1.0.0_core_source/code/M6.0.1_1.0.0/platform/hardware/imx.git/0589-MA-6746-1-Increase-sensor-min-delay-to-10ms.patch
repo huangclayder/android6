@@ -1,0 +1,91 @@
+From c696a2cfe07a2577b35f3683240ecf4cc8270866 Mon Sep 17 00:00:00 2001
+From: Haoran Wang <b50027@freescale.com>
+Date: Wed, 24 Jun 2015 09:39:06 +0800
+Subject: [PATCH 589/635] MA-6746-1 Increase sensor min delay to 10ms
+
+As the fsos8700, fxas2100 and mpl3115 support 800Hz
+max data sample rate. So we increase to 100Hz in
+sensor hub HAL for sabresd_7d.
+
+Signed-off-by: Haoran Wang <b50027@freescale.com>
+---
+ libsensors_sensorhub/sensors.cpp | 32 ++++++++++++++++----------------
+ 1 file changed, 16 insertions(+), 16 deletions(-)
+
+diff --git a/libsensors_sensorhub/sensors.cpp b/libsensors_sensorhub/sensors.cpp
+index eaeebc2..43d98f4 100755
+--- a/libsensors_sensorhub/sensors.cpp
++++ b/libsensors_sensorhub/sensors.cpp
+@@ -64,53 +64,53 @@ static const struct sensor_t sSensorList[] = {
+         { "Freescale Sensor Hub Accelerometer",
+           "Freescale Semiconductor Inc.",
+           1, SENSORS_ACCELERATION_HANDLE,
+-          SENSOR_TYPE_ACCELEROMETER, RANGE_A, CONVERT_A, 0.30f, 20000, 0, 0, "" },
+-          
++          SENSOR_TYPE_ACCELEROMETER, RANGE_A, CONVERT_A, 0.30f, 10000, 0, 0, "" },
++
+         { "Freescale Sensor Hub Magnetic field sensor",
+           "Freescale Semiconductor Inc.",
+           1, SENSORS_MAGNETIC_FIELD_HANDLE,
+-          SENSOR_TYPE_MAGNETIC_FIELD, 1500.0f, CONVERT_M, 0.50f, 100000, 0, 0, "" },
+-          
++          SENSOR_TYPE_MAGNETIC_FIELD, 1500.0f, CONVERT_M, 0.50f, 10000, 0, 0, "" },
++
+         { "Freescale Sensor Hub Orientation sensor",
+           "Freescale Semiconductor Inc.",
+           1, SENSORS_ORIENTATION_HANDLE,
+-          SENSOR_TYPE_ORIENTATION, 360.0f, CONVERT_O, 0.50f, 100000, 0, 0, "" },
+-          
++          SENSOR_TYPE_ORIENTATION, 360.0f, CONVERT_O, 0.50f, 10000, 0, 0, "" },
++
+         { "Freescale Sensor Hub Gyroscope sensor",
+           "Freescale Semiconductor Inc.",
+           1, SENSORS_GYROSCOPE_HANDLE,
+-          SENSOR_TYPE_GYROSCOPE, 4000.0f, 0.0035, 0.50f, 100000, 0, 0, "" },
++          SENSOR_TYPE_GYROSCOPE, 4000.0f, 0.0035, 0.50f, 10000, 0, 0, "" },
+ 
+ 		 { "Freescale Sensor Hub Rotation Vector",
+           "Freescale Semiconductor Inc.",
+           1, SENSORS_ROTATION_VECTOR_HANDLE,
+-          SENSOR_TYPE_ROTATION_VECTOR,10240.0f, 1.0f, 0.50f, 100000, 0, 0, "" },
+-		
++          SENSOR_TYPE_ROTATION_VECTOR,10240.0f, 1.0f, 0.50f, 10000, 0, 0, "" },
++
+         { "Freescale Sensor Hub Gravity",
+           "Freescale Semiconductor Inc.",
+           1, SENSORS_GRAVITY_HANDLE,
+-          SENSOR_TYPE_GRAVITY, 10240.0f, 1.0f, 0.50f, 100000, 0, 0, "" },
+-          
++          SENSOR_TYPE_GRAVITY, 10240.0f, 1.0f, 0.50f, 10000, 0, 0, "" },
++
+         { "Freescale Sensor Hub Linear Accelerometer",
+           "Freescale Semiconductor Inc.",
+           1, SENSORS_LINEAR_ACCEL_HANDLE,
+-          SENSOR_TYPE_LINEAR_ACCELERATION,10240.0f, 1.0f, 0.50f, 100000, 0, 0, "" },
++          SENSOR_TYPE_LINEAR_ACCELERATION,10240.0f, 1.0f, 0.50f, 10000, 0, 0, "" },
+         { "Freescale Sensor Hub Step Detect",
+           "Freescale Semiconductor Inc.",
+           1, SENSORS_STEP_DETECTOR_HANDLE,
+-          SENSOR_TYPE_STEP_DETECTOR, 1.0, 1.0f, 0.50f, 100000, 0, 0, "" }, 
++          SENSOR_TYPE_STEP_DETECTOR, 1.0, 1.0f, 0.50f, 10000, 0, 0, "" },
+         { "Freescale Sensor Hub Step Count",
+           "Freescale Semiconductor Inc.",
+           1, SENSORS_STEP_COUNTER_HANDLE,
+-          SENSOR_TYPE_STEP_COUNTER, 360.0f, CONVERT_O, 0.50f, 100000, 0, 0, "" },
++          SENSOR_TYPE_STEP_COUNTER, 360.0f, CONVERT_O, 0.50f, 10000, 0, 0, "" },
+         { "Freescale Pressure Sensor ",
+           "Freescale Semiconductor Inc.",
+           1, SENSORS_PRESSURE_HANDLE,
+-          SENSOR_TYPE_PRESSURE, 110.0f, 1.5, 0.50f, 100000, 0, 0, "" },
++          SENSOR_TYPE_PRESSURE, 110.0f, 1.5, 0.50f, 10000, 0, 0, "" },
+         { "Freescale Temperature Sensor ",
+           "Freescale Semiconductor Inc.",
+           1, SENSORS_TEMPERATURE_HANDLE,
+-          SENSOR_TYPE_TEMPERATURE, 110.0f, 1.5, 0.50f, 100000, 0, 0, "" },
++          SENSOR_TYPE_TEMPERATURE, 110.0f, 1.5, 0.50f, 10000, 0, 0, "" },
+ };
+ 
+ 
+-- 
+1.8.0
+

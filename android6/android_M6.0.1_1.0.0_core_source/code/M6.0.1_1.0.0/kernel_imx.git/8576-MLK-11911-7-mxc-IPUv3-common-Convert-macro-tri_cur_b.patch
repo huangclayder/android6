@@ -1,0 +1,50 @@
+From dcb82987164af2ae094bd996d9d8e0fa563783e7 Mon Sep 17 00:00:00 2001
+From: Liu Ying <Ying.Liu@freescale.com>
+Date: Fri, 27 Nov 2015 14:29:53 +0800
+Subject: [PATCH] MLK-11911-7 mxc IPUv3: common: Convert macro
+ tri_cur_buf_mask/shift to function
+
+This patch converts macro tri_cur_buf_mask/shift to function to address the
+following issue reported by Coverity:
+Operands don't affect result (CONSTANT_EXPRESSION_RESULT)
+result_independent_of_operands: dma_chan * 2 != 63 is always true regardless of
+the values of its operands. This occurs as the logical first operand of '?:'.
+
+Signed-off-by: Liu Ying <Ying.Liu@freescale.com>
+(cherry picked from commit 524126ee31ba42e6e5d2136c54dd55772b472d08)
+---
+ drivers/mxc/ipu3/ipu_common.c | 16 ++++++++++++++--
+ 1 file changed, 14 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/mxc/ipu3/ipu_common.c b/drivers/mxc/ipu3/ipu_common.c
+index 7a27756..b676ec3 100644
+--- a/drivers/mxc/ipu3/ipu_common.c
++++ b/drivers/mxc/ipu3/ipu_common.c
+@@ -118,10 +118,22 @@ static inline int _ipu_is_sync_irq(uint32_t irq)
+ 		(reg_num == 14) || (reg_num == 15));
+ }
+ 
++static inline uint32_t tri_cur_buf_mask(uint32_t dma_chan)
++{
++	uint32_t mask = 1UL << ((dma_chan * 2) & 0x1F);
++
++	return mask * 3;
++}
++
++static inline uint32_t tri_cur_buf_shift(uint32_t dma_chan)
++{
++	uint32_t mask = 1UL << ((dma_chan * 2) & 0x1F);
++
++	return ffs(mask) - 1;
++}
++
+ #define idma_is_valid(ch)	(ch != NO_DMA)
+ #define idma_mask(ch)		(idma_is_valid(ch) ? (1UL << (ch & 0x1F)) : 0)
+-#define tri_cur_buf_mask(ch)	(idma_mask(ch*2) * 3)
+-#define tri_cur_buf_shift(ch)	(ffs(idma_mask(ch*2)) - 1)
+ 
+ static inline bool idma_is_set(struct ipu_soc *ipu, uint32_t reg, uint32_t dma)
+ {
+-- 
+1.8.0
+

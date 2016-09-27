@@ -1,0 +1,27 @@
+From b7f153c8b55c4ccccf792de9dd63ece243c72435 Mon Sep 17 00:00:00 2001
+From: Peng Fan <Peng.Fan@freescale.com>
+Date: Sat, 14 Mar 2015 18:17:41 +0800
+Subject: [PATCH] MLK-10774-32 imx:mx6slevk inlcude crm_regs.h
+
+Add missed included header file crm_regs.h
+
+Signed-off-by: Peng Fan <Peng.Fan@freescale.com>
+---
+ board/freescale/mx6slevk/mx6slevk.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/board/freescale/mx6slevk/mx6slevk.c b/board/freescale/mx6slevk/mx6slevk.c
+index db4b9f8..137fae3 100644
+--- a/board/freescale/mx6slevk/mx6slevk.c
++++ b/board/freescale/mx6slevk/mx6slevk.c
+@@ -7,6 +7,7 @@
+  */
+ 
+ #include <asm/arch/clock.h>
++#include <asm/arch/crm_regs.h>
+ #include <asm/arch/iomux.h>
+ #include <asm/arch/imx-regs.h>
+ #include <asm/arch/mx6-pins.h>
+-- 
+1.8.0
+

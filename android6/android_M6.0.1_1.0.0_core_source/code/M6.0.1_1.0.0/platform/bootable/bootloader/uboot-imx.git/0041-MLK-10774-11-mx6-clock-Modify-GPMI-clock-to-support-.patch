@@ -1,0 +1,48 @@
+From bcd970ec12dbdcd7ace1d031a91722fb654fbbd2 Mon Sep 17 00:00:00 2001
+From: Peng Fan <Peng.Fan@freescale.com>
+Date: Sat, 14 Mar 2015 17:48:48 +0800
+Subject: [PATCH] MLK-10774-11 mx6: clock: Modify GPMI clock to support mx6sx
+
+On mx6sx, the CCM register bits for GPMI are different as other
+mx6 platforms. Modify the GPMI clock function to support mx6sx.
+
+Signed-off-by: Ye.Li <B37916@freescale.com>
+Signed-off-by: Peng Fan <Peng.Fan@freescale.com>
+---
+ arch/arm/cpu/armv7/mx6/clock.c | 13 +++++++++++++
+ 1 file changed, 13 insertions(+)
+
+diff --git a/arch/arm/cpu/armv7/mx6/clock.c b/arch/arm/cpu/armv7/mx6/clock.c
+index 90dcd6d..8cd4f14 100644
+--- a/arch/arm/cpu/armv7/mx6/clock.c
++++ b/arch/arm/cpu/armv7/mx6/clock.c
+@@ -47,6 +47,18 @@ void setup_gpmi_io_clk(u32 cfg)
+ 		     MXC_CCM_CCGR4_RAWNAND_U_GPMI_INPUT_APB_MASK |
+ 		     MXC_CCM_CCGR4_PL301_MX6QPER1_BCH_MASK);
+ 
++#if defined(CONFIG_MX6SX)
++	clrbits_le32(&imx_ccm->CCGR4, MXC_CCM_CCGR4_QSPI2_ENFC_MASK);
++
++	clrsetbits_le32(&imx_ccm->cs2cdr,
++			MXC_CCM_CS2CDR_QSPI2_CLK_PODF_MASK |
++			MXC_CCM_CS2CDR_QSPI2_CLK_PRED_MASK |
++			MXC_CCM_CS2CDR_QSPI2_CLK_SEL_MASK,
++			cfg);
++
++	setbits_le32(&imx_ccm->CCGR4, MXC_CCM_CCGR4_QSPI2_ENFC_MASK);
++#else
++
+ 	clrbits_le32(&imx_ccm->CCGR2, MXC_CCM_CCGR2_IOMUX_IPT_CLK_IO_MASK);
+ 
+ 	clrsetbits_le32(&imx_ccm->cs2cdr,
+@@ -56,6 +68,7 @@ void setup_gpmi_io_clk(u32 cfg)
+ 			cfg);
+ 
+ 	setbits_le32(&imx_ccm->CCGR2, MXC_CCM_CCGR2_IOMUX_IPT_CLK_IO_MASK);
++#endif
+ 	setbits_le32(&imx_ccm->CCGR4,
+ 		     MXC_CCM_CCGR4_RAWNAND_U_BCH_INPUT_APB_MASK |
+ 		     MXC_CCM_CCGR4_RAWNAND_U_GPMI_BCH_INPUT_BCH_MASK |
+-- 
+1.8.0
+

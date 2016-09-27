@@ -1,0 +1,127 @@
+From 5c1d4854c56bc32b0d1c7caeaac0511eff45b804 Mon Sep 17 00:00:00 2001
+From: Xiaowen Liu <xiaowen.liu@freescale.com>
+Date: Fri, 20 Nov 2015 09:44:14 -0500
+Subject: [PATCH 567/602] MA-7121 enable camera hal v3 interface.
+
+Add IMX_CAMERA_HAL_V3 support to sabreauto_6q&sabresd_6dq board.
+Change IMX_CAMERA_HAL_V2 to IMX_CAMERA_HAL_V1 on others board.
+
+Signed-off-by: Xiaowen Liu <xiaowen.liu@freescale.com>
+---
+ evk_6sl/BoardConfig.mk       | 4 ++--
+ evk_6ul/BoardConfig.mk       | 4 ++--
+ sabreauto_6q/BoardConfig.mk  | 4 ++--
+ sabreauto_6sx/BoardConfig.mk | 4 ++--
+ sabresd_6dq/BoardConfig.mk   | 4 ++--
+ sabresd_6sx/BoardConfig.mk   | 4 ++--
+ sabresd_7d/BoardConfig.mk    | 4 ++--
+ 7 files changed, 14 insertions(+), 14 deletions(-)
+
+diff --git a/evk_6sl/BoardConfig.mk b/evk_6sl/BoardConfig.mk
+index 3519178..1a17dda 100644
+--- a/evk_6sl/BoardConfig.mk
++++ b/evk_6sl/BoardConfig.mk
+@@ -81,8 +81,8 @@ DM_VERITY_RUNTIME_CONFIG := true
+ USE_ION_ALLOCATOR := false
+ USE_GPU_ALLOCATOR := true
+ 
+-# camera hal v2
+-IMX_CAMERA_HAL_V2 := false
++# camera hal v1
++IMX_CAMERA_HAL_V1 := true
+ TARGET_VSYNC_DIRECT_REFRESH := true
+ 
+ BOARD_KERNEL_CMDLINE := console=ttymxc0,115200 init=/init androidboot.console=ttymxc0 consoleblank=0 androidboot.hardware=freescale 
+diff --git a/evk_6ul/BoardConfig.mk b/evk_6ul/BoardConfig.mk
+index 1b9217d..95bad94 100644
+--- a/evk_6ul/BoardConfig.mk
++++ b/evk_6ul/BoardConfig.mk
+@@ -87,8 +87,8 @@ BOARD_USE_AR3K_BLUETOOTH := false
+ USE_ION_ALLOCATOR := false
+ USE_GPU_ALLOCATOR := true
+ 
+-# camera hal v2
+-IMX_CAMERA_HAL_V2 := false
++# camera hal v1
++IMX_CAMERA_HAL_V1 := true
+ TARGET_VSYNC_DIRECT_REFRESH := true
+ 
+ BOARD_KERNEL_CMDLINE := console=ttymxc0,115200 init=/init androidboot.console=ttymxc0 consoleblank=0 androidboot.hardware=freescale 
+diff --git a/sabreauto_6q/BoardConfig.mk b/sabreauto_6q/BoardConfig.mk
+index 8069764..2609468 100644
+--- a/sabreauto_6q/BoardConfig.mk
++++ b/sabreauto_6q/BoardConfig.mk
+@@ -78,8 +78,8 @@ TARGET_SELECT_KEY := 28
+ TARGET_USERIMAGES_SPARSE_EXT_DISABLED := false
+ DM_VERITY_RUNTIME_CONFIG := true
+ 
+-# camera hal v2
+-IMX_CAMERA_HAL_V2 := true
++# camera hal v3
++IMX_CAMERA_HAL_V3 := true
+ 
+ BOARD_HAVE_USB_CAMERA := true
+ 
+diff --git a/sabreauto_6sx/BoardConfig.mk b/sabreauto_6sx/BoardConfig.mk
+index d59ffe8..b1024d3 100755
+--- a/sabreauto_6sx/BoardConfig.mk
++++ b/sabreauto_6sx/BoardConfig.mk
+@@ -94,8 +94,8 @@ endif
+ USE_ION_ALLOCATOR := false
+ USE_GPU_ALLOCATOR := true
+ 
+-# camera hal v2
+-IMX_CAMERA_HAL_V2 := false
++# camera hal v1
++IMX_CAMERA_HAL_V1 := true
+ TARGET_VSYNC_DIRECT_REFRESH := true
+ 
+ ifeq ($(TARGET_USERIMAGES_USE_UBIFS),true)
+diff --git a/sabresd_6dq/BoardConfig.mk b/sabresd_6dq/BoardConfig.mk
+index 3854e57..ee8c0e9 100644
+--- a/sabresd_6dq/BoardConfig.mk
++++ b/sabresd_6dq/BoardConfig.mk
+@@ -122,8 +122,8 @@ BOARD_BLUETOOTH_BDROID_BUILDCFG_INCLUDE_DIR := device/fsl/sabresd_6dq/bluetooth
+ USE_ION_ALLOCATOR := false
+ USE_GPU_ALLOCATOR := true
+ 
+-# camera hal v2
+-IMX_CAMERA_HAL_V2 := true
++# camera hal v3
++IMX_CAMERA_HAL_V3 := true
+ 
+ #define consumer IR HAL support
+ IMX6_CONSUMER_IR_HAL := false
+diff --git a/sabresd_6sx/BoardConfig.mk b/sabresd_6sx/BoardConfig.mk
+index 202d8fa..4d061ee 100644
+--- a/sabresd_6sx/BoardConfig.mk
++++ b/sabresd_6sx/BoardConfig.mk
+@@ -110,8 +110,8 @@ BOARD_BLUETOOTH_BDROID_BUILDCFG_INCLUDE_DIR := device/fsl/sabresd_6sx/bluetooth
+ USE_ION_ALLOCATOR := false
+ USE_GPU_ALLOCATOR := true
+ 
+-# camera hal v2
+-IMX_CAMERA_HAL_V2 := false
++# camera hal v1
++IMX_CAMERA_HAL_V1 := true
+ TARGET_VSYNC_DIRECT_REFRESH := true
+ 
+ TARGET_BOOTLOADER_CONFIG := imx6sx:mx6sxsabresdandroid_config
+diff --git a/sabresd_7d/BoardConfig.mk b/sabresd_7d/BoardConfig.mk
+index 6911725..74fd21a 100644
+--- a/sabresd_7d/BoardConfig.mk
++++ b/sabresd_7d/BoardConfig.mk
+@@ -85,8 +85,8 @@ BOARD_BLUETOOTH_BDROID_BUILDCFG_INCLUDE_DIR := device/fsl/sabresd_7d/bluetooth
+ USE_ION_ALLOCATOR := false
+ USE_GPU_ALLOCATOR := true
+ 
+-# camera hal v2
+-IMX_CAMERA_HAL_V2 := false
++# camera hal v1
++IMX_CAMERA_HAL_V1 := true
+ TARGET_VSYNC_DIRECT_REFRESH := true
+ 
+ BOARD_KERNEL_CMDLINE := console=ttymxc0,115200 init=/init androidboot.console=ttymxc0 consoleblank=0 androidboot.hardware=freescale 
+-- 
+1.8.0
+

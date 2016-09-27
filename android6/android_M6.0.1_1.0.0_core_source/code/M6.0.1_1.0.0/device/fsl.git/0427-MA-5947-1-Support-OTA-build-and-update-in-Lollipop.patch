@@ -1,0 +1,98 @@
+From 8cd2fdf1b33898b83231b27110be66cea85cf65b Mon Sep 17 00:00:00 2001
+From: zhang sanshan <b51434@freescale.com>
+Date: Wed, 21 Jan 2015 17:32:40 +0800
+Subject: [PATCH 427/602] MA-5947-1 Support OTA build and update in Lollipop
+
+change the selinux policy which is related with OTA update.
+
+Signed-off-by: zhang sanshan <b51434@freescale.com>
+---
+ imx6/imx6.mk                      | 2 +-
+ imx6/sepolicy/init_shell.te       | 2 +-
+ imx6/sepolicy/install_recovery.te | 2 ++
+ imx6/sepolicy/recovery.te         | 2 ++
+ sabreauto_6q/BoardConfig.mk       | 5 +++--
+ sabreauto_6sx/BoardConfig.mk      | 3 ++-
+ 6 files changed, 11 insertions(+), 5 deletions(-)
+ create mode 100644 imx6/sepolicy/install_recovery.te
+
+diff --git a/imx6/imx6.mk b/imx6/imx6.mk
+index 12641ea..9cd475e 100644
+--- a/imx6/imx6.mk
++++ b/imx6/imx6.mk
+@@ -309,7 +309,7 @@ PRODUCT_PACKAGES += \
+ # ntfs-3g binary
+ PRODUCT_PACKAGES += \
+ 	ntfs-3g		\
+-	ntfsfix
++	ntfsfix 	
+ 
+ # for CtsVerifier
+ PRODUCT_PACKAGES += \
+diff --git a/imx6/sepolicy/init_shell.te b/imx6/sepolicy/init_shell.te
+index 61e31a7..8e743ba 100644
+--- a/imx6/sepolicy/init_shell.te
++++ b/imx6/sepolicy/init_shell.te
+@@ -12,5 +12,5 @@ allow init_shell sdcard_external:dir rw_dir_perms;
+ allow init_shell sdcard_external:file rw_file_perms;
+ allow init_shell powerctl_prop:property_service {set};
+ allow init_shell fuse:dir {search read open write};
+-allow init_shell fuse:file {getattr};
++allow init_shell fuse:file {getattr read open write};
+ allow init_shell kernel:system { syslog_mod syslog_read};
+diff --git a/imx6/sepolicy/install_recovery.te b/imx6/sepolicy/install_recovery.te
+new file mode 100644
+index 0000000..cbb6dc9
+--- /dev/null
++++ b/imx6/sepolicy/install_recovery.te
+@@ -0,0 +1,2 @@
++allow install_recovery mtd_device:dir { search read write};
++allow install_recovery mtd_device:chr_file { read write open ioctl};
+diff --git a/imx6/sepolicy/recovery.te b/imx6/sepolicy/recovery.te
+index bac84c5..4fe9c16 100644
+--- a/imx6/sepolicy/recovery.te
++++ b/imx6/sepolicy/recovery.te
+@@ -1,5 +1,7 @@
+ recovery_only(`
+   allow recovery block_device:chr_file {getattr read write open ioctl};
+   allow recovery self:capability {sys_resource};
++  allow recovery mtd_device:dir { search }; 
++  allow recovery mtd_device:chr_file { getattr read write open ioctl}; 
+ ')
+ 
+diff --git a/sabreauto_6q/BoardConfig.mk b/sabreauto_6q/BoardConfig.mk
+index 6e4d55c..0992e61 100644
+--- a/sabreauto_6q/BoardConfig.mk
++++ b/sabreauto_6q/BoardConfig.mk
+@@ -108,7 +108,7 @@ endif
+ endif
+ 
+ TARGET_BOOTLOADER_CONFIG := imx6q:mx6qsabreautoandroid_config imx6dl:mx6dlsabreautoandroid_config imx6solo:mx6solosabresdandroid_config imx6q-nand:mx6qsabreautoandroid_nand_config imx6dl-nand:mx6dlsabreautoandroid_nand_config imx6solo-nand:mx6solosabreauto_nand_config
+-TARGET_BOARD_DTS_CONFIG := imx6q:imx6q-sabreauto.dtb imx6dl:imx6dl-sabreauto.dtb imx6q-nand:imx6q-sabreauto-gpmi-weim.dtb imx6dl-nand:imx6dl-sabreauto-gpmi-weim.dtb
++TARGET_BOARD_DTS_CONFIG := imx6q:imx6q-sabreauto.dtb imx6q-nand:imx6q-sabreauto-gpmi-weim.dtb imx6dl:imx6dl-sabreauto.dtb  imx6dl-nand:imx6dl-sabreauto-gpmi-weim.dtb
+ 
+ BOARD_SEPOLICY_DIRS := \
+        device/fsl/imx6/sepolicy \
+@@ -131,5 +131,6 @@ BOARD_SEPOLICY_UNION := \
+        netd.te \
+        bootanim.te \
+        dnsmasq.te \
+-       recovery.te
++       recovery.te \
++       install_recovery.te
+ 
+diff --git a/sabreauto_6sx/BoardConfig.mk b/sabreauto_6sx/BoardConfig.mk
+index 2a83283..8ce9608 100755
+--- a/sabreauto_6sx/BoardConfig.mk
++++ b/sabreauto_6sx/BoardConfig.mk
+@@ -124,5 +124,6 @@ BOARD_SEPOLICY_UNION := \
+        netd.te \
+        bootanim.te \
+        dnsmasq.te \
+-       recovery.te
++       recovery.te \
++       install_recovery.te
+ 
+-- 
+1.8.0
+

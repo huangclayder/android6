@@ -1,0 +1,29 @@
+From 815b1c88c43fe463d3fdfb43c4ce643db6bb9ce1 Mon Sep 17 00:00:00 2001
+From: Ke Qinghua <qinghua.ke@freescale.com>
+Date: Wed, 21 May 2014 10:24:22 +0800
+Subject: [PATCH 2/3] ENGR00312465 All result show '0' if do any mathes
+ operations in Calculator. 100%
+
+Include endian definition header file to define __BYTE_ORDER and __LITTLE_ENDIAN
+
+Signed-off-by: Ke Qinghua <qinghua.ke@freescale.com>
+---
+ luni/src/main/native/cbigint.h | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/luni/src/main/native/cbigint.h b/luni/src/main/native/cbigint.h
+index 2bf5b1b..0f15112 100644
+--- a/luni/src/main/native/cbigint.h
++++ b/luni/src/main/native/cbigint.h
+@@ -19,7 +19,7 @@
+ #define cbigint_h
+ 
+ #include "JNIHelp.h"
+-
++#include <endian.h>
+ #include <sys/types.h>
+ #include <sys/param.h>
+ #include <stdint.h>
+-- 
+1.8.0
+

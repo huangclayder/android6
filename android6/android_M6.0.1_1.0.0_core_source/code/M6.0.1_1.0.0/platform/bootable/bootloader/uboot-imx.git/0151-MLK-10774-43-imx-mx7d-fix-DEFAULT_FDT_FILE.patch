@@ -1,0 +1,69 @@
+From eafc4b9843c1086533cbcdc62c20ff1f7ba78ad4 Mon Sep 17 00:00:00 2001
+From: Peng Fan <Peng.Fan@freescale.com>
+Date: Tue, 14 Apr 2015 16:09:53 +0800
+Subject: [PATCH] MLK-10774-43 imx:mx7d fix DEFAULT_FDT_FILE
+
+should add '\' to string, otherwise this macro will be ignored.
+
+Signed-off-by: Peng Fan <Peng.Fan@freescale.com>
+---
+ configs/mx7d_12x12_ddr3_arm2_defconfig          | 2 +-
+ configs/mx7d_12x12_lpddr3_arm2_defconfig        | 2 +-
+ configs/mx7d_12x12_lpddr3_arm2_qspi1_defconfig  | 2 +-
+ configs/mx7d_12x12_lpddr3_arm2_spinor_defconfig | 2 +-
+ configs/mx7d_19x19_ddr3_arm2_defconfig          | 2 +-
+ 5 files changed, 5 insertions(+), 5 deletions(-)
+
+diff --git a/configs/mx7d_12x12_ddr3_arm2_defconfig b/configs/mx7d_12x12_ddr3_arm2_defconfig
+index c71a2be..9b78871 100644
+--- a/configs/mx7d_12x12_ddr3_arm2_defconfig
++++ b/configs/mx7d_12x12_ddr3_arm2_defconfig
+@@ -1,4 +1,4 @@
+-CONFIG_SYS_EXTRA_OPTIONS="IMX_CONFIG=board/freescale/mx7d_12x12_ddr3_arm2/imximage.cfg,MX7D,DEFAULT_FDT_FILE="imx7d-12x12-ddr3-arm2.dtb""
++CONFIG_SYS_EXTRA_OPTIONS="IMX_CONFIG=board/freescale/mx7d_12x12_ddr3_arm2/imximage.cfg,MX7D,DEFAULT_FDT_FILE=\"imx7d-12x12-ddr3-arm2.dtb\""
+ CONFIG_ARM=y
+ CONFIG_TARGET_MX7D_12X12_DDR3_ARM2=y
+ CONFIG_SYS_MALLOC_F=y
+diff --git a/configs/mx7d_12x12_lpddr3_arm2_defconfig b/configs/mx7d_12x12_lpddr3_arm2_defconfig
+index e9c9879..9a06d7b 100644
+--- a/configs/mx7d_12x12_lpddr3_arm2_defconfig
++++ b/configs/mx7d_12x12_lpddr3_arm2_defconfig
+@@ -1,4 +1,4 @@
+-CONFIG_SYS_EXTRA_OPTIONS="IMX_CONFIG=board/freescale/mx7d_12x12_lpddr3_arm2/imximage.cfg,MX7D,DEFAULT_FDT_FILE="imx7d-12x12-lpddr3-arm2.dtb""
++CONFIG_SYS_EXTRA_OPTIONS="IMX_CONFIG=board/freescale/mx7d_12x12_lpddr3_arm2/imximage.cfg,MX7D,DEFAULT_FDT_FILE=\"imx7d-12x12-lpddr3-arm2.dtb\""
+ CONFIG_ARM=y
+ CONFIG_TARGET_MX7D_12X12_LPDDR3_ARM2=y
+ CONFIG_SYS_MALLOC_F=y
+diff --git a/configs/mx7d_12x12_lpddr3_arm2_qspi1_defconfig b/configs/mx7d_12x12_lpddr3_arm2_qspi1_defconfig
+index 83d6989..ebd4094 100644
+--- a/configs/mx7d_12x12_lpddr3_arm2_qspi1_defconfig
++++ b/configs/mx7d_12x12_lpddr3_arm2_qspi1_defconfig
+@@ -1,4 +1,4 @@
+-CONFIG_SYS_EXTRA_OPTIONS="IMX_CONFIG=board/freescale/mx7d_12x12_lpddr3_arm2/imximage.cfg,MX7D,SYS_BOOT_QSPI,DEFAULT_FDT_FILE="imx7d-12x12-lpddr3-arm2.dtb""
++CONFIG_SYS_EXTRA_OPTIONS="IMX_CONFIG=board/freescale/mx7d_12x12_lpddr3_arm2/imximage.cfg,MX7D,SYS_BOOT_QSPI,DEFAULT_FDT_FILE=\"imx7d-12x12-lpddr3-arm2.dtb\""
+ CONFIG_ARM=y
+ CONFIG_TARGET_MX7D_12X12_LPDDR3_ARM2=y
+ CONFIG_SYS_MALLOC_F=y
+diff --git a/configs/mx7d_12x12_lpddr3_arm2_spinor_defconfig b/configs/mx7d_12x12_lpddr3_arm2_spinor_defconfig
+index 5f57931..1050d42 100644
+--- a/configs/mx7d_12x12_lpddr3_arm2_spinor_defconfig
++++ b/configs/mx7d_12x12_lpddr3_arm2_spinor_defconfig
+@@ -1,4 +1,4 @@
+-CONFIG_SYS_EXTRA_OPTIONS="IMX_CONFIG=board/freescale/mx7d_12x12_lpddr3_arm2/imximage.cfg,MX7D,SYS_BOOT_SPINOR,DEFAULT_FDT_FILE="imx7d-12x12-lpddr3-arm2.dtb""
++CONFIG_SYS_EXTRA_OPTIONS="IMX_CONFIG=board/freescale/mx7d_12x12_lpddr3_arm2/imximage.cfg,MX7D,SYS_BOOT_SPINOR,DEFAULT_FDT_FILE=\"imx7d-12x12-lpddr3-arm2.dtb\""
+ CONFIG_ARM=y
+ CONFIG_TARGET_MX7D_12X12_LPDDR3_ARM2=y
+ CONFIG_SYS_MALLOC_F=y
+diff --git a/configs/mx7d_19x19_ddr3_arm2_defconfig b/configs/mx7d_19x19_ddr3_arm2_defconfig
+index 9fd99b3..2973077 100644
+--- a/configs/mx7d_19x19_ddr3_arm2_defconfig
++++ b/configs/mx7d_19x19_ddr3_arm2_defconfig
+@@ -1,4 +1,4 @@
+-CONFIG_SYS_EXTRA_OPTIONS="IMX_CONFIG=board/freescale/mx7d_19x19_ddr3_arm2/imximage.cfg,MX7D,DEFAULT_FDT_FILE="imx7d-19x19-ddr3-arm2.dtb""
++CONFIG_SYS_EXTRA_OPTIONS="IMX_CONFIG=board/freescale/mx7d_19x19_ddr3_arm2/imximage.cfg,MX7D,DEFAULT_FDT_FILE=\"imx7d-19x19-ddr3-arm2.dtb\""
+ CONFIG_ARM=y
+ CONFIG_TARGET_MX7D_19X19_DDR3_ARM2=y
+ CONFIG_SYS_MALLOC_F=y
+-- 
+1.8.0
+

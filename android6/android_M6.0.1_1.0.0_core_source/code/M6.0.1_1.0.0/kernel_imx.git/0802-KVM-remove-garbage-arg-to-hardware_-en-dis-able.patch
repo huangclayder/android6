@@ -1,0 +1,305 @@
+From 47a53256d4ac266089f050d5dce2cd53249d1e74 Mon Sep 17 00:00:00 2001
+From: Christoffer Dall <christoffer.dall@linaro.org>
+Date: Thu, 2 Oct 2014 22:29:59 +0200
+Subject: [PATCH] KVM: remove garbage arg to *hardware_{en,dis}able
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+In the beggining was on_each_cpu(), which required an unused argument to
+kvm_arch_ops.hardware_{en,dis}able, but this was soon forgotten.
+
+Remove unnecessary arguments that stem from this.
+
+Signed-off-by: Radim KrÄmÃ¡Å™ <rkrcmar@redhat.com>
+Signed-off-by: Paolo Bonzini <pbonzini@redhat.com>
+(cherry picked from commit 13a34e067eab24fec882e1834fbf2cc31911d474)
+Signed-off-by: Christoffer Dall <christoffer.dall@linaro.org>
+---
+ arch/arm/include/asm/kvm_host.h     |  2 +-
+ arch/arm/kvm/arm.c                  |  2 +-
+ arch/arm64/include/asm/kvm_host.h   |  2 +-
+ arch/ia64/kvm/kvm-ia64.c            |  4 ++--
+ arch/mips/include/asm/kvm_host.h    |  2 +-
+ arch/powerpc/include/asm/kvm_host.h |  2 +-
+ arch/powerpc/kvm/powerpc.c          |  2 +-
+ arch/s390/include/asm/kvm_host.h    |  2 +-
+ arch/s390/kvm/kvm-s390.c            |  2 +-
+ arch/x86/include/asm/kvm_host.h     |  4 ++--
+ arch/x86/kvm/svm.c                  |  4 ++--
+ arch/x86/kvm/vmx.c                  |  4 ++--
+ arch/x86/kvm/x86.c                  | 12 ++++++------
+ include/linux/kvm_host.h            |  4 ++--
+ virt/kvm/kvm_main.c                 |  4 ++--
+ 15 files changed, 26 insertions(+), 26 deletions(-)
+
+diff --git a/arch/arm/include/asm/kvm_host.h b/arch/arm/include/asm/kvm_host.h
+index 2b17f6a..46e5d4d 100644
+--- a/arch/arm/include/asm/kvm_host.h
++++ b/arch/arm/include/asm/kvm_host.h
+@@ -230,7 +230,7 @@ static inline void vgic_arch_setup(const struct vgic_params *vgic)
+ int kvm_perf_init(void);
+ int kvm_perf_teardown(void);
+ 
+-static inline void kvm_arch_hardware_disable(void *garbage) {}
++static inline void kvm_arch_hardware_disable(void) {}
+ static inline void kvm_arch_hardware_unsetup(void) {}
+ static inline void kvm_arch_sync_events(struct kvm *kvm) {}
+ static inline void kvm_arch_vcpu_uninit(struct kvm_vcpu *vcpu) {}
+diff --git a/arch/arm/kvm/arm.c b/arch/arm/kvm/arm.c
+index a3073d4..4ad8c1f 100644
+--- a/arch/arm/kvm/arm.c
++++ b/arch/arm/kvm/arm.c
+@@ -87,7 +87,7 @@ struct kvm_vcpu * __percpu *kvm_get_running_vcpus(void)
+ 	return &kvm_arm_running_vcpu;
+ }
+ 
+-int kvm_arch_hardware_enable(void *garbage)
++int kvm_arch_hardware_enable(void)
+ {
+ 	return 0;
+ }
+diff --git a/arch/arm64/include/asm/kvm_host.h b/arch/arm64/include/asm/kvm_host.h
+index eaf689c..bcde419 100644
+--- a/arch/arm64/include/asm/kvm_host.h
++++ b/arch/arm64/include/asm/kvm_host.h
+@@ -242,7 +242,7 @@ static inline void vgic_arch_setup(const struct vgic_params *vgic)
+ 	}
+ }
+ 
+-static inline void kvm_arch_hardware_disable(void *garbage) {}
++static inline void kvm_arch_hardware_disable(void) {}
+ static inline void kvm_arch_hardware_unsetup(void) {}
+ static inline void kvm_arch_sync_events(struct kvm *kvm) {}
+ static inline void kvm_arch_vcpu_uninit(struct kvm_vcpu *vcpu) {}
+diff --git a/arch/ia64/kvm/kvm-ia64.c b/arch/ia64/kvm/kvm-ia64.c
+index b1e074d..c9aa236 100644
+--- a/arch/ia64/kvm/kvm-ia64.c
++++ b/arch/ia64/kvm/kvm-ia64.c
+@@ -125,7 +125,7 @@ long ia64_pal_vp_create(u64 *vpd, u64 *host_iva, u64 *opt_handler)
+ 
+ static  DEFINE_SPINLOCK(vp_lock);
+ 
+-int kvm_arch_hardware_enable(void *garbage)
++int kvm_arch_hardware_enable(void)
+ {
+ 	long  status;
+ 	long  tmp_base;
+@@ -160,7 +160,7 @@ int kvm_arch_hardware_enable(void *garbage)
+ 	return 0;
+ }
+ 
+-void kvm_arch_hardware_disable(void *garbage)
++void kvm_arch_hardware_disable(void)
+ {
+ 
+ 	long status;
+diff --git a/arch/mips/include/asm/kvm_host.h b/arch/mips/include/asm/kvm_host.h
+index 3225496..ad91e1a 100644
+--- a/arch/mips/include/asm/kvm_host.h
++++ b/arch/mips/include/asm/kvm_host.h
+@@ -640,7 +640,7 @@ extern void mips32_SyncICache(unsigned long addr, unsigned long size);
+ extern int kvm_mips_dump_stats(struct kvm_vcpu *vcpu);
+ extern unsigned long kvm_mips_get_ramsize(struct kvm *kvm);
+ 
+-static inline void kvm_arch_hardware_disable(void *garbage) {}
++static inline void kvm_arch_hardware_disable(void) {}
+ static inline void kvm_arch_hardware_unsetup(void) {}
+ static inline void kvm_arch_sync_events(struct kvm *kvm) {}
+ static inline void kvm_arch_free_memslot(struct kvm *kvm,
+diff --git a/arch/powerpc/include/asm/kvm_host.h b/arch/powerpc/include/asm/kvm_host.h
+index c53d5da..7b3907a 100644
+--- a/arch/powerpc/include/asm/kvm_host.h
++++ b/arch/powerpc/include/asm/kvm_host.h
+@@ -671,7 +671,7 @@ struct kvm_vcpu_arch {
+ #define __KVM_HAVE_ARCH_WQP
+ #define __KVM_HAVE_CREATE_DEVICE
+ 
+-static inline void kvm_arch_hardware_disable(void *garbage) {}
++static inline void kvm_arch_hardware_disable(void) {}
+ static inline void kvm_arch_hardware_unsetup(void) {}
+ static inline void kvm_arch_sync_events(struct kvm *kvm) {}
+ static inline void kvm_arch_memslots_updated(struct kvm *kvm) {}
+diff --git a/arch/powerpc/kvm/powerpc.c b/arch/powerpc/kvm/powerpc.c
+index 8d6a254..2b00922 100644
+--- a/arch/powerpc/kvm/powerpc.c
++++ b/arch/powerpc/kvm/powerpc.c
+@@ -243,7 +243,7 @@ int kvmppc_emulate_mmio(struct kvm_run *run, struct kvm_vcpu *vcpu)
+ }
+ EXPORT_SYMBOL_GPL(kvmppc_emulate_mmio);
+ 
+-int kvm_arch_hardware_enable(void *garbage)
++int kvm_arch_hardware_enable(void)
+ {
+ 	return 0;
+ }
+diff --git a/arch/s390/include/asm/kvm_host.h b/arch/s390/include/asm/kvm_host.h
+index afce8ee..892d957 100644
+--- a/arch/s390/include/asm/kvm_host.h
++++ b/arch/s390/include/asm/kvm_host.h
+@@ -293,7 +293,7 @@ static inline bool kvm_is_error_hva(unsigned long addr)
+ extern int sie64a(struct kvm_s390_sie_block *, u64 *);
+ extern char sie_exit;
+ 
+-static inline void kvm_arch_hardware_disable(void *garbage) {}
++static inline void kvm_arch_hardware_disable(void) {}
+ static inline void kvm_arch_check_processor_compat(void *rtn) {}
+ static inline void kvm_arch_exit(void) {}
+ static inline void kvm_arch_sync_events(struct kvm *kvm) {}
+diff --git a/arch/s390/kvm/kvm-s390.c b/arch/s390/kvm/kvm-s390.c
+index 57852c6..ccca1b7 100644
+--- a/arch/s390/kvm/kvm-s390.c
++++ b/arch/s390/kvm/kvm-s390.c
+@@ -95,7 +95,7 @@ static inline int test_vfacility(unsigned long nr)
+ }
+ 
+ /* Section: not file related */
+-int kvm_arch_hardware_enable(void *garbage)
++int kvm_arch_hardware_enable(void)
+ {
+ 	/* every s390 is virtualization enabled ;-) */
+ 	return 0;
+diff --git a/arch/x86/include/asm/kvm_host.h b/arch/x86/include/asm/kvm_host.h
+index 323c23c..824ff25 100644
+--- a/arch/x86/include/asm/kvm_host.h
++++ b/arch/x86/include/asm/kvm_host.h
+@@ -658,8 +658,8 @@ struct msr_data {
+ struct kvm_x86_ops {
+ 	int (*cpu_has_kvm_support)(void);          /* __init */
+ 	int (*disabled_by_bios)(void);             /* __init */
+-	int (*hardware_enable)(void *dummy);
+-	void (*hardware_disable)(void *dummy);
++	int (*hardware_enable)(void);
++	void (*hardware_disable)(void);
+ 	void (*check_processor_compatibility)(void *rtn);
+ 	int (*hardware_setup)(void);               /* __init */
+ 	void (*hardware_unsetup)(void);            /* __exit */
+diff --git a/arch/x86/kvm/svm.c b/arch/x86/kvm/svm.c
+index 2de1bc0..945b426 100644
+--- a/arch/x86/kvm/svm.c
++++ b/arch/x86/kvm/svm.c
+@@ -606,7 +606,7 @@ static int has_svm(void)
+ 	return 1;
+ }
+ 
+-static void svm_hardware_disable(void *garbage)
++static void svm_hardware_disable(void)
+ {
+ 	/* Make sure we clean up behind us */
+ 	if (static_cpu_has(X86_FEATURE_TSCRATEMSR))
+@@ -617,7 +617,7 @@ static void svm_hardware_disable(void *garbage)
+ 	amd_pmu_disable_virt();
+ }
+ 
+-static int svm_hardware_enable(void *garbage)
++static int svm_hardware_enable(void)
+ {
+ 
+ 	struct svm_cpu_data *sd;
+diff --git a/arch/x86/kvm/vmx.c b/arch/x86/kvm/vmx.c
+index 3927528..8123dc7 100644
+--- a/arch/x86/kvm/vmx.c
++++ b/arch/x86/kvm/vmx.c
+@@ -2655,7 +2655,7 @@ static void kvm_cpu_vmxon(u64 addr)
+ 			: "memory", "cc");
+ }
+ 
+-static int hardware_enable(void *garbage)
++static int hardware_enable(void)
+ {
+ 	int cpu = raw_smp_processor_id();
+ 	u64 phys_addr = __pa(per_cpu(vmxarea, cpu));
+@@ -2719,7 +2719,7 @@ static void kvm_cpu_vmxoff(void)
+ 	asm volatile (__ex(ASM_VMX_VMXOFF) : : : "cc");
+ }
+ 
+-static void hardware_disable(void *garbage)
++static void hardware_disable(void)
+ {
+ 	if (vmm_exclusive) {
+ 		vmclear_local_loaded_vmcss();
+diff --git a/arch/x86/kvm/x86.c b/arch/x86/kvm/x86.c
+index 265b2e3..ce5852f 100644
+--- a/arch/x86/kvm/x86.c
++++ b/arch/x86/kvm/x86.c
+@@ -242,7 +242,7 @@ void kvm_set_shared_msr(unsigned slot, u64 value, u64 mask)
+ }
+ EXPORT_SYMBOL_GPL(kvm_set_shared_msr);
+ 
+-static void drop_user_return_notifiers(void *ignore)
++static void drop_user_return_notifiers(void)
+ {
+ 	unsigned int cpu = smp_processor_id();
+ 	struct kvm_shared_msrs *smsr = per_cpu_ptr(shared_msrs, cpu);
+@@ -6780,7 +6780,7 @@ void kvm_vcpu_deliver_sipi_vector(struct kvm_vcpu *vcpu, unsigned int vector)
+ 	kvm_rip_write(vcpu, 0);
+ }
+ 
+-int kvm_arch_hardware_enable(void *garbage)
++int kvm_arch_hardware_enable(void)
+ {
+ 	struct kvm *kvm;
+ 	struct kvm_vcpu *vcpu;
+@@ -6791,7 +6791,7 @@ int kvm_arch_hardware_enable(void *garbage)
+ 	bool stable, backwards_tsc = false;
+ 
+ 	kvm_shared_msr_cpu_online();
+-	ret = kvm_x86_ops->hardware_enable(garbage);
++	ret = kvm_x86_ops->hardware_enable();
+ 	if (ret != 0)
+ 		return ret;
+ 
+@@ -6871,10 +6871,10 @@ int kvm_arch_hardware_enable(void *garbage)
+ 	return 0;
+ }
+ 
+-void kvm_arch_hardware_disable(void *garbage)
++void kvm_arch_hardware_disable(void)
+ {
+-	kvm_x86_ops->hardware_disable(garbage);
+-	drop_user_return_notifiers(garbage);
++	kvm_x86_ops->hardware_disable();
++	drop_user_return_notifiers();
+ }
+ 
+ int kvm_arch_hardware_setup(void)
+diff --git a/include/linux/kvm_host.h b/include/linux/kvm_host.h
+index e276456..d13d837 100644
+--- a/include/linux/kvm_host.h
++++ b/include/linux/kvm_host.h
+@@ -620,8 +620,8 @@ int kvm_arch_vcpu_setup(struct kvm_vcpu *vcpu);
+ int kvm_arch_vcpu_postcreate(struct kvm_vcpu *vcpu);
+ void kvm_arch_vcpu_destroy(struct kvm_vcpu *vcpu);
+ 
+-int kvm_arch_hardware_enable(void *garbage);
+-void kvm_arch_hardware_disable(void *garbage);
++int kvm_arch_hardware_enable(void);
++void kvm_arch_hardware_disable(void);
+ int kvm_arch_hardware_setup(void);
+ void kvm_arch_hardware_unsetup(void);
+ void kvm_arch_check_processor_compat(void *rtn);
+diff --git a/virt/kvm/kvm_main.c b/virt/kvm/kvm_main.c
+index 7381ec6..4832924 100644
+--- a/virt/kvm/kvm_main.c
++++ b/virt/kvm/kvm_main.c
+@@ -2673,7 +2673,7 @@ static void hardware_enable_nolock(void *junk)
+ 
+ 	cpumask_set_cpu(cpu, cpus_hardware_enabled);
+ 
+-	r = kvm_arch_hardware_enable(NULL);
++	r = kvm_arch_hardware_enable();
+ 
+ 	if (r) {
+ 		cpumask_clear_cpu(cpu, cpus_hardware_enabled);
+@@ -2698,7 +2698,7 @@ static void hardware_disable_nolock(void *junk)
+ 	if (!cpumask_test_cpu(cpu, cpus_hardware_enabled))
+ 		return;
+ 	cpumask_clear_cpu(cpu, cpus_hardware_enabled);
+-	kvm_arch_hardware_disable(NULL);
++	kvm_arch_hardware_disable();
+ }
+ 
+ static void hardware_disable(void)
+-- 
+1.8.0
+

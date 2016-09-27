@@ -1,0 +1,44 @@
+From 85a96872fa1e7a589dc9ccee1f167937677afc28 Mon Sep 17 00:00:00 2001
+From: Fancy Fang <chen.fang@freescale.com>
+Date: Fri, 27 Nov 2015 15:09:30 +0800
+Subject: [PATCH] MLK-11914-2 video: mipi_dsi: add the missing error code
+ check
+
+Add the missing error code check just as the others which
+have the check.
+
+Signed-off-by: Fancy Fang <chen.fang@freescale.com>
+(cherry picked from commit 4075dfe1bd0e444510c0299c6c900e3b270332c9)
+
+Conflicts:
+	drivers/video/fbdev/mxc/mxcfb_hx8369_wvga.c
+---
+ drivers/video/mxc/mxcfb_hx8369_wvga.c | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
+
+diff --git a/drivers/video/mxc/mxcfb_hx8369_wvga.c b/drivers/video/mxc/mxcfb_hx8369_wvga.c
+index 0216c0b..8741288 100644
+--- a/drivers/video/mxc/mxcfb_hx8369_wvga.c
++++ b/drivers/video/mxc/mxcfb_hx8369_wvga.c
+@@ -386,6 +386,7 @@ int mipid_hx8369_lcd_setup(struct mipi_dsi_info *mipi_dsi)
+ 
+ static int mipid_bl_update_status(struct backlight_device *bl)
+ {
++	int err;
+ 	u32 buf;
+ 	int brightness = bl->props.brightness;
+ 	struct mipi_dsi_info *mipi_dsi = bl_get_data(bl);
+@@ -396,8 +397,9 @@ static int mipid_bl_update_status(struct backlight_device *bl)
+ 
+ 	buf = HX8369_CMD_WRT_DISP_BRIGHT |
+ 			((brightness & HX8369BL_MAX_BRIGHT) << 8);
+-	mipi_dsi->mipi_dsi_pkt_write(mipi_dsi, MIPI_DSI_GENERIC_SHORT_WRITE_2_PARAM,
++	err = mipi_dsi->mipi_dsi_pkt_write(mipi_dsi, MIPI_DSI_GENERIC_SHORT_WRITE_2_PARAM,
+ 		&buf, 0);
++	CHECK_RETCODE(err);
+ 
+ 	hx8369bl_brightness = brightness & HX8369BL_MAX_BRIGHT;
+ 
+-- 
+1.8.0
+

@@ -1,0 +1,28 @@
+From 7ad9d6f3a688fbf7dc9c0f11c4d12a20df24c246 Mon Sep 17 00:00:00 2001
+From: Fang Hui <b31070@freescale.com>
+Date: Tue, 2 Dec 2014 18:43:02 +0800
+Subject: [PATCH 408/602] MA-5921 - sabreauto_6sx: enable tvin
+
+set back_camera_name to csi_v4l2
+
+Signed-off-by: Fang Hui <b31070@freescale.com>
+---
+ sabreauto_6sx/init.rc | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/sabreauto_6sx/init.rc b/sabreauto_6sx/init.rc
+index 42061cd..b26d54b 100755
+--- a/sabreauto_6sx/init.rc
++++ b/sabreauto_6sx/init.rc
+@@ -47,7 +47,7 @@ on boot
+     #For portrait mode, orient is 90
+     #the android before honycomb are all in portrait mode
+     setprop camera.disable_zsl_mode 1
+-    setprop back_camera_name adv7180_decoder
++    setprop back_camera_name csi_v4l2
+     setprop back_camera_orient 0
+     setprop front_camera_name uvc
+     setprop front_camera_orient 0
+-- 
+1.8.0
+

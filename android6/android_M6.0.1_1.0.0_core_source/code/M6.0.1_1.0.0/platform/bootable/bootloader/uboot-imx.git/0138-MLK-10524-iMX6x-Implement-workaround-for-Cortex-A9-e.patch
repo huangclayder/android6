@@ -1,0 +1,62 @@
+From 789fcfd7ae1f605826ec9b75b96381aad3ded568 Mon Sep 17 00:00:00 2001
+From: Nitin Garg <nitin.garg@freescale.com>
+Date: Tue, 31 Mar 2015 20:37:36 -0500
+Subject: [PATCH] MLK-10524: iMX6x: Implement workaround for Cortex-A9 errata
+ 845369
+
+Under very rare timing circumstances, transitioning into streaming
+mode might create a data corruption. Present on Two or more processors
+or 1 core with ACP, all revisions. This erratum can be worked round
+by setting bit[22] of the undocumented Diagnostic Control Register to 1.
+
+Signed-off-by: Nitin Garg <nitin.garg@freescale.com>
+(cherry picked from commit 70ad44e523680de67dd8b7a7505d7f27799980ee)
+---
+ README                       | 1 +
+ arch/arm/cpu/armv7/start.S   | 5 +++++
+ include/configs/mx6_common.h | 1 +
+ 3 files changed, 7 insertions(+)
+
+diff --git a/README b/README
+index 9b748cc..19cdb84 100644
+--- a/README
++++ b/README
+@@ -683,6 +683,7 @@ The following options need to be configured:
+ 		CONFIG_ARM_ERRATA_751472
+ 		CONFIG_ARM_ERRATA_794072
+ 		CONFIG_ARM_ERRATA_761320
++		CONFIG_ARM_ERRATA_845369
+ 
+ 		If set, the workarounds for these ARM errata are applied early
+ 		during U-Boot startup. Note that these options force the
+diff --git a/arch/arm/cpu/armv7/start.S b/arch/arm/cpu/armv7/start.S
+index 5ed0f45..db77adb 100644
+--- a/arch/arm/cpu/armv7/start.S
++++ b/arch/arm/cpu/armv7/start.S
+@@ -164,6 +164,11 @@ ENTRY(cpu_init_cp15)
+ 	orr	r0, r0, #1 << 21	@ set bit #21
+ 	mcr	p15, 0, r0, c15, c0, 1	@ write diagnostic register
+ #endif
++#ifdef CONFIG_ARM_ERRATA_845369
++	mrc	p15, 0, r0, c15, c0, 1	@ read diagnostic register
++	orr	r0, r0, #1 << 22	@ set bit #22
++	mcr	p15, 0, r0, c15, c0, 1	@ write diagnostic register
++#endif
+ 
+ 	mov	r5, lr			@ Store my Caller
+ 	mrc	p15, 0, r1, c0, c0, 0	@ r1 has Read Main ID Register (MIDR)
+diff --git a/include/configs/mx6_common.h b/include/configs/mx6_common.h
+index 607fe25..a3c8346 100644
+--- a/include/configs/mx6_common.h
++++ b/include/configs/mx6_common.h
+@@ -21,6 +21,7 @@
+ #define CONFIG_ARM_ERRATA_751472
+ #define CONFIG_ARM_ERRATA_794072
+ #define CONFIG_ARM_ERRATA_761320
++#define CONFIG_ARM_ERRATA_845369
+ #define CONFIG_BOARD_POSTCLK_INIT
+ #define CONFIG_LDO_BYPASS_CHECK
+ 
+-- 
+1.8.0
+

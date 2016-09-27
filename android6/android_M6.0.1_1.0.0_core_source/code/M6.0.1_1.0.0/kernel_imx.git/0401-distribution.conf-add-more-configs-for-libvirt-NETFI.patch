@@ -1,0 +1,37 @@
+From 9533bf2bb9f18c23ede9bda3acb430e096e3f502 Mon Sep 17 00:00:00 2001
+From: Fathi Boudra <fathi.boudra@linaro.org>
+Date: Thu, 27 Jun 2013 20:57:39 +0300
+Subject: [PATCH] distribution.conf: add more configs for libvirt
+ (NETFILTER_XT_CONNMARK, NETFILTER_XT_MARK,
+ NETFILTER_XT_TARGET_CHECKSUM, BRIDGE_EBT_MARK_T)
+
+Signed-off-by: Fathi Boudra <fathi.boudra@linaro.org>
+---
+ linaro/configs/distribution.conf | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/linaro/configs/distribution.conf b/linaro/configs/distribution.conf
+index 5b8bdb7..fbcfed1 100644
+--- a/linaro/configs/distribution.conf
++++ b/linaro/configs/distribution.conf
+@@ -9,6 +9,9 @@ CONFIG_IPV6=y
+ CONFIG_NETLABEL=y
+ CONFIG_BRIDGE_NETFILTER=y
+ CONFIG_NF_CONNTRACK=m
++CONFIG_NETFILTER_XT_CONNMARK=m
++CONFIG_NETFILTER_XT_MARK=m
++CONFIG_NETFILTER_XT_TARGET_CHECKSUM=m
+ CONFIG_NF_CONNTRACK_IPV4=m
+ CONFIG_NF_NAT_IPV4=m
+ CONFIG_IP_NF_IPTABLES=m
+@@ -20,6 +23,7 @@ CONFIG_IP6_NF_IPTABLES=m
+ CONFIG_IP6_NF_FILTER=m
+ CONFIG_IP6_NF_MANGLE=m
+ CONFIG_BRIDGE_NF_EBTABLES=m
++CONFIG_BRIDGE_EBT_MARK_T=m
+ CONFIG_BRIDGE=m
+ CONFIG_DEVTMPFS=y
+ CONFIG_DEVTMPFS_MOUNT=y
+-- 
+1.8.0
+

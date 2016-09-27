@@ -1,0 +1,41 @@
+From aab7dd9e326da2fbff12ae7aeccae1fda7fb9d25 Mon Sep 17 00:00:00 2001
+From: Dong Aisheng <b29396@freescale.com>
+Date: Tue, 24 Jun 2014 17:25:03 +0800
+Subject: [PATCH] ENGR00319936-1 mmc: sdhci-esdhc-imx: do not enable wakeup by
+ default
+
+After adding mega fast support, the default enabled usdhc wakeup will block
+M/F to gate off power domain.
+To avoid this issue, we only claim wakeup capability and reply on user to enable
+it via sysfs according to real needs.
+The drawback of such change is that for SDIO WiFi Wakeup On Wireless feature,
+User has to enable both uSDHC and WiFi WoW wakeup mannually to make
+WoW work well.
+
+BTW, due to the wakeup feature is controller itself, so we do not need to reply
+on WiFi PM flags to enable it.
+
+Signed-off-by: Dong Aisheng <b29396@freescale.com>
+(cherry picked from commit 58f91ff6f6719fef44f5122ae1d8a5df7e0061d5)
+---
+ drivers/mmc/host/sdhci-esdhc-imx.c | 4 +---
+ 1 file changed, 1 insertion(+), 3 deletions(-)
+
+diff --git a/drivers/mmc/host/sdhci-esdhc-imx.c b/drivers/mmc/host/sdhci-esdhc-imx.c
+index 6d5d31a..2232aa6 100644
+--- a/drivers/mmc/host/sdhci-esdhc-imx.c
++++ b/drivers/mmc/host/sdhci-esdhc-imx.c
+@@ -1156,9 +1156,7 @@ static int sdhci_esdhc_imx_probe(struct platform_device *pdev)
+ 		host->quirks2 |= SDHCI_QUIRK2_NO_1_8_V;
+ 	}
+ 
+-	if (host->mmc->pm_caps & MMC_PM_KEEP_POWER &&
+-		host->mmc->pm_caps & MMC_PM_WAKE_SDIO_IRQ)
+-		device_init_wakeup(&pdev->dev, 1);
++	device_set_wakeup_capable(&pdev->dev, 1);
+ 
+ 	err = sdhci_add_host(host);
+ 	if (err)
+-- 
+1.8.0
+

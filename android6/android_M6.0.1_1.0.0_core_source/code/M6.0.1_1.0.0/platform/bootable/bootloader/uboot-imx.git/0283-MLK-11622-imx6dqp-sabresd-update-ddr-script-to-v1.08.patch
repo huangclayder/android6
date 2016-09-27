@@ -1,0 +1,82 @@
+From 5ac4bb5ae675a2d36da19ad7ee728403ca6e9b78 Mon Sep 17 00:00:00 2001
+From: Robby Cai <r63905@freescale.com>
+Date: Thu, 24 Sep 2015 18:43:08 +0800
+Subject: [PATCH] MLK-11622 imx6dqp-sabresd: update ddr script to v1.08
+
+enable bank interleave feature to improve the performance
+
+downloaded from
+http://compass.freescale.net/livelink/livelink?func=ll&objId=234609508&objAction=browse&viewType=1
+
+Before:
+
+$ /opt/fsl-samples/g2d/g2d_test
+Width 1920, Height 1088, Format RGBA, Bpp 32
+---------------- g2d blit performance ----------------
+g2d blit time 15566us, 64fps, 134Mpixel/s ........
+g2d blending time 20672us, 48fps, 101Mpixel/s ........
+g2d blend-dim time 13616us, 73fps, 153Mpixel/s ........
+---------------- g2d clear performance ----------------
+g2d clear time 8433us, 118fps, 247Mpixel/s ........
+---------------- g2d rotation performance ----------------
+90 rotation time 15366us, 65fps, 135Mpixel/s ........
+180 rotation time 15374us, 65fps, 135Mpixel/s ........
+270 rotation time 15373us, 65fps, 135Mpixel/s ........
+g2d flip-h time 15373us, 65fps, 135Mpixel/s ........
+g2d flip-v time 15372us, 65fps, 135Mpixel/s ........
+
+...
+
+After:
+$ /opt/fsl-samples/g2d/g2d_test
+Width 1920, Height 1088, Format RGBA, Bpp 32
+---------------- g2d blit performance ----------------
+g2d blit time 2810us, 355fps, 743Mpixel/s ........
+g2d blending time 4025us, 248fps, 518Mpixel/s ........
+g2d blend-dim time 2740us, 364fps, 762Mpixel/s ........
+---------------- g2d clear performance ----------------
+g2d clear time 1846us, 541fps, 1131Mpixel/s ........
+---------------- g2d rotation performance ----------------
+90 rotation time 5234us, 191fps, 399Mpixel/s ........
+180 rotation time 3176us, 314fps, 657Mpixel/s ........
+270 rotation time 5248us, 190fps, 398Mpixel/s ........
+g2d flip-h time 2765us, 361fps, 755Mpixel/s ........
+g2d flip-v time 3179us, 314fps, 657Mpixel/s ........
+
+...
+
+Signed-off-by: Robby Cai <r63905@freescale.com>
+---
+ board/freescale/mx6sabresd/mx6qp.cfg | 2 +-
+ board/freescale/mx6sabresd/plugin.S  | 2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/board/freescale/mx6sabresd/mx6qp.cfg b/board/freescale/mx6sabresd/mx6qp.cfg
+index 13d54a1..9f0089a 100644
+--- a/board/freescale/mx6sabresd/mx6qp.cfg
++++ b/board/freescale/mx6sabresd/mx6qp.cfg
+@@ -120,7 +120,7 @@ DATA 4, 0x021b0030, 0x008E1023
+ DATA 4, 0x021b0040, 0x00000027
+ DATA 4, 0x021b0400, 0x14420000
+ DATA 4, 0x021b0000, 0x831A0000
+-DATA 4, 0x00bb0008, 0x00000007
++DATA 4, 0x00bb0008, 0x00000004
+ DATA 4, 0x00bb000c, 0x2891E41A
+ DATA 4, 0x00bb0038, 0x00000564
+ DATA 4, 0x00bb0014, 0x00000040
+diff --git a/board/freescale/mx6sabresd/plugin.S b/board/freescale/mx6sabresd/plugin.S
+index 10d6426..4ea3c16 100644
+--- a/board/freescale/mx6sabresd/plugin.S
++++ b/board/freescale/mx6sabresd/plugin.S
+@@ -148,7 +148,7 @@
+ 	str r2, [r0, #0x000]
+ 
+ 	ldr r3, =0x00bb0000
+-	ldr r2, =0x00000007
++	ldr r2, =0x00000004
+ 	str r2, [r3, #0x008]
+ 	ldr r2, =0x2891E41A
+ 	str r2, [r3, #0x00C]
+-- 
+1.8.0
+

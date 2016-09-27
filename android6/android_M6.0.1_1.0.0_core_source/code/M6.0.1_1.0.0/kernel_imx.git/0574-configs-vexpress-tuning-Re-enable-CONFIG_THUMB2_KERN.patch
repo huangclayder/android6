@@ -1,0 +1,25 @@
+From 7a4eb22f9a669ac4e788329ad902131b180469ac Mon Sep 17 00:00:00 2001
+From: Jon Medhurst <tixy@linaro.org>
+Date: Tue, 19 Mar 2013 20:14:31 +0000
+Subject: [PATCH] configs: vexpress-tuning: Re-enable CONFIG_THUMB2_KERNEL
+
+Performace and power don't appear to be improved by building for ARM,
+in fact, there's a suggestion it uses slightly more power.
+
+Signed-off-by: Jon Medhurst <tixy@linaro.org>
+(cherry picked from commit 7bc6000de35a017a56a12fc524bbd7efa9687eaf)
+Signed-off-by: Alex Shi <alex.shi@linaro.org>
+---
+ linaro/configs/vexpress-tuning.conf | 1 -
+ 1 file changed, 1 deletion(-)
+
+diff --git a/linaro/configs/vexpress-tuning.conf b/linaro/configs/vexpress-tuning.conf
+index 917ba6c..adea6cc 100644
+--- a/linaro/configs/vexpress-tuning.conf
++++ b/linaro/configs/vexpress-tuning.conf
+@@ -1,2 +1 @@
+-# CONFIG_THUMB2_KERNEL is not set
+ # CONFIG_PROVE_LOCKING is not set
+-- 
+1.8.0
+

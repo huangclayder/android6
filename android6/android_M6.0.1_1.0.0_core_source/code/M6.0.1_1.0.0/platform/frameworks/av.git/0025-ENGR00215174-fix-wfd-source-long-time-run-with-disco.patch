@@ -1,0 +1,49 @@
+From bb49f29492c017c44bd80c3b84d3b533d1229ce9 Mon Sep 17 00:00:00 2001
+From: Liu Xiaowen <b37945@freescale.com>
+Date: Tue, 3 Sep 2013 10:17:31 +0800
+Subject: [PATCH 25/95] ENGR00215174 fix wfd source long time run with
+ disconnection.
+
+fix wfd source disconnection with null pointer exception.
+add pointer equal to zero after free it.
+
+Signed-off-by: Liu Xiaowen <b37945@freescale.com>
+---
+ media/libstagefright/foundation/AMessage.cpp | 7 ++++++-
+ 1 file changed, 6 insertions(+), 1 deletion(-)
+
+diff --git a/media/libstagefright/foundation/AMessage.cpp b/media/libstagefright/foundation/AMessage.cpp
+index 725a574..f3c9f17 100644
+--- a/media/libstagefright/foundation/AMessage.cpp
++++ b/media/libstagefright/foundation/AMessage.cpp
+@@ -52,6 +52,7 @@ AMessage::AMessage(void)
+     : mWhat(0),
+       mTarget(0),
+       mNumItems(0) {
++    memset(&mItems, 0, sizeof(mItems));
+ }
+ 
+ AMessage::AMessage(uint32_t what, const sp<const AHandler> &handler)
+@@ -98,7 +99,10 @@ void AMessage::freeItemValue(Item *item) {
+     switch (item->mType) {
+         case kTypeString:
+         {
+-            delete item->u.stringValue;
++            if (item->u.stringValue != NULL) {
++                delete item->u.stringValue;
++                item->u.stringValue = NULL;
++            }
+             break;
+         }
+ 
+@@ -108,6 +112,7 @@ void AMessage::freeItemValue(Item *item) {
+         {
+             if (item->u.refValue != NULL) {
+                 item->u.refValue->decStrong(this);
++                item->u.refValue = NULL;
+             }
+             break;
+         }
+-- 
+1.8.0
+

@@ -1,0 +1,82 @@
+From 5c49aaf41e3b98b946aecb6eb66a98f10f4d7f6b Mon Sep 17 00:00:00 2001
+From: zhang sanshan <b51434@freescale.com>
+Date: Thu, 22 Jan 2015 10:36:37 +0800
+Subject: [PATCH 10/22] MA-5948 Support DM-Verity on Lollipop
+
+read DM_VERITY from command line.
+
+Signed-off-by: zhang sanshan <b51434@freescale.com>
+---
+ fs_mgr/Android.mk |  7 ++++++-
+ fs_mgr/fs_mgr.c   | 24 ++++++++++++++++++++++--
+ 2 files changed, 28 insertions(+), 3 deletions(-)
+
+diff --git a/fs_mgr/Android.mk b/fs_mgr/Android.mk
+index 8ed5cc9..42318e7 100644
+--- a/fs_mgr/Android.mk
++++ b/fs_mgr/Android.mk
+@@ -21,6 +21,9 @@ ifneq (,$(filter userdebug,$(TARGET_BUILD_VARIANT)))
+ LOCAL_CFLAGS += -DALLOW_ADBD_DISABLE_VERITY=1
+ endif
+ 
++ifeq ($(DM_VERITY_RUNTIME_CONFIG),true)
++LOCAL_CFLAGS += -DDM_VERITY_DYNAMIC
++endif
+ include $(BUILD_STATIC_LIBRARY)
+ 
+ 
+@@ -43,6 +46,8 @@ LOCAL_STATIC_LIBRARIES += libsparse_static libz libselinux
+ LOCAL_CXX_STL := libc++_static
+ 
+ LOCAL_CFLAGS := -Werror
+-
++ifeq ($(DM_VERITY_RUNTIME_CONFIG),true)
++LOCAL_CFLAGS += -DDM_VERITY_DYNAMIC
++endif
+ include $(BUILD_EXECUTABLE)
+ 
+diff --git a/fs_mgr/fs_mgr.c b/fs_mgr/fs_mgr.c
+index 15d44ef..efcc06e 100644
+--- a/fs_mgr/fs_mgr.c
++++ b/fs_mgr/fs_mgr.c
+@@ -505,7 +505,22 @@ int fs_mgr_mount_all(struct fstab *fstab)
+     int mret = -1;
+     int mount_errno = 0;
+     int attempted_idx = -1;
+-
++#ifdef DM_VERITY_DYNAMIC 
++    char *dm_verity=0;
++    int fd;
++    static char  cmdline[1024];
++       fd = open("/proc/cmdline", O_RDONLY);
++              if (fd >= 0) {
++                        int  n = read(fd, cmdline, sizeof(cmdline)-1 );
++                        if (n < 0) n = 0;
++                        cmdline[n] = 0;
++                        close(fd);
++                    } else {
++                        cmdline[0] = 0;
++                    }
++
++ 	dm_verity = strstr( cmdline, "DM_VERITY=disable");
++#endif
+     if (!fstab) {
+         return -1;
+     }
+@@ -515,7 +530,12 @@ int fs_mgr_mount_all(struct fstab *fstab)
+         if (fstab->recs[i].fs_mgr_flags & (MF_VOLDMANAGED | MF_RECOVERYONLY)) {
+             continue;
+         }
+-
++#ifdef DM_VERITY_DYNAMIC
++if (dm_verity)
++{
++fstab->recs[i].fs_mgr_flags &= ~(MF_VERIFY);
++}
++#endif
+         /* Skip swap and raw partition entries such as boot, recovery, etc */
+         if (!strcmp(fstab->recs[i].fs_type, "swap") ||
+             !strcmp(fstab->recs[i].fs_type, "emmc") ||
+-- 
+1.8.0
+

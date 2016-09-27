@@ -1,0 +1,58 @@
+From 7319dca7fca622059ca9d3142fef990fed09098a Mon Sep 17 00:00:00 2001
+From: zhang sanshan <b51434@freescale.com>
+Date: Wed, 15 Jul 2015 11:03:03 +0800
+Subject: [PATCH 511/602] MA-6888 [Android_MX6SXAUTO_NAND] OTA online: The
+ uboot can't boot kernel after do OTA 100%
+
+The uboot in ota package is sd uboot rather than nand uboot.
+The uboot is put into ota package according dts,and Sabreauto6sx nand and sd use the same dts.
+1 redefine TARGET_BOOTLOADER_CONFIG according the boot device is nand or not.
+2 refine TARGET_BOOTLOADER_CONFIG. It makes the script don't generate the redundant uboot.img
+
+Signed-off-by: zhang sanshan <b51434@freescale.com>
+---
+ sabreauto_6q/BoardConfig.mk  | 3 ++-
+ sabreauto_6sx/BoardConfig.mk | 8 ++++++--
+ 2 files changed, 8 insertions(+), 3 deletions(-)
+
+diff --git a/sabreauto_6q/BoardConfig.mk b/sabreauto_6q/BoardConfig.mk
+index 0cd0cea..e8ad189 100644
+--- a/sabreauto_6q/BoardConfig.mk
++++ b/sabreauto_6q/BoardConfig.mk
+@@ -111,11 +111,12 @@ $(error "TARGET_USERIMAGES_USE_UBIFS and TARGET_USERIMAGES_USE_EXT4 config open
+ endif
+ endif
+ 
+-TARGET_BOOTLOADER_CONFIG := imx6q:mx6qsabreautoandroid_config imx6dl:mx6dlsabreautoandroid_config imx6solo:mx6solosabresdandroid_config imx6qp:mx6qpsabreautoandroid_config imx6q-nand:mx6qsabreautoandroid_nand_config imx6dl-nand:mx6dlsabreautoandroid_nand_config imx6solo-nand:mx6solosabreauto_nand_config imx6qp-nand:mx6qpsabreautoandroid_nand_config
+ ifeq ($(TARGET_USERIMAGES_USE_UBIFS),true)
+ TARGET_BOARD_DTS_CONFIG := imx6q-nand:imx6q-sabreauto-gpmi-weim.dtb  imx6dl-nand:imx6dl-sabreauto-gpmi-weim.dtb imx6qp-nand:imx6qp-sabreauto-gpmi-weim.dtb
++TARGET_BOOTLOADER_CONFIG := imx6q-nand:mx6qsabreautoandroid_nand_config imx6dl-nand:mx6dlsabreautoandroid_nand_config imx6solo-nand:mx6solosabreauto_nand_config imx6qp-nand:mx6qpsabreautoandroid_nand_config
+ else 
+ TARGET_BOARD_DTS_CONFIG := imx6q:imx6q-sabreauto.dtb imx6dl:imx6dl-sabreauto.dtb imx6qp:imx6qp-sabreauto.dtb
++TARGET_BOOTLOADER_CONFIG := imx6q:mx6qsabreautoandroid_config imx6dl:mx6dlsabreautoandroid_config imx6solo:mx6solosabresdandroid_config imx6qp:mx6qpsabreautoandroid_config
+ endif
+ 
+ BOARD_SEPOLICY_DIRS := \
+diff --git a/sabreauto_6sx/BoardConfig.mk b/sabreauto_6sx/BoardConfig.mk
+index 48004cb..2ab9565 100755
+--- a/sabreauto_6sx/BoardConfig.mk
++++ b/sabreauto_6sx/BoardConfig.mk
+@@ -105,9 +105,13 @@ USE_GPU_ALLOCATOR := true
+ IMX_CAMERA_HAL_V2 := false
+ TARGET_VSYNC_DIRECT_REFRESH := true
+ 
+-TARGET_BOOTLOADER_CONFIG := imx6sx:mx6sxsabreautoandroid_config imx6sx-nand:mx6sxsabreautoandroid_nand_config
++ifeq ($(TARGET_USERIMAGES_USE_UBIFS),true)
++TARGET_BOARD_DTS_CONFIG := imx6sx-nand:imx6sx-sabreauto.dtb
++TARGET_BOOTLOADER_CONFIG := imx6sx-nand:mx6sxsabreautoandroid_nand_config 
++else
+ TARGET_BOARD_DTS_CONFIG := imx6sx:imx6sx-sabreauto.dtb
+-
++TARGET_BOOTLOADER_CONFIG := imx6sx:mx6sxsabreautoandroid_config
++endif
+ BOARD_SEPOLICY_DIRS := \
+        device/fsl/imx6/sepolicy \
+        device/fsl/sabreauto_6sx/sepolicy
+-- 
+1.8.0
+

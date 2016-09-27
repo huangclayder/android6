@@ -1,0 +1,27 @@
+From ac769b1b1805789377aab18b4d89fc6d32874d1a Mon Sep 17 00:00:00 2001
+From: Luwei Zhou <b45643@freescale.com>
+Date: Wed, 17 Sep 2014 13:38:56 +0800
+Subject: [PATCH] ENGR00331509-3 imx_v7_defconfig: enable isl29023 by default
+
+Enable isl29023 driver in default config.
+
+Signed-off-by: Luwei Zhou <b45643@freescale.com>
+---
+ arch/arm/configs/imx_v7_defconfig | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/arch/arm/configs/imx_v7_defconfig b/arch/arm/configs/imx_v7_defconfig
+index 08801b0..fdd3b0f 100644
+--- a/arch/arm/configs/imx_v7_defconfig
++++ b/arch/arm/configs/imx_v7_defconfig
+@@ -144,6 +144,7 @@ CONFIG_TOUCHSCREEN_TSC2007=y
+ CONFIG_TOUCHSCREEN_STMPE=y
+ CONFIG_INPUT_MISC=y
+ CONFIG_INPUT_MMA8450=y
++CONFIG_INPUT_ISL29023=y
+ CONFIG_SERIO_SERPORT=m
+ # CONFIG_LEGACY_PTYS is not set
+ # CONFIG_DEVKMEM is not set
+-- 
+1.8.0
+

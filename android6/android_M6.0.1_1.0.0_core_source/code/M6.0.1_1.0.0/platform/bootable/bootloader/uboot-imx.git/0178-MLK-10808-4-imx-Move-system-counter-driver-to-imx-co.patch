@@ -1,0 +1,493 @@
+From 25a0ba04a051e5b3c03cc628c849551aa803409d Mon Sep 17 00:00:00 2001
+From: "Ye.Li" <B37916@freescale.com>
+Date: Mon, 4 May 2015 17:15:29 +0800
+Subject: [PATCH] MLK-10808-4 imx: Move system counter driver to imx-common
+
+Since the system counter driver will also be used by mx6ul, move
+this timer driver to imx-common and rename it as syscounter.c
+
+For mx6ul and mx7, configurations are used for choose the GPT timer
+or system counter timer (default).
+
+GPT timer:              CONFIG_GPT_TIMER
+System counter timer:   CONFIG_SYSCOUNTER_TIMER
+
+Signed-off-by: Ye.Li <B37916@freescale.com>
+---
+ arch/arm/cpu/armv7/mx7/Makefile              |   2 +-
+ arch/arm/cpu/armv7/mx7/timer.c               | 126 ---------------------------
+ arch/arm/imx-common/Makefile                 |  11 ++-
+ arch/arm/imx-common/syscounter.c             | 126 +++++++++++++++++++++++++++
+ arch/arm/imx-common/timer.c                  |   8 +-
+ arch/arm/include/asm/arch-mx7/timer.h        |  29 ------
+ arch/arm/include/asm/imx-common/syscounter.h |  29 ++++++
+ include/configs/mx6_common.h                 |  11 ++-
+ include/configs/mx7_common.h                 |   1 +
+ 9 files changed, 180 insertions(+), 163 deletions(-)
+
+diff --git a/arch/arm/cpu/armv7/mx7/Makefile b/arch/arm/cpu/armv7/mx7/Makefile
+index 2b09f5b..6c1764f 100644
+--- a/arch/arm/cpu/armv7/mx7/Makefile
++++ b/arch/arm/cpu/armv7/mx7/Makefile
+@@ -5,5 +5,5 @@
+ #
+ #
+ 
+-obj-y	:= soc.o clock.o clock_slice.o timer.o
++obj-y	:= soc.o clock.o clock_slice.o
+ obj-$(CONFIG_SECURE_BOOT)    += hab.o
+diff --git a/arch/arm/cpu/armv7/mx7/timer.c b/arch/arm/cpu/armv7/mx7/timer.c
+deleted file mode 100644
+index fdbf1e8..0000000
+--- a/arch/arm/cpu/armv7/mx7/timer.c
++++ /dev/null
+@@ -1,126 +0,0 @@
+-/*
+- * Copyright (C) 2014-2015 Freescale Semiconductor, Inc.
+- *
+- * SPDX-License-Identifier:	GPL-2.0+
+- *
+- * The file use ls102xa/timer.c as a reference.
+- */
+-
+-#include <common.h>
+-#include <asm/io.h>
+-#include <div64.h>
+-#include <asm/arch/imx-regs.h>
+-#include <asm/arch/sys_proto.h>
+-#include <asm/arch/timer.h>
+-
+-DECLARE_GLOBAL_DATA_PTR;
+-
+-/*
+- * This function is intended for SHORT delays only.
+- * It will overflow at around 10 seconds @ 400MHz,
+- * or 20 seconds @ 200MHz.
+- */
+-unsigned long usec2ticks(unsigned long usec)
+-{
+-	ulong ticks;
+-
+-	if (usec < 1000)
+-		ticks = ((usec * (get_tbclk()/1000)) + 500) / 1000;
+-	else
+-		ticks = ((usec / 10) * (get_tbclk() / 100000));
+-
+-	return ticks;
+-}
+-
+-static inline unsigned long long tick_to_time(unsigned long long tick)
+-{
+-	unsigned long freq;
+-
+-	asm volatile("mrc p15, 0, %0, c14, c0, 0" : "=r" (freq));
+-
+-	tick *= CONFIG_SYS_HZ;
+-	do_div(tick, freq);
+-
+-	return tick;
+-}
+-
+-static inline unsigned long long us_to_tick(unsigned long long usec)
+-{
+-	unsigned long freq;
+-
+-	asm volatile("mrc p15, 0, %0, c14, c0, 0" : "=r" (freq));
+-
+-	usec = usec * freq  + 999999;
+-	do_div(usec, 1000000);
+-
+-	return usec;
+-}
+-
+-int timer_init(void)
+-{
+-	struct sctr_regs *sctr = (struct sctr_regs *)SCTR_BASE_ADDR;
+-	unsigned long val, freq;
+-
+-	freq = CONFIG_SC_TIMER_CLK;
+-	asm("mcr p15, 0, %0, c14, c0, 0" : : "r" (freq));
+-
+-	writel(freq, &sctr->cntfid0);
+-
+-	/* Enable system counter */
+-	val = readl(&sctr->cntcr);
+-	val &= ~(SC_CNTCR_FREQ0 | SC_CNTCR_FREQ1);
+-	val |= SC_CNTCR_FREQ0 | SC_CNTCR_ENABLE | SC_CNTCR_HDBG;
+-	writel(val, &sctr->cntcr);
+-
+-	gd->arch.tbl = 0;
+-	gd->arch.tbu = 0;
+-
+-	return 0;
+-}
+-
+-unsigned long long get_ticks(void)
+-{
+-	unsigned long long now;
+-
+-	asm("mrrc p15, 0, %Q0, %R0, c14" : "=r" (now));
+-
+-	gd->arch.tbl = (unsigned long)(now & 0xffffffff);
+-	gd->arch.tbu = (unsigned long)(now >> 32);
+-
+-	return now;
+-}
+-
+-ulong get_timer_masked(void)
+-{
+-	return tick_to_time(get_ticks());
+-}
+-
+-ulong get_timer(ulong base)
+-{
+-	return get_timer_masked() - base;
+-}
+-
+-void __udelay(unsigned long usec)
+-{
+-	unsigned long long tmp;
+-	ulong tmo;
+-
+-	tmo = us_to_tick(usec);
+-	tmp = get_ticks() + tmo;	/* get current timestamp */
+-
+-	while (get_ticks() < tmp)	/* loop till event */
+-		 /*NOP*/;
+-}
+-
+-/*
+- * This function is derived from PowerPC code (timebase clock frequency).
+- * On ARM it returns the number of timer ticks per second.
+- */
+-ulong get_tbclk(void)
+-{
+-	unsigned long freq;
+-
+-	asm volatile("mrc p15, 0, %0, c14, c0, 0" : "=r" (freq));
+-
+-	return freq;
+-}
+diff --git a/arch/arm/imx-common/Makefile b/arch/arm/imx-common/Makefile
+index a50b52c..70f22b2 100644
+--- a/arch/arm/imx-common/Makefile
++++ b/arch/arm/imx-common/Makefile
+@@ -2,7 +2,7 @@
+ # (C) Copyright 2000-2006
+ # Wolfgang Denk, DENX Software Engineering, wd@denx.de.
+ #
+-# (C) Copyright 2011 Freescale Semiconductor, Inc.
++# (C) Copyright 2011-2015 Freescale Semiconductor, Inc.
+ #
+ # SPDX-License-Identifier:	GPL-2.0+
+ #
+@@ -11,12 +11,17 @@ ifeq ($(SOC),$(filter $(SOC),mx25 mx35 mx5 mx6 mx7 vf610))
+ obj-y	= iomux-v3.o
+ endif
+ ifeq ($(SOC),$(filter $(SOC),mx5 mx6))
+-obj-y	+= timer.o cpu.o speed.o
++obj-y	+= cpu.o speed.o
+ obj-$(CONFIG_SYS_I2C_MXC) += i2c-mxv7.o
+ endif
++ifeq ($(SOC),$(filter $(SOC),mx5))
++obj-y  += timer.o
++endif
+ ifeq ($(SOC),$(filter $(SOC),mx7))
+ obj-y	+= cpu.o
+ obj-$(CONFIG_SYS_I2C_MXC) += i2c-mxv7.o
++obj-$(CONFIG_GPT_TIMER) += timer.o
++obj-$(CONFIG_SYSCOUNTER_TIMER) += syscounter.o
+ endif
+ ifeq ($(SOC),$(filter $(SOC),mx7 mx6 mxs))
+ obj-y	+= misc.o
+@@ -26,6 +31,8 @@ ifeq ($(SOC),$(filter $(SOC),mx6))
+ obj-$(CONFIG_CMD_SATA) += sata.o
+ obj-$(CONFIG_IMX_VIDEO_SKIP) += video.o
+ obj-$(CONFIG_MXC_RDC) += rdc-sema.o
++obj-$(CONFIG_GPT_TIMER) += timer.o
++obj-$(CONFIG_SYSCOUNTER_TIMER) += syscounter.o
+ endif
+ obj-$(CONFIG_CMD_BMODE) += cmd_bmode.o
+ obj-$(CONFIG_CMD_HDMIDETECT) += cmd_hdmidet.o
+diff --git a/arch/arm/imx-common/syscounter.c b/arch/arm/imx-common/syscounter.c
+new file mode 100644
+index 0000000..f5e5cdc
+--- /dev/null
++++ b/arch/arm/imx-common/syscounter.c
+@@ -0,0 +1,126 @@
++/*
++ * Copyright (C) 2014-2015 Freescale Semiconductor, Inc.
++ *
++ * SPDX-License-Identifier:	GPL-2.0+
++ *
++ * The file use ls102xa/timer.c as a reference.
++ */
++
++#include <common.h>
++#include <asm/io.h>
++#include <div64.h>
++#include <asm/arch/imx-regs.h>
++#include <asm/arch/sys_proto.h>
++#include <asm/imx-common/syscounter.h>
++
++DECLARE_GLOBAL_DATA_PTR;
++
++/*
++ * This function is intended for SHORT delays only.
++ * It will overflow at around 10 seconds @ 400MHz,
++ * or 20 seconds @ 200MHz.
++ */
++unsigned long usec2ticks(unsigned long usec)
++{
++	ulong ticks;
++
++	if (usec < 1000)
++		ticks = ((usec * (get_tbclk()/1000)) + 500) / 1000;
++	else
++		ticks = ((usec / 10) * (get_tbclk() / 100000));
++
++	return ticks;
++}
++
++static inline unsigned long long tick_to_time(unsigned long long tick)
++{
++	unsigned long freq;
++
++	asm volatile("mrc p15, 0, %0, c14, c0, 0" : "=r" (freq));
++
++	tick *= CONFIG_SYS_HZ;
++	do_div(tick, freq);
++
++	return tick;
++}
++
++static inline unsigned long long us_to_tick(unsigned long long usec)
++{
++	unsigned long freq;
++
++	asm volatile("mrc p15, 0, %0, c14, c0, 0" : "=r" (freq));
++
++	usec = usec * freq  + 999999;
++	do_div(usec, 1000000);
++
++	return usec;
++}
++
++int timer_init(void)
++{
++	struct sctr_regs *sctr = (struct sctr_regs *)SCTR_BASE_ADDR;
++	unsigned long val, freq;
++
++	freq = CONFIG_SC_TIMER_CLK;
++	asm("mcr p15, 0, %0, c14, c0, 0" : : "r" (freq));
++
++	writel(freq, &sctr->cntfid0);
++
++	/* Enable system counter */
++	val = readl(&sctr->cntcr);
++	val &= ~(SC_CNTCR_FREQ0 | SC_CNTCR_FREQ1);
++	val |= SC_CNTCR_FREQ0 | SC_CNTCR_ENABLE | SC_CNTCR_HDBG;
++	writel(val, &sctr->cntcr);
++
++	gd->arch.tbl = 0;
++	gd->arch.tbu = 0;
++
++	return 0;
++}
++
++unsigned long long get_ticks(void)
++{
++	unsigned long long now;
++
++	asm("mrrc p15, 0, %Q0, %R0, c14" : "=r" (now));
++
++	gd->arch.tbl = (unsigned long)(now & 0xffffffff);
++	gd->arch.tbu = (unsigned long)(now >> 32);
++
++	return now;
++}
++
++ulong get_timer_masked(void)
++{
++	return tick_to_time(get_ticks());
++}
++
++ulong get_timer(ulong base)
++{
++	return get_timer_masked() - base;
++}
++
++void __udelay(unsigned long usec)
++{
++	unsigned long long tmp;
++	ulong tmo;
++
++	tmo = us_to_tick(usec);
++	tmp = get_ticks() + tmo;	/* get current timestamp */
++
++	while (get_ticks() < tmp)	/* loop till event */
++		 /*NOP*/;
++}
++
++/*
++ * This function is derived from PowerPC code (timebase clock frequency).
++ * On ARM it returns the number of timer ticks per second.
++ */
++ulong get_tbclk(void)
++{
++	unsigned long freq;
++
++	asm volatile("mrc p15, 0, %0, c14, c0, 0" : "=r" (freq));
++
++	return freq;
++}
+diff --git a/arch/arm/imx-common/timer.c b/arch/arm/imx-common/timer.c
+index c9eb530..6fea6fe 100644
+--- a/arch/arm/imx-common/timer.c
++++ b/arch/arm/imx-common/timer.c
+@@ -45,7 +45,8 @@ static inline int gpt_has_clk_source_osc(void)
+ #if defined(CONFIG_MX6)
+ 	if (((is_cpu_type(MXC_CPU_MX6Q) || is_cpu_type(MXC_CPU_MX6D)) &&
+ 	     (is_soc_rev(CHIP_REV_1_0) > 0)) || is_cpu_type(MXC_CPU_MX6DL) ||
+-	      is_cpu_type(MXC_CPU_MX6SOLO) || is_cpu_type(MXC_CPU_MX6SX))
++	      is_cpu_type(MXC_CPU_MX6SOLO) || is_cpu_type(MXC_CPU_MX6SX) ||
++	      is_cpu_type(MXC_CPU_MX6UL))
+ 		return 1;
+ 
+ 	return 0;
+@@ -109,11 +110,12 @@ int timer_init(void)
+ 	if (gpt_has_clk_source_osc()) {
+ 		i |= GPTCR_CLKSOURCE_OSC | GPTCR_TEN;
+ 
+-		/* For DL/S, SX, set 24Mhz OSC Enable bit and prescaler */
++		/* For DL/S, SX, UL, set 24Mhz OSC Enable bit and prescaler */
+ 		if (is_cpu_type(MXC_CPU_MX6DL) ||
+ 		    is_cpu_type(MXC_CPU_MX6SOLO) ||
+ 		    is_cpu_type(MXC_CPU_MX6SX) ||
+-		    is_cpu_type(MXC_CPU_MX7D)) {
++		    is_cpu_type(MXC_CPU_MX7D) ||
++		    is_cpu_type(MXC_CPU_MX6UL)) {
+ 			i |= GPTCR_24MEN;
+ 
+ 			/* Produce 3Mhz clock */
+diff --git a/arch/arm/include/asm/arch-mx7/timer.h b/arch/arm/include/asm/arch-mx7/timer.h
+deleted file mode 100644
+index 0bb2ebe..0000000
+--- a/arch/arm/include/asm/arch-mx7/timer.h
++++ /dev/null
+@@ -1,29 +0,0 @@
+-/*
+- * Copyright (C) 2014-2015 Freescale Semiconductor, Inc.
+- *
+- * SPDX-License-Identifier:	GPL-2.0+
+- */
+-
+-#ifndef _ASM_ARCH_MX7_TIMER_H
+-#define _ASM_ARCH_MX7_TIMER_H
+-
+-/* System Counter */
+-struct sctr_regs {
+-	u32 cntcr;
+-	u32 cntsr;
+-	u32 cntcv1;
+-	u32 cntcv2;
+-	u32 resv1[4];
+-	u32 cntfid0;
+-	u32 cntfid1;
+-	u32 cntfid2;
+-	u32 resv2[1001];
+-	u32 counterid[1];
+-};
+-
+-#define SC_CNTCR_ENABLE		(1 << 0)
+-#define SC_CNTCR_HDBG		(1 << 1)
+-#define SC_CNTCR_FREQ0		(1 << 8)
+-#define SC_CNTCR_FREQ1		(1 << 9)
+-
+-#endif
+diff --git a/arch/arm/include/asm/imx-common/syscounter.h b/arch/arm/include/asm/imx-common/syscounter.h
+new file mode 100644
+index 0000000..ddb412e
+--- /dev/null
++++ b/arch/arm/include/asm/imx-common/syscounter.h
+@@ -0,0 +1,29 @@
++/*
++ * Copyright (C) 2014-2015 Freescale Semiconductor, Inc.
++ *
++ * SPDX-License-Identifier:	GPL-2.0+
++ */
++
++#ifndef _ASM_ARCH_SYSTEM_COUNTER_H
++#define _ASM_ARCH_SYSTEM_COUNTER_H
++
++/* System Counter */
++struct sctr_regs {
++	u32 cntcr;
++	u32 cntsr;
++	u32 cntcv1;
++	u32 cntcv2;
++	u32 resv1[4];
++	u32 cntfid0;
++	u32 cntfid1;
++	u32 cntfid2;
++	u32 resv2[1001];
++	u32 counterid[1];
++};
++
++#define SC_CNTCR_ENABLE		(1 << 0)
++#define SC_CNTCR_HDBG		(1 << 1)
++#define SC_CNTCR_FREQ0		(1 << 8)
++#define SC_CNTCR_FREQ1		(1 << 9)
++
++#endif
+diff --git a/include/configs/mx6_common.h b/include/configs/mx6_common.h
+index c96ba97..d7ce792 100644
+--- a/include/configs/mx6_common.h
++++ b/include/configs/mx6_common.h
+@@ -17,6 +17,7 @@
+ #ifndef __MX6_COMMON_H
+ #define __MX6_COMMON_H
+ 
++#ifndef CONFIG_MX6UL
+ #define CONFIG_ARM_ERRATA_743622
+ #if (defined(CONFIG_MX6QP) || defined(CONFIG_MX6Q) ||\
+ defined(CONFIG_MX6DL)) && !defined(CONFIG_MX6SOLO)
+@@ -25,8 +26,6 @@ defined(CONFIG_MX6DL)) && !defined(CONFIG_MX6SOLO)
+ #define CONFIG_ARM_ERRATA_761320
+ #define CONFIG_ARM_ERRATA_845369
+ #endif
+-#define CONFIG_BOARD_POSTCLK_INIT
+-#define CONFIG_LDO_BYPASS_CHECK
+ 
+ #ifndef CONFIG_SYS_L2CACHE_OFF
+ #define CONFIG_SYS_L2_PL310
+@@ -34,6 +33,14 @@ defined(CONFIG_MX6DL)) && !defined(CONFIG_MX6SOLO)
+ #endif
+ 
+ #define CONFIG_MP
++#define CONFIG_GPT_TIMER
++#else
++#define CONFIG_SYSCOUNTER_TIMER
++#define CONFIG_SC_TIMER_CLK 8000000 /* 8Mhz */
++#endif /* CONFIG_MX6UL */
++
++#define CONFIG_BOARD_POSTCLK_INIT
++#define CONFIG_LDO_BYPASS_CHECK
+ #define CONFIG_MXC_GPT_HCLK
+ #ifdef CONFIG_MX6QP
+ #define CONFIG_MX6Q
+diff --git a/include/configs/mx7_common.h b/include/configs/mx7_common.h
+index 9352164..3e5c811 100644
+--- a/include/configs/mx7_common.h
++++ b/include/configs/mx7_common.h
+@@ -13,6 +13,7 @@
+ #define CONFIG_BOARD_POSTCLK_INIT
+ #define CONFIG_MXC_GPT_HCLK
+ 
++#define CONFIG_SYSCOUNTER_TIMER
+ #define CONFIG_SC_TIMER_CLK 8000000 /* 8Mhz */
+ 
+ #define CONFIG_IOMUX_LPSR
+-- 
+1.8.0
+

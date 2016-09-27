@@ -1,0 +1,35 @@
+From 200c8698a60f07b5da5b12994a70662c6358df83 Mon Sep 17 00:00:00 2001
+From: Robby Cai <r63905@freescale.com>
+Date: Wed, 24 Jun 2015 11:01:38 +0800
+Subject: [PATCH] MLK-11159-2 Revert "MLK-11092 ARM: imx6: set pl310 l2 cache
+ prefetch offset to zero"
+
+This reverts commit 34ff6ab4e6af5e87eb3edc0420b204bf09e859e6.
+
+After further investigation, find L2 prefetch offset setting of 0xF is not the
+root cause for USB stress reboot failure. With the fix in USB driver,
+and L2 prefetch offset setting of 0xF, the reboot stress test has passed 4-days
+both on imx6q and imx6qp sabreauto board.
+
+Signed-off-by: Robby Cai <r63905@freescale.com>
+(cherry picked from commit 2151ecdb1030691be2de662943f8f97a01a60e35)
+---
+ arch/arm/mach-imx/system.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/arch/arm/mach-imx/system.c b/arch/arm/mach-imx/system.c
+index d446f7d..fc398b5 100644
+--- a/arch/arm/mach-imx/system.c
++++ b/arch/arm/mach-imx/system.c
+@@ -156,7 +156,7 @@ void __init imx_init_l2cache(void)
+ 	/* Configure the L2 PREFETCH and POWER registers */
+ 	/* Set prefetch offset with any value except 23 as per errata 765569 */
+ 	val = readl_relaxed(l2x0_base + L2X0_PREFETCH_CTRL);
+-	val |= 0x70000000;
++	val |= 0x7000000f;
+ 	/*
+ 	 * The L2 cache controller(PL310) version on the i.MX6D/Q is r3p1-50rel0
+ 	 * The L2 cache controller(PL310) version on the i.MX6DL/SOLO/SL/SX/DQP
+-- 
+1.8.0
+

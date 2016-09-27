@@ -1,0 +1,29 @@
+From 6042f291f816d51c955cbe4575d246e0f4d96e49 Mon Sep 17 00:00:00 2001
+From: Wang Haoran <b50027@freescale.com>
+Date: Tue, 9 Dec 2014 16:26:09 +0800
+Subject: [PATCH 404/602] MA-5040-1 Disable light sensor in evk_6sl
+ permissions
+
+Our evk_6sl doesn't have light sensor. So remove the
+permissions for it.
+
+Signed-off-by: Wang Haoran <b50027@freescale.com>
+---
+ imx6/evk_6sl.mk | 1 -
+ 1 file changed, 1 deletion(-)
+
+diff --git a/imx6/evk_6sl.mk b/imx6/evk_6sl.mk
+index 303cada..da04282 100644
+--- a/imx6/evk_6sl.mk
++++ b/imx6/evk_6sl.mk
+@@ -46,7 +46,6 @@ PRODUCT_COPY_FILES += \
+ 	frameworks/native/data/etc/android.software.managed_users.xml:system/etc/permissions/android.software.managed_users.xml \
+ 	frameworks/native/data/etc/android.hardware.wifi.xml:system/etc/permissions/android.hardware.wifi.xml \
+ 	frameworks/native/data/etc/android.hardware.wifi.direct.xml:system/etc/permissions/android.hardware.wifi.direct.xml \
+-	frameworks/native/data/etc/android.hardware.sensor.light.xml:system/etc/permissions/android.hardware.sensor.light.xml \
+ 	frameworks/native/data/etc/android.software.sip.voip.xml:system/etc/permissions/android.software.sip.voip.xml \
+ 	frameworks/native/data/etc/android.hardware.usb.host.xml:system/etc/permissions/android.hardware.usb.host.xml \
+ 	frameworks/native/data/etc/android.hardware.usb.accessory.xml:system/etc/permissions/android.hardware.usb.accessory.xml \
+-- 
+1.8.0
+

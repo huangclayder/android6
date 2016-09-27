@@ -1,0 +1,90 @@
+From e0edd880fae108572b46463693b0c555a9951abb Mon Sep 17 00:00:00 2001
+From: Peter Chen <peter.chen@freescale.com>
+Date: Fri, 12 Dec 2014 13:29:58 +0800
+Subject: [PATCH] MLK-10088-3 usb: chipidea: usbmisc_imx: delete clock
+ information
+
+All imx usb controller's non core registers uses the same clock gate with
+core registers, the usbmisc_imx is the library for imx glue driver, the
+glue keeps clock on when it calls usbmisc_imx API to change non-core register.
+
+Besides, we will support runtime pm in the future, it also needs to
+close this clock when the usb is not in use.
+
+Philipp Zabel also verifies it at imx6q platform, see
+http://www.spinics.net/lists/linux-usb/msg118491.html
+
+Cc: Philipp Zabel <p.zabel@pengutronix.de>
+Signed-off-by: Peter Chen <peter.chen@freescale.com>
+---
+ drivers/usb/chipidea/usbmisc_imx.c | 21 +--------------------
+ 1 file changed, 1 insertion(+), 20 deletions(-)
+
+diff --git a/drivers/usb/chipidea/usbmisc_imx.c b/drivers/usb/chipidea/usbmisc_imx.c
+index 58591e9..e91e64a 100644
+--- a/drivers/usb/chipidea/usbmisc_imx.c
++++ b/drivers/usb/chipidea/usbmisc_imx.c
+@@ -1,5 +1,5 @@
+ /*
+- * Copyright 2012 Freescale Semiconductor, Inc.
++ * Copyright 2012-2015 Freescale Semiconductor, Inc.
+  *
+  * The code contained herein is licensed under the GNU General Public
+  * License. You may obtain a copy of the GNU General Public License
+@@ -11,7 +11,6 @@
+ 
+ #include <linux/module.h>
+ #include <linux/of_platform.h>
+-#include <linux/clk.h>
+ #include <linux/err.h>
+ #include <linux/io.h>
+ #include <linux/delay.h>
+@@ -69,7 +68,6 @@ struct usbmisc_ops {
+ struct imx_usbmisc {
+ 	void __iomem *base;
+ 	spinlock_t lock;
+-	struct clk *clk;
+ 	const struct usbmisc_ops *ops;
+ };
+ 
+@@ -322,7 +320,6 @@ static int usbmisc_imx_probe(struct platform_device *pdev)
+ {
+ 	struct resource	*res;
+ 	struct imx_usbmisc *data;
+-	int ret;
+ 	struct of_device_id *tmp_dev;
+ 
+ 	data = devm_kzalloc(&pdev->dev, sizeof(*data), GFP_KERNEL);
+@@ -336,20 +333,6 @@ static int usbmisc_imx_probe(struct platform_device *pdev)
+ 	if (IS_ERR(data->base))
+ 		return PTR_ERR(data->base);
+ 
+-	data->clk = devm_clk_get(&pdev->dev, NULL);
+-	if (IS_ERR(data->clk)) {
+-		dev_err(&pdev->dev,
+-			"failed to get clock, err=%ld\n", PTR_ERR(data->clk));
+-		return PTR_ERR(data->clk);
+-	}
+-
+-	ret = clk_prepare_enable(data->clk);
+-	if (ret) {
+-		dev_err(&pdev->dev,
+-			"clk_prepare_enable failed, err=%d\n", ret);
+-		return ret;
+-	}
+-
+ 	tmp_dev = (struct of_device_id *)
+ 		of_match_device(usbmisc_imx_dt_ids, &pdev->dev);
+ 	data->ops = (const struct usbmisc_ops *)tmp_dev->data;
+@@ -360,8 +343,6 @@ static int usbmisc_imx_probe(struct platform_device *pdev)
+ 
+ static int usbmisc_imx_remove(struct platform_device *pdev)
+ {
+-	struct imx_usbmisc *usbmisc = dev_get_drvdata(&pdev->dev);
+-	clk_disable_unprepare(usbmisc->clk);
+ 	return 0;
+ }
+ 
+-- 
+1.8.0
+

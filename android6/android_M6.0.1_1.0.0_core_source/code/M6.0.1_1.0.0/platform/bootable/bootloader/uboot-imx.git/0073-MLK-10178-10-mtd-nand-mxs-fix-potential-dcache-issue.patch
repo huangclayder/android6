@@ -1,0 +1,53 @@
+From 9449666cc215d6dff5f3fbd0348372e5fe03e637 Mon Sep 17 00:00:00 2001
+From: Peng Fan <Peng.Fan@freescale.com>
+Date: Thu, 29 Jan 2015 16:33:11 +0800
+Subject: [PATCH] MLK-10178-10 mtd:nand:mxs fix potential dcache issue
+
+DCIMVAC is upgraded to DCCIMVAC for the individual processor
+(Cortex-A7) that the DCIMVAC is executed on.
+
+We should follow the linux dma follow. Before DMA read, first
+invalidate dcache then after DMA read, invalidate dcache again.
+
+Signed-off-by: Peng Fan <Peng.Fan@freescale.com>
+(cherry picked from commit dddb52ebdc6c4919da0103a364563dbe2c100874)
+---
+ drivers/mtd/nand/mxs_nand.c | 8 +++++++-
+ 1 file changed, 7 insertions(+), 1 deletion(-)
+
+diff --git a/drivers/mtd/nand/mxs_nand.c b/drivers/mtd/nand/mxs_nand.c
+index 5a7ef6b..0779866 100644
+--- a/drivers/mtd/nand/mxs_nand.c
++++ b/drivers/mtd/nand/mxs_nand.c
+@@ -7,7 +7,7 @@
+  * Based on code from LTIB:
+  * Freescale GPMI NFC NAND Flash Driver
+  *
+- * Copyright (C) 2010-2014 Freescale Semiconductor, Inc.
++ * Copyright (C) 2010-2015 Freescale Semiconductor, Inc.
+  * Copyright (C) 2008 Embedded Alley Solutions, Inc.
+  *
+  * SPDX-License-Identifier:	GPL-2.0+
+@@ -456,6 +456,9 @@ static void mxs_nand_read_buf(struct mtd_info *mtd, uint8_t *buf, int length)
+ 
+ 	mxs_dma_desc_append(channel, d);
+ 
++	/* Invalidate caches */
++	mxs_nand_inval_data_buf(nand_info);
++
+ 	/* Execute the DMA chain. */
+ 	ret = mxs_dma_go(channel);
+ 	if (ret) {
+@@ -622,6 +625,9 @@ static int mxs_nand_ecc_read_page(struct mtd_info *mtd, struct nand_chip *nand,
+ 
+ 	mxs_dma_desc_append(channel, d);
+ 
++	/* Invalidate caches */
++	mxs_nand_inval_data_buf(nand_info);
++
+ 	/* Execute the DMA chain. */
+ 	ret = mxs_dma_go(channel);
+ 	if (ret) {
+-- 
+1.8.0
+

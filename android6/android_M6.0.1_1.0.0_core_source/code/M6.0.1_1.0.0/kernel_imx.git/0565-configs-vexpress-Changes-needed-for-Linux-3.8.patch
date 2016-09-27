@@ -1,0 +1,29 @@
+From 57e0195228bd2b1e87df41f56bb5873093f2dd4f Mon Sep 17 00:00:00 2001
+From: Jon Medhurst <tixy@linaro.org>
+Date: Tue, 2 Oct 2012 11:53:06 +0100
+Subject: [PATCH] configs: vexpress: Changes needed for Linux 3.8
+
+Signed-off-by: Jon Medhurst <tixy@linaro.org>
+(cherry picked from commit 0deb780b993a6ca965665b7976054ce7e4baeb35)
+Signed-off-by: Alex Shi <alex.shi@linaro.org>
+---
+ linaro/configs/vexpress.conf | 6 ++++++
+ 1 file changed, 6 insertions(+)
+
+diff --git a/linaro/configs/vexpress.conf b/linaro/configs/vexpress.conf
+index 6a06e8b..fb960d9 100644
+--- a/linaro/configs/vexpress.conf
++++ b/linaro/configs/vexpress.conf
+@@ -33,3 +33,9 @@ CONFIG_NFS_V3=y
+ CONFIG_NFS_V3_ACL=y
+ CONFIG_NFS_V4=y
+ CONFIG_ROOT_NFS=y
++CONFIG_VEXPRESS_CONFIG=y
++CONFIG_SENSORS_VEXPRESS=y
++CONFIG_REGULATOR=y
++CONFIG_REGULATOR_VEXPRESS=y
++CONFIG_NEW_LEDS=y
++CONFIG_LEDS_CLASS=y
+-- 
+1.8.0
+

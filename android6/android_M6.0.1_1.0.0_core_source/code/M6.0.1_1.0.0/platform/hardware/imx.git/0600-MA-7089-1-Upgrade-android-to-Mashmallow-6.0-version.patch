@@ -1,0 +1,29 @@
+From 902673e4c0ed6a2b0189837d7e73ba833e9b49d3 Mon Sep 17 00:00:00 2001
+From: Xiaowen Liu <xiaowen.liu@freescale.com>
+Date: Tue, 27 Oct 2015 09:15:10 -0400
+Subject: [PATCH 600/635] MA-7089-1 Upgrade android to Mashmallow 6.0 version.
+
+fix build failed on imx7 platform.
+change HAL_PIXEL_FORMAT_RAW_SENSOR to HAL_PIXEL_FORMAT_RAW16.
+
+Signed-off-by: Xiaowen Liu <xiaowen.liu@freescale.com>
+---
+ mx7/gralloc/gralloc.cpp | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/mx7/gralloc/gralloc.cpp b/mx7/gralloc/gralloc.cpp
+index bdc789d..a9fbc80 100644
+--- a/mx7/gralloc/gralloc.cpp
++++ b/mx7/gralloc/gralloc.cpp
+@@ -217,7 +217,7 @@ static int gralloc_alloc(alloc_device_t* dev,
+             bpp = 3;
+             break;
+         case HAL_PIXEL_FORMAT_RGB_565:
+-        case HAL_PIXEL_FORMAT_RAW_SENSOR:
++        case HAL_PIXEL_FORMAT_RAW16:
+             bpp = 2;
+             break;
+         default:
+-- 
+1.8.0
+

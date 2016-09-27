@@ -1,0 +1,43 @@
+From e8ddffbda0542e5d6d1e2018c60d4627236358d4 Mon Sep 17 00:00:00 2001
+From: Ke Qinghua <qinghua.ke@freescale.com>
+Date: Fri, 11 Jul 2014 10:57:21 +0800
+Subject: [PATCH] MA-6499 Remove non-power key's wakeup to system for ARD
+
+Cherry-pick below commit:
+commit 6a895ee7785fcd36b1abf99b9f16264143a93280
+Author: Ke Qinghua <qinghua.ke@freescale.com>
+Date:   Fri Jul 11 10:57:21 2014 +0800
+
+ENGR00322385 ARD:all on board key can wake up system
+
+Enable only power key as wake up source.
+
+Signed-off-by: guoyin.chen <guoyin.chen@freescale.com>
+---
+ arch/arm/boot/dts/imx6qdl-sabreauto.dtsi | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/arch/arm/boot/dts/imx6qdl-sabreauto.dtsi b/arch/arm/boot/dts/imx6qdl-sabreauto.dtsi
+index cd1ccdf..cba67ab 100644
+--- a/arch/arm/boot/dts/imx6qdl-sabreauto.dtsi
++++ b/arch/arm/boot/dts/imx6qdl-sabreauto.dtsi
+@@ -58,14 +58,14 @@
+ 		home {
+ 			label = "Home";
+ 			gpios = <&gpio1 11 1>;
+-			gpio-key,wakeup;
++			gpio-key;
+ 			linux,code = <KEY_HOME>;
+ 		};
+ 
+ 		back {
+ 			label = "Back";
+ 			gpios = <&gpio1 12 1>;
+-			gpio-key,wakeup;
++			gpio-key;
+ 			linux,code = <KEY_BACK>;
+ 		};
+ 
+-- 
+1.8.0
+

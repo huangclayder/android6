@@ -1,0 +1,53 @@
+From a77f3213938706ace092c0c1e7d830590289a7ad Mon Sep 17 00:00:00 2001
+From: Haoran Wang <b50027@freescale.com>
+Date: Thu, 29 Jan 2015 09:10:32 +0800
+Subject: [PATCH 082/115] MA-6167 Use configurated Ethernet port
+
+Select the configurated Ethernet port from overlay
+xml file.
+If no one are matched it will choose eth0 as default.
+
+Signed-off-by: Haoran Wang <b50027@freescale.com>
+---
+ Ethernet/com/fsl/ethernet/EthernetManager.java | 18 ++++++++++++++++++
+ 1 file changed, 18 insertions(+)
+
+diff --git a/Ethernet/com/fsl/ethernet/EthernetManager.java b/Ethernet/com/fsl/ethernet/EthernetManager.java
+index ffb8342..becdf39 100644
+--- a/Ethernet/com/fsl/ethernet/EthernetManager.java
++++ b/Ethernet/com/fsl/ethernet/EthernetManager.java
+@@ -116,6 +116,9 @@ public class EthernetManager {
+         mContext = context;
+ 
+         DevName = new String[1];
++        String sIfaceMatch = context.getResources().getString(
++                        com.android.internal.R.string.config_ethernet_iface_regex);
++
+ 
+         DevName[0] = "eth0";//mTracker.getLinkProperties().getInterfaceName();
+ 
+@@ -123,6 +126,21 @@ public class EthernetManager {
+         IBinder b = ServiceManager.getService(Context.NETWORKMANAGEMENT_SERVICE);
+         ethernetService = (android.net.EthernetManager) context.getSystemService(Context.ETHERNET_SERVICE);
+         mNMService = INetworkManagementService.Stub.asInterface(b);
++
++        try {
++            final String[] ifaces = mNMService.listInterfaces();
++            for (String iface : ifaces) {
++                if (iface.matches(sIfaceMatch)) {
++                    DevName[0] = iface;
++                    Log.d(TAG, "We will operate iface:" + DevName[0]);
++                    break;
++                }
++            }
++        } catch (RemoteException e) {
++            Log.e(TAG, "Could not get list of interfaces " + e);
++        }
++
++
+         HandlerThread dhcpThread = new HandlerThread("DHCP Handler Thread");
+         dhcpThread.start();
+         mDhcpInfo = new DhcpInfo();
+-- 
+1.8.0
+

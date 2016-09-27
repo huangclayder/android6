@@ -1,0 +1,299 @@
+From 1f0cbe2b52b1ed7832a2f9c48950522f7b0fb6e8 Mon Sep 17 00:00:00 2001
+From: "Ye.Li" <B37916@freescale.com>
+Date: Thu, 9 Jul 2015 17:07:32 +0800
+Subject: [PATCH] MLK-11230 imx6: USB: Modify OTG ID pin pad setting to pull
+ up
+
+Set the ID pin pad to pull up not the pull down at default, otherwise
+we can't enter the device mode, but always detect as host.
+
+After this change we have to use portA cable to play as host,
+and use portB cable for device.
+
+Signed-off-by: Ye.Li <B37916@freescale.com>
+---
+ board/freescale/mx6qarm2/mx6qarm2.c                               | 6 +++++-
+ board/freescale/mx6qsabreauto/mx6qsabreauto.c                     | 6 +++++-
+ board/freescale/mx6sabresd/mx6sabresd.c                           | 7 ++++++-
+ board/freescale/mx6sx_17x17_arm2/mx6sx_17x17_arm2.c               | 6 +++++-
+ board/freescale/mx6sx_19x19_arm2/mx6sx_19x19_arm2.c               | 8 ++++++--
+ board/freescale/mx6sxsabreauto/mx6sxsabreauto.c                   | 8 ++++++--
+ board/freescale/mx6sxsabresd/mx6sxsabresd.c                       | 8 ++++++--
+ board/freescale/mx6ul_14x14_ddr3_arm2/mx6ul_14x14_ddr3_arm2.c     | 6 +++++-
+ board/freescale/mx6ul_14x14_evk/mx6ul_14x14_evk.c                 | 5 ++++-
+ board/freescale/mx6ul_14x14_lpddr2_arm2/mx6ul_14x14_lpddr2_arm2.c | 8 ++++++--
+ 10 files changed, 54 insertions(+), 14 deletions(-)
+
+diff --git a/board/freescale/mx6qarm2/mx6qarm2.c b/board/freescale/mx6qarm2/mx6qarm2.c
+index 2f03f92..188096b 100644
+--- a/board/freescale/mx6qarm2/mx6qarm2.c
++++ b/board/freescale/mx6qarm2/mx6qarm2.c
+@@ -31,6 +31,10 @@ DECLARE_GLOBAL_DATA_PTR;
+ #define ENET_PAD_CTRL  (PAD_CTL_PUS_100K_UP |			\
+ 	PAD_CTL_SPEED_MED | PAD_CTL_DSE_40ohm | PAD_CTL_HYS)
+ 
++#define OTG_ID_PAD_CTRL (PAD_CTL_PKE | PAD_CTL_PUE |		\
++	PAD_CTL_PUS_47K_UP  | PAD_CTL_SPEED_LOW |		\
++	PAD_CTL_DSE_80ohm   | PAD_CTL_SRE_FAST  | PAD_CTL_HYS)
++
+ int dram_init(void)
+ {
+ #if defined(CONFIG_MX6DL) && !defined(CONFIG_MX6DL_LPDDR2) && \
+@@ -286,7 +290,7 @@ int board_eth_init(bd_t *bis)
+ 
+ static iomux_v3_cfg_t const usb_otg_pads[] = {
+ 	MX6_PAD_EIM_D22__USB_OTG_PWR | MUX_PAD_CTRL(NO_PAD_CTRL),
+-	MX6_PAD_GPIO_1__USB_OTG_ID | MUX_PAD_CTRL(NO_PAD_CTRL),
++	MX6_PAD_GPIO_1__USB_OTG_ID | MUX_PAD_CTRL(OTG_ID_PAD_CTRL),
+ };
+ 
+ static void setup_usb(void)
+diff --git a/board/freescale/mx6qsabreauto/mx6qsabreauto.c b/board/freescale/mx6qsabreauto/mx6qsabreauto.c
+index e20cd91..cedc090 100644
+--- a/board/freescale/mx6qsabreauto/mx6qsabreauto.c
++++ b/board/freescale/mx6qsabreauto/mx6qsabreauto.c
+@@ -84,6 +84,10 @@ DECLARE_GLOBAL_DATA_PTR;
+ 	PAD_CTL_PUS_100K_UP | PAD_CTL_SPEED_MED |               \
+ 	PAD_CTL_DSE_40ohm   | PAD_CTL_SRE_FAST)
+ 
++#define OTG_ID_PAD_CTRL (PAD_CTL_PKE | PAD_CTL_PUE |		\
++	PAD_CTL_PUS_47K_UP  | PAD_CTL_SPEED_LOW |		\
++	PAD_CTL_DSE_80ohm   | PAD_CTL_SRE_FAST  | PAD_CTL_HYS)
++
+ #define I2C_PMIC	1
+ 
+ int dram_init(void)
+@@ -889,7 +893,7 @@ int checkboard(void)
+ #define USB_OTG_PWR       IOEXP_GPIO_NR(3, 1)
+ 
+ iomux_v3_cfg_t const usb_otg_pads[] = {
+-	MX6_PAD_ENET_RX_ER__USB_OTG_ID | MUX_PAD_CTRL(NO_PAD_CTRL),
++	MX6_PAD_ENET_RX_ER__USB_OTG_ID | MUX_PAD_CTRL(OTG_ID_PAD_CTRL),
+ };
+ 
+ int board_ehci_hcd_init(int port)
+diff --git a/board/freescale/mx6sabresd/mx6sabresd.c b/board/freescale/mx6sabresd/mx6sabresd.c
+index eedeb94..4bc754a 100644
+--- a/board/freescale/mx6sabresd/mx6sabresd.c
++++ b/board/freescale/mx6sabresd/mx6sabresd.c
+@@ -75,6 +75,11 @@ DECLARE_GLOBAL_DATA_PTR;
+ #define EPDC_PAD_CTRL    (PAD_CTL_PKE | PAD_CTL_SPEED_MED |	\
+ 	PAD_CTL_DSE_40ohm | PAD_CTL_HYS)
+ 
++#define OTG_ID_PAD_CTRL (PAD_CTL_PKE | PAD_CTL_PUE |		\
++	PAD_CTL_PUS_47K_UP  | PAD_CTL_SPEED_LOW |		\
++	PAD_CTL_DSE_80ohm   | PAD_CTL_SRE_FAST  | PAD_CTL_HYS)
++
++
+ #define I2C_PMIC	1
+ 
+ #define I2C_PAD MUX_PAD_CTRL(I2C_PAD_CTRL)
+@@ -908,7 +913,7 @@ int board_eth_init(bd_t *bis)
+ 
+ static iomux_v3_cfg_t const usb_otg_pads[] = {
+ 	MX6_PAD_EIM_D22__USB_OTG_PWR | MUX_PAD_CTRL(NO_PAD_CTRL),
+-	MX6_PAD_ENET_RX_ER__USB_OTG_ID | MUX_PAD_CTRL(NO_PAD_CTRL),
++	MX6_PAD_ENET_RX_ER__USB_OTG_ID | MUX_PAD_CTRL(OTG_ID_PAD_CTRL),
+ };
+ 
+ static iomux_v3_cfg_t const usb_hc1_pads[] = {
+diff --git a/board/freescale/mx6sx_17x17_arm2/mx6sx_17x17_arm2.c b/board/freescale/mx6sx_17x17_arm2/mx6sx_17x17_arm2.c
+index 3d23408..5e94f72 100644
+--- a/board/freescale/mx6sx_17x17_arm2/mx6sx_17x17_arm2.c
++++ b/board/freescale/mx6sx_17x17_arm2/mx6sx_17x17_arm2.c
+@@ -72,6 +72,10 @@ DECLARE_GLOBAL_DATA_PTR;
+ 	PAD_CTL_PUS_100K_UP | PAD_CTL_SPEED_MED |		\
+ 	PAD_CTL_DSE_40ohm)
+ 
++#define OTG_ID_PAD_CTRL (PAD_CTL_PKE | PAD_CTL_PUE |		\
++	PAD_CTL_PUS_47K_UP  | PAD_CTL_SPEED_LOW |		\
++	PAD_CTL_DSE_80ohm   | PAD_CTL_SRE_FAST  | PAD_CTL_HYS)
++
+ #define I2C_PMIC 0
+ 
+ #ifdef CONFIG_SYS_I2C_MXC
+@@ -711,7 +715,7 @@ int board_early_init_f(void)
+ iomux_v3_cfg_t const usb_otg_pads[] = {
+ 	/*Only enable OTG1, the OTG2 has pin conflicts with PWM and WDOG*/
+ 	MX6_PAD_GPIO1_IO09__USB_OTG1_PWR | MUX_PAD_CTRL(NO_PAD_CTRL),
+-	MX6_PAD_GPIO1_IO10__ANATOP_OTG1_ID | MUX_PAD_CTRL(NO_PAD_CTRL),
++	MX6_PAD_GPIO1_IO10__ANATOP_OTG1_ID | MUX_PAD_CTRL(OTG_ID_PAD_CTRL),
+ };
+ 
+ static void setup_usb(void)
+diff --git a/board/freescale/mx6sx_19x19_arm2/mx6sx_19x19_arm2.c b/board/freescale/mx6sx_19x19_arm2/mx6sx_19x19_arm2.c
+index 88318ed..a0d5842 100644
+--- a/board/freescale/mx6sx_19x19_arm2/mx6sx_19x19_arm2.c
++++ b/board/freescale/mx6sx_19x19_arm2/mx6sx_19x19_arm2.c
+@@ -1,5 +1,5 @@
+ /*
+- * Copyright (C) 2014 Freescale Semiconductor, Inc.
++ * Copyright (C) 2014-2015 Freescale Semiconductor, Inc.
+  *
+  * SPDX-License-Identifier:	GPL-2.0+
+  */
+@@ -77,6 +77,10 @@ DECLARE_GLOBAL_DATA_PTR;
+ 	PAD_CTL_PUS_100K_UP | PAD_CTL_SPEED_MED |		\
+ 	PAD_CTL_DSE_40ohm)
+ 
++#define OTG_ID_PAD_CTRL (PAD_CTL_PKE | PAD_CTL_PUE |		\
++	PAD_CTL_PUS_47K_UP  | PAD_CTL_SPEED_LOW |		\
++	PAD_CTL_DSE_80ohm   | PAD_CTL_SRE_FAST  | PAD_CTL_HYS)
++
+ #define I2C_PMIC 0
+ 
+ #ifdef CONFIG_SYS_I2C_MXC
+@@ -755,7 +759,7 @@ int board_early_init_f(void)
+ 
+ iomux_v3_cfg_t const usb_otg_pads[] = {
+ 	MX6_PAD_GPIO1_IO09__USB_OTG1_PWR | MUX_PAD_CTRL(NO_PAD_CTRL),
+-	MX6_PAD_GPIO1_IO10__ANATOP_OTG1_ID | MUX_PAD_CTRL(NO_PAD_CTRL),
++	MX6_PAD_GPIO1_IO10__ANATOP_OTG1_ID | MUX_PAD_CTRL(OTG_ID_PAD_CTRL),
+ 	MX6_PAD_GPIO1_IO12__USB_OTG2_PWR | MUX_PAD_CTRL(NO_PAD_CTRL),
+ };
+ 
+diff --git a/board/freescale/mx6sxsabreauto/mx6sxsabreauto.c b/board/freescale/mx6sxsabreauto/mx6sxsabreauto.c
+index 6019dde..0e19345 100644
+--- a/board/freescale/mx6sxsabreauto/mx6sxsabreauto.c
++++ b/board/freescale/mx6sxsabreauto/mx6sxsabreauto.c
+@@ -1,5 +1,5 @@
+ /*
+- * Copyright (C) 2014 Freescale Semiconductor, Inc.
++ * Copyright (C) 2014-2015 Freescale Semiconductor, Inc.
+  *
+  * SPDX-License-Identifier:	GPL-2.0+
+  */
+@@ -87,6 +87,10 @@ DECLARE_GLOBAL_DATA_PTR;
+ 			PAD_CTL_SRE_FAST)
+ #define GPMI_PAD_CTRL2 (GPMI_PAD_CTRL0 | GPMI_PAD_CTRL1)
+ 
++#define OTG_ID_PAD_CTRL (PAD_CTL_PKE | PAD_CTL_PUE |		\
++	PAD_CTL_PUS_47K_UP  | PAD_CTL_SPEED_LOW |		\
++	PAD_CTL_DSE_80ohm   | PAD_CTL_SRE_FAST  | PAD_CTL_HYS)
++
+ #define I2C_PMIC 1
+ 
+ #ifdef CONFIG_SYS_I2C_MXC
+@@ -727,7 +731,7 @@ int board_early_init_f(void)
+ iomux_v3_cfg_t const usb_otg_pads[] = {
+ 	/* OTG1 */
+ 	MX6_PAD_GPIO1_IO09__USB_OTG1_PWR | MUX_PAD_CTRL(NO_PAD_CTRL),
+-	MX6_PAD_GPIO1_IO10__ANATOP_OTG1_ID | MUX_PAD_CTRL(NO_PAD_CTRL),
++	MX6_PAD_GPIO1_IO10__ANATOP_OTG1_ID | MUX_PAD_CTRL(OTG_ID_PAD_CTRL),
+ 	/* OTG2 */
+ 	MX6_PAD_GPIO1_IO12__USB_OTG2_PWR | MUX_PAD_CTRL(NO_PAD_CTRL),
+ };
+diff --git a/board/freescale/mx6sxsabresd/mx6sxsabresd.c b/board/freescale/mx6sxsabresd/mx6sxsabresd.c
+index 4e545b5..f653908 100644
+--- a/board/freescale/mx6sxsabresd/mx6sxsabresd.c
++++ b/board/freescale/mx6sxsabresd/mx6sxsabresd.c
+@@ -1,5 +1,5 @@
+ /*
+- * Copyright (C) 2014 Freescale Semiconductor, Inc.
++ * Copyright (C) 2014-2015 Freescale Semiconductor, Inc.
+  *
+  * Author: Fabio Estevam <fabio.estevam@freescale.com>
+  *
+@@ -86,6 +86,10 @@ DECLARE_GLOBAL_DATA_PTR;
+ #define WDOG_PAD_CTRL (PAD_CTL_PUE | PAD_CTL_PKE | PAD_CTL_SPEED_MED |	\
+ 	PAD_CTL_DSE_40ohm)
+ 
++#define OTG_ID_PAD_CTRL (PAD_CTL_PKE | PAD_CTL_PUE |		\
++	PAD_CTL_PUS_47K_UP  | PAD_CTL_SPEED_LOW |		\
++	PAD_CTL_DSE_80ohm   | PAD_CTL_SRE_FAST  | PAD_CTL_HYS)
++
+ int dram_init(void)
+ {
+ 	gd->ram_size = PHYS_SDRAM_SIZE;
+@@ -567,7 +571,7 @@ static rdc_peri_cfg_t const shared_resources[] = {
+ static iomux_v3_cfg_t const usb_otg_pads[] = {
+ 	/* OGT1 */
+ 	MX6_PAD_GPIO1_IO09__USB_OTG1_PWR | MUX_PAD_CTRL(NO_PAD_CTRL),
+-	MX6_PAD_GPIO1_IO10__ANATOP_OTG1_ID | MUX_PAD_CTRL(NO_PAD_CTRL),
++	MX6_PAD_GPIO1_IO10__ANATOP_OTG1_ID | MUX_PAD_CTRL(OTG_ID_PAD_CTRL),
+ 	/* OTG2 */
+ 	MX6_PAD_GPIO1_IO12__USB_OTG2_PWR | MUX_PAD_CTRL(NO_PAD_CTRL)
+ };
+diff --git a/board/freescale/mx6ul_14x14_ddr3_arm2/mx6ul_14x14_ddr3_arm2.c b/board/freescale/mx6ul_14x14_ddr3_arm2/mx6ul_14x14_ddr3_arm2.c
+index f5b8fc6..bb78c7b 100644
+--- a/board/freescale/mx6ul_14x14_ddr3_arm2/mx6ul_14x14_ddr3_arm2.c
++++ b/board/freescale/mx6ul_14x14_ddr3_arm2/mx6ul_14x14_ddr3_arm2.c
+@@ -75,6 +75,10 @@ DECLARE_GLOBAL_DATA_PTR;
+ 	PAD_CTL_SPEED_MED |		\
+ 	PAD_CTL_DSE_40ohm | PAD_CTL_SRE_FAST)
+ 
++#define OTG_ID_PAD_CTRL (PAD_CTL_PKE | PAD_CTL_PUE |		\
++	PAD_CTL_PUS_47K_UP  | PAD_CTL_SPEED_LOW |		\
++	PAD_CTL_DSE_80ohm   | PAD_CTL_SRE_FAST  | PAD_CTL_HYS)
++
+ #ifdef CONFIG_SYS_I2C_MXC
+ #define PC MUX_PAD_CTRL(I2C_PAD_CTRL)
+ /* I2C1 for PMIC and EEPROM */
+@@ -985,7 +989,7 @@ iomux_v3_cfg_t const usb_otg2_pads[] = {
+ 	/* conflict with i2c1_scl */
+ 	MX6_PAD_GPIO1_IO02__USB_OTG2_PWR | MUX_PAD_CTRL(NO_PAD_CTRL),
+ 	/* conflict with sd1_vselect */
+-	MX6_PAD_GPIO1_IO05__ANATOP_OTG2_ID | MUX_PAD_CTRL(NO_PAD_CTRL),
++	MX6_PAD_GPIO1_IO05__ANATOP_OTG2_ID | MUX_PAD_CTRL(OTG_ID_PAD_CTRL),
+ };
+ 
+ int board_usb_phy_mode(int port)
+diff --git a/board/freescale/mx6ul_14x14_evk/mx6ul_14x14_evk.c b/board/freescale/mx6ul_14x14_evk/mx6ul_14x14_evk.c
+index aaca883..4ef338f 100644
+--- a/board/freescale/mx6ul_14x14_evk/mx6ul_14x14_evk.c
++++ b/board/freescale/mx6ul_14x14_evk/mx6ul_14x14_evk.c
+@@ -84,6 +84,9 @@ DECLARE_GLOBAL_DATA_PTR;
+ 	PAD_CTL_SPEED_MED |		\
+ 	PAD_CTL_DSE_40ohm | PAD_CTL_SRE_FAST)
+ 
++#define OTG_ID_PAD_CTRL (PAD_CTL_PKE | PAD_CTL_PUE |		\
++	PAD_CTL_PUS_47K_UP  | PAD_CTL_SPEED_LOW |		\
++	PAD_CTL_DSE_80ohm   | PAD_CTL_SRE_FAST  | PAD_CTL_HYS)
+ 
+ #define IOX_SDI IMX_GPIO_NR(5, 10)
+ #define IOX_STCP IMX_GPIO_NR(5, 7)
+@@ -776,7 +779,7 @@ int board_phy_config(struct phy_device *phydev)
+ #define UCTRL_PWR_POL		(1 << 9)
+ 
+ static iomux_v3_cfg_t const usb_otg_pads[] = {
+-	MX6_PAD_GPIO1_IO00__ANATOP_OTG1_ID | MUX_PAD_CTRL(NO_PAD_CTRL),
++	MX6_PAD_GPIO1_IO00__ANATOP_OTG1_ID | MUX_PAD_CTRL(OTG_ID_PAD_CTRL),
+ };
+ 
+ /* At default the 3v3 enables the MIC2026 for VBUS power */
+diff --git a/board/freescale/mx6ul_14x14_lpddr2_arm2/mx6ul_14x14_lpddr2_arm2.c b/board/freescale/mx6ul_14x14_lpddr2_arm2/mx6ul_14x14_lpddr2_arm2.c
+index e37e870..0245809 100644
+--- a/board/freescale/mx6ul_14x14_lpddr2_arm2/mx6ul_14x14_lpddr2_arm2.c
++++ b/board/freescale/mx6ul_14x14_lpddr2_arm2/mx6ul_14x14_lpddr2_arm2.c
+@@ -75,6 +75,10 @@ DECLARE_GLOBAL_DATA_PTR;
+ 	PAD_CTL_SPEED_MED |		\
+ 	PAD_CTL_DSE_40ohm | PAD_CTL_SRE_FAST)
+ 
++#define OTG_ID_PAD_CTRL (PAD_CTL_PKE | PAD_CTL_PUE |		\
++	PAD_CTL_PUS_47K_UP  | PAD_CTL_SPEED_LOW |		\
++	PAD_CTL_DSE_80ohm   | PAD_CTL_SRE_FAST  | PAD_CTL_HYS)
++
+ #ifdef CONFIG_SYS_I2C_MXC
+ #define PC MUX_PAD_CTRL(I2C_PAD_CTRL)
+ /* I2C1 for PMIC and EEPROM */
+@@ -946,7 +950,7 @@ int checkboard(void)
+ #define UCTRL_PWR_POL		(1 << 9)
+ iomux_v3_cfg_t const usb_otg1_pads[] = {
+ 	MX6_PAD_GPIO1_IO04__USB_OTG1_PWR | MUX_PAD_CTRL(NO_PAD_CTRL),
+-	MX6_PAD_GPIO1_IO00__ANATOP_OTG1_ID | MUX_PAD_CTRL(NO_PAD_CTRL),
++	MX6_PAD_GPIO1_IO00__ANATOP_OTG1_ID | MUX_PAD_CTRL(OTG_ID_PAD_CTRL),
+ };
+ 
+ /*
+@@ -957,7 +961,7 @@ iomux_v3_cfg_t const usb_otg2_pads[] = {
+ 	/* conflict with i2c1_scl */
+ 	MX6_PAD_GPIO1_IO02__USB_OTG2_PWR | MUX_PAD_CTRL(NO_PAD_CTRL),
+ 	/* conflict with sd1_vselect */
+-	MX6_PAD_GPIO1_IO05__ANATOP_OTG2_ID | MUX_PAD_CTRL(NO_PAD_CTRL),
++	MX6_PAD_GPIO1_IO05__ANATOP_OTG2_ID | MUX_PAD_CTRL(OTG_ID_PAD_CTRL),
+ };
+ 
+ int board_usb_phy_mode(int port)
+-- 
+1.8.0
+

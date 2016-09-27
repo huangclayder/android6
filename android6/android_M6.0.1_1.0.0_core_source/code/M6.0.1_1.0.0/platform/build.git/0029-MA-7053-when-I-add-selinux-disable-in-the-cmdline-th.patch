@@ -1,0 +1,111 @@
+From 0acb4d294e45447eae99517384761c60ae506f42 Mon Sep 17 00:00:00 2001
+From: zhang sanshan <b51434@freescale.com>
+Date: Thu, 24 Sep 2015 11:14:26 +0800
+Subject: [PATCH 29/34] MA-7053 when I add selinux=disable in the cmdline, the
+ board do OTA update will fail(auto dq 0910 daily).
+
+The ota update script will set selinux label with set_metadata when do nand ota update.
+The root cause is set_metadata will fail if disable selinux in recovery mode.
+The nand oat script will not set selinux label when androidboot.selinux=disabled.
+
+Signed-off-by: zhang sanshan <b51434@freescale.com>
+---
+ tools/releasetools/edify_generator.py       | 24 ++++++++++++++++++
+ tools/releasetools/ota_from_target_files.py | 38 +++++++++++++++++++++++++++++
+ 2 files changed, 62 insertions(+)
+
+diff --git a/tools/releasetools/edify_generator.py b/tools/releasetools/edify_generator.py
+index 9896d39..63be2ac 100644
+--- a/tools/releasetools/edify_generator.py
++++ b/tools/releasetools/edify_generator.py
+@@ -342,6 +342,30 @@ class EdifyGenerator(object):
+       cmd += ');'
+       self.script.append(cmd)
+ 
++  def SetPermissions_NonSelinux(self, fn, uid, gid, mode, selabel, capabilities):
++    """Set file ownership and permissions."""
++    if not self.info.get("use_set_metadata", False):
++      self.script.append('set_perm(%d, %d, 0%o, "%s");' % (uid, gid, mode, fn))
++    else:
++      if capabilities is None: capabilities = "0x0"
++      cmd = 'set_metadata("%s", "uid", %d, "gid", %d, "mode", 0%o, ' \
++          '"capabilities", %s' % (fn, uid, gid, mode, capabilities)
++      cmd += ');'
++      self.script.append(cmd)
++
++  def SetPermissionsRecursive_NonSelinux(self, fn, uid, gid, dmode, fmode, selabel, capabilities):
++    """Recursively set path ownership and permissions."""
++    if not self.info.get("use_set_metadata", False):
++      self.script.append('set_perm_recursive(%d, %d, 0%o, 0%o, "%s");'
++                         % (uid, gid, dmode, fmode, fn))
++    else:
++      if capabilities is None: capabilities = "0x0"
++      cmd = 'set_metadata_recursive("%s", "uid", %d, "gid", %d, ' \
++          '"dmode", 0%o, "fmode", 0%o, "capabilities", %s' \
++          % (fn, uid, gid, dmode, fmode, capabilities)
++      cmd += ');'
++      self.script.append(cmd)
++
+   def MakeSymlinks(self, symlink_list):
+     """Create symlinks, given a list of (dest, link) pairs."""
+     by_dest = {}
+diff --git a/tools/releasetools/ota_from_target_files.py b/tools/releasetools/ota_from_target_files.py
+index 1dcf8b1..4568eaf 100755
+--- a/tools/releasetools/ota_from_target_files.py
++++ b/tools/releasetools/ota_from_target_files.py
+@@ -360,6 +360,40 @@ class Item(object):
+ 
+     recurse(self, (-1, -1, -1, -1, None, None))
+ 
++  def SetPermissions_NonSelinux(self, script):
++    """Append set_perm/set_perm_recursive commands to 'script' to
++    set all permissions, users, and groups for the tree of files
++    rooted at 'self'."""
++
++    self.CountChildMetadata()
++
++    def recurse(item, current):
++      # current is the (uid, gid, dmode, fmode, selabel, capabilities) tuple that the current
++      # item (and all its children) have already been set to.  We only
++      # need to issue set_perm/set_perm_recursive commands if we're
++      # supposed to be something different.
++      if item.dir:
++        if current != item.best_subtree:
++          script.SetPermissionsRecursive_NonSelinux("/"+item.name, *item.best_subtree)
++          current = item.best_subtree
++
++        if item.uid != current[0] or item.gid != current[1] or \
++           item.mode != current[2] or item.selabel != current[4] or \
++           item.capabilities != current[5]:
++          script.SetPermissions_NonSelinux("/"+item.name, item.uid, item.gid,
++                                item.mode, item.selabel, item.capabilities)
++
++        for i in item.children:
++          recurse(i, current)
++      else:
++        if item.uid != current[0] or item.gid != current[1] or \
++               item.mode != current[3] or item.selabel != current[4] or \
++               item.capabilities != current[5]:
++          script.SetPermissions_NonSelinux("/"+item.name, item.uid, item.gid,
++                                item.mode, item.selabel, item.capabilities)
++
++    recurse(self, (-1, -1, -1, -1, None, None))
++
+ 
+ def CopyPartitionFiles(itemset, input_zip, output_zip=None, substitute=None):
+   """Copies files for the partition in the input zip to the output
+@@ -633,7 +667,11 @@ else if get_stage("%(bcb_dev)s") == "3/3" then
+                              recovery_img, boot_img)
+ 
+     system_items.GetMetadata(input_zip)
++    script.AppendExtra('if getprop("ro.boot.selinux") == "disabled" then');
++    system_items.Get("system").SetPermissions_NonSelinux(script)
++    script.AppendExtra('else')
+     system_items.Get("system").SetPermissions(script)
++    script.AppendExtra('endif;')
+ 
+   if HasVendorPartition(input_zip):
+     vendor_items = ItemSet("vendor", "META/vendor_filesystem_config.txt")
+-- 
+1.8.0
+

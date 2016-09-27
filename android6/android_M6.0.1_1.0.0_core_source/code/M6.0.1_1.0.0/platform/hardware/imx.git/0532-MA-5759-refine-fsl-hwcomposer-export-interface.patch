@@ -1,0 +1,145 @@
+From 710d1b3e6bdef0ade61073c040f099ba2e710a20 Mon Sep 17 00:00:00 2001
+From: Liu Xiaowen <b37945@freescale.com>
+Date: Thu, 16 Oct 2014 11:19:54 +0800
+Subject: [PATCH 532/635] MA-5759 refine fsl hwcomposer export interface.
+
+refine fsl hwcomposer export interface to reduce module dependency.
+
+Signed-off-by: Liu Xiaowen <b37945@freescale.com>
+---
+ mx6/hwcomposer/hwc_context.h   | 14 ++++++++------
+ mx6/hwcomposer/hwc_display.cpp |  3 ++-
+ mx6/hwcomposer/hwc_uevent.cpp  |  8 ++++++--
+ mx6/hwcomposer/hwcomposer.cpp  | 12 +++++++-----
+ 4 files changed, 23 insertions(+), 14 deletions(-)
+
+diff --git a/mx6/hwcomposer/hwc_context.h b/mx6/hwcomposer/hwc_context.h
+index dfa1d05..50de7c8 100644
+--- a/mx6/hwcomposer/hwc_context.h
++++ b/mx6/hwcomposer/hwc_context.h
+@@ -79,14 +79,17 @@ typedef struct {
+ 
+ struct hwc_context_t;
+ 
++//note:
++//the five member in hwc_operations structure must not be changed.
+ struct hwc_operations {
+-    void (*setDisplayInfo)(int disp, struct hwc_context_t* ctx);
+-    int (*prepare)(struct hwc_context_t* ctx,
++    void (*setDisplayInfo)(struct hwc_operations* ctx, int disp, int xres,
++                           int yres, bool connected);
++    int (*prepare)(struct hwc_operations* ctx,
+                     size_t numDisplays, hwc_display_contents_1_t** displays);
+-    int (*set)(struct hwc_context_t* ctx,
++    int (*set)(struct hwc_operations* ctx,
+                 size_t numDisplays, hwc_display_contents_1_t** displays);
+-    int (*blank)(struct hwc_context_t* ctx, int disp, int blank);
+-    int (*close)(struct hwc_context_t* ctx);
++    int (*blank)(struct hwc_operations* ctx, int disp, int blank);
++    int (*close)(struct hwc_operations* ctx);
+ };
+ 
+ struct hwc_context_t {
+@@ -107,7 +110,6 @@ struct hwc_context_t {
+     framebuffer_device_t* mFbDev[HWC_NUM_PHYSICAL_DISPLAY_TYPES];
+ 
+     //fsl private property and operations.
+-    void* m_priv;
+     hwc_operations* m_hwc_ops;
+ };
+ 
+diff --git a/mx6/hwcomposer/hwc_display.cpp b/mx6/hwcomposer/hwc_display.cpp
+index 388e984..c910de9 100644
+--- a/mx6/hwcomposer/hwc_display.cpp
++++ b/mx6/hwcomposer/hwc_display.cpp
+@@ -231,7 +231,8 @@ int hwc_get_display_info(struct hwc_context_t* ctx)
+         if(pInfo->connected) {
+             err = hwc_get_framebuffer_info(pInfo);
+             if (!err && ctx->m_hwc_ops) {
+-                ctx->m_hwc_ops->setDisplayInfo(dispid, ctx);
++                ctx->m_hwc_ops->setDisplayInfo(ctx->m_hwc_ops, dispid,
++                            pInfo->xres, pInfo->yres, pInfo->connected);
+             }
+         }
+     }
+diff --git a/mx6/hwcomposer/hwc_uevent.cpp b/mx6/hwcomposer/hwc_uevent.cpp
+index c360d54..aa4793f 100644
+--- a/mx6/hwcomposer/hwc_uevent.cpp
++++ b/mx6/hwcomposer/hwc_uevent.cpp
+@@ -60,7 +60,9 @@ void UeventThread::handleHdmiUevent(const char *buff, int len, int dispid) {
+                 ALOGI("HDMI Plugin detected");
+                 hwc_get_framebuffer_info(&mCtx->mDispInfo[HWC_DISPLAY_EXTERNAL]);
+                 if (mCtx->m_hwc_ops) {
+-                    mCtx->m_hwc_ops->setDisplayInfo(dispid, mCtx);
++                    displayInfo *pInfo = &mCtx->mDispInfo[HWC_DISPLAY_EXTERNAL];
++                    mCtx->m_hwc_ops->setDisplayInfo(mCtx->m_hwc_ops, dispid,
++                            pInfo->xres, pInfo->yres, pInfo->connected);
+                 }
+             }
+         } else if (!strncmp(s, "EVENT=plugout", strlen("EVENT=plugout"))) {
+@@ -71,7 +73,9 @@ void UeventThread::handleHdmiUevent(const char *buff, int len, int dispid) {
+ 
+             mCtx->mDispInfo[HWC_DISPLAY_EXTERNAL].connected = false;
+             if (mCtx->m_hwc_ops) {
+-                mCtx->m_hwc_ops->setDisplayInfo(dispid, mCtx);
++                displayInfo *pInfo = &mCtx->mDispInfo[HWC_DISPLAY_EXTERNAL];
++                mCtx->m_hwc_ops->setDisplayInfo(mCtx->m_hwc_ops, dispid,
++                            pInfo->xres, pInfo->yres, pInfo->connected);
+             }
+             ALOGI("HDMI Plugout detected");
+         }
+diff --git a/mx6/hwcomposer/hwcomposer.cpp b/mx6/hwcomposer/hwcomposer.cpp
+index 3ca4a36..a9187f4 100644
+--- a/mx6/hwcomposer/hwcomposer.cpp
++++ b/mx6/hwcomposer/hwcomposer.cpp
+@@ -106,7 +106,7 @@ static int hwc_device_close(struct hw_device_t *dev)
+         }
+ 
+         if (ctx->m_hwc_ops != NULL) {
+-            ctx->m_hwc_ops->close(ctx);
++            ctx->m_hwc_ops->close(ctx->m_hwc_ops);
+         }
+ 
+         if(ctx->m_viv_hwc) {
+@@ -137,7 +137,7 @@ static int hwc_prepare(hwc_composer_device_1_t *dev,
+     }
+ 
+     if (ctx->m_hwc_ops) {
+-        return ctx->m_hwc_ops->prepare(ctx, numDisplays, displays);
++        return ctx->m_hwc_ops->prepare(ctx->m_hwc_ops, numDisplays, displays);
+     }
+ 
+     return ret;
+@@ -166,7 +166,7 @@ static int hwc_set(struct hwc_composer_device_1 *dev,
+             ret = ctx->m_viv_hwc->set(ctx->m_viv_hwc, numDisplays, displays);
+         }
+         else {
+-            ret = ctx->m_hwc_ops->set(ctx, numDisplays, displays);
++            ret = ctx->m_hwc_ops->set(ctx->m_hwc_ops, numDisplays, displays);
+         }
+         if(ret) return ret;
+     }
+@@ -254,7 +254,7 @@ static int hwc_blank(struct hwc_composer_device_1 *dev, int disp, int blank)
+     }
+ 
+     if (ctx->m_hwc_ops) {
+-        ctx->m_hwc_ops->blank(ctx, disp, blank);
++        ctx->m_hwc_ops->blank(ctx->m_hwc_ops, disp, blank);
+     }
+ 
+     ctx->mDispInfo[disp].blank = blank;
+@@ -382,8 +382,10 @@ static int hwc_device_open(const struct hw_module_t* module, const char* name,
+                 (const hw_module_t**)&hwc_module) < 0) {
+             ALOGE("Error! hw_get_module fsl_hwc failed");
+         }
+-        else if (hwc_open_1(hwc_module, (hwc_composer_device_1_t**)&dev) != 0) {
++        else if (hwc_open_1(hwc_module,
++                (hwc_composer_device_1_t**)&(dev->m_hwc_ops)) != 0) {
+             //set m_hwc_ops and m_priv;
++            dev->m_hwc_ops = NULL;
+             ALOGE("Error! hw_get_module fsl_hwc failed");
+         }
+         else {
+-- 
+1.8.0
+

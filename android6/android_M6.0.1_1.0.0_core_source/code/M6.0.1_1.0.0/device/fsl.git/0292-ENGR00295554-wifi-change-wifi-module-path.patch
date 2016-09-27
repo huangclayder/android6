@@ -1,0 +1,71 @@
+From dca2d051703017f9dcfc95362d96bc9c4548a70a Mon Sep 17 00:00:00 2001
+From: Jianzheng Zhou <jianzheng.zhou@freescale.com>
+Date: Wed, 12 Feb 2014 10:41:11 +0800
+Subject: [PATCH 292/602] ENGR00295554 wifi:change wifi module path
+
+Change wifi module path for all realtek wifi modules have been
+converged into a seperate file(i.e. rtlwifi) in linux3.10.
+
+Signed-off-by: Jianzheng Zhou <jianzheng.zhou@freescale.com>
+---
+ evk_6sl/BoardConfig.mk      | 2 +-
+ imx53_smd/BoardConfig.mk    | 2 +-
+ sabreauto_6q/BoardConfig.mk | 2 +-
+ sabresd_6dq/BoardConfig.mk  | 2 +-
+ 4 files changed, 4 insertions(+), 4 deletions(-)
+
+diff --git a/evk_6sl/BoardConfig.mk b/evk_6sl/BoardConfig.mk
+index 9e1f35e..8d0644a 100644
+--- a/evk_6sl/BoardConfig.mk
++++ b/evk_6sl/BoardConfig.mk
+@@ -30,7 +30,7 @@ PRODUCT_MODEL := EVK_MX6SL
+ BOARD_WLAN_DEVICE            := UNITE
+ WPA_SUPPLICANT_VERSION       := VER_0_8_UNITE
+ TARGET_KERNEL_MODULES        := \
+-                                kernel_imx/drivers/net/wireless/rtl8723as/8723as.ko:system/lib/modules/8723as.ko \
++                                kernel_imx/drivers/net/wireless/rtlwifi/rtl8723as/8723as.ko:system/lib/modules/8723as.ko \
+                                 kernel_imx/net/wireless/cfg80211.ko:system/lib/modules/cfg80211_realtek.ko
+ BOARD_WPA_SUPPLICANT_DRIVER  := NL80211
+ BOARD_HOSTAPD_DRIVER         := NL80211
+diff --git a/imx53_smd/BoardConfig.mk b/imx53_smd/BoardConfig.mk
+index 2575fcc..5d491a4 100755
+--- a/imx53_smd/BoardConfig.mk
++++ b/imx53_smd/BoardConfig.mk
+@@ -16,7 +16,7 @@ TARGET_RECOVERY_FSTAB = device/fsl/imx53_smd/fstab.freescale
+ BOARD_WLAN_DEVICE            := UNITE
+ WPA_SUPPLICANT_VERSION       := VER_0_8_UNITE
+ TARGET_KERNEL_MODULES        := \
+-                                kernel_imx/drivers/net/wireless/rtl8723as/8723as.ko:system/lib/modules/8723as.ko \
++                                kernel_imx/drivers/net/wireless/rtlwifi/rtl8723as/8723as.ko:system/lib/modules/8723as.ko \
+                                 kernel_imx/net/wireless/cfg80211.ko:system/lib/modules/cfg80211_realtek.ko
+ BOARD_WPA_SUPPLICANT_DRIVER  := NL80211
+ BOARD_HOSTAPD_DRIVER         := NL80211
+diff --git a/sabreauto_6q/BoardConfig.mk b/sabreauto_6q/BoardConfig.mk
+index 54ba276..9ab6769 100644
+--- a/sabreauto_6q/BoardConfig.mk
++++ b/sabreauto_6q/BoardConfig.mk
+@@ -35,7 +35,7 @@ TARGET_CPU_SMP := true
+ BOARD_WLAN_DEVICE            := UNITE
+ WPA_SUPPLICANT_VERSION       := VER_0_8_UNITE
+ TARGET_KERNEL_MODULES        := \
+-                                kernel_imx/drivers/net/wireless/rtl8723as/8723as.ko:system/lib/modules/8723as.ko \
++                                kernel_imx/drivers/net/wireless/rtlwifi/rtl8723as/8723as.ko:system/lib/modules/8723as.ko \
+                                 kernel_imx/net/wireless/cfg80211.ko:system/lib/modules/cfg80211_realtek.ko
+ BOARD_WPA_SUPPLICANT_DRIVER  := NL80211
+ BOARD_HOSTAPD_DRIVER         := NL80211
+diff --git a/sabresd_6dq/BoardConfig.mk b/sabresd_6dq/BoardConfig.mk
+index 55b1838..da56eae 100755
+--- a/sabresd_6dq/BoardConfig.mk
++++ b/sabresd_6dq/BoardConfig.mk
+@@ -30,7 +30,7 @@ PRODUCT_MODEL := SABRESD-MX6DQ
+ BOARD_WLAN_DEVICE            := UNITE
+ WPA_SUPPLICANT_VERSION       := VER_0_8_UNITE
+ TARGET_KERNEL_MODULES        := \
+-                                kernel_imx/drivers/net/wireless/rtl8723as/8723as.ko:system/lib/modules/8723as.ko \
++                                kernel_imx/drivers/net/wireless/rtlwifi/rtl8723as/8723as.ko:system/lib/modules/8723as.ko \
+                                 kernel_imx/net/wireless/cfg80211.ko:system/lib/modules/cfg80211_realtek.ko
+ BOARD_WPA_SUPPLICANT_DRIVER  := NL80211
+ BOARD_HOSTAPD_DRIVER         := NL80211
+-- 
+1.8.0
+

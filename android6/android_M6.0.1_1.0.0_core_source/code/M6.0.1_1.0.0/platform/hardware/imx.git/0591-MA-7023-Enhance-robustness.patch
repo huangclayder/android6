@@ -1,0 +1,36 @@
+From 2c9d64106c3e3ee5fade1b881e4b7fe1aee84736 Mon Sep 17 00:00:00 2001
+From: Haoran Wang <b50027@freescale.com>
+Date: Mon, 31 Aug 2015 13:38:37 +0800
+Subject: [PATCH 591/635] MA-7023 Enhance robustness
+
+Enhance the robustness of the HAL code.
+Removed the memory leak warning from "cppcheck".
+
+Signed-off-by: Haoran Wang <b50027@freescale.com>
+---
+ libsensors/LightSensor.cpp | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/libsensors/LightSensor.cpp b/libsensors/LightSensor.cpp
+index c4e8882..1fa00d0 100755
+--- a/libsensors/LightSensor.cpp
++++ b/libsensors/LightSensor.cpp
+@@ -1,6 +1,6 @@
+ /*
+  * Copyright (C) 2008 The Android Open Source Project
+- * Copyright (C) 2011-2012 Freescale Semiconductor, Inc.
++ * Copyright (C) 2011-2015 Freescale Semiconductor, Inc.
+  *
+  * Licensed under the Apache License, Version 2.0 (the "License");
+  * you may not use this file except in compliance with the License.
+@@ -120,6 +120,7 @@ int LightSensor::setIntLux()
+     memset(buf, 0, 6);
+     if ((n = fread(buf, 1, 6, fd)) < 0) {
+         ALOGE("Unable to read %s\n", ls_sysfs_path);
++        close(fd);
+ 	return -1;
+     }
+     fclose(fd);
+-- 
+1.8.0
+

@@ -1,0 +1,25 @@
+From 6642a070e81c1fff0e285b710e279c2b995937b5 Mon Sep 17 00:00:00 2001
+From: Mark Brown <broonie@linaro.org>
+Date: Wed, 16 Jul 2014 21:59:24 +0100
+Subject: [PATCH] configs: Enable USB PHY for Juno
+
+Signed-off-by: Mark Brown <broonie@linaro.org>
+---
+ linaro/configs/vexpress64.conf | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/linaro/configs/vexpress64.conf b/linaro/configs/vexpress64.conf
+index c9b66a1..cb5d016 100644
+--- a/linaro/configs/vexpress64.conf
++++ b/linaro/configs/vexpress64.conf
+@@ -47,6 +47,7 @@ CONFIG_USB_EHCI_HCD=y
+ CONFIG_USB_EHCI_HCD_SYNOPSYS=y
+ CONFIG_USB_OHCI_HCD=y
+ CONFIG_USB_PHY=y
++CONFIG_USB_ISP1301=y
+ CONFIG_PM_OPP=y
+ CONFIG_GENERIC_CPUFREQ_CPU0=y
+ CONFIG_ARM_BIG_LITTLE_CPUFREQ=y
+-- 
+1.8.0
+

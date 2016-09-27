@@ -1,0 +1,36 @@
+From 22ef3acceb434d728d5b35489af86d19f74ea8b7 Mon Sep 17 00:00:00 2001
+From: "guoyin.chen" <guoyin.chen@freescale.com>
+Date: Wed, 13 Jan 2016 15:01:37 +0800
+Subject: [PATCH 25/25] MA-7515 CID 29192 (#1 of 1): Resource leak
+ (RESOURCE_LEAK)
+
+leaked_storage: Variable pbuf going out of scope leaks the storage it points to
+
+Signed-off-by: guoyin.chen <guoyin.chen@freescale.com>
+---
+ wifi/wifi_unite.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/wifi/wifi_unite.c b/wifi/wifi_unite.c
+index d4fb524..bc55f68 100644
+--- a/wifi/wifi_unite.c
++++ b/wifi/wifi_unite.c
+@@ -1,6 +1,6 @@
+ /*
+  * Copyright 2008, The Android Open Source Project
+- * Copyright (C) 2015 Freescale Semiconductor, Inc.
++ * Copyright (C) 2015-2016 Freescale Semiconductor, Inc.
+  *
+  * Licensed under the Apache License, Version 2.0 (the "License");
+  * you may not use this file except in compliance with the License.
+@@ -756,6 +756,7 @@ int update_ctrl_interface(const char *config_file) {
+         property_get("wifi.interface", ifc, WIFI_TEST_INTERFACE);
+         if (wifi_ifname(PRIMARY) == NULL) {
+             ALOGE("%s: get wifi_ifname(PRIMARY) fail\n", __func__);
++            free(pbuf);
+             return -1;
+         }
+         strcpy(ifc, wifi_ifname(PRIMARY));
+-- 
+1.8.0
+

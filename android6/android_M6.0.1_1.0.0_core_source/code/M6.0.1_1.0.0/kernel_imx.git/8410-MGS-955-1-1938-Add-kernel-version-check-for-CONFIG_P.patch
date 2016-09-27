@@ -1,0 +1,39 @@
+From e30ed398afae2755511336bb09895f7bd7f6054d Mon Sep 17 00:00:00 2001
+From: Shawn Xiao <b49994@freescale.com>
+Date: Sun, 6 Sep 2015 11:27:58 +0800
+Subject: [PATCH] MGS-955-1 [#1938]Add kernel version check for
+ CONFIG_PM_RUNTIME
+
+The CONFIG_PM_RUNTIME is not supported in 4.1.0 kernel, so add version check to disable
+the related functions.
+
+Date Sep 14, 2015
+
+Signed-off-by: Shawn Xiao <b49994@freescale.com>
+---
+ .../os/linux/kernel/platform/freescale/gc_hal_kernel_platform_imx6q14.c | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/drivers/mxc/gpu-viv/hal/os/linux/kernel/platform/freescale/gc_hal_kernel_platform_imx6q14.c b/drivers/mxc/gpu-viv/hal/os/linux/kernel/platform/freescale/gc_hal_kernel_platform_imx6q14.c
+index eee8194..7a5718d 100644
+--- a/drivers/mxc/gpu-viv/hal/os/linux/kernel/platform/freescale/gc_hal_kernel_platform_imx6q14.c
++++ b/drivers/mxc/gpu-viv/hal/os/linux/kernel/platform/freescale/gc_hal_kernel_platform_imx6q14.c
+@@ -850,6 +850,7 @@ _SetClock(
+ 
+ #if LINUX_VERSION_CODE >= KERNEL_VERSION(3,5,0)
+ #ifdef CONFIG_PM
++#ifdef CONFIG_PM_RUNTIME
+ static int gpu_runtime_suspend(struct device *dev)
+ {
+     release_bus_freq(BUS_FREQ_HIGH);
+@@ -861,6 +862,7 @@ static int gpu_runtime_resume(struct device *dev)
+     request_bus_freq(BUS_FREQ_HIGH);
+     return 0;
+ }
++#endif
+ 
+ static struct dev_pm_ops gpu_pm_ops;
+ #endif
+-- 
+1.8.0
+

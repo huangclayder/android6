@@ -1,0 +1,51 @@
+From 0c919c3e4a42f548f0ca775c5530ece6b25aa0b4 Mon Sep 17 00:00:00 2001
+From: Wang Haoran <b50027@freescale.com>
+Date: Tue, 25 Nov 2014 11:01:42 +0800
+Subject: [PATCH 398/602] MA-5895 Enable eth1 for Sabreauto_6sx Ethernet port
+
+Select eth1 to be the Ethernet port of Sabreauto_6sx.
+Added the eth1's dhcp service to get and renew IP.
+
+Signed-off-by: Wang Haoran <b50027@freescale.com>
+---
+ sabreauto_6sx/init.rc                                          | 10 ++++++++++
+ .../overlay/frameworks/base/core/res/res/values/config.xml     |  2 ++
+ 2 files changed, 12 insertions(+)
+
+diff --git a/sabreauto_6sx/init.rc b/sabreauto_6sx/init.rc
+index f18a9d8..42061cd 100755
+--- a/sabreauto_6sx/init.rc
++++ b/sabreauto_6sx/init.rc
+@@ -166,6 +166,16 @@ service ing /system/bin/ingsvcd -c /system/etc/gps/Orion.ini
+     group gps
+     oneshot
+ 
++service dhcpcd_eth1 /system/bin/dhcpcd -ABKL
++    class main
++    disabled
++    oneshot
++
++service iprenew_eth1 /system/bin/dhcpcd -n
++    class main
++    disabled
++    oneshot
++
+ on fs
+ # mount ext4 partitions
+     mount_all /fstab.freescale
+diff --git a/sabreauto_6sx/overlay/frameworks/base/core/res/res/values/config.xml b/sabreauto_6sx/overlay/frameworks/base/core/res/res/values/config.xml
+index d51d234..864ae0b 100755
+--- a/sabreauto_6sx/overlay/frameworks/base/core/res/res/values/config.xml
++++ b/sabreauto_6sx/overlay/frameworks/base/core/res/res/values/config.xml
+@@ -21,6 +21,8 @@
+      for different hardware and product builds. -->
+ <resources>
+ 
++    <!--In Sabreauto_6sx we select eth1 for Ethernet -->
++    <string translatable="false" name="config_ethernet_iface_regex">eth1</string>
+     <!-- List of regexpressions describing the interface (if any) that represent tetherable
+          USB interfaces.  If the device doesn't want to support tething over USB this should
+          be empty.  An example would be "usb.*" -->
+-- 
+1.8.0
+

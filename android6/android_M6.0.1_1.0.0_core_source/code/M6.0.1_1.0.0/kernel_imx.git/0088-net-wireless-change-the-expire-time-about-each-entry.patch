@@ -1,0 +1,29 @@
+From fd1ee5868c72d52c8e29812db92caa9c40e9faca Mon Sep 17 00:00:00 2001
+From: "jun.ho.lee" <jun.ho.lee@samsung.com>
+Date: Fri, 9 Sep 2011 18:50:02 +0900
+Subject: [PATCH] net: wireless: change the expire time about each entry of
+ scan results
+
+Change-Id: I6e8d838d91bebc28f4cd09dcb8b9f1de775be13d
+Signed-off-by: jun.ho.lee <jun.ho.lee@samsung.com>
+Signed-off-by: Dmitry Shmidt <dimitrysh@google.com>
+---
+ net/wireless/scan.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/net/wireless/scan.c b/net/wireless/scan.c
+index d1ed4ae..cf26b23 100644
+--- a/net/wireless/scan.c
++++ b/net/wireless/scan.c
+@@ -55,7 +55,7 @@
+  * also linked into the probe response struct.
+  */
+ 
+-#define IEEE80211_SCAN_RESULT_EXPIRE	(30 * HZ)
++#define IEEE80211_SCAN_RESULT_EXPIRE	(3 * HZ)
+ 
+ static void bss_free(struct cfg80211_internal_bss *bss)
+ {
+-- 
+1.8.0
+

@@ -1,0 +1,32 @@
+From c78d4f2570008066fa6c4e480a3d6d747c85a66e Mon Sep 17 00:00:00 2001
+From: Richard Zhu <Richard.Zhu@freescale.com>
+Date: Thu, 19 Mar 2015 15:36:35 +0800
+Subject: [PATCH] MLK-10454 arm: pcie: enable pcie for imx7d sdb board
+
+enable pcie for imx7d sdb board
+
+Signed-off-by: Richard Zhu <Richard.Zhu@freescale.com>
+---
+ arch/arm/boot/dts/imx7d-sdb.dts | 6 ++++++
+ 1 file changed, 6 insertions(+)
+
+diff --git a/arch/arm/boot/dts/imx7d-sdb.dts b/arch/arm/boot/dts/imx7d-sdb.dts
+index 5b6aea7..992c654 100644
+--- a/arch/arm/boot/dts/imx7d-sdb.dts
++++ b/arch/arm/boot/dts/imx7d-sdb.dts
+@@ -674,6 +674,12 @@
+ 	};
+ };
+ 
++&pcie {
++	pinctrl-names = "default";
++	reset-gpio = <&gpio_spi 1 GPIO_ACTIVE_HIGH>;
++	status = "okay";
++};
++
+ &sai1 {
+ 	pinctrl-names = "default";
+ 	pinctrl-0 = <&pinctrl_sai1>;
+-- 
+1.8.0
+

@@ -1,0 +1,75 @@
+From 2c90c112a84e41abda5b1f1a8c99cf37505d8d60 Mon Sep 17 00:00:00 2001
+From: Wang Haoran <b50027@freescale.com>
+Date: Fri, 5 Sep 2014 10:23:01 +0800
+Subject: [PATCH 361/602] ENGR00326131-1 Porting Realtek RTL8821AS wifi card
+
+Modify the BoardConfig.mk for all of the i.MX6 chips
+to prepare the kernel modules for RTL8821AS.
+
+Signed-off-by: Wang Haoran <b50027@freescale.com>
+---
+ evk_6sl/BoardConfig.mk      | 3 ++-
+ sabreauto_6q/BoardConfig.mk | 3 ++-
+ sabresd_6dq/BoardConfig.mk  | 3 ++-
+ sabresd_6sx/BoardConfig.mk  | 3 ++-
+ 4 files changed, 8 insertions(+), 4 deletions(-)
+
+diff --git a/evk_6sl/BoardConfig.mk b/evk_6sl/BoardConfig.mk
+index 8568e3b..fdff9b7 100644
+--- a/evk_6sl/BoardConfig.mk
++++ b/evk_6sl/BoardConfig.mk
+@@ -31,7 +31,8 @@ BOARD_WLAN_DEVICE            := UNITE
+ WPA_SUPPLICANT_VERSION       := VER_0_8_UNITE
+ TARGET_KERNEL_MODULES        := \
+                                 kernel_imx/drivers/net/wireless/rtlwifi/rtl8723as/8723as.ko:system/lib/modules/8723as.ko \
+-                                kernel_imx/net/wireless/cfg80211.ko:system/lib/modules/cfg80211_realtek.ko
++                                kernel_imx/net/wireless/cfg80211.ko:system/lib/modules/cfg80211_realtek.ko \
++                                kernel_imx/drivers/net/wireless/rtlwifi/rtl8821as/8821as.ko:system/lib/modules/8821as.ko
+ BOARD_WPA_SUPPLICANT_DRIVER  := NL80211
+ BOARD_HOSTAPD_DRIVER         := NL80211
+ 
+diff --git a/sabreauto_6q/BoardConfig.mk b/sabreauto_6q/BoardConfig.mk
+index f5d97b0..421eb43 100644
+--- a/sabreauto_6q/BoardConfig.mk
++++ b/sabreauto_6q/BoardConfig.mk
+@@ -36,7 +36,8 @@ BOARD_WLAN_DEVICE            := UNITE
+ WPA_SUPPLICANT_VERSION       := VER_0_8_UNITE
+ TARGET_KERNEL_MODULES        := \
+                                 kernel_imx/drivers/net/wireless/rtlwifi/rtl8723as/8723as.ko:system/lib/modules/8723as.ko \
+-                                kernel_imx/net/wireless/cfg80211.ko:system/lib/modules/cfg80211_realtek.ko
++                                kernel_imx/net/wireless/cfg80211.ko:system/lib/modules/cfg80211_realtek.ko \
++                                kernel_imx/drivers/net/wireless/rtlwifi/rtl8821as/8821as.ko:system/lib/modules/8821as.ko
+ BOARD_WPA_SUPPLICANT_DRIVER  := NL80211
+ BOARD_HOSTAPD_DRIVER         := NL80211
+ 
+diff --git a/sabresd_6dq/BoardConfig.mk b/sabresd_6dq/BoardConfig.mk
+index 5568a49..0d2442c 100644
+--- a/sabresd_6dq/BoardConfig.mk
++++ b/sabresd_6dq/BoardConfig.mk
+@@ -31,7 +31,8 @@ BOARD_WLAN_DEVICE            := UNITE
+ WPA_SUPPLICANT_VERSION       := VER_0_8_UNITE
+ TARGET_KERNEL_MODULES        := \
+                                 kernel_imx/drivers/net/wireless/rtlwifi/rtl8723as/8723as.ko:system/lib/modules/8723as.ko \
+-                                kernel_imx/net/wireless/cfg80211.ko:system/lib/modules/cfg80211_realtek.ko
++                                kernel_imx/net/wireless/cfg80211.ko:system/lib/modules/cfg80211_realtek.ko \
++                                kernel_imx/drivers/net/wireless/rtlwifi/rtl8821as/8821as.ko:system/lib/modules/8821as.ko
+ BOARD_WPA_SUPPLICANT_DRIVER  := NL80211
+ BOARD_HOSTAPD_DRIVER         := NL80211
+ 
+diff --git a/sabresd_6sx/BoardConfig.mk b/sabresd_6sx/BoardConfig.mk
+index 092d93a..1997056 100644
+--- a/sabresd_6sx/BoardConfig.mk
++++ b/sabresd_6sx/BoardConfig.mk
+@@ -31,7 +31,8 @@ BOARD_WLAN_DEVICE            := UNITE
+ WPA_SUPPLICANT_VERSION       := VER_0_8_UNITE
+ TARGET_KERNEL_MODULES        := \
+                                 kernel_imx/drivers/net/wireless/rtlwifi/rtl8723as/8723as.ko:system/lib/modules/8723as.ko \
+-                                kernel_imx/net/wireless/cfg80211.ko:system/lib/modules/cfg80211_realtek.ko
++                                kernel_imx/net/wireless/cfg80211.ko:system/lib/modules/cfg80211_realtek.ko \
++                                kernel_imx/drivers/net/wireless/rtlwifi/rtl8821as/8821as.ko:system/lib/modules/8821as.ko
+ BOARD_WPA_SUPPLICANT_DRIVER  := NL80211
+ BOARD_HOSTAPD_DRIVER         := NL80211
+ 
+-- 
+1.8.0
+

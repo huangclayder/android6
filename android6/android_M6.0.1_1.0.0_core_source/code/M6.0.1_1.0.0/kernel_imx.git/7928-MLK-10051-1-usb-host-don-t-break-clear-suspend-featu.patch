@@ -1,0 +1,37 @@
+From 878198fda49111b2d2dba5e46616c9d757c90b26 Mon Sep 17 00:00:00 2001
+From: Li Jun <B47624@freescale.com>
+Date: Wed, 24 Dec 2014 18:23:04 +0800
+Subject: [PATCH] MLK-10051-1 usb: host: don't break clear suspend feature if
+ otg fsm is used
+
+Current code just do not do reusme signaling for clear suspend feature if it's
+a OTG port with b_hnp_enable set, this result in OTG host cannot clear suspend
+and resume OTG device after system resume from sleep, then host will disconnect
+the OTG B-device and enumerate it again. To make OTG A-device in host state can
+do clear feature of suspend like an usual host, and also be compatible legacy
+OTG device, this patch adds another condition to check if OTG FSM driver is used
+,as in OTG FSM driver, we need not do HNP in that case.
+
+Acked-by: Peter Chen <peter.chen@freescale.com>
+Signed-off-by: Li Jun <jun.li@freescale.com>
+(cherry picked from commit f92731f787ca00ef8cd0ab9d591e4e24d5a40cc4)
+---
+ drivers/usb/host/ehci-hub.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/usb/host/ehci-hub.c b/drivers/usb/host/ehci-hub.c
+index 37b2220..59a6a70 100644
+--- a/drivers/usb/host/ehci-hub.c
++++ b/drivers/usb/host/ehci-hub.c
+@@ -931,7 +931,7 @@ static int ehci_hub_control (
+ 				break;
+ #ifdef CONFIG_USB_OTG
+ 			if ((hcd->self.otg_port == (wIndex + 1))
+-			    && hcd->self.b_hnp_enable) {
++			    && hcd->self.b_hnp_enable && !hcd->self.otg_fsm) {
+ 				otg_start_hnp(hcd->usb_phy->otg);
+ 				break;
+ 			}
+-- 
+1.8.0
+

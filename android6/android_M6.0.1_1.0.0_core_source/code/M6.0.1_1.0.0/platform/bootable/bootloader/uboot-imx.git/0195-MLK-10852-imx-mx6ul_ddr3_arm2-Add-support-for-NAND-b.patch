@@ -1,0 +1,92 @@
+From dfc46c87787f187abf3b4aba2d57032f8531deae Mon Sep 17 00:00:00 2001
+From: "Ye.Li" <B37916@freescale.com>
+Date: Thu, 7 May 2015 13:44:32 +0800
+Subject: [PATCH] MLK-10852 imx: mx6ul_ddr3_arm2: Add support for NAND boot
+
+Since the NAND has two pins conflict with SD2, when NAND is enabled, we
+must disable SD2. So the CONFIG_SYS_FSL_USDHC_NUM needs configure to 1
+and should be moved to under defining CONFIG_SYS_USE_NAND.
+
+New build target for NAND boot:
+    mx6ul_ddr3_arm2_nand_config
+
+Signed-off-by: Ye.Li <B37916@freescale.com>
+---
+ configs/mx6ul_ddr3_arm2_nand_defconfig |  7 ++++++
+ include/configs/mx6ul_ddr3_arm2.h      | 40 +++++++++++++++++-----------------
+ 2 files changed, 27 insertions(+), 20 deletions(-)
+
+diff --git a/configs/mx6ul_ddr3_arm2_nand_defconfig b/configs/mx6ul_ddr3_arm2_nand_defconfig
+new file mode 100644
+index 0000000..0d31e69
+--- /dev/null
++++ b/configs/mx6ul_ddr3_arm2_nand_defconfig
+@@ -0,0 +1,7 @@
++CONFIG_SYS_EXTRA_OPTIONS="IMX_CONFIG=board/freescale/mx6ul_ddr3_arm2/imximage.cfg,MX6UL,SYS_BOOT_NAND"
++CONFIG_ARM=y
++CONFIG_TARGET_MX6UL_DDR3_ARM2=y
++CONFIG_SYS_MALLOC_F=y
++CONFIG_SYS_MALLOC_F_LEN=0x400
++CONFIG_DM=y
++CONFIG_DM_THERMAL=y
+diff --git a/include/configs/mx6ul_ddr3_arm2.h b/include/configs/mx6ul_ddr3_arm2.h
+index 23be08c..318c3c8 100644
+--- a/include/configs/mx6ul_ddr3_arm2.h
++++ b/include/configs/mx6ul_ddr3_arm2.h
+@@ -51,26 +51,6 @@
+ #define CONFIG_MXC_OCOTP
+ #endif
+ 
+-/* MMC Configs */
+-#define CONFIG_FSL_USDHC
+-#ifdef CONFIG_FSL_USDHC
+-#define CONFIG_FSL_ESDHC
+-#define CONFIG_SYS_FSL_ESDHC_ADDR	0
+-
+-#ifdef CONFIG_SYS_USE_NAND
+-#define CONFIG_SYS_FSL_USDHC_NUM	1
+-#else
+-#define CONFIG_SYS_FSL_USDHC_NUM	2
+-#endif
+-
+-#define CONFIG_MMC
+-#define CONFIG_CMD_MMC
+-#define CONFIG_GENERIC_MMC
+-#define CONFIG_CMD_FAT
+-#define CONFIG_DOS_PARTITION
+-#define CONFIG_SUPPORT_EMMC_BOOT /* eMMC specific */
+-#endif
+-
+ #undef CONFIG_BOOTM_NETBSD
+ #undef CONFIG_BOOTM_PLAN9
+ #undef CONFIG_BOOTM_RTEMS
+@@ -388,6 +368,26 @@
+ #define CONFIG_ENV_SIZE			CONFIG_ENV_SECT_SIZE
+ #endif
+ 
++/* MMC Configs */
++#define CONFIG_FSL_USDHC
++#ifdef CONFIG_FSL_USDHC
++#define CONFIG_FSL_ESDHC
++#define CONFIG_SYS_FSL_ESDHC_ADDR	0
++
++#ifdef CONFIG_SYS_USE_NAND
++#define CONFIG_SYS_FSL_USDHC_NUM	1
++#else
++#define CONFIG_SYS_FSL_USDHC_NUM	2
++#endif
++
++#define CONFIG_MMC
++#define CONFIG_CMD_MMC
++#define CONFIG_GENERIC_MMC
++#define CONFIG_CMD_FAT
++#define CONFIG_DOS_PARTITION
++#define CONFIG_SUPPORT_EMMC_BOOT /* eMMC specific */
++#endif
++
+ #define CONFIG_SYS_MMC_ENV_DEV		0   /* USDHC1 */
+ #define CONFIG_SYS_MMC_ENV_PART		0	/* user area */
+ #define CONFIG_MMCROOT			"/dev/mmcblk0p2"  /* USDHC1 */
+-- 
+1.8.0
+

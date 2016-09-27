@@ -1,0 +1,34 @@
+From fee78c67ec831884e30899bba8b6d7b3d5f48800 Mon Sep 17 00:00:00 2001
+From: Adrian Alonso <aalonso@freescale.com>
+Date: Wed, 1 Apr 2015 10:58:05 -0500
+Subject: [PATCH] MLK-10522-1: mx7d_arm: allow override mtest settings
+
+* Allow to override mtest settings for target board
+  variants that differs on physical sdram memory size
+
+Signed-off-by: Adrian Alonso <aalonso@freescale.com>
+Signed-off-by: Ye.Li <B37916@freescale.com>
+(cherry picked from commit 6173a3954b83ce22e24c62bc8ee922007b0929a6)
+---
+ include/configs/mx7d_arm2.h | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/include/configs/mx7d_arm2.h b/include/configs/mx7d_arm2.h
+index 081545e..b476e5b 100644
+--- a/include/configs/mx7d_arm2.h
++++ b/include/configs/mx7d_arm2.h
+@@ -231,9 +231,11 @@
+ #define CONFIG_SYS_MAXARGS		256
+ #define CONFIG_SYS_BARGSIZE CONFIG_SYS_CBSIZE
+ 
++#ifndef CONFIG_CMD_MEMTEST
+ #define CONFIG_CMD_MEMTEST
+ #define CONFIG_SYS_MEMTEST_START	0x80000000
+ #define CONFIG_SYS_MEMTEST_END		(CONFIG_SYS_MEMTEST_START + 0x40000000)
++#endif
+ 
+ #define CONFIG_SYS_LOAD_ADDR		CONFIG_LOADADDR
+ #define CONFIG_SYS_HZ			1000
+-- 
+1.8.0
+

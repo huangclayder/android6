@@ -1,0 +1,49 @@
+From 418b617334a30e79c9836fae491c0d055c82961a Mon Sep 17 00:00:00 2001
+From: Haoran Wang <b50027@freescale.com>
+Date: Wed, 14 Jan 2015 09:52:07 +0800
+Subject: [PATCH] MA-6367-2 Upgrade RTL8821AS wifi driver
+
+Enable Tasklet for TX.
+Disable debug info.
+
+Signed-off-by: Haoran Wang <b50027@freescale.com>
+Acked-by: Jason Liu
+---
+ drivers/net/wireless/rtlwifi/rtl8821as/include/autoconf.h | 12 ++++++------
+ 1 file changed, 6 insertions(+), 6 deletions(-)
+
+diff --git a/drivers/net/wireless/rtlwifi/rtl8821as/include/autoconf.h b/drivers/net/wireless/rtlwifi/rtl8821as/include/autoconf.h
+index 150dece..034b76e 100755
+--- a/drivers/net/wireless/rtlwifi/rtl8821as/include/autoconf.h
++++ b/drivers/net/wireless/rtlwifi/rtl8821as/include/autoconf.h
+@@ -46,7 +46,7 @@
+ // Driver(software) Config
+ // ==============================
+ #define CONFIG_EMBEDDED_FWIMG
+-//#define CONFIG_SDIO_TX_TASKLET
++#define CONFIG_SDIO_TX_TASKLET
+ //#define CONFIG_SDIO_REDUCE_TX_POLLING
+ #define CONFIG_RECV_REORDERING_CTRL
+ #define CONFIG_SKB_COPY	//for amsdu
+@@ -99,13 +99,13 @@
+  * Debug Related Config
+  *
+  ***********************************************************/
+-#define CONFIG_DEBUG /* DBG_871X, etc... */
++/*#define CONFIG_DEBUG */ /* DBG_871X, etc... */
+ //#define CONFIG_DEBUG_RTL871X /* RT_TRACE, RT_PRINT_DATA, _func_enter_, _func_exit_ */
+-#define CONFIG_PROC_DEBUG
+-#define DBG_CONFIG_ERROR_DETECT
+-//#define DBG_CONFIG_ERROR_RESET
++/* #define CONFIG_PROC_DEBUG */
++/* #define DBG_CONFIG_ERROR_DETECT */
++/* #define DBG_CONFIG_ERROR_RESET */
+ 
+-#define DBG 1
++#define DBG 0
+ 
+ //#define DBG_IO
+ //#define DBG_DELAY_OS
+-- 
+1.8.0
+

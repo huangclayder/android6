@@ -1,0 +1,28 @@
+From 9ccef7501a161212682663afab2f8e6482dcaa0b Mon Sep 17 00:00:00 2001
+From: "guoyin.chen" <guoyin.chen@freescale.com>
+Date: Wed, 25 Mar 2015 15:09:57 +0800
+Subject: [PATCH] MA-6454 Remove EVBUG kernel config
+
+Remove CONFIG_INPUT_EVBUG as it will cause security thread
+to log keypresses in dmesg
+
+Signed-off-by: guoyin.chen <guoyin.chen@freescale.com>
+---
+ arch/arm/configs/imx_v7_android_defconfig | 1 -
+ 1 file changed, 1 deletion(-)
+
+diff --git a/arch/arm/configs/imx_v7_android_defconfig b/arch/arm/configs/imx_v7_android_defconfig
+index 9fd7339f..3064614 100644
+--- a/arch/arm/configs/imx_v7_android_defconfig
++++ b/arch/arm/configs/imx_v7_android_defconfig
+@@ -266,7 +266,6 @@ CONFIG_BRCMFMAC=m
+ CONFIG_RTL8821AS=m
+ # CONFIG_INPUT_MOUSEDEV_PSAUX is not set
+ CONFIG_INPUT_EVDEV=y
+-CONFIG_INPUT_EVBUG=y
+ CONFIG_INPUT_KEYRESET=y
+ CONFIG_KEYBOARD_GPIO=y
+ CONFIG_KEYBOARD_SNVS_PWRKEY=y
+-- 
+1.8.0
+

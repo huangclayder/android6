@@ -1,0 +1,72 @@
+From ef4cb7c53418e4e1dd7cfcb7c6974cfea77ef3c0 Mon Sep 17 00:00:00 2001
+From: Peng Fan <Peng.Fan@freescale.com>
+Date: Thu, 10 Sep 2015 14:40:01 +0800
+Subject: [PATCH] MLK-11528 imx: mx6ul check fuse before init bee
+
+Need to check fuse bit 25 of bank 0 word 4 before initialize bee.
+The bit: 0 means bee enabled, 1 means bee disabled.
+If disabled, continuing initialize bee will cause system hang, so
+need to check this bit before initialize bee.
+
+Add macro to enable BEE in header file, default disabled.
+
+Signed-off-by: Peng Fan <Peng.Fan@freescale.com>
+---
+ arch/arm/cpu/armv7/mx6/bee.c      | 12 +++++++++++-
+ include/configs/mx6ul_14x14_evk.h |  3 +++
+ 2 files changed, 14 insertions(+), 1 deletion(-)
+
+diff --git a/arch/arm/cpu/armv7/mx6/bee.c b/arch/arm/cpu/armv7/mx6/bee.c
+index 40c4c5a..d40b584 100644
+--- a/arch/arm/cpu/armv7/mx6/bee.c
++++ b/arch/arm/cpu/armv7/mx6/bee.c
+@@ -10,6 +10,7 @@
+ #include <asm/system.h>
+ #include <common.h>
+ #include <command.h>
++#include <fuse.h>
+ 
+ DECLARE_GLOBAL_DATA_PTR;
+ 
+@@ -265,7 +266,7 @@ static int region_valid(u32 start, u32 size)
+ static int do_bee_init(cmd_tbl_t *cmdtp, int flag, int argc,
+ 		       char * const argv[])
+ {
+-	u32 start, size;
++	u32 start, size, val;
+ 	int ret;
+ 	struct bee_parameters *p = &para;
+ 
+@@ -278,6 +279,15 @@ static int do_bee_init(cmd_tbl_t *cmdtp, int flag, int argc,
+ 	if (argc > 5)
+ 		return CMD_RET_USAGE;
+ 
++	if (fuse_read(0, 4, &val)) {
++		puts("Can not get fuse bank 0, word 4\n");
++	} else {
++		if (val & (1 << 25)) {
++			puts("BEE disabed in fuse!\n");
++			return CMD_RET_FAILURE;
++		}
++	}
++
+ 	/* Cache enabled? */
+ 	if ((get_cr() & (CR_I | CR_C)) != (CR_I | CR_C)) {
+ 		/*
+diff --git a/include/configs/mx6ul_14x14_evk.h b/include/configs/mx6ul_14x14_evk.h
+index cc1df2e..0ccd984 100644
+--- a/include/configs/mx6ul_14x14_evk.h
++++ b/include/configs/mx6ul_14x14_evk.h
+@@ -31,6 +31,9 @@
+ /* uncomment for SECURE mode support */
+ /* #define CONFIG_SECURE_BOOT */
+ 
++/* uncomment for BEE support, needs to enable CONFIG_CMD_FUSE */
++/* #define CONFIG_CMD_BEE */
++
+ #ifdef CONFIG_SECURE_BOOT
+ #ifndef CONFIG_CSF_SIZE
+ #define CONFIG_CSF_SIZE 0x4000
+-- 
+1.8.0
+

@@ -1,0 +1,27 @@
+From aeed4a8c150cac718485ed2e04850cd91692dca7 Mon Sep 17 00:00:00 2001
+From: Haoran Wang <b50027@freescale.com>
+Date: Tue, 5 May 2015 16:41:12 +0800
+Subject: [PATCH 486/602] MA-6376-2 Add features permission for sabresd_7d
+
+Added accelerometer, compass and gyroscope permission.
+
+Signed-off-by: Haoran Wang <b50027@freescale.com>
+---
+ imx7/sabresd_7d.mk | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/imx7/sabresd_7d.mk b/imx7/sabresd_7d.mk
+index 4c9bb35..d7c5c76 100644
+--- a/imx7/sabresd_7d.mk
++++ b/imx7/sabresd_7d.mk
+@@ -57,4 +57,7 @@ PRODUCT_COPY_FILES += \
+ 	frameworks/native/data/etc/android.hardware.camera.xml:system/etc/permissions/android.hardware.camera.xml \
+ 	frameworks/native/data/etc/android.hardware.camera.front.xml:system/etc/permissions/android.hardware.camera.front.xml \
+ 	frameworks/native/data/etc/android.hardware.ethernet.xml:system/etc/permissions/android.hardware.ethernet.xml \
++	frameworks/native/data/etc/android.hardware.sensor.compass.xml:system/etc/permissions/android.hardware.sensor.compass.xml \
++	frameworks/native/data/etc/android.hardware.sensor.accelerometer.xml:system/etc/permissions/android.hardware.sensor.accelerometer.xml \
++	frameworks/native/data/etc/android.hardware.sensor.gyroscope.xml:system/etc/permissions/android.hardware.sensor.gyroscope.xml \
+ 	device/fsl/sabresd_7d/required_hardware.xml:system/etc/permissions/required_hardware.xml
+-- 
+1.8.0
+

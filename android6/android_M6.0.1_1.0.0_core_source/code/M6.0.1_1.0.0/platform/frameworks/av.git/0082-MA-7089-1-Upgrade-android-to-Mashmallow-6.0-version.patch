@@ -1,0 +1,38 @@
+From bfeb1d89c875dab601d901f7cbb0185f89ba57d8 Mon Sep 17 00:00:00 2001
+From: Xiaowen Liu <xiaowen.liu@freescale.com>
+Date: Wed, 14 Oct 2015 06:23:17 -0400
+Subject: [PATCH 82/95] MA-7089-1 Upgrade android to Mashmallow 6.0 version.
+
+fix null pointer issue in camera service.
+
+if (entry.count > 1 || entry.data.u8[0] != ANDROID_CONTROL_SCENE_MODE_DISABLED)
+When entry.count == 0, it also can asscess entry.data.u8[0].
+But in this case entry.data.u8 is 0.
+So, make sure entry.count > 0 before run this code.
+
+Signed-off-by: Xiaowen Liu <xiaowen.liu@freescale.com>
+---
+ services/camera/libcameraservice/common/CameraModule.cpp | 7 +++++--
+ 1 file changed, 5 insertions(+), 2 deletions(-)
+
+diff --git a/services/camera/libcameraservice/common/CameraModule.cpp b/services/camera/libcameraservice/common/CameraModule.cpp
+index 16b8aba..6eef4d5 100644
+--- a/services/camera/libcameraservice/common/CameraModule.cpp
++++ b/services/camera/libcameraservice/common/CameraModule.cpp
+@@ -43,8 +43,11 @@ void CameraModule::deriveCameraCharacteristicsKeys(
+         chars.update(ANDROID_CONTROL_AWB_LOCK_AVAILABLE, &data, /*count*/1);
+         controlModes.push(ANDROID_CONTROL_MODE_AUTO);
+         camera_metadata_entry entry = chars.find(ANDROID_CONTROL_AVAILABLE_SCENE_MODES);
+-        if (entry.count > 1 || entry.data.u8[0] != ANDROID_CONTROL_SCENE_MODE_DISABLED) {
+-            controlModes.push(ANDROID_CONTROL_MODE_USE_SCENE_MODE);
++        if (entry.count > 0) {
++            if (entry.count > 1 ||
++                     entry.data.u8[0] != ANDROID_CONTROL_SCENE_MODE_DISABLED) {
++                controlModes.push(ANDROID_CONTROL_MODE_USE_SCENE_MODE);
++            }
+         }
+ 
+         // Only advertise CONTROL_OFF mode if 3A manual controls are supported.
+-- 
+1.8.0
+

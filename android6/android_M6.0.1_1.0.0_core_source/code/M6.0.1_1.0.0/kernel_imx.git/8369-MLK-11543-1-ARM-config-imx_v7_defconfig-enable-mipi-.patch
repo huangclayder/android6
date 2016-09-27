@@ -1,0 +1,28 @@
+From d0e62c33f4d6350f97f9d122fbe1252c2ee290a4 Mon Sep 17 00:00:00 2001
+From: Fancy Fang <chen.fang@freescale.com>
+Date: Fri, 18 Sep 2015 14:06:55 +0800
+Subject: [PATCH] MLK-11543-1 ARM: config: imx_v7_defconfig: enable mipi dsi
+ by default
+
+Enable mipi dsi config in the imx_v7_defconfig by default.
+
+Signed-off-by: Fancy Fang <chen.fang@freescale.com>
+---
+ arch/arm/configs/imx_v7_defconfig | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/arch/arm/configs/imx_v7_defconfig b/arch/arm/configs/imx_v7_defconfig
+index 64cc212..abdf1df 100644
+--- a/arch/arm/configs/imx_v7_defconfig
++++ b/arch/arm/configs/imx_v7_defconfig
+@@ -266,6 +266,7 @@ CONFIG_BACKLIGHT_CLASS_DEVICE=y
+ CONFIG_BACKLIGHT_PWM=y
+ CONFIG_FB_MXC_SYNC_PANEL=y
+ CONFIG_FB_MXC_LDB=y
++CONFIG_FB_MXC_MIPI_DSI=y
+ CONFIG_FB_MXC_MIPI_DSI_SAMSUNG=y
+ CONFIG_FB_MXC_TRULY_WVGA_SYNC_PANEL=y
+ CONFIG_FB_MXC_HDMI=y
+-- 
+1.8.0
+

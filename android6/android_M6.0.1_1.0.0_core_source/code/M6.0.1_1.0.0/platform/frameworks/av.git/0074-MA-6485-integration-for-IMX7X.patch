@@ -1,0 +1,38 @@
+From c4c80e685c63636633a7f9cd9e5e47c695a7ffaa Mon Sep 17 00:00:00 2001
+From: xumao <b34688@freescale.com>
+Date: Tue, 31 Mar 2015 09:40:59 +0800
+Subject: [PATCH 74/95] MA-6485 integration for IMX7X
+
+enable webm support
+
+Signed-off-by: xumao <b34688@freescale.com>
+---
+ media/libmediaplayerservice/MediaPlayerFactory.cpp | 4 +---
+ 1 file changed, 1 insertion(+), 3 deletions(-)
+
+diff --git a/media/libmediaplayerservice/MediaPlayerFactory.cpp b/media/libmediaplayerservice/MediaPlayerFactory.cpp
+index 6463ec2..addc470 100644
+--- a/media/libmediaplayerservice/MediaPlayerFactory.cpp
++++ b/media/libmediaplayerservice/MediaPlayerFactory.cpp
+@@ -15,7 +15,7 @@
+ ** limitations under the License.
+ */
+ 
+-/* Copyright (C) 2013-2014 Freescale Semiconductor, Inc. */
++/* Copyright (C) 2013-2015 Freescale Semiconductor, Inc. */
+ 
+ //#define LOG_NDEBUG 0
+ 
+@@ -369,9 +369,7 @@ class OMXPlayerFactory : public MediaPlayerFactory::IFactory {
+                 ".divx",
+                 ".m4v",        
+                 //".ogg,   
+-#ifdef MX6X
+                 ".webm",   
+-#endif
+                 ".amr",
+                 ".awb"
+             };
+-- 
+1.8.0
+

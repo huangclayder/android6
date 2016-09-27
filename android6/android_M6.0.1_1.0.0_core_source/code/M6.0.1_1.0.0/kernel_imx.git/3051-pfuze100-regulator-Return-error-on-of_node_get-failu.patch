@@ -1,0 +1,30 @@
+From 0fb1dd84099d05b3b547a165261e6235bd1e430e Mon Sep 17 00:00:00 2001
+From: Fabio Estevam <fabio.estevam@freescale.com>
+Date: Thu, 20 Feb 2014 13:47:02 -0300
+Subject: [PATCH] pfuze100-regulator: Return error on of_node_get() failure
+
+If of_node_get() fails, we should return an error.
+
+Signed-off-by: Fabio Estevam <fabio.estevam@freescale.com>
+Signed-off-by: Mark Brown <broonie@linaro.org>
+(cherry picked from commit 6428789e11f056d58ed59c0c0aa7d381d0bf50f8)
+---
+ drivers/regulator/pfuze100-regulator.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/regulator/pfuze100-regulator.c b/drivers/regulator/pfuze100-regulator.c
+index dcb03ce..1296221 100644
+--- a/drivers/regulator/pfuze100-regulator.c
++++ b/drivers/regulator/pfuze100-regulator.c
+@@ -252,7 +252,7 @@ static int pfuze_parse_regulators_dt(struct pfuze_chip *chip)
+ 
+ 	np = of_node_get(dev->of_node);
+ 	if (!np)
+-		return 0;
++		return -EINVAL;
+ 
+ 	parent = of_get_child_by_name(np, "regulators");
+ 	if (!parent) {
+-- 
+1.8.0
+

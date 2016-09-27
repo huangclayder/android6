@@ -1,0 +1,29 @@
+From 6311376965d9208fbda5ad56514413041741e8bb Mon Sep 17 00:00:00 2001
+From: Robin Gong <b38343@freescale.com>
+Date: Mon, 28 Sep 2015 18:13:24 +0800
+Subject: [PATCH] MLK-11648: spi: spi-imx: remove duplicated code line
+
+Remove duplicated code line.
+
+Signed-off-by: Robin Gong <b38343@freescale.com>
+---
+ drivers/spi/spi-imx.c | 3 +--
+ 1 file changed, 1 insertion(+), 2 deletions(-)
+
+diff --git a/drivers/spi/spi-imx.c b/drivers/spi/spi-imx.c
+index 6bcf8b9..1e9013a 100644
+--- a/drivers/spi/spi-imx.c
++++ b/drivers/spi/spi-imx.c
+@@ -208,8 +208,7 @@ static bool spi_imx_can_dma(struct spi_master *master, struct spi_device *spi,
+ 	struct spi_imx_data *spi_imx = spi_master_get_devdata(master);
+ 
+ 	if (spi_imx->dma_is_inited &&
+-		(transfer->len > spi_imx_get_fifosize(spi_imx)) &&
+-		(transfer->len > spi_imx_get_fifosize(spi_imx)))
++		(transfer->len > spi_imx_get_fifosize(spi_imx))
+ 		return true;
+ 	return false;
+ }
+-- 
+1.8.0
+

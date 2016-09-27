@@ -1,0 +1,36 @@
+From 25cfa36a375d8e4c7ac64fc89d109ef75b78cee5 Mon Sep 17 00:00:00 2001
+From: Fabio Estevam <fabio.estevam@freescale.com>
+Date: Wed, 30 Jul 2014 11:27:06 -0300
+Subject: [PATCH] ASoC: fsl: fsl_asrc: Select SND_SOC_GENERIC_DMAENGINE_PCM
+
+Building a kernel with SND_SOC_GENERIC_DMAENGINE_PCM=n leads to the following
+error:
+
+ERROR: "snd_dmaengine_pcm_prepare_slave_config" [sound/soc/fsl/snd-soc-fsl-asrc.ko] undefined!
+
+Let SND_SOC_FSL_ASRC select SND_SOC_GENERIC_DMAENGINE_PCM in order to fix such
+error.
+
+Reported-by: kbuild test robot <fengguang.wu@intel.com>
+Signed-off-by: Fabio Estevam <fabio.estevam@freescale.com>
+Signed-off-by: Mark Brown <broonie@linaro.org>
+(cherry picked from commit bdb9eb49671566afb9ca2025752f57d0e1a6b2a3)
+---
+ sound/soc/fsl/Kconfig | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/sound/soc/fsl/Kconfig b/sound/soc/fsl/Kconfig
+index 8c42bdc..4f3f7d7 100644
+--- a/sound/soc/fsl/Kconfig
++++ b/sound/soc/fsl/Kconfig
+@@ -5,6 +5,7 @@ comment "Common SoC Audio options for Freescale CPUs:"
+ config SND_SOC_FSL_ASRC
+ 	tristate "Asynchronous Sample Rate Converter (ASRC) module support"
+ 	select REGMAP_MMIO
++	select SND_SOC_GENERIC_DMAENGINE_PCM
+ 	help
+ 	  Say Y if you want to add Asynchronous Sample Rate Converter (ASRC)
+ 	  support for the Freescale CPUs.
+-- 
+1.8.0
+

@@ -1,0 +1,34 @@
+From ad2042059dd299efec3b5201e999c2a158a5cfc4 Mon Sep 17 00:00:00 2001
+From: Jon Medhurst <tixy@linaro.org>
+Date: Wed, 13 Mar 2013 10:56:22 +0000
+Subject: [PATCH] configs: vexpress-tuning: Add fragment for better
+ performance
+
+Use ARM rather than Thumb2 and disable debug and trace features which
+aren't essential. (Some trace features are still needed to avoid
+breaking Gator).
+
+Signed-off-by: Jon Medhurst <tixy@linaro.org>
+(cherry picked from commit d29456a1cfd202474e0938d8637dcb8a4440a82c)
+Signed-off-by: Alex Shi <alex.shi@linaro.org>
+---
+ linaro/configs/vexpress-tuning.conf | 8 ++++++++
+ 1 file changed, 8 insertions(+)
+
+diff --git a/linaro/configs/vexpress-tuning.conf b/linaro/configs/vexpress-tuning.conf
+new file mode 100644
+index 0000000..7bdf273
+--- /dev/null
++++ b/linaro/configs/vexpress-tuning.conf
+@@ -0,0 +1,8 @@
++# CONFIG_THUMB2_KERNEL is not set
++# CONFIG_PROVE_LOCKING is not set
++# CONFIG_OPROFILE is not set
++# CONFIG_SCHEDSTATS is not set
++# CONFIG_TIMER_STATS is not set
++# CONFIG_SCHED_DEBUG is not set
++# CONFIG_FTRACE is not set
++# CONFIG_FUNCTION_TRACER is not set
+-- 
+1.8.0
+

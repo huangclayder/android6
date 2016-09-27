@@ -1,0 +1,42 @@
+From 496b945c561c17d2220a8c8e378c3b1ea7f6ad03 Mon Sep 17 00:00:00 2001
+From: Ming Zhou <b42586@freescale.com>
+Date: Thu, 20 Nov 2014 13:18:16 +0800
+Subject: [PATCH 436/602] ENGR00133115:add property value for real parser.
+
+add real property.
+
+Signed-off-by: Ming Zhou <b42586@freescale.com>
+---
+ imx5x/init.rc    | 2 ++
+ imx6/etc/init.rc | 2 ++
+ 2 files changed, 4 insertions(+)
+
+diff --git a/imx5x/init.rc b/imx5x/init.rc
+index a74c47a..83ff031 100644
+--- a/imx5x/init.rc
++++ b/imx5x/init.rc
+@@ -386,6 +386,8 @@ on boot
+     setprop ro.FSL_MPG2_PARSER 1
+ 
+     setprop ro.UI_TVOUT_DISPLAY 0
++# property to support real parser and decoder
++    setprop ro.FSL_REAL_PARSER 0
+ 
+ # ALSA mixer naming define
+     setprop alsa.mixer.playback.master Playback
+diff --git a/imx6/etc/init.rc b/imx6/etc/init.rc
+index c1a4734..2029643 100755
+--- a/imx6/etc/init.rc
++++ b/imx6/etc/init.rc
+@@ -462,6 +462,8 @@ on boot
+     setprop ro.FSL_MKV_PARSER 1
+     setprop ro.FSL_FLAC_PARSER 1
+     setprop ro.FSL_MPG2_PARSER 1
++#real parser and decoder support
++    setprop ro.FSL_REAL_PARSER 0
+ 
+     # don't preload OpenGL in Zygote, the Vivante drivers do not like it
+     setprop ro.zygote.disable_gl_preload true
+-- 
+1.8.0
+

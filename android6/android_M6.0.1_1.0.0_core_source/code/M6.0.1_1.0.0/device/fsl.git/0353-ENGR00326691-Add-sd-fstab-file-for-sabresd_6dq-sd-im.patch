@@ -1,0 +1,64 @@
+From fbc195b7b5b8578256b281c3744a5e640957b469 Mon Sep 17 00:00:00 2001
+From: Ke Qinghua <qinghua.ke@freescale.com>
+Date: Tue, 12 Aug 2014 10:47:58 +0800
+Subject: [PATCH 353/602] ENGR00326691 Add sd fstab file for sabresd_6dq sd
+ image build
+
+Add BUILD_TARGET_DEVICE parameter for build SD image for sabresd_6dq
+
+Signed-off-by: Ke Qinghua <qinghua.ke@freescale.com>
+---
+ sabresd_6dq/BoardConfig.mk     |  8 ++++----
+ sabresd_6dq/fstab_sd.freescale | 14 ++++++++++++++
+ 2 files changed, 18 insertions(+), 4 deletions(-)
+ create mode 100644 sabresd_6dq/fstab_sd.freescale
+
+diff --git a/sabresd_6dq/BoardConfig.mk b/sabresd_6dq/BoardConfig.mk
+index 59ddc3c..5568a49 100644
+--- a/sabresd_6dq/BoardConfig.mk
++++ b/sabresd_6dq/BoardConfig.mk
+@@ -10,17 +10,17 @@ include device/fsl-proprietary/gpu-viv/fsl-gpu.mk
+ BUILD_TARGET_FS ?= ext4
+ include device/fsl/imx6/imx6_target_fs.mk
+ 
+-ifeq ($(BUILD_TARGET_FS),ubifs)
+-TARGET_RECOVERY_FSTAB = device/fsl/sabresd_6dq/fstab_nand.freescale
++ifeq ($(BUILD_TARGET_DEVICE),sd)
++TARGET_RECOVERY_FSTAB = device/fsl/sabresd_6dq/fstab_sd.freescale
+ # build ubifs for nand devices
+ PRODUCT_COPY_FILES +=	\
+-	device/fsl/sabresd_6dq/fstab_nand.freescale:root/fstab.freescale
++	device/fsl/sabresd_6dq/fstab_sd.freescale:root/fstab.freescale
+ else
+ TARGET_RECOVERY_FSTAB = device/fsl/sabresd_6dq/fstab.freescale
+ # build for ext4
+ PRODUCT_COPY_FILES +=	\
+ 	device/fsl/sabresd_6dq/fstab.freescale:root/fstab.freescale
+-endif # BUILD_TARGET_FS
++endif # BUILD_TARGET_DEVICE
+ 
+ 
+ TARGET_BOOTLOADER_BOARD_NAME := SABRESD
+diff --git a/sabresd_6dq/fstab_sd.freescale b/sabresd_6dq/fstab_sd.freescale
+new file mode 100644
+index 0000000..d169973
+--- /dev/null
++++ b/sabresd_6dq/fstab_sd.freescale
+@@ -0,0 +1,14 @@
++# Android fstab file.
++#<src>                                                  <mnt_point>         <type>    <mnt_flags and options>                       <fs_mgr_flags>
++# The filesystem that contains the filesystem checker binary (typically /system) cannot
++# specify MF_CHECK, and must come before any filesystems that do specify MF_CHECK
++
++/devices/soc0/soc.1/2100000.aips-bus/2194000.usdhc/mmc_host /mnt/media_rw/extsd vfat defaults voldmanaged=extsd:auto
++/devices/soc0/soc.1/2100000.aips-bus/2184000.usb/ci_hdrc.0  /mnt/media_rw/udisk vfat defaults voldmanaged=udisk:auto
++/dev/block/mmcblk2p5    /system      ext4    ro                                                                               wait
++/dev/block/mmcblk2p4    /data        ext4    nosuid,nodev,nodiratime,noatime,nomblk_io_submit,noauto_da_alloc,errors=panic    wait,encryptable=footer
++/dev/block/mmcblk2p6    /cache       ext4    nosuid,nodev,nomblk_io_submit                                                    wait
++/dev/block/mmcblk2p7    /device      ext4    ro,nosuid,nodev                                                                  wait
++/dev/block/mmcblk2p1    /boot        emmc    defaults                                                                         defaults
++/dev/block/mmcblk2p2    /recovery    emmc    defaults                                                                         defaults
++/dev/block/mmcblk2p8    /misc        emmc    defaults                                                                         defaults
+-- 
+1.8.0
+

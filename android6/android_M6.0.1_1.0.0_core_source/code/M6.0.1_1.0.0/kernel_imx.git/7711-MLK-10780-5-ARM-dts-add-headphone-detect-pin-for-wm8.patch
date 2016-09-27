@@ -1,0 +1,27 @@
+From 9290fb71448c97224f92872aa5ad62fc770bd5d9 Mon Sep 17 00:00:00 2001
+From: Zidan Wang <zidan.wang@freescale.com>
+Date: Wed, 29 Apr 2015 19:51:26 +0800
+Subject: [PATCH] MLK-10780-5 ARM: dts: add headphone detect pin for wm8960
+
+add headphone detect pin for wm8960.
+
+Signed-off-by: Zidan Wang <zidan.wang@freescale.com>
+---
+ arch/arm/boot/dts/imx6ul-evk.dts | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/arch/arm/boot/dts/imx6ul-evk.dts b/arch/arm/boot/dts/imx6ul-evk.dts
+index 324d7be..af3ad3f 100644
+--- a/arch/arm/boot/dts/imx6ul-evk.dts
++++ b/arch/arm/boot/dts/imx6ul-evk.dts
+@@ -50,6 +50,7 @@
+ 		 * hp-det-polarity = 1: hp detect high for speaker
+ 		 */
+ 		hp-det = <3 0>;
++		hp-det-gpios = <&gpio5 4 0>;
+ 
+ 		assigned-clocks = <&clks IMX6UL_CLK_AUDIO_SEL>,
+ 				 <&clks IMX6UL_CLK_AUDIO>;
+-- 
+1.8.0
+

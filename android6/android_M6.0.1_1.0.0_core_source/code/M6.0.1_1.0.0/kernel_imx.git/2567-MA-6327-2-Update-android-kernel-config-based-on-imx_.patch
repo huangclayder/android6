@@ -1,0 +1,29 @@
+From 4684ea59932f0e4f16c0566a405f9c392367e412 Mon Sep 17 00:00:00 2001
+From: "guoyin.chen" <guoyin.chen@freescale.com>
+Date: Sat, 28 Feb 2015 19:22:40 +0800
+Subject: [PATCH] MA-6327-2 Update android kernel config based on
+ imx_v7_defconfig
+
+Add back CONFIG_ARCH_MULTI_V6 config due to image with gcc4.6&4.9 cannot boot
+Will revert this commit after bsp fix it
+
+Signed-off-by: guoyin.chen <guoyin.chen@freescale.com>
+---
+ arch/arm/configs/imx_v7_android_defconfig | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/arch/arm/configs/imx_v7_android_defconfig b/arch/arm/configs/imx_v7_android_defconfig
+index 8a97ba8..a68621e 100644
+--- a/arch/arm/configs/imx_v7_android_defconfig
++++ b/arch/arm/configs/imx_v7_android_defconfig
+@@ -22,6 +22,7 @@ CONFIG_MODULE_UNLOAD=y
+ CONFIG_MODVERSIONS=y
+ CONFIG_MODULE_SRCVERSION_ALL=y
+ # CONFIG_BLK_DEV_BSG is not set
++CONFIG_ARCH_MULTI_V6=y
+ CONFIG_GPIO_PCA953X=y
+ CONFIG_ARCH_MXC=y
+ CONFIG_MACH_IMX51_DT=y
+-- 
+1.8.0
+

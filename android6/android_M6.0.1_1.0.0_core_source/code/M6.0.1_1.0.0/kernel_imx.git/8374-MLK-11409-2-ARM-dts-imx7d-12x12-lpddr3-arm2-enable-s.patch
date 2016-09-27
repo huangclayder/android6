@@ -1,0 +1,28 @@
+From 70f10e25f06ac66e56a3b12d705878d5d8139075 Mon Sep 17 00:00:00 2001
+From: Robin Gong <b38343@freescale.com>
+Date: Tue, 25 Aug 2015 14:34:39 +0800
+Subject: [PATCH] MLK-11409-2 ARM: dts: imx7d-12x12-lpddr3-arm2: enable sdma
+
+enable sdma driver.
+
+Signed-off-by: Robin Gong <b38343@freescale.com>
+---
+ arch/arm/boot/dts/imx7d-12x12-lpddr3-arm2.dts | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/arch/arm/boot/dts/imx7d-12x12-lpddr3-arm2.dts b/arch/arm/boot/dts/imx7d-12x12-lpddr3-arm2.dts
+index a69f938..747ad3b 100644
+--- a/arch/arm/boot/dts/imx7d-12x12-lpddr3-arm2.dts
++++ b/arch/arm/boot/dts/imx7d-12x12-lpddr3-arm2.dts
+@@ -962,7 +962,7 @@
+ };
+ 
+ &sdma {
+-	status = "disabled";
++	status = "okay";
+ };
+ 
+ &sim1 {
+-- 
+1.8.0
+

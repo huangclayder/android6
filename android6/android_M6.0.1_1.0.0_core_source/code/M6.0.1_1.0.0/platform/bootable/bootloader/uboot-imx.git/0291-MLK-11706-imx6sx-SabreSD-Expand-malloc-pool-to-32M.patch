@@ -1,0 +1,33 @@
+From e16fad0e536d8cddc4abde4b0390c8e6003c1c2e Mon Sep 17 00:00:00 2001
+From: Sandor Yu <R01008@freescale.com>
+Date: Fri, 16 Oct 2015 11:03:45 +0800
+Subject: [PATCH] MLK-11706: imx6sx: SabreSD: Expand malloc pool to 32M
+
+Same issue as ENGR00321137, commit 3695635.
+GIS module need total 3M+3M+1.5M+1.5M=9M video memory.
+and sys reserved 16M memory for malloc.
+When gis module enabled, malloc may failed to allocate memory
+for other modules, that may cause system hang.
+Expand malloc pool to 32M.
+
+Signed-off-by: Sandor Yu <R01008@freescale.com>
+---
+ include/configs/mx6sxsabresd.h | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/include/configs/mx6sxsabresd.h b/include/configs/mx6sxsabresd.h
+index bc061d9..d41cc68 100644
+--- a/include/configs/mx6sxsabresd.h
++++ b/include/configs/mx6sxsabresd.h
+@@ -46,7 +46,7 @@
+ #define CONFIG_SYS_GENERIC_BOARD
+ 
+ /* Size of malloc() pool */
+-#define CONFIG_SYS_MALLOC_LEN		(16 * SZ_1M)
++#define CONFIG_SYS_MALLOC_LEN		(32 * SZ_1M)
+ 
+ #define CONFIG_BOARD_EARLY_INIT_F
+ #define CONFIG_BOARD_LATE_INIT
+-- 
+1.8.0
+

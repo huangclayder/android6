@@ -1,0 +1,42 @@
+From bda5610a77ad2b9ab675edc990db94fd34754871 Mon Sep 17 00:00:00 2001
+From: Haoran Wang <b50027@freescale.com>
+Date: Wed, 1 Jul 2015 17:26:04 +0800
+Subject: [PATCH 505/602] MA-6846 Added overlay configuration for A2dpSink in
+ 7D
+
+Enable A2dpSink and AVRCP Controller overlay configuration
+in sabresd_7d platform.
+
+Signed-off-by: Haoran Wang <b50027@freescale.com>
+---
+ .../packages/apps/Bluetooth/res/values/config.xml      | 18 ++++++++++++++++++
+ 1 file changed, 18 insertions(+)
+ create mode 100644 sabresd_7d/overlay/packages/apps/Bluetooth/res/values/config.xml
+
+diff --git a/sabresd_7d/overlay/packages/apps/Bluetooth/res/values/config.xml b/sabresd_7d/overlay/packages/apps/Bluetooth/res/values/config.xml
+new file mode 100644
+index 0000000..6033c97
+--- /dev/null
++++ b/sabresd_7d/overlay/packages/apps/Bluetooth/res/values/config.xml
+@@ -0,0 +1,18 @@
++<?xml version="1.0" encoding="utf-8"?>
++<!-- Copyright (C) 2009-2012 Broadcom Corporation
++   Licensed under the Apache License, Version 2.0 (the "License");
++   you may not use this file except in compliance with the License.
++   You may obtain a copy of the License at
++
++       http://www.apache.org/licenses/LICENSE-2.0
++
++   Unless required by applicable law or agreed to in writing, software
++   distributed under the License is distributed on an "AS IS" BASIS,
++   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++   See the License for the specific language governing permissions and
++   limitations under the License.
++ -->
++ <resources>
++     <bool name="profile_supported_a2dp_sink">true</bool>
++     <bool name="profile_supported_avrcp_controller">true</bool>
++ </resources>
+-- 
+1.8.0
+

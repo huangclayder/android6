@@ -1,0 +1,30 @@
+From 60d0b08d35f46f54ec7d96b9ad135a245ec69c50 Mon Sep 17 00:00:00 2001
+From: Liviu Dudau <Liviu.Dudau@arm.com>
+Date: Wed, 13 Mar 2013 15:42:07 +0000
+Subject: [PATCH] ARM: VExpress: PSCI: Compile PSCI code by default
+
+Compile support for PSCI by default and let the command line decide
+whether support for SMC calls gets enabled or not.
+
+Signed-off-by: Liviu Dudau <Liviu.Dudau@arm.com>
+(cherry picked from commit 4e6b0ee5c6c07d36988469a4d4dec0b7fea0bd86)
+Signed-off-by: Alex Shi <alex.shi@linaro.org>
+---
+ linaro/configs/vexpress.conf | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/linaro/configs/vexpress.conf b/linaro/configs/vexpress.conf
+index a601ed4..0f02f3a 100644
+--- a/linaro/configs/vexpress.conf
++++ b/linaro/configs/vexpress.conf
+@@ -4,6 +4,7 @@ CONFIG_HAVE_ARM_ARCH_TIMER=y
+ CONFIG_NR_CPUS=8
+ CONFIG_HIGHMEM=y
+ CONFIG_HIGHPTE=y
++CONFIG_ARM_PSCI=y
+ CONFIG_MCPM=y
+ CONFIG_ARCH_VEXPRESS_DCSCB=y
+ CONFIG_ARCH_VEXPRESS_TC2_PM=y
+-- 
+1.8.0
+

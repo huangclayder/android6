@@ -1,0 +1,34 @@
+From 52f0b0884cd675959f227fca8338903629f17740 Mon Sep 17 00:00:00 2001
+From: Haibin Wang <wanghaibin.wang@huawei.com>
+Date: Thu, 10 Apr 2014 13:14:32 +0100
+Subject: [PATCH] KVM: ARM: vgic: Fix sgi dispatch problem
+
+When dispatch SGI(mode == 0), that is the vcpu of VM should send
+sgi to the cpu which the target_cpus list.
+So, there must add the "break" to branch of case 0.
+
+Cc: <stable@vger.kernel.org> # 3.10+
+Signed-off-by: Haibin Wang <wanghaibin.wang@huawei.com>
+Acked-by: Marc Zyngier <marc.zyngier@arm.com>
+Signed-off-by: Christoffer Dall <christoffer.dall@linaro.org>
+(cherry picked from commit 91021a6c8ffdc55804dab5acdfc7de4f278b9ac3)
+Signed-off-by: Christoffer Dall <christoffer.dall@linaro.org>
+---
+ virt/kvm/arm/vgic.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/virt/kvm/arm/vgic.c b/virt/kvm/arm/vgic.c
+index 8ca405c..26954a7 100644
+--- a/virt/kvm/arm/vgic.c
++++ b/virt/kvm/arm/vgic.c
+@@ -916,6 +916,7 @@ static void vgic_dispatch_sgi(struct kvm_vcpu *vcpu, u32 reg)
+ 	case 0:
+ 		if (!target_cpus)
+ 			return;
++		break;
+ 
+ 	case 1:
+ 		target_cpus = ((1 << nrcpus) - 1) & ~(1 << vcpu_id) & 0xff;
+-- 
+1.8.0
+

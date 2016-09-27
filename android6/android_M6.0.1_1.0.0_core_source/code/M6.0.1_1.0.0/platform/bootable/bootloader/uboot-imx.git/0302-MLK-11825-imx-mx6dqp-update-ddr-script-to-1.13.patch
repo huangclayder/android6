@@ -1,0 +1,149 @@
+From 5fb08a4dcc7b8478fc4236b90ad8dc2190cf94e7 Mon Sep 17 00:00:00 2001
+From: Peng Fan <Peng.Fan@freescale.com>
+Date: Wed, 4 Nov 2015 16:30:47 +0800
+Subject: [PATCH] MLK-11825 imx: mx6dqp: update ddr script to 1.13
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+http://sw-stash.freescale.net/projects/IMX/repos/ddr-scripts-rel/commits/8111e4d0cd81226899be637013048281e3c097b4
+http://compass.freescale.net/livelink/livelink?func=ll&objId=234753630&objAction=browse&viewType=1
+arik_r2_sabre_ddr3_528_1.13.inc is for sabre-AI
+arik_r2_sdb_ddr3_528_1.13.inc is for sabresd
+
+1.13<-1.12:
+Change log:
+1. Remove 20c4080
+
+1.12<-1.10
+Change log:
+1. NoC register DDRCONF change to 0 which is compatible
+   for only CS0 is used on board
+2. Change 2 values to compatible with our DDR aid script,
+   these two registers doesn’t have any effect on current system
+   tRPA = 0;
+   //this bit only used in DDR2 mode
+   tAOFPD/tAONPD=0x4;
+   //These register only works when MDPDC. SLOW_PD = 1 which is 0 in script
+
+Test results:
+One mx6qp-sdb and one mx6qp-ard board and one mx6qp-ard board passed
+60 hours memtester stress teset.
+
+Signed-off-by: Peng Fan <Peng.Fan@freescale.com>
+---
+ board/freescale/mx6qsabreauto/mx6qp.cfg | 6 +++---
+ board/freescale/mx6qsabreauto/plugin.S  | 6 +++---
+ board/freescale/mx6sabresd/mx6qp.cfg    | 6 +++---
+ board/freescale/mx6sabresd/plugin.S     | 6 +++---
+ 4 files changed, 12 insertions(+), 12 deletions(-)
+
+diff --git a/board/freescale/mx6qsabreauto/mx6qp.cfg b/board/freescale/mx6qsabreauto/mx6qp.cfg
+index 4b3e50a..f8d84cc 100644
+--- a/board/freescale/mx6qsabreauto/mx6qp.cfg
++++ b/board/freescale/mx6qsabreauto/mx6qp.cfg
+@@ -114,9 +114,9 @@ DATA 4 0x021b48c0 0x24914289
+ DATA 4 0x021b08b8 0x00000800
+ DATA 4 0x021b48b8 0x00000800
+ DATA 4 0x021b0004 0x00020036
+-DATA 4 0x021b0008 0x09444040
++DATA 4 0x021b0008 0x24444040
+ DATA 4 0x021b000c 0x898E7955
+-DATA 4 0x021b0010 0xFF328F64
++DATA 4 0x021b0010 0xFF320F64
+ DATA 4 0x021b0014 0x01FF00DB
+ DATA 4 0x021b0018 0x00001740
+ DATA 4 0x021b001c 0x00008000
+@@ -127,7 +127,7 @@ DATA 4 0x021b0040 0x00000047
+ DATA 4 0x021b0400 0x14420000
+ DATA 4 0x021b0000 0x841A0000
+ DATA 4 0x021b0890 0x00400C58
+-DATA 4 0x00bb0008 0x00000004
++DATA 4 0x00bb0008 0x00000000
+ DATA 4 0x00bb000c 0x2891E41A
+ DATA 4 0x00bb0038 0x00000564
+ DATA 4 0x00bb0014 0x00000040
+diff --git a/board/freescale/mx6qsabreauto/plugin.S b/board/freescale/mx6qsabreauto/plugin.S
+index 129b03d..db322c0 100644
+--- a/board/freescale/mx6qsabreauto/plugin.S
++++ b/board/freescale/mx6qsabreauto/plugin.S
+@@ -119,12 +119,12 @@
+ 
+ 	ldr r2, =0x00020036
+ 	str r2, [r0, #0x004]
+-	ldr r2, =0x09444040
++	ldr r2, =0x24444040
+ 	str r2, [r0, #0x008]
+ 
+ 	ldr r2, =0x898E7955
+ 	str r2, [r0, #0x00c]
+-	ldr r2, =0xFF328F64
++	ldr r2, =0xFF320F64
+ 	str r2, [r0, #0x010]
+ 
+ 	ldr r2, =0x01FF00DB
+@@ -150,7 +150,7 @@
+ 	str r2, [r0, #0x890]
+ 
+ 	ldr r3, =0x00bb0000
+-	ldr r2, =0x00000004
++	ldr r2, =0x00000000
+ 	str r2, [r3, #0x008]
+ 	ldr r2, =0x2891E41A
+ 	str r2, [r3, #0x00c]
+diff --git a/board/freescale/mx6sabresd/mx6qp.cfg b/board/freescale/mx6sabresd/mx6qp.cfg
+index 1ae28a8..fa62066 100644
+--- a/board/freescale/mx6sabresd/mx6qp.cfg
++++ b/board/freescale/mx6sabresd/mx6qp.cfg
+@@ -109,9 +109,9 @@ DATA 4, 0x021b48c0, 0x24914289
+ DATA 4, 0x021b08b8, 0x00000800
+ DATA 4, 0x021b48b8, 0x00000800
+ DATA 4, 0x021b0004, 0x00020036
+-DATA 4, 0x021b0008, 0x09444040
++DATA 4, 0x021b0008, 0x24444040
+ DATA 4, 0x021b000c, 0x555A7955
+-DATA 4, 0x021b0010, 0xFF328F64
++DATA 4, 0x021b0010, 0xFF320F64
+ DATA 4, 0x021b0014, 0x01ff00db
+ DATA 4, 0x021b0018, 0x00001740
+ DATA 4, 0x021b001c, 0x00008000
+@@ -121,7 +121,7 @@ DATA 4, 0x021b0040, 0x00000027
+ DATA 4, 0x021b0400, 0x14420000
+ DATA 4, 0x021b0000, 0x831A0000
+ DATA 4, 0x021b0890, 0x00400C58
+-DATA 4, 0x00bb0008, 0x00000004
++DATA 4, 0x00bb0008, 0x00000000
+ DATA 4, 0x00bb000c, 0x2891E41A
+ DATA 4, 0x00bb0038, 0x00000564
+ DATA 4, 0x00bb0014, 0x00000040
+diff --git a/board/freescale/mx6sabresd/plugin.S b/board/freescale/mx6sabresd/plugin.S
+index 7b15a24..0e593e0 100644
+--- a/board/freescale/mx6sabresd/plugin.S
++++ b/board/freescale/mx6sabresd/plugin.S
+@@ -120,12 +120,12 @@
+ 
+ 	ldr r2, =0x00020036
+ 	str r2, [r0, #0x004]
+-	ldr r2, =0x09444040
++	ldr r2, =0x24444040
+ 	str r2, [r0, #0x008]
+ 
+ 	ldr r2, =0x555A7955
+ 	str r2, [r0, #0x00c]
+-	ldr r2, =0xFF328F64
++	ldr r2, =0xFF320F64
+ 	str r2, [r0, #0x010]
+ 
+ 	ldr r2, =0x01FF00DB
+@@ -152,7 +152,7 @@
+ 	str r2, [r0, #0x890]
+ 
+ 	ldr r3, =0x00bb0000
+-	ldr r2, =0x00000004
++	ldr r2, =0x00000000
+ 	str r2, [r3, #0x008]
+ 	ldr r2, =0x2891E41A
+ 	str r2, [r3, #0x00C]
+-- 
+1.8.0
+

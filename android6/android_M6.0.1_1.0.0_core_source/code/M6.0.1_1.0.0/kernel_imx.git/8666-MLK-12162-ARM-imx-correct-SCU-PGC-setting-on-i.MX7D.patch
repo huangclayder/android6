@@ -1,0 +1,44 @@
+From 95427c9ac4be14480bb6d1656b4fda1516de6c74 Mon Sep 17 00:00:00 2001
+From: Anson Huang <Anson.Huang@nxp.com>
+Date: Sat, 9 Jan 2016 00:20:25 +0800
+Subject: [PATCH] MLK-12162 ARM: imx: correct SCU PGC setting on i.MX7D
+
+SCU PGC register is different from others, it contains
+other timing settings, so we can NOT just program 0/1
+to disable/enable SCU power gating, but need to only
+program bit 0, correct it for all modules' PGC settings.
+
+Signed-off-by: Anson Huang <Anson.Huang@nxp.com>
+---
+ arch/arm/mach-imx/gpcv2.c | 8 +++++++-
+ 1 file changed, 7 insertions(+), 1 deletion(-)
+
+diff --git a/arch/arm/mach-imx/gpcv2.c b/arch/arm/mach-imx/gpcv2.c
+index 18bc732..00d81aa 100644
+--- a/arch/arm/mach-imx/gpcv2.c
++++ b/arch/arm/mach-imx/gpcv2.c
+@@ -77,6 +77,7 @@
+ #define BM_LPCR_A7_AD_EN_C0_WFI_PDN		0x1
+ 
+ #define BM_CPU_PGC_SW_PDN_PUP_REQ_CORE1_A7	0x2
++#define BM_GPC_PGC_PCG				0x1
+ 
+ #define BM_GPC_PGC_ACK_SEL_A7_DUMMY_PUP_ACK	0x80000000
+ #define BM_GPC_PGC_ACK_SEL_A7_DUMMY_PDN_ACK	0x8000
+@@ -241,7 +242,12 @@ void imx_gpcv2_set_plat_power_gate_by_lpm(bool pdn)
+ 
+ void imx_gpcv2_set_m_core_pgc(bool enable, u32 offset)
+ {
+-	writel_relaxed(enable, gpc_base + offset);
++	u32 val = readl_relaxed(gpc_base + offset) & (~BM_GPC_PGC_PCG);
++
++	if (enable)
++		val |= BM_GPC_PGC_PCG;
++
++	writel_relaxed(val, gpc_base + offset);
+ }
+ 
+ void imx_gpcv2_set_core1_pdn_pup_by_software(bool pdn)
+-- 
+1.8.0
+

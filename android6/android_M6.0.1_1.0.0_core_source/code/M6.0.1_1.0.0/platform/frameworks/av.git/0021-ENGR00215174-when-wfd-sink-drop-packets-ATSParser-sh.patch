@@ -1,0 +1,29 @@
+From 10cd2ce30b2bf5fade87b5d50c56e0bc4de34130 Mon Sep 17 00:00:00 2001
+From: Liu Xiaowen <b37945@freescale.com>
+Date: Thu, 1 Aug 2013 17:32:18 +0800
+Subject: [PATCH 21/95] ENGR00215174 when wfd sink drop packets ATSParser
+ should not break.
+
+when wfd sink drop packets ATSParser should not break
+
+Signed-off-by: Liu Xiaowen <b37945@freescale.com>
+---
+ media/libstagefright/mpeg2ts/ATSParser.cpp | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/media/libstagefright/mpeg2ts/ATSParser.cpp b/media/libstagefright/mpeg2ts/ATSParser.cpp
+index e3c3e80..d94bde1 100644
+--- a/media/libstagefright/mpeg2ts/ATSParser.cpp
++++ b/media/libstagefright/mpeg2ts/ATSParser.cpp
+@@ -994,7 +994,7 @@ status_t ATSParser::Stream::parsePES(ABitReader *br, SyncEvent *event) {
+                      "payload. (numBitsLeft = %zu, required = %u)",
+                      br->numBitsLeft(), dataLength * 8);
+ 
+-                return ERROR_MALFORMED;
++                return OK;//ERROR_MALFORMED;
+             }
+ 
+             onPayloadData(
+-- 
+1.8.0
+

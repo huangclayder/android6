@@ -1,0 +1,98 @@
+From 1f29fd4e7956702621118c1b5fcaebbc65298728 Mon Sep 17 00:00:00 2001
+From: Haoran Wang <b50027@freescale.com>
+Date: Wed, 17 Jun 2015 17:07:07 +0800
+Subject: [PATCH 502/602] MA-6450 Enable BCM4339 wifi on sabresd_7d
+
+1. Enable macros to compile BCM4339 libs.
+2. Add bcm_supplicant service for specific
+   wpa_supplicant_8 of Broadcom wifi.
+3. Added BCM4339 firmware LOCAL_MODULE to
+   copy them into etc folder.
+
+Signed-off-by: Haoran Wang <b50027@freescale.com>
+---
+ common/wifi/Android.mk    |  2 +-
+ imx7/imx7.mk              |  4 ++++
+ sabresd_7d/BoardConfig.mk |  6 +++++-
+ sabresd_7d/init.rc        | 13 +++++++++++++
+ 4 files changed, 23 insertions(+), 2 deletions(-)
+
+diff --git a/common/wifi/Android.mk b/common/wifi/Android.mk
+index 71bcb85..98a381d 100644
+--- a/common/wifi/Android.mk
++++ b/common/wifi/Android.mk
+@@ -23,7 +23,7 @@
+ # *not* include it on all devices, so it is safe even with hardware-specific
+ # components.
+ 
+-ifeq ($(TARGET_BOARD_PLATFORM),imx6)
++ifeq ($(TARGET_BOARD_PLATFORM),$(filter $(TARGET_BOARD_PLATFORM),imx6 imx7))
+ 
+ LOCAL_PATH := $(call my-dir)
+ 
+diff --git a/imx7/imx7.mk b/imx7/imx7.mk
+index 9b35fd9..aa12689 100644
+--- a/imx7/imx7.mk
++++ b/imx7/imx7.mk
+@@ -107,6 +107,10 @@ PRODUCT_PACKAGES += \
+ 	ar3kbdaddr_ar3002			\
+ 	PS_ASIC_ar3002				\
+ 	RamPatch_ar3002				\
++	Type_ZP.hcd					\
++	bcmdhd.cal					\
++	fw_bcmdhd.bin
++
+ 
+ # Atheros wifi firmwre files.
+ PRODUCT_PACKAGES += \
+diff --git a/sabresd_7d/BoardConfig.mk b/sabresd_7d/BoardConfig.mk
+index a3fd7e0..e9c8666 100644
+--- a/sabresd_7d/BoardConfig.mk
++++ b/sabresd_7d/BoardConfig.mk
+@@ -38,7 +38,9 @@ BOARD_WLAN_DEVICE            := UNITE
+ WPA_SUPPLICANT_VERSION       := VER_0_8_UNITE
+ TARGET_KERNEL_MODULES        := \
+                                 kernel_imx/net/wireless/cfg80211.ko:system/lib/modules/cfg80211_realtek.ko \
+-                                kernel_imx/drivers/net/wireless/rtlwifi/rtl8821as/8821as.ko:system/lib/modules/8821as.ko
++                                kernel_imx/drivers/net/wireless/rtlwifi/rtl8821as/8821as.ko:system/lib/modules/8821as.ko \
++                                kernel_imx/drivers/net/wireless/bcmdhd/bcmdhd.ko:system/lib/modules/bcmdhd.ko
++
+ BOARD_WPA_SUPPLICANT_DRIVER  := NL80211
+ BOARD_HOSTAPD_DRIVER         := NL80211
+ 
+@@ -46,6 +48,8 @@ BOARD_HOSTAPD_PRIVATE_LIB_QCOM              := lib_driver_cmd_qcwcn
+ BOARD_WPA_SUPPLICANT_PRIVATE_LIB_QCOM       := lib_driver_cmd_qcwcn
+ BOARD_HOSTAPD_PRIVATE_LIB_RTL               := lib_driver_cmd_rtl
+ BOARD_WPA_SUPPLICANT_PRIVATE_LIB_RTL        := lib_driver_cmd_rtl
++BOARD_HOSTAPD_PRIVATE_LIB_BCM               := lib_driver_cmd_bcmdhd
++BOARD_WPA_SUPPLICANT_PRIVATE_LIB_BCM        := lib_driver_cmd_bcmdhd
+ #for intel vendor
+ ifeq ($(BOARD_WLAN_VENDOR),INTEL)
+ BOARD_HOSTAPD_PRIVATE_LIB                := private_lib_driver_cmd
+diff --git a/sabresd_7d/init.rc b/sabresd_7d/init.rc
+index 77e5430..920367a 100644
+--- a/sabresd_7d/init.rc
++++ b/sabresd_7d/init.rc
+@@ -155,6 +155,19 @@ service wpa_supplicant /system/bin/wpa_supplicant \
+     disabled
+     oneshot
+ 
++service bcm_supplicant /system/bin/wpa_supplicant \
++    -iwlan0 -Dnl80211 -c/data/misc/wifi/wpa_supplicant.conf \
++    -I/system/etc/wifi/wpa_supplicant_overlay.conf \
++    -puse_p2p_group_interface=1p2p_device=1 \
++    -g/data/misc/wifi/sockets/p2p0 \
++    -O/data/misc/wifi/sockets \
++    -e/data/misc/wifi/entropy.bin -g@android:wpa_wlan0
++    socket wpa_wlan0 dgram 660 wifi wifi
++    class late_start
++    disabled
++    oneshot
++
++
+ service sensor_fusion /system/bin/fsl_sensor_fusion
+     class main
+     seclabel u:r:sensors:s0
+-- 
+1.8.0
+

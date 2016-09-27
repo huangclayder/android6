@@ -1,0 +1,29 @@
+From 8bfb63b88db88011e0fe0cfb98d30563c6c1e612 Mon Sep 17 00:00:00 2001
+From: Fang Hui <b31070@freescale.com>
+Date: Tue, 1 Dec 2015 19:08:21 +0800
+Subject: [PATCH 89/95] MA-6155 - [sabreauto_6q]: usb camera recorder, no
+ audio is recorderd
+
+Add AUDIO_DEVICE_IN_USB_DEVICE for AUDIO_SOURCE_CAMCORDER
+
+Signed-off-by: Winter Wang <b55847@freescale.com>
+---
+ services/audiopolicy/enginedefault/src/Engine.cpp | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/services/audiopolicy/enginedefault/src/Engine.cpp b/services/audiopolicy/enginedefault/src/Engine.cpp
+index b64bda5..e9665f1 100755
+--- a/services/audiopolicy/enginedefault/src/Engine.cpp
++++ b/services/audiopolicy/enginedefault/src/Engine.cpp
+@@ -681,6 +681,8 @@ audio_devices_t Engine::getDeviceForInputSource(audio_source_t inputSource) cons
+     case AUDIO_SOURCE_CAMCORDER:
+         if (availableDeviceTypes & AUDIO_DEVICE_IN_AUX_DIGITAL) {
+             device = AUDIO_DEVICE_IN_AUX_DIGITAL;
++        } else if (availableDeviceTypes & AUDIO_DEVICE_IN_USB_DEVICE) {
++            device = AUDIO_DEVICE_IN_USB_DEVICE;
+         } else if (availableDeviceTypes & AUDIO_DEVICE_IN_BACK_MIC) {
+             device = AUDIO_DEVICE_IN_BACK_MIC;
+         } else if (availableDeviceTypes & AUDIO_DEVICE_IN_BUILTIN_MIC) {
+-- 
+1.8.0
+

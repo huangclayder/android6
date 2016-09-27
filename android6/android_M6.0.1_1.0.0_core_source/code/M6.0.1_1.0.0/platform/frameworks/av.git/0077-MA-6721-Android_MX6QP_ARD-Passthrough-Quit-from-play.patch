@@ -1,0 +1,116 @@
+From 707291df09ad85cc2c6842dc438ccdbf2a4b2a85 Mon Sep 17 00:00:00 2001
+From: fang hui <b31070@freescale.com>
+Date: Fri, 19 Jun 2015 10:58:04 +0800
+Subject: [PATCH 77/95] MA-6721-[Android_MX6QP_ARD]Passthrough:Quit from
+ playback after some operation
+
+No memory for audio ctrl block.
+There is total 1M space for ctrl block allocation
+The audio track ctor count is larger and larger than dtor count.
+
+When seek, will close the old track, then open an new track.
+
+If active track changed, should drain frame in previous active track,
+or it has no chance to destory.
+
+Signed-off-by: fang hui <b31070@freescale.com>
+---
+ services/audioflinger/Threads.cpp | 40 ++++++++++++++++++++++++++++++++++++++-
+ services/audioflinger/Threads.h   |  2 ++
+ 2 files changed, 41 insertions(+), 1 deletion(-)
+
+diff --git a/services/audioflinger/Threads.cpp b/services/audioflinger/Threads.cpp
+index 5169d66..170f219 100644
+--- a/services/audioflinger/Threads.cpp
++++ b/services/audioflinger/Threads.cpp
+@@ -1,7 +1,7 @@
+ /*
+ **
+ ** Copyright 2012, The Android Open Source Project
+-** Copyright (C) 2013 Freescale Semiconductor, Inc.
++** Copyright (C) 2013-2015 Freescale Semiconductor, Inc.
+ **
+ ** Licensed under the Apache License, Version 2.0 (the "License");
+ ** you may not use this file except in compliance with the License.
+@@ -4436,6 +4436,7 @@ AudioFlinger::DirectOutputThread::DirectOutputThread(const sp<AudioFlinger>& aud
+     :   PlaybackThread(audioFlinger, output, id, device, DIRECT, systemReady)
+         // mLeftVolFloat, mRightVolFloat
+ {
++    mpPreActiveTrack = NULL;
+ }
+ 
+ AudioFlinger::DirectOutputThread::DirectOutputThread(const sp<AudioFlinger>& audioFlinger,
+@@ -4615,6 +4616,36 @@ AudioFlinger::PlaybackThread::mixer_state AudioFlinger::DirectOutputThread::prep
+                 // reset retry count
+                 track->mRetryCount = kMaxTrackRetriesDirect;
+                 mActiveTrack = t;
++
++                // If active track changed, should drain frame in previous active track, or it has no chance to destory.
++                if(mpPreActiveTrack && (mpPreActiveTrack != mActiveTrack.get()) && mpPreActiveTrack->isStopping_1()) {
++                    int cycle = 0;
++                    size_t frameReady = mpPreActiveTrack->framesReady();
++                    ALOGI("activeTrack changed, cur %p, pre %p, pre frameReady %d",
++                        mActiveTrack.get(), mpPreActiveTrack, frameReady);
++
++                    while(frameReady) {
++                        //avoid dead loop
++                        cycle++;
++                        if(cycle > 100) {
++                            ALOGW("too much cycle to drain off pre active track");
++                            break;
++                        }
++
++                        AudioBufferProvider::Buffer buffer;
++                        buffer.frameCount = frameReady;
++
++                        mpPreActiveTrack->getNextBuffer(&buffer);
++                        mpPreActiveTrack->releaseBuffer(&buffer);
++
++                        frameReady = mpPreActiveTrack->framesReady();
++                    }
++
++                    ALOGI("after drain pre active track, frameReady %d", mpPreActiveTrack->framesReady());
++                }
++
++                mpPreActiveTrack = mActiveTrack.get();
++
+                 mixerStatus = MIXER_TRACKS_READY;
+                 if (mHwPaused) {
+                     doHwResume = true;
+@@ -4716,6 +4747,13 @@ void AudioFlinger::DirectOutputThread::threadLoop_mix()
+ {
+     size_t frameCount = mFrameCount;
+     int8_t *curBuf = (int8_t *)mSinkBuffer;
++
++    //can prepareTracks_l assure mActiveTrack valid ?
++    if(mActiveTrack.get() == NULL) {
++        ALOGW("DirectOutputThread::threadLoop_mix, no active track");
++        return;
++    }
++
+     // output audio to hardware
+     while (frameCount) {
+         AudioBufferProvider::Buffer buffer;
+diff --git a/services/audioflinger/Threads.h b/services/audioflinger/Threads.h
+index 46ac300..3e007cc 100644
+--- a/services/audioflinger/Threads.h
++++ b/services/audioflinger/Threads.h
+@@ -1,6 +1,7 @@
+ /*
+ **
+ ** Copyright 2012, The Android Open Source Project
++** Copyright (C) 2015 Freescale Semiconductor, Inc.
+ **
+ ** Licensed under the Apache License, Version 2.0 (the "License");
+ ** you may not use this file except in compliance with the License.
+@@ -962,6 +963,7 @@ protected:
+ 
+     wp<Track>               mPreviousTrack;         // used to detect track switch
+ 
++    Track*                  mpPreActiveTrack;
+ public:
+     virtual     bool        hasFastMixer() const { return false; }
+ };
+-- 
+1.8.0
+

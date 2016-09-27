@@ -1,0 +1,30 @@
+From 2b1ce5ec442dde8801b6b2d059d22f5dce7c9c76 Mon Sep 17 00:00:00 2001
+From: Han Xu <b45815@freescale.com>
+Date: Thu, 22 Oct 2015 22:22:58 -0500
+Subject: [PATCH] MLK-11751: mtd: gpmi: add empty sentinel entry at the end of
+ of_device_id table
+
+add an empty sentinel entry to avoid the struct of_device_id is not
+terminated with a NULL entry issue.
+
+Signed-off-by: Han Xu <b45815@freescale.com>
+---
+ drivers/mtd/nand/gpmi-nand/gpmi-nand.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/mtd/nand/gpmi-nand/gpmi-nand.c b/drivers/mtd/nand/gpmi-nand/gpmi-nand.c
+index 7da004a..9c0475f 100644
+--- a/drivers/mtd/nand/gpmi-nand/gpmi-nand.c
++++ b/drivers/mtd/nand/gpmi-nand/gpmi-nand.c
+@@ -2099,7 +2099,7 @@ static const struct of_device_id gpmi_nand_id_table[] = {
+ 	}, {
+ 		.compatible = "fsl,imx7d-gpmi-nand",
+ 		.data = (void *)&gpmi_devdata_imx7d,
+-	}
++	}, { /* sentinel */ }
+ };
+ MODULE_DEVICE_TABLE(of, gpmi_nand_id_table);
+ 
+-- 
+1.8.0
+

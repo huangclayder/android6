@@ -1,0 +1,31 @@
+From c0dc0ba635512afa7c23afd22c1058277e6a2942 Mon Sep 17 00:00:00 2001
+From: b37945 <b37945@freescale.com>
+Date: Fri, 25 Jul 2014 14:45:35 +0800
+Subject: [PATCH 517/635] ENGR00324255 fix YV12 format mismatched on
+ CTS-Verifier.
+
+The root cause is YV12/I420 format stride is not aligned with
+CTS-Verifier defination.
+Correct the YV12/I420 format stride.
+
+Signed-off-by: b37945 <b37945@freescale.com>
+---
+ mx6/libgralloc_wrapper/BufferManager.cpp | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/mx6/libgralloc_wrapper/BufferManager.cpp b/mx6/libgralloc_wrapper/BufferManager.cpp
+index c2ab553..dc07569 100755
+--- a/mx6/libgralloc_wrapper/BufferManager.cpp
++++ b/mx6/libgralloc_wrapper/BufferManager.cpp
+@@ -126,7 +126,7 @@ int BufferManager::alloc(int w, int h, int format, int usage,
+ 
+         case HAL_PIXEL_FORMAT_YCbCr_420_P:
+         case HAL_PIXEL_FORMAT_YV12: {
+-            alignedw = ALIGN_PIXEL_32(w);
++            alignedw = ALIGN_PIXEL_16(w);
+             alignedh = ALIGN_PIXEL_4(h);
+             int c_stride = (alignedw/2+15)/16*16;
+             size = alignedw * alignedh + c_stride * h;
+-- 
+1.8.0
+

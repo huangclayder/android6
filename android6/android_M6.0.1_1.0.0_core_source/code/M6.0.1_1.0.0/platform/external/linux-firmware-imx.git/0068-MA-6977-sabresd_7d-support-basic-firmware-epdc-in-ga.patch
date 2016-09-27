@@ -1,0 +1,25 @@
+From f59a3cfc747670b5d7c49f5bc4b4ca0033523411 Mon Sep 17 00:00:00 2001
+From: fang hui <b31070@freescale.com>
+Date: Tue, 11 Aug 2015 10:45:11 +0800
+Subject: [PATCH 68/69] MA-6977 - [sabresd_7d] : support basic firmware epdc
+ in ga release
+
+copy firmware to correct output dir path
+
+Signed-off-by: fang hui <b31070@freescale.com>
+---
+ firmware/epdc/fsl-epdc.mk | 2 ++
+ 1 file changed, 2 insertions(+)
+ create mode 100644 firmware/epdc/fsl-epdc.mk
+
+diff --git a/firmware/epdc/fsl-epdc.mk b/firmware/epdc/fsl-epdc.mk
+new file mode 100644
+index 0000000..72719b1
+--- /dev/null
++++ b/firmware/epdc/fsl-epdc.mk
+@@ -0,0 +1,2 @@
++PRODUCT_COPY_FILES += \
++        external/linux-firmware-imx/firmware/epdc/epdc_ED060XH2C1.fw.nonrestricted:root/lib/firmware/imx/epdc/epdc_ED060XH2C1.fw
+-- 
+1.8.0
+

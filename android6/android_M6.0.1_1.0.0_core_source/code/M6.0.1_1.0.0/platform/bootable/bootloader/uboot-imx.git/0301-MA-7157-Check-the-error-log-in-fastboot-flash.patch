@@ -1,0 +1,30 @@
+From cc55f2e65eac561a2ad421d664b9db3430b91e8c Mon Sep 17 00:00:00 2001
+From: zhang sanshan <b51434@freescale.com>
+Date: Thu, 5 Nov 2015 16:35:30 +0800
+Subject: [PATCH] MA-7157 Check the error log in fastboot flash
+
+The fastboot.exe will get var partition-type:* firstly when "fastboot flash * *".
+The uboot did not support get var partition-type: default.
+This patch mask info the error when gat cat partition-type.
+
+Signed-off-by: zhang sanshan <b51434@freescale.com>
+---
+ drivers/usb/gadget/f_fastboot.c | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/drivers/usb/gadget/f_fastboot.c b/drivers/usb/gadget/f_fastboot.c
+index 519a9d3..88c648f 100644
+--- a/drivers/usb/gadget/f_fastboot.c
++++ b/drivers/usb/gadget/f_fastboot.c
+@@ -2053,6 +2053,8 @@ static void cb_getvar(struct usb_ep *ep, struct usb_request *req)
+ 			strncat(response, s, chars_left);
+ 		else
+ 			strcpy(response, "FAILValue not set");
++	} else if (!strcmp_l1("partition-type", cmd)) {
++		strcpy(response, "FAILVariable not implemented");
+ 	} else {
+ 		error("unknown variable: %s\n", cmd);
+ 		strcpy(response, "FAILVariable not implemented");
+-- 
+1.8.0
+

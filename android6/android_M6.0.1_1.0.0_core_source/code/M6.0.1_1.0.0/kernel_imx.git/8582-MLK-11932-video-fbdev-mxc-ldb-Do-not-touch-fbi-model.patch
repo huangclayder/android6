@@ -1,0 +1,40 @@
+From 7f6b9e6c51e446fb41eeb7927d78f5bfb8ed84e1 Mon Sep 17 00:00:00 2001
+From: Liu Ying <Ying.Liu@freescale.com>
+Date: Tue, 1 Dec 2015 14:42:41 +0800
+Subject: [PATCH] MLK-11932 video: fbdev: mxc: ldb: Do not touch fbi->modelist
+ in ldb_init()
+
+We don't have to touch fbi->modelist in ldb_init(), because mxcfb_register()
+may initialize the list and add a video mode to the list for us.
+
+This patch fixes the following issue reported by Coverity:
+	INIT_LIST_HEAD(&fbi->modelist);
+Uninitialized scalar variable (UNINIT)
+uninit_use_in_call: Using uninitialized value fb_vm. Field fb_vm.name is
+uninitialized when calling fb_add_videomode.
+	fb_add_videomode(&fb_vm, &fbi->modelist);
+	fb_videomode_to_var(&fbi->var, &fb_vm);
+
+Signed-off-by: Liu Ying <Ying.Liu@freescale.com>
+(cherry picked from commit fc1c42c67d556436baa68ec31bfcbe357452db33)
+---
+ drivers/video/mxc/ldb.c | 3 ---
+ 1 file changed, 3 deletions(-)
+
+diff --git a/drivers/video/mxc/ldb.c b/drivers/video/mxc/ldb.c
+index ca53344..71e17f8 100644
+--- a/drivers/video/mxc/ldb.c
++++ b/drivers/video/mxc/ldb.c
+@@ -331,9 +331,6 @@ static int ldb_init(struct mxc_dispdrv_handle *mddh,
+ 	chan->fbi = fbi;
+ 
+ 	fb_videomode_from_videomode(&chan->vm, &fb_vm);
+-
+-	INIT_LIST_HEAD(&fbi->modelist);
+-	fb_add_videomode(&fb_vm, &fbi->modelist);
+ 	fb_videomode_to_var(&fbi->var, &fb_vm);
+ 
+ 	setting->crtc = chan->crtc;
+-- 
+1.8.0
+

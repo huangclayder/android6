@@ -1,0 +1,50 @@
+From 0be01b7b7afa221e360482a2bb1622da9568fb3a Mon Sep 17 00:00:00 2001
+From: Jon Medhurst <tixy@linaro.org>
+Date: Wed, 10 Oct 2012 13:27:25 +0100
+Subject: [PATCH] amba-clcd: Remove check for 'reg' value in clcdfb_probe
+
+This check was attempting to ensure only one clcd device in the
+device-tree was probed, however the check fails in the valid case where
+the device is a child of another device and the 'reg' value is a offset
+from the start of that other device, not an absolute address. This
+occurs on vexpress with the motherboard clcd being a child of iofga.
+
+For now, we will just have to rely on there only being one display
+device specified in device-tree.
+
+Signed-off-by: Jon Medhurst <tixy@linaro.org>
+(cherry picked from commit efff95fcd957f10fc69d8c04a2cdbb07b5c75e40)
+Signed-off-by: Alex Shi <alex.shi@linaro.org>
+---
+ drivers/video/amba-clcd.c | 15 ---------------
+ 1 file changed, 15 deletions(-)
+
+diff --git a/drivers/video/amba-clcd.c b/drivers/video/amba-clcd.c
+index 94e4632..bbc55b7 100644
+--- a/drivers/video/amba-clcd.c
++++ b/drivers/video/amba-clcd.c
+@@ -769,21 +769,6 @@ static int clcdfb_probe(struct amba_device *dev, const struct amba_id *id)
+ 
+ #ifdef CONFIG_OF
+ 	if (dev->dev.of_node) {
+-		const __be32 *prop;
+-		int len, na, ns;
+-		phys_addr_t reg_base;
+-
+-		na = of_n_addr_cells(dev->dev.of_node);
+-		ns = of_n_size_cells(dev->dev.of_node);
+-
+-		prop = of_get_property(dev->dev.of_node, "reg", &len);
+-		if (WARN_ON(!prop || len < (na + ns) * sizeof(*prop)))
+-			return -EINVAL;
+-		reg_base = of_read_number(prop, na);
+-
+-		if (dev->res.start != reg_base)
+-			return -EINVAL;
+-
+ 		if (!board) {
+ 			board = kzalloc(sizeof(struct clcd_board), GFP_KERNEL);
+ 			if (!board)
+-- 
+1.8.0
+

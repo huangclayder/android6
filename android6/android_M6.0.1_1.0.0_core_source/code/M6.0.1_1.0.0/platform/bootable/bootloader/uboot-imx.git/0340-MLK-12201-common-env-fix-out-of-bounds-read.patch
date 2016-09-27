@@ -1,0 +1,31 @@
+From d72087c428ee44dcfe527d4eff4270ad51a8f917 Mon Sep 17 00:00:00 2001
+From: Peng Fan <peng.fan@nxp.com>
+Date: Tue, 12 Jan 2016 13:21:23 +0800
+Subject: [PATCH] MLK-12201 common: env: fix out of bounds read
+
+We should use ARRAY_SIZE, but not directly sizeof, otherwise
+we may access memory that is not belong the array env_flags_varaccess_mask.
+
+Coverity ID: 17949
+
+Signed-off-by: Peng Fan <peng.fan@nxp.com>
+---
+ common/env_flags.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/common/env_flags.c b/common/env_flags.c
+index 471973a..8e60384 100644
+--- a/common/env_flags.c
++++ b/common/env_flags.c
+@@ -152,7 +152,7 @@ enum env_flags_varaccess env_flags_parse_varaccess_from_binflags(int binflags)
+ {
+ 	int i;
+ 
+-	for (i = 0; i < sizeof(env_flags_varaccess_mask); i++)
++	for (i = 0; i < ARRAY_SIZE(env_flags_varaccess_mask); i++)
+ 		if (env_flags_varaccess_mask[i] ==
+ 		    (binflags & ENV_FLAGS_VARACCESS_BIN_MASK))
+ 			return (enum env_flags_varaccess)i;
+-- 
+1.8.0
+

@@ -1,0 +1,34 @@
+From fdc4abe71599cc1b7ef1c7641ad67974d070016d Mon Sep 17 00:00:00 2001
+From: Xianzhong <b07117@freescale.com>
+Date: Wed, 1 Apr 2015 18:46:38 +0800
+Subject: [PATCH] MGS-608 [#1592] disable GC2000 TX clock gating
+
+Random hang may occur if module clock gating is enabled for TX module,
+The software workaround is to disable clock gating for the TX module
+
+Date: Apr 01, 2015
+Signed-off-by: Xianzhong <b07117@freescale.com>
+(cherry picked from commit 3bc16575406c239c0ad37cad73d2d8aa1d223c79)
+---
+ drivers/mxc/gpu-viv/hal/kernel/arch/gc_hal_kernel_hardware.c | 5 ++++-
+ 1 file changed, 4 insertions(+), 1 deletion(-)
+
+diff --git a/drivers/mxc/gpu-viv/hal/kernel/arch/gc_hal_kernel_hardware.c b/drivers/mxc/gpu-viv/hal/kernel/arch/gc_hal_kernel_hardware.c
+index eeae631..f4fa9d9 100644
+--- a/drivers/mxc/gpu-viv/hal/kernel/arch/gc_hal_kernel_hardware.c
++++ b/drivers/mxc/gpu-viv/hal/kernel/arch/gc_hal_kernel_hardware.c
+@@ -1566,7 +1566,10 @@ gckHARDWARE_InitializeHardware(
+                                   data));
+     }
+ 
+-    if (_IsHardwareMatch(Hardware, gcv4000, 0x5222))
++    if (_IsHardwareMatch(Hardware, gcv4000, 0x5222)
++     /* VIV: HW bug #728. */
++     || _IsHardwareMatch(Hardware, gcv2000, 0x5108)
++    )
+     {
+         if (regPMC == 0)
+         {
+-- 
+1.8.0
+

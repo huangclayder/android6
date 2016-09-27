@@ -1,0 +1,30 @@
+From 2c6ffde1b936c651417a43b497d199afb1d707b2 Mon Sep 17 00:00:00 2001
+From: "guoyin.chen" <guoyin.chen@freescale.com>
+Date: Wed, 4 Nov 2015 13:07:58 +0800
+Subject: [PATCH 604/635] MA-7210 Add missed HAL folder
+
+Add libsensors_sensorhub mx6/libcamera and mx6/libcamera2
+Remove mx6/consumerir in HAL folder
+
+Signed-off-by: guoyin.chen <guoyin.chen@freescale.com>
+---
+ Android.mk | 5 +++--
+ 1 file changed, 3 insertions(+), 2 deletions(-)
+
+diff --git a/Android.mk b/Android.mk
+index cadc083..e416238 100644
+--- a/Android.mk
++++ b/Android.mk
+@@ -1,6 +1,7 @@
+ imx_dirs := libsensors libgps lights wlan libbt-ath3k \
+-            alsa mx6/libgralloc_wrapper mx6/hwcomposer \
+-            mx6/power mx6/consumerir mx7/gralloc mx7/hwcomposer \
++            alsa libsensors_sensorhub mx6/libgralloc_wrapper \
++            mx6/hwcomposer mx6/power mx6/libcamera mx6/libcamera2 \
++            mx7/gralloc mx7/hwcomposer \
+ 
+ include $(call all-named-subdir-makefiles,$(imx_dirs))
+ 
+-- 
+1.8.0
+

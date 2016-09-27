@@ -1,0 +1,29 @@
+From 141f4850bed4bf41cb44ef0b4ee74779a828f50a Mon Sep 17 00:00:00 2001
+From: Haibo Chen <haibo.chen@freescale.com>
+Date: Tue, 22 Sep 2015 16:44:53 +0800
+Subject: [PATCH] MLK-11601 ARM: dts: imx7d-12x12-lpddr3-arm2: enable ADC in
+ LPSR mode
+
+Enable ADC in LPSR mode for imx7d-12x12-lpddr3-arm2 board.
+
+Signed-off-by: Haibo Chen <haibo.chen@freescale.com>
+---
+ arch/arm/boot/dts/imx7d-12x12-lpddr3-arm2.dts | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/arch/arm/boot/dts/imx7d-12x12-lpddr3-arm2.dts b/arch/arm/boot/dts/imx7d-12x12-lpddr3-arm2.dts
+index 79b5790..5f3b8d3 100644
+--- a/arch/arm/boot/dts/imx7d-12x12-lpddr3-arm2.dts
++++ b/arch/arm/boot/dts/imx7d-12x12-lpddr3-arm2.dts
+@@ -147,7 +147,7 @@
+ 
+ &adc1 {
+ 	vref-supply = <&reg_vref_1v8>;
+-	status = "disabled";
++	status = "okay";
+ };
+ 
+ &cpu0 {
+-- 
+1.8.0
+

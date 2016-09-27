@@ -1,0 +1,31 @@
+From 98a55a7846427f2e7e539ba7daa605e7997ceed0 Mon Sep 17 00:00:00 2001
+From: Richard Liu <r66033@freescale.com>
+Date: Tue, 1 Mar 2016 17:50:43 +0800
+Subject: [PATCH] MA-7665 skip build Contacts on the platform without GPU 3D
+
+Skip build Contacts apk on 6sl_evk and sabresd_7d platform.
+Contacts apk not work well on the platform which don't have
+GPU 3D to support OpenGL ES 2.0.
+
+Signed-off-by: Richard Liu <r66033@freescale.com>
+---
+ Android.mk | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/Android.mk b/Android.mk
+index 8f34bb9..52ba5f2 100644
+--- a/Android.mk
++++ b/Android.mk
+@@ -1,3 +1,4 @@
++ifeq ($(HAVE_FSL_IMX_GPU3D),true)
+ LOCAL_PATH:= $(call my-dir)
+ include $(CLEAR_VARS)
+ 
+@@ -42,3 +43,4 @@ include $(BUILD_PACKAGE)
+ 
+ # Use the folloing include to make our test apk.
+ include $(call all-makefiles-under,$(LOCAL_PATH))
++endif
+-- 
+1.8.0
+

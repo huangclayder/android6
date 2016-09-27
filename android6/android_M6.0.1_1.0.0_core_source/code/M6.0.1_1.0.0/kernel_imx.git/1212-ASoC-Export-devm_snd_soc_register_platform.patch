@@ -1,0 +1,34 @@
+From 62bad8e314f97aae5f3498c4ac1c36f333d72cb3 Mon Sep 17 00:00:00 2001
+From: Lars-Peter Clausen <lars@metafoo.de>
+Date: Tue, 22 Apr 2014 22:58:41 +0200
+Subject: [PATCH] ASoC: Export devm_snd_soc_register_platform()
+
+devm_snd_soc_register_platform() is used in drivers which can be build as
+modules, so it needs to be exported to avoid linkers errors like:
+
+	ERROR: "devm_snd_soc_register_platform" [sound/soc/omap/snd-soc-omap.ko] undefined!
+	ERROR: "devm_snd_soc_register_platform" [sound/soc/davinci/snd-soc-davinci.ko] undefined!
+
+Fixes: 8931bf620 ("ASoC: Add resource managed snd_soc_register_platform()")
+Signed-off-by: Lars-Peter Clausen <lars@metafoo.de>
+Signed-off-by: Mark Brown <broonie@linaro.org>
+(cherry picked from commit 1f23380b803a670a9eb53f63fd0c662d20ab1b66)
+---
+ sound/soc/soc-devres.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/sound/soc/soc-devres.c b/sound/soc/soc-devres.c
+index e94aa02..057e5ef 100644
+--- a/sound/soc/soc-devres.c
++++ b/sound/soc/soc-devres.c
+@@ -85,6 +85,7 @@ int devm_snd_soc_register_platform(struct device *dev,
+ 
+ 	return ret;
+ }
++EXPORT_SYMBOL_GPL(devm_snd_soc_register_platform);
+ 
+ static void devm_card_release(struct device *dev, void *res)
+ {
+-- 
+1.8.0
+

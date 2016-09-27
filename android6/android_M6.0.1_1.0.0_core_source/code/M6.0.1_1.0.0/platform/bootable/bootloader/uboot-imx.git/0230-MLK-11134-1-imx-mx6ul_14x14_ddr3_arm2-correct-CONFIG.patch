@@ -1,0 +1,29 @@
+From 2accd8a3cd743ae033528ae30a65f742447583c3 Mon Sep 17 00:00:00 2001
+From: Peng Fan <Peng.Fan@freescale.com>
+Date: Fri, 19 Jun 2015 11:29:25 +0800
+Subject: [PATCH] MLK-11134-1 imx: mx6ul_14x14_ddr3_arm2 correct
+ CONFIG_DEFAULT_SPI_CS
+
+We should not put the GPIO in CONFIG_SF_DEFAULT_CS
+
+Signed-off-by: Peng Fan <Peng.Fan@freescale.com>
+---
+ include/configs/mx6ul_14x14_ddr3_arm2.h | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/include/configs/mx6ul_14x14_ddr3_arm2.h b/include/configs/mx6ul_14x14_ddr3_arm2.h
+index 643961e..41a1582 100644
+--- a/include/configs/mx6ul_14x14_ddr3_arm2.h
++++ b/include/configs/mx6ul_14x14_ddr3_arm2.h
+@@ -323,7 +323,7 @@
+ #define CONFIG_SF_DEFAULT_BUS  0
+ #define CONFIG_SF_DEFAULT_SPEED 20000000
+ #define CONFIG_SF_DEFAULT_MODE (SPI_MODE_0)
+-#define CONFIG_SF_DEFAULT_CS   (0|(IMX_GPIO_NR(4, 26)<<8))
++#define CONFIG_SF_DEFAULT_CS   0
+ #endif
+ 
+ #ifdef CONFIG_SYS_USE_EIMNOR
+-- 
+1.8.0
+

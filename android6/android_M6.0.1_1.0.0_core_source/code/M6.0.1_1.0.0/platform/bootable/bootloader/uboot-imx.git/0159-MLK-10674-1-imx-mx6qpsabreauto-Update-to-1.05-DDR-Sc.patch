@@ -1,0 +1,76 @@
+From b7b3449744e81bbf56c787f47eb07a345dca408a Mon Sep 17 00:00:00 2001
+From: Peng Fan <Peng.Fan@freescale.com>
+Date: Thu, 16 Apr 2015 18:53:21 +0800
+Subject: [PATCH] MLK-10674-1 imx: mx6qpsabreauto Update to 1.05 DDR Script
+
+Update to 1.05 ddr script, url:
+http://compass.freescale.net/livelink/livelink?func=ll&
+objId=233944823&objAction=browse&viewType=1
+
+File name:
+arik_r2_sabre_ddr3_528_1.05c.inc
+
+Update:
+Read latency
+Aging control for IPU1/PRE0/PRE3
+Aging control for IPU2/PRE1/PRE2
+
+Test results:
+3 boards passed overnight memtester stress test.
+
+Signed-off-by: Peng Fan <Peng.Fan@freescale.com>
+(cherry picked from commit b8625b732cfc59e44955f0e23b581e7896be1733)
+---
+ board/freescale/mx6qsabreauto/mx6qp.cfg | 5 ++++-
+ board/freescale/mx6qsabreauto/plugin.S  | 5 +++++
+ 2 files changed, 9 insertions(+), 1 deletion(-)
+
+diff --git a/board/freescale/mx6qsabreauto/mx6qp.cfg b/board/freescale/mx6qsabreauto/mx6qp.cfg
+index b3ccaef..3f9f50f 100644
+--- a/board/freescale/mx6qsabreauto/mx6qp.cfg
++++ b/board/freescale/mx6qsabreauto/mx6qp.cfg
+@@ -118,6 +118,7 @@ DATA 4 0x021b0010 0xFF328F64
+ DATA 4 0x021b0014 0x01FF00DB
+ DATA 4 0x021b0018 0x00001740
+ DATA 4 0x021b001c 0x00008000
++
+ DATA 4 0x021b002c 0x000026d2
+ DATA 4 0x021b0030 0x008E1023
+ DATA 4 0x021b0040 0x00000047
+@@ -126,6 +127,9 @@ DATA 4 0x021b0000 0x841A0000
+ DATA 4 0x00bb0008 0x00000004
+ DATA 4 0x00bb000c 0x2891E41A
+ DATA 4 0x00bb0038 0x00000564
++DATA 4 0x00bb0014 0x00000040
++DATA 4 0x00bb0028 0x00000020
++DATA 4 0x00bb002c 0x00000020
+ DATA 4 0x021b001c 0x04088032
+ DATA 4 0x021b001c 0x00008033
+ DATA 4 0x021b001c 0x00048031
+@@ -137,7 +141,6 @@ DATA 4 0x021b4818 0x00011117
+ DATA 4 0x021b0004 0x00025576
+ DATA 4 0x021b0404 0x00011006
+ DATA 4 0x021b001c 0x00000000
+-
+ /* set the default clock gate to save power */
+ DATA 4, 0x020c4068, 0x00C03F3F
+ DATA 4, 0x020c406c, 0x0030FC03
+diff --git a/board/freescale/mx6qsabreauto/plugin.S b/board/freescale/mx6qsabreauto/plugin.S
+index 18f49b8..c0d09b8 100644
+--- a/board/freescale/mx6qsabreauto/plugin.S
++++ b/board/freescale/mx6qsabreauto/plugin.S
+@@ -148,6 +148,11 @@
+ 	str r2, [r3, #0x00c]
+ 	ldr r2, =0x00000564
+ 	str r2, [r3, #0x038]
++	ldr r2, =0x00000040
++	str r2, [r3, #0x014]
++	ldr r2, =0x00000020
++	str r2, [r3, #0x028]
++	str r2, [r3, #0x02c]
+ 
+ 	ldr r2, =0x04088032
+ 	str r2, [r0, #0x01c]
+-- 
+1.8.0
+

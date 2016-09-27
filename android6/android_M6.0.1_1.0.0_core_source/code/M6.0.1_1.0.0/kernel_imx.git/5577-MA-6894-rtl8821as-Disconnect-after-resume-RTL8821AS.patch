@@ -1,0 +1,34 @@
+From b9dbd1d39964bd7e678428e75cc04708e43c9fe7 Mon Sep 17 00:00:00 2001
+From: Haoran Wang <b50027@freescale.com>
+Date: Thu, 23 Jul 2015 15:40:08 +0800
+Subject: [PATCH] MA-6894 rtl8821as: Disconnect after resume RTL8821AS
+
+Disconnect cfg80211 when enter common resume process.
+This patch keep the behaviour as previous release.
+RTL8821AS will disconnect AP during suspend/resume.
+
+This patch fix the issue what the device cannot
+access Internet after suspend/resume.
+
+Signed-off-by: Haoran Wang <b50027@freescale.com>
+---
+ drivers/net/wireless/rtlwifi/rtl8821as/os_dep/linux/os_intfs.c | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/drivers/net/wireless/rtlwifi/rtl8821as/os_dep/linux/os_intfs.c b/drivers/net/wireless/rtlwifi/rtl8821as/os_dep/linux/os_intfs.c
+index 347d4d3..dd5ad68 100755
+--- a/drivers/net/wireless/rtlwifi/rtl8821as/os_dep/linux/os_intfs.c
++++ b/drivers/net/wireless/rtlwifi/rtl8821as/os_dep/linux/os_intfs.c
+@@ -4262,6 +4262,9 @@ int rtw_resume_common(_adapter *padapter)
+ 	DBG_871X_LEVEL(_drv_always_, "resume start\n");
+ 	DBG_871X("==> %s (%s:%d)\n",__FUNCTION__, current->comm, current->pid);	
+ 
++    cfg80211_disconnected(padapter->pnetdev, 0, NULL, 0,
++            GFP_ATOMIC);
++    rtw_lock_ext_suspend_timeout(10000);
+ 	if (check_fwstate(pmlmepriv,WIFI_STATION_STATE) == _TRUE
+ #ifdef CONFIG_CONCURRENT_MODE
+ 		&& check_buddy_fwstate(padapter, WIFI_AP_STATE) == _FALSE
+-- 
+1.8.0
+

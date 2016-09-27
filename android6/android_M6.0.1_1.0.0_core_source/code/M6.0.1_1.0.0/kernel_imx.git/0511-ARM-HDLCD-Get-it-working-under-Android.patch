@@ -1,0 +1,59 @@
+From fa8b1b9aa3558231c489199779fb9f6c01844036 Mon Sep 17 00:00:00 2001
+From: Dietmar Eggemann <dietmar.eggemann@arm.com>
+Date: Thu, 21 Jun 2012 17:16:33 +0100
+Subject: [PATCH] ARM HDLCD: Get it working under Android.
+
+Add a shortcut when set_par is called to only change the yoffset. Android is
+doing that instead of calling pan_display to flip the framebuffer.
+
+Signed-off-by: Chris Redpath <chris.redpath@arm.com>
+(cherry picked from commit 5b809b267f457215e660af8cbecf0578e53f6bfe)
+Signed-off-by: Alex Shi <alex.shi@linaro.org>
+---
+ drivers/video/arm-hdlcd.c | 22 ++++++++++++++++++++--
+ 1 file changed, 20 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/video/arm-hdlcd.c b/drivers/video/arm-hdlcd.c
+index 948d41c..526d771 100644
+--- a/drivers/video/arm-hdlcd.c
++++ b/drivers/video/arm-hdlcd.c
+@@ -166,6 +166,11 @@ static int hdlcd_set_output_mode(int xres, int yres)
+ 	return set_dvi_mode(msgbuffer[0]);
+ }
+ 
++
++/* prototype */
++static int hdlcd_pan_display(struct fb_var_screeninfo *var,
++	struct fb_info *info);
++
+ #define WRITE_HDLCD_REG(reg, value)	writel((value), hdlcd->base + (reg))
+ #define READ_HDLCD_REG(reg)		readl(hdlcd->base + (reg))
+ 
+@@ -174,9 +179,22 @@ static int hdlcd_set_par(struct fb_info *info)
+ 	struct hdlcd_device *hdlcd = to_hdlcd_device(info);
+ 	int bytes_per_pixel = hdlcd->fb.var.bits_per_pixel / 8;
+ 	int polarities;
+-
+-	if (!memcmp(&info->var, &cached_var_screeninfo, sizeof(struct fb_var_screeninfo)))
++	int old_yoffset;
++
++	/* check for shortcuts */
++	old_yoffset = cached_var_screeninfo.yoffset;
++	cached_var_screeninfo.yoffset = info->var.yoffset;
++	if (!memcmp(&info->var, &cached_var_screeninfo,
++				sizeof(struct fb_var_screeninfo))) {
++		if(old_yoffset != info->var.yoffset) {
++			/* we only changed yoffset */
++			hdlcd_pan_display(&info->var, info);
++			memcpy(&cached_var_screeninfo, &info->var,
++				sizeof(struct fb_var_screeninfo));
++		}
++		/* or no change */
+ 		return 0;
++	}
+ 
+ 	hdlcd->fb.fix.line_length = hdlcd->fb.var.xres * bytes_per_pixel;
+ 
+-- 
+1.8.0
+

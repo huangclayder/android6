@@ -1,0 +1,28 @@
+From 1e7a9000fe62c7391a0caa1e80ba03090994c73f Mon Sep 17 00:00:00 2001
+From: Peter Chen <peter.chen@freescale.com>
+Date: Fri, 23 May 2014 08:12:48 +0800
+Subject: [PATCH] usb: chipidea: udc: delete useless code
+
+Delete useless code
+
+Signed-off-by: Peter Chen <peter.chen@freescale.com>
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+---
+ drivers/usb/chipidea/udc.c | 1 -
+ 1 file changed, 1 deletion(-)
+
+diff --git a/drivers/usb/chipidea/udc.c b/drivers/usb/chipidea/udc.c
+index 234eaa2..f1a046a 100644
+--- a/drivers/usb/chipidea/udc.c
++++ b/drivers/usb/chipidea/udc.c
+@@ -823,7 +823,6 @@ __acquires(hwep->lock)
+ 	if ((setup->bRequestType & USB_RECIP_MASK) == USB_RECIP_DEVICE) {
+ 		/* Assume that device is bus powered for now. */
+ 		*(u16 *)req->buf = ci->remote_wakeup << 1;
+-		retval = 0;
+ 	} else if ((setup->bRequestType & USB_RECIP_MASK) \
+ 		   == USB_RECIP_ENDPOINT) {
+ 		dir = (le16_to_cpu(setup->wIndex) & USB_ENDPOINT_DIR_MASK) ?
+-- 
+1.8.0
+

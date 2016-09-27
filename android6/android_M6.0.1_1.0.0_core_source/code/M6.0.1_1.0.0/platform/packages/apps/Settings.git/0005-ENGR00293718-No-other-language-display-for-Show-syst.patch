@@ -1,0 +1,41 @@
+From 52232279fcc4aec213858f085cd693316748c532 Mon Sep 17 00:00:00 2001
+From: Huang Shan <huang.shan@freescale.com>
+Date: Tue, 29 Apr 2014 16:12:59 +0800
+Subject: [PATCH 05/12] ENGR00293718 No other language display for Show system
+ time when change to other UI language.
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+add items
+<string name="show_system_time">"显示系统时间"</string>
+<string name="show_system_time_summary">"屏幕叠加显示系统当前时间"</string>
+Settings/res/values-zh-rCN/strings.xml b/res/values-zh-rCN/strings.xml
+
+Signed-off-by: Huang Shan <huang.shan@freescale.com>
+
+Conflicts:
+	res/values-zh-rCN/strings.xml
+
+Conflicts:
+	res/values-zh-rCN/strings.xml
+---
+ res/values-zh-rCN/strings.xml | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/res/values-zh-rCN/strings.xml b/res/values-zh-rCN/strings.xml
+old mode 100644
+new mode 100755
+index 9524d24..56f7078
+--- a/res/values-zh-rCN/strings.xml
++++ b/res/values-zh-rCN/strings.xml
+@@ -2900,4 +2900,6 @@
+   </string-array>
+     <string name="picture_color_mode" msgid="4560755008730283695">"图片颜色模式"</string>
+     <string name="picture_color_mode_desc" msgid="1141891467675548590">"使用 sRGB"</string>
++    <string name="show_system_time">"显示系统时间"</string>
++    <string name="show_system_time_summary">"屏幕叠加显示系统当前时间"</string>
+ </resources>
+-- 
+1.8.0
+

@@ -1,0 +1,146 @@
+From ae74c6d930e98cbb4afabf09224f22234c0fa9ba Mon Sep 17 00:00:00 2001
+From: Haoran Wang <b50027@freescale.com>
+Date: Tue, 21 Apr 2015 21:39:59 +0800
+Subject: [PATCH 501/602] MA-6568 Enable BCM4339 Bluetooth on sabresd_7d
+
+Enable configuration macro.
+Enable permission for Bluetooth of Android.
+Add btcfg file to configure the Bluedroid.
+
+Signed-off-by: Haoran Wang <b50027@freescale.com>
+---
+ imx7/etc/ueventd.freescale.rc                      |  2 +-
+ imx7/sabresd_7d.mk                                 |  1 +
+ sabresd_7d/BoardConfig.mk                          |  4 ++-
+ sabresd_7d/bluetooth/bdroid_buildcfg.h             | 40 ++++++++++++++++++++++
+ .../frameworks/base/core/res/res/values/config.xml |  8 +++++
+ sabresd_7d/required_hardware.xml                   |  1 +
+ 6 files changed, 54 insertions(+), 2 deletions(-)
+ create mode 100644 sabresd_7d/bluetooth/bdroid_buildcfg.h
+
+diff --git a/imx7/etc/ueventd.freescale.rc b/imx7/etc/ueventd.freescale.rc
+index bb19df8..5007404 100644
+--- a/imx7/etc/ueventd.freescale.rc
++++ b/imx7/etc/ueventd.freescale.rc
+@@ -1,5 +1,5 @@
+ /dev/pmem_gpu             0660   system     graphics
+-/dev/ttymxc4              0660   bluetooth  bluetooth
++/dev/ttymxc5              0660   bluetooth  bluetooth
+ /dev/snd/*                0660   system     audio
+ /dev/ttyUSB*              0640   radio      radio
+ /dev/ttyACM*              0640   radio      radio
+diff --git a/imx7/sabresd_7d.mk b/imx7/sabresd_7d.mk
+index d7c5c76..c1c5f4f 100644
+--- a/imx7/sabresd_7d.mk
++++ b/imx7/sabresd_7d.mk
+@@ -60,4 +60,5 @@ PRODUCT_COPY_FILES += \
+ 	frameworks/native/data/etc/android.hardware.sensor.compass.xml:system/etc/permissions/android.hardware.sensor.compass.xml \
+ 	frameworks/native/data/etc/android.hardware.sensor.accelerometer.xml:system/etc/permissions/android.hardware.sensor.accelerometer.xml \
+ 	frameworks/native/data/etc/android.hardware.sensor.gyroscope.xml:system/etc/permissions/android.hardware.sensor.gyroscope.xml \
++	frameworks/native/data/etc/android.hardware.bluetooth_le.xml:system/etc/permissions/android.hardware.bluetooth_le.xml \
+ 	device/fsl/sabresd_7d/required_hardware.xml:system/etc/permissions/required_hardware.xml
+diff --git a/sabresd_7d/BoardConfig.mk b/sabresd_7d/BoardConfig.mk
+index 466b9da..a3fd7e0 100644
+--- a/sabresd_7d/BoardConfig.mk
++++ b/sabresd_7d/BoardConfig.mk
+@@ -73,7 +73,8 @@ TARGET_SELECT_KEY := 28
+ TARGET_USERIMAGES_SPARSE_EXT_DISABLED := false
+ DM_VERITY_RUNTIME_CONFIG := true
+ # atheros 3k BT
+-BOARD_USE_AR3K_BLUETOOTH := false
++BOARD_HAVE_BLUETOOTH_BCM := true
++BOARD_BLUETOOTH_BDROID_BUILDCFG_INCLUDE_DIR := device/fsl/sabresd_7d/bluetooth
+ 
+ USE_ION_ALLOCATOR := false
+ USE_GPU_ALLOCATOR := true
+@@ -107,4 +108,5 @@ BOARD_SEPOLICY_UNION := \
+        bootanim.te \
+        dnsmasq.te \
+        recovery.te \
++	   bluetooth.te \
+        device.te
+diff --git a/sabresd_7d/bluetooth/bdroid_buildcfg.h b/sabresd_7d/bluetooth/bdroid_buildcfg.h
+new file mode 100644
+index 0000000..9bc7d3a
+--- /dev/null
++++ b/sabresd_7d/bluetooth/bdroid_buildcfg.h
+@@ -0,0 +1,40 @@
++/*
++ * Copyright (C) 2012 The Android Open Source Project
++ *
++ * Licensed under the Apache License, Version 2.0 (the "License");
++ * you may not use this file except in compliance with the License.
++ * You may obtain a copy of the License at
++ *
++ *      http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++
++/* Copyright (C) 2015 Freescale Semiconductor, Inc. */
++
++#ifndef _BDROID_BUILDCFG_H
++#define _BDROID_BUILDCFG_H
++
++#define BTM_DEF_LOCAL_NAME "iMX7"
++
++// Networking, Capturing, Object Transfer
++// MAJOR CLASS: COMPUTER
++// MINOR CLASS: PALM SIZE PC/PDA
++#define BTA_DM_COD {0x1A, 0x01, 0x14}
++
++#define BTIF_HF_SERVICES (BTA_HSP_SERVICE_MASK)
++#define BTIF_HF_SERVICE_NAMES  { BTIF_HSAG_SERVICE_NAME }
++#define BTM_WBS_INCLUDED TRUE
++#define BTIF_HF_WBS_PREFERRED TRUE
++
++/*Enable A2dp Sink */
++#define BTA_AV_SINK_INCLUDED TRUE
++
++#define BLE_PRIVACY_SPT TRUE
++#define BLE_VND_INCLUDED TRUE
++
++#endif
+diff --git a/sabresd_7d/overlay/frameworks/base/core/res/res/values/config.xml b/sabresd_7d/overlay/frameworks/base/core/res/res/values/config.xml
+index 226b65d..6721aa8 100644
+--- a/sabresd_7d/overlay/frameworks/base/core/res/res/values/config.xml
++++ b/sabresd_7d/overlay/frameworks/base/core/res/res/values/config.xml
+@@ -35,6 +35,13 @@
+       <item>"wlan0"</item>
+     </string-array>
+ 
++    <!-- List of regexpressions describing the interface (if any) that represent tetherable
++               bluetooth interfaces.  If the device doesn't want to support tethering over bluetooth this
++         should be empty. -->
++    <string-array translatable="false" name="config_tether_bluetooth_regexs">
++        <item>"bt-pan"</item>
++    </string-array>
++
+     <!-- Regex array of allowable upstream ifaces for tethering - for example if you want
+          tethering on a new interface called "foo2" add <item>"foo\\d"</item> to the array -->
+     <add-resource type="string" name="config_tether_upstream_regexs">
+@@ -76,6 +83,7 @@
+         <item>"mobile_mms,2,0,3,60000,true"</item>
+         <item>"mobile_supl,3,0,3,60000,true"</item>
+         <item>"mobile_hipri,5,0,4,60000,true"</item>
++        <item>"bluetooth,7,7,2,-1,true"</item>
+         <item>"mobile_fota,10,0,3,60000,true"</item>
+         <item>"mobile_ims,11,0,3,60000,true"</item>
+         <item>"mobile_cbs,12,0,3,60000,true"</item>
+diff --git a/sabresd_7d/required_hardware.xml b/sabresd_7d/required_hardware.xml
+index 5cb012c..c03893b 100644
+--- a/sabresd_7d/required_hardware.xml
++++ b/sabresd_7d/required_hardware.xml
+@@ -24,4 +24,5 @@
+     <feature name="android.software.input_methods" />
+     <feature name="android.hardware.location" />
+     <feature name="android.hardware.location.network" />
++    <feature name="android.hardware.bluetooth" />
+ </permissions>
+-- 
+1.8.0
+

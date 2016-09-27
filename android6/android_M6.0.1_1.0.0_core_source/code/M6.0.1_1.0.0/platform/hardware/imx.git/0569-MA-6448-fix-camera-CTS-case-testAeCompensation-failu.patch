@@ -1,0 +1,37 @@
+From 563f8b523a648aa298e02d115e89fe7cb45f6651 Mon Sep 17 00:00:00 2001
+From: Liu Xiaowen <xiaowen.liu@freescale.com>
+Date: Tue, 24 Mar 2015 13:44:36 +0800
+Subject: [PATCH 569/635] MA-6448 fix camera CTS case testAeCompensation
+ failure on 6sx.
+
+fix android.hardware.camera2.cts.StillCaptureTest#testAeCompensation
+failure on 6sx.
+add exposure relevant parameters which is required by 5.0 CTS.
+
+Signed-off-by: Liu Xiaowen <xiaowen.liu@freescale.com>
+---
+ mx6/libcamera/CameraBridge.cpp | 8 +++++---
+ 1 file changed, 5 insertions(+), 3 deletions(-)
+
+diff --git a/mx6/libcamera/CameraBridge.cpp b/mx6/libcamera/CameraBridge.cpp
+index 074b6c6..8992675 100644
+--- a/mx6/libcamera/CameraBridge.cpp
++++ b/mx6/libcamera/CameraBridge.cpp
+@@ -241,9 +241,11 @@ status_t CameraBridge::initParameters(CameraParameters& params)
+     params.set(CameraParameters::KEY_HORIZONTAL_VIEW_ANGLE, "54.8");
+     params.set(CameraParameters::KEY_VERTICAL_VIEW_ANGLE, "42.5");
+     params.set(CameraParameters::KEY_EXPOSURE_COMPENSATION, "0");
+-    params.set(CameraParameters::KEY_MAX_EXPOSURE_COMPENSATION, "0");
+-    params.set(CameraParameters::KEY_MIN_EXPOSURE_COMPENSATION, "0");
+-    params.set(CameraParameters::KEY_EXPOSURE_COMPENSATION_STEP, "0.0");
++    params.set(CameraParameters::KEY_MAX_EXPOSURE_COMPENSATION, "3");
++    params.set(CameraParameters::KEY_MIN_EXPOSURE_COMPENSATION, "-3");
++    params.set(CameraParameters::KEY_EXPOSURE_COMPENSATION_STEP, "1.0");
++    params.set(CameraParameters::KEY_AUTO_EXPOSURE_LOCK, "false");
++    params.set(CameraParameters::KEY_AUTO_EXPOSURE_LOCK_SUPPORTED, "true");
+ 
+     memset(tmpBuffer, '\0', sizeof(*tmpBuffer));
+     strncat((char *)tmpBuffer,
+-- 
+1.8.0
+

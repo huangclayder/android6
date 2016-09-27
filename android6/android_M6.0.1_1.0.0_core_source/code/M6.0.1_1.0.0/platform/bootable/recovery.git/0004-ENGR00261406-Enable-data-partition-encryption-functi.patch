@@ -1,0 +1,78 @@
+From 138d7d51a1d8cc9f90a777320e136df465c6b734 Mon Sep 17 00:00:00 2001
+From: "guoyin.chen" <guoyin.chen@freescale.com>
+Date: Mon, 5 Aug 2013 12:51:42 +0800
+Subject: [PATCH 04/21] ENGR00261406 Enable data partition encryption function
+ for android
+
+Make reserved space(32k) for data partition encryption function
+
+Signed-off-by: guoyin.chen <guoyin.chen@freescale.com>
+---
+ roots.cpp | 39 +++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 39 insertions(+)
+
+diff --git a/roots.cpp b/roots.cpp
+index 16885da..c709fed 100644
+--- a/roots.cpp
++++ b/roots.cpp
+@@ -24,6 +24,10 @@
+ #include <ctype.h>
+ #include <fcntl.h>
+ 
++#include <fcntl.h>
++#include <sys/ioctl.h>
++#include <linux/fs.h>
++
+ #include <fs_mgr.h>
+ #include "mtdutils/mtdutils.h"
+ #include "mtdutils/mounts.h"
+@@ -41,11 +45,46 @@ static struct fstab *fstab = NULL;
+ #include "ubi.h"
+ #endif
+ 
++#define KEY_IN_FOOTER  "footer"
++#define CRYPT_FOOTER_OFFSET (0x8000)
++
+ static int num_volumes = 0;
+ static Volume* device_volumes = NULL;
+ 
+ extern struct selabel_handle *sehandle;
+ 
++static const char* PERSISTENT_PATH = "/persistent";
++static int get_block_device_size(const char *filename, long long *block_size)
++{
++    int fd;
++    struct stat buf;
++    int ret;
++
++    *block_size = 0;
++    fd = open(filename, O_WRONLY | O_CREAT | O_TRUNC, 0644);
++    if (fd < 0) {
++        return -1;
++    }
++
++    ret = fstat(fd, &buf);
++    if (ret)
++        return -1;
++
++    if (S_ISBLK(buf.st_mode)) {
++        ret = ioctl(fd, BLKGETSIZE64, block_size);
++        if (ret)
++            return -1;
++    }
++
++    if (*block_size < 0) {
++        LOGE("Computed filesystem size less than 0");
++        *block_size = 0;
++    }
++
++    close(fd);
++    return 0;
++}
++
+ void load_volume_table()
+ {
+     int i;
+-- 
+1.8.0
+

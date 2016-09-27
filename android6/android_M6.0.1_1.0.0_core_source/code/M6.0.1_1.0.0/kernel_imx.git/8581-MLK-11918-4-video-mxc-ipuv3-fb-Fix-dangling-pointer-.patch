@@ -1,0 +1,38 @@
+From cf633d3ff7d340b148a009f3baf5816d617a0af5 Mon Sep 17 00:00:00 2001
+From: Liu Ying <Ying.Liu@freescale.com>
+Date: Mon, 30 Nov 2015 11:46:00 +0800
+Subject: [PATCH] MLK-11918-4 video: mxc ipuv3 fb: Fix dangling pointer
+ dereference in check_var
+
+The function fbi_to_pixfmt() could access the pointer fbi->device provided
+by it's input parameter fbi, so let's make sure the pointer isn't dangling.
+
+This patch fixes the following issue reported by Coverity:
+Uninitialized pointer read (UNINIT)
+uninit_use_in_call: Using uninitialized value tmp_fbi.device when calling
+fbi_to_pixfmt.
+		switch (fbi_to_pixfmt(&tmp_fbi, true)) {
+		case IPU_PIX_FMT_YUV420P2:
+		case IPU_PIX_FMT_YVU420P:
+
+Signed-off-by: Liu Ying <Ying.Liu@freescale.com>
+(cherry picked from commit c24a5dcbcb8d2152a23fb5f60377716d9d727763)
+---
+ drivers/video/mxc/mxc_ipuv3_fb.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/drivers/video/mxc/mxc_ipuv3_fb.c b/drivers/video/mxc/mxc_ipuv3_fb.c
+index 6fe8d0f..38ea948 100644
+--- a/drivers/video/mxc/mxc_ipuv3_fb.c
++++ b/drivers/video/mxc/mxc_ipuv3_fb.c
+@@ -1647,6 +1647,7 @@ static int mxcfb_check_var(struct fb_var_screeninfo *var, struct fb_info *info)
+ 		fr_h = var->yres_virtual;
+ 	}
+ 
++	tmp_fbi.device = info->device;
+ 	tmp_fbi.var = *var;
+ 	tmp_fbi.par = mxc_fbi;
+ 	if (ipu_pixel_format_is_gpu_tile(var->nonstd)) {
+-- 
+1.8.0
+

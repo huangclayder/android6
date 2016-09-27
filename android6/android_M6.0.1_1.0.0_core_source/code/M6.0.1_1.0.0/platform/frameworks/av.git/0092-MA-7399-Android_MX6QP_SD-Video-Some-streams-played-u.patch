@@ -1,0 +1,66 @@
+From 7177b23a29b10aea12208d5cddeb60b2036a91b2 Mon Sep 17 00:00:00 2001
+From: fang hui <b31070@freescale.com>
+Date: Thu, 31 Dec 2015 17:02:00 +0800
+Subject: [PATCH 92/95] MA-7399 - [Android_MX6QP_SD]Video:Some streams played
+ unfluently if
+
+connect to audio receiver, 100%
+
+The issue occues when passthrough is not checked in AudioRoute.apk
+
+44100 pcm sent to hdmi, but comsumed by 48000.
+The video will jump frames to catch up audio.
+
+The framework will auto check direct output profile.
+If has, then use AUDIO_OUTPUT_FLAG_DIRECT.
+
+So when passthrough is not checked, the OMX will decode ac3 to 44.1k pcm.
+But the audiopolicy use direct output as 48K.
+
+In audiopolicy, when check direct output,
+if hdmi, also assure that the application enable direct output.
+
+Signed-off-by: fang hui <b31070@freescale.com>
+---
+ services/audiopolicy/managerdefault/AudioPolicyManager.cpp | 12 +++++++++++-
+ 1 file changed, 11 insertions(+), 1 deletion(-)
+
+diff --git a/services/audiopolicy/managerdefault/AudioPolicyManager.cpp b/services/audiopolicy/managerdefault/AudioPolicyManager.cpp
+index 5ff1c0b..26df336 100644
+--- a/services/audiopolicy/managerdefault/AudioPolicyManager.cpp
++++ b/services/audiopolicy/managerdefault/AudioPolicyManager.cpp
+@@ -1,6 +1,6 @@
+ /*
+  * Copyright (C) 2009 The Android Open Source Project
+- *
++ * Copyright (C) 2015 Freescale Semiconductor, Inc.
+  * Licensed under the Apache License, Version 2.0 (the "License");
+  * you may not use this file except in compliance with the License.
+  * You may obtain a copy of the License at
+@@ -609,6 +609,8 @@ sp<IOProfile> AudioPolicyManager::getProfileForDirectOutput(
+     // if explicitly requested
+     static const uint32_t kRelevantFlags =
+             (AUDIO_OUTPUT_FLAG_HW_AV_SYNC | AUDIO_OUTPUT_FLAG_COMPRESS_OFFLOAD);
++
++    audio_output_flags_t saveFlag = flags;
+     flags =
+         (audio_output_flags_t)((flags & kRelevantFlags) | AUDIO_OUTPUT_FLAG_DIRECT);
+ 
+@@ -627,6 +629,14 @@ sp<IOProfile> AudioPolicyManager::getProfileForDirectOutput(
+                     flags)) {
+                 continue;
+             }
++
++            // if hdmi, also assure the application enable direct output
++            if(((saveFlag & AUDIO_OUTPUT_FLAG_DIRECT) == 0) &&
++               (strncmp(curProfile->mName.string(), "hdmi", 4) == 0)) {
++               ALOGI("Application not enable direct output");
++               continue;
++            }
++
+             // reject profiles not corresponding to a device currently available
+             if ((mAvailableOutputDevices.types() & curProfile->mSupportedDevices.types()) == 0) {
+                 continue;
+-- 
+1.8.0
+

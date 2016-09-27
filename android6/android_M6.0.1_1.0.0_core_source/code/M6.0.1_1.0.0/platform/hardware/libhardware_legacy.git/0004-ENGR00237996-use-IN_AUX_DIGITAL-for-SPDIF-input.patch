@@ -1,0 +1,39 @@
+From 97d1900775c71b9ea83231f66fb945f399582a92 Mon Sep 17 00:00:00 2001
+From: b02247 <b02247@freescale.com>
+Date: Thu, 27 Dec 2012 15:03:30 +0800
+Subject: [PATCH 04/25] ENGR00237996 use IN_AUX_DIGITAL for SPDIF input
+
+use IN_AUX_DIGITAL for SPDIF input
+
+Signed-off-by: b02247 <b02247@freescale.com>
+---
+ audio/AudioPolicyManagerBase.cpp | 6 +++++-
+ 1 file changed, 5 insertions(+), 1 deletion(-)
+
+diff --git a/audio/AudioPolicyManagerBase.cpp b/audio/AudioPolicyManagerBase.cpp
+index 53d0038..8cf7523 100644
+--- a/audio/AudioPolicyManagerBase.cpp
++++ b/audio/AudioPolicyManagerBase.cpp
+@@ -2945,6 +2945,8 @@ audio_devices_t AudioPolicyManagerBase::getDeviceForInputSource(int inputSource)
+             device = AUDIO_DEVICE_IN_BLUETOOTH_SCO_HEADSET;
+         } else if (mAvailableInputDevices & AUDIO_DEVICE_IN_WIRED_HEADSET) {
+             device = AUDIO_DEVICE_IN_WIRED_HEADSET;
++        } else if (mAvailableInputDevices & AUDIO_DEVICE_IN_AUX_DIGITAL) {
++            device = AUDIO_DEVICE_IN_AUX_DIGITAL;
+         } else if (mAvailableInputDevices & AUDIO_DEVICE_IN_USB_DEVICE) {
+             device = AUDIO_DEVICE_IN_USB_DEVICE;
+         } else if (mAvailableInputDevices & AUDIO_DEVICE_IN_BUILTIN_MIC) {
+@@ -2952,7 +2954,9 @@ audio_devices_t AudioPolicyManagerBase::getDeviceForInputSource(int inputSource)
+         }
+         break;
+     case AUDIO_SOURCE_CAMCORDER:
+-        if (mAvailableInputDevices & AUDIO_DEVICE_IN_USB_DEVICE) {
++        if (mAvailableInputDevices & AUDIO_DEVICE_IN_AUX_DIGITAL) {
++            device = AUDIO_DEVICE_IN_AUX_DIGITAL;
++        } else if (mAvailableInputDevices & AUDIO_DEVICE_IN_USB_DEVICE) {
+             device = AUDIO_DEVICE_IN_USB_DEVICE;
+         } else if (mAvailableInputDevices & AUDIO_DEVICE_IN_BACK_MIC) {
+             device = AUDIO_DEVICE_IN_BACK_MIC;
+-- 
+1.8.0
+

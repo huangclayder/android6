@@ -1,0 +1,110 @@
+From cf4346d9a5664f5760efe01592d3c36e97afdffd Mon Sep 17 00:00:00 2001
+From: "xuegang.liu" <xuegang.liu@freescale.com>
+Date: Wed, 3 Jun 2015 11:28:55 +0800
+Subject: [PATCH 12/22] MA-6767 support separate init.rc configure according
+ to hardware soc
+
+Add a mechanism to allow separate init.rc configure according to
+hardware soc. Read hardware soc_id and export it to prop ro.soc,
+and ro.soc can be overwrite by boot command androidboot.soc.
+
+Signed-off-by: Richard Liu <r66033@freescale.com>
+
+Conflicts:
+	init/init.cpp
+	init/util.h
+---
+ init/init.cpp | 10 ++++++++++
+ init/util.cpp | 21 +++++++++++++++++++++
+ init/util.h   |  1 +
+ 3 files changed, 32 insertions(+)
+
+diff --git a/init/init.cpp b/init/init.cpp
+index 93fe944..5c6877e 100644
+--- a/init/init.cpp
++++ b/init/init.cpp
+@@ -69,6 +69,7 @@ struct selabel_handle *sehandle_prop;
+ 
+ static int property_triggers_enabled = 0;
+ 
++static char soc[32];
+ static char qemu[32];
+ 
+ static struct action *cur_action = NULL;
+@@ -794,6 +795,8 @@ static void import_kernel_nv(char *name, bool for_emulator)
+ }
+ 
+ static void export_kernel_boot_props() {
++    char tmp[PROP_VALUE_MAX];
++    int ret;
+     struct {
+         const char *src_prop;
+         const char *dst_prop;
+@@ -811,6 +814,12 @@ static void export_kernel_boot_props() {
+         int rc = property_get(prop_map[i].src_prop, value);
+         property_set(prop_map[i].dst_prop, (rc > 0) ? value : prop_map[i].default_value);
+     }
++    /* if this was given on kernel command line, override what we read
++     * before (e.g. from /sys/devices/soc0/soc_id), if anything */
++    ret = property_get("ro.boot.soc", tmp);
++    if (ret)
++        strlcpy(soc, tmp, sizeof(soc));
++    property_set("ro.soc", soc);
+ }
+ 
+ static void process_kernel_dt(void)
+@@ -1022,6 +1031,7 @@ int main(int argc, char** argv) {
+     klog_set_level(KLOG_NOTICE_LEVEL);
+ 
+     NOTICE("init%s started!\n", is_first_stage ? "" : " second stage");
++    get_soc_name(soc);
+ 
+     if (!is_first_stage) {
+         // Indicate that booting is in progress to background fw loaders, etc.
+diff --git a/init/util.cpp b/init/util.cpp
+index a5392c6..e12a675 100644
+--- a/init/util.cpp
++++ b/init/util.cpp
+@@ -430,6 +430,27 @@ void import_kernel_cmdline(bool in_qemu, std::function<void(char*,bool)> import_
+     }
+ }
+ 
++void get_soc_name(char *soc)
++{
++    const char *socinfo = "/sys/devices/soc0/soc_id";
++    FILE *fp;
++
++    fp = fopen(socinfo, "r");
++    if (fp == NULL) {
++        ERROR("Failed reading %s\n", socinfo);
++        return;
++    }
++
++    if (fscanf(fp, "%s", soc) != 1) {
++        ERROR("fscanf fail\n");
++        fclose(fp);
++        return;
++     }
++
++     fclose(fp);
++}
++
++
+ int make_dir(const char *path, mode_t mode)
+ {
+     int rc;
+diff --git a/init/util.h b/init/util.h
+index 09d64cd..65cf569 100644
+--- a/init/util.h
++++ b/init/util.h
+@@ -59,6 +59,7 @@ void remove_link(const char *oldpath, const char *newpath);
+ int wait_for_file(const char *filename, int timeout);
+ void open_devnull_stdio(void);
+ void import_kernel_cmdline(bool in_qemu, std::function<void(char*,bool)>);
++void get_soc_name(char *soc);
+ int make_dir(const char *path, mode_t mode);
+ int restorecon(const char *pathname);
+ int restorecon_recursive(const char *pathname);
+-- 
+1.8.0
+

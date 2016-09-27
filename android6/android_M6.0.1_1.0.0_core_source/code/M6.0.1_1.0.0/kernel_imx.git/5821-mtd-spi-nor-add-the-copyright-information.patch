@@ -1,0 +1,31 @@
+From e1deeb4e42926ebfe34d650b1bd2c085d07ad685 Mon Sep 17 00:00:00 2001
+From: Huang Shijie <b32955@freescale.com>
+Date: Thu, 10 Apr 2014 16:27:28 +0800
+Subject: [PATCH] mtd: spi-nor: add the copyright information
+
+Add the copyright information for spi-nor.c and spi-nor.h.
+
+Signed-off-by: Huang Shijie <b32955@freescale.com>
+Signed-off-by: Brian Norris <computersforpeace@gmail.com>
+---
+ drivers/mtd/spi-nor/spi-nor.c | 6 +++++-
+ 1 file changed, 5 insertions(+), 1 deletion(-)
+
+diff --git a/drivers/mtd/spi-nor/spi-nor.c b/drivers/mtd/spi-nor/spi-nor.c
+index 5cd86eb..6c64ab9 100644
+--- a/drivers/mtd/spi-nor/spi-nor.c
++++ b/drivers/mtd/spi-nor/spi-nor.c
+@@ -1,5 +1,9 @@
+ /*
+- * Cloned most of the code from the m25p80.c
++ * Based on m25p80.c, by Mike Lavender (mike@steroidmicros.com), with
++ * influence from lart.c (Abraham Van Der Merwe) and mtd_dataflash.c
++ *
++ * Copyright (C) 2005, Intec Automation Inc.
++ * Copyright (C) 2014, Freescale Semiconductor, Inc.
+  *
+  * This code is free software; you can redistribute it and/or modify
+  * it under the terms of the GNU General Public License version 2 as
+-- 
+1.8.0
+

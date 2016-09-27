@@ -1,0 +1,104 @@
+From 4f953a1e6a6941ef4109f4a0ea31f2a61c6df863 Mon Sep 17 00:00:00 2001
+From: Pratyush Anand <pratyush.anand@st.com>
+Date: Fri, 4 Jul 2014 17:01:25 +0300
+Subject: [PATCH] xhci: Platform: Set xhci lpm support quirk based on platform
+ data
+
+If an xhci platform supports USB3 LPM capability then enable
+XHCI_LPM_SUPPORT quirk flag.
+
+Signed-off-by: Pratyush Anand <pratyush.anand@st.com>
+Signed-off-by: Mathias Nyman <mathias.nyman@linux.intel.com>
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+(cherry picked from commit 20f6fdd01c2c0de9cc1109083222edded24c5350)
+Signed-off-by: Mark Brown <broonie@kernel.org>
+
+Conflicts:
+	Documentation/devicetree/bindings/usb/usb-xhci.txt
+---
+ Documentation/devicetree/bindings/usb/usb-xhci.txt |  3 +++
+ drivers/usb/host/xhci-plat.c                       |  6 +++++
+ include/linux/usb/xhci_pdriver.h                   | 27 ++++++++++++++++++++++
+ 3 files changed, 36 insertions(+)
+
+diff --git a/Documentation/devicetree/bindings/usb/usb-xhci.txt b/Documentation/devicetree/bindings/usb/usb-xhci.txt
+index 5752df0..98424d5 100644
+--- a/Documentation/devicetree/bindings/usb/usb-xhci.txt
++++ b/Documentation/devicetree/bindings/usb/usb-xhci.txt
+@@ -6,6 +6,9 @@ Required properties:
+     register set for the device.
+   - interrupts: one XHCI interrupt should be described here.
+ 
++Optional properties:
++  - usb3-lpm-capable: determines if platform is USB3 LPM capable
++
+ Example:
+ 	usb@f0931000 {
+ 		compatible = "xhci-platform";
+diff --git a/drivers/usb/host/xhci-plat.c b/drivers/usb/host/xhci-plat.c
+index ab1b6d8..874dede 100644
+--- a/drivers/usb/host/xhci-plat.c
++++ b/drivers/usb/host/xhci-plat.c
+@@ -16,6 +16,7 @@
+ #include <linux/of.h>
+ #include <linux/platform_device.h>
+ #include <linux/slab.h>
++#include <linux/usb/xhci_pdriver.h>
+ 
+ #include "xhci.h"
+ 
+@@ -87,6 +88,8 @@ static const struct hc_driver xhci_plat_xhci_driver = {
+ 
+ static int xhci_plat_probe(struct platform_device *pdev)
+ {
++	struct device_node	*node = pdev->dev.of_node;
++	struct usb_xhci_pdata	*pdata = dev_get_platdata(&pdev->dev);
+ 	const struct hc_driver	*driver;
+ 	struct xhci_hcd		*xhci;
+ 	struct resource         *res;
+@@ -152,6 +155,9 @@ static int xhci_plat_probe(struct platform_device *pdev)
+ 		goto dealloc_usb2_hcd;
+ 	}
+ 
++	if ((node && of_property_read_bool(node, "usb3-lpm-capable")) ||
++			(pdata && pdata->usb3_lpm_capable))
++		xhci->quirks |= XHCI_LPM_SUPPORT;
+ 	/*
+ 	 * Set the xHCI pointer before xhci_plat_setup() (aka hcd_driver.reset)
+ 	 * is called by usb_add_hcd().
+diff --git a/include/linux/usb/xhci_pdriver.h b/include/linux/usb/xhci_pdriver.h
+new file mode 100644
+index 0000000..376654b
+--- /dev/null
++++ b/include/linux/usb/xhci_pdriver.h
+@@ -0,0 +1,27 @@
++/*
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License version 2 as
++ * published by the Free Software Foundation.
++ *
++ * This program is distributed in the hope that it will be useful, but
++ * WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
++ * or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
++ * for more details.
++ *
++ */
++
++#ifndef __USB_CORE_XHCI_PDRIVER_H
++#define __USB_CORE_XHCI_PDRIVER_H
++
++/**
++ * struct usb_xhci_pdata - platform_data for generic xhci platform driver
++ *
++ * @usb3_lpm_capable:	determines if this xhci platform supports USB3
++ *			LPM capability
++ *
++ */
++struct usb_xhci_pdata {
++	unsigned	usb3_lpm_capable:1;
++};
++
++#endif /* __USB_CORE_XHCI_PDRIVER_H */
+-- 
+1.8.0
+

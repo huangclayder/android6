@@ -1,0 +1,71 @@
+From a96f093df30e848e7200beb24e9ae411dc8cff6a Mon Sep 17 00:00:00 2001
+From: Marc Zyngier <marc.zyngier@arm.com>
+Date: Tue, 8 Jul 2014 12:09:03 +0100
+Subject: [PATCH] arm/arm64: KVM: vgic: kill VGIC_MAX_CPUS
+
+We now have the information about the number of CPU interfaces in
+the distributor itself. Let's get rid of VGIC_MAX_CPUS, and just
+rely on KVM_MAX_VCPUS where we don't have the choice. Yet.
+
+Reviewed-by: Christoffer Dall <christoffer.dall@linaro.org>
+Signed-off-by: Marc Zyngier <marc.zyngier@arm.com>
+(cherry picked from commit fc675e355e705a046df7b635d3f3330c0ad94569)
+Signed-off-by: Christoffer Dall <christoffer.dall@linaro.org>
+---
+ include/kvm/arm_vgic.h | 3 +--
+ virt/kvm/arm/vgic.c    | 6 +++---
+ 2 files changed, 4 insertions(+), 5 deletions(-)
+
+diff --git a/include/kvm/arm_vgic.h b/include/kvm/arm_vgic.h
+index b2f9936..3b73d78 100644
+--- a/include/kvm/arm_vgic.h
++++ b/include/kvm/arm_vgic.h
+@@ -29,13 +29,12 @@
+ #define VGIC_NR_SGIS		16
+ #define VGIC_NR_PPIS		16
+ #define VGIC_NR_PRIVATE_IRQS	(VGIC_NR_SGIS + VGIC_NR_PPIS)
+-#define VGIC_MAX_CPUS		KVM_MAX_VCPUS
+ 
+ #define VGIC_V2_MAX_LRS		(1 << 6)
+ #define VGIC_V3_MAX_LRS		16
+ 
+ /* Sanity checks... */
+-#if (VGIC_MAX_CPUS > 8)
++#if (KVM_MAX_VCPUS > 8)
+ #error	Invalid number of CPU interfaces
+ #endif
+ 
+diff --git a/virt/kvm/arm/vgic.c b/virt/kvm/arm/vgic.c
+index a0d9dbf..296ee83 100644
+--- a/virt/kvm/arm/vgic.c
++++ b/virt/kvm/arm/vgic.c
+@@ -1297,7 +1297,7 @@ static bool vgic_queue_sgi(struct kvm_vcpu *vcpu, int irq)
+ 
+ 	sources = *vgic_get_sgi_sources(dist, vcpu_id, irq);
+ 
+-	for_each_set_bit(c, &sources, VGIC_MAX_CPUS) {
++	for_each_set_bit(c, &sources, dist->nr_cpus) {
+ 		if (vgic_queue_irq(vcpu, c, irq))
+ 			clear_bit(c, &sources);
+ 	}
+@@ -1700,7 +1700,7 @@ int kvm_vgic_vcpu_init(struct kvm_vcpu *vcpu)
+ 	struct vgic_dist *dist = &vcpu->kvm->arch.vgic;
+ 	int i;
+ 
+-	if (vcpu->vcpu_id >= VGIC_MAX_CPUS)
++	if (vcpu->vcpu_id >= dist->nr_cpus)
+ 		return -EBUSY;
+ 
+ 	for (i = 0; i < VGIC_NR_IRQS; i++) {
+@@ -1767,7 +1767,7 @@ static int vgic_init_maps(struct kvm *kvm)
+ 	int nr_cpus, nr_irqs;
+ 	int ret, i;
+ 
+-	nr_cpus = dist->nr_cpus = VGIC_MAX_CPUS;
++	nr_cpus = dist->nr_cpus = KVM_MAX_VCPUS;
+ 	nr_irqs = dist->nr_irqs = VGIC_NR_IRQS;
+ 
+ 	ret  = vgic_init_bitmap(&dist->irq_enabled, nr_cpus, nr_irqs);
+-- 
+1.8.0
+

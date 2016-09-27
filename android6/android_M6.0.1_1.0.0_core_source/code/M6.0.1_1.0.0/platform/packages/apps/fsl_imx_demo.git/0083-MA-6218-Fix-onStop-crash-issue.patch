@@ -1,0 +1,35 @@
+From 0aed6b86cd8d16c835c4db147769addc08991286 Mon Sep 17 00:00:00 2001
+From: Haoran Wang <b50027@freescale.com>
+Date: Wed, 4 Feb 2015 18:48:45 +0800
+Subject: [PATCH 083/115] MA-6218 Fix onStop crash issue
+
+Before playback task was established check null pointer
+onStop.
+
+Signed-off-by: Haoran Wang <b50027@freescale.com>
+---
+ A2dpSinkApp/java/com/freescale/a2dpsinkapp/MainActivity.java | 8 +++++++-
+ 1 file changed, 7 insertions(+), 1 deletion(-)
+
+diff --git a/A2dpSinkApp/java/com/freescale/a2dpsinkapp/MainActivity.java b/A2dpSinkApp/java/com/freescale/a2dpsinkapp/MainActivity.java
+index f1161f1..17a8432 100755
+--- a/A2dpSinkApp/java/com/freescale/a2dpsinkapp/MainActivity.java
++++ b/A2dpSinkApp/java/com/freescale/a2dpsinkapp/MainActivity.java
+@@ -347,7 +347,13 @@ public class MainActivity extends Activity {
+             }
+             mRecord.release();
+         }
+-        mPlayTask.cancel(true);
++        if (mPlayTask != null) {
++            try {
++                mPlayTask.cancel(true);
++            } catch (Exception err) {
++                Log.e(TAG, "onStop cannot cancel task because" + err);
++            }
++        }
+         mTrack = null;
+         mRecord = null;
+     }
+-- 
+1.8.0
+

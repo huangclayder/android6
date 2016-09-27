@@ -1,0 +1,71 @@
+From f3f49d71c825067c803e5f7fd9e50e52ee89c428 Mon Sep 17 00:00:00 2001
+From: "Ye.Li" <B37916@freescale.com>
+Date: Fri, 22 May 2015 10:40:02 +0800
+Subject: [PATCH] MLK-10955 imx: mx7d arm2: Add NAND support for mx7d 19x19
+ lpddr3 arm2 board
+
+Add the default TSOP NAND support and build target.
+
+New build target for nand boot: mx7d_19x19_lpddr3_arm2_nand_config
+
+Signed-off-by: Ye.Li <B37916@freescale.com>
+---
+ configs/mx7d_19x19_lpddr3_arm2_nand_defconfig |  7 +++++++
+ include/configs/mx7d_arm2.h                   | 21 +++++++++++++++++++++
+ 2 files changed, 28 insertions(+)
+
+diff --git a/configs/mx7d_19x19_lpddr3_arm2_nand_defconfig b/configs/mx7d_19x19_lpddr3_arm2_nand_defconfig
+new file mode 100644
+index 0000000..2c6587e
+--- /dev/null
++++ b/configs/mx7d_19x19_lpddr3_arm2_nand_defconfig
+@@ -0,0 +1,7 @@
++CONFIG_SYS_EXTRA_OPTIONS="IMX_CONFIG=board/freescale/mx7d_19x19_lpddr3_arm2/imximage.cfg,MX7D,SYS_BOOT_NAND,DEFAULT_FDT_FILE=\"imx7d-19x19-lpddr3-arm2.dtb\""
++CONFIG_ARM=y
++CONFIG_TARGET_MX7D_19X19_LPDDR3_ARM2=y
++CONFIG_SYS_MALLOC_F=y
++CONFIG_SYS_MALLOC_F_LEN=0x400
++CONFIG_DM=y
++CONFIG_DM_THERMAL=y
+diff --git a/include/configs/mx7d_arm2.h b/include/configs/mx7d_arm2.h
+index 3121dd8..c19c751 100644
+--- a/include/configs/mx7d_arm2.h
++++ b/include/configs/mx7d_arm2.h
+@@ -288,6 +288,22 @@
+ #define CONFIG_SYS_FLASH_EMPTY_INFO
+ #endif
+ 
++#ifdef CONFIG_SYS_USE_NAND
++#define CONFIG_CMD_NAND
++#define CONFIG_CMD_NAND_TRIMFFS
++
++/* NAND stuff */
++#define CONFIG_NAND_MXS
++#define CONFIG_SYS_MAX_NAND_DEVICE	1
++#define CONFIG_SYS_NAND_BASE		0x40000000
++#define CONFIG_SYS_NAND_5_ADDR_CYCLE
++#define CONFIG_SYS_NAND_ONFI_DETECTION
++
++/* DMA stuff, needed for GPMI/MXS NAND support */
++#define CONFIG_APBH_DMA
++#define CONFIG_APBH_DMA_BURST
++#define CONFIG_APBH_DMA_BURST8
++#endif
+ 
+ #if defined(CONFIG_ENV_IS_IN_MMC)
+ #define CONFIG_ENV_OFFSET		(8 * SZ_64K)
+@@ -303,6 +319,11 @@
+ #define CONFIG_ENV_SIZE			CONFIG_SYS_FLASH_SECT_SIZE
+ #define CONFIG_ENV_SECT_SIZE		CONFIG_SYS_FLASH_SECT_SIZE
+ #define CONFIG_ENV_OFFSET		(4 * CONFIG_SYS_FLASH_SECT_SIZE)
++#elif defined(CONFIG_ENV_IS_IN_NAND)
++#undef CONFIG_ENV_SIZE
++#define CONFIG_ENV_OFFSET		(8 << 20)
++#define CONFIG_ENV_SECT_SIZE		(128 << 10)
++#define CONFIG_ENV_SIZE			CONFIG_ENV_SECT_SIZE
+ #endif
+ 
+ #define CONFIG_OF_LIBFDT
+-- 
+1.8.0
+

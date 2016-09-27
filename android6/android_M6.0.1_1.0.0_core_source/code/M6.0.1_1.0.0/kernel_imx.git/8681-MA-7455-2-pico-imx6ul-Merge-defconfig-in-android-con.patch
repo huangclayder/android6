@@ -1,0 +1,37 @@
+From 42f8980368fef8195cb3be24cc3d415e5da3ddfd Mon Sep 17 00:00:00 2001
+From: Haoran Wang <Haoran.Wang@freescale.com>
+Date: Tue, 5 Jan 2016 00:20:47 +0800
+Subject: [PATCH] MA-7455-2 pico-imx6ul: Merge defconfig in android config
+
+Merge defconfig from picosom-imx6ul_defconfig to
+imx_v7_android_defconfig.
+
+Change-Id: I77630935ef52655f9be4c170c47ae4c7ccb3232b
+Signed-off-by: Haoran Wang <Haoran.Wang@freescale.com>
+---
+ arch/arm/configs/imx_v7_android_defconfig | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/arch/arm/configs/imx_v7_android_defconfig b/arch/arm/configs/imx_v7_android_defconfig
+index dff9adb..55a1ba7 100644
+--- a/arch/arm/configs/imx_v7_android_defconfig
++++ b/arch/arm/configs/imx_v7_android_defconfig
+@@ -529,6 +529,7 @@ CONFIG_LEDS_TRIGGER_GPIO=y
+ CONFIG_SWITCH=y
+ CONFIG_RTC_CLASS=y
+ CONFIG_RTC_INTF_DEV_UIE_EMUL=y
++CONFIG_RTC_DRV_DS1307=y
+ CONFIG_RTC_DRV_MC13XXX=y
+ CONFIG_RTC_DRV_MXC=y
+ CONFIG_RTC_DRV_SNVS=y
+@@ -550,6 +551,7 @@ CONFIG_ION=y
+ CONFIG_ION_MXC=y
+ # CONFIG_IOMMU_SUPPORT is not set
+ CONFIG_IIO=y
++CONFIG_TI_ADC081C=y
+ CONFIG_VF610_ADC=y
+ CONFIG_AD2802A=y
+ CONFIG_PWM=y
+-- 
+1.8.0
+

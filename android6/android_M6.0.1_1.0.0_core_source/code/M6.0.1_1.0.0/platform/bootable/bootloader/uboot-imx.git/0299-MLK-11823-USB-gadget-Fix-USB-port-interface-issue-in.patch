@@ -1,0 +1,36 @@
+From f78cbee0375dcb81b10bac2e0dcd254d0551baa9 Mon Sep 17 00:00:00 2001
+From: "Ye.Li" <B37916@freescale.com>
+Date: Wed, 4 Nov 2015 16:40:36 +0800
+Subject: [PATCH] MLK-11823 USB:gadget Fix USB port interface issue in ci_udc
+ driver
+
+The ci_udc driver tries to use the ULPI interface for the USB OTG controller,
+but this type is not supported by all i.MX6 and i.MX7 platforms. When setting to
+ULPI, other platforms except the 6UL refuse the settings and keep default value.
+But on 6UL, the PTW bit of PORTSC1 register which is documented as RO can change.
+This cause the interface setting problem with USB PHY.
+
+Fix the issue by removing the ULPI setting for i.MX6 and i.MX7. All will use default
+UTMI setting.
+
+Signed-off-by: Ye.Li <B37916@freescale.com>
+---
+ drivers/usb/gadget/ci_udc.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/usb/gadget/ci_udc.c b/drivers/usb/gadget/ci_udc.c
+index 1dd8b11..70ac819 100644
+--- a/drivers/usb/gadget/ci_udc.c
++++ b/drivers/usb/gadget/ci_udc.c
+@@ -888,7 +888,7 @@ int usb_gadget_register_driver(struct usb_gadget_driver *driver)
+ 		return ret;
+ 
+ 	ret = ci_udc_probe();
+-#if defined(CONFIG_USB_EHCI_MX6) || defined(CONFIG_USB_EHCI_MXS) || defined(CONFIG_USB_EHCI_MX7)
++#if defined(CONFIG_USB_EHCI_MXS)
+ 	/*
+ 	 * FIXME: usb_lowlevel_init()->ehci_hcd_init() should be doing all
+ 	 * HW-specific initialization, e.g. ULPI-vs-UTMI PHY selection
+-- 
+1.8.0
+

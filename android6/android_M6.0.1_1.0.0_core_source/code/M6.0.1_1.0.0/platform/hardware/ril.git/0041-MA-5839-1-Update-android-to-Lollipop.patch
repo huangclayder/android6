@@ -1,0 +1,57 @@
+From 23afa954db401701b659760f12287be024496617 Mon Sep 17 00:00:00 2001
+From: "guoyin.chen" <guoyin.chen@freescale.com>
+Date: Mon, 10 Nov 2014 09:15:33 +0800
+Subject: [PATCH 41/43] MA-5839-1 Update android to Lollipop
+
+Add runtime.h include
+Remove pthread library useage in Andorid.mk
+Remove duplicated case in switch
+
+Signed-off-by: guoyin.chen <guoyin.chen@freescale.com>
+---
+ reference-ril/reference-ril.c | 10 +---------
+ runtime-ril-port/Android.mk   |  1 -
+ 2 files changed, 1 insertion(+), 10 deletions(-)
+
+diff --git a/reference-ril/reference-ril.c b/reference-ril/reference-ril.c
+index ec80390..585bb02 100755
+--- a/reference-ril/reference-ril.c
++++ b/reference-ril/reference-ril.c
+@@ -55,7 +55,7 @@
+ 
+ static void *noopRemoveWarning( void *a ) { return a; }
+ #define RIL_UNUSED_PARM(a) noopRemoveWarning((void *)&(a));
+-#include "runtime.h"
++#include "runtime/runtime.h"
+ #include "fcp_parser.h"
+ 
+ #define MAX_AT_RESPONSE 0x1000
+@@ -3700,14 +3700,6 @@ onRequest (int request, void *data, size_t datalen, RIL_Token t)
+             requestQueryFacilityLock(data, datalen, t);
+             break;
+ 
+-        case RIL_REQUEST_GET_CELL_INFO_LIST:
+-            requestGetCellInfoList(data, datalen, t);
+-            break;
+-
+-        case RIL_REQUEST_SET_UNSOL_CELL_INFO_LIST_RATE:
+-            requestSetCellInfoListRate(data, datalen, t);
+-            break;
+-
+         case RIL_REQUEST_SET_NETWORK_SELECTION_MANUAL:
+             requestSetNetworkSelectionManual(data, datalen, t);
+             break;
+diff --git a/runtime-ril-port/Android.mk b/runtime-ril-port/Android.mk
+index ac0254b..fdf21f4 100644
+--- a/runtime-ril-port/Android.mk
++++ b/runtime-ril-port/Android.mk
+@@ -15,6 +15,5 @@ LOCAL_CFLAGS :=
+ LOCAL_MODULE_TAGS := optional
+ LOCAL_MODULE:= libruntime-ril-port
+ 
+-LOCAL_LDLIBS += -lpthread
+ 
+ include $(BUILD_SHARED_LIBRARY)
+-- 
+1.8.0
+

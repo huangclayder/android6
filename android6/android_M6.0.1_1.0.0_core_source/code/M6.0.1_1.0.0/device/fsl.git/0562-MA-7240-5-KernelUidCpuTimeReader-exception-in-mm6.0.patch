@@ -1,0 +1,55 @@
+From bcb250321c7f75691f186598f973bfeab38ff287 Mon Sep 17 00:00:00 2001
+From: Zhang Sanshan <b51434@freescale.com>
+Date: Tue, 10 Nov 2015 15:02:57 +0800
+Subject: [PATCH 562/602] MA-7240-5 KernelUidCpuTimeReader exception in mm6.0
+
+1 add the permission 'cat /proc/uid_cputime/show_uid_stat' in mm6.0
+2 pass the building error
+  allow init shell_exec:file  { execute_no_trans };
+
+Signed-off-by: Zhang Sanshan <b51434@freescale.com>
+---
+ imx6/sepolicy/init.te  | 1 -
+ imx6/sepolicy/shell.te | 2 ++
+ imx7/sepolicy/init.te  | 1 -
+ imx7/sepolicy/shell.te | 2 ++
+ 4 files changed, 4 insertions(+), 2 deletions(-)
+
+diff --git a/imx6/sepolicy/init.te b/imx6/sepolicy/init.te
+index fdf33bf..c5a1c85 100644
+--- a/imx6/sepolicy/init.te
++++ b/imx6/sepolicy/init.te
+@@ -8,4 +8,3 @@ allow init tmpfs:lnk_file  { create };
+ allow init storage_file:dir  { mounton };
+ allow init block_device:blk_file  { write };
+ allow init sysfs_devices_system_cpu:dir  { write };
+-allow init shell_exec:file  { execute_no_trans };
+diff --git a/imx6/sepolicy/shell.te b/imx6/sepolicy/shell.te
+index 2b55944..dbfea85 100644
+--- a/imx6/sepolicy/shell.te
++++ b/imx6/sepolicy/shell.te
+@@ -1 +1,3 @@
+ allow shell procrank_exec:file { getattr };
++allow shell proc_uid_cputime_showstat:file { getattr read open };
++allow shell proc_uid_cputime_removeuid:file { getattr read open };
+diff --git a/imx7/sepolicy/init.te b/imx7/sepolicy/init.te
+index 5d5d34c..2ef28d9 100644
+--- a/imx7/sepolicy/init.te
++++ b/imx7/sepolicy/init.te
+@@ -8,5 +8,4 @@ allow init tmpfs:lnk_file  { create };
+ allow init storage_file:dir  { mounton };
+ allow init block_device:blk_file  { write };
+ allow init sysfs_devices_system_cpu:dir  { write };
+-allow init shell_exec:file  { execute_no_trans };
+ 
+diff --git a/imx7/sepolicy/shell.te b/imx7/sepolicy/shell.te
+index 2b55944..dbfea85 100644
+--- a/imx7/sepolicy/shell.te
++++ b/imx7/sepolicy/shell.te
+@@ -1 +1,3 @@
+ allow shell procrank_exec:file { getattr };
++allow shell proc_uid_cputime_showstat:file { getattr read open };
++allow shell proc_uid_cputime_removeuid:file { getattr read open };
+-- 
+1.8.0
+

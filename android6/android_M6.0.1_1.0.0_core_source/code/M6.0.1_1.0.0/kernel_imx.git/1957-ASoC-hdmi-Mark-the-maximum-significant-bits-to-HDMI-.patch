@@ -1,0 +1,31 @@
+From 084b0d98043e79ce373d8eaecca7e2296f2ec09f Mon Sep 17 00:00:00 2001
+From: Jyri Sarha <jsarha@ti.com>
+Date: Tue, 14 Oct 2014 20:29:26 +0300
+Subject: [PATCH] ASoC: hdmi: Mark the maximum significant bits to HDMI codec
+
+HDMI audio can not have more than 24 bits even if on i2s bus there
+would be 32 bit samples. Mark this by adding .sig_bits = 24 to
+playback stream definition.
+
+Signed-off-by: Jyri Sarha <jsarha@ti.com>
+Signed-off-by: Mark Brown <broonie@kernel.org>
+(cherry picked from commit 74d813cf37c210e94d155b0c19598fe269b8f78c)
+---
+ sound/soc/codecs/hdmi.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/sound/soc/codecs/hdmi.c b/sound/soc/codecs/hdmi.c
+index 9cb1c7d..5e8c69a 100644
+--- a/sound/soc/codecs/hdmi.c
++++ b/sound/soc/codecs/hdmi.c
+@@ -46,6 +46,7 @@ static struct snd_soc_dai_driver hdmi_codec_dai = {
+ 			SNDRV_PCM_RATE_176400 | SNDRV_PCM_RATE_192000,
+ 		.formats = SNDRV_PCM_FMTBIT_S16_LE |
+ 			SNDRV_PCM_FMTBIT_S24_LE | SNDRV_PCM_FMTBIT_S32_LE,
++		.sig_bits = 24,
+ 	},
+ 	.capture = {
+ 		.stream_name = "Capture",
+-- 
+1.8.0
+

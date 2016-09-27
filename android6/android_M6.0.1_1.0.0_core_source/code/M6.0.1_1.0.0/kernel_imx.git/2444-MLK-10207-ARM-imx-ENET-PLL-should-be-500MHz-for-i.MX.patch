@@ -1,0 +1,32 @@
+From 729bbf97ed9f29bf443b3b0f3a3e079ab611a5d4 Mon Sep 17 00:00:00 2001
+From: Anson Huang <b20788@freescale.com>
+Date: Thu, 5 Feb 2015 18:32:19 +0800
+Subject: [PATCH] MLK-10207 ARM: imx: ENET PLL should be 500MHz for i.MX6
+
+ENET PLL rate should be 500MHz for i.MX6 and 1GHz for i.MX7,
+add cpu type check.
+
+Signed-off-by: Anson Huang <b20788@freescale.com>
+---
+ arch/arm/mach-imx/clk-pllv3.c | 5 ++++-
+ 1 file changed, 4 insertions(+), 1 deletion(-)
+
+diff --git a/arch/arm/mach-imx/clk-pllv3.c b/arch/arm/mach-imx/clk-pllv3.c
+index a2131fc..0a1b269 100644
+--- a/arch/arm/mach-imx/clk-pllv3.c
++++ b/arch/arm/mach-imx/clk-pllv3.c
+@@ -316,7 +316,10 @@ static const struct clk_ops clk_pllv3_av_ops = {
+ static unsigned long clk_pllv3_enet_recalc_rate(struct clk_hw *hw,
+ 						unsigned long parent_rate)
+ {
+-	return 1000000000;
++	if (cpu_is_imx7d())
++		return 1000000000;
++	else
++		return 500000000;
+ }
+ 
+ static const struct clk_ops clk_pllv3_enet_ops = {
+-- 
+1.8.0
+

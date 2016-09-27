@@ -1,0 +1,92 @@
+From d6417ac035a9051994a3192f937dfb4e677f9701 Mon Sep 17 00:00:00 2001
+From: "guoyin.chen" <guoyin.chen@freescale.com>
+Date: Tue, 14 Jan 2014 13:17:40 +0800
+Subject: [PATCH 11/34] ENGR00293354-1 Support build for 3.10 kernel and
+ imx_v2013.04 uboot
+
+Rename TARGET_BOOTLOADER_IMAGE to u-boot.imx as new uboot update
+Add LOADADDR parameter for build 3.10 uImage
+Copy boards'dtb file into out directory
+Add boards'dtb file as sencond bootimage into boot.img
+
+Signed-off-by: guoyin.chen <guoyin.chen@freescale.com>
+---
+ core/Makefile | 27 +++++++++++++++++++++------
+ 1 file changed, 21 insertions(+), 6 deletions(-)
+
+diff --git a/core/Makefile b/core/Makefile
+index ff46300..2e864ea 100644
+--- a/core/Makefile
++++ b/core/Makefile
+@@ -539,6 +539,14 @@ $(INSTALLED_BOOTIMAGE_TARGET): $(MKBOOTIMG) $(INTERNAL_BOOTIMAGE_FILES)
+ 	$(call pretty,"Target boot image: $@")
+ 	$(hide) $(MKBOOTIMG) $(INTERNAL_BOOTIMAGE_ARGS) $(BOARD_MKBOOTIMG_ARGS) --output $@
+ 	$(hide) $(call assert-max-image-size,$@,$(BOARD_BOOTIMAGE_PARTITION_SIZE))
++	for dtsplat in $(TARGET_BOARD_DTS_CONFIG); do \
++		DTS_PLATFORM=`echo $$dtsplat | cut -d':' -f1`; \
++		DTS_BOARD=`echo $$dtsplat | cut -d':' -f2`; \
++		BOOT_IMAGE_BOARD=$(patsubst %.img,%-$$DTS_PLATFORM.img,$@); \
++		$(MKBOOTIMG) $(INTERNAL_BOOTIMAGE_ARGS) --second kernel_imx/arch/arm/boot/dts/$$DTS_BOARD $(BOARD_MKBOOTIMG_ARGS) --output $@; \
++		$(call assert-max-image-size,$@,$(BOARD_BOOTIMAGE_PARTITION_SIZE),raw); \
++		cp -f $@ $$BOOT_IMAGE_BOARD; \
++	done
+ 
+ .PHONY: bootimage-nodeps
+ bootimage-nodeps: $(MKBOOTIMG)
+@@ -952,7 +960,7 @@ ifneq ($(strip $(TARGET_BOOTLOADER_CONFIG)),)
+ BOOTLOADER_CROSS_TOOLCHAIN := `pwd`/prebuilts/gcc/linux-x86/arm/arm-eabi-4.6/bin/arm-eabi-
+ BOOTLOADER_ENV := ARCH=arm CROSS_COMPILE=$(BOOTLOADER_CROSS_TOOLCHAIN)
+ HOST_PROCESSOR := $(shell cat /proc/cpuinfo | grep processor | wc -l)
+-TARGET_BOOTLOADER_IMAGE := $(PRODUCT_OUT)/u-boot.bin
++TARGET_BOOTLOADER_IMAGE := $(PRODUCT_OUT)/u-boot.imx
+ 
+ BOOTLOADER_PATH := bootable/bootloader/uboot-imx/
+ BOOTLOADER_CONFIG_FILE := $(BOOTLOADER_PATH)/include/config.h
+@@ -960,14 +968,16 @@ BOOTLOADER_CONFIG_FILE := $(BOOTLOADER_PATH)/include/config.h
+ bootloader: $(TARGET_BOOTLOADER_IMAGE)
+ 
+ $(TARGET_BOOTLOADER_IMAGE):
+-	@for ubootplat in $(TARGET_BOOTLOADER_CONFIG); do \
++	for ubootplat in $(TARGET_BOOTLOADER_CONFIG); do \
+ 		UBOOT_PLATFORM=`echo $$ubootplat | cut -d':' -f1`; \
+ 		UBOOT_CONFIG=`echo $$ubootplat | cut -d':' -f2`; \
++        echo $(UBOOT_PLATFORM); \
++        echo $(UBOOT_CONFIG); \
+ 		$(MAKE) -C bootable/bootloader/uboot-imx/ distclean $(BOOTLOADER_ENV); \
+ 		$(MAKE) -C bootable/bootloader/uboot-imx/ $$UBOOT_CONFIG $(BOOTLOADER_ENV); \
+ 		$(MAKE) -C bootable/bootloader/uboot-imx/ $(BOOTLOADER_ENV); \
+-		install -D bootable/bootloader/uboot-imx/u-boot.bin $(PRODUCT_OUT)/u-boot-$$UBOOT_PLATFORM.bin; \
+-		install -D bootable/bootloader/uboot-imx/u-boot.bin $@; \
++		install -D bootable/bootloader/uboot-imx/u-boot.imx $(PRODUCT_OUT)/u-boot-$$UBOOT_PLATFORM.imx; \
++		install -D bootable/bootloader/uboot-imx/u-boot.imx $@; \
+ 	done
+ else
+ bootloader:
+@@ -976,7 +986,7 @@ endif
+ .PHONY: kernelimage
+ ifneq ($(strip $(TARGET_NO_KERNEL)),true)
+ KERNEL_CROSS_TOOLCHAIN := `pwd`/prebuilts/gcc/linux-x86/arm/arm-eabi-4.6/bin/arm-eabi-
+-KERNEL_ENV := ARCH=arm CROSS_COMPILE=$(KERNEL_CROSS_TOOLCHAIN)
++KERNEL_ENV := ARCH=arm CROSS_COMPILE=$(KERNEL_CROSS_TOOLCHAIN) LOADADDR=$(LOAD_KERNEL_ENTRY)
+ HOST_PROCESSOR := $(shell cat /proc/cpuinfo | grep processor | wc -l)
+ INSTALLED_KERNEL_TARGET := $(PRODUCT_OUT)/kernel
+ TARGET_PREBUILT_KERNEL := $(PRODUCT_OUT)/kernel
+@@ -998,9 +1008,14 @@ $(TARGET_KERNEL_CONFIGURE): kernel_imx/arch/arm/configs/$(TARGET_KERNEL_DEFCONF)
+ 
+ $(TARGET_PREBUILT_KERNEL): $(TARGET_KERNEL_CONFIGURE)
+ 	$(MAKE) -C kernel_imx -j$(HOST_PROCESSOR) uImage $(KERNEL_ENV)
++	$(MAKE) -C kernel_imx dtbs $(KERNEL_ENV)
+ 	install -D $(KERNEL_UIMAGE)  $(PRODUCT_OUT)/uImage
+ 	install -D $(KERNEL_ZIMAGE)  $(PRODUCT_OUT)/kernel
+-
++	for dtsplat in $(TARGET_BOARD_DTS_CONFIG); do \
++		DTS_PLATFORM=`echo $$dtsplat | cut -d':' -f1`; \
++		DTS_BOARD=`echo $$dtsplat | cut -d':' -f2`; \
++		install -D kernel_imx/arch/arm/boot/dts/$$DTS_BOARD $(PRODUCT_OUT)/$$DTS_BOARD; \
++	done
+ else
+ kernelimage:
+ endif
+-- 
+1.8.0
+

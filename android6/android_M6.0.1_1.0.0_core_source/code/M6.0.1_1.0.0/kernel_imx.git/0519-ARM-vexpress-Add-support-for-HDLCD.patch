@@ -1,0 +1,116 @@
+From 1f8cf0aff531cea29fc4ce11e7bc79966f6b2a48 Mon Sep 17 00:00:00 2001
+From: Jon Medhurst <tixy@linaro.org>
+Date: Wed, 13 Jun 2012 10:01:28 +0100
+Subject: [PATCH] ARM: vexpress: Add support for HDLCD
+
+This is a temporary solution to get everything running.
+
+Signed-off-by: Jon Medhurst <tixy@linaro.org>
+(cherry picked from commit c54f2d43f309a772457570248907c2e48ead13c9)
+Signed-off-by: Alex Shi <alex.shi@linaro.org>
+---
+ arch/arm/boot/dts/vexpress-v2p-ca15-tc1.dts |  4 ++++
+ arch/arm/boot/dts/vexpress-v2p-ca5s.dts     |  4 ++++
+ arch/arm/mach-vexpress/v2m.c                | 28 ++++++++++++++++++++++++++++
+ 3 files changed, 36 insertions(+)
+
+diff --git a/arch/arm/boot/dts/vexpress-v2p-ca15-tc1.dts b/arch/arm/boot/dts/vexpress-v2p-ca15-tc1.dts
+index 9420053..7cbe38c 100644
+--- a/arch/arm/boot/dts/vexpress-v2p-ca15-tc1.dts
++++ b/arch/arm/boot/dts/vexpress-v2p-ca15-tc1.dts
+@@ -9,6 +9,8 @@
+ 
+ /dts-v1/;
+ 
++/memreserve/ 0xbf000000 0x01000000;
++
+ / {
+ 	model = "V2P-CA15";
+ 	arm,hbi = <0x237>;
+@@ -57,6 +59,8 @@
+ 		interrupts = <0 85 4>;
+ 		clocks = <&oscclk5>;
+ 		clock-names = "pxlclk";
++		mode = "1024x768-16@60";
++		framebuffer = <0 0xbf000000 0 0x01000000>;
+ 	};
+ 
+ 	memory-controller@2b0a0000 {
+diff --git a/arch/arm/boot/dts/vexpress-v2p-ca5s.dts b/arch/arm/boot/dts/vexpress-v2p-ca5s.dts
+index c544a55..cf633ed 100644
+--- a/arch/arm/boot/dts/vexpress-v2p-ca5s.dts
++++ b/arch/arm/boot/dts/vexpress-v2p-ca5s.dts
+@@ -9,6 +9,8 @@
+ 
+ /dts-v1/;
+ 
++/memreserve/ 0xbf000000 0x01000000;
++
+ / {
+ 	model = "V2P-CA5s";
+ 	arm,hbi = <0x225>;
+@@ -59,6 +61,8 @@
+ 		interrupts = <0 85 4>;
+ 		clocks = <&oscclk3>;
+ 		clock-names = "pxlclk";
++		mode = "640x480-16@60";
++		framebuffer = <0xbf000000 0x01000000>;
+ 	};
+ 
+ 	memory-controller@2a150000 {
+diff --git a/arch/arm/mach-vexpress/v2m.c b/arch/arm/mach-vexpress/v2m.c
+index 4f8b8cb..ffa9b73 100644
+--- a/arch/arm/mach-vexpress/v2m.c
++++ b/arch/arm/mach-vexpress/v2m.c
+@@ -7,6 +7,7 @@
+ #include <linux/io.h>
+ #include <linux/smp.h>
+ #include <linux/init.h>
++#include <linux/memblock.h>
+ #include <linux/of_address.h>
+ #include <linux/of_fdt.h>
+ #include <linux/of_irq.h>
+@@ -369,6 +370,31 @@ MACHINE_START(VEXPRESS, "ARM-Versatile Express")
+ 	.init_machine	= v2m_init,
+ MACHINE_END
+ 
++static void __init v2m_dt_hdlcd_init(void)
++{
++	struct device_node *node;
++	int len, na, ns;
++	const __be32 *prop;
++	phys_addr_t fb_base, fb_size;
++
++	node = of_find_compatible_node(NULL, NULL, "arm,hdlcd");
++	if (!node)
++		return;
++
++	na = of_n_addr_cells(node);
++	ns = of_n_size_cells(node);
++
++	prop = of_get_property(node, "framebuffer", &len);
++	if (WARN_ON(!prop || len < (na + ns) * sizeof(*prop)))
++		return;
++
++	fb_base = of_read_number(prop, na);
++	fb_size = of_read_number(prop + na, ns);
++
++	if (WARN_ON(memblock_remove(fb_base, fb_size)))
++		return;
++};
++
+ static struct map_desc v2m_rs1_io_desc __initdata = {
+ 	.virtual	= V2M_PERIPH,
+ 	.pfn		= __phys_to_pfn(0x1c000000),
+@@ -421,6 +447,8 @@ void __init v2m_dt_init_early(void)
+ 	}
+ 
+ 	versatile_sched_clock_init(vexpress_get_24mhz_clock_base(), 24000000);
++
++	v2m_dt_hdlcd_init();
+ }
+ 
+ static const struct of_device_id v2m_dt_bus_match[] __initconst = {
+-- 
+1.8.0
+

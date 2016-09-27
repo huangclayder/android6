@@ -1,0 +1,74 @@
+From c27987b12ebaafb80f8db552b393290404045532 Mon Sep 17 00:00:00 2001
+From: Winter Wang <b55847@freescale.com>
+Date: Tue, 12 Jan 2016 20:03:17 +0800
+Subject: [PATCH 95/95] MA-7487 AudioTrack::getTimestamp always failed when
+ play videos on sabreauto_dl board
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+on sabreauto board, if play media stream with multi-channel audio(5.1/7.1),
+omx's AudioSink->getTimestamp() returns -38
+
+Find that if switches to 6 channel audio, due to audio_policy.conf's
+channel config, direct output thread is created. The thread->mOutput->flags
+is compatible with direct output’s flag, but the mFlags in AudioTrack,
+which is set at the creation of AudioTrack(af->createTrack), is 0,
+this lead to isDirect() == 0, so direct output(here is esai)’s gettimestamp
+can’t be called.
+
+Fixed by send the trackFlags with DIRECT flag setted in createTrack_l() of
+direct thread back to AudioTrack, and set the corresponding mFlags.
+
+Signed-off-by: Winter Wang <b55847@freescale.com>
+---
+ media/libmedia/AudioTrack.cpp     | 3 +++
+ services/audioflinger/Threads.cpp | 4 +++-
+ 2 files changed, 6 insertions(+), 1 deletion(-)
+
+diff --git a/media/libmedia/AudioTrack.cpp b/media/libmedia/AudioTrack.cpp
+index ff5fe1d..ded32bf 100644
+--- a/media/libmedia/AudioTrack.cpp
++++ b/media/libmedia/AudioTrack.cpp
+@@ -1,6 +1,7 @@
+ /*
+ **
+ ** Copyright 2007, The Android Open Source Project
++** Copyright (C) 2016 Freescale Semiconductor, Inc.
+ **
+ ** Licensed under the Apache License, Version 2.0 (the "License");
+ ** you may not use this file except in compliance with the License.
+@@ -1290,6 +1291,8 @@ status_t AudioTrack::createTrack_l()
+         goto release;
+     }
+     ALOG_ASSERT(track != 0);
++    if (trackFlags & IAudioFlinger::TRACK_DIRECT)
++        mFlags = (audio_output_flags_t)(mFlags | AUDIO_OUTPUT_FLAG_DIRECT);
+ 
+     // AudioFlinger now owns the reference to the I/O handle,
+     // so we are no longer responsible for releasing it.
+diff --git a/services/audioflinger/Threads.cpp b/services/audioflinger/Threads.cpp
+index 170f219..cc123de 100644
+--- a/services/audioflinger/Threads.cpp
++++ b/services/audioflinger/Threads.cpp
+@@ -1,7 +1,7 @@
+ /*
+ **
+ ** Copyright 2012, The Android Open Source Project
+-** Copyright (C) 2013-2015 Freescale Semiconductor, Inc.
++** Copyright (C) 2013-2016 Freescale Semiconductor, Inc.
+ **
+ ** Licensed under the Apache License, Version 2.0 (the "License");
+ ** you may not use this file except in compliance with the License.
+@@ -1729,6 +1729,8 @@ sp<AudioFlinger::PlaybackThread::Track> AudioFlinger::PlaybackThread::createTrac
+                 goto Exit;
+             }
+         }
++        if ((*flags & IAudioFlinger::TRACK_DIRECT) == 0)
++            *flags |= IAudioFlinger::TRACK_DIRECT;
+         break;
+ 
+     case OFFLOAD:
+-- 
+1.8.0
+

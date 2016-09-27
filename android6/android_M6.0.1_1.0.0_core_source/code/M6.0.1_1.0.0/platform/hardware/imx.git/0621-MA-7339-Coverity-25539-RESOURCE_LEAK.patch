@@ -1,0 +1,35 @@
+From 8b0259660aa3b2e98f9236304862fa69b86f6075 Mon Sep 17 00:00:00 2001
+From: Xiaowen Liu <xiaowen.liu@freescale.com>
+Date: Wed, 23 Dec 2015 09:56:36 -0500
+Subject: [PATCH 621/635] MA-7339 Coverity 25539: RESOURCE_LEAK.
+
+When fgets failed, file handle is leaked out.
+Add close file handle to fix this issue.
+
+Signed-off-by: Xiaowen Liu <xiaowen.liu@freescale.com>
+---
+ mx6/hwcomposer/hwc_display.cpp | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/mx6/hwcomposer/hwc_display.cpp b/mx6/hwcomposer/hwc_display.cpp
+index c910de9..13768f3 100644
+--- a/mx6/hwcomposer/hwc_display.cpp
++++ b/mx6/hwcomposer/hwc_display.cpp
+@@ -1,5 +1,5 @@
+ /*
+- * Copyright (C) 2009-2014 Freescale Semiconductor, Inc. All Rights Reserved.
++ * Copyright (C) 2009-2015 Freescale Semiconductor, Inc. All Rights Reserved.
+  *
+  * Licensed under the Apache License, Version 2.0 (the "License");
+  * you may not use this file except in compliance with the License.
+@@ -91,6 +91,7 @@ static int hwc_judge_display_state(struct hwc_context_t* ctx)
+             memset(value, 0, sizeof(value));
+             if (!fgets(value, sizeof(value), fp)) {
+                 ALOGI("read %s failed", tmp);
++                fclose(fp);
+                 continue;
+                 //make default type to ldb.
+                 //pInfo->type = HWC_DISPLAY_LDB;
+-- 
+1.8.0
+

@@ -1,0 +1,47 @@
+From 898df3cde33d40d58e861359f0328c11b36157ff Mon Sep 17 00:00:00 2001
+From: Xiaowen Liu <b37945@freescale.com>
+Date: Tue, 15 Apr 2014 09:35:20 +0800
+Subject: [PATCH 302/602] ENGR00308369 enable camera function for 6sx sdb
+ board.
+
+configure camera similarly to 6sl evk.
+and use camera vl interface for no VPU module.
+
+Signed-off-by: Xiaowen Liu <b37945@freescale.com>
+---
+ sabresd_6sx/BoardConfig.mk | 2 +-
+ sabresd_6sx/init.rc        | 4 ++--
+ 2 files changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/sabresd_6sx/BoardConfig.mk b/sabresd_6sx/BoardConfig.mk
+index 2f684a9..3ef62c9 100755
+--- a/sabresd_6sx/BoardConfig.mk
++++ b/sabresd_6sx/BoardConfig.mk
+@@ -98,7 +98,7 @@ USE_ION_ALLOCATOR := false
+ USE_GPU_ALLOCATOR := true
+ 
+ # camera hal v2
+-IMX_CAMERA_HAL_V2 := true
++IMX_CAMERA_HAL_V2 := false
+ 
+ # define frame buffer count
+ NUM_FRAMEBUFFER_SURFACE_BUFFERS := 3
+diff --git a/sabresd_6sx/init.rc b/sabresd_6sx/init.rc
+index 9e9f555..aefbe7c 100755
+--- a/sabresd_6sx/init.rc
++++ b/sabresd_6sx/init.rc
+@@ -52,9 +52,9 @@ on boot
+     #For landscape mode, orient is 0
+     #For portrait mode, orient is 90
+     #the android before honycomb are all in portrait mode
+-    setprop back_camera_name ov5640_mipi
++    setprop back_camera_name csi
+     setprop back_camera_orient 0
+-    setprop front_camera_name uvc,ov5642_camera,ov5640_camera
++    setprop front_camera_name uvc
+     setprop front_camera_orient 0
+ 
+     # Set OpenGLES version
+-- 
+1.8.0
+

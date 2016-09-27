@@ -1,0 +1,36 @@
+From 11280786c9e08dce99a31bf7627ac5b3f4969560 Mon Sep 17 00:00:00 2001
+From: zhang sanshan <b51434@freescale.com>
+Date: Mon, 26 Jan 2015 15:32:59 +0800
+Subject: [PATCH 431/602] MA-5947 optimize compile process
+
+when compile sd or nand iamges on sabreauto-6q board,it always produce redundant images.
+such as when compile nand images: make BUILD_TARGET_FS=ubifs
+It always produces four bootimgs.
+boot-imx6dl.img boot-imx6dl-nand.img boot-imx6q.img boot-imx6q-nand.img
+Actually We just need: boot-imx6dl-nand.img and boot-imx6q-nand.img
+
+Signed-off-by: zhang sanshan <b51434@freescale.com>
+---
+ sabreauto_6q/BoardConfig.mk | 6 +++++-
+ 1 file changed, 5 insertions(+), 1 deletion(-)
+
+diff --git a/sabreauto_6q/BoardConfig.mk b/sabreauto_6q/BoardConfig.mk
+index 95dcf68..5086404 100644
+--- a/sabreauto_6q/BoardConfig.mk
++++ b/sabreauto_6q/BoardConfig.mk
+@@ -108,7 +108,11 @@ endif
+ endif
+ 
+ TARGET_BOOTLOADER_CONFIG := imx6q:mx6qsabreautoandroid_config imx6dl:mx6dlsabreautoandroid_config imx6solo:mx6solosabresdandroid_config imx6q-nand:mx6qsabreautoandroid_nand_config imx6dl-nand:mx6dlsabreautoandroid_nand_config imx6solo-nand:mx6solosabreauto_nand_config
+-TARGET_BOARD_DTS_CONFIG := imx6q:imx6q-sabreauto.dtb imx6q-nand:imx6q-sabreauto-gpmi-weim.dtb imx6dl:imx6dl-sabreauto.dtb  imx6dl-nand:imx6dl-sabreauto-gpmi-weim.dtb
++ifeq ($(TARGET_USERIMAGES_USE_UBIFS),true)
++TARGET_BOARD_DTS_CONFIG := imx6q-nand:imx6q-sabreauto-gpmi-weim.dtb  imx6dl-nand:imx6dl-sabreauto-gpmi-weim.dtb
++else 
++TARGET_BOARD_DTS_CONFIG := imx6q:imx6q-sabreauto.dtb imx6dl:imx6dl-sabreauto.dtb
++endif
+ 
+ BOARD_SEPOLICY_DIRS := \
+        device/fsl/imx6/sepolicy \
+-- 
+1.8.0
+

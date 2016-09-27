@@ -1,0 +1,36 @@
+From 16727b975e3563bb17903bacbd5f5000ef8ca1b1 Mon Sep 17 00:00:00 2001
+From: Jianzheng Zhou <jianzheng.zhou@freescale.com>
+Date: Wed, 21 May 2014 17:29:46 +0800
+Subject: [PATCH 319/602] ENGR00304415 ethernet: refix ethernet support in
+ sabresx board
+
+Now, just come back to only support one interface(eth0) in android.
+
+Revert "ENGR00305958 Ethernet:change custom ethernet interface for sabresd_sx"
+
+This reverts commit 9b2143ed91f74e6b44bbb95fcce1586363351042.
+
+Signed-off-by: Jianzheng Zhou <jianzheng.zhou@freescale.com>
+---
+ sabresd_6sx/init.rc | 5 -----
+ 1 file changed, 5 deletions(-)
+
+diff --git a/sabresd_6sx/init.rc b/sabresd_6sx/init.rc
+index ade65f3..aefbe7c 100755
+--- a/sabresd_6sx/init.rc
++++ b/sabresd_6sx/init.rc
+@@ -174,11 +174,6 @@ service ing /system/bin/ingsvcd -c /system/etc/gps/Orion.ini
+ service charger /charger
+     class charger
+ 
+-service dhcpcd_eth1 /system/bin/dhcpcd -ABKL
+-    class main
+-    disabled
+-    oneshot
+-
+ on fs
+ # mount ext4 partitions
+     mount_all /fstab.freescale
+-- 
+1.8.0
+

@@ -1,0 +1,58 @@
+From 9aa6a1ca3efc18d3b771206e261420a47400ee21 Mon Sep 17 00:00:00 2001
+From: Liu Xiaowen <xiaowen.liu@freescale.com>
+Date: Tue, 1 Sep 2015 15:20:02 +0800
+Subject: [PATCH 593/635] MA-7024 fix issues reported by cppcheck.
+
+add free to match malloc when return error.
+
+Signed-off-by: Liu Xiaowen <xiaowen.liu@freescale.com>
+---
+ mx6/libgralloc_wrapper/framebuffer.cpp | 6 +++++-
+ 1 file changed, 5 insertions(+), 1 deletion(-)
+
+diff --git a/mx6/libgralloc_wrapper/framebuffer.cpp b/mx6/libgralloc_wrapper/framebuffer.cpp
+index 6c0fc05..6cfe95b 100755
+--- a/mx6/libgralloc_wrapper/framebuffer.cpp
++++ b/mx6/libgralloc_wrapper/framebuffer.cpp
+@@ -1,6 +1,6 @@
+ /*
+  * Copyright (C) 2008 The Android Open Source Project
+- * Copyright (C) 2010-2014 Freescale Semiconductor, Inc.
++ * Copyright (C) 2010-2015 Freescale Semiconductor, Inc.
+  *
+  * Licensed under the Apache License, Version 2.0 (the "License");
+  * you may not use this file except in compliance with the License.
+@@ -622,12 +622,14 @@ int BufferManager::fb_device_open(hw_module_t const* module, const char* name,
+         BufferManager* pBufferManager = BufferManager::getInstance();
+         if (pBufferManager == NULL) {
+             ALOGE("%s get buffer manager failed.", __FUNCTION__);
++            ::free(dev);
+             return -EINVAL;
+         }
+ 
+         int fbid = atoi(name+2);
+         if (fbid < 0 || fbid > 5) {
+             ALOGE("%s invalid fb num %d", __FUNCTION__, fbid);
++            ::free(dev);
+             return -EINVAL;
+         }
+ 
+@@ -637,6 +639,7 @@ int BufferManager::fb_device_open(hw_module_t const* module, const char* name,
+             dispid = (int)*device;
+             if (dispid < 0 || dispid >= MAX_DISPLAY_DEVICE) {
+                 ALOGE("%s invalid dispid %d", __FUNCTION__, dispid);
++                ::free(dev);
+                 return -EINVAL;
+             }
+             dev->isMainDisp = 0;
+@@ -646,6 +649,7 @@ int BufferManager::fb_device_open(hw_module_t const* module, const char* name,
+         Display* display = pBufferManager->getDisplay(dispid);
+         if (display == NULL) {
+             ALOGE("%s can't get valid display", __FUNCTION__);
++            ::free(dev);
+             return -EINVAL;
+         }
+ 
+-- 
+1.8.0
+

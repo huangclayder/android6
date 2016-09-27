@@ -1,0 +1,62 @@
+From 02c1474429f0fd1e18c742f526206b8b73e2d6dd Mon Sep 17 00:00:00 2001
+From: Haoran Wang <Haoran.Wang@freescale.com>
+Date: Fri, 17 Oct 2014 01:12:36 +0800
+Subject: [PATCH 363/602] MA-5756 Modify GPS power and reset GPIO node
+ permission
+
+Add GPS power on control GPIO. Make it default to be low.
+Modify GPS power and reset GPIO node to "system" group.
+Remove the GPS related initrc scripts for sabresd_6sx.
+
+Signed-off-by: Haoran Wang <Haoran.Wang@freescale.com>
+---
+ sabresd_6dq/init.rc | 8 +++++++-
+ sabresd_6sx/init.rc | 8 --------
+ 2 files changed, 7 insertions(+), 9 deletions(-)
+
+diff --git a/sabresd_6dq/init.rc b/sabresd_6dq/init.rc
+index c0ef53e..e2649b3 100755
+--- a/sabresd_6dq/init.rc
++++ b/sabresd_6dq/init.rc
+@@ -22,12 +22,18 @@ on boot
+     # Set permission for IIM node
+     symlink /dev/mxs_viim /dev/mxc_mem
+ 
+-    # Set GPS serial and reset GPIO pin
++    # Set GPS serial GPS power-on GPIO64 pin and reset GPIO60 pin
+     setprop ro.kernel.android.gps /dev/athrnmea
+     setprop persist.gps.oacmode @f
+     symlink /dev/ttymxc2 /dev/gpsdevice
++    write /sys/class/gpio/export 64
++    write /sys/class/gpio/gpio64/direction "out"
++    chown system /sys/class/gpio/gpio64/value
++    write /sys/class/gpio/gpio60/value 0
++
+     write /sys/class/gpio/export 60
+     write /sys/class/gpio/gpio60/direction "out"
++    chown system /sys/class/gpio/gpio60/value
+     write /sys/class/gpio/gpio60/value 1
+ 
+     # Enable Tethering in the Settings
+diff --git a/sabresd_6sx/init.rc b/sabresd_6sx/init.rc
+index dfe3233..afffb3f 100755
+--- a/sabresd_6sx/init.rc
++++ b/sabresd_6sx/init.rc
+@@ -24,14 +24,6 @@ on boot
+     # Set permission for IIM node
+     symlink /dev/mxs_viim /dev/mxc_mem
+ 
+-    # Set GPS serial and reset GPIO pin
+-    setprop ro.kernel.android.gps /dev/athrnmea
+-    setprop persist.gps.oacmode @f
+-    symlink /dev/ttymxc2 /dev/gpsdevice
+-    write /sys/class/gpio/export 60
+-    write /sys/class/gpio/gpio60/direction "out"
+-    write /sys/class/gpio/gpio60/value 1
+-
+     # Enable Tethering in the Settings
+     setprop ro.tether.denied false
+ 
+-- 
+1.8.0
+

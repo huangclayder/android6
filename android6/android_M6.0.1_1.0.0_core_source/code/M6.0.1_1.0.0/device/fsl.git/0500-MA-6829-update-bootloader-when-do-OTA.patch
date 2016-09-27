@@ -1,0 +1,429 @@
+From 1fee1a8b25c27d65cab9d580870cbddc0df77678 Mon Sep 17 00:00:00 2001
+From: Zhang Sanshan <b51434@freescale.com>
+Date: Thu, 25 Jun 2015 14:34:43 +0800
+Subject: [PATCH 500/602] MA-6829 update bootloader when do OTA
+
+1 add updating bootloader function in releasetool.py
+  The below function is used to update bootloader(ext4 and ubifs)
+  FullOTA_InstallEnd_Ext4 FullOTA_InstallEnd_Ubifs
+2 add bootloader partition. This is used by recovery to update bootloader partition.
+
+Signed-off-by: Zhang Sanshan <b51434@freescale.com>
+---
+ evk_6sl/BoardConfig.mk              |  2 +-
+ evk_6sl/fstab-f2fs.freescale        |  1 +
+ evk_6sl/fstab.freescale             |  1 +
+ imx6/releasetools.py                | 74 +++++++++++++++++++++++++++++++++++++
+ imx7/releasetools.py                | 74 +++++++++++++++++++++++++++++++++++++
+ sabreauto_6q/BoardConfig.mk         |  1 +
+ sabreauto_6q/fstab-f2fs.freescale   |  1 +
+ sabreauto_6q/fstab.freescale        |  1 +
+ sabreauto_6q/fstab_nand.freescale   |  1 +
+ sabreauto_6sx/BoardConfig.mk        |  1 +
+ sabreauto_6sx/fstab-f2fs.freescale  |  1 +
+ sabreauto_6sx/fstab.freescale       |  1 +
+ sabreauto_6sx/fstab_nand.freescale  |  1 +
+ sabresd_6dq/BoardConfig.mk          |  1 +
+ sabresd_6dq/fstab-f2fs.freescale    |  1 +
+ sabresd_6dq/fstab.freescale         |  1 +
+ sabresd_6dq/fstab_sd-f2fs.freescale |  1 +
+ sabresd_6dq/fstab_sd.freescale      |  1 +
+ sabresd_6sx/BoardConfig.mk          |  1 +
+ sabresd_6sx/fstab-f2fs.freescale    |  1 +
+ sabresd_6sx/fstab.freescale         |  1 +
+ sabresd_7d/BoardConfig.mk           |  2 +-
+ sabresd_7d/fstab-f2fs.freescale     |  1 +
+ sabresd_7d/fstab.freescale          |  1 +
+ 24 files changed, 170 insertions(+), 2 deletions(-)
+ create mode 100644 imx6/releasetools.py
+ create mode 100644 imx7/releasetools.py
+
+diff --git a/evk_6sl/BoardConfig.mk b/evk_6sl/BoardConfig.mk
+index 46fae75..401fe56 100644
+--- a/evk_6sl/BoardConfig.mk
++++ b/evk_6sl/BoardConfig.mk
+@@ -32,7 +32,7 @@ endif # BUILD_TARGET_FS
+ TARGET_BOOTLOADER_BOARD_NAME := EVK
+ PRODUCT_MODEL := EVK_MX6SL
+ 
+-
++TARGET_RELEASETOOLS_EXTENSIONS := device/fsl/imx6
+ # UNITE is a virtual device support both atheros and realtek wifi(ar6103 and rtl8723as)
+ BOARD_WLAN_DEVICE            := UNITE
+ WPA_SUPPLICANT_VERSION       := VER_0_8_UNITE
+diff --git a/evk_6sl/fstab-f2fs.freescale b/evk_6sl/fstab-f2fs.freescale
+index d3ade45..26e328e 100644
+--- a/evk_6sl/fstab-f2fs.freescale
++++ b/evk_6sl/fstab-f2fs.freescale
+@@ -13,4 +13,5 @@
+ /dev/block/mmcblk1p1    /boot        emmc    defaults                                                                         defaults
+ /dev/block/mmcblk1p2    /recovery    emmc    defaults                                                                         defaults
+ /dev/block/mmcblk1p8    /misc        emmc    defaults                                                                         defaults
++/dev/block/mmcblk1      /bootloader  emmc    defaults                                                                         defaults
+ 
+diff --git a/evk_6sl/fstab.freescale b/evk_6sl/fstab.freescale
+index 8beca58..a28d603 100644
+--- a/evk_6sl/fstab.freescale
++++ b/evk_6sl/fstab.freescale
+@@ -12,4 +12,5 @@
+ /dev/block/mmcblk1p1    /boot        emmc    defaults                                                                         defaults
+ /dev/block/mmcblk1p2    /recovery    emmc    defaults                                                                         defaults
+ /dev/block/mmcblk1p8    /misc        emmc    defaults                                                                         defaults
++/dev/block/mmcblk1      /bootloader        emmc    defaults                                                                         defaults
+ 
+diff --git a/imx6/releasetools.py b/imx6/releasetools.py
+new file mode 100644
+index 0000000..b62fc6c
+--- /dev/null
++++ b/imx6/releasetools.py
+@@ -0,0 +1,74 @@
++# Copyright (C) 2012 The Android Open Source Project
++#
++# Licensed under the Apache License, Version 2.0 (the "License");
++# you may not use this file except in compliance with the License.
++# You may obtain a copy of the License at
++#
++#      http://www.apache.org/licenses/LICENSE-2.0
++#
++# Unless required by applicable law or agreed to in writing, software
++# distributed under the License is distributed on an "AS IS" BASIS,
++# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++# See the License for the specific language governing permissions and
++# limitations under the License.
++
++"""Emit extra commands needed for Group during OTA installation
++(installing the bootloader)."""
++
++import common
++
++def FullOTA_InstallEnd_Ext4(info):
++  try:
++    bootloader_bin = info.input_zip.read("RADIO/bootloader.img")
++  except KeyError:
++    print "no bootloader.raw in target_files; skipping install"
++  else:
++    WriteExt4Bootloader(info, bootloader_bin)
++
++def FullOTA_InstallEnd_Ubifs(info):
++  try:
++    bootloader_bin = info.input_zip.read("RADIO/bootloader.img")
++  except KeyError:
++    print "no bootloader.raw in target_files; skipping install"
++  else:
++    WriteUbifsBootloader(info, bootloader_bin)
++
++def IncrementalOTA_InstallBegin(info):
++  info.script.Unmount("/system")
++  info.script.TunePartition("/system", "-O", "^has_journal")
++  info.script.Mount("/system")
++
++def IncrementalOTA_InstallEnd(info):
++  try:
++    target_bootloader_bin = info.target_zip.read("RADIO/bootloader.img")
++    try:
++      source_bootloader_bin = info.source_zip.read("RADIO/bootloader.img")
++    except KeyError:
++      source_bootloader_bin = None
++
++    if source_bootloader_bin == target_bootloader_bin:
++      print "bootloader unchanged; skipping"
++    else:
++      WriteBootloader(info, target_bootloader_bin)
++  except KeyError:
++    print "no bootloader.img in target target_files; skipping install"
++
++
++def WriteExt4Bootloader(info, bootloader_bin):
++  common.ZipWriteStr(info.output_zip, "bootloader.img", bootloader_bin)
++  fstab = info.info_dict["fstab"]
++
++  info.script.Print("Writing bootloader...")
++  info.script.AppendExtra('''package_extract_bootloader("bootloader.img", "%s");''' %
++                          (fstab["/bootloader"].device,))
++
++def WriteUbifsBootloader(info, bootloader_bin):
++  common.ZipWriteStr(info.output_zip, "bootloader.img", bootloader_bin)
++  fstab = info.info_dict["fstab"]
++
++  info.script.Print("Writing bootloader...")
++  info.script.AppendExtra('''package_extract_file("bootloader.img", "%s");''' %
++                          "/tmp/bootloader.imx")
++  info.script.AppendExtra('''write_raw_bootloader_image("/tmp/bootloader.imx", "bootloader");''' )
++  info.script.AppendExtra('''delete("/tmp/bootloader.imx");''' )
++ 
+diff --git a/imx7/releasetools.py b/imx7/releasetools.py
+new file mode 100644
+index 0000000..b62fc6c
+--- /dev/null
++++ b/imx7/releasetools.py
+@@ -0,0 +1,74 @@
++# Copyright (C) 2012 The Android Open Source Project
++#
++# Licensed under the Apache License, Version 2.0 (the "License");
++# you may not use this file except in compliance with the License.
++# You may obtain a copy of the License at
++#
++#      http://www.apache.org/licenses/LICENSE-2.0
++#
++# Unless required by applicable law or agreed to in writing, software
++# distributed under the License is distributed on an "AS IS" BASIS,
++# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++# See the License for the specific language governing permissions and
++# limitations under the License.
++
++"""Emit extra commands needed for Group during OTA installation
++(installing the bootloader)."""
++
++import common
++
++def FullOTA_InstallEnd_Ext4(info):
++  try:
++    bootloader_bin = info.input_zip.read("RADIO/bootloader.img")
++  except KeyError:
++    print "no bootloader.raw in target_files; skipping install"
++  else:
++    WriteExt4Bootloader(info, bootloader_bin)
++
++def FullOTA_InstallEnd_Ubifs(info):
++  try:
++    bootloader_bin = info.input_zip.read("RADIO/bootloader.img")
++  except KeyError:
++    print "no bootloader.raw in target_files; skipping install"
++  else:
++    WriteUbifsBootloader(info, bootloader_bin)
++
++def IncrementalOTA_InstallBegin(info):
++  info.script.Unmount("/system")
++  info.script.TunePartition("/system", "-O", "^has_journal")
++  info.script.Mount("/system")
++
++def IncrementalOTA_InstallEnd(info):
++  try:
++    target_bootloader_bin = info.target_zip.read("RADIO/bootloader.img")
++    try:
++      source_bootloader_bin = info.source_zip.read("RADIO/bootloader.img")
++    except KeyError:
++      source_bootloader_bin = None
++
++    if source_bootloader_bin == target_bootloader_bin:
++      print "bootloader unchanged; skipping"
++    else:
++      WriteBootloader(info, target_bootloader_bin)
++  except KeyError:
++    print "no bootloader.img in target target_files; skipping install"
++
++
++def WriteExt4Bootloader(info, bootloader_bin):
++  common.ZipWriteStr(info.output_zip, "bootloader.img", bootloader_bin)
++  fstab = info.info_dict["fstab"]
++
++  info.script.Print("Writing bootloader...")
++  info.script.AppendExtra('''package_extract_bootloader("bootloader.img", "%s");''' %
++                          (fstab["/bootloader"].device,))
++
++def WriteUbifsBootloader(info, bootloader_bin):
++  common.ZipWriteStr(info.output_zip, "bootloader.img", bootloader_bin)
++  fstab = info.info_dict["fstab"]
++
++  info.script.Print("Writing bootloader...")
++  info.script.AppendExtra('''package_extract_file("bootloader.img", "%s");''' %
++                          "/tmp/bootloader.imx")
++  info.script.AppendExtra('''write_raw_bootloader_image("/tmp/bootloader.imx", "bootloader");''' )
++  info.script.AppendExtra('''delete("/tmp/bootloader.imx");''' )
++ 
+diff --git a/sabreauto_6q/BoardConfig.mk b/sabreauto_6q/BoardConfig.mk
+index 6bc2d72..0cd0cea 100644
+--- a/sabreauto_6q/BoardConfig.mk
++++ b/sabreauto_6q/BoardConfig.mk
+@@ -42,6 +42,7 @@ PRODUCT_MODEL := SABREAUTO-MX6Q
+ USE_OPENGL_RENDERER := true
+ TARGET_CPU_SMP := true
+ 
++TARGET_RELEASETOOLS_EXTENSIONS := device/fsl/imx6
+ # UNITE is a virtual device support both atheros and realtek wifi(ar6103 and rtl8723as)
+ BOARD_WLAN_DEVICE            := UNITE
+ WPA_SUPPLICANT_VERSION       := VER_0_8_UNITE
+diff --git a/sabreauto_6q/fstab-f2fs.freescale b/sabreauto_6q/fstab-f2fs.freescale
+index c61a8ce..8b57aed 100644
+--- a/sabreauto_6q/fstab-f2fs.freescale
++++ b/sabreauto_6q/fstab-f2fs.freescale
+@@ -13,4 +13,5 @@
+ /dev/block/mmcblk2p1    /boot        emmc    defaults                                                                         defaults
+ /dev/block/mmcblk2p2    /recovery    emmc    defaults                                                                         defaults
+ /dev/block/mmcblk2p8    /misc        emmc    defaults                                                                         defaults
++/dev/block/mmcblk2      /bootloader  emmc    defaults                                                                         defaults
+ 
+diff --git a/sabreauto_6q/fstab.freescale b/sabreauto_6q/fstab.freescale
+index bc64c0c..a6d8905 100644
+--- a/sabreauto_6q/fstab.freescale
++++ b/sabreauto_6q/fstab.freescale
+@@ -12,4 +12,5 @@
+ /dev/block/mmcblk2p1    /boot        emmc    defaults                                                                         defaults
+ /dev/block/mmcblk2p2    /recovery    emmc    defaults                                                                         defaults
+ /dev/block/mmcblk2p8    /misc        emmc    defaults                                                                         defaults
++/dev/block/mmcblk2      /bootloader  emmc    defaults                                                                         defaults
+ 
+diff --git a/sabreauto_6q/fstab_nand.freescale b/sabreauto_6q/fstab_nand.freescale
+index 27b4980..25ff59e 100644
+--- a/sabreauto_6q/fstab_nand.freescale
++++ b/sabreauto_6q/fstab_nand.freescale
+@@ -13,3 +13,4 @@
+ /dev/ubi0_2     /device         ubifs   nosuid,nodev                            wait
+ bootimg         /boot           mtd     defaults                                defaults
+ recovery        /recovery       mtd     defaults                                defaults
++bootloader      /bootloader     mtd     defaults                                defaults
+diff --git a/sabreauto_6sx/BoardConfig.mk b/sabreauto_6sx/BoardConfig.mk
+index 14ebc44..48004cb 100755
+--- a/sabreauto_6sx/BoardConfig.mk
++++ b/sabreauto_6sx/BoardConfig.mk
+@@ -37,6 +37,7 @@ TARGET_BOOTLOADER_BOARD_NAME := SABREAUTO
+ PRODUCT_MODEL := SABREAUTO-MX6SX
+ 
+ 
++TARGET_RELEASETOOLS_EXTENSIONS := device/fsl/imx6
+ # UNITE is a virtual device support both atheros and realtek wifi(ar6103 and rtl8723as)
+ BOARD_WLAN_DEVICE            := UNITE
+ WPA_SUPPLICANT_VERSION       := VER_0_8_UNITE
+diff --git a/sabreauto_6sx/fstab-f2fs.freescale b/sabreauto_6sx/fstab-f2fs.freescale
+index 5d93ed9..8e567d6 100644
+--- a/sabreauto_6sx/fstab-f2fs.freescale
++++ b/sabreauto_6sx/fstab-f2fs.freescale
+@@ -13,4 +13,5 @@
+ /dev/block/mmcblk2p1    /boot        emmc    defaults                                                                         defaults
+ /dev/block/mmcblk2p2    /recovery    emmc    defaults                                                                         defaults
+ /dev/block/mmcblk2p8    /misc        emmc    defaults                                                                         defaults
++/dev/block/mmcblk2      /bootloader  emmc    defaults                                                                         defaults
+ 
+diff --git a/sabreauto_6sx/fstab.freescale b/sabreauto_6sx/fstab.freescale
+index 3c5a216..3b39e69 100644
+--- a/sabreauto_6sx/fstab.freescale
++++ b/sabreauto_6sx/fstab.freescale
+@@ -12,4 +12,5 @@
+ /dev/block/mmcblk2p1    /boot        emmc    defaults                                                                         defaults
+ /dev/block/mmcblk2p2    /recovery    emmc    defaults                                                                         defaults
+ /dev/block/mmcblk2p8    /misc        emmc    defaults                                                                         defaults
++/dev/block/mmcblk2      /bootloader  emmc    defaults                                                                         defaults
+ 
+diff --git a/sabreauto_6sx/fstab_nand.freescale b/sabreauto_6sx/fstab_nand.freescale
+index a2268c2..6baf5c4 100644
+--- a/sabreauto_6sx/fstab_nand.freescale
++++ b/sabreauto_6sx/fstab_nand.freescale
+@@ -13,3 +13,4 @@
+ /dev/ubi0_2     /device         ubifs   nosuid,nodev                            wait
+ bootimg         /boot           mtd     defaults                                defaults
+ recovery        /recovery       mtd     defaults                                defaults
++bootloader      /bootloader     mtd     defaults                                defaults
+diff --git a/sabresd_6dq/BoardConfig.mk b/sabresd_6dq/BoardConfig.mk
+index 1073047..ba34a98 100644
+--- a/sabresd_6dq/BoardConfig.mk
++++ b/sabresd_6dq/BoardConfig.mk
+@@ -44,6 +44,7 @@ endif # BUILD_TARGET_DEVICE
+ TARGET_BOOTLOADER_BOARD_NAME := SABRESD
+ PRODUCT_MODEL := SABRESD-MX6DQ
+ 
++TARGET_RELEASETOOLS_EXTENSIONS := device/fsl/imx6
+ # UNITE is a virtual device support both atheros and realtek wifi(ar6103 and rtl8723as)
+ BOARD_WLAN_DEVICE            := UNITE
+ WPA_SUPPLICANT_VERSION       := VER_0_8_UNITE
+diff --git a/sabresd_6dq/fstab-f2fs.freescale b/sabresd_6dq/fstab-f2fs.freescale
+index 39adf32..3ce45dd 100644
+--- a/sabresd_6dq/fstab-f2fs.freescale
++++ b/sabresd_6dq/fstab-f2fs.freescale
+@@ -13,3 +13,4 @@
+ /dev/block/mmcblk3p1    /boot        emmc    defaults                                                                         defaults
+ /dev/block/mmcblk3p2    /recovery    emmc    defaults                                                                         defaults
+ /dev/block/mmcblk3p8    /misc        emmc    defaults                                                                         defaults
++/dev/block/mmcblk3boot0 /bootloader  emmc    defaults                                                                         defaults
+diff --git a/sabresd_6dq/fstab.freescale b/sabresd_6dq/fstab.freescale
+index 10a4537..2ff4f34 100644
+--- a/sabresd_6dq/fstab.freescale
++++ b/sabresd_6dq/fstab.freescale
+@@ -12,3 +12,4 @@
+ /dev/block/mmcblk3p1    /boot        emmc    defaults                                                                         defaults
+ /dev/block/mmcblk3p2    /recovery    emmc    defaults                                                                         defaults
+ /dev/block/mmcblk3p8    /misc        emmc    defaults                                                                         defaults
++/dev/block/mmcblk3boot0 /bootloader  emmc    defaults                                                                         defaults
+diff --git a/sabresd_6dq/fstab_sd-f2fs.freescale b/sabresd_6dq/fstab_sd-f2fs.freescale
+index f55c437..fb2fd96 100644
+--- a/sabresd_6dq/fstab_sd-f2fs.freescale
++++ b/sabresd_6dq/fstab_sd-f2fs.freescale
+@@ -13,3 +13,4 @@
+ /dev/block/mmcblk2p1    /boot        emmc    defaults                                                                         defaults
+ /dev/block/mmcblk2p2    /recovery    emmc    defaults                                                                         defaults
+ /dev/block/mmcblk2p8    /misc        emmc    defaults                                                                         defaults
++/dev/block/mmcblk2      /bootloader  emmc    defaults                                                                         defaults
+diff --git a/sabresd_6dq/fstab_sd.freescale b/sabresd_6dq/fstab_sd.freescale
+index a6ede0a..6ea9cd2 100644
+--- a/sabresd_6dq/fstab_sd.freescale
++++ b/sabresd_6dq/fstab_sd.freescale
+@@ -12,3 +12,4 @@
+ /dev/block/mmcblk2p1    /boot        emmc    defaults                                                                         defaults
+ /dev/block/mmcblk2p2    /recovery    emmc    defaults                                                                         defaults
+ /dev/block/mmcblk2p8    /misc        emmc    defaults                                                                         defaults
++/dev/block/mmcblk2      /bootloader  emmc    defaults                                                                         defaults
+diff --git a/sabresd_6sx/BoardConfig.mk b/sabresd_6sx/BoardConfig.mk
+index 88bb387..7385882 100644
+--- a/sabresd_6sx/BoardConfig.mk
++++ b/sabresd_6sx/BoardConfig.mk
+@@ -33,6 +33,7 @@ endif # BUILD_TARGET_FS
+ TARGET_BOOTLOADER_BOARD_NAME := SABRESD
+ PRODUCT_MODEL := SABRESD-MX6SX
+ 
++TARGET_RELEASETOOLS_EXTENSIONS := device/fsl/imx6
+ # UNITE is a virtual device support both atheros and realtek wifi(ar6103 and rtl8723as)
+ BOARD_WLAN_DEVICE            := UNITE
+ WPA_SUPPLICANT_VERSION       := VER_0_8_UNITE
+diff --git a/sabresd_6sx/fstab-f2fs.freescale b/sabresd_6sx/fstab-f2fs.freescale
+index 40f83ef..e706346 100644
+--- a/sabresd_6sx/fstab-f2fs.freescale
++++ b/sabresd_6sx/fstab-f2fs.freescale
+@@ -13,3 +13,4 @@
+ /dev/block/mmcblk3p1    /boot        emmc    defaults                                                                         defaults
+ /dev/block/mmcblk3p2    /recovery    emmc    defaults                                                                         defaults
+ /dev/block/mmcblk3p8    /misc        emmc    defaults                                                                         defaults
++/dev/block/mmcblk3      /bootloader  emmc    defaults                                                                         defaults
+diff --git a/sabresd_6sx/fstab.freescale b/sabresd_6sx/fstab.freescale
+index cf7ed1b..64650df 100644
+--- a/sabresd_6sx/fstab.freescale
++++ b/sabresd_6sx/fstab.freescale
+@@ -12,3 +12,4 @@
+ /dev/block/mmcblk3p1    /boot        emmc    defaults                                                                         defaults
+ /dev/block/mmcblk3p2    /recovery    emmc    defaults                                                                         defaults
+ /dev/block/mmcblk3p8    /misc        emmc    defaults                                                                         defaults
++/dev/block/mmcblk3      /bootloader  emmc    defaults                                                                         defaults
+diff --git a/sabresd_7d/BoardConfig.mk b/sabresd_7d/BoardConfig.mk
+index 33ad08b..466b9da 100644
+--- a/sabresd_7d/BoardConfig.mk
++++ b/sabresd_7d/BoardConfig.mk
+@@ -32,7 +32,7 @@ endif # BUILD_TARGET_FS
+ TARGET_BOOTLOADER_BOARD_NAME := SABRESD
+ PRODUCT_MODEL := SABRESD_MX7D
+ 
+-
++TARGET_RELEASETOOLS_EXTENSIONS := device/fsl/imx7
+ # UNITE is a virtual device support both atheros and realtek wifi(ar6103 and rtl8723as)
+ BOARD_WLAN_DEVICE            := UNITE
+ WPA_SUPPLICANT_VERSION       := VER_0_8_UNITE
+diff --git a/sabresd_7d/fstab-f2fs.freescale b/sabresd_7d/fstab-f2fs.freescale
+index 3f58516..bbb577d 100644
+--- a/sabresd_7d/fstab-f2fs.freescale
++++ b/sabresd_7d/fstab-f2fs.freescale
+@@ -11,4 +11,5 @@
+ /dev/block/mmcblk0p1    /boot        emmc    defaults                                                                         defaults
+ /dev/block/mmcblk0p2    /recovery    emmc    defaults                                                                         defaults
+ /dev/block/mmcblk0p8    /misc        emmc    defaults                                                                         defaults
++/dev/block/mmcblk0      /bootloader  emmc    defaults                                                                         defaults
+ 
+diff --git a/sabresd_7d/fstab.freescale b/sabresd_7d/fstab.freescale
+index c4cba3b..d839c41 100644
+--- a/sabresd_7d/fstab.freescale
++++ b/sabresd_7d/fstab.freescale
+@@ -11,4 +11,5 @@
+ /dev/block/mmcblk0p1    /boot        emmc    defaults                                                                         defaults
+ /dev/block/mmcblk0p2    /recovery    emmc    defaults                                                                         defaults
+ /dev/block/mmcblk0p8    /misc        emmc    defaults                                                                         defaults
++/dev/block/mmcblk0      /bootloader  emmc    defaults                                                                         defaults
+ 
+-- 
+1.8.0
+

@@ -1,0 +1,58 @@
+From 04188abb2294f7421b34309b9d35fa2f6e435ee0 Mon Sep 17 00:00:00 2001
+From: Anson Huang <Anson.Huang@freescale.com>
+Date: Tue, 10 Nov 2015 19:05:02 +0800
+Subject: [PATCH] MLK-11844-1 ARM: dts: imx6sx: reserve DDR space for M4 use
+ case
+
+FreeRTOS/M4 has DDR use case, M4 can only execute on DDR
+space lower than 0xa0000000, Linux kernel will reserve 1M
+(0x9ff00000 - 0x9fffffff) for it, below are the DDR usage:
+
+0x80000000 - 0x9fefffff: Linux kernel;
+0x9ff00000 - 0x9fffffff: FreeRTOS;
+0xa0000000 - 0xbfefffff: Linux kernel;
+0xbff00000 - 0xbfffffff: RPMSG shared memory;
+0xc0000000 - 0xffffffff: Linux kernel if boards has 2GB DDR.
+
+Also, remove 'reg' property which is unused.
+
+Signed-off-by: Anson Huang <Anson.Huang@freescale.com>
+---
+ arch/arm/boot/dts/imx6sx-sabreauto-m4.dts | 5 +++--
+ arch/arm/boot/dts/imx6sx-sdb-m4.dts       | 4 ++--
+ 2 files changed, 5 insertions(+), 4 deletions(-)
+
+diff --git a/arch/arm/boot/dts/imx6sx-sabreauto-m4.dts b/arch/arm/boot/dts/imx6sx-sabreauto-m4.dts
+index 2ad2b6a..b720278 100644
+--- a/arch/arm/boot/dts/imx6sx-sabreauto-m4.dts
++++ b/arch/arm/boot/dts/imx6sx-sabreauto-m4.dts
+@@ -10,8 +10,9 @@
+ 
+ /{
+ 	memory {
+-		linux,usable-memory = <0x80000000 0x3ff00000>;
+-		reg = <0x80000000 0x40000000>;
++		linux,usable-memory = <0x80000000 0x1ff00000>,
++				<0xa0000000 0x1ff00000>,
++				<0xc0000000 0x40000000>;
+ 	};
+ };
+ 
+diff --git a/arch/arm/boot/dts/imx6sx-sdb-m4.dts b/arch/arm/boot/dts/imx6sx-sdb-m4.dts
+index f3958be..a5d4bcf 100644
+--- a/arch/arm/boot/dts/imx6sx-sdb-m4.dts
++++ b/arch/arm/boot/dts/imx6sx-sdb-m4.dts
+@@ -10,8 +10,8 @@
+ 
+ /{
+ 	memory {
+-		linux,usable-memory = <0x80000000 0x3ff00000>;
+-		reg = <0x80000000 0x40000000>;
++		linux,usable-memory = <0x80000000 0x1ff00000>,
++				<0xa0000000 0x1ff00000>;
+ 	};
+ };
+ 
+-- 
+1.8.0
+

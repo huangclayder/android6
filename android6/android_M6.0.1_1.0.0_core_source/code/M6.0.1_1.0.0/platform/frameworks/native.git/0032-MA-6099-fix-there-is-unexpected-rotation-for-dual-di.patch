@@ -1,0 +1,69 @@
+From 43893b719757474c46a21ad5944ee3122785f409 Mon Sep 17 00:00:00 2001
+From: Liu Xiaowen <xiaowen.liu@freescale.com>
+Date: Thu, 22 Jan 2015 18:12:24 +0800
+Subject: [PATCH 32/43] MA-6099 fix there is unexpected rotation for dual
+ display.
+
+Add displayDevice rotation to framebuffer target and pass
+it to hwcomposer to handle.
+
+Signed-off-by: Liu Xiaowen <xiaowen.liu@freescale.com>
+---
+ services/surfaceflinger/DisplayHardware/HWComposer.cpp | 4 +++-
+ services/surfaceflinger/DisplayHardware/HWComposer.h   | 3 ++-
+ services/surfaceflinger/SurfaceFlinger.cpp             | 3 ++-
+ 3 files changed, 7 insertions(+), 3 deletions(-)
+
+diff --git a/services/surfaceflinger/DisplayHardware/HWComposer.cpp b/services/surfaceflinger/DisplayHardware/HWComposer.cpp
+index 010fd87..609da23 100644
+--- a/services/surfaceflinger/DisplayHardware/HWComposer.cpp
++++ b/services/surfaceflinger/DisplayHardware/HWComposer.cpp
+@@ -661,7 +661,8 @@ status_t HWComposer::setFramebufferTarget(int32_t id,
+     return NO_ERROR;
+ }
+ 
+-status_t HWComposer::setFramebufferTargetScissor(int32_t id, const Rect& scissor)
++status_t HWComposer::setFramebufferTargetScissor(int32_t id, const Rect& scissor,
++                                                 uint32_t transform)
+ {
+     if (uint32_t(id)>31 || !mAllocatedDisplayIDs.hasBit(id)) {
+         return BAD_INDEX;
+@@ -677,6 +678,7 @@ status_t HWComposer::setFramebufferTargetScissor(int32_t id, const Rect& scissor
+ 
+     memcpy(&disp.framebufferTarget->displayFrame, &scissor,
+                sizeof(disp.framebufferTarget->displayFrame));
++    disp.framebufferTarget->transform = transform;
+     return NO_ERROR;
+ }
+ 
+diff --git a/services/surfaceflinger/DisplayHardware/HWComposer.h b/services/surfaceflinger/DisplayHardware/HWComposer.h
+index 814272d..ecff053 100644
+--- a/services/surfaceflinger/DisplayHardware/HWComposer.h
++++ b/services/surfaceflinger/DisplayHardware/HWComposer.h
+@@ -138,7 +138,8 @@ public:
+     status_t setOutputBuffer(int32_t id, const sp<Fence>& acquireFence,
+             const sp<GraphicBuffer>& buf);
+ 
+-    status_t setFramebufferTargetScissor(int32_t id, const Rect& scissor);
++    status_t setFramebufferTargetScissor(int32_t id, const Rect& scissor,
++            uint32_t transform);
+     // Get the retire fence for the last committed frame. This fence will
+     // signal when the h/w composer is completely finished with the frame.
+     // For physical displays, it is no longer being displayed. For virtual
+diff --git a/services/surfaceflinger/SurfaceFlinger.cpp b/services/surfaceflinger/SurfaceFlinger.cpp
+index 37142b0..b87a9d0 100644
+--- a/services/surfaceflinger/SurfaceFlinger.cpp
++++ b/services/surfaceflinger/SurfaceFlinger.cpp
+@@ -2084,7 +2084,8 @@ bool SurfaceFlinger::doComposeSurfaces(const sp<const DisplayDevice>& hw, const
+         // to hwc to handle it. just like 3D do above.
+         // here, the DisplayDevice'frame change can tell this.
+         int id = hw->getHwcDisplayId();
+-        hwc.setFramebufferTargetScissor(id, hw->getFrame());
++        uint32_t transform = hw->getOrientationTransform();
++        hwc.setFramebufferTargetScissor(id, hw->getFrame(), transform);
+     }
+ 
+     /*
+-- 
+1.8.0
+

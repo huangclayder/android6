@@ -1,0 +1,53 @@
+From c6db26ff72c9365eb1d12baae4c08feb1469f584 Mon Sep 17 00:00:00 2001
+From: Fang Hui <b31070@freescale.com>
+Date: Thu, 31 Jul 2014 09:27:49 +0800
+Subject: [PATCH 60/95] ENGR00324993 CTS-Verifier/Camera Orientation: taking
+ picture cause apk hung.
+
+The apk enable preview frame callback, when take picture before
+CAMERA_MSG_PREVIEW_FRAME bit cleared, dead lock occurs.
+
+In takePicture(), make sure the CAMERA_MSG_PREVIEW_FRAME bit is cleared.
+
+Signed-off-by: Fang Hui <b31070@freescale.com>
+---
+ services/camera/libcameraservice/api1/CameraClient.cpp | 12 ++++++++++++
+ 1 file changed, 12 insertions(+)
+
+diff --git a/services/camera/libcameraservice/api1/CameraClient.cpp b/services/camera/libcameraservice/api1/CameraClient.cpp
+index 30b462b..b9f3505 100644
+--- a/services/camera/libcameraservice/api1/CameraClient.cpp
++++ b/services/camera/libcameraservice/api1/CameraClient.cpp
+@@ -1,5 +1,6 @@
+ /*
+  * Copyright (C) 2012 The Android Open Source Project
++ * Copyright (C) 2014 Freescale Semiconductor, Inc.
+  *
+  * Licensed under the Apache License, Version 2.0 (the "License");
+  * you may not use this file except in compliance with the License.
+@@ -528,11 +529,22 @@ status_t CameraClient::cancelAutoFocus() {
+     return mHardware->cancelAutoFocus();
+ }
+ 
++
+ // take a picture - image is returned in callback
+ status_t CameraClient::takePicture(int msgType) {
+     LOG1("takePicture (pid %d): 0x%x", getCallingPid(), msgType);
+ 
++LockAndCheck:
+     Mutex::Autolock lock(mLock);
++
++    //avoid dead lock on preview callback enabled
++    if(mMsgEnabled & CAMERA_MSG_PREVIEW_FRAME) {
++        ALOGW("takePicture, wait CAMERA_MSG_PREVIEW_FRAME to clear");
++        mLock.unlock();
++        usleep(10000);
++        goto LockAndCheck;
++    }
++
+     status_t result = checkPidAndHardware();
+     if (result != NO_ERROR) return result;
+ 
+-- 
+1.8.0
+

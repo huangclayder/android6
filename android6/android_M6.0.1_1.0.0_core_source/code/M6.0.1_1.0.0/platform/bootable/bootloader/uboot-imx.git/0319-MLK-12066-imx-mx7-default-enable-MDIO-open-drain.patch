@@ -1,0 +1,70 @@
+From d7fb38219447c5d4af04f48a4546468fcd911d4f Mon Sep 17 00:00:00 2001
+From: Peng Fan <peng.fan@nxp.com>
+Date: Wed, 23 Dec 2015 10:52:01 +0800
+Subject: [PATCH] MLK-12066 imx: mx7: default enable MDIO open drain
+
+The management data input/output (MDIO) requires open-drain,
+i.MX7D TO1.0 ENET MDIO pin has no open drain, but TO1.1 supports
+this feature. So to TO1.1, need to enable open drain by setting
+bits GPR0[8:7] for TO1.1.
+
+Signed-off-by: Peng Fan <peng.fan@nxp.com>
+---
+ arch/arm/cpu/armv7/mx7/soc.c             | 20 ++++++++++++++++++++
+ arch/arm/include/asm/arch-mx7/imx-regs.h |  2 ++
+ 2 files changed, 22 insertions(+)
+
+diff --git a/arch/arm/cpu/armv7/mx7/soc.c b/arch/arm/cpu/armv7/mx7/soc.c
+index 58621ce..d718e67 100644
+--- a/arch/arm/cpu/armv7/mx7/soc.c
++++ b/arch/arm/cpu/armv7/mx7/soc.c
+@@ -170,6 +170,24 @@ static void imx_set_wdog_powerdown(bool enable)
+ 	writew(enable, &wdog4->wmcr);
+ }
+ 
++static void imx_enet_mdio_fixup(void)
++{
++	struct iomuxc_gpr_base_regs *gpr_regs =
++		(struct iomuxc_gpr_base_regs *)IOMUXC_GPR_BASE_ADDR;
++
++	/*
++	 * The management data input/output (MDIO) requires open-drain,
++	 * i.MX7D TO1.0 ENET MDIO pin has no open drain, but TO1.1 supports
++	 * this feature. So to TO1.1, need to enable open drain by setting
++	 * bits GPR0[8:7].
++	 */
++
++	if (is_soc_rev(CHIP_REV_1_1) >= 0) {
++		setbits_le32(&gpr_regs->gpr[0],
++			     IOMUXC_GPR_GPR0_ENET_MDIO_OPEN_DRAIN_MASK);
++	}
++}
++
+ static void set_epdc_qos(void)
+ {
+ #define REGS_QOS_BASE     QOSC_IPS_BASE_ADDR
+@@ -208,6 +226,8 @@ int arch_cpu_init(void)
+ 
+ 	imx_set_pcie_phy_power_down();
+ 
++	imx_enet_mdio_fixup();
++
+ #ifdef CONFIG_APBH_DMA
+ 	/* Start APBH DMA */
+ 	mxs_dma_init();
+diff --git a/arch/arm/include/asm/arch-mx7/imx-regs.h b/arch/arm/include/asm/arch-mx7/imx-regs.h
+index 532b0da..cf88831 100644
+--- a/arch/arm/include/asm/arch-mx7/imx-regs.h
++++ b/arch/arm/include/asm/arch-mx7/imx-regs.h
+@@ -273,6 +273,8 @@ struct src {
+ #define IOMUXC_GPR_GPR0_DMAREQ_MUX_SEL5_SHIFT    5
+ #define IOMUXC_GPR_GPR0_DMAREQ_MUX_SEL6_MASK     0x40u
+ #define IOMUXC_GPR_GPR0_DMAREQ_MUX_SEL6_SHIFT    6
++#define IOMUXC_GPR_GPR0_ENET_MDIO_OPEN_DRAIN_MASK (3 << 7)
++#define IOMUXC_GPR_GPR0_ENET_MDIO_OPEN_DRAIN_SHIFT 7
+ /* GPR1 Bit Fields */
+ #define IOMUXC_GPR_GPR1_GPR_WEIM_ACT_CS0_MASK    0x1u
+ #define IOMUXC_GPR_GPR1_GPR_WEIM_ACT_CS0_SHIFT   0
+-- 
+1.8.0
+

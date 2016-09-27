@@ -1,0 +1,40 @@
+From cb791c9ac0514a29c02003fbb4746ec9bb8a8d1d Mon Sep 17 00:00:00 2001
+From: Li Jun <jun.li@freescale.com>
+Date: Fri, 16 Oct 2015 13:53:20 +0800
+Subject: [PATCH] usb: chipidea: otg: don't wait vbus drops below BSV when
+ starts host
+
+Some HW design may use ID pin state to control vbus for otg port,
+so before host role start, the vbus is already turned on, in this
+case, we do not need wait vbus dropping below BSV.
+
+Signed-off-by: Li Jun <jun.li@freescale.com>
+Signed-off-by: Peter Chen <peter.chen@freescale.com>
+Signed-off-by: Peter Chen <peter.chen@kernel.org>
+---
+ drivers/usb/chipidea/otg.c | 9 ++++++---
+ 1 file changed, 6 insertions(+), 3 deletions(-)
+
+diff --git a/drivers/usb/chipidea/otg.c b/drivers/usb/chipidea/otg.c
+index 9bb4278..3b2ae1b 100644
+--- a/drivers/usb/chipidea/otg.c
++++ b/drivers/usb/chipidea/otg.c
+@@ -123,9 +123,12 @@ void ci_handle_id_switch(struct ci_hdrc *ci)
+ 		}
+ 
+ 		ci_role_stop(ci);
+-		/* wait vbus lower than OTGSC_BSV */
+-		hw_wait_reg(ci, OP_OTGSC, OTGSC_BSV, 0,
+-				CI_VBUS_STABLE_TIMEOUT_MS);
++
++		if (role == CI_ROLE_GADGET)
++			/* wait vbus lower than OTGSC_BSV */
++			hw_wait_reg(ci, OP_OTGSC, OTGSC_BSV, 0,
++					CI_VBUS_STABLE_TIMEOUT_MS);
++
+ 		ci_role_start(ci, role);
+ 	}
+ }
+-- 
+1.8.0
+

@@ -1,0 +1,56 @@
+From 3624e4b6b0c161a6a58b9cef3aa32181050b0402 Mon Sep 17 00:00:00 2001
+From: "Ye.Li" <B37916@freescale.com>
+Date: Wed, 13 May 2015 11:35:50 +0800
+Subject: [PATCH] MLK-10884 imx: MX6SX: Fix IOMUXC GPR registers access issue
+
+The iomuxc structure has changed to add 0x4000 offset for i.MX6SX and UL,
+so when using this structure to access gpr registers needs to change
+the base address to IOMUXC_BASE_ADDR.
+
+Signed-off-by: Ye.Li <B37916@freescale.com>
+---
+ arch/arm/cpu/armv7/mx6/soc.c | 4 ++--
+ drivers/pci/pcie_imx.c       | 4 ----
+ 2 files changed, 2 insertions(+), 6 deletions(-)
+
+diff --git a/arch/arm/cpu/armv7/mx6/soc.c b/arch/arm/cpu/armv7/mx6/soc.c
+index 1ab6dbe..9b0f126 100644
+--- a/arch/arm/cpu/armv7/mx6/soc.c
++++ b/arch/arm/cpu/armv7/mx6/soc.c
+@@ -324,7 +324,7 @@ static void init_src(void)
+ #ifdef CONFIG_MX6SX
+ void vadc_power_up(void)
+ {
+-	struct iomuxc *iomux = (struct iomuxc *)IOMUXC_GPR_BASE_ADDR;
++	struct iomuxc *iomux = (struct iomuxc *)IOMUXC_BASE_ADDR;
+ 	u32 val;
+ 
+ 	/* csi0 */
+@@ -356,7 +356,7 @@ void vadc_power_up(void)
+ 
+ void vadc_power_down(void)
+ {
+-	struct iomuxc *iomux = (struct iomuxc *)IOMUXC_GPR_BASE_ADDR;
++	struct iomuxc *iomux = (struct iomuxc *)IOMUXC_BASE_ADDR;
+ 	u32 val;
+ 
+ 	/* Power down vadc ext power
+diff --git a/drivers/pci/pcie_imx.c b/drivers/pci/pcie_imx.c
+index b6d477e..497937e 100644
+--- a/drivers/pci/pcie_imx.c
++++ b/drivers/pci/pcie_imx.c
+@@ -100,11 +100,7 @@
+ static void print_regs(int contain_pcie_reg)
+ {
+ 	u32 val;
+-#ifndef CONFIG_MX6SX
+ 	struct iomuxc *iomuxc_regs = (struct iomuxc *)IOMUXC_BASE_ADDR;
+-#else
+-	struct iomuxc *iomuxc_regs = (struct iomuxc *)IOMUXC_GPR_BASE_ADDR;
+-#endif
+ 	struct mxc_ccm_reg *ccm_regs = (struct mxc_ccm_reg *)CCM_BASE_ADDR;
+ 	val = readl(&iomuxc_regs->gpr[1]);
+ 	DBGF("GPR01 a:0x%08x v:0x%08x\n", (u32)&iomuxc_regs->gpr[1], val);
+-- 
+1.8.0
+

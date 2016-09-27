@@ -1,0 +1,29 @@
+From aebaef5a1bc2ca2ff0700e3b2d37375a6bf1f2e7 Mon Sep 17 00:00:00 2001
+From: Peng Fan <Peng.Fan@freescale.com>
+Date: Tue, 14 Apr 2015 19:19:15 +0800
+Subject: [PATCH] MLK-10774-44 imx:mx6 fix is_soc_rev
+
+is_soc_rev should be casted to signed int, otherwise
+may incur errors when detecting cpu types.
+
+Signed-off-by: Peng Fan <Peng.Fan@freescale.com>
+---
+ arch/arm/include/asm/arch-mx6/sys_proto.h | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/arch/arm/include/asm/arch-mx6/sys_proto.h b/arch/arm/include/asm/arch-mx6/sys_proto.h
+index a2768d1..60f0929 100644
+--- a/arch/arm/include/asm/arch-mx6/sys_proto.h
++++ b/arch/arm/include/asm/arch-mx6/sys_proto.h
+@@ -14,7 +14,7 @@
+ #include "../arch-imx/cpu.h"
+ 
+ #define soc_rev() (get_cpu_rev() & 0xFF)
+-#define is_soc_rev(rev)        (soc_rev() - rev)
++#define is_soc_rev(rev)        (int)(soc_rev() - rev)
+ 
+ u32 get_nr_cpus(void);
+ u32 get_cpu_rev(void);
+-- 
+1.8.0
+

@@ -1,0 +1,163 @@
+From f36293f72b8e73262cfa43de245d4f88bd9fcf5a Mon Sep 17 00:00:00 2001
+From: Ke Qinghua <qinghua.ke@freescale.com>
+Date: Mon, 14 Apr 2014 17:45:36 +0800
+Subject: [PATCH 304/602] ENGR00305254 imx6sx sarbesd board bring up
+
+Enable mutiple storage for evk,sabreauto,sabresd_6dq, sabresd_6sx in kernel 3.10
+
+Signed-off-by: Ke Qinghua <qinghua.ke@freescale.com>
+---
+ evk_6sl/fstab.freescale              | 4 ++--
+ evk_6sl/sepolicy/app.te              | 2 ++
+ evk_6sl/sepolicy/genfs_contexts      | 1 +
+ sabreauto_6q/fstab.freescale         | 4 ++--
+ sabreauto_6q/fstab_nand.freescale    | 4 ++--
+ sabreauto_6q/sepolicy/app.te         | 4 +++-
+ sabreauto_6q/sepolicy/genfs_contexts | 1 +
+ sabresd_6dq/fstab.freescale          | 4 ++--
+ sabresd_6dq/sepolicy/app.te          | 4 +++-
+ sabresd_6dq/sepolicy/genfs_contexts  | 1 +
+ sabresd_6sx/sepolicy/app.te          | 4 +++-
+ sabresd_6sx/sepolicy/genfs_contexts  | 1 +
+ 12 files changed, 23 insertions(+), 11 deletions(-)
+
+diff --git a/evk_6sl/fstab.freescale b/evk_6sl/fstab.freescale
+index b4ca4e7..77526e3 100644
+--- a/evk_6sl/fstab.freescale
++++ b/evk_6sl/fstab.freescale
+@@ -3,8 +3,8 @@
+ # The filesystem that contains the filesystem checker binary (typically /system) cannot
+ # specify MF_CHECK, and must come before any filesystems that do specify MF_CHECK
+ 
+-/devices/platform/sdhci-esdhc-imx.0/mmc_host/mmc1 /mnt/media_rw/extsd vfat defaults voldmanaged=extsd:auto
+-/devices/platform/fsl-ehci /mnt/media_rw/udisk vfat defaults voldmanaged=udisk:auto
++/devices/soc0/soc.2/2100000.aips-bus/2198000.usdhc/mmc_host/mmc2 /mnt/media_rw/extsd vfat defaults voldmanaged=extsd:auto
++/devices/soc0/soc.2/2100000.aips-bus/2184200.usb/ci_hdrc.1/usb1 /mnt/media_rw/udisk vfat defaults voldmanaged=udisk:auto
+ /dev/block/mmcblk0p5    /system      ext4    ro                                                                               wait
+ /dev/block/mmcblk0p4    /data        ext4    nosuid,nodev,nodiratime,noatime,nomblk_io_submit,noauto_da_alloc,errors=panic    wait,encryptable=footer
+ /dev/block/mmcblk0p6    /cache       ext4    nosuid,nodev,nomblk_io_submit                                                    wait
+diff --git a/evk_6sl/sepolicy/app.te b/evk_6sl/sepolicy/app.te
+index 158c7e3..561a2b1 100644
+--- a/evk_6sl/sepolicy/app.te
++++ b/evk_6sl/sepolicy/app.te
+@@ -3,3 +3,5 @@
+ allow domain    graphics_device:chr_file rw_file_perms;
+ allow domain    graphics_device:dir { write create add_name setattr mounton search };
+ allow system    system_data_file:dir *;
++allow vold      self:capability { setgid setuid };
++allow vold      fuse_device:chr_file rw_file_perms;
+diff --git a/evk_6sl/sepolicy/genfs_contexts b/evk_6sl/sepolicy/genfs_contexts
+index b27f218..34f9db4 100644
+--- a/evk_6sl/sepolicy/genfs_contexts
++++ b/evk_6sl/sepolicy/genfs_contexts
+@@ -1 +1,2 @@
+ genfscon nfs / u:object_r:rootfs:s0
++genfscon fuseblk / u:object_r:sdcard_external:s0
+diff --git a/sabreauto_6q/fstab.freescale b/sabreauto_6q/fstab.freescale
+index b4ca4e7..dfd5b1d 100644
+--- a/sabreauto_6q/fstab.freescale
++++ b/sabreauto_6q/fstab.freescale
+@@ -3,8 +3,8 @@
+ # The filesystem that contains the filesystem checker binary (typically /system) cannot
+ # specify MF_CHECK, and must come before any filesystems that do specify MF_CHECK
+ 
+-/devices/platform/sdhci-esdhc-imx.0/mmc_host/mmc1 /mnt/media_rw/extsd vfat defaults voldmanaged=extsd:auto
+-/devices/platform/fsl-ehci /mnt/media_rw/udisk vfat defaults voldmanaged=udisk:auto
++/devices/soc0/soc.1/2100000.aips-bus/2190000.usdhc/mmc_host/mmc0 /mnt/media_rw/extsd vfat defaults voldmanaged=extsd:auto
++/devices/soc0/soc.1/2100000.aips-bus/2184200.usb/ci_hdrc.1/usb1 /mnt/media_rw/udisk vfat defaults voldmanaged=udisk:auto
+ /dev/block/mmcblk0p5    /system      ext4    ro                                                                               wait
+ /dev/block/mmcblk0p4    /data        ext4    nosuid,nodev,nodiratime,noatime,nomblk_io_submit,noauto_da_alloc,errors=panic    wait,encryptable=footer
+ /dev/block/mmcblk0p6    /cache       ext4    nosuid,nodev,nomblk_io_submit                                                    wait
+diff --git a/sabreauto_6q/fstab_nand.freescale b/sabreauto_6q/fstab_nand.freescale
+index 385fb17..413b72d 100644
+--- a/sabreauto_6q/fstab_nand.freescale
++++ b/sabreauto_6q/fstab_nand.freescale
+@@ -5,8 +5,8 @@
+ 
+ # below is for ubi support, uncomment to support ubifs(NAND)
+ 
+-/devices/platform/sdhci-esdhc-imx.0/mmc_host/mmc1 /mnt/media_rw/extsd vfat defaults voldmanaged=extsd:auto
+-/devices/platform/fsl-ehci /mnt/media_rw/udisk vfat defaults voldmanaged=udisk:auto
++/devices/soc0/soc.1/2100000.aips-bus/2190000.usdhc/mmc_host/mmc0 /mnt/media_rw/extsd vfat defaults voldmanaged=extsd:auto
++/devices/soc0/soc.1/2100000.aips-bus/2184200.usb/ci_hdrc.1/usb1 /mnt/media_rw/udisk vfat defaults voldmanaged=udisk:auto
+ /dev/ubi0_0     /system		    ubifs 	ro                                      wait
+ /dev/ubi0_3     /data           ubifs   nosuid,nodev,nodiratime,noatime         wait
+ /dev/ubi0_1     /cache          ubifs   nosuid,nodev                            wait
+diff --git a/sabreauto_6q/sepolicy/app.te b/sabreauto_6q/sepolicy/app.te
+index 9418dbe..561a2b1 100644
+--- a/sabreauto_6q/sepolicy/app.te
++++ b/sabreauto_6q/sepolicy/app.te
+@@ -2,4 +2,6 @@
+ # They need that to render the standard UI.
+ allow domain    graphics_device:chr_file rw_file_perms;
+ allow domain    graphics_device:dir { write create add_name setattr mounton search };
+-allow system    system_data_file:dir *;
+\ No newline at end of file
++allow system    system_data_file:dir *;
++allow vold      self:capability { setgid setuid };
++allow vold      fuse_device:chr_file rw_file_perms;
+diff --git a/sabreauto_6q/sepolicy/genfs_contexts b/sabreauto_6q/sepolicy/genfs_contexts
+index b27f218..34f9db4 100644
+--- a/sabreauto_6q/sepolicy/genfs_contexts
++++ b/sabreauto_6q/sepolicy/genfs_contexts
+@@ -1 +1,2 @@
+ genfscon nfs / u:object_r:rootfs:s0
++genfscon fuseblk / u:object_r:sdcard_external:s0
+diff --git a/sabresd_6dq/fstab.freescale b/sabresd_6dq/fstab.freescale
+index 8e6981c..f282f9f 100644
+--- a/sabresd_6dq/fstab.freescale
++++ b/sabresd_6dq/fstab.freescale
+@@ -3,8 +3,8 @@
+ # The filesystem that contains the filesystem checker binary (typically /system) cannot
+ # specify MF_CHECK, and must come before any filesystems that do specify MF_CHECK
+ 
+-/devices/platform/sdhci-esdhc-imx.2/mmc_host/mmc1 /mnt/media_rw/extsd vfat defaults voldmanaged=extsd:auto
+-/devices/platform/fsl-ehci /mnt/media_rw/udisk vfat defaults voldmanaged=udisk:auto
++/devices/soc0/soc.1/2100000.aips-bus/2198000.usdhc/mmc_host/mmc1 /mnt/media_rw/extsd vfat defaults voldmanaged=extsd:auto
++/devices/soc0/soc.1/2100000.aips-bus/2184000.usb/ci_hdrc.0/usb2  /mnt/media_rw/udisk vfat defaults voldmanaged=udisk:auto
+ /dev/block/mmcblk0p5    /system      ext4    ro                                                                               wait
+ /dev/block/mmcblk0p4    /data        ext4    nosuid,nodev,nodiratime,noatime,nomblk_io_submit,noauto_da_alloc,errors=panic    wait,encryptable=footer
+ /dev/block/mmcblk0p6    /cache       ext4    nosuid,nodev,nomblk_io_submit                                                    wait
+diff --git a/sabresd_6dq/sepolicy/app.te b/sabresd_6dq/sepolicy/app.te
+index 9418dbe..561a2b1 100644
+--- a/sabresd_6dq/sepolicy/app.te
++++ b/sabresd_6dq/sepolicy/app.te
+@@ -2,4 +2,6 @@
+ # They need that to render the standard UI.
+ allow domain    graphics_device:chr_file rw_file_perms;
+ allow domain    graphics_device:dir { write create add_name setattr mounton search };
+-allow system    system_data_file:dir *;
+\ No newline at end of file
++allow system    system_data_file:dir *;
++allow vold      self:capability { setgid setuid };
++allow vold      fuse_device:chr_file rw_file_perms;
+diff --git a/sabresd_6dq/sepolicy/genfs_contexts b/sabresd_6dq/sepolicy/genfs_contexts
+index b27f218..34f9db4 100644
+--- a/sabresd_6dq/sepolicy/genfs_contexts
++++ b/sabresd_6dq/sepolicy/genfs_contexts
+@@ -1 +1,2 @@
+ genfscon nfs / u:object_r:rootfs:s0
++genfscon fuseblk / u:object_r:sdcard_external:s0
+diff --git a/sabresd_6sx/sepolicy/app.te b/sabresd_6sx/sepolicy/app.te
+index 9418dbe..561a2b1 100644
+--- a/sabresd_6sx/sepolicy/app.te
++++ b/sabresd_6sx/sepolicy/app.te
+@@ -2,4 +2,6 @@
+ # They need that to render the standard UI.
+ allow domain    graphics_device:chr_file rw_file_perms;
+ allow domain    graphics_device:dir { write create add_name setattr mounton search };
+-allow system    system_data_file:dir *;
+\ No newline at end of file
++allow system    system_data_file:dir *;
++allow vold      self:capability { setgid setuid };
++allow vold      fuse_device:chr_file rw_file_perms;
+diff --git a/sabresd_6sx/sepolicy/genfs_contexts b/sabresd_6sx/sepolicy/genfs_contexts
+index b27f218..34f9db4 100644
+--- a/sabresd_6sx/sepolicy/genfs_contexts
++++ b/sabresd_6sx/sepolicy/genfs_contexts
+@@ -1 +1,2 @@
+ genfscon nfs / u:object_r:rootfs:s0
++genfscon fuseblk / u:object_r:sdcard_external:s0
+-- 
+1.8.0
+

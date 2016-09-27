@@ -1,0 +1,39 @@
+From b5e1b393192099e91c5cb75b69291c87eacb9f60 Mon Sep 17 00:00:00 2001
+From: Anson Huang <b20788@freescale.com>
+Date: Tue, 9 Sep 2014 14:43:51 +0800
+Subject: [PATCH] ENGR00331269 arm: mx6: select OSC as uart's clk parent
+
+As M4 is sourcing UART clk from OSC, to make UART work
+when M4 is enabled, need to select OSC as clk parent,
+24M OSC is enough for debug UART in uboot.
+
+Signed-off-by: Anson Huang <b20788@freescale.com>
+(cherry picked from commit 8b903f529370fdc59cc03b3ced954ed894753044)
+Signed-off-by: Peng Fan <Peng.Fan@freescale.com>
+---
+ arch/arm/cpu/armv7/mx6/soc.c | 9 +++++++++
+ 1 file changed, 9 insertions(+)
+
+diff --git a/arch/arm/cpu/armv7/mx6/soc.c b/arch/arm/cpu/armv7/mx6/soc.c
+index 1e72212..e584306 100644
+--- a/arch/arm/cpu/armv7/mx6/soc.c
++++ b/arch/arm/cpu/armv7/mx6/soc.c
+@@ -435,6 +435,15 @@ int arch_cpu_init(void)
+ 	set_preclk_from_osc();
+ #endif
+ 
++#ifdef CONFIG_MX6SX
++	u32 reg;
++
++	/* set uart clk to OSC */
++	reg = readl(CCM_BASE_ADDR + 0x24);
++	reg |= 0x40;
++	writel(reg, CCM_BASE_ADDR + 0x24);
++#endif
++
+ 	imx_set_wdog_powerdown(false); /* Disable PDE bit of WMCR register */
+ 
+ #ifndef CONFIG_MX6SL
+-- 
+1.8.0
+

@@ -1,0 +1,66 @@
+From 2eb304a2175a76f32e029108c5da5de39b27e57a Mon Sep 17 00:00:00 2001
+From: Liu Ying <Ying.Liu@freescale.com>
+Date: Mon, 24 Feb 2014 16:49:34 +0800
+Subject: [PATCH] ENGR00315499-22 video: ipu: wait for DP SF end irq when
+ disabling sync BG flow
+
+Instead of waiting for DC triple buffer to be cleared, this patch changes
+to wait for a relevant DP sync flow end irq when disabling sync BG flows.
+In this way, we align the implement to the FSL internal IPUv3 driver.
+After applying this patch, the uboot hang up issue at the arch_preboot_os
+stage on the MX6DL platforms is not observed any more.
+
+Signed-off-by: Liu Ying <Ying.Liu@freescale.com>
+Signed-off-by: Nitin Garg <nitin.garg@freescale.com>
+(cherry picked from commit 56d72035946c40f45d2f49ccb1520734e34ecc89)
+Signed-off-by: Peng Fan <Peng.Fan@freescale.com>
+(cherry picked from commit d8ac526681589c62287d014fedee4c9e64fbca66)
+Signed-off-by: Peng Fan <Peng.Fan@freescale.com>
+---
+ drivers/video/ipu.h      | 2 +-
+ drivers/video/ipu_disp.c | 2 +-
+ drivers/video/ipu_regs.h | 2 +-
+ 3 files changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/drivers/video/ipu.h b/drivers/video/ipu.h
+index 091b58f..a3dce8f 100644
+--- a/drivers/video/ipu.h
++++ b/drivers/video/ipu.h
+@@ -6,7 +6,7 @@
+  *
+  * Linux IPU driver for MX51:
+  *
+- * (C) Copyright 2005-2010 Freescale Semiconductor, Inc.
++ * (C) Copyright 2005-2014 Freescale Semiconductor, Inc.
+  *
+  * SPDX-License-Identifier:	GPL-2.0+
+  */
+diff --git a/drivers/video/ipu_disp.c b/drivers/video/ipu_disp.c
+index 4faeafb..86ddb9d 100644
+--- a/drivers/video/ipu_disp.c
++++ b/drivers/video/ipu_disp.c
+@@ -6,7 +6,7 @@
+  *
+  * Linux IPU driver for MX51:
+  *
+- * (C) Copyright 2005-2010 Freescale Semiconductor, Inc.
++ * (C) Copyright 2005-2014 Freescale Semiconductor, Inc.
+  *
+  * SPDX-License-Identifier:	GPL-2.0+
+  */
+diff --git a/drivers/video/ipu_regs.h b/drivers/video/ipu_regs.h
+index c2c134a..f800405 100644
+--- a/drivers/video/ipu_regs.h
++++ b/drivers/video/ipu_regs.h
+@@ -6,7 +6,7 @@
+  *
+  * Linux IPU driver for MX51:
+  *
+- * (C) Copyright 2005-2009 Freescale Semiconductor, Inc.
++ * (C) Copyright 2005-2014 Freescale Semiconductor, Inc.
+  *
+  * SPDX-License-Identifier:	GPL-2.0+
+  */
+-- 
+1.8.0
+

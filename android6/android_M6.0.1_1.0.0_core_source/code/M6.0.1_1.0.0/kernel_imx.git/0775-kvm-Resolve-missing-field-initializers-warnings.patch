@@ -1,0 +1,41 @@
+From 6bb7724ee43511575aba8505caba2b22ccbd0771 Mon Sep 17 00:00:00 2001
+From: Mark Rustad <mark.d.rustad@intel.com>
+Date: Fri, 25 Jul 2014 06:27:03 -0700
+Subject: [PATCH] kvm: Resolve missing-field-initializers warnings
+
+Resolve missing-field-initializers warnings seen in W=2 kernel
+builds by having macros generate more elaborated initializers.
+That is enough to silence the warnings.
+
+Signed-off-by: Mark Rustad <mark.d.rustad@intel.com>
+Signed-off-by: Jeff Kirsher <jeffrey.t.kirsher@intel.com>
+Signed-off-by: Paolo Bonzini <pbonzini@redhat.com>
+(cherry picked from commit 25f97ff451a4aab534afc1290af97d23ea0b4fb3)
+Signed-off-by: Christoffer Dall <christoffer.dall@linaro.org>
+---
+ virt/kvm/irq_comm.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/virt/kvm/irq_comm.c b/virt/kvm/irq_comm.c
+index ced4a54..a228ee8 100644
+--- a/virt/kvm/irq_comm.c
++++ b/virt/kvm/irq_comm.c
+@@ -323,13 +323,13 @@ out:
+ 
+ #define IOAPIC_ROUTING_ENTRY(irq) \
+ 	{ .gsi = irq, .type = KVM_IRQ_ROUTING_IRQCHIP,	\
+-	  .u.irqchip.irqchip = KVM_IRQCHIP_IOAPIC, .u.irqchip.pin = (irq) }
++	  .u.irqchip = { .irqchip = KVM_IRQCHIP_IOAPIC, .pin = (irq) } }
+ #define ROUTING_ENTRY1(irq) IOAPIC_ROUTING_ENTRY(irq)
+ 
+ #ifdef CONFIG_X86
+ #  define PIC_ROUTING_ENTRY(irq) \
+ 	{ .gsi = irq, .type = KVM_IRQ_ROUTING_IRQCHIP,	\
+-	  .u.irqchip.irqchip = SELECT_PIC(irq), .u.irqchip.pin = (irq) % 8 }
++	  .u.irqchip = { .irqchip = SELECT_PIC(irq), .pin = (irq) % 8 } }
+ #  define ROUTING_ENTRY2(irq) \
+ 	IOAPIC_ROUTING_ENTRY(irq), PIC_ROUTING_ENTRY(irq)
+ #else
+-- 
+1.8.0
+

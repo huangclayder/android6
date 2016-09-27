@@ -1,0 +1,33 @@
+From 02f316936062f5d590abab46b2899937f3efa5a8 Mon Sep 17 00:00:00 2001
+From: Liu Ying <Ying.Liu@freescale.com>
+Date: Mon, 30 Nov 2015 17:01:49 +0800
+Subject: [PATCH] MLK-11921-1 mxc IPUv3: common: Fix the macro
+ idma_is_valid/idma_mask definitions
+
+This patch adds missing parentheses around the argument of the macro
+idma_is_valid and idma_mask to avoid any potential macro expansion issue.
+
+Signed-off-by: Liu Ying <Ying.Liu@freescale.com>
+(cherry picked from commit f8ac8589fb21ea52670a47905f9109b3a0a2afe1)
+---
+ drivers/mxc/ipu3/ipu_common.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/mxc/ipu3/ipu_common.c b/drivers/mxc/ipu3/ipu_common.c
+index b676ec3..5970cc3 100644
+--- a/drivers/mxc/ipu3/ipu_common.c
++++ b/drivers/mxc/ipu3/ipu_common.c
+@@ -132,8 +132,8 @@ static inline uint32_t tri_cur_buf_shift(uint32_t dma_chan)
+ 	return ffs(mask) - 1;
+ }
+ 
+-#define idma_is_valid(ch)	(ch != NO_DMA)
+-#define idma_mask(ch)		(idma_is_valid(ch) ? (1UL << (ch & 0x1F)) : 0)
++#define idma_is_valid(ch)	((ch) != NO_DMA)
++#define idma_mask(ch)		(idma_is_valid(ch) ? (1UL << ((ch) & 0x1F)) : 0)
+ 
+ static inline bool idma_is_set(struct ipu_soc *ipu, uint32_t reg, uint32_t dma)
+ {
+-- 
+1.8.0
+

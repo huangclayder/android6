@@ -1,0 +1,31 @@
+From e8b68ced4b08063fdba8f60a88d5a03f500ef45c Mon Sep 17 00:00:00 2001
+From: Eric Auger <eric.auger@linaro.org>
+Date: Mon, 1 Sep 2014 09:36:08 +0100
+Subject: [PATCH] KVM: EVENTFD: remove inclusion of irq.h
+
+No more needed. irq.h would be void on ARM.
+
+Acked-by: Paolo Bonzini <pbonzini@redhat.com>
+Signed-off-by: Eric Auger <eric.auger@linaro.org>
+Signed-off-by: Marc Zyngier <marc.zyngier@arm.com>
+(cherry picked from commit 0ba09511ddc3ff0b462f37b4fe4b9c4dccc054ec)
+Signed-off-by: Christoffer Dall <christoffer.dall@linaro.org>
+---
+ virt/kvm/eventfd.c | 1 -
+ 1 file changed, 1 deletion(-)
+
+diff --git a/virt/kvm/eventfd.c b/virt/kvm/eventfd.c
+index 25b34d7..0ab1411 100644
+--- a/virt/kvm/eventfd.c
++++ b/virt/kvm/eventfd.c
+@@ -36,7 +36,6 @@
+ #include <linux/seqlock.h>
+ #include <trace/events/kvm.h>
+ 
+-#include "irq.h"
+ #include "iodev.h"
+ 
+ #ifdef CONFIG_HAVE_KVM_IRQFD
+-- 
+1.8.0
+

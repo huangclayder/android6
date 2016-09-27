@@ -1,0 +1,29 @@
+From 98b6e698f3be3d2d1613eda1bbbbc83ce4547601 Mon Sep 17 00:00:00 2001
+From: zhang sanshan <b51434@freescale.com>
+Date: Mon, 9 Nov 2015 15:30:03 +0800
+Subject: [PATCH] MA-7219 [Android_6SX_SD]Brightness: Brightness is darker
+ when boot up to launche on SX_SD than SX_ARD. 100%
+
+Correct the pin of CABC_EN on sabresd 6SX board.
+
+Signed-off-by: zhang sanshan <b51434@freescale.com>
+---
+ arch/arm/boot/dts/imx6sx-sdb.dts | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/arch/arm/boot/dts/imx6sx-sdb.dts b/arch/arm/boot/dts/imx6sx-sdb.dts
+index 601e47d..d018e30 100644
+--- a/arch/arm/boot/dts/imx6sx-sdb.dts
++++ b/arch/arm/boot/dts/imx6sx-sdb.dts
+@@ -73,7 +73,7 @@
+ 		compatible = "hannstar,cabc";
+ 
+ 		lvds0 {
+-			gpios = <&gpio4 26 GPIO_ACTIVE_HIGH>;
++			gpios = <&gpio4 18 GPIO_ACTIVE_HIGH>;
+ 		};
+ 	};
+ 
+-- 
+1.8.0
+

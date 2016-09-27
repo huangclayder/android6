@@ -1,0 +1,63 @@
+From aa107f1051874d2494bfea14e247fc678670c62e Mon Sep 17 00:00:00 2001
+From: Victor Kamensky <victor.kamensky@linaro.org>
+Date: Thu, 12 Jun 2014 09:30:05 -0700
+Subject: [PATCH] ARM: KVM: MMIO support BE host running LE code
+
+In case of status register E bit is not set (LE mode) and host runs in
+BE mode we need byteswap data, so read/write is emulated correctly.
+
+Signed-off-by: Victor Kamensky <victor.kamensky@linaro.org>
+Reviewed-by: Christoffer Dall <christoffer.dall@linaro.org>
+Reviewed-by: Marc Zyngier <marc.zyngier@arm.com>
+Signed-off-by: Marc Zyngier <marc.zyngier@arm.com>
+(cherry picked from commit 27f194fd360a96cc64bebb2d69dd5abd67984b8a)
+Signed-off-by: Christoffer Dall <christoffer.dall@linaro.org>
+---
+ arch/arm/include/asm/kvm_emulate.h | 22 ++++++++++++++++++----
+ 1 file changed, 18 insertions(+), 4 deletions(-)
+
+diff --git a/arch/arm/include/asm/kvm_emulate.h b/arch/arm/include/asm/kvm_emulate.h
+index 0fa90c9..69b7469 100644
+--- a/arch/arm/include/asm/kvm_emulate.h
++++ b/arch/arm/include/asm/kvm_emulate.h
+@@ -185,9 +185,16 @@ static inline unsigned long vcpu_data_guest_to_host(struct kvm_vcpu *vcpu,
+ 		default:
+ 			return be32_to_cpu(data);
+ 		}
++	} else {
++		switch (len) {
++		case 1:
++			return data & 0xff;
++		case 2:
++			return le16_to_cpu(data & 0xffff);
++		default:
++			return le32_to_cpu(data);
++		}
+ 	}
+-
+-	return data;		/* Leave LE untouched */
+ }
+ 
+ static inline unsigned long vcpu_data_host_to_guest(struct kvm_vcpu *vcpu,
+@@ -203,9 +210,16 @@ static inline unsigned long vcpu_data_host_to_guest(struct kvm_vcpu *vcpu,
+ 		default:
+ 			return cpu_to_be32(data);
+ 		}
++	} else {
++		switch (len) {
++		case 1:
++			return data & 0xff;
++		case 2:
++			return cpu_to_le16(data & 0xffff);
++		default:
++			return cpu_to_le32(data);
++		}
+ 	}
+-
+-	return data;		/* Leave LE untouched */
+ }
+ 
+ #endif /* __ARM_KVM_EMULATE_H__ */
+-- 
+1.8.0
+

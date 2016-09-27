@@ -1,0 +1,26 @@
+From 6e845ef7afdac722eff775911008c89e22619cec Mon Sep 17 00:00:00 2001
+From: Ricardo Salveti de Araujo <ricardo.salveti@linaro.org>
+Date: Mon, 25 Jun 2012 20:54:36 -0300
+Subject: [PATCH] configs: ubuntu: disabling CONFIG_MTD_NAND_NANDSIM=m,
+ breaking build
+
+Signed-off-by: Ricardo Salveti de Araujo <ricardo.salveti@linaro.org>
+---
+ linaro/configs/ubuntu.conf | 1 -
+ 1 file changed, 1 deletion(-)
+
+diff --git a/linaro/configs/ubuntu.conf b/linaro/configs/ubuntu.conf
+index 202a0a2..5b9d8ad 100644
+--- a/linaro/configs/ubuntu.conf
++++ b/linaro/configs/ubuntu.conf
+@@ -713,7 +713,6 @@ CONFIG_MTD_NAND_IDS=y
+ CONFIG_MTD_NAND_DISKONCHIP=m
+ CONFIG_MTD_NAND_DISKONCHIP_PROBE_ADDRESS=0
+ CONFIG_MTD_NAND_DOCG4=m
+-CONFIG_MTD_NAND_NANDSIM=m
+ CONFIG_MTD_NAND_PLATFORM=m
+ CONFIG_MTD_ALAUDA=m
+ CONFIG_MTD_ONENAND_GENERIC=m
+-- 
+1.8.0
+

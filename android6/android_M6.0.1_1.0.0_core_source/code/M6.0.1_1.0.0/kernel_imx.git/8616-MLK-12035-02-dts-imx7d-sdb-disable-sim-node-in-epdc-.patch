@@ -1,0 +1,42 @@
+From c9a80d6e2818661ff55687d7d82916a8258dcae0 Mon Sep 17 00:00:00 2001
+From: Fugang Duan <b38611@freescale.com>
+Date: Mon, 21 Dec 2015 12:44:03 +0800
+Subject: [PATCH] MLK-12035-02 dts: imx7d-sdb: disable sim node in epdc file
+
+Disable sim node in epdc file since sim and epdc have pin confiliction.
+The patch also remove enet2 assert gpios.
+
+Signed-off-by: Fugang Duan <B38611@freescale.com>
+---
+ arch/arm/boot/dts/imx7d-sdb-epdc.dtsi | 4 ++++
+ arch/arm/boot/dts/imx7d-sdb-reva.dts  | 2 +-
+ 2 files changed, 5 insertions(+), 1 deletion(-)
+
+diff --git a/arch/arm/boot/dts/imx7d-sdb-epdc.dtsi b/arch/arm/boot/dts/imx7d-sdb-epdc.dtsi
+index f6c589c..cbc7ca1 100644
+--- a/arch/arm/boot/dts/imx7d-sdb-epdc.dtsi
++++ b/arch/arm/boot/dts/imx7d-sdb-epdc.dtsi
+@@ -29,3 +29,7 @@
+ &sii902x {
+ 	status = "disabled";
+ };
++
++&sim1 {
++	status = "disabled";
++};
+diff --git a/arch/arm/boot/dts/imx7d-sdb-reva.dts b/arch/arm/boot/dts/imx7d-sdb-reva.dts
+index 7ee698f..e4d2d8d 100644
+--- a/arch/arm/boot/dts/imx7d-sdb-reva.dts
++++ b/arch/arm/boot/dts/imx7d-sdb-reva.dts
+@@ -38,7 +38,7 @@
+ 
+ &fec2 {
+ 	pinctrl-0 = <&pinctrl_enet2>;
+-	pinctrl-assert-gpios = <&gpio_spi 5 GPIO_ACTIVE_HIGH>;
++	pinctrl-assert-gpios = <>;
+ };
+ 
+ &i2c4 {
+-- 
+1.8.0
+

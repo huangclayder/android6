@@ -1,0 +1,29 @@
+From 74341bdac1ac58f1b6e3f23b1d580db0baa66bc6 Mon Sep 17 00:00:00 2001
+From: Anson Huang <b20788@freescale.com>
+Date: Tue, 7 Apr 2015 14:31:34 +0800
+Subject: [PATCH] MLK-10591-1 ARM: dts: add ipg clk node for imx6qdl
+
+Add ipg clk node in gpc for kernel use.
+
+Signed-off-by: Anson Huang <b20788@freescale.com>
+---
+ arch/arm/boot/dts/imx6qdl.dtsi | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/arch/arm/boot/dts/imx6qdl.dtsi b/arch/arm/boot/dts/imx6qdl.dtsi
+index ce7837c..255288e 100644
+--- a/arch/arm/boot/dts/imx6qdl.dtsi
++++ b/arch/arm/boot/dts/imx6qdl.dtsi
+@@ -787,7 +787,8 @@
+ 					 <&clks IMX6QDL_CLK_GPU2D_CORE>,
+ 					 <&clks IMX6QDL_CLK_GPU2D_AXI>,
+ 					 <&clks IMX6QDL_CLK_OPENVG_AXI>,
+-					 <&clks IMX6QDL_CLK_VPU_AXI>;
++					 <&clks IMX6QDL_CLK_VPU_AXI>,
++					 <&clks IMX6QDL_CLK_IPG>;
+ 				#power-domain-cells = <1>;
+ 			};
+ 
+-- 
+1.8.0
+

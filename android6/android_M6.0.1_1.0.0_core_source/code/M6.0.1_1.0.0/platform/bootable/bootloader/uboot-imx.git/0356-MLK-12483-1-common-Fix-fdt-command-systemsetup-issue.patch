@@ -1,0 +1,31 @@
+From 380ba3fe91ff28079659290c5a9e024aad0f20eb Mon Sep 17 00:00:00 2001
+From: Ye Li <ye.li@nxp.com>
+Date: Wed, 2 Mar 2016 00:56:16 +0800
+Subject: [PATCH] MLK-12483-1 common: Fix fdt command systemsetup issue
+
+The fdt command "fdt systemsetup" can't work because the do_fdt check the
+start char 's' for command "fdt set". So the fdt systemsetup will also go into
+the "fdt set" in fault. Fix this problem by checking the whole word "set" for
+"fdt set" command.
+
+Signed-off-by: Ye Li <ye.li@nxp.com>
+---
+ common/cmd_fdt.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/common/cmd_fdt.c b/common/cmd_fdt.c
+index 48b3e70..e18cf9c 100644
+--- a/common/cmd_fdt.c
++++ b/common/cmd_fdt.c
+@@ -243,7 +243,7 @@ static int do_fdt(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
+ 	/*
+ 	 * Set the value of a property in the working_fdt.
+ 	 */
+-	} else if (argv[1][0] == 's') {
++	} else if (strncmp(argv[1], "set", 3) == 0) {
+ 		char *pathp;		/* path */
+ 		char *prop;		/* property */
+ 		int  nodeoffset;	/* node offset from libfdt */
+-- 
+1.8.0
+

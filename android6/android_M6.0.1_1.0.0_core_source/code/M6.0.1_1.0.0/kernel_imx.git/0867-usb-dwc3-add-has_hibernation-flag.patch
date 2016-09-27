@@ -1,0 +1,39 @@
+From b58f6024f9b807a4f7464b021101be6c4dc16ba3 Mon Sep 17 00:00:00 2001
+From: Felipe Balbi <balbi@ti.com>
+Date: Thu, 19 Dec 2013 12:14:29 -0600
+Subject: [PATCH] usb: dwc3: add has_hibernation flag
+
+this will tell driver that this version
+of the core was configured with hibernation
+feature enabled.
+
+Signed-off-by: Felipe Balbi <balbi@ti.com>
+(cherry picked from commit b559531d3b7a3ab1d93c873ccbd4c245c0372558)
+Signed-off-by: Mark Brown <broonie@kernel.org>
+---
+ drivers/usb/dwc3/core.h | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/drivers/usb/dwc3/core.h b/drivers/usb/dwc3/core.h
+index 0ee9199..b287e69 100644
+--- a/drivers/usb/dwc3/core.h
++++ b/drivers/usb/dwc3/core.h
+@@ -640,6 +640,7 @@ struct dwc3_scratchpad_array {
+  * @delayed_status: true when gadget driver asks for delayed status
+  * @ep0_bounced: true when we used bounce buffer
+  * @ep0_expect_in: true when we expect a DATA IN transfer
++ * @has_hibernation: true when dwc3 was configured with Hibernation
+  * @is_selfpowered: true when we are selfpowered
+  * @needs_fifo_resize: not all users might want fifo resizing, flag it
+  * @pullups_connected: true when Run/Stop bit is set
+@@ -736,6 +737,7 @@ struct dwc3 {
+ 	unsigned		delayed_status:1;
+ 	unsigned		ep0_bounced:1;
+ 	unsigned		ep0_expect_in:1;
++	unsigned		has_hibernation:1;
+ 	unsigned		is_selfpowered:1;
+ 	unsigned		needs_fifo_resize:1;
+ 	unsigned		pullups_connected:1;
+-- 
+1.8.0
+

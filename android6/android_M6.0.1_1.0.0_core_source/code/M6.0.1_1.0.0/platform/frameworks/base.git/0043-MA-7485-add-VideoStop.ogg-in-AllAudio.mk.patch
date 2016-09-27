@@ -1,0 +1,31 @@
+From 868ab267caeddf35fc0588a0642b5bbaef98dabf Mon Sep 17 00:00:00 2001
+From: Winter Wang <b55847@freescale.com>
+Date: Fri, 5 Feb 2016 10:26:25 +0800
+Subject: [PATCH 43/45] MA-7485 add VideoStop.ogg in AllAudio.mk
+
+In libcameraservice, mm6.0 uses VideoStop.ogg as the video record stop sound.
+This ogg file is located at frameworks/base/data/sounds/effects/ogg/,
+but it has not been added to the AllAudio.mk which is included in our imx6/7.mk.
+
+Add this file in the AllAudio.mk to fix this issue.
+
+Signed-off-by: Winter Wang <b55847@freescale.com>
+---
+ data/sounds/AllAudio.mk | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/data/sounds/AllAudio.mk b/data/sounds/AllAudio.mk
+index f6d8ee9..edfd380 100644
+--- a/data/sounds/AllAudio.mk
++++ b/data/sounds/AllAudio.mk
+@@ -228,6 +228,7 @@ PRODUCT_COPY_FILES += \
+     $(LOCAL_PATH)/effects/ogg/Unlock.ogg:system/media/audio/ui/Unlock.ogg \
+     $(LOCAL_PATH)/effects/ogg/Trusted_48k.ogg:system/media/audio/ui/Trusted.ogg \
+     $(LOCAL_PATH)/effects/ogg/VideoRecord_48k.ogg:system/media/audio/ui/VideoRecord.ogg \
++    $(LOCAL_PATH)/effects/ogg/VideoStop_48k.ogg:system/media/audio/ui/VideoStop.ogg \
+     $(LOCAL_PATH)/effects/ogg/WirelessChargingStarted.ogg:system/media/audio/ui/WirelessChargingStarted.ogg \
+     $(LOCAL_PATH)/effects/ogg/camera_click_48k.ogg:system/media/audio/ui/camera_click.ogg \
+     $(LOCAL_PATH)/effects/ogg/camera_focus.ogg:system/media/audio/ui/camera_focus.ogg \
+-- 
+1.8.0
+

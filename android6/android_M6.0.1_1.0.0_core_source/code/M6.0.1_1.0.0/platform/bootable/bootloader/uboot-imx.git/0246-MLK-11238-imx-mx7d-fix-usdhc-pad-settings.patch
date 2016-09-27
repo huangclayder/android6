@@ -1,0 +1,221 @@
+From e2a48d1ebf95df7fd9a8c16366bd5453fbd8bb99 Mon Sep 17 00:00:00 2001
+From: Peng Fan <Peng.Fan@freescale.com>
+Date: Mon, 13 Jul 2015 14:39:02 +0800
+Subject: [PATCH] MLK-11238 imx: mx7d fix usdhc pad settings
+
+To CD/VSELECT/RST, should use same pad settings with USDHC_PAD_CTRL,
+because default NO_PAD_CTRL's settings is 100K Pull-Down. But, we need
+pull-up for CD/VSELECT/RST.
+
+Also some board provides external pull-down/up, we'd better use internal
+pull-up for these pad settings.
+
+To mx7d_12x12_lpddr3_arm2:
+If no card plugged in, "mmc dev 1" will show "Card did not respond to
+voltage select". After apply this patch, it will show "MMC: no card present".
+
+To mx7dsabresd:
+Alougth without this patch, if no card plugged in sd1, still correct msg
+"MMC: no card present", anyway we'd better use pull-up.
+
+Signed-off-by: Peng Fan <Peng.Fan@freescale.com>
+---
+ .../mx7d_12x12_ddr3_arm2/mx7d_12x12_ddr3_arm2.c       |  8 +++-----
+ .../mx7d_12x12_lpddr3_arm2/mx7d_12x12_lpddr3_arm2.c   | 17 +++++++----------
+ .../mx7d_19x19_ddr3_arm2/mx7d_19x19_ddr3_arm2.c       | 19 ++++++++-----------
+ .../mx7d_19x19_lpddr3_arm2/mx7d_19x19_lpddr3_arm2.c   |  9 +++------
+ board/freescale/mx7dsabresd/mx7dsabresd.c             |  6 +++---
+ 5 files changed, 24 insertions(+), 35 deletions(-)
+
+diff --git a/board/freescale/mx7d_12x12_ddr3_arm2/mx7d_12x12_ddr3_arm2.c b/board/freescale/mx7d_12x12_ddr3_arm2/mx7d_12x12_ddr3_arm2.c
+index 91fa798..0c1b4ce 100644
+--- a/board/freescale/mx7d_12x12_ddr3_arm2/mx7d_12x12_ddr3_arm2.c
++++ b/board/freescale/mx7d_12x12_ddr3_arm2/mx7d_12x12_ddr3_arm2.c
+@@ -33,8 +33,6 @@ DECLARE_GLOBAL_DATA_PTR;
+ 	PAD_CTL_PUS_PU100KOHM | PAD_CTL_HYS)
+ #define USDHC_PAD_CTRL (PAD_CTL_DSE_3P3V_32OHM | PAD_CTL_SRE_SLOW | \
+ 	PAD_CTL_HYS | PAD_CTL_PUE | PAD_CTL_PUS_PU47KOHM)
+-#define USDHC_PAD_VSELECT (PAD_CTL_DSE_3P3V_32OHM | \
+-	PAD_CTL_PUE | PAD_CTL_PUS_PU47KOHM)
+ #define I2C_PAD_CTRL    (PAD_CTL_DSE_3P3V_32OHM | PAD_CTL_SRE_SLOW | \
+ 	PAD_CTL_HYS | PAD_CTL_PUE | PAD_CTL_PUS_PU100KOHM)
+ #define SPI_PAD_CTRL (PAD_CTL_DSE_3P3V_49OHM | PAD_CTL_SRE_SLOW | PAD_CTL_HYS)
+@@ -94,7 +92,7 @@ static iomux_v3_cfg_t const usdhc2_emmc_pads[] = {
+ 	MX7D_PAD_ECSPI1_MISO__SD2_DATA6 | MUX_PAD_CTRL(USDHC_PAD_CTRL),
+ 	MX7D_PAD_ECSPI1_SS0__SD2_DATA7 | MUX_PAD_CTRL(USDHC_PAD_CTRL),
+ 
+-	MX7D_PAD_SD2_RESET_B__GPIO5_IO11 | MUX_PAD_CTRL(NO_PAD_CTRL),
++	MX7D_PAD_SD2_RESET_B__GPIO5_IO11 | MUX_PAD_CTRL(USDHC_PAD_CTRL),
+ };
+ 
+ static iomux_v3_cfg_t const usdhc3_pads[] = {
+@@ -105,8 +103,8 @@ static iomux_v3_cfg_t const usdhc3_pads[] = {
+ 	MX7D_PAD_SD3_DATA2__SD3_DATA2 | MUX_PAD_CTRL(USDHC_PAD_CTRL),
+ 	MX7D_PAD_SD3_DATA3__SD3_DATA3 | MUX_PAD_CTRL(USDHC_PAD_CTRL),
+ 
+-	MX7D_PAD_GPIO1_IO14__GPIO1_IO14  | MUX_PAD_CTRL(NO_PAD_CTRL),
+-	MX7D_PAD_GPIO1_IO15__GPIO1_IO15  | MUX_PAD_CTRL(NO_PAD_CTRL),
++	MX7D_PAD_GPIO1_IO14__GPIO1_IO14  | MUX_PAD_CTRL(USDHC_PAD_CTRL),
++	MX7D_PAD_GPIO1_IO15__GPIO1_IO15  | MUX_PAD_CTRL(USDHC_PAD_CTRL),
+ };
+ 
+ static iomux_v3_cfg_t const wdog_pads[] = {
+diff --git a/board/freescale/mx7d_12x12_lpddr3_arm2/mx7d_12x12_lpddr3_arm2.c b/board/freescale/mx7d_12x12_lpddr3_arm2/mx7d_12x12_lpddr3_arm2.c
+index 5ecc8e4..ce11a21 100644
+--- a/board/freescale/mx7d_12x12_lpddr3_arm2/mx7d_12x12_lpddr3_arm2.c
++++ b/board/freescale/mx7d_12x12_lpddr3_arm2/mx7d_12x12_lpddr3_arm2.c
+@@ -44,9 +44,6 @@ DECLARE_GLOBAL_DATA_PTR;
+ #define USDHC_PAD_CTRL (PAD_CTL_DSE_3P3V_32OHM | PAD_CTL_SRE_SLOW | \
+ 	PAD_CTL_HYS | PAD_CTL_PUE | PAD_CTL_PUS_PU47KOHM)
+ 
+-#define USDHC_PAD_VSELECT (PAD_CTL_DSE_3P3V_32OHM | \
+-	PAD_CTL_PUE | PAD_CTL_PUS_PU47KOHM)
+-
+ #define ENET_PAD_CTRL  (PAD_CTL_PUS_PU100KOHM | PAD_CTL_DSE_3P3V_98OHM)
+ #define ENET_PAD_CTRL_MII  (PAD_CTL_PUS_PU100KOHM | PAD_CTL_DSE_3P3V_98OHM)
+ 
+@@ -115,10 +112,10 @@ static iomux_v3_cfg_t const usdhc1_pads[] = {
+ 	MX7D_PAD_SD1_DATA1__SD1_DATA1 | MUX_PAD_CTRL(USDHC_PAD_CTRL),
+ 	MX7D_PAD_SD1_DATA2__SD1_DATA2 | MUX_PAD_CTRL(USDHC_PAD_CTRL),
+ 	MX7D_PAD_SD1_DATA3__SD1_DATA3 | MUX_PAD_CTRL(USDHC_PAD_CTRL),
+-	MX7D_PAD_GPIO1_IO08__SD1_VSELECT | MUX_PAD_CTRL(USDHC_PAD_VSELECT),
++	MX7D_PAD_GPIO1_IO08__SD1_VSELECT | MUX_PAD_CTRL(USDHC_PAD_CTRL),
+ 
+-	MX7D_PAD_SD1_CD_B__GPIO5_IO0 | MUX_PAD_CTRL(NO_PAD_CTRL),
+-	MX7D_PAD_SD1_RESET_B__GPIO5_IO2 | MUX_PAD_CTRL(NO_PAD_CTRL),
++	MX7D_PAD_SD1_CD_B__GPIO5_IO0 | MUX_PAD_CTRL(USDHC_PAD_CTRL),
++	MX7D_PAD_SD1_RESET_B__GPIO5_IO2 | MUX_PAD_CTRL(USDHC_PAD_CTRL),
+ };
+ 
+ static iomux_v3_cfg_t const usdhc2_pads[] = {
+@@ -129,10 +126,10 @@ static iomux_v3_cfg_t const usdhc2_pads[] = {
+ 	MX7D_PAD_SD2_DATA2__SD2_DATA2 | MUX_PAD_CTRL(USDHC_PAD_CTRL),
+ 	MX7D_PAD_SD2_DATA3__SD2_DATA3 | MUX_PAD_CTRL(USDHC_PAD_CTRL),
+ 
+-	MX7D_PAD_GPIO1_IO12__SD2_VSELECT | MUX_PAD_CTRL(USDHC_PAD_VSELECT),
++	MX7D_PAD_GPIO1_IO12__SD2_VSELECT | MUX_PAD_CTRL(USDHC_PAD_CTRL),
+ 
+-	MX7D_PAD_SD2_CD_B__GPIO5_IO9 | MUX_PAD_CTRL(NO_PAD_CTRL),
+-	MX7D_PAD_SD2_RESET_B__GPIO5_IO11 | MUX_PAD_CTRL(NO_PAD_CTRL),
++	MX7D_PAD_SD2_CD_B__GPIO5_IO9 | MUX_PAD_CTRL(USDHC_PAD_CTRL),
++	MX7D_PAD_SD2_RESET_B__GPIO5_IO11 | MUX_PAD_CTRL(USDHC_PAD_CTRL),
+ };
+ 
+ static iomux_v3_cfg_t const usdhc3_emmc_pads[] = {
+@@ -147,7 +144,7 @@ static iomux_v3_cfg_t const usdhc3_emmc_pads[] = {
+ 	MX7D_PAD_SD3_DATA6__SD3_DATA6 | MUX_PAD_CTRL(USDHC_PAD_CTRL),
+ 	MX7D_PAD_SD3_DATA7__SD3_DATA7 | MUX_PAD_CTRL(USDHC_PAD_CTRL),
+ 
+-	MX7D_PAD_SD3_RESET_B__GPIO6_IO11 | MUX_PAD_CTRL(NO_PAD_CTRL),
++	MX7D_PAD_SD3_RESET_B__GPIO6_IO11 | MUX_PAD_CTRL(USDHC_PAD_CTRL),
+ };
+ 
+ 
+diff --git a/board/freescale/mx7d_19x19_ddr3_arm2/mx7d_19x19_ddr3_arm2.c b/board/freescale/mx7d_19x19_ddr3_arm2/mx7d_19x19_ddr3_arm2.c
+index 6fbde13..84e08ba 100644
+--- a/board/freescale/mx7d_19x19_ddr3_arm2/mx7d_19x19_ddr3_arm2.c
++++ b/board/freescale/mx7d_19x19_ddr3_arm2/mx7d_19x19_ddr3_arm2.c
+@@ -40,9 +40,6 @@ DECLARE_GLOBAL_DATA_PTR;
+ #define USDHC_PAD_CTRL (PAD_CTL_DSE_3P3V_32OHM | PAD_CTL_SRE_SLOW | \
+ 	PAD_CTL_HYS | PAD_CTL_PUE | PAD_CTL_PUS_PU47KOHM)
+ 
+-#define USDHC_PAD_VSELECT (PAD_CTL_DSE_3P3V_32OHM | \
+-	PAD_CTL_PUE | PAD_CTL_PUS_PU47KOHM)
+-
+ #define ENET_PAD_CTRL  (PAD_CTL_PUS_PU100KOHM | PAD_CTL_DSE_3P3V_98OHM)
+ #define ENET_PAD_CTRL_MII  (PAD_CTL_PUS_PU100KOHM | PAD_CTL_DSE_3P3V_98OHM)
+ 
+@@ -114,8 +111,8 @@ static iomux_v3_cfg_t const usdhc1_emmc_pads[] = {
+ 	MX7D_PAD_ECSPI2_MISO__SD1_DATA6 | MUX_PAD_CTRL(USDHC_PAD_CTRL),
+ 	MX7D_PAD_ECSPI2_SS0__SD1_DATA7  | MUX_PAD_CTRL(USDHC_PAD_CTRL),
+ 
+-	MX7D_PAD_SD1_CD_B__GPIO5_IO0 | MUX_PAD_CTRL(NO_PAD_CTRL),
+-	MX7D_PAD_SD1_RESET_B__GPIO5_IO2 | MUX_PAD_CTRL(NO_PAD_CTRL),
++	MX7D_PAD_SD1_CD_B__GPIO5_IO0 | MUX_PAD_CTRL(USDHC_PAD_CTRL),
++	MX7D_PAD_SD1_RESET_B__GPIO5_IO2 | MUX_PAD_CTRL(USDHC_PAD_CTRL),
+ };
+ 
+ static iomux_v3_cfg_t const usdhc2_pads[] = {
+@@ -126,10 +123,10 @@ static iomux_v3_cfg_t const usdhc2_pads[] = {
+ 	MX7D_PAD_SD2_DATA2__SD2_DATA2 | MUX_PAD_CTRL(USDHC_PAD_CTRL),
+ 	MX7D_PAD_SD2_DATA3__SD2_DATA3 | MUX_PAD_CTRL(USDHC_PAD_CTRL),
+ 
+-	MX7D_PAD_GPIO1_IO12__SD2_VSELECT | MUX_PAD_CTRL(USDHC_PAD_VSELECT),
++	MX7D_PAD_GPIO1_IO12__SD2_VSELECT | MUX_PAD_CTRL(USDHC_PAD_CTRL),
+ 
+-	MX7D_PAD_SD2_CD_B__GPIO5_IO9 | MUX_PAD_CTRL(NO_PAD_CTRL),
+-	MX7D_PAD_SD2_RESET_B__GPIO5_IO11 | MUX_PAD_CTRL(NO_PAD_CTRL),
++	MX7D_PAD_SD2_CD_B__GPIO5_IO9 | MUX_PAD_CTRL(USDHC_PAD_CTRL),
++	MX7D_PAD_SD2_RESET_B__GPIO5_IO11 | MUX_PAD_CTRL(USDHC_PAD_CTRL),
+ };
+ 
+ static iomux_v3_cfg_t const usdhc3_pads[] = {
+@@ -144,10 +141,10 @@ static iomux_v3_cfg_t const usdhc3_pads[] = {
+ 	MX7D_PAD_SD3_DATA6__SD3_DATA6 | MUX_PAD_CTRL(USDHC_PAD_CTRL),
+ 	MX7D_PAD_SD3_DATA7__SD3_DATA7 | MUX_PAD_CTRL(USDHC_PAD_CTRL),
+ 
+-	MX7D_PAD_GPIO1_IO13__SD3_VSELECT | MUX_PAD_CTRL(USDHC_PAD_VSELECT),
++	MX7D_PAD_GPIO1_IO13__SD3_VSELECT | MUX_PAD_CTRL(USDHC_PAD_CTRL),
+ 
+-	MX7D_PAD_GPIO1_IO14__GPIO1_IO14  | MUX_PAD_CTRL(NO_PAD_CTRL),
+-	MX7D_PAD_SD3_RESET_B__GPIO6_IO11 | MUX_PAD_CTRL(NO_PAD_CTRL),
++	MX7D_PAD_GPIO1_IO14__GPIO1_IO14  | MUX_PAD_CTRL(USDHC_PAD_CTRL),
++	MX7D_PAD_SD3_RESET_B__GPIO6_IO11 | MUX_PAD_CTRL(USDHC_PAD_CTRL),
+ };
+ 
+ 
+diff --git a/board/freescale/mx7d_19x19_lpddr3_arm2/mx7d_19x19_lpddr3_arm2.c b/board/freescale/mx7d_19x19_lpddr3_arm2/mx7d_19x19_lpddr3_arm2.c
+index 2624a06..27ee853 100644
+--- a/board/freescale/mx7d_19x19_lpddr3_arm2/mx7d_19x19_lpddr3_arm2.c
++++ b/board/freescale/mx7d_19x19_lpddr3_arm2/mx7d_19x19_lpddr3_arm2.c
+@@ -37,9 +37,6 @@ DECLARE_GLOBAL_DATA_PTR;
+ #define USDHC_PAD_CTRL (PAD_CTL_DSE_3P3V_32OHM | PAD_CTL_SRE_SLOW | \
+ 	PAD_CTL_HYS | PAD_CTL_PUE | PAD_CTL_PUS_PU47KOHM)
+ 
+-#define USDHC_PAD_VSELECT (PAD_CTL_DSE_3P3V_32OHM | \
+-	PAD_CTL_PUE | PAD_CTL_PUS_PU47KOHM)
+-
+ #define ENET_PAD_CTRL  (PAD_CTL_PUS_PU100KOHM | PAD_CTL_DSE_3P3V_98OHM)
+ #define ENET_PAD_CTRL_MII  (PAD_CTL_PUS_PU100KOHM | PAD_CTL_DSE_3P3V_98OHM)
+ 
+@@ -115,10 +112,10 @@ static iomux_v3_cfg_t const usdhc1_pads[] = {
+ 	MX7D_PAD_SD1_DATA2__SD1_DATA2 | MUX_PAD_CTRL(USDHC_PAD_CTRL),
+ 	MX7D_PAD_SD1_DATA3__SD1_DATA3 | MUX_PAD_CTRL(USDHC_PAD_CTRL),
+ 
+-	MX7D_PAD_GPIO1_IO08__SD1_VSELECT | MUX_PAD_CTRL(USDHC_PAD_VSELECT),
++	MX7D_PAD_GPIO1_IO08__SD1_VSELECT | MUX_PAD_CTRL(USDHC_PAD_CTRL),
+ 
+-	MX7D_PAD_SD1_CD_B__GPIO5_IO0    | MUX_PAD_CTRL(NO_PAD_CTRL),
+-	MX7D_PAD_SD1_RESET_B__GPIO5_IO2 | MUX_PAD_CTRL(NO_PAD_CTRL),
++	MX7D_PAD_SD1_CD_B__GPIO5_IO0    | MUX_PAD_CTRL(USDHC_PAD_CTRL),
++	MX7D_PAD_SD1_RESET_B__GPIO5_IO2 | MUX_PAD_CTRL(USDHC_PAD_CTRL),
+ };
+ 
+ #ifdef CONFIG_SYS_USE_EIMNOR
+diff --git a/board/freescale/mx7dsabresd/mx7dsabresd.c b/board/freescale/mx7dsabresd/mx7dsabresd.c
+index 610e27a..77e730d 100644
+--- a/board/freescale/mx7dsabresd/mx7dsabresd.c
++++ b/board/freescale/mx7dsabresd/mx7dsabresd.c
+@@ -131,8 +131,8 @@ static iomux_v3_cfg_t const usdhc1_pads[] = {
+ 	MX7D_PAD_SD1_DATA2__SD1_DATA2 | MUX_PAD_CTRL(USDHC_PAD_CTRL),
+ 	MX7D_PAD_SD1_DATA3__SD1_DATA3 | MUX_PAD_CTRL(USDHC_PAD_CTRL),
+ 
+-	MX7D_PAD_SD1_CD_B__GPIO5_IO0 | MUX_PAD_CTRL(NO_PAD_CTRL),
+-	MX7D_PAD_SD1_RESET_B__GPIO5_IO2 | MUX_PAD_CTRL(NO_PAD_CTRL),
++	MX7D_PAD_SD1_CD_B__GPIO5_IO0 | MUX_PAD_CTRL(USDHC_PAD_CTRL),
++	MX7D_PAD_SD1_RESET_B__GPIO5_IO2 | MUX_PAD_CTRL(USDHC_PAD_CTRL),
+ };
+ 
+ static iomux_v3_cfg_t const usdhc3_emmc_pads[] = {
+@@ -148,7 +148,7 @@ static iomux_v3_cfg_t const usdhc3_emmc_pads[] = {
+ 	MX7D_PAD_SD3_DATA7__SD3_DATA7 | MUX_PAD_CTRL(USDHC_PAD_CTRL),
+ 	MX7D_PAD_SD3_STROBE__SD3_STROBE	 | MUX_PAD_CTRL(USDHC_PAD_CTRL),
+ 
+-	MX7D_PAD_SD3_RESET_B__GPIO6_IO11 | MUX_PAD_CTRL(NO_PAD_CTRL),
++	MX7D_PAD_SD3_RESET_B__GPIO6_IO11 | MUX_PAD_CTRL(USDHC_PAD_CTRL),
+ };
+ 
+ #define IOX_SDI IMX_GPIO_NR(1, 9)
+-- 
+1.8.0
+

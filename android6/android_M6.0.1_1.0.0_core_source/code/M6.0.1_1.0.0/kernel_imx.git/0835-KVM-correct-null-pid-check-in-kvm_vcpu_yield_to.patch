@@ -1,0 +1,33 @@
+From d731c6c9b17b8a6b471981b3e310235049190034 Mon Sep 17 00:00:00 2001
+From: Sam Bobroff <sam.bobroff@au1.ibm.com>
+Date: Fri, 19 Sep 2014 09:40:41 +1000
+Subject: [PATCH] KVM: correct null pid check in kvm_vcpu_yield_to()
+
+Correct a simple mistake of checking the wrong variable
+before a dereference, resulting in the dereference not being
+properly protected by rcu_dereference().
+
+Signed-off-by: Sam Bobroff <sam.bobroff@au1.ibm.com>
+Signed-off-by: Paolo Bonzini <pbonzini@redhat.com>
+(cherry picked from commit 27fbe64bfa63cfb9da025975b59d96568caa2d53)
+Signed-off-by: Christoffer Dall <christoffer.dall@linaro.org>
+---
+ virt/kvm/kvm_main.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/virt/kvm/kvm_main.c b/virt/kvm/kvm_main.c
+index 0733a2a..4bdadf1 100644
+--- a/virt/kvm/kvm_main.c
++++ b/virt/kvm/kvm_main.c
+@@ -1748,7 +1748,7 @@ bool kvm_vcpu_yield_to(struct kvm_vcpu *target)
+ 	rcu_read_lock();
+ 	pid = rcu_dereference(target->pid);
+ 	if (pid)
+-		task = get_pid_task(target->pid, PIDTYPE_PID);
++		task = get_pid_task(pid, PIDTYPE_PID);
+ 	rcu_read_unlock();
+ 	if (!task)
+ 		return ret;
+-- 
+1.8.0
+

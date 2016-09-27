@@ -1,0 +1,45 @@
+From db1c0198789232fad08db4a9f6fccbd55f105331 Mon Sep 17 00:00:00 2001
+From: Richard Liu <r66033@freescale.com>
+Date: Wed, 19 Nov 2014 17:59:11 +0800
+Subject: [PATCH 390/602] MA-5879 fix mx6sl_evk boot fail on Lollipop
+
+mx6sl_evk boot up fail on Lollipop, root cause is MARCO USE_OPENGL_RENDERER not
+work well, we can't disable HW OpenGL Render by set USE_OPENGL_RENDERER=false.
+we add property sys.viewroot.hw in ViewRootImpl.java to control HW OpenGL Render,
+set sys.viewroot.hw to false on mx6sl_evk board.
+
+Signed-off-by: Richard Liu <r66033@freescale.com>
+---
+ evk_6sl/init.rc    | 3 +++
+ imx6/soc/imx6sl.mk | 2 +-
+ 2 files changed, 4 insertions(+), 1 deletion(-)
+
+diff --git a/evk_6sl/init.rc b/evk_6sl/init.rc
+index cc38df7..a52406d 100644
+--- a/evk_6sl/init.rc
++++ b/evk_6sl/init.rc
+@@ -38,6 +38,9 @@ on boot
+     setprop hwc.stretch.filter  1
+     setprop hwc.enable_dither   1
+ 
++    # Disable OpenGL Renderer on 6sl_evk
++    setprop sys.viewroot.hw false
++
+     # fsl omx graphic manager media framework property
+     setprop media.omxgm.enable-player 1
+     setprop media.omxgm.enable-record 0
+diff --git a/imx6/soc/imx6sl.mk b/imx6/soc/imx6sl.mk
+index 114dfca..c05ff66 100644
+--- a/imx6/soc/imx6sl.mk
++++ b/imx6/soc/imx6sl.mk
+@@ -13,6 +13,6 @@ TARGET_KERNEL_DEFCONF := imx_v7_android_defconfig
+ -include external/fsl_imx_omx/codec_env.mk
+ TARGET_HAVE_IMX_GRALLOC := true
+ TARGET_HAVE_IMX_HWCOMPOSER = true
+-USE_OPENGL_RENDERER := false
++USE_OPENGL_RENDERER := true
+ TARGET_CPU_SMP := false
+ 
+-- 
+1.8.0
+

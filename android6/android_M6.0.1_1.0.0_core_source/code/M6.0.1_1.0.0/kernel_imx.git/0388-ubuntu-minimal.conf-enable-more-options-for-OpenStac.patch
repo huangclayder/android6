@@ -1,0 +1,31 @@
+From 7f5cf3db2860051a61641e60441197e8f07726f0 Mon Sep 17 00:00:00 2001
+From: Andrey Konovalov <andrey.konovalov@linaro.org>
+Date: Tue, 28 May 2013 22:30:25 +0400
+Subject: [PATCH] ubuntu-minimal.conf: enable more options for OpenStack
+
+Signed-off-by: Andrey Konovalov <andrey.konovalov@linaro.org>
+---
+ linaro/configs/ubuntu-minimal.conf | 5 +++++
+ 1 file changed, 5 insertions(+)
+
+diff --git a/linaro/configs/ubuntu-minimal.conf b/linaro/configs/ubuntu-minimal.conf
+index 330adcf..cb77d39 100644
+--- a/linaro/configs/ubuntu-minimal.conf
++++ b/linaro/configs/ubuntu-minimal.conf
+@@ -7,8 +7,13 @@ CONFIG_CC_STACKPROTECTOR=y
+ CONFIG_SYN_COOKIES=y
+ CONFIG_IPV6=y
+ CONFIG_NETLABEL=y
++CONFIG_NF_CONNTRACK=m
++CONFIG_NF_CONNTRACK_IPV4=m
++CONFIG_NF_NAT_IPV4=m
+ CONFIG_IP_NF_IPTABLES=m
+ CONFIG_IP_NF_FILTER=m
++CONFIG_NF_CONNTRACK_IPV6=m
++CONFIG_NF_NAT_IPV6=m
+ CONFIG_IP6_NF_IPTABLES=m
+ CONFIG_IP6_NF_FILTER=m
+ CONFIG_DEVTMPFS=y
+-- 
+1.8.0
+

@@ -1,0 +1,74 @@
+From 0ed80b94691514c4ae64c94109c2b68ffcaea7ab Mon Sep 17 00:00:00 2001
+From: Achin Gupta <achin.gupta@arm.com>
+Date: Sun, 16 Dec 2012 23:11:32 +0000
+Subject: [PATCH] ARM: psci: add probe function to discover presence of a psci
+ implementation
+
+This patch adds a probe function to check if the secure firmware has an
+implementation of the Power State Coordination Interface.
+
+'bL_platform_power_ops' will be implemented by:
+
+a. a native backend when Linux runs in secure world
+b. a psci backend which relies on the secure firmware to implement the
+   power ops
+
+presence of b. will be indicated by the psci device node in the device tree.
+The device node is expected to be populated by the secure firmware if it
+supports psci. If the native backend detects a psci node then it bails out
+allowing the psci backend to be registered.
+
+Also a dummy 'psci_probe' function is added for the case when psci support
+is not included. This prevents the build from breaking for tc2 and the
+rtsm platforms.
+
+Signed-off-by: Achin Gupta <achin.gupta@arm.com>
+Signed-off-by: Liviu Dudau <Liviu.Dudau@arm.com>
+(cherry picked from commit 83abf76f81fc8b0602e23afb0650e26eb89090b4)
+Signed-off-by: Alex Shi <alex.shi@linaro.org>
+---
+ arch/arm/include/asm/psci.h |  8 ++++++++
+ arch/arm/kernel/psci.c      | 13 +++++++++++++
+ 2 files changed, 21 insertions(+)
+
+diff --git a/arch/arm/include/asm/psci.h b/arch/arm/include/asm/psci.h
+index 66d8184..f0a8627 100644
+--- a/arch/arm/include/asm/psci.h
++++ b/arch/arm/include/asm/psci.h
+@@ -46,4 +46,12 @@ static inline void psci_init(void) { }
+ static inline bool psci_smp_available(void) { return false; }
+ #endif
+ 
++#ifdef CONFIG_ARM_PSCI
++extern int __init psci_probe(void);
++#else
++static inline int psci_probe(void)
++{
++	return -ENODEV;
++}
++#endif
+ #endif /* __ASM_ARM_PSCI_H */
+diff --git a/arch/arm/kernel/psci.c b/arch/arm/kernel/psci.c
+index 61f7675..1984d7b 100644
+--- a/arch/arm/kernel/psci.c
++++ b/arch/arm/kernel/psci.c
+@@ -211,3 +211,16 @@ out_put_node:
+ 	of_node_put(np);
+ 	return;
+ }
++
++int __init psci_probe(void)
++{
++	struct device_node *np;
++	int ret = -ENODEV;
++
++	np = of_find_matching_node(NULL, psci_of_match);
++	if (np)
++		ret = 0;
++
++	of_node_put(np);
++	return ret;
++}
+-- 
+1.8.0
+

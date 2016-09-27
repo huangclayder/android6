@@ -1,0 +1,37 @@
+From 1334dc103831be612a5c4a0957c3c6830a3a971b Mon Sep 17 00:00:00 2001
+From: Winter Wang <b55847@freescale.com>
+Date: Sun, 6 Sep 2015 14:22:21 +0800
+Subject: [PATCH 3/3] MA-7038 update lp5.1 changes to m-preview-2
+
+the applyOverrides() is removed by google
+
+commit db4d0bd54407d4f6116e51ba0668869f3f790b40
+Author: Narayan Kamath <narayan@google.com>
+Date:   Mon Apr 20 11:47:40 2015 +0100
+
+    Remove support for reading mime types from property files.
+
+    This support was untested and unused and of very limited utility,
+    given that this class is initialized in the zygote. It also discourages
+    arbitrary changes to the priority order of mappings.
+
+Signed-off-by: Winter Wang <b55847@freescale.com>
+---
+ luni/src/main/java/libcore/net/MimeUtils.java | 1 -
+ 1 file changed, 1 deletion(-)
+
+diff --git a/luni/src/main/java/libcore/net/MimeUtils.java b/luni/src/main/java/libcore/net/MimeUtils.java
+index 68ce110..10a6210 100644
+--- a/luni/src/main/java/libcore/net/MimeUtils.java
++++ b/luni/src/main/java/libcore/net/MimeUtils.java
+@@ -382,7 +382,6 @@ public final class MimeUtils {
+         add("video/x-flv", "f4v");
+         add("video/x-matroska", "mkv");
+         add("video/x-matroska", "webm");
+-        applyOverrides();
+     }
+ 
+     private static void add(String mimeType, String extension) {
+-- 
+1.8.0
+

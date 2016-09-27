@@ -1,0 +1,108 @@
+From 2971072586149db354117b232061f141bd0ac547 Mon Sep 17 00:00:00 2001
+From: Wang Haoran <b50027@freescale.com>
+Date: Wed, 12 Nov 2014 14:48:09 +0800
+Subject: [PATCH 076/115] MA-5839 Replace lollipop API to fix compile error
+
+Some API has been removed in lollipop.
+Use the new one to pass the compile.
+
+Signed-off-by: Wang Haoran <b50027@freescale.com>
+---
+ Ethernet/com/fsl/ethernet/EthernetAdvDialog.java |  4 ++--
+ Ethernet/com/fsl/ethernet/EthernetManager.java   | 14 +++++---------
+ 2 files changed, 7 insertions(+), 11 deletions(-)
+
+diff --git a/Ethernet/com/fsl/ethernet/EthernetAdvDialog.java b/Ethernet/com/fsl/ethernet/EthernetAdvDialog.java
+index 962f47c..aa89886 100644
+--- a/Ethernet/com/fsl/ethernet/EthernetAdvDialog.java
++++ b/Ethernet/com/fsl/ethernet/EthernetAdvDialog.java
+@@ -18,7 +18,7 @@ package com.fsl.ethernet;
+ import android.net.ConnectivityManager;
+ import android.net.Proxy;
+ import android.net.LinkProperties;
+-import android.net.ProxyProperties;
++import android.net.ProxyInfo;
+ import android.app.AlertDialog;
+ import android.content.Context;
+ import android.content.DialogInterface;
+@@ -44,7 +44,7 @@ public class EthernetAdvDialog extends AlertDialog implements DialogInterface.On
+     private EditText mProxyPort;
+     private EditText mProxyExclusionList;
+     private LinkProperties mLinkProperties;
+-    private ProxyProperties mHttpProxy;
++    private ProxyInfo mHttpProxy;
+     private static ConnectivityManager sConnectivityManager = null;
+ 
+     protected EthernetAdvDialog(Context context,EthernetEnabler Enabler) {
+diff --git a/Ethernet/com/fsl/ethernet/EthernetManager.java b/Ethernet/com/fsl/ethernet/EthernetManager.java
+index 896b9e1..9ab1489 100644
+--- a/Ethernet/com/fsl/ethernet/EthernetManager.java
++++ b/Ethernet/com/fsl/ethernet/EthernetManager.java
+@@ -25,7 +25,6 @@ import android.os.Handler;
+ import android.os.RemoteException;
+ import android.util.Log;
+ import android.content.Context;
+-import android.net.EthernetDataTracker;
+ import android.provider.Settings;
+ import android.os.ServiceManager;
+ import android.os.IBinder;
+@@ -39,7 +38,7 @@ import android.net.NetworkInfo;
+ import android.net.NetworkInfo.DetailedState;
+ import android.net.LinkProperties;
+ import android.net.InterfaceConfiguration;
+-import android.net.ProxyProperties;
++import android.net.ProxyInfo;
+ import android.os.HandlerThread;
+ import android.os.Looper;
+ import android.os.Message;
+@@ -97,10 +96,8 @@ public class EthernetManager {
+     private Context mContext;
+     private String[] DevName;
+     private int mEthState= ETHERNET_STATE_UNKNOWN;
+-    private EthernetDataTracker mTracker;
+     private INetworkManagementService mNMService;
+     private DhcpInfo mDhcpInfo;
+-    private Handler mTrackerTarget;
+     private String mode;
+     private String ip_address;
+     private String dns_address;
+@@ -108,7 +105,6 @@ public class EthernetManager {
+ 
+     public EthernetManager(Context context) {
+         mContext = context;
+-        mTracker = EthernetDataTracker.getInstance();
+ 
+         DevName = new String[1];
+ 
+@@ -231,7 +227,7 @@ public class EthernetManager {
+             infotemp.setIpAddress(ip.substring(2, ip.length()-1));
+         String dns = " ";
+         int i = 0;
+-        for( InetAddress d : mConnMgr.getLinkProperties(ConnectivityManager.TYPE_ETHERNET).getDnses()) {
++        for( InetAddress d : mConnMgr.getLinkProperties(ConnectivityManager.TYPE_ETHERNET).getDnsServers()) {
+             String temp = d.toString();
+             if (temp != null)
+                 dns = temp.substring(1, temp.length()-1);
+@@ -378,7 +374,7 @@ public class EthernetManager {
+             mConnMgr.setGlobalProxy(null);
+             return;
+         }
+-        LinkProperties lp = mTracker.getLinkProperties();
++        LinkProperties lp = mConnMgr.getLinkProperties(ConnectivityManager.TYPE_ETHERNET);
+         if (lp == null)
+             return;
+         int port = 0;
+@@ -386,8 +382,8 @@ public class EthernetManager {
+             port = Integer.parseInt(getSharedPreProxyPort());
+         } catch(NumberFormatException e){
+         }
+-        ProxyProperties proxyProperties =
+-            new ProxyProperties(getSharedPreProxyAddress(), port, exclusionList);
++        ProxyInfo proxyProperties =
++            new ProxyInfo(getSharedPreProxyAddress(), port, exclusionList);
+         mConnMgr.setGlobalProxy(null);
+         mConnMgr.setGlobalProxy(proxyProperties);
+         Log.i(TAG,"=============getHttpProxy==============" + proxyProperties);
+-- 
+1.8.0
+

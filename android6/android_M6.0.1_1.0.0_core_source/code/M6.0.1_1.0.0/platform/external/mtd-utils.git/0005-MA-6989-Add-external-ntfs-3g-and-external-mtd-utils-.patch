@@ -1,0 +1,78 @@
+From a1dbcb4f9e8704851a40bd1e2ac7d0bcaf249e43 Mon Sep 17 00:00:00 2001
+From: Winter Wang <b55847@freescale.com>
+Date: Tue, 8 Sep 2015 20:24:04 +0800
+Subject: [PATCH 5/7] MA-6989 Add external/ntfs-3g and external/mtd-utils gits
+ into maddev_m-preview
+
+fix mtd-utils build error in android-m-preview-2
+1. implementation of "fs_config" is moved to libcutils, add it to Android.mk
+2. force 32bit build of module mkfs_ubifs by add LOCAL_MULTILIB=32
+3. fix build error caused by the difference between clang and gcc
+
+Signed-off-by: Winter Wang <b55847@freescale.com>
+---
+ Android.mk                           |  2 ++
+ mkfs.ubifs/hashtable/hashtable_itr.h | 14 ++++----------
+ mkfs.ubifs/mkfs.ubifs.c              |  2 +-
+ 3 files changed, 7 insertions(+), 11 deletions(-)
+
+diff --git a/Android.mk b/Android.mk
+index e28671d..46e8118 100644
+--- a/Android.mk
++++ b/Android.mk
+@@ -6,8 +6,10 @@ include $(CLEAR_VARS)
+ 
+ include $(CLEAR_VARS)
+ 
++LOCAL_MULTILIB = 32
+ LOCAL_CFLAGS += -O2 -Wall
+ LOCAL_LDLIBS += -lz -lm 
++LOCAL_SHARED_LIBRARIES += libcutils
+ LOCAL_STATIC_LIBRARIES := libselinux 
+ LOCAL_SRC_FILES := \
+        ubi-utils/src/libubi.c \
+diff --git a/mkfs.ubifs/hashtable/hashtable_itr.h b/mkfs.ubifs/hashtable/hashtable_itr.h
+index eea699a..b80ea1d 100644
+--- a/mkfs.ubifs/hashtable/hashtable_itr.h
++++ b/mkfs.ubifs/hashtable/hashtable_itr.h
+@@ -28,20 +28,14 @@ hashtable_iterator(struct hashtable *h);
+ /* hashtable_iterator_key
+  * - return the value of the (key,value) pair at the current position */
+ 
+-extern inline void *
+-hashtable_iterator_key(struct hashtable_itr *i)
+-{
+-    return i->e->k;
+-}
++void *
++hashtable_iterator_key(struct hashtable_itr *i);
+ 
+ /*****************************************************************************/
+ /* value - return the value of the (key,value) pair at the current position */
+ 
+-extern inline void *
+-hashtable_iterator_value(struct hashtable_itr *i)
+-{
+-    return i->e->v;
+-}
++void *
++hashtable_iterator_value(struct hashtable_itr *i);
+ 
+ /*****************************************************************************/
+ /* advance - advance the iterator to the next element
+diff --git a/mkfs.ubifs/mkfs.ubifs.c b/mkfs.ubifs/mkfs.ubifs.c
+index 683d944..96f39e8 100644
+--- a/mkfs.ubifs/mkfs.ubifs.c
++++ b/mkfs.ubifs/mkfs.ubifs.c
+@@ -1843,7 +1843,7 @@ static int add_directory(const char *dir_name, ino_t dir_inum, struct stat *st,
+ 			nlink += 1;
+ 			type = UBIFS_ITYPE_DIR;
+ 		} else {
+-			err = add_non_dir(name, &inum, 0, &type, &fake_st);
++			err = add_non_dir(name, inum, 0, &type, &fake_st);
+ 			if (err)
+ 				goto out_free;
+ 		}
+-- 
+1.8.0
+

@@ -1,0 +1,47 @@
+From 0494797a8f9ed3a2fb807c9bac2274dad08f1cc1 Mon Sep 17 00:00:00 2001
+From: Anson Huang <Anson.Huang@freescale.com>
+Date: Fri, 6 Nov 2015 18:41:59 +0800
+Subject: [PATCH] MLK-11828-1 ARM: dts: reserve OCRAM space for M4
+
+FreeRTOS has use case of running on OCRAM, reserve the
+bottom half of OCRAM spase(0x910000 - 0x91ffff) for M4.
+
+Signed-off-by: Anson Huang <Anson.Huang@freescale.com>
+---
+ arch/arm/boot/dts/imx7d-12x12-lpddr3-arm2-m4.dts | 4 ++++
+ arch/arm/boot/dts/imx7d-sdb-m4.dts               | 4 ++++
+ 2 files changed, 8 insertions(+)
+
+diff --git a/arch/arm/boot/dts/imx7d-12x12-lpddr3-arm2-m4.dts b/arch/arm/boot/dts/imx7d-12x12-lpddr3-arm2-m4.dts
+index 1c8de62..f7b6b97 100644
+--- a/arch/arm/boot/dts/imx7d-12x12-lpddr3-arm2-m4.dts
++++ b/arch/arm/boot/dts/imx7d-12x12-lpddr3-arm2-m4.dts
+@@ -35,6 +35,10 @@
+ 	status = "okay";
+ };
+ 
++&ocram {
++	reg = <0x00901000 0xf000>;
++};
++
+ &rpmsg{
+ 	status = "okay";
+ };
+diff --git a/arch/arm/boot/dts/imx7d-sdb-m4.dts b/arch/arm/boot/dts/imx7d-sdb-m4.dts
+index a6642a8..41b8c0e 100644
+--- a/arch/arm/boot/dts/imx7d-sdb-m4.dts
++++ b/arch/arm/boot/dts/imx7d-sdb-m4.dts
+@@ -52,6 +52,10 @@
+ 	status = "okay";
+ };
+ 
++&ocram {
++	reg = <0x00901000 0xf000>;
++};
++
+ &rpmsg{
+ 	status = "okay";
+ };
+-- 
+1.8.0
+

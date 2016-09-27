@@ -1,0 +1,44 @@
+From ea5bc293eca36d1e0c3071eed250244c10cd2b04 Mon Sep 17 00:00:00 2001
+From: Haoran Wang <b50027@freescale.com>
+Date: Wed, 4 Feb 2015 17:43:26 +0800
+Subject: [PATCH 42/43] MA-6147 Remove the ZTE MF210 support
+
+MF210 not work on Lollipop.
+So we just remove it.
+
+Signed-off-by: Haoran Wang <b50027@freescale.com>
+---
+ runtime-ril-port/runtime_port.c | 10 +---------
+ 1 file changed, 1 insertion(+), 9 deletions(-)
+
+diff --git a/runtime-ril-port/runtime_port.c b/runtime-ril-port/runtime_port.c
+index a49cdf1..4997493 100755
+--- a/runtime-ril-port/runtime_port.c
++++ b/runtime-ril-port/runtime_port.c
+@@ -13,7 +13,7 @@
+  */
+ 
+ /*
+- * Copyright 2011-2013 Freescale Semiconductor, Inc. All Rights Reserved.
++ * Copyright 2011-2015 Freescale Semiconductor, Inc. All Rights Reserved.
+  */
+ 
+ #include <stdio.h>
+@@ -113,14 +113,6 @@ static struct modem_3g_device modem_3g_device_table[] = {
+ 		.dataport	= "/dev/ttyUSB4",
+ 		.type		= ZTE_MODEM,
+ 	},
+-	{
+-		.name		= "ZTE-MF210",
+-		.idVendor	= "19d2",
+-		.idProduct	= "0117",
+-		.deviceport     = "/dev/ttyUSB1",
+-		.dataport	= "/dev/ttyUSB2",
+-		.type		= ZTE_MODEM,
+-	},
+ };
+ 
+ /* -------------------------------------------------------------- */
+-- 
+1.8.0
+

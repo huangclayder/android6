@@ -1,0 +1,33 @@
+From ce7798efc2b7a2d7cf458a2f5e3d263a73588b27 Mon Sep 17 00:00:00 2001
+From: "Ye.Li" <B37916@freescale.com>
+Date: Mon, 9 Mar 2015 11:57:16 +0800
+Subject: [PATCH] MLK-10385-3 imx: mx7: Enable rawnand clock at init for
+ APBH-DMA
+
+For APBH-DMA enabled case, we have to enable rawnand clock for mxs_dma_init.
+
+Signed-off-by: Ye.Li <B37916@freescale.com>
+(cherry picked from commit 42f42939bbd8161ce283a6af326d0f313cc4c36c)
+Signed-off-by: Peng Fan <Peng.Fan@freescale.com>
+---
+ arch/arm/cpu/armv7/mx7/clock.c | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/arch/arm/cpu/armv7/mx7/clock.c b/arch/arm/cpu/armv7/mx7/clock.c
+index f8d17df..4945916 100644
+--- a/arch/arm/cpu/armv7/mx7/clock.c
++++ b/arch/arm/cpu/armv7/mx7/clock.c
+@@ -997,6 +997,10 @@ void clock_init(void)
+ 	enable_usboh3_clk(1);
+ 
+ 	clock_enable(CCGR_SNVS, 1);
++
++#ifdef CONFIG_NAND_MXS
++	clock_enable(CCGR_RAWNAND, 1);
++#endif
+ }
+ 
+ #ifdef CONFIG_SECURE_BOOT
+-- 
+1.8.0
+

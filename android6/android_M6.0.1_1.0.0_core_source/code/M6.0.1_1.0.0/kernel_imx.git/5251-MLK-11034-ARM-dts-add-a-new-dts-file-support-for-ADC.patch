@@ -1,0 +1,60 @@
+From 8cd429b3c0ef5fc1e359df7868f7d120e65d8e2f Mon Sep 17 00:00:00 2001
+From: Haibo Chen <haibo.chen@freescale.com>
+Date: Thu, 4 Jun 2015 17:55:43 +0800
+Subject: [PATCH] MLK-11034 ARM: dts: add a new dts file support for ADC
+
+Due to the ADC input channel is conflict with USB on
+imx6ul-14x14-ddr3-arm2 board. So if we want to support
+ADC input channel0 and channle1, we should do hardware
+rework, remove R352 R354 and add R517 R518 in A-select.
+
+This patch add a new dts file support for ADC on
+imx6ul-14x14-ddr3-arm2 board.
+
+Signed-off-by: Haibo Chen <haibo.chen@freescale.com>
+---
+ arch/arm/boot/dts/Makefile                       |  1 +
+ arch/arm/boot/dts/imx6ul-14x14-ddr3-arm2-adc.dts | 20 ++++++++++++++++++++
+ 2 files changed, 21 insertions(+)
+
+diff --git a/arch/arm/boot/dts/Makefile b/arch/arm/boot/dts/Makefile
+index 302cd69..8e5ceaa 100644
+--- a/arch/arm/boot/dts/Makefile
++++ b/arch/arm/boot/dts/Makefile
+@@ -215,6 +215,7 @@ dtb-$(CONFIG_ARCH_MXC) += \
+ 	imx6sx-sabreauto-m4.dtb \
+ 	imx6sx-sdb-lcdif1.dtb \
+ 	imx6ul-14x14-ddr3-arm2.dtb \
++	imx6ul-14x14-ddr3-arm2-adc.dtb \
+ 	imx6ul-14x14-ddr3-arm2-flexcan2.dtb \
+ 	imx6ul-14x14-ddr3-arm2-gpmi-weim.dtb \
+ 	imx6ul-14x14-ddr3-arm2-lcdif.dtb \
+diff --git a/arch/arm/boot/dts/imx6ul-14x14-ddr3-arm2-adc.dts b/arch/arm/boot/dts/imx6ul-14x14-ddr3-arm2-adc.dts
+new file mode 100644
+index 0000000..9a6787d
+--- /dev/null
++++ b/arch/arm/boot/dts/imx6ul-14x14-ddr3-arm2-adc.dts
+@@ -0,0 +1,20 @@
++/*
++ * Copyright (C) 2015 Freescale Semiconductor, Inc.
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License version 2 as
++ * published by the Free Software Foundation.
++ */
++
++#include "imx6ul-14x14-ddr3-arm2.dts"
++
++&usbotg1 {
++	status = "disable";
++};
++
++&adc1 {
++	pinctrl-names = "default";
++	pinctrl-0 = <&pinctrl_adc1>;
++	vref-supply = <&reg_vref_3v3>;
++	status = "okay";
++};
+-- 
+1.8.0
+

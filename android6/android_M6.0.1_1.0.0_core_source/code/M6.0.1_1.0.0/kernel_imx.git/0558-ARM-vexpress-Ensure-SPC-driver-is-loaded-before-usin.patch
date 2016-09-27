@@ -1,0 +1,34 @@
+From ab0459be3d38f81f6559e0b1227be64b724689f8 Mon Sep 17 00:00:00 2001
+From: Jon Medhurst <tixy@linaro.org>
+Date: Wed, 19 Jun 2013 10:17:00 +0100
+Subject: [PATCH] ARM: vexpress: Ensure SPC driver is loaded before using it
+ in PSCI init
+
+Otherwise we get a nullptr dereference calling vexpress_spc_get_nb_cpus.
+
+Signed-off-by: Jon Medhurst <tixy@linaro.org>
+(cherry picked from commit de874f5a9684d7e5a99a52e66f4d5cb36138646d)
+Signed-off-by: Alex Shi <alex.shi@linaro.org>
+---
+ arch/arm/mach-vexpress/tc2_pm_psci.c | 5 +++++
+ 1 file changed, 5 insertions(+)
+
+diff --git a/arch/arm/mach-vexpress/tc2_pm_psci.c b/arch/arm/mach-vexpress/tc2_pm_psci.c
+index 5a5e4f5..c2fdc22 100644
+--- a/arch/arm/mach-vexpress/tc2_pm_psci.c
++++ b/arch/arm/mach-vexpress/tc2_pm_psci.c
+@@ -155,6 +155,11 @@ static int __init tc2_pm_psci_init(void)
+ 		return -ENODEV;
+ 	}
+ 
++	if (!vexpress_spc_check_loaded()) {
++		pr_debug("spc not found. Aborting psci init\n");
++		return -ENODEV;
++	}
++
+ 	tc2_pm_usage_count_init();
+ 
+ 	ret = mcpm_platform_register(&tc2_pm_power_ops);
+-- 
+1.8.0
+

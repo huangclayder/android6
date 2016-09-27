@@ -1,0 +1,39 @@
+From 195e4167692d06a2e8ac8bb0ade9bc62c61b440b Mon Sep 17 00:00:00 2001
+From: Jon Medhurst <tixy@linaro.org>
+Date: Thu, 26 Jul 2012 15:01:40 +0100
+Subject: [PATCH] configs: vexpress: Enable TC2 cpufreq driver
+
+Note, for the sake of a faster boot and better performance, we default
+to maximum CPU clock frequency (CONFIG_CPU_FREQ_DEFAULT_GOV_PERFORMANCE)
+and will rely on user-side scripts on Android and Ubuntu to change this
+as appropriate for big.LITTLE power saving. E.g. changing LITTLE cores
+to 'ondemand'.
+
+Signed-off-by: Jon Medhurst <tixy@linaro.org>
+(cherry picked from commit 2a486801770148052e19bfdec3043454dbf07a05)
+Signed-off-by: Alex Shi <alex.shi@linaro.org>
+---
+ linaro/configs/vexpress.conf | 7 +++++++
+ 1 file changed, 7 insertions(+)
+
+diff --git a/linaro/configs/vexpress.conf b/linaro/configs/vexpress.conf
+index 62f491c..bb67b3f 100644
+--- a/linaro/configs/vexpress.conf
++++ b/linaro/configs/vexpress.conf
+@@ -8,6 +8,13 @@ CONFIG_MCPM=y
+ CONFIG_ARCH_VEXPRESS_DCSCB=y
+ CONFIG_ARCH_VEXPRESS_TC2_PM=y
+ CONFIG_ARM_BIG_LITTLE_CPUIDLE=y
++CONFIG_BIG_LITTLE=y
++CONFIG_ARM_VEXPRESS_SPC_CPUFREQ=y
++CONFIG_PM_OPP=y
++CONFIG_CPU_FREQ=y
++CONFIG_CPU_FREQ_GOV_ONDEMAND=y
++CONFIG_CPU_FREQ_GOV_PERFORMANCE=y
++CONFIG_CPU_FREQ_DEFAULT_GOV_PERFORMANCE=y
+ CONFIG_CMDLINE="console=ttyAMA0,38400n8 root=/dev/mmcblk0p2 rootwait mmci.fmax=4000000"
+ CONFIG_VFP=y
+ CONFIG_NEON=y
+-- 
+1.8.0
+

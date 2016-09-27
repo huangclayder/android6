@@ -1,0 +1,60 @@
+From f1dc11f8f749555acbf423e32f7d149592521aab Mon Sep 17 00:00:00 2001
+From: Liu Xiaowen <b37945@freescale.com>
+Date: Wed, 5 Nov 2014 14:46:56 +0800
+Subject: [PATCH 540/635] MA-5830 fix hwcomposer fence leakage on
+ suspend/resume.
+
+When do suspend, display is blanked.
+In this case, framebuffer can't be posted, but fence should be closed.
+
+Signed-off-by: Liu Xiaowen <b37945@freescale.com>
+---
+ mx6/hwcomposer/hwcomposer.cpp | 13 +++++++++----
+ 1 file changed, 9 insertions(+), 4 deletions(-)
+
+diff --git a/mx6/hwcomposer/hwcomposer.cpp b/mx6/hwcomposer/hwcomposer.cpp
+index 0d9d64c..8385759 100644
+--- a/mx6/hwcomposer/hwcomposer.cpp
++++ b/mx6/hwcomposer/hwcomposer.cpp
+@@ -164,7 +164,7 @@ static int hwc_set(struct hwc_composer_device_1 *dev,
+         if(ret) return ret;
+     }
+ 
+-    if (primary && ctx->mDispInfo[HWC_DISPLAY_PRIMARY].blank == 0) {
++    if (primary) {
+         hwc_layer_1 *fbt = &primary->hwLayers[primary->numHwLayers-1];
+         if(ctx->mFbDev[HWC_DISPLAY_PRIMARY] != NULL && fbt != NULL) {
+             int fenceFd = fbt->acquireFenceFd;
+@@ -174,12 +174,14 @@ static int hwc_set(struct hwc_composer_device_1 *dev,
+                 fbt->acquireFenceFd = -1;
+             }
+ 
+-            ctx->mFbDev[HWC_DISPLAY_PRIMARY]->post(
++            if (ctx->mDispInfo[HWC_DISPLAY_PRIMARY].blank == 0) {
++                ctx->mFbDev[HWC_DISPLAY_PRIMARY]->post(
+                      ctx->mFbDev[HWC_DISPLAY_PRIMARY],  fbt->handle);
++            }
+        }
+     }
+ 
+-    if (external && ctx->mDispInfo[HWC_DISPLAY_EXTERNAL].blank == 0) {
++    if (external) {
+         hwc_layer_1 *fbt = &external->hwLayers[external->numHwLayers-1];
+         if(ctx->mFbDev[HWC_DISPLAY_EXTERNAL] != NULL && fbt != NULL) {
+             int fenceFd = fbt->acquireFenceFd;
+@@ -188,8 +190,11 @@ static int hwc_set(struct hwc_composer_device_1 *dev,
+                 close(fenceFd);
+                 fbt->acquireFenceFd = -1;
+             }
+-            ctx->mFbDev[HWC_DISPLAY_EXTERNAL]->post(
++
++            if (ctx->mDispInfo[HWC_DISPLAY_EXTERNAL].blank == 0) {
++                ctx->mFbDev[HWC_DISPLAY_EXTERNAL]->post(
+                      ctx->mFbDev[HWC_DISPLAY_EXTERNAL], fbt->handle);
++            }
+         }
+     }
+ 
+-- 
+1.8.0
+

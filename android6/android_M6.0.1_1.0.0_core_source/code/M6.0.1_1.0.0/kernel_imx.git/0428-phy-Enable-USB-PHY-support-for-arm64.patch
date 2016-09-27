@@ -1,0 +1,30 @@
+From 54a298132ca1654960241b861f9ee2f2b8b94049 Mon Sep 17 00:00:00 2001
+From: Liviu Dudau <Liviu.Dudau@arm.com>
+Date: Tue, 4 Mar 2014 11:21:41 +0000
+Subject: [PATCH] phy: Enable USB PHY support for arm64.
+
+Signed-off-by: Liviu Dudau <Liviu.Dudau@arm.com>
+Signed-off-by: Ryan Harkin <ryan.harkin@linaro.org>
+Signed-off-by: Mark Brown <broonie@linaro.org>
+(cherry picked from commit f5b36de8d872e8abab045b0c1c808976d24e3764)
+Signed-off-by: Alex Shi <alex.shi@linaro.org>
+---
+ drivers/usb/phy/Kconfig | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/usb/phy/Kconfig b/drivers/usb/phy/Kconfig
+index 7d1451d..5998c1d 100644
+--- a/drivers/usb/phy/Kconfig
++++ b/drivers/usb/phy/Kconfig
+@@ -253,7 +253,7 @@ config USB_RCAR_GEN2_PHY
+ 
+ config USB_ULPI
+ 	bool "Generic ULPI Transceiver Driver"
+-	depends on ARM
++	depends on ARM || ARM64
+ 	help
+ 	  Enable this to support ULPI connected USB OTG transceivers which
+ 	  are likely found on embedded boards.
+-- 
+1.8.0
+

@@ -1,0 +1,67 @@
+From 1e73f0ce010a7cf78abdab203980ac34f7d67148 Mon Sep 17 00:00:00 2001
+From: "Ye.Li" <B37916@freescale.com>
+Date: Tue, 3 Feb 2015 16:20:31 +0800
+Subject: [PATCH] MLK-10200 imx: mx7: Add M4 booting support
+
+Implement the auxiliary core booting for Cortex M4 on i.MX7
+
+Signed-off-by: Ye.Li <B37916@freescale.com>
+(cherry picked from commit c1c8ba37d87493c16ec1a12bc36d47f909e0e733)
+Signed-off-by: Peng Fan <Peng.Fan@freescale.com>
+---
+ arch/arm/cpu/armv7/mx7/soc.c             | 19 +++++++++++++++++--
+ arch/arm/include/asm/arch-mx7/imx-regs.h |  1 +
+ 2 files changed, 18 insertions(+), 2 deletions(-)
+
+diff --git a/arch/arm/cpu/armv7/mx7/soc.c b/arch/arm/cpu/armv7/mx7/soc.c
+index 6b012fb..f150569 100644
+--- a/arch/arm/cpu/armv7/mx7/soc.c
++++ b/arch/arm/cpu/armv7/mx7/soc.c
+@@ -314,7 +314,22 @@ void imx_get_mac_from_fuse(int dev_id, unsigned char *mac)
+ 
+ int arch_auxiliary_core_up(u32 core_id, u32 boot_private_data)
+ {
+-	/* TODO */
++	u32 stack, pc;
++
++	if (!boot_private_data)
++		return 1;
++
++	stack = *(u32 *)boot_private_data;
++	pc = *(u32 *)(boot_private_data + 4);
++
++	/* Set the stack and pc to M4 bootROM */
++	writel(stack, M4_BOOTROM_BASE_ADDR);
++	writel(pc, M4_BOOTROM_BASE_ADDR + 4);
++
++	/* Enable M4 */
++	setbits_le32(&src_reg->m4rcr, 0x00000008);
++	clrbits_le32(&src_reg->m4rcr, 0x00000001);
++
+ 	return 0;
+ }
+ 
+@@ -323,7 +338,7 @@ int arch_auxiliary_core_check_up(u32 core_id)
+ 	uint32_t val;
+ 
+ 	val = readl(&src_reg->m4rcr);
+-	if (val & 0x1)
++	if (val & 0x00000001)
+ 		return 0; /* assert in reset */
+ 
+ 	return 1;
+diff --git a/arch/arm/include/asm/arch-mx7/imx-regs.h b/arch/arm/include/asm/arch-mx7/imx-regs.h
+index ca4f4f4..db148e9 100644
+--- a/arch/arm/include/asm/arch-mx7/imx-regs.h
++++ b/arch/arm/include/asm/arch-mx7/imx-regs.h
+@@ -20,6 +20,7 @@
+ #define GIC400_ARB_END_ADDR             0x31007FFF
+ #define APBH_DMA_ARB_BASE_ADDR          0x33000000
+ #define APBH_DMA_ARB_END_ADDR           0x33007FFF
++#define M4_BOOTROM_BASE_ADDR            0x00180000
+ 
+ #define MXS_APBH_BASE			APBH_DMA_ARB_BASE_ADDR
+ #define MXS_GPMI_BASE			(APBH_DMA_ARB_BASE_ADDR + 0x02000)
+-- 
+1.8.0
+

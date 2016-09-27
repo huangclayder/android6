@@ -1,0 +1,29 @@
+From 317b10d240961e226c0acf40db94e653eb9132f2 Mon Sep 17 00:00:00 2001
+From: Haoran Wang <b50027@freescale.com>
+Date: Wed, 17 Jun 2015 17:43:56 +0800
+Subject: [PATCH 503/602] MA-6450-1 Added SELinux policy for bcm_supplicant
+
+Added bcm_supplicant and bcm_hostap's SELinux
+permission.
+
+Signed-off-by: Haoran Wang <b50027@freescale.com>
+---
+ imx7/sepolicy/file_contexts | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/imx7/sepolicy/file_contexts b/imx7/sepolicy/file_contexts
+index 26933da..7867c6e 100644
+--- a/imx7/sepolicy/file_contexts
++++ b/imx7/sepolicy/file_contexts
+@@ -3,6 +3,8 @@
+ /system/bin/ingsvcd             u:object_r:gpsd_exec:s0
+ /system/bin/rtl_wpa_supplicant  u:object_r:wpa_exec:s0
+ /system/bin/rtl_hostapd         u:object_r:hostapd_exec:s0
++/system/bin/bcm_supplicant      u:object_r:wpa_exec:s0
++/system/bin/bcm_hostapd         u:object_r:hostapd_exec:s0
+ /dev/ttyGS[0-9]*                u:object_r:tty_device:s0
+ /dev/ttymxc[0-9]*               u:object_r:tty_device:s0
+ /dev/ttyUSB[0-9]*               u:object_r:tty_device:s0 
+-- 
+1.8.0
+

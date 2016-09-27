@@ -1,0 +1,32 @@
+From 77a580406c1524adbf6bf10f38cfc57f8e64c6a5 Mon Sep 17 00:00:00 2001
+From: Luwei Zhou <b45643@freescale.com>
+Date: Thu, 18 Sep 2014 13:15:43 +0800
+Subject: [PATCH] ENGR00331116 ARM: dts: i.mx6sl-evk: Add mma8450 sensor dts
+ support on i.MX6SL-EVK platform.
+
+Support MMA8450 sensor on i.MX6SL-EVK
+
+Signed-off-by: Luwei Zhou <b45643@freescale.com>
+---
+ arch/arm/boot/dts/imx6sl-evk.dts | 5 +++++
+ 1 file changed, 5 insertions(+)
+
+diff --git a/arch/arm/boot/dts/imx6sl-evk.dts b/arch/arm/boot/dts/imx6sl-evk.dts
+index c3ac2c8..e0f7390 100644
+--- a/arch/arm/boot/dts/imx6sl-evk.dts
++++ b/arch/arm/boot/dts/imx6sl-evk.dts
+@@ -280,6 +280,11 @@
+ 			};
+ 		};
+ 	};
++
++	mma8450@1c {
++		compatible = "fsl,mma8450";
++		reg = <0x1c>;
++	};
+ };
+ 
+ &i2c2 {
+-- 
+1.8.0
+

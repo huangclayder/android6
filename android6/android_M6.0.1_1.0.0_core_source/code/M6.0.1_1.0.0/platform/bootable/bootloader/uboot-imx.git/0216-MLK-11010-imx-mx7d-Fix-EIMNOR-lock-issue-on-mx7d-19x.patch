@@ -1,0 +1,59 @@
+From 7c368ed315067b68c45a8fa6ef73e91161a90b98 Mon Sep 17 00:00:00 2001
+From: "Ye.Li" <B37916@freescale.com>
+Date: Mon, 1 Jun 2015 13:43:26 +0800
+Subject: [PATCH] MLK-11010 imx: mx7d: Fix EIMNOR lock issue on mx7d 19x19
+ lpddr3 board
+
+Since the flash blocks are locked at default , need to set
+"CONFIG_SYS_FLASH_PROTECTION" to unlock them before write/erase.
+
+The patch also add the pinmux for LBA (ADV) pin and set eimnor enabled at
+default.
+
+Signed-off-by: Ye.Li <B37916@freescale.com>
+---
+ board/freescale/mx7d_19x19_lpddr3_arm2/mx7d_19x19_lpddr3_arm2.c | 1 +
+ include/configs/mx7d_19x19_lpddr3_arm2.h                        | 2 ++
+ include/configs/mx7d_arm2.h                                     | 1 +
+ 3 files changed, 4 insertions(+)
+
+diff --git a/board/freescale/mx7d_19x19_lpddr3_arm2/mx7d_19x19_lpddr3_arm2.c b/board/freescale/mx7d_19x19_lpddr3_arm2/mx7d_19x19_lpddr3_arm2.c
+index 74a0581..2624a06 100644
+--- a/board/freescale/mx7d_19x19_lpddr3_arm2/mx7d_19x19_lpddr3_arm2.c
++++ b/board/freescale/mx7d_19x19_lpddr3_arm2/mx7d_19x19_lpddr3_arm2.c
+@@ -170,6 +170,7 @@ static iomux_v3_cfg_t const eimnor_pads[] = {
+ 	MX7D_PAD_EPDC_DATA08__EIM_OE    | MUX_PAD_CTRL(WEIM_NOR_PAD_CTRL),
+ 	MX7D_PAD_EPDC_DATA09__EIM_RW    | MUX_PAD_CTRL(WEIM_NOR_PAD_CTRL),
+ 	MX7D_PAD_EPDC_DATA10__EIM_CS0_B | MUX_PAD_CTRL(WEIM_NOR_PAD_CTRL),
++	MX7D_PAD_EPDC_DATA12__EIM_LBA_B | MUX_PAD_CTRL(WEIM_NOR_PAD_CTRL),
+ 	MX7D_PAD_EPDC_DATA13__EIM_WAIT  | MUX_PAD_CTRL(WEIM_NOR_PAD_CTRL),
+ };
+ 
+diff --git a/include/configs/mx7d_19x19_lpddr3_arm2.h b/include/configs/mx7d_19x19_lpddr3_arm2.h
+index 67244a8..1c68ee1 100644
+--- a/include/configs/mx7d_19x19_lpddr3_arm2.h
++++ b/include/configs/mx7d_19x19_lpddr3_arm2.h
+@@ -50,6 +50,8 @@
+ #define CONFIG_SYS_USE_NAND
+ #define CONFIG_ENV_IS_IN_NAND
+ #else
++#define CONFIG_SYS_USE_EIMNOR
++#undef CONFIG_FEC_MXC
+ #define CONFIG_ENV_IS_IN_MMC
+ #endif
+ 
+diff --git a/include/configs/mx7d_arm2.h b/include/configs/mx7d_arm2.h
+index c19c751..39b5eb0 100644
+--- a/include/configs/mx7d_arm2.h
++++ b/include/configs/mx7d_arm2.h
+@@ -286,6 +286,7 @@
+ #define CONFIG_FLASH_CFI_DRIVER         /* Use drivers/cfi_flash.c */
+ #define CONFIG_SYS_FLASH_USE_BUFFER_WRITE /* Use buffered writes*/
+ #define CONFIG_SYS_FLASH_EMPTY_INFO
++#define CONFIG_SYS_FLASH_PROTECTION
+ #endif
+ 
+ #ifdef CONFIG_SYS_USE_NAND
+-- 
+1.8.0
+

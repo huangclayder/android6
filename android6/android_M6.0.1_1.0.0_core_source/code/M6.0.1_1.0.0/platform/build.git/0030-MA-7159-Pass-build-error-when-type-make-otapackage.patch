@@ -1,0 +1,28 @@
+From 0fb9fa667e3203b77f8ff6dfcec7e25abfc81e6a Mon Sep 17 00:00:00 2001
+From: Zhang Sanshan <b51434@freescale.com>
+Date: Mon, 26 Oct 2015 17:59:58 +0800
+Subject: [PATCH 30/34] MA-7159 Pass build error when type 'make otapackage'
+
+ota_from_target_files change to ota_from_target_files.py
+
+Signed-off-by: Zhang Sanshan <b51434@freescale.com>
+---
+ core/Makefile | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/core/Makefile b/core/Makefile
+index f9eee45..de7a53e 100644
+--- a/core/Makefile
++++ b/core/Makefile
+@@ -1727,7 +1727,7 @@ $(INTERNAL_OTA_PACKAGE_TARGET): KEY_CERT_PAIR := $(DEFAULT_KEY_CERT_PAIR)
+ $(INTERNAL_OTA_PACKAGE_TARGET): $(BUILT_TARGET_FILES_PACKAGE) $(DISTTOOLS)
+ 	@echo "Package OTA: $@"
+ 	$(hide) PATH=$(foreach p,$(INTERNAL_USERIMAGES_BINARY_PATHS),$(p):)$$PATH MKBOOTIMG=$(MKBOOTIMG) \
+-	   ./build/tools/releasetools/ota_from_target_files -v \
++	   ./build/tools/releasetools/ota_from_target_files.py -v \
+ 	   $(block_file)  \
+ 	   -p $(HOST_OUT) \
+ 	   -k $(KEY_CERT_PAIR) \
+-- 
+1.8.0
+

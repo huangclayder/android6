@@ -1,0 +1,60 @@
+From cf5b3d15bcd5921aa6c5ad666f00b6e5602c4ea8 Mon Sep 17 00:00:00 2001
+From: Wang Haoran <b50027@freescale.com>
+Date: Mon, 10 Nov 2014 17:42:12 +0800
+Subject: [PATCH 07/10] MA-5839 Fix compile error for upgrade Android-L
+
+  1. Change the header files for this private lib
+  2. Change os_strncpy to os_strlcpy as the wpa_supplicant
+     has removed os_strncpy.
+  3. Clear warnings.
+
+Signed-off-by: Wang Haoran <b50027@freescale.com>
+---
+ wlan/wpa_supplicant_8_lib/Android.mk           | 2 +-
+ wlan/wpa_supplicant_8_lib/driver_cmd_nl80211.c | 5 +++--
+ 2 files changed, 4 insertions(+), 3 deletions(-)
+
+diff --git a/wlan/wpa_supplicant_8_lib/Android.mk b/wlan/wpa_supplicant_8_lib/Android.mk
+index 24517c3..b895214 100755
+--- a/wlan/wpa_supplicant_8_lib/Android.mk
++++ b/wlan/wpa_supplicant_8_lib/Android.mk
+@@ -35,7 +35,7 @@ WPA_SUPPL_DIR_INCLUDE = $(WPA_SUPPL_DIR)/src \
+ 	$(WPA_SUPPL_DIR)/wpa_supplicant
+ 
+ ifdef CONFIG_DRIVER_NL80211
+-WPA_SUPPL_DIR_INCLUDE += external/libnl-headers
++WPA_SUPPL_DIR_INCLUDE += external/libnl/include
+ WPA_SRC_FILE += driver_cmd_nl80211.c
+ endif
+ 
+diff --git a/wlan/wpa_supplicant_8_lib/driver_cmd_nl80211.c b/wlan/wpa_supplicant_8_lib/driver_cmd_nl80211.c
+index bf16b1f..2c8be10 100755
+--- a/wlan/wpa_supplicant_8_lib/driver_cmd_nl80211.c
++++ b/wlan/wpa_supplicant_8_lib/driver_cmd_nl80211.c
+@@ -1,4 +1,5 @@
+ /*
++ * Copyright (C) 2012-2014 Freescale Semiconductor, Inc.
+  * Driver interaction with extended Linux CFG8021
+  *
+  * This program is free software; you can redistribute it and/or modify
+@@ -62,7 +63,7 @@ int wpa_driver_nl80211_driver_cmd(void *priv, char *cmd, char *buf,
+ 		os_memcpy(buf, cmd, strlen(cmd) + 1);
+ 		memset(&ifr, 0, sizeof(ifr));
+ 		memset(&priv_cmd, 0, sizeof(priv_cmd));
+-		os_strncpy(ifr.ifr_name, bss->ifname, IFNAMSIZ);
++		os_strlcpy(ifr.ifr_name, bss->ifname, IFNAMSIZ);
+ 
+ 		priv_cmd.buf = buf;
+ 		priv_cmd.used_len = buf_len;
+@@ -100,7 +101,7 @@ int wpa_driver_set_p2p_noa(void *priv, u8 count, int start, int duration)
+ 	return wpa_driver_nl80211_driver_cmd(priv, buf, buf, strlen(buf)+1);
+ }
+ 
+-int wpa_driver_get_p2p_noa(void *priv, u8 *buf, size_t len)
++int wpa_driver_get_p2p_noa(void __unused *priv, u8 __unused *buf, size_t __unused len)
+ {
+ 	/* Return 0 till we handle p2p_presence request completely in the driver */
+ 	return 0;
+-- 
+1.8.0
+

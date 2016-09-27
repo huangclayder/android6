@@ -1,0 +1,55 @@
+From e8480316de00097b9037e78456d468a3bba093e2 Mon Sep 17 00:00:00 2001
+From: "guoyin.chen" <guoyin.chen@freescale.com>
+Date: Wed, 27 May 2015 15:01:04 +0800
+Subject: [PATCH] MA-6745 Update kernel config due to merge imx_3.14.y kernel
+
+Updaet android config to align the imx_v7_defconfig change in imx_3.14.y
+
+Signed-off-by: guoyin.chen <guoyin.chen@freescale.com>
+---
+ arch/arm/configs/imx_v7_android_defconfig | 5 ++++-
+ 1 file changed, 4 insertions(+), 1 deletion(-)
+
+diff --git a/arch/arm/configs/imx_v7_android_defconfig b/arch/arm/configs/imx_v7_android_defconfig
+index d7d4332..91daefa 100644
+--- a/arch/arm/configs/imx_v7_android_defconfig
++++ b/arch/arm/configs/imx_v7_android_defconfig
+@@ -180,7 +180,6 @@ CONFIG_BT_BNEP_MC_FILTER=y
+ CONFIG_BT_BNEP_PROTO_FILTER=y
+ CONFIG_BT_HIDP=y
+ CONFIG_BT_HCIBTUSB=y
+-CONFIG_BT_HCIBTSDIO=y
+ CONFIG_BT_HCIUART=y
+ CONFIG_BT_HCIUART_BCSP=y
+ CONFIG_BT_HCIUART_ATH3K=y
+@@ -256,6 +255,7 @@ CONFIG_SMC91X=y
+ CONFIG_SMC911X=y
+ CONFIG_SMSC911X=y
+ # CONFIG_NET_VENDOR_STMICRO is not set
++CONFIG_MICREL_PHY=y
+ CONFIG_PPP=y
+ CONFIG_PPP_BSDCOMP=y
+ CONFIG_PPP_DEFLATE=y
+@@ -294,9 +294,11 @@ CONFIG_TABLET_USB_HANWANG=y
+ CONFIG_TABLET_USB_KBTAB=y
+ CONFIG_TABLET_USB_WACOM=y
+ CONFIG_INPUT_TOUCHSCREEN=y
++CONFIG_TOUCHSCREEN_ADS7846=y
+ CONFIG_TOUCHSCREEN_EGALAX=y
+ CONFIG_TOUCHSCREEN_ELAN=y
+ CONFIG_TOUCHSCREEN_MAX11801=y
++CONFIG_TOUCHSCREEN_IMX6UL_TSC=y
+ CONFIG_TOUCHSCREEN_MC13783=y
+ CONFIG_TOUCHSCREEN_TSC2007=y
+ CONFIG_TOUCHSCREEN_STMPE=y
+@@ -307,6 +309,7 @@ CONFIG_INPUT_UINPUT=y
+ CONFIG_INPUT_GPIO=y
+ CONFIG_INPUT_ISL29023=y
+ CONFIG_INPUT_MPL3115=y
++CONFIG_SENSOR_FXLS8471=y
+ # CONFIG_LEGACY_PTYS is not set
+ # CONFIG_DEVKMEM is not set
+ CONFIG_SERIAL_IMX=y
+-- 
+1.8.0
+

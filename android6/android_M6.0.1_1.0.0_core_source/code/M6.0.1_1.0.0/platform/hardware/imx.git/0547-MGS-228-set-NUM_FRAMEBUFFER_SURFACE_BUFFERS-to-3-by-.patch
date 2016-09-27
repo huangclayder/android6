@@ -1,0 +1,55 @@
+From 2a527f14982b726b8990ae91264c0e4f3310220d Mon Sep 17 00:00:00 2001
+From: Richard Liu <r66033@freescale.com>
+Date: Thu, 20 Nov 2014 13:54:00 +0800
+Subject: [PATCH 547/635] MGS-228 set NUM_FRAMEBUFFER_SURFACE_BUFFERS to 3 by
+ default
+
+NUM_FRAMEBUFFER_SURFACE_BUFFERS default is set to 2 on android framework,
+but our IPU driver need configure frame buffer number to 3 else there is
+tearing issue, so we set NUM_FRAMEBUFFER_SURFACE_BUFFERS to three in each
+board configure file, but customer may missing add such configure and cause
+tearing issue, we should by default set NUM_FRAMEBUFFER_SURFACE_BUFFERS to
+3 and remove such configure request on board configure file.
+
+This patch align NUM_BUFFERS with NUM_FRAMEBUFFER_SURFACE_BUFFERS.
+
+Signed-off-by: Richard Liu <r66033@freescale.com>
+---
+ mx6/libgralloc_wrapper/Android.mk      | 4 ++++
+ mx6/libgralloc_wrapper/framebuffer.cpp | 4 ++++
+ 2 files changed, 8 insertions(+)
+
+diff --git a/mx6/libgralloc_wrapper/Android.mk b/mx6/libgralloc_wrapper/Android.mk
+index 41b5bcb..c9f4e81 100755
+--- a/mx6/libgralloc_wrapper/Android.mk
++++ b/mx6/libgralloc_wrapper/Android.mk
+@@ -51,6 +51,10 @@ ifeq ($(HAVE_FSL_IMX_GPU2D),true)
+ LOCAL_CFLAGS += -DFSL_IMX_DISPLAY -DIMX_GPU
+ endif
+ 
++ifneq ($(NUM_FRAMEBUFFER_SURFACE_BUFFERS),)
++  LOCAL_CFLAGS += -DNUM_FRAMEBUFFER_SURFACE_BUFFERS=$(NUM_FRAMEBUFFER_SURFACE_BUFFERS)
++endif
++
+ LOCAL_MODULE_TAGS := eng
+ 
+ include $(BUILD_SHARED_LIBRARY)
+diff --git a/mx6/libgralloc_wrapper/framebuffer.cpp b/mx6/libgralloc_wrapper/framebuffer.cpp
+index 55ad7fc..6c0fc05 100755
+--- a/mx6/libgralloc_wrapper/framebuffer.cpp
++++ b/mx6/libgralloc_wrapper/framebuffer.cpp
+@@ -54,7 +54,11 @@
+ /*****************************************************************************/
+ 
+ // numbers of buffers for page flipping
++#ifndef NUM_FRAMEBUFFER_SURFACE_BUFFERS
+ #define NUM_BUFFERS 3
++#else
++#define NUM_BUFFERS NUM_FRAMEBUFFER_SURFACE_BUFFERS
++#endif
+ 
+ inline size_t roundUpToPageSize(size_t x) {
+     return (x + (PAGE_SIZE-1)) & ~(PAGE_SIZE-1);
+-- 
+1.8.0
+

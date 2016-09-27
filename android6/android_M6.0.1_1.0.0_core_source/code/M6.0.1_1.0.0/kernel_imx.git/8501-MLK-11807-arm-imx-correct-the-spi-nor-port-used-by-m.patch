@@ -1,0 +1,27 @@
+From 75eb4493d701fc068a2969b038cb0254ddc84b2c Mon Sep 17 00:00:00 2001
+From: Richard Zhu <Richard.Zhu@freescale.com>
+Date: Mon, 2 Nov 2015 13:58:14 +0800
+Subject: [PATCH] MLK-11807 arm: imx: correct the spi nor port used by m4
+
+The spi nor port1 is used by m4 on imx6sx sabreauto board.
+
+Signed-off-by: Richard Zhu <Richard.Zhu@freescale.com>
+---
+ arch/arm/boot/dts/imx6sx-sdb-m4.dts | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/arch/arm/boot/dts/imx6sx-sdb-m4.dts b/arch/arm/boot/dts/imx6sx-sdb-m4.dts
+index c3962a7..d52d5bc 100644
+--- a/arch/arm/boot/dts/imx6sx-sdb-m4.dts
++++ b/arch/arm/boot/dts/imx6sx-sdb-m4.dts
+@@ -61,6 +61,7 @@
+ };
+ 
+ &qspi_m4 {
++	reg = <0x021e0000 0x4000>;
+ 	status = "okay";
+ };
+ 
+-- 
+1.8.0
+

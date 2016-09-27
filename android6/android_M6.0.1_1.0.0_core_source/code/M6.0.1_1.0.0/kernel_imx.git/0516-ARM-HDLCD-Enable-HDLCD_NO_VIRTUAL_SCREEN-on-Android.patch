@@ -1,0 +1,32 @@
+From b0e4320c3e6810bff7eaaf63d2bd9c94d326f7f5 Mon Sep 17 00:00:00 2001
+From: Jon Medhurst <tixy@linaro.org>
+Date: Fri, 13 Jul 2012 14:25:50 +0100
+Subject: [PATCH] ARM HDLCD: Enable HDLCD_NO_VIRTUAL_SCREEN on Android
+
+This is a hack which prevents annoying screen flicker in the Android UI.
+
+Signed-off-by: Jon Medhurst <tixy@linaro.org>
+(cherry picked from commit a0464c9ae35a01afba84693f3f31172eb3e65002)
+Signed-off-by: Alex Shi <alex.shi@linaro.org>
+---
+ include/linux/arm-hdlcd.h | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/include/linux/arm-hdlcd.h b/include/linux/arm-hdlcd.h
+index 124995a..939f3a8 100644
+--- a/include/linux/arm-hdlcd.h
++++ b/include/linux/arm-hdlcd.h
+@@ -107,6 +107,10 @@
+  */
+ //#define HDLCD_NO_VIRTUAL_SCREEN
+ 
++#ifdef CONFIG_ANDROID
++#define HDLCD_NO_VIRTUAL_SCREEN
++#endif
++
+ struct hdlcd_device {
+ 	struct fb_info		fb;
+ 	struct device		*dev;
+-- 
+1.8.0
+

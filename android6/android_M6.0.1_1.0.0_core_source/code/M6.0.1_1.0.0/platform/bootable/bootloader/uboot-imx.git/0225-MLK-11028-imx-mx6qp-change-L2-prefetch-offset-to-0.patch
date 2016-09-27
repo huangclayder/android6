@@ -1,0 +1,28 @@
+From 5cab58016a032ea364c8e5df3994ac51fdf60b0a Mon Sep 17 00:00:00 2001
+From: Peng Fan <Peng.Fan@freescale.com>
+Date: Thu, 11 Jun 2015 18:19:45 +0800
+Subject: [PATCH] MLK-11028 imx: mx6qp change L2 prefetch offset to 0
+
+Change L2 prefetch offset to 0 to make system stable.
+
+Signed-off-by: Peng Fan <Peng.Fan@freescale.com>
+---
+ arch/arm/cpu/armv7/mx6/soc.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/arch/arm/cpu/armv7/mx6/soc.c b/arch/arm/cpu/armv7/mx6/soc.c
+index febf96e..0375996 100644
+--- a/arch/arm/cpu/armv7/mx6/soc.c
++++ b/arch/arm/cpu/armv7/mx6/soc.c
+@@ -985,7 +985,7 @@ void v7_outer_cache_enable(void)
+ 
+ 	/* Turn on the L2 I/D prefetch, double linefill */
+ 	/* Set prefetch offset with any value except 23 as per errata 765569 */
+-	val |= 0x7000000f;
++	val |= 0x70000000;
+ 
+ 	/*
+ 	 * The L2 cache controller(PL310) version on the i.MX6D/Q is r3p1-50rel0
+-- 
+1.8.0
+

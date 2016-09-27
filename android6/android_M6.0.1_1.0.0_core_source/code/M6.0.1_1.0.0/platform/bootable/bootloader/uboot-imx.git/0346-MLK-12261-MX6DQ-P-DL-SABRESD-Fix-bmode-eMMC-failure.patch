@@ -1,0 +1,32 @@
+From ca98d082e45da94cc1a47833df69c4112c8c6268 Mon Sep 17 00:00:00 2001
+From: Ye Li <ye.li@nxp.com>
+Date: Thu, 14 Jan 2016 14:42:43 +0800
+Subject: [PATCH] MLK-12261 MX6DQ{P}/DL:SABRESD Fix bmode eMMC failure
+
+The BOOTCFG value used by bmode for SABRESD eMMC boot are actually for SD card.
+Fixed the value to correct one.
+
+The issue was fixed in 2014.04 u-boot, but that patch seems missed during porting
+to 2015.04.
+
+Signed-off-by: Ye Li <ye.li@nxp.com>
+---
+ board/freescale/mx6sabresd/mx6sabresd.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/board/freescale/mx6sabresd/mx6sabresd.c b/board/freescale/mx6sabresd/mx6sabresd.c
+index 0e4ee2f..716e2d7 100644
+--- a/board/freescale/mx6sabresd/mx6sabresd.c
++++ b/board/freescale/mx6sabresd/mx6sabresd.c
+@@ -1169,7 +1169,7 @@ static const struct boot_mode board_boot_modes[] = {
+ 	{"sd2",	 MAKE_CFGVAL(0x40, 0x28, 0x00, 0x00)},
+ 	{"sd3",	 MAKE_CFGVAL(0x40, 0x30, 0x00, 0x00)},
+ 	/* 8 bit bus width */
+-	{"emmc", MAKE_CFGVAL(0x40, 0x38, 0x00, 0x00)},
++	{"emmc", MAKE_CFGVAL(0x60, 0x58, 0x00, 0x00)},
+ 	{NULL,	 0},
+ };
+ #endif
+-- 
+1.8.0
+

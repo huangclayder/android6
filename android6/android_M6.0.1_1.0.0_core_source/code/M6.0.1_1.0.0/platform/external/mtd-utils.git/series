@@ -1,0 +1,7 @@
+0001-MA-5998-fix-the-compile-error-of-new-mtd-utils.patch
+0002-MA-6043-add-ubi-related-tools.patch
+0003-This-patch-enables-SELinux-context-to-be-added-to-a-.patch
+0004-MA-6096-enable-selinux-context-to-be-added-to-ubifs-.patch
+0005-MA-6989-Add-external-ntfs-3g-and-external-mtd-utils-.patch
+0006-MA-7098-Upgrade-android-to-Mashmallow.patch
+0007-MA-7218-1-Android_imx6_auto-factoryreset-do-factory-.patch

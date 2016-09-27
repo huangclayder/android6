@@ -1,0 +1,97 @@
+From 6cd86f329a675df639805cd4a51a87452b8a58b8 Mon Sep 17 00:00:00 2001
+From: Zhang Sanshan <b51434@freescale.com>
+Date: Mon, 14 Dec 2015 17:28:17 +0800
+Subject: [PATCH 580/602] MA-7350 Add some selinux policy for mm6.0
+
+Add selinux policy for ethernet access on ard board(nand).
+Add some selinux policy for sanity test.
+
+Signed-off-by: Zhang Sanshan <b51434@freescale.com>
+---
+ imx6/sepolicy/domain.te | 1 +
+ imx6/sepolicy/kernel.te | 4 ++++
+ imx6/sepolicy/shell.te  | 1 +
+ imx7/sepolicy/domain.te | 1 +
+ imx7/sepolicy/kernel.te | 4 ++++
+ imx7/sepolicy/shell.te  | 1 +
+ 6 files changed, 12 insertions(+)
+
+diff --git a/imx6/sepolicy/domain.te b/imx6/sepolicy/domain.te
+index 2ff3da3..f91c490 100644
+--- a/imx6/sepolicy/domain.te
++++ b/imx6/sepolicy/domain.te
+@@ -16,4 +16,5 @@ allow {domain -untrusted_app -shell -isolated_app} graphics_device:dir rw_dir_pe
+ allow domain self:process execmem;
+ allow domain unlabeled:file { setattr getattr rename rw_file_perms };
+ allow domain unlabeled:dir { setattr getattr rename rw_dir_perms };
++allow domain unlabeled:lnk_file { read };
+ allow domain ashmem_device:chr_file {execute};
+diff --git a/imx6/sepolicy/kernel.te b/imx6/sepolicy/kernel.te
+index 751bbf1..7e1f767 100644
+--- a/imx6/sepolicy/kernel.te
++++ b/imx6/sepolicy/kernel.te
+@@ -3,6 +3,7 @@ allow kernel sdcard_internal:file rw_file_perms;
+ allow kernel sdcard_internal:dir rw_dir_perms;
+ allow kernel device:blk_file  { create setattr getattr unlink};
+ allow kernel device:dir  { add_name write };
++allow kernel device:chr_file  { create setattr };
+ allow healthd kernel:system  { module_request };
+ allow logd kernel:system  { module_request };
+ allow ueventd kernel:system  { module_request };
+@@ -24,3 +25,6 @@ allow tzdatacheck kernel:system  { module_request };
+ allow shell kernel:system  { module_request };
+ allow dex2oat kernel:system  { module_request };
+ allow gatekeeperd kernel:system  { module_request };
++allow dhcp kernel:system  { module_request };
++allow adbd kernel:system  { module_request };
++allow dnsmasq kernel:system  { module_request };
+diff --git a/imx6/sepolicy/shell.te b/imx6/sepolicy/shell.te
+index dbfea85..361af5e 100644
+--- a/imx6/sepolicy/shell.te
++++ b/imx6/sepolicy/shell.te
+@@ -1,3 +1,4 @@
+ allow shell procrank_exec:file { getattr };
+ allow shell proc_uid_cputime_showstat:file { getattr read open };
+ allow shell proc_uid_cputime_removeuid:file { getattr read open };
++allow shell unlabeled:lnk_file { read };
+diff --git a/imx7/sepolicy/domain.te b/imx7/sepolicy/domain.te
+index 2ff3da3..f91c490 100644
+--- a/imx7/sepolicy/domain.te
++++ b/imx7/sepolicy/domain.te
+@@ -16,4 +16,5 @@ allow {domain -untrusted_app -shell -isolated_app} graphics_device:dir rw_dir_pe
+ allow domain self:process execmem;
+ allow domain unlabeled:file { setattr getattr rename rw_file_perms };
+ allow domain unlabeled:dir { setattr getattr rename rw_dir_perms };
++allow domain unlabeled:lnk_file { read };
+ allow domain ashmem_device:chr_file {execute};
+diff --git a/imx7/sepolicy/kernel.te b/imx7/sepolicy/kernel.te
+index 751bbf1..7e1f767 100644
+--- a/imx7/sepolicy/kernel.te
++++ b/imx7/sepolicy/kernel.te
+@@ -3,6 +3,7 @@ allow kernel sdcard_internal:file rw_file_perms;
+ allow kernel sdcard_internal:dir rw_dir_perms;
+ allow kernel device:blk_file  { create setattr getattr unlink};
+ allow kernel device:dir  { add_name write };
++allow kernel device:chr_file  { create setattr };
+ allow healthd kernel:system  { module_request };
+ allow logd kernel:system  { module_request };
+ allow ueventd kernel:system  { module_request };
+@@ -24,3 +25,6 @@ allow tzdatacheck kernel:system  { module_request };
+ allow shell kernel:system  { module_request };
+ allow dex2oat kernel:system  { module_request };
+ allow gatekeeperd kernel:system  { module_request };
++allow dhcp kernel:system  { module_request };
++allow adbd kernel:system  { module_request };
++allow dnsmasq kernel:system  { module_request };
+diff --git a/imx7/sepolicy/shell.te b/imx7/sepolicy/shell.te
+index dbfea85..361af5e 100644
+--- a/imx7/sepolicy/shell.te
++++ b/imx7/sepolicy/shell.te
+@@ -1,3 +1,4 @@
+ allow shell procrank_exec:file { getattr };
+ allow shell proc_uid_cputime_showstat:file { getattr read open };
+ allow shell proc_uid_cputime_removeuid:file { getattr read open };
++allow shell unlabeled:lnk_file { read };
+-- 
+1.8.0
+

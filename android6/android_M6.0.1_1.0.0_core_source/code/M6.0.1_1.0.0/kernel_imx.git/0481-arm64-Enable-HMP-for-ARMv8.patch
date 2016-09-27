@@ -1,0 +1,301 @@
+From f59466fe0655fd6b835b394f9c210d3f5cb02bb8 Mon Sep 17 00:00:00 2001
+From: Mark Hambleton <mahamble@broadcom.com>
+Date: Wed, 27 Nov 2013 13:30:29 +0000
+Subject: [PATCH] arm64: Enable HMP for ARMv8
+
+Signed-off-by: Mark Hambleton <mahamble@broadcom.com>
+Signed-off-by: Mark Brown <broonie@linaro.org>
+(cherry picked from commit 8ecd48091c61213762407f5ce02d3fa4ede66402)
+Signed-off-by: Alex Shi <alex.shi@linaro.org>
+
+Conflicts:
+	arch/arm64/kernel/topology.c
+---
+ arch/arm64/Kconfig                |  96 ++++++++++++++++++++++++++++++
+ arch/arm64/include/asm/topology.h |  31 ++++++++++
+ arch/arm64/kernel/topology.c      | 120 ++++++++++++++++++++++++++++++++++++++
+ 3 files changed, 247 insertions(+)
+
+diff --git a/arch/arm64/Kconfig b/arch/arm64/Kconfig
+index 78b25fd..53bc19a 100644
+--- a/arch/arm64/Kconfig
++++ b/arch/arm64/Kconfig
+@@ -196,6 +196,102 @@ config SCHED_SMT
+ 	  MultiThreading at a cost of slightly increased overhead in some
+ 	  places. If unsure say N here.
+ 
++config DISABLE_CPU_SCHED_DOMAIN_BALANCE
++	bool "(EXPERIMENTAL) Disable CPU level scheduler load-balancing"
++	help
++	  Disables scheduler load-balancing at CPU sched domain level.
++
++config SCHED_HMP
++	bool "(EXPERIMENTAL) Heterogenous multiprocessor scheduling"
++	depends on DISABLE_CPU_SCHED_DOMAIN_BALANCE && SCHED_MC && FAIR_GROUP_SCHED && !SCHED_AUTOGROUP
++	help
++	  Experimental scheduler optimizations for heterogeneous platforms.
++	  Attempts to introspectively select task affinity to optimize power
++	  and performance. Basic support for multiple (>2) cpu types is in place,
++	  but it has only been tested with two types of cpus.
++	  There is currently no support for migration of task groups, hence
++	  !SCHED_AUTOGROUP. Furthermore, normal load-balancing must be disabled
++	  between cpus of different type (DISABLE_CPU_SCHED_DOMAIN_BALANCE).
++
++config SCHED_HMP_PRIO_FILTER
++	bool "(EXPERIMENTAL) Filter HMP migrations by task priority"
++	depends on SCHED_HMP
++	help
++	  Enables task priority based HMP migration filter. Any task with
++	  a NICE value above the threshold will always be on low-power cpus
++	  with less compute capacity.
++
++config SCHED_HMP_PRIO_FILTER_VAL
++	int "NICE priority threshold"
++	default 5
++	depends on SCHED_HMP_PRIO_FILTER
++
++config HMP_FAST_CPU_MASK
++	string "HMP scheduler fast CPU mask"
++	depends on SCHED_HMP
++	help
++          Leave empty to use device tree information.
++	  Specify the cpuids of the fast CPUs in the system as a list string,
++	  e.g. cpuid 0+1 should be specified as 0-1.
++
++config HMP_SLOW_CPU_MASK
++	string "HMP scheduler slow CPU mask"
++	depends on SCHED_HMP
++	help
++	  Leave empty to use device tree information.
++	  Specify the cpuids of the slow CPUs in the system as a list string,
++	  e.g. cpuid 0+1 should be specified as 0-1.
++
++config HMP_VARIABLE_SCALE
++	bool "Allows changing the load tracking scale through sysfs"
++	depends on SCHED_HMP
++	help
++	  When turned on, this option exports the thresholds and load average
++	  period value for the load tracking patches through sysfs.
++	  The values can be modified to change the rate of load accumulation
++	  and the thresholds used for HMP migration.
++	  The load_avg_period_ms is the time in ms to reach a load average of
++	  0.5 for an idle task of 0 load average ratio that start a busy loop.
++	  The up_threshold and down_threshold is the value to go to a faster
++	  CPU or to go back to a slower cpu.
++	  The {up,down}_threshold are devided by 1024 before being compared
++	  to the load average.
++	  For examples, with load_avg_period_ms = 128 and up_threshold = 512,
++	  a running task with a load of 0 will be migrated to a bigger CPU after
++	  128ms, because after 128ms its load_avg_ratio is 0.5 and the real
++	  up_threshold is 0.5.
++	  This patch has the same behavior as changing the Y of the load
++	  average computation to
++	        (1002/1024)^(LOAD_AVG_PERIOD/load_avg_period_ms)
++	  but it remove intermadiate overflows in computation.
++
++config HMP_FREQUENCY_INVARIANT_SCALE
++	bool "(EXPERIMENTAL) Frequency-Invariant Tracked Load for HMP"
++	depends on HMP_VARIABLE_SCALE && CPU_FREQ
++	help
++	  Scales the current load contribution in line with the frequency
++	  of the CPU that the task was executed on.
++	  In this version, we use a simple linear scale derived from the
++	  maximum frequency reported by CPUFreq.
++	  Restricting tracked load to be scaled by the CPU's frequency
++	  represents the consumption of possible compute capacity
++	  (rather than consumption of actual instantaneous capacity as
++	  normal) and allows the HMP migration's simple threshold
++	  migration strategy to interact more predictably with CPUFreq's
++	  asynchronous compute capacity changes.
++
++config SCHED_HMP_LITTLE_PACKING
++	bool "Small task packing for HMP"
++	depends on SCHED_HMP
++	default n
++	help
++	  Allows the HMP Scheduler to pack small tasks into CPUs in the
++	  smallest HMP domain.
++	  Controlled by two sysfs files in sys/kernel/hmp.
++	  packing_enable: 1 to enable, 0 to disable packing. Default 1.
++	  packing_limit: runqueue load ratio where a RQ is considered
++	    to be full. Default is NICE_0_LOAD * 9/8.
++
+ config NR_CPUS
+ 	int "Maximum number of CPUs (2-32)"
+ 	range 2 32
+diff --git a/arch/arm64/include/asm/topology.h b/arch/arm64/include/asm/topology.h
+index 0172e6d..e0171b3 100644
+--- a/arch/arm64/include/asm/topology.h
++++ b/arch/arm64/include/asm/topology.h
+@@ -27,6 +27,37 @@ void init_cpu_topology(void);
+ void store_cpu_topology(unsigned int cpuid);
+ const struct cpumask *cpu_coregroup_mask(int cpu);
+ 
++#ifdef CONFIG_DISABLE_CPU_SCHED_DOMAIN_BALANCE
++/* Common values for CPUs */
++#ifndef SD_CPU_INIT
++#define SD_CPU_INIT (struct sched_domain) {				\
++	.min_interval		= 1,					\
++	.max_interval		= 4,					\
++	.busy_factor		= 64,					\
++	.imbalance_pct		= 125,					\
++	.cache_nice_tries	= 1,					\
++	.busy_idx		= 2,					\
++	.idle_idx		= 1,					\
++	.newidle_idx		= 0,					\
++	.wake_idx		= 0,					\
++	.forkexec_idx		= 0,					\
++									\
++	.flags			= 0*SD_LOAD_BALANCE			\
++				| 1*SD_BALANCE_NEWIDLE			\
++				| 1*SD_BALANCE_EXEC			\
++				| 1*SD_BALANCE_FORK			\
++				| 0*SD_BALANCE_WAKE			\
++				| 1*SD_WAKE_AFFINE			\
++				| 0*SD_SHARE_CPUPOWER			\
++				| 0*SD_SHARE_PKG_RESOURCES		\
++				| 0*SD_SERIALIZE			\
++				,					\
++	.last_balance		 = jiffies,				\
++	.balance_interval	= 1,					\
++}
++#endif
++#endif /* CONFIG_DISABLE_CPU_SCHED_DOMAIN_BALANCE */
++
+ #else
+ 
+ static inline void init_cpu_topology(void) { }
+diff --git a/arch/arm64/kernel/topology.c b/arch/arm64/kernel/topology.c
+index d450a6d..a732837 100644
+--- a/arch/arm64/kernel/topology.c
++++ b/arch/arm64/kernel/topology.c
+@@ -396,6 +396,126 @@ void store_cpu_topology(unsigned int cpuid)
+ 	update_cpu_power(cpuid);
+ }
+ 
++#ifdef CONFIG_SCHED_HMP
++
++/*
++ * Retrieve logical cpu index corresponding to a given MPIDR[23:0]
++ *  - mpidr: MPIDR[23:0] to be used for the look-up
++ *
++ * Returns the cpu logical index or -EINVAL on look-up error
++ */
++static inline int get_logical_index(u32 mpidr)
++{
++	int cpu;
++	for (cpu = 0; cpu < nr_cpu_ids; cpu++)
++		if (cpu_logical_map(cpu) == mpidr)
++			return cpu;
++	return -EINVAL;
++}
++
++static const char * const little_cores[] = {
++	"arm,cortex-a53",
++	NULL,
++};
++
++static bool is_little_cpu(struct device_node *cn)
++{
++	const char * const *lc;
++	for (lc = little_cores; *lc; lc++)
++		if (of_device_is_compatible(cn, *lc))
++			return true;
++	return false;
++}
++
++void __init arch_get_fast_and_slow_cpus(struct cpumask *fast,
++					struct cpumask *slow)
++{
++	struct device_node *cn = NULL;
++	int cpu;
++
++	cpumask_clear(fast);
++	cpumask_clear(slow);
++
++	/*
++	 * Use the config options if they are given. This helps testing
++	 * HMP scheduling on systems without a big.LITTLE architecture.
++	 */
++	if (strlen(CONFIG_HMP_FAST_CPU_MASK) && strlen(CONFIG_HMP_SLOW_CPU_MASK)) {
++		if (cpulist_parse(CONFIG_HMP_FAST_CPU_MASK, fast))
++			WARN(1, "Failed to parse HMP fast cpu mask!\n");
++		if (cpulist_parse(CONFIG_HMP_SLOW_CPU_MASK, slow))
++			WARN(1, "Failed to parse HMP slow cpu mask!\n");
++		return;
++	}
++
++	/*
++	 * Else, parse device tree for little cores.
++	 */
++	while ((cn = of_find_node_by_type(cn, "cpu"))) {
++
++		const u32 *mpidr;
++		int len;
++
++		mpidr = of_get_property(cn, "reg", &len);
++		if (!mpidr || len != 8) {
++			pr_err("%s missing reg property\n", cn->full_name);
++			continue;
++		}
++
++		cpu = get_logical_index(be32_to_cpup(mpidr+1));
++		if (cpu == -EINVAL) {
++			pr_err("couldn't get logical index for mpidr %x\n",
++							be32_to_cpup(mpidr+1));
++			break;
++		}
++
++		if (is_little_cpu(cn))
++			cpumask_set_cpu(cpu, slow);
++		else
++			cpumask_set_cpu(cpu, fast);
++	}
++
++	if (!cpumask_empty(fast) && !cpumask_empty(slow))
++		return;
++
++	/*
++	 * We didn't find both big and little cores so let's call all cores
++	 * fast as this will keep the system running, with all cores being
++	 * treated equal.
++	 */
++	cpumask_setall(fast);
++	cpumask_clear(slow);
++}
++
++struct cpumask hmp_slow_cpu_mask;
++
++void __init arch_get_hmp_domains(struct list_head *hmp_domains_list)
++{
++	struct cpumask hmp_fast_cpu_mask;
++	struct hmp_domain *domain;
++
++	arch_get_fast_and_slow_cpus(&hmp_fast_cpu_mask, &hmp_slow_cpu_mask);
++
++	/*
++	 * Initialize hmp_domains
++	 * Must be ordered with respect to compute capacity.
++	 * Fastest domain at head of list.
++	 */
++	if(!cpumask_empty(&hmp_slow_cpu_mask)) {
++		domain = (struct hmp_domain *)
++			kmalloc(sizeof(struct hmp_domain), GFP_KERNEL);
++		cpumask_copy(&domain->possible_cpus, &hmp_slow_cpu_mask);
++		cpumask_and(&domain->cpus, cpu_online_mask, &domain->possible_cpus);
++		list_add(&domain->hmp_domains, hmp_domains_list);
++	}
++	domain = (struct hmp_domain *)
++		kmalloc(sizeof(struct hmp_domain), GFP_KERNEL);
++	cpumask_copy(&domain->possible_cpus, &hmp_fast_cpu_mask);
++	cpumask_and(&domain->cpus, cpu_online_mask, &domain->possible_cpus);
++	list_add(&domain->hmp_domains, hmp_domains_list);
++}
++#endif /* CONFIG_SCHED_HMP */
++
+ static void __init reset_cpu_topology(void)
+ {
+ 	unsigned int cpu;
+-- 
+1.8.0
+

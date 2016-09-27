@@ -1,0 +1,45 @@
+From facd34eb7ea34bf091b2c60168bfb0f0728811f7 Mon Sep 17 00:00:00 2001
+From: "guoyin.chen" <guoyin.chen@freescale.com>
+Date: Mon, 30 Jun 2014 09:50:05 +0800
+Subject: [PATCH] ENGR00275429-1 video: mxc_ipuv3_fb Screen flashing found in
+ recovery mode
+
+Android Recovery UI framework uses FBIOPUT_VSCREENINFO with yoffset update
+to update display.
+ipuv3 FB will set var.activate to be FB_ACTIVATE_FORCE in
+driver's probe. User space will get the VSCREENINFO with activate been set
+to FB_ACTIVE_FORCE. Each FBIOPUT_VSCREENINFO with only yoffset update will
+make the driver reinit.The activate should be cleared once set_par() been
+finished.
+
+Signed-off-by: guoyin.chen <guoyin.chen@freescale.com>
+---
+ drivers/video/mxc/mxc_ipuv3_fb.c | 7 ++++++-
+ 1 file changed, 6 insertions(+), 1 deletion(-)
+
+diff --git a/drivers/video/mxc/mxc_ipuv3_fb.c b/drivers/video/mxc/mxc_ipuv3_fb.c
+index 9d074f9..dad0ad7 100644
+--- a/drivers/video/mxc/mxc_ipuv3_fb.c
++++ b/drivers/video/mxc/mxc_ipuv3_fb.c
+@@ -1,5 +1,5 @@
+ /*
+- * Copyright 2004-2014 Freescale Semiconductor, Inc. All Rights Reserved.
++ * Copyright 2004-2015 Freescale Semiconductor, Inc. All Rights Reserved.
+  */
+ 
+ /*
+@@ -654,6 +654,11 @@ static int mxcfb_set_par(struct fb_info *fbi)
+ 	if (ovfbi_enable)
+ 		ipu_enable_channel(mxc_fbi_fg->ipu, mxc_fbi_fg->ipu_ch);
+ 
++	/* Clear activate as not Reconfiguring framebuffer again */
++	if ((fbi->var.activate & FB_ACTIVATE_FORCE) &&
++		(fbi->var.activate & FB_ACTIVATE_MASK) == FB_ACTIVATE_NOW)
++		fbi->var.activate = FB_ACTIVATE_NOW;
++
+ 	if (mxc_fbi->dispdrv && mxc_fbi->dispdrv->drv->enable) {
+ 		retval = mxc_fbi->dispdrv->drv->enable(mxc_fbi->dispdrv, fbi);
+ 		if (retval < 0) {
+-- 
+1.8.0
+

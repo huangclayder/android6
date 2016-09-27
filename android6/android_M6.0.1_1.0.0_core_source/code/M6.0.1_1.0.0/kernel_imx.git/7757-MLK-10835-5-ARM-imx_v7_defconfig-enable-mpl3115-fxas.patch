@@ -1,0 +1,37 @@
+From 5dcfa20736f0534acd72ecad1e273284c30fbddc Mon Sep 17 00:00:00 2001
+From: Fugang Duan <b38611@freescale.com>
+Date: Wed, 6 May 2015 10:02:42 +0800
+Subject: [PATCH] MLK-10835-5 ARM: imx_v7_defconfig: enable mpl3115,fxas2100x
+ and fxos8700 in defconfig
+
+Enable mpl3115,fxas2100x and fxos8700 sensors in defconfig.
+
+Signed-off-by: Fugang Duan <B38611@freescale.com>
+---
+ arch/arm/configs/imx_v7_defconfig | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/arch/arm/configs/imx_v7_defconfig b/arch/arm/configs/imx_v7_defconfig
+index dd9f739..f940021 100644
+--- a/arch/arm/configs/imx_v7_defconfig
++++ b/arch/arm/configs/imx_v7_defconfig
+@@ -117,6 +117,8 @@ CONFIG_MTD_UBI=y
+ CONFIG_BLK_DEV_LOOP=y
+ CONFIG_BLK_DEV_RAM=y
+ CONFIG_BLK_DEV_RAM_SIZE=65536
++CONFIG_SENSORS_FXOS8700=y
++CONFIG_SENSORS_FXAS2100X=y
+ CONFIG_EEPROM_AT24=y
+ CONFIG_EEPROM_AT25=y
+ # CONFIG_SCSI_PROC_FS is not set
+@@ -172,6 +174,7 @@ CONFIG_TOUCHSCREEN_STMPE=y
+ CONFIG_INPUT_MISC=y
+ CONFIG_INPUT_MMA8450=y
+ CONFIG_INPUT_ISL29023=y
++CONFIG_INPUT_MPL3115=y
+ CONFIG_SERIO_SERPORT=m
+ # CONFIG_LEGACY_PTYS is not set
+ # CONFIG_DEVKMEM is not set
+-- 
+1.8.0
+

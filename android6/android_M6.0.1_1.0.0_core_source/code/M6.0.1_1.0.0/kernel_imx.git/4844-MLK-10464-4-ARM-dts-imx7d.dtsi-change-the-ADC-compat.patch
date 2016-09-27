@@ -1,0 +1,41 @@
+From 235db35176d58a7dd944f010bfd0567700aa413b Mon Sep 17 00:00:00 2001
+From: Haibo Chen <haibo.chen@freescale.com>
+Date: Wed, 25 Mar 2015 10:24:01 +0800
+Subject: [PATCH] MLK-10464-4 ARM: dts: imx7d.dtsi: change the ADC compatible
+
+The ADC in i.MX7D soc don't compatible with vf610_adc.
+
+If not change this, for i.MX7D, during kernel boot up, the ADC
+device of i.MX7D will match with vf610_adc driver, and make
+the ADC device can't work.
+
+Signed-off-by: Haibo Chen <haibo.chen@freescale.com>
+---
+ arch/arm/boot/dts/imx7d.dtsi | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/arch/arm/boot/dts/imx7d.dtsi b/arch/arm/boot/dts/imx7d.dtsi
+index 9f82805..3ffbb72 100644
+--- a/arch/arm/boot/dts/imx7d.dtsi
++++ b/arch/arm/boot/dts/imx7d.dtsi
+@@ -615,7 +615,7 @@
+ 			ranges;
+ 
+ 			adc1: adc@30610000 {
+-				compatible = "fsl,imx7d-adc", "fsl,vf610-adc";
++				compatible = "fsl,imx7d-adc";
+ 				reg = <0x30610000 0x10000>;
+ 				interrupts = <GIC_SPI 98 IRQ_TYPE_LEVEL_HIGH>;
+ 				clocks = <&clks IMX7D_CLK_DUMMY>;
+@@ -625,7 +625,7 @@
+ 			};
+ 
+ 			adc2: adc@30620000 {
+-				compatible = "fsl,imx7d-adc", "fsl,vf610-adc";
++				compatible = "fsl,imx7d-adc";
+ 				reg = <0x30620000 0x10000>;
+ 				interrupts = <GIC_SPI 99 IRQ_TYPE_LEVEL_HIGH>;
+ 				clocks = <&clks IMX7D_CLK_DUMMY>;
+-- 
+1.8.0
+

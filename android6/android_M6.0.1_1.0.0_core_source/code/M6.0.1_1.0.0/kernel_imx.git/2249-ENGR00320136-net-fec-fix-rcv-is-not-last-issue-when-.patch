@@ -1,0 +1,44 @@
+From d85fe10a7dfbaf27996871ca271f3e0fed3096c9 Mon Sep 17 00:00:00 2001
+From: Fugang Duan <b38611@freescale.com>
+Date: Fri, 16 Jan 2015 13:18:00 +0800
+Subject: [PATCH] ENGR00320136 net: fec: fix rcv is not last issue when do
+ suspend/resume test
+
+When do suspend/resume stress test, some log shows "rcv is not +last".
+The issue is that enet suspend will disable phy clock, phy link down,
+after resume back, enet MAC redo initial and ready to tx/rx packet,
+but phy still is not ready which is doing auto-negotiation. When phy
+link is not up, don't schdule napi soft irq.
+
+(cherry-picked from commit 61b16b307663ac972bc6c80cc5b308c546396027)
+
+Signed-off-by: Fugang Duan <B38611@freescale.com>
+---
+ drivers/net/ethernet/freescale/fec_main.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/net/ethernet/freescale/fec_main.c b/drivers/net/ethernet/freescale/fec_main.c
+index c86ee7a..70564a4 100644
+--- a/drivers/net/ethernet/freescale/fec_main.c
++++ b/drivers/net/ethernet/freescale/fec_main.c
+@@ -18,7 +18,7 @@
+  * Bug fixes and cleanup by Philippe De Muyter (phdm@macqel.be)
+  * Copyright (c) 2004-2006 Macq Electronique SA.
+  *
+- * Copyright (C) 2010-2014 Freescale Semiconductor, Inc.
++ * Copyright (C) 2010-2015 Freescale Semiconductor, Inc.
+  */
+ 
+ #include <linux/module.h>
+@@ -1588,7 +1588,7 @@ fec_enet_interrupt(int irq, void *dev_id)
+ 	writel(int_events, fep->hwp + FEC_IEVENT);
+ 	fec_enet_collect_events(fep, int_events);
+ 
+-	if (fep->work_tx || fep->work_rx) {
++	if ((fep->work_tx || fep->work_rx) && fep->link) {
+ 		ret = IRQ_HANDLED;
+ 
+ 		if (napi_schedule_prep(&fep->napi)) {
+-- 
+1.8.0
+

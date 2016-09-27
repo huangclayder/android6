@@ -1,0 +1,33 @@
+From 05ef5fc55cab03657d2943e5b6e0e620490e54a0 Mon Sep 17 00:00:00 2001
+From: Ma Jiamin <b55507@freescale.com>
+Date: Mon, 18 Jan 2016 17:32:34 +0800
+Subject: [PATCH 12/12] MA-7432 Settings: Settings Stops after reset network
+ settings
+
+Ard board dosen't support the bluetooth, so the bluetoothAdapter is null,
+but the network reset need to get the bluetoothadapter
+add a judgement to prevent operate the null object reference
+
+Signed-off-by: Ma Jiamin<b55507@freescale.com>
+---
+ src/com/android/settings/ResetNetworkConfirm.java | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
+
+diff --git a/src/com/android/settings/ResetNetworkConfirm.java b/src/com/android/settings/ResetNetworkConfirm.java
+index db4b9a5..275fc37 100644
+--- a/src/com/android/settings/ResetNetworkConfirm.java
++++ b/src/com/android/settings/ResetNetworkConfirm.java
+@@ -97,7 +97,9 @@ public class ResetNetworkConfirm extends InstrumentedFragment {
+             BluetoothManager btManager = (BluetoothManager)
+                     context.getSystemService(Context.BLUETOOTH_SERVICE);
+             if (btManager != null) {
+-                btManager.getAdapter().factoryReset();
++                if(btManager.getAdapter() != null){
++			btManager.getAdapter().factoryReset();
++		}
+             }
+ 
+             Toast.makeText(context, R.string.reset_network_complete_toast, Toast.LENGTH_SHORT)
+-- 
+1.8.0
+

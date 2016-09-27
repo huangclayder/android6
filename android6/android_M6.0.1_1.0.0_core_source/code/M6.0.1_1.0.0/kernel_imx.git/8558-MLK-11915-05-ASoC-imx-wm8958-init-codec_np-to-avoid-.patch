@@ -1,0 +1,29 @@
+From 76665930654867cf38a86ba747a9f8a5bf2665e2 Mon Sep 17 00:00:00 2001
+From: Zidan Wang <zidan.wang@freescale.com>
+Date: Fri, 27 Nov 2015 11:14:36 +0800
+Subject: [PATCH] MLK-11915-05 ASoC: imx-wm8958: init codec_np to avoid wild
+ pointer
+
+init codec_np to avoid wild pointer. Reported by Coverity.
+
+Signed-off-by: Zidan Wang <zidan.wang@freescale.com>
+---
+ sound/soc/fsl/imx-wm8958.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/sound/soc/fsl/imx-wm8958.c b/sound/soc/fsl/imx-wm8958.c
+index 9be2362..163ad8e 100644
+--- a/sound/soc/fsl/imx-wm8958.c
++++ b/sound/soc/fsl/imx-wm8958.c
+@@ -397,7 +397,7 @@ static int imx_wm8958_set_bias_level_post(struct snd_soc_card *card,
+ 
+ static int imx_wm8958_probe(struct platform_device *pdev)
+ {
+-	struct device_node *cpu_np, *codec_np, *gpr_np;
++	struct device_node *cpu_np, *codec_np = NULL, *gpr_np;
+ 	struct device_node *np = pdev->dev.of_node;
+ 	struct platform_device *cpu_pdev;
+ 	struct imx_priv *priv = &card_priv;
+-- 
+1.8.0
+

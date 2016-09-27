@@ -1,0 +1,32 @@
+From 089b7ce5f4d705c793424ca8f576fbb5fe45b13a Mon Sep 17 00:00:00 2001
+From: Xiaowen Liu <b37945@freescale.com>
+Date: Tue, 15 Apr 2014 10:39:47 +0800
+Subject: [PATCH 501/635] ENGR00308369 enable camera function for 6sx sdb
+ board.
+
+align 6sx sdb with 6sl evk board to use camera v1 interface.
+because they are common without VPU module.
+
+Signed-off-by: Xiaowen Liu <b37945@freescale.com>
+---
+ mx6/libcamera/Android.mk | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/mx6/libcamera/Android.mk b/mx6/libcamera/Android.mk
+index e5f5580..a04d601 100755
+--- a/mx6/libcamera/Android.mk
++++ b/mx6/libcamera/Android.mk
+@@ -78,6 +78,10 @@ ifeq ($(PRODUCT_MODEL), EVK_MX6SL)
+     LOCAL_CPPFLAGS += -DEVK_6SL
+ endif
+ 
++ifeq ($(PRODUCT_MODEL), SABRESD-MX6SX)
++    LOCAL_CPPFLAGS += -DEVK_6SL
++endif
++
+ #Define this for switch the Camera through V4L2 MXC IOCTL
+ #LOCAL_CPPFLAGS += -DV4L2_CAMERA_SWITCH
+ 
+-- 
+1.8.0
+

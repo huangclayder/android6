@@ -1,0 +1,34 @@
+From d890d90ba41ceff46c61a38b75b0a86d78385839 Mon Sep 17 00:00:00 2001
+From: Dong Aisheng <b29396@freescale.com>
+Date: Thu, 9 Apr 2015 16:23:24 +0800
+Subject: [PATCH] MLK-10629-4 mmc: sdhci: remove MMC_CAP_NEEDS_POLL
+
+This will cause meaningless CPU overhead by polling the card at backgroud
+if the CD is broken.
+Most board does not intend to use this function, so remove it.
+Platform driver could add it for test if needed.
+
+Signed-off-by: Dong Aisheng <b29396@freescale.com>
+(cherry picked from commit 9418183f29da8478d7103944f97a24946b7849d4)
+---
+ drivers/mmc/host/sdhci.c | 4 ----
+ 1 file changed, 4 deletions(-)
+
+diff --git a/drivers/mmc/host/sdhci.c b/drivers/mmc/host/sdhci.c
+index 3f2649b..f304ef5 100644
+--- a/drivers/mmc/host/sdhci.c
++++ b/drivers/mmc/host/sdhci.c
+@@ -3093,10 +3093,6 @@ int sdhci_add_host(struct sdhci_host *host)
+ 	if (caps[0] & SDHCI_CAN_DO_HISPD)
+ 		mmc->caps |= MMC_CAP_SD_HIGHSPEED | MMC_CAP_MMC_HIGHSPEED;
+ 
+-	if ((host->quirks & SDHCI_QUIRK_BROKEN_CARD_DETECTION) &&
+-	    !(host->mmc->caps & MMC_CAP_NONREMOVABLE))
+-		mmc->caps |= MMC_CAP_NEEDS_POLL;
+-
+ 	/* If vqmmc regulator and no 1.8V signalling, then there's no UHS */
+ 	host->vqmmc = regulator_get_optional(mmc_dev(mmc), "vqmmc");
+ 	if (IS_ERR_OR_NULL(host->vqmmc)) {
+-- 
+1.8.0
+

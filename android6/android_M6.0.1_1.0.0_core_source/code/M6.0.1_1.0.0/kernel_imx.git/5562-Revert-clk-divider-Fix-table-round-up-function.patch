@@ -1,0 +1,26 @@
+From 0c22788992123160891943dbb16561a1a480e88b Mon Sep 17 00:00:00 2001
+From: Liu Xiaowen <xiaowen.liu@freescale.com>
+Date: Tue, 21 Jul 2015 17:26:39 +0800
+Subject: [PATCH] Revert "clk: divider: Fix table round up function"
+
+This reverts commit 275e370c566136f758a016e02291978db0a87947.
+---
+ drivers/clk/clk-divider.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/clk/clk-divider.c b/drivers/clk/clk-divider.c
+index 6226e5c..c572945 100644
+--- a/drivers/clk/clk-divider.c
++++ b/drivers/clk/clk-divider.c
+@@ -158,7 +158,7 @@ static bool _is_valid_div(struct clk_divider *divider, unsigned int div)
+ static int _round_up_table(const struct clk_div_table *table, int div)
+ {
+ 	const struct clk_div_table *clkt;
+-	int up = INT_MAX;
++	int up = _get_table_maxdiv(table);
+ 
+ 	for (clkt = table; clkt->div; clkt++) {
+ 		if (clkt->div == div)
+-- 
+1.8.0
+

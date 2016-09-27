@@ -1,0 +1,48 @@
+From d37ba82645a3645a5335d4fd20c86e4b1887c75b Mon Sep 17 00:00:00 2001
+From: Liu Xiaowen <xiaowen.liu@freescale.com>
+Date: Mon, 16 Mar 2015 16:25:21 +0800
+Subject: [PATCH] MA-6402 enable gpu low memory killer for 3.14 kernel.
+
+add CONFIG_GPU_LOW_MEMORY_KILLER to default config.
+
+Signed-off-by: Liu Xiaowen <xiaowen.liu@freescale.com>
+---
+ arch/arm/configs/imx_v7_android_defconfig |  1 +
+ drivers/mxc/gpu-viv/Kconfig               | 11 +++++++++++
+ 2 files changed, 12 insertions(+)
+
+diff --git a/arch/arm/configs/imx_v7_android_defconfig b/arch/arm/configs/imx_v7_android_defconfig
+index 2107e8d..75bac38 100644
+--- a/arch/arm/configs/imx_v7_android_defconfig
++++ b/arch/arm/configs/imx_v7_android_defconfig
+@@ -487,6 +487,7 @@ CONFIG_MMC_SDHCI_PLTFM=y
+ CONFIG_MMC_SDHCI_ESDHC_IMX=y
+ CONFIG_MXC_IPU=y
+ CONFIG_MXC_GPU_VIV=y
++CONFIG_GPU_LOW_MEMORY_KILLER=y
+ CONFIG_MXC_MIPI_CSI2=y
+ CONFIG_MXC_MLB150=y
+ CONFIG_LEDS_GPIO=y
+diff --git a/drivers/mxc/gpu-viv/Kconfig b/drivers/mxc/gpu-viv/Kconfig
+index e9cc4b2..ec57721 100644
+--- a/drivers/mxc/gpu-viv/Kconfig
++++ b/drivers/mxc/gpu-viv/Kconfig
+@@ -6,4 +6,15 @@ config MXC_GPU_VIV
+ 	---help---
+          Say Y to get the GPU driver support.
+ 
++config GPU_LOW_MEMORY_KILLER
++       tristate "Reserved memory account to Low memory Killer"
++       depends on ANDROID
++       default n
++       ---help---
++         Resigter reserved memory account to low memory killer, These
++         reserved memory is mainly used by GPU driver, but it's not
++         account by low memory killer, so even it takes much memory,
++         it will not killed.  add this to fix this, it will kill the
++         large memory app in background.
++
+ endmenu
+-- 
+1.8.0
+

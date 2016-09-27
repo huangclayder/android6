@@ -1,0 +1,53 @@
+From 5a536f416197ff740966319ecc55a877cf800b0f Mon Sep 17 00:00:00 2001
+From: Will Deacon <will.deacon@arm.com>
+Date: Tue, 26 Aug 2014 15:13:20 +0100
+Subject: [PATCH] KVM: ARM/arm64: fix non-const declaration of function
+ returning const
+
+Sparse kicks up about a type mismatch for kvm_target_cpu:
+
+arch/arm64/kvm/guest.c:271:25: error: symbol 'kvm_target_cpu' redeclared with different type (originally declared at ./arch/arm64/include/asm/kvm_host.h:45) - different modifiers
+
+so fix this by adding the missing const attribute to the function
+declaration.
+
+Cc: Christoffer Dall <christoffer.dall@linaro.org>
+Cc: Marc Zyngier <marc.zyngier@arm.com>
+Signed-off-by: Will Deacon <will.deacon@arm.com>
+Signed-off-by: Christoffer Dall <christoffer.dall@linaro.org>
+(cherry picked from commit 6951e48bff0b55d2a8e825a953fc1f8e3a34bf1c)
+Signed-off-by: Christoffer Dall <christoffer.dall@linaro.org>
+---
+ arch/arm/include/asm/kvm_host.h   | 2 +-
+ arch/arm64/include/asm/kvm_host.h | 2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/arch/arm/include/asm/kvm_host.h b/arch/arm/include/asm/kvm_host.h
+index 6dfb404..fcb12a6 100644
+--- a/arch/arm/include/asm/kvm_host.h
++++ b/arch/arm/include/asm/kvm_host.h
+@@ -42,7 +42,7 @@
+ 
+ struct kvm_vcpu;
+ u32 *kvm_vcpu_reg(struct kvm_vcpu *vcpu, u8 reg_num, u32 mode);
+-int kvm_target_cpu(void);
++int __attribute_const__ kvm_target_cpu(void);
+ int kvm_reset_vcpu(struct kvm_vcpu *vcpu);
+ void kvm_reset_coprocs(struct kvm_vcpu *vcpu);
+ 
+diff --git a/arch/arm64/include/asm/kvm_host.h b/arch/arm64/include/asm/kvm_host.h
+index e10c45a..44094e5 100644
+--- a/arch/arm64/include/asm/kvm_host.h
++++ b/arch/arm64/include/asm/kvm_host.h
+@@ -42,7 +42,7 @@
+ #define KVM_VCPU_MAX_FEATURES 3
+ 
+ struct kvm_vcpu;
+-int kvm_target_cpu(void);
++int __attribute_const__ kvm_target_cpu(void);
+ int kvm_reset_vcpu(struct kvm_vcpu *vcpu);
+ int kvm_arch_dev_ioctl_check_extension(long ext);
+ 
+-- 
+1.8.0
+

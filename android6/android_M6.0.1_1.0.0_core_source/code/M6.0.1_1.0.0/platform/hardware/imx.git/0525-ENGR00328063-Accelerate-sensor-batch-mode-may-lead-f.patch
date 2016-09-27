@@ -1,0 +1,60 @@
+From 9f6c7f82934c53f0745202c583247cd6defbd36c Mon Sep 17 00:00:00 2001
+From: Wang Haoran <b50027@freescale.com>
+Date: Thu, 21 Aug 2014 22:31:09 +0800
+Subject: [PATCH 525/635] ENGR00328063 Accelerate sensor batch mode may lead
+ framework crash
+
+As the mFifoCount is not inited when read_fifo() didn't
+get any data from hardware then the data copy from
+fifo to user buffer will be wrong.
+Init the mFifoCount and complete some special
+case to the code.
+
+Change-Id: If5028a1e2d1cf664f97d361dccd51cc0c1c32c85
+Signed-off-by: Wang Haoran <b50027@freescale.com>
+---
+ libsensors/AccelSensor.cpp | 7 ++++---
+ 1 file changed, 4 insertions(+), 3 deletions(-)
+
+diff --git a/libsensors/AccelSensor.cpp b/libsensors/AccelSensor.cpp
+index b814827..fb9fdd6 100755
+--- a/libsensors/AccelSensor.cpp
++++ b/libsensors/AccelSensor.cpp
+@@ -46,6 +46,7 @@ AccelSensor::AccelSensor()
+       mEnabled(0),
+       mPendingMask(0),
+       mInputReader(4),
++      mFifoCount(0),
+       mDelay(0)
+ {
+ 	mBatchEnabled = 0;
+@@ -129,7 +130,7 @@ struct mma8x5x_fifo{
+ int AccelSensor::read_fifo(){
+ 	char buf[256];
+ 	int i = 0;
+-	int nread,n;
++	int nread = 0,n;
+ 	int count;
+ 	int64_t period;
+ 	int64_t timestamp;
+@@ -175,7 +176,7 @@ int AccelSensor::read_fifo(){
+ 			}
+ 		}
+ 	}
+-	return 0;
++	return nread;
+ }
+ int AccelSensor::readEvents(sensors_event_t* data, int count)
+ {
+@@ -200,7 +201,7 @@ int AccelSensor::readEvents(sensors_event_t* data, int count)
+ 				mFlushed &= ~(0x01 << ID_A);;
+ 			}
+ 			ret = read_fifo();
+-			if(ret < 0)  /*not fifo data ,return immediately*/
++			if(ret <= 0)  /*not fifo data ,return immediately*/
+ 				return 0;
+ 			}
+ 			events = (count -1 < mFifoCount)? count -1 : mFifoCount;
+-- 
+1.8.0
+

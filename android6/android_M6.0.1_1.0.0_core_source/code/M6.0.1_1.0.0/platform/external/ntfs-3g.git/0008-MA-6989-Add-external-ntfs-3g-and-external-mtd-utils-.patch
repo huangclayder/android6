@@ -1,0 +1,34 @@
+From 5446b1402e3ec1573b2c3b43c9c1f74161fb9d20 Mon Sep 17 00:00:00 2001
+From: Winter Wang <b55847@freescale.com>
+Date: Wed, 9 Sep 2015 14:45:38 +0800
+Subject: [PATCH 8/8] MA-6989 Add external/ntfs-3g and external/mtd-utils gits
+ into maddev_m-preview
+
+m_preview has remove macros in
+    build/core/combo/include/arch/linux-arm/AndroidConfig.h
+For build project has its own config.h
+add the  macro HAVE_ENDIAN_H in config.h to fix build error due to
+endian define.
+
+Signed-off-by: Winter Wang <b55847@freescale.com>
+---
+ config.h | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/config.h b/config.h
+index d90c91b..90c1dc8 100644
+--- a/config.h
++++ b/config.h
+@@ -105,6 +105,9 @@
+ /* Define to 1 if you have the <machine/endian.h> header file. */
+ /* #undef HAVE_MACHINE_ENDIAN_H */
+ 
++/* Define to 1 if you have the <endian.h> header file. */
++#define HAVE_ENDIAN_H 1
++
+ /* Define to 1 if mbrtowc and mbstate_t are properly declared. */
+ #define HAVE_MBRTOWC 1
+ 
+-- 
+1.8.0
+

@@ -1,0 +1,32 @@
+From d82ad0795be07e7c402d6e1e081b0f5f8b8d469c Mon Sep 17 00:00:00 2001
+From: Jon Medhurst <tixy@linaro.org>
+Date: Wed, 18 Jul 2012 15:54:27 +0100
+Subject: [PATCH] configs: android: Enable CONFIG_INPUT_UINPUT to get aidb
+ working
+
+AIB Daemon expects this config, see bug #1026119
+(https://bugs.launchpad.net/linaro-landing-team-arm/+bug/1026119)
+
+Also enable CONFIG_INPUT_MISC as CONFIG_INPUT_UINPUT depends on it.
+
+Signed-off-by: Jon Medhurst <tixy@linaro.org>
+---
+ linaro/configs/android.conf | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/linaro/configs/android.conf b/linaro/configs/android.conf
+index 7b3aa11..9984a92 100644
+--- a/linaro/configs/android.conf
++++ b/linaro/configs/android.conf
+@@ -12,6 +12,8 @@ CONFIG_POWER_SUPPLY=y
+ CONFIG_ANDROID_PARANOID_NETWORK=y
+ CONFIG_NET_ACTIVITY_STATS=y
+ CONFIG_FB_EARLYSUSPEND=y
++CONFIG_INPUT_MISC=y
++CONFIG_INPUT_UINPUT=y
+ CONFIG_INPUT_GPIO=y
+ CONFIG_USB_G_ANDROID=y
+ CONFIG_SWITCH=y
+-- 
+1.8.0
+

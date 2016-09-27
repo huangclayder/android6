@@ -1,0 +1,37 @@
+From c26331525332301c41b540584fae445324b07d63 Mon Sep 17 00:00:00 2001
+From: "guoyin.chen" <guoyin.chen@freescale.com>
+Date: Wed, 13 Jan 2016 15:22:46 +0800
+Subject: [PATCH 626/635] MA-7516 CID 29189 (#2-1 of 2): Resource leak
+ (RESOURCE_LEAK)
+
+leaked_storage: Variable imx_control going out of scope leaks the storage it points to
+
+Signed-off-by: guoyin.chen <guoyin.chen@freescale.com>
+---
+ alsa/tinyalsa_hal.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/alsa/tinyalsa_hal.c b/alsa/tinyalsa_hal.c
+index 6ab494e..45f97dd 100644
+--- a/alsa/tinyalsa_hal.c
++++ b/alsa/tinyalsa_hal.c
+@@ -13,7 +13,7 @@
+  * See the License for the specific language governing permissions and
+  * limitations under the License.
+  */
+-/* Copyright (C) 2012-2015 Freescale Semiconductor, Inc. */
++/* Copyright (C) 2012-2016 Freescale Semiconductor, Inc. */
+ 
+ #define LOG_TAG "audio_hw_primary"
+ //#define LOG_NDEBUG 0
+@@ -3324,6 +3324,7 @@ static int scan_available_device(struct imx_audio_device *adev, bool rescanusb,
+                     adev->mixer[n] = mixer_open(i);
+                     if (!adev->mixer[n]) {
+                          ALOGE("Unable to open the mixer, aborting.");
++                         control_close(imx_control);
+                          return -EINVAL;
+                     }
+                 }
+-- 
+1.8.0
+

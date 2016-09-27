@@ -1,0 +1,30 @@
+From ad0e01151c614070518547085511cc06b1c19ba3 Mon Sep 17 00:00:00 2001
+From: Felipe Balbi <balbi@ti.com>
+Date: Tue, 25 Feb 2014 14:08:51 -0600
+Subject: [PATCH] usb: dwc3: core: define bit 10 of GCTL register
+
+This bit is necessary for implemeting workaround
+for known issue with some revisions of this core.
+
+Signed-off-by: Felipe Balbi <balbi@ti.com>
+(cherry picked from commit fc483fd2a19d7ff97e677cc8e8f8d3990bbf381c)
+Signed-off-by: Mark Brown <broonie@kernel.org>
+---
+ drivers/usb/dwc3/core.h | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/drivers/usb/dwc3/core.h b/drivers/usb/dwc3/core.h
+index 01ec7d7..9c1e1d9 100644
+--- a/drivers/usb/dwc3/core.h
++++ b/drivers/usb/dwc3/core.h
+@@ -159,6 +159,7 @@
+ #define DWC3_GCTL_PRTCAP_OTG	3
+ 
+ #define DWC3_GCTL_CORESOFTRESET		(1 << 11)
++#define DWC3_GCTL_SOFITPSYNC		(1 << 10)
+ #define DWC3_GCTL_SCALEDOWN(n)		((n) << 4)
+ #define DWC3_GCTL_SCALEDOWN_MASK	DWC3_GCTL_SCALEDOWN(3)
+ #define DWC3_GCTL_DISSCRAMBLE		(1 << 3)
+-- 
+1.8.0
+

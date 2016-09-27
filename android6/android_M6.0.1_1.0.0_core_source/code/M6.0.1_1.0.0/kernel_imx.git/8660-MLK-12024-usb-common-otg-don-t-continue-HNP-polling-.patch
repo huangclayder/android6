@@ -1,0 +1,45 @@
+From c090f38609061873c01c0b2ccc5459bdc73cc0a4 Mon Sep 17 00:00:00 2001
+From: Li Jun <jun.li@freescale.com>
+Date: Wed, 6 Jan 2016 17:00:36 +0800
+Subject: [PATCH] MLK-12024 usb: common: otg: don't continue HNP polling if
+ b_hnp_enable fail
+
+When host request flag is set by B device, but b_hnp_enable is not
+accepted, A device does not need continue HNP polling, just fail it.
+
+Signed-off-by: Li Jun <jun.li@freescale.com>
+---
+ drivers/usb/common/usb-otg-fsm.c | 9 ++-------
+ 1 file changed, 2 insertions(+), 7 deletions(-)
+
+diff --git a/drivers/usb/common/usb-otg-fsm.c b/drivers/usb/common/usb-otg-fsm.c
+index 97ff34c..0aaefa7 100644
+--- a/drivers/usb/common/usb-otg-fsm.c
++++ b/drivers/usb/common/usb-otg-fsm.c
+@@ -1,7 +1,7 @@
+ /*
+  * OTG Finite State Machine from OTG spec
+  *
+- * Copyright (C) 2007-2015 Freescale Semiconductor, Inc.
++ * Copyright (C) 2007-2016 Freescale Semiconductor, Inc.
+  *
+  * Author:	Li Yang <LeoLi@freescale.com>
+  *		Jerry Huang <Chang-Ming.Huang@freescale.com>
+@@ -399,13 +399,8 @@ static int otg_handle_role_switch(struct otg_fsm *fsm, struct usb_device *udev)
+ 				USB_DEVICE_B_HNP_ENABLE,
+ 				0, NULL, 0,
+ 				USB_CTRL_SET_TIMEOUT);
+-			if (err < 0) {
+-				/* Continue polling */
+-				otg_add_timer(fsm, HNP_POLLING);
+-				return 0;
+-			} else {
++			if (err >= 0)
+ 				fsm->a_set_b_hnp_en = 1;
+-			}
+ 		}
+ 		fsm->a_bus_req = 0;
+ 		if (fsm->tst_maint) {
+-- 
+1.8.0
+

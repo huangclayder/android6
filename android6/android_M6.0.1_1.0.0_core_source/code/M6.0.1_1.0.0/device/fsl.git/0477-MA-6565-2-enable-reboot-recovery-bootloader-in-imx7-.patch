@@ -1,0 +1,29 @@
+From 2bd455ace952663b181e90061ef44dca832c000d Mon Sep 17 00:00:00 2001
+From: Zhang Sanshan <b51434@freescale.com>
+Date: Wed, 22 Apr 2015 09:00:54 +0800
+Subject: [PATCH 477/602] MA-6565-2 enable 'reboot recovery&bootloader' in
+ imx7 board
+
+fix selinux issue when enter recovery in 7d board.
+
+Signed-off-by: Zhang Sanshan <b51434@freescale.com>
+---
+ imx7/sepolicy/recovery.te | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/imx7/sepolicy/recovery.te b/imx7/sepolicy/recovery.te
+index 345dcfa..c59141b 100644
+--- a/imx7/sepolicy/recovery.te
++++ b/imx7/sepolicy/recovery.te
+@@ -4,6 +4,7 @@ recovery_only(`
+   allow recovery block_device:file { read write open ioctl create};
+   allow recovery self:capability {sys_resource};
+   allow recovery mtd_device:dir { search }; 
+-  allow recovery mtd_device:chr_file { getattr read write open ioctl}; 
++  allow recovery mtd_device:chr_file { getattr read write open ioctl};
++  allow recovery cache_file:dir { mounton };  
+ ')
+ 
+-- 
+1.8.0
+

@@ -1,0 +1,43 @@
+From 4409e2cf1a8f3f223bc508cdb40aad1391218b49 Mon Sep 17 00:00:00 2001
+From: lijian <jian.li@freescale.com>
+Date: Tue, 24 Jun 2014 21:30:04 +0800
+Subject: [PATCH 324/602] ENGR00133115 Use GM for playback for MX6SX
+
+-   Use GM for playback/scanning for MX6SX
+-   recording still uses stagefright
+
+Signed-off-by: lijian <jian.li@freescale.com>
+---
+ imx6/soc/imx6sx.mk  | 2 +-
+ sabresd_6sx/init.rc | 2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/imx6/soc/imx6sx.mk b/imx6/soc/imx6sx.mk
+index 352c859..483e231 100644
+--- a/imx6/soc/imx6sx.mk
++++ b/imx6/soc/imx6sx.mk
+@@ -10,7 +10,7 @@ HAVE_FSL_IMX_IPU := false
+ BOARD_KERNEL_BASE := 0x80800000
+ LOAD_KERNEL_ENTRY := 0x80008000
+ TARGET_KERNEL_DEFCONF := imx_v7_android_defconfig
+--include external/fsl_vpu_omx/codec_env.mk
++-include external/fsl_imx_omx/codec_env.mk
+ TARGET_HAVE_IMX_GRALLOC := true
+ TARGET_HAVE_IMX_HWCOMPOSER = true
+ USE_OPENGL_RENDERER := true
+diff --git a/sabresd_6sx/init.rc b/sabresd_6sx/init.rc
+index f82ff01..9d201b6 100755
+--- a/sabresd_6sx/init.rc
++++ b/sabresd_6sx/init.rc
+@@ -45,7 +45,7 @@ on boot
+ 
+     # fsl omx graphic manager media framework property
+     setprop media.omxgm.enable-player 1
+-    setprop media.omxgm.enable-record 1
++    setprop media.omxgm.enable-record 0
+     setprop media.omxgm.enable-scan 1
+     setprop rw.VIDEO_RENDER_NAME video_render.surface
+ 
+-- 
+1.8.0
+

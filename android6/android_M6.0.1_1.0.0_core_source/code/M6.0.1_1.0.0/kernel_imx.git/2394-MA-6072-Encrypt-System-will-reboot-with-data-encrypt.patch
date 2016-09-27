@@ -1,0 +1,40 @@
+From d053138903345b740583146e9d6c035100bda276 Mon Sep 17 00:00:00 2001
+From: "guoyin.chen" <guoyin.chen@freescale.com>
+Date: Tue, 30 Dec 2014 14:16:18 +0800
+Subject: [PATCH] MA-6072 Encrypt: System will reboot with data encryption
+ after system waking up
+
+Disable caam encrypt module in sx dts, which align with dl/dq dts
+
+Signed-off-by: guoyin.chen <guoyin.chen@freescale.com>
+---
+ arch/arm/boot/dts/imx6sx.dtsi | 16 ++++++++++++++++
+ 1 file changed, 16 insertions(+)
+
+diff --git a/arch/arm/boot/dts/imx6sx.dtsi b/arch/arm/boot/dts/imx6sx.dtsi
+index fc3eb1b..6beaf77 100644
+--- a/arch/arm/boot/dts/imx6sx.dtsi
++++ b/arch/arm/boot/dts/imx6sx.dtsi
+@@ -1479,3 +1479,19 @@
+ 		};
+ 	};
+ };
++
++&caam_sm  {
++	status = "disabled";
++};
++
++&irq_sec_vio  {
++	status = "disabled";
++};
++
++&caam_snvs  {
++	status = "disabled";
++};
++
++&crypto {
++	status = "disabled";
++};
+-- 
+1.8.0
+

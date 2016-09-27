@@ -1,0 +1,29 @@
+From 8020d4337ad306e919122723c08e1bc559fe4fd3 Mon Sep 17 00:00:00 2001
+From: Robin Gong <b38343@freescale.com>
+Date: Thu, 18 Dec 2014 12:39:13 +0800
+Subject: [PATCH] MLK-9986-3 imx-sdma: add new ecspi tx sdma script
+
+Add new ecspi tx sdma script in the head file.
+
+Signed-off-by: Robin Gong <b38343@freescale.com>
+(cherry picked from commit 9ca3cf4f301dc6d4130624814e689b676125fd36)
+(cherry picked from commit 4241bfb6920410de9a05c420e6abd9c98b6bf388)
+---
+ include/linux/platform_data/dma-imx-sdma.h | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/include/linux/platform_data/dma-imx-sdma.h b/include/linux/platform_data/dma-imx-sdma.h
+index 2d08816..e2dcb3c 100644
+--- a/include/linux/platform_data/dma-imx-sdma.h
++++ b/include/linux/platform_data/dma-imx-sdma.h
+@@ -50,6 +50,7 @@ struct sdma_script_start_addrs {
+ 	/* End of v2 array */
+ 	s32 zcanfd_2_mcu_addr;
+ 	s32 zqspi_2_mcu_addr;
++	s32 mcu_2_ecspi_addr;
+ 	/* End of v3 array */
+ };
+ 
+-- 
+1.8.0
+

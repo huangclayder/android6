@@ -1,0 +1,31 @@
+From a840078ee988a741052c36aa20557b288a0b61c8 Mon Sep 17 00:00:00 2001
+From: Xu Mao <B34688@freescale.com>
+Date: Mon, 25 Nov 2013 13:51:13 +0800
+Subject: [PATCH 35/95] ENGR00133115 use invoke to implement setPlaySpeed on
+ kitkat
+
+Signed-off-by: Xu Mao <B34688@freescale.com>
+
+Conflicts:
+	include/media/mediaplayer.h
+---
+ include/media/mediaplayer.h | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/include/media/mediaplayer.h b/include/media/mediaplayer.h
+index 3fe749c..734ae73 100644
+--- a/include/media/mediaplayer.h
++++ b/include/media/mediaplayer.h
+@@ -177,7 +177,8 @@ enum media_player_invoke_ids {
+     INVOKE_ID_SELECT_TRACK = 4,
+     INVOKE_ID_UNSELECT_TRACK = 5,
+     INVOKE_ID_SET_VIDEO_SCALING_MODE = 6,
+-    INVOKE_ID_GET_SELECTED_TRACK = 7
++    INVOKE_ID_GET_SELECTED_TRACK = 7,
++    INVOKE_ID_SET_PLAY_SPEED = 8,
+ };
+ 
+ // Keep MEDIA_TRACK_TYPE_* in sync with MediaPlayer.java.
+-- 
+1.8.0
+

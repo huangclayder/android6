@@ -1,0 +1,30 @@
+From d75828c29dc18df8ff6924f6746d1f684344e20d Mon Sep 17 00:00:00 2001
+From: Peter Chen <peter.chen@freescale.com>
+Date: Tue, 14 Jul 2015 14:34:38 +0800
+Subject: [PATCH] MLK-10932-1 ARM: imx6: imx-regs: add disconnect_from_pc API
+
+Add disconnect_from_pc API which is used to disconnect the connection
+with PC which is established at rom code.
+
+Signed-off-by: Peter Chen <peter.chen@freescale.com>
+---
+ arch/arm/include/asm/arch-mx6/imx-regs.h | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/arch/arm/include/asm/arch-mx6/imx-regs.h b/arch/arm/include/asm/arch-mx6/imx-regs.h
+index 230544b..9fbe3e4 100644
+--- a/arch/arm/include/asm/arch-mx6/imx-regs.h
++++ b/arch/arm/include/asm/arch-mx6/imx-regs.h
+@@ -1274,7 +1274,8 @@ extern void pcie_power_off(void);
+  * If ROM fail back to USB recover mode, USBPH0_PWD will be clear to use USB
+  * If boot from the other mode, USB0_PWD will keep reset value
+  */
+-#define  is_boot_from_usb(void) (!(readl(USB_PHY0_BASE_ADDR) & (1<<20)))
++#define	is_boot_from_usb(void) (!(readl(USB_PHY0_BASE_ADDR) & (1<<20)))
++#define	disconnect_from_pc(void) writel(0x0, OTG_BASE_ADDR + 0x140)
+ 
+ #endif /* __ASSEMBLER__*/
+ #endif /* __ASM_ARCH_MX6_IMX_REGS_H__ */
+-- 
+1.8.0
+

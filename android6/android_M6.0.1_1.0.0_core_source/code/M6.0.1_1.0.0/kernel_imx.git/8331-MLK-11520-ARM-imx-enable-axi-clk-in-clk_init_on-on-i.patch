@@ -1,0 +1,30 @@
+From 854c7873aeb972448c9d8d3d55f135fbd6f2972b Mon Sep 17 00:00:00 2001
+From: Anson Huang <b20788@freescale.com>
+Date: Tue, 8 Sep 2015 15:25:42 +0800
+Subject: [PATCH] MLK-11520 ARM: imx: enable axi clk in clk_init_on on
+ i.mx6qdl
+
+AXI clk should be always enabled, as many peripheral
+devices need this clk to be on, especially for busfreq,
+AXI podf change needs AXI clk and its parent on.
+
+Signed-off-by: Anson Huang <b20788@freescale.com>
+---
+ arch/arm/mach-imx/clk-imx6q.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/arch/arm/mach-imx/clk-imx6q.c b/arch/arm/mach-imx/clk-imx6q.c
+index d3eb2cf..ada6f20 100644
+--- a/arch/arm/mach-imx/clk-imx6q.c
++++ b/arch/arm/mach-imx/clk-imx6q.c
+@@ -106,6 +106,7 @@ static unsigned int const clks_init_on[] __initconst = {
+ 	IMX6QDL_CLK_ROM,
+ 	IMX6QDL_CLK_ARM,
+ 	IMX6QDL_CLK_OCRAM,
++	IMX6QDL_CLK_AXI,
+ };
+ 
+ static struct clk_div_table clk_enet_ref_table[] = {
+-- 
+1.8.0
+

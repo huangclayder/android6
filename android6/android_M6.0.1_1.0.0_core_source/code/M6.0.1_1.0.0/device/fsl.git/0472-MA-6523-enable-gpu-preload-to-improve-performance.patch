@@ -1,0 +1,46 @@
+From ad7c8d23ec3be54326988c2a624cf50a85176f60 Mon Sep 17 00:00:00 2001
+From: "xuegang.liu" <xuegang.liu@freescale.com>
+Date: Fri, 10 Apr 2015 16:31:06 +0800
+Subject: [PATCH 472/602] MA-6523 enable gpu preload to improve performance
+
+enable GPU preload can avoid load OpenGL ES binaries each time,
+that can saving the time of loading OpenGL ES binaries, this feature
+can be enabled on android 5.0 + GPU 5.x driver.
+
+Signed-off-by: Richard Liu <r66033@freescale.com>
+---
+ imx6/etc/init.rc | 3 ---
+ imx7/etc/init.rc | 3 ---
+ 2 files changed, 6 deletions(-)
+
+diff --git a/imx6/etc/init.rc b/imx6/etc/init.rc
+index 013553d..6c915ac 100755
+--- a/imx6/etc/init.rc
++++ b/imx6/etc/init.rc
+@@ -460,9 +460,6 @@ on boot
+ #real parser and decoder support
+     setprop ro.FSL_REAL_PARSER 0
+ 
+-    # don't preload OpenGL in Zygote, the Vivante drivers do not like it
+-    setprop ro.zygote.disable_gl_preload true
+-
+     # ALSA mixer naming define
+     setprop alsa.mixer.playback.master Playback
+     setprop alsa.mixer.capture.master Capture
+diff --git a/imx7/etc/init.rc b/imx7/etc/init.rc
+index 013553d..6c915ac 100755
+--- a/imx7/etc/init.rc
++++ b/imx7/etc/init.rc
+@@ -460,9 +460,6 @@ on boot
+ #real parser and decoder support
+     setprop ro.FSL_REAL_PARSER 0
+ 
+-    # don't preload OpenGL in Zygote, the Vivante drivers do not like it
+-    setprop ro.zygote.disable_gl_preload true
+-
+     # ALSA mixer naming define
+     setprop alsa.mixer.playback.master Playback
+     setprop alsa.mixer.capture.master Capture
+-- 
+1.8.0
+

@@ -1,0 +1,44 @@
+From d025cb3421c792cb8bb9c327a3ae389471581b53 Mon Sep 17 00:00:00 2001
+From: Sandor Yu <R01008@freescale.com>
+Date: Fri, 23 Jan 2015 14:18:01 +0800
+Subject: [PATCH] MLK-10137:csi: Return physical address in querybuffer call
+
+GST application want to use physical address even video buffer
+allocated with type of V4L2_MEMORY_MMAP.
+So add a trick in querybuffer function, if video buffer flags
+is setting to V4L2_BUF_FLAG_MAPPED, overwirte m.offset with
+physical address.
+
+Signed-off-by: Sandor Yu <R01008@freescale.com>
+---
+ drivers/media/platform/mxc/subdev/mx6s_capture.c | 11 ++++++++++-
+ 1 file changed, 10 insertions(+), 1 deletion(-)
+
+diff --git a/drivers/media/platform/mxc/subdev/mx6s_capture.c b/drivers/media/platform/mxc/subdev/mx6s_capture.c
+index 1f6d74d..8cb1c1d 100644
+--- a/drivers/media/platform/mxc/subdev/mx6s_capture.c
++++ b/drivers/media/platform/mxc/subdev/mx6s_capture.c
+@@ -1210,10 +1210,19 @@ static int mx6s_vidioc_querybuf(struct file *file, void *priv,
+ 			       struct v4l2_buffer *p)
+ {
+ 	struct mx6s_csi_dev *csi_dev = video_drvdata(file);
++	int ret;
+ 
+ 	WARN_ON(priv != file->private_data);
+ 
+-	return vb2_querybuf(&csi_dev->vb2_vidq, p);
++	ret = vb2_querybuf(&csi_dev->vb2_vidq, p);
++
++	if (!ret) {
++		/* return physical address */
++		struct vb2_buffer *vb = csi_dev->vb2_vidq.bufs[p->index];
++		if (p->flags & V4L2_BUF_FLAG_MAPPED)
++			p->m.offset = vb2_dma_contig_plane_dma_addr(vb, 0);
++	}
++	return ret;
+ }
+ 
+ static int mx6s_vidioc_qbuf(struct file *file, void *priv,
+-- 
+1.8.0
+

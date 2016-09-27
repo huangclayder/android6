@@ -1,0 +1,38 @@
+From 0b29b5d8deaf3f3de56a10c1964944ea28b27558 Mon Sep 17 00:00:00 2001
+From: Shengjiu Wang <shengjiu.wang@freescale.com>
+Date: Wed, 10 Dec 2014 13:25:15 +0800
+Subject: [PATCH 478/505] MLK-9985: mxc_asrc_test: enlarge the buffer size.
+
+As some wav file has longer header, and some case need larger output
+buffer, so here enlarge these two size.
+
+Signed-off-by: Shengjiu Wang <shengjiu.wang@freescale.com>
+---
+ test/mxc_asrc_test/mxc_asrc_test.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/test/mxc_asrc_test/mxc_asrc_test.c b/test/mxc_asrc_test/mxc_asrc_test.c
+index 574ebaa..f63a35a 100644
+--- a/test/mxc_asrc_test/mxc_asrc_test.c
++++ b/test/mxc_asrc_test/mxc_asrc_test.c
+@@ -58,7 +58,7 @@ struct audio_buf {
+ 	unsigned int max_len;
+ };
+ 
+-#define WAVE_HEAD_SIZE 44 + 14
++#define WAVE_HEAD_SIZE 44 + 14 + 16
+ static enum asrc_pair_index pair_index;
+ static char header[WAVE_HEAD_SIZE];
+ 
+@@ -317,7 +317,7 @@ void bitshift(FILE * src, struct audio_info_s *info)
+ 	info->input_word_width = ASRC_WIDTH_24_BIT;
+ 	update_sample_bitdepth(info);
+ 	/*allocate input buffer*/
+-	output_buffer = (int *)malloc(info->output_data_len + 64 * 1024);
++	output_buffer = (int *)malloc(info->output_data_len + 256 * 1024);
+ 	if (output_buffer == NULL)
+ 		printf("output buffer allocate error\n");
+ }
+-- 
+1.8.0
+

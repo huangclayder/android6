@@ -1,0 +1,31 @@
+From fa142d9859be7bdf16702aa79b7f95df48a26719 Mon Sep 17 00:00:00 2001
+From: Jianzheng Zhou <jianzheng.zhou@freescale.com>
+Date: Wed, 2 Jul 2014 14:02:00 +0800
+Subject: [PATCH 336/602] ENGR00312966 wfd-uibc: revert one commit
+
+No need for this now. Just delete it.
+Revert "ENGR00305797 wfd-uibc:change permission for input event"
+
+This reverts commit 43c0e0cbb871170ad45b9a0954522e14d9c35823.
+
+Signed-off-by: Jianzheng Zhou <jianzheng.zhou@freescale.com>
+---
+ imx6/etc/ueventd.freescale.rc | 2 --
+ 1 file changed, 2 deletions(-)
+
+diff --git a/imx6/etc/ueventd.freescale.rc b/imx6/etc/ueventd.freescale.rc
+index 19b0b40..218e122 100644
+--- a/imx6/etc/ueventd.freescale.rc
++++ b/imx6/etc/ueventd.freescale.rc
+@@ -22,8 +22,6 @@
+ /dev/watchdog             0660   system     root
+ /dev/ir                   0660   system     system
+ /dev/mma8x5x              0640   compass     system
+-/dev/input/event2         0666   root        input
+-/dev/input/event0         0666   root        input
+ 
+ # sysfs properties
+ /sys/devices/virtual/input/input*   name        0660  root   input
+-- 
+1.8.0
+

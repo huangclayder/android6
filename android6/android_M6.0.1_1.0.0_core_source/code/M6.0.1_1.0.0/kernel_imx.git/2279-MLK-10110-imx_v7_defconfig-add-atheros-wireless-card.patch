@@ -1,0 +1,30 @@
+From 5e0a537ad15a4f089da18462b8a8b805cd89b412 Mon Sep 17 00:00:00 2001
+From: Dong Aisheng <b29396@freescale.com>
+Date: Fri, 16 Jan 2015 17:36:49 +0800
+Subject: [PATCH] MLK-10110 imx_v7_defconfig: add atheros wireless card
+ support
+
+Add atheros wireless card support
+
+Signed-off-by: Dong Aisheng <b29396@freescale.com>
+---
+ arch/arm/configs/imx_v7_defconfig | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/arch/arm/configs/imx_v7_defconfig b/arch/arm/configs/imx_v7_defconfig
+index 55b6e5b..956ef6e 100644
+--- a/arch/arm/configs/imx_v7_defconfig
++++ b/arch/arm/configs/imx_v7_defconfig
+@@ -149,6 +149,9 @@ CONFIG_USB_RTL8150=m
+ CONFIG_USB_RTL8152=m
+ CONFIG_USB_USBNET=m
+ CONFIG_USB_NET_CDC_EEM=m
++CONFIG_ATH_CARDS=y
++CONFIG_ATH6KL=m
++CONFIG_ATH6KL_SDIO=m
+ CONFIG_BRCMFMAC=m
+ # CONFIG_INPUT_MOUSEDEV_PSAUX is not set
+ CONFIG_INPUT_EVDEV=y
+-- 
+1.8.0
+

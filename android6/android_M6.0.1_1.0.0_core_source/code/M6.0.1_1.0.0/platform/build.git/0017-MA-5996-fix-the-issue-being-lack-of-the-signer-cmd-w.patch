@@ -1,0 +1,31 @@
+From cdfca420b687247be07d2707108df5621834e376 Mon Sep 17 00:00:00 2001
+From: zhang sanshan <b51434@freescale.com>
+Date: Wed, 10 Dec 2014 14:34:16 +0800
+Subject: [PATCH 17/34] MA-5996 fix the issue being lack of the signer cmd
+ when do dm-verity
+
+can't get signer_path when compile the project which open the dm-verity.
+
+Signed-off-by: zhang sanshan <b51434@freescale.com>
+---
+ tools/releasetools/build_image.py | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/tools/releasetools/build_image.py b/tools/releasetools/build_image.py
+index 0cc93a0..b63dcd6 100755
+--- a/tools/releasetools/build_image.py
++++ b/tools/releasetools/build_image.py
+@@ -425,8 +425,8 @@ def ImagePropFromGlobalDict(glob_dict, mount_point):
+       "skip_fsck",
+       "verity",
+       "verity_key",
+-      "verity_signer_cmd"
+-      "mkfsubifs_flags",
++      "verity_signer_cmd",
++      "mkfsubifs_flags"
+       )
+   for p in common_props:
+     copy_prop(p, p)
+-- 
+1.8.0
+

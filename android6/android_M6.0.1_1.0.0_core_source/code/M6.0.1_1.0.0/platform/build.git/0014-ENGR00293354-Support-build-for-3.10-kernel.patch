@@ -1,0 +1,35 @@
+From 7ff425a4fdd25ced94add42d61321a403d0dae4f Mon Sep 17 00:00:00 2001
+From: Ke Qinghua <qinghua.ke@freescale.com>
+Date: Thu, 19 Jun 2014 10:34:43 +0800
+Subject: [PATCH 14/34] ENGR00293354 Support build for 3.10 kernel
+
+Remove uImage generation
+
+Signed-off-by: Ke Qinghua <qinghua.ke@freescale.com>
+---
+ core/Makefile | 2 --
+ 1 file changed, 2 deletions(-)
+
+diff --git a/core/Makefile b/core/Makefile
+index 1233a9e..cf38162 100644
+--- a/core/Makefile
++++ b/core/Makefile
+@@ -1001,7 +1001,6 @@ TARGET_PREBUILT_KERNEL := $(PRODUCT_OUT)/kernel
+ KERNEL_CONFIGURE := kernel_imx/.config
+ TARGET_KERNEL_CONFIGURE := $(PRODUCT_OUT)/.config
+ KERNEL_ZIMAGE    := kernel_imx/arch/arm/boot/zImage
+-KERNEL_UIMAGE    := kernel_imx/arch/arm/boot/uImage
+ KERNEL_OUT := $(TARGET_OUT_INTERMEDIATES)/KERNEL_OBJ
+ 
+ 
+@@ -1017,7 +1016,6 @@ $(TARGET_KERNEL_CONFIGURE): kernel_imx/arch/arm/configs/$(TARGET_KERNEL_DEFCONF)
+ $(TARGET_PREBUILT_KERNEL): $(TARGET_KERNEL_CONFIGURE)
+ 	$(MAKE) -C kernel_imx -j$(HOST_PROCESSOR) uImage $(KERNEL_ENV)
+ 	$(MAKE) -C kernel_imx dtbs $(KERNEL_ENV)
+-	install -D $(KERNEL_UIMAGE)  $(PRODUCT_OUT)/uImage
+ 	install -D $(KERNEL_ZIMAGE)  $(PRODUCT_OUT)/kernel
+ 	for dtsplat in $(TARGET_BOARD_DTS_CONFIG); do \
+ 		DTS_PLATFORM=`echo $$dtsplat | cut -d':' -f1`; \
+-- 
+1.8.0
+

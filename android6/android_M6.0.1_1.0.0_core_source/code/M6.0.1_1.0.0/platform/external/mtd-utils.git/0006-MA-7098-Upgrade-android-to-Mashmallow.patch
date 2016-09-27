@@ -1,0 +1,30 @@
+From 1ea6c38c628ccf3ad0d96be9030c5ab22c983ca6 Mon Sep 17 00:00:00 2001
+From: zhang sanshan <b51434@freescale.com>
+Date: Tue, 13 Oct 2015 11:05:37 +0800
+Subject: [PATCH 6/7] MA-7098 Upgrade android to Mashmallow
+
+fs_config is used to  set attribute of files.
+fs_config add parameter target_out_path which include the output file after changing attribute.
+Should use NULL which means current file.
+
+Signed-off-by: zhang sanshan <b51434@freescale.com>
+---
+ mkfs.ubifs/mkfs.ubifs.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/mkfs.ubifs/mkfs.ubifs.c b/mkfs.ubifs/mkfs.ubifs.c
+index 96f39e8..94de66e 100644
+--- a/mkfs.ubifs/mkfs.ubifs.c
++++ b/mkfs.ubifs/mkfs.ubifs.c
+@@ -222,7 +222,7 @@ static void fix_stat(const char *path, struct stat *s)
+ {
+ 	uint64_t capabilities;
+ 	path += source_path_len;
+-	fs_config(path, S_ISDIR(s->st_mode), &s->st_uid, &s->st_gid, &s->st_mode,&capabilities);
++	fs_config(path, S_ISDIR(s->st_mode), NULL, &s->st_uid, &s->st_gid, &s->st_mode,&capabilities);
+ }
+ 
+ /**
+-- 
+1.8.0
+

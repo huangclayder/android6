@@ -1,0 +1,27 @@
+From 6e65fc4d6b49a106169448c57867786bfe1ba81e Mon Sep 17 00:00:00 2001
+From: Anson Huang <b20788@freescale.com>
+Date: Thu, 23 Apr 2015 18:58:41 +0800
+Subject: [PATCH] MLK-10724-3 ARM: imx: imx_v7_defconfig: enable i.mx6ul soc
+
+Enable i.MX6UL SOC support by default.
+
+Signed-off-by: Anson Huang <b20788@freescale.com>
+---
+ arch/arm/configs/imx_v7_defconfig | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/arch/arm/configs/imx_v7_defconfig b/arch/arm/configs/imx_v7_defconfig
+index 43f152f..dd9f739 100644
+--- a/arch/arm/configs/imx_v7_defconfig
++++ b/arch/arm/configs/imx_v7_defconfig
+@@ -27,6 +27,7 @@ CONFIG_SOC_IMX53=y
+ CONFIG_SOC_IMX6Q=y
+ CONFIG_SOC_IMX6SL=y
+ CONFIG_SOC_IMX6SX=y
++CONFIG_SOC_IMX6UL=y
+ CONFIG_SOC_IMX7D=y
+ CONFIG_SOC_VF610=y
+ # CONFIG_SWP_EMULATE is not set
+-- 
+1.8.0
+

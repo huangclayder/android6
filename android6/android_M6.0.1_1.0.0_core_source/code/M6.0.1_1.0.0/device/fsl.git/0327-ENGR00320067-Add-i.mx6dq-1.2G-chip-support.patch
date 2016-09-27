@@ -1,0 +1,28 @@
+From 1733a93a8423a806c60ee8ef58a969a82663cbf8 Mon Sep 17 00:00:00 2001
+From: "guoyin.chen" <guoyin.chen@freescale.com>
+Date: Thu, 26 Jun 2014 13:32:34 +0800
+Subject: [PATCH 327/602] ENGR00320067 Add i.mx6dq 1.2G chip support
+
+Use ldo dtb for i.mx6dq 1.2G chip
+
+Signed-off-by: guoyin.chen <guoyin.chen@freescale.com>
+---
+ sabresd_6dq/BoardConfig.mk | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/sabresd_6dq/BoardConfig.mk b/sabresd_6dq/BoardConfig.mk
+index baef80f..99bfe17 100644
+--- a/sabresd_6dq/BoardConfig.mk
++++ b/sabresd_6dq/BoardConfig.mk
+@@ -107,7 +107,7 @@ NUM_FRAMEBUFFER_SURFACE_BUFFERS := 3
+ IMX6_CONSUMER_IR_HAL := true
+ 
+ TARGET_BOOTLOADER_CONFIG := imx6q:mx6qsabresdandroid_config imx6dl:mx6dlsabresdandroid_config
+-TARGET_BOARD_DTS_CONFIG := imx6q:imx6q-sabresd.dtb imx6dl:imx6dl-sabresd.dtb
++TARGET_BOARD_DTS_CONFIG := imx6q:imx6q-sabresd.dtb imx6dl:imx6dl-sabresd.dtb imx6q-ldo:imx6q-sabresd-ldo.dtb
+ 
+ BOARD_SEPOLICY_DIRS := \
+        device/fsl/sabresd_6dq/sepolicy
+-- 
+1.8.0
+

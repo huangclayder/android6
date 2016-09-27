@@ -1,0 +1,42 @@
+From 8808058f3b849ff479c5ddc781980eb785af92e3 Mon Sep 17 00:00:00 2001
+From: Robby Cai <r63905@freescale.com>
+Date: Thu, 23 Oct 2014 20:42:24 +0800
+Subject: [PATCH] MLK-9719-3 ARM: dts: imx6qdl-sabreauto: Add pwm setting for
+ backlight
+
+Add PWM setting for brightness control
+
+Signed-off-by: Robby Cai <r63905@freescale.com>
+---
+ arch/arm/boot/dts/imx6qdl-sabreauto.dtsi | 12 ++++++++++++
+ 1 file changed, 12 insertions(+)
+
+diff --git a/arch/arm/boot/dts/imx6qdl-sabreauto.dtsi b/arch/arm/boot/dts/imx6qdl-sabreauto.dtsi
+index e992cd3..8cb4e75 100644
+--- a/arch/arm/boot/dts/imx6qdl-sabreauto.dtsi
++++ b/arch/arm/boot/dts/imx6qdl-sabreauto.dtsi
+@@ -787,9 +787,21 @@
+ 				MX6QDL_PAD_EIM_A25__HDMI_TX_CEC_LINE 0x1f8b0
+ 			>;
+ 		};
++
++		pinctrl_pwm3_1: pwm3grp-1 {
++			fsl,pins = <
++				MX6QDL_PAD_SD4_DAT1__PWM3_OUT 0x1b0b1
++			>;
++		};
+ 	};
+ };
+ 
++&pwm3 {
++	pinctrl-names = "default";
++	pinctrl-0 = <&pinctrl_pwm3_1>;
++	status = "okay";
++};
++
+ &spdif {
+ 	pinctrl-names = "default";
+ 	pinctrl-0 = <&pinctrl_spdif>;
+-- 
+1.8.0
+

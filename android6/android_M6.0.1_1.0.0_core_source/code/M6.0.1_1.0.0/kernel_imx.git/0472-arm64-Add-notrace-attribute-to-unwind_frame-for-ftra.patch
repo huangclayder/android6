@@ -1,0 +1,33 @@
+From c0b39882849bbd4eb48620665307469237aa2e97 Mon Sep 17 00:00:00 2001
+From: AKASHI Takahiro <takahiro.akashi@linaro.org>
+Date: Sat, 15 Mar 2014 14:40:43 +0900
+Subject: [PATCH] arm64: Add 'notrace' attribute to unwind_frame() for ftrace
+
+walk_stackframe() calls unwind_frame(), and if walk_stackframe() is
+"notrace", unwind_frame() should be also "notrace".
+
+Acked-by: Will Deacon <will.deacon@arm.com>
+Signed-off-by: AKASHI Takahiro <takahiro.akashi@linaro.org>
+Signed-off-by: Mark Brown <broonie@linaro.org>
+(cherry picked from LSK commit 8370369c5c33b9d573575249f080a905323d7eb4)
+Signed-off-by: Alex Shi <alex.shi@linaro.org>
+---
+ arch/arm64/kernel/stacktrace.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/arch/arm64/kernel/stacktrace.c b/arch/arm64/kernel/stacktrace.c
+index 38f0558..55437ba 100644
+--- a/arch/arm64/kernel/stacktrace.c
++++ b/arch/arm64/kernel/stacktrace.c
+@@ -35,7 +35,7 @@
+  *	ldp	x29, x30, [sp]
+  *	add	sp, sp, #0x10
+  */
+-int unwind_frame(struct stackframe *frame)
++int notrace unwind_frame(struct stackframe *frame)
+ {
+ 	unsigned long high, low;
+ 	unsigned long fp = frame->fp;
+-- 
+1.8.0
+

@@ -1,0 +1,27 @@
+From c4430668dc75aee35a60842f49f03d90b7c68dcc Mon Sep 17 00:00:00 2001
+From: Jon Medhurst <tixy@linaro.org>
+Date: Tue, 5 Mar 2013 09:24:57 +0800
+Subject: [PATCH] ARM HDLCD: Fix compilation on Linux 3.9
+
+Signed-off-by: Jon Medhurst <tixy@linaro.org>
+(cherry picked from commit ecc90d9ec039abe8b78e2c98dc71d0cb0b6b5b79)
+Signed-off-by: Alex Shi <alex.shi@linaro.org>
+---
+ drivers/video/arm-hdlcd.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/drivers/video/arm-hdlcd.c b/drivers/video/arm-hdlcd.c
+index bd5fe68..f9c4e74 100644
+--- a/drivers/video/arm-hdlcd.c
++++ b/drivers/video/arm-hdlcd.c
+@@ -21,6 +21,7 @@
+ #include <linux/fb.h>
+ #include <linux/clk.h>
+ #include <linux/init.h>
++#include <linux/interrupt.h>
+ #include <linux/ioport.h>
+ #include <linux/dma-mapping.h>
+ #include <linux/platform_device.h>
+-- 
+1.8.0
+

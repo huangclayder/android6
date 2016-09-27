@@ -1,0 +1,48 @@
+From d7d0275194c82bf8c43a65e11a293fb6da833643 Mon Sep 17 00:00:00 2001
+From: Hongzhang Yang <hongzhang.yang@nxp.com>
+Date: Fri, 29 Jan 2016 14:07:17 +0800
+Subject: [PATCH 280/280] MLK-12369 Change an error message to warning
+
+VPU lib v5.4.34
+
+Some users may call vpu_DecGetInitialInfo() when bs buffer
+is empty and handle the failure properly.
+
+Change it to warning to avoid printing error messages when
+app is just working fine.
+
+Signed-off-by: Hongzhang Yang <hongzhang.yang@nxp.com>
+---
+ vpu/vpu_lib.c | 2 +-
+ vpu/vpu_lib.h | 2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/vpu/vpu_lib.c b/vpu/vpu_lib.c
+index 1a9cf1f..75e27f9 100644
+--- a/vpu/vpu_lib.c
++++ b/vpu/vpu_lib.c
+@@ -3002,7 +3002,7 @@ RetCode vpu_DecGetInitialInfo(DecHandle handle, DecInitialInfo * info)
+ 		return RETCODE_FAILURE_TIMEOUT;
+ 
+ 	if (DecBitstreamBufEmpty(handle)) {
+-		err_msg("rd 0x%lx, rd reg 0x%lx, wr 0x%lx, wr reg 0x%lx, idx %d, idx reg %ld\n",
++		warn_msg("rd 0x%lx, rd reg 0x%lx, wr 0x%lx, wr reg 0x%lx, idx %d, idx reg %ld\n",
+ 				pCodecInst->ctxRegs[CTX_BIT_RD_PTR], VpuReadReg(BIT_RD_PTR),
+ 				pCodecInst->ctxRegs[CTX_BIT_WR_PTR], VpuReadReg(BIT_WR_PTR),
+ 				pCodecInst->instIndex, VpuReadReg(BIT_RUN_INDEX));
+diff --git a/vpu/vpu_lib.h b/vpu/vpu_lib.h
+index 98b7220..6e5222d 100644
+--- a/vpu/vpu_lib.h
++++ b/vpu/vpu_lib.h
+@@ -729,7 +729,7 @@ static const SocInfo soc_info[] = {
+  * v4.2.2 [2008.09.03] support encoder on MX51
+  * v4.0.2 [2008.08.21] add the IOClkGateSet() for power saving.
+  */
+-#define VPU_LIB_VERSION_CODE	VPU_LIB_VERSION(5, 4, 33)
++#define VPU_LIB_VERSION_CODE	VPU_LIB_VERSION(5, 4, 34)
+ 
+ extern unsigned int system_rev;
+ 
+-- 
+1.8.0
+

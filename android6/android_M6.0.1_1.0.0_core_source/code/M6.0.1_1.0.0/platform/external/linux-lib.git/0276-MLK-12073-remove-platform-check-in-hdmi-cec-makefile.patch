@@ -1,0 +1,54 @@
+From 45a26128f85da45cb2672b2b605046d91f17d4bc Mon Sep 17 00:00:00 2001
+From: Gao Pan <gaopan@freescale.com>
+Date: Thu, 24 Dec 2015 11:37:15 +0800
+Subject: [PATCH 276/280] MLK-12073 remove platform check in hdmi-cec makefile
+
+To avoid platform restriction, remove platform check
+in hdmi-cec makefile
+
+Signed-off-by: Gao Pan <pandy.gao@nxp.com>
+---
+ hdmi-cec/Makefile | 15 ---------------
+ 1 file changed, 15 deletions(-)
+
+diff --git a/hdmi-cec/Makefile b/hdmi-cec/Makefile
+index 3518528..2804c4a 100755
+--- a/hdmi-cec/Makefile
++++ b/hdmi-cec/Makefile
+@@ -2,23 +2,11 @@ CC ?=$(CROSS_COMPILE)gcc
+ AR ?=$(CROSS_COMPILE)ar
+ CFLAGS ?=-O2
+ 
+-# list of platforms which want this test case
+-INCLUDE_LIST:= IMX6Q
+-
+ OBJ = mxc_hdmi-cec.o
+ 
+ LIBNAME = libcec
+ SONAMEVERSION=1
+ 
+-ifeq ($(PLATFORM), $(findstring $(PLATFORM), $(INCLUDE_LIST)))
+-
+-ifeq ($(findstring IMX5, $(PLATFORM)), IMX5)
+-VERSION = imx5
+-else
+-VERSION = $(shell echo $(PLATFORM_STR) | awk '{print substr($$0, 1, 5)}' \
+-	| awk '{print  tolower($$0) }' )
+-endif
+-
+ all: $(LIBNAME).so $(LIBNAME).a
+ 
+ install: install_headers
+@@ -28,9 +16,6 @@ install: install_headers
+ install_headers:
+ 	@mkdir -p $(DEST_DIR)/usr/include
+ 	cp hdmi-cec.h $(DEST_DIR)/usr/include
+-else
+-all install :
+-endif
+ 
+ %.o: %.c
+ 	$(CC) -D$(PLATFORM) -Wall -fPIC $(CFLAGS) -c $^ -o $@
+-- 
+1.8.0
+

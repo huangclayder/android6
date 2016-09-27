@@ -1,0 +1,53 @@
+From f991f995a3a6be746dcc788bbf06eafeeacef306 Mon Sep 17 00:00:00 2001
+From: "guoyin.chen" <guoyin.chen@freescale.com>
+Date: Mon, 12 Jan 2015 17:18:27 +0800
+Subject: [PATCH 422/602] MA-6096 Add sepolicy for ubifs in recover
+
+add recovery.te for ubifs
+
+Signed-off-by: guoyin.chen <guoyin.chen@freescale.com>
+---
+ imx6/sepolicy/recovery.te    | 5 +++++
+ sabreauto_6q/BoardConfig.mk  | 3 ++-
+ sabreauto_6sx/BoardConfig.mk | 3 ++-
+ 3 files changed, 9 insertions(+), 2 deletions(-)
+ create mode 100644 imx6/sepolicy/recovery.te
+
+diff --git a/imx6/sepolicy/recovery.te b/imx6/sepolicy/recovery.te
+new file mode 100644
+index 0000000..bac84c5
+--- /dev/null
++++ b/imx6/sepolicy/recovery.te
+@@ -0,0 +1,5 @@
++recovery_only(`
++  allow recovery block_device:chr_file {getattr read write open ioctl};
++  allow recovery self:capability {sys_resource};
++')
++
+diff --git a/sabreauto_6q/BoardConfig.mk b/sabreauto_6q/BoardConfig.mk
+index 0d22551..f73173c 100644
+--- a/sabreauto_6q/BoardConfig.mk
++++ b/sabreauto_6q/BoardConfig.mk
+@@ -123,5 +123,6 @@ BOARD_SEPOLICY_UNION := \
+        init.te \
+        netd.te \
+        bootanim.te \
+-       dnsmasq.te
++       dnsmasq.te \
++       recovery.te
+ 
+diff --git a/sabreauto_6sx/BoardConfig.mk b/sabreauto_6sx/BoardConfig.mk
+index 0b91e35..d478085 100755
+--- a/sabreauto_6sx/BoardConfig.mk
++++ b/sabreauto_6sx/BoardConfig.mk
+@@ -117,5 +117,6 @@ BOARD_SEPOLICY_UNION := \
+        init.te \
+        netd.te \
+        bootanim.te \
+-       dnsmasq.te
++       dnsmasq.te \
++       recovery.te
+ 
+-- 
+1.8.0
+

@@ -1,0 +1,139 @@
+From 8289ddadf1e3ed3eca2b5d2510a9fa7007cd530c Mon Sep 17 00:00:00 2001
+From: Richard Zhu <r65037@freescale.com>
+Date: Tue, 15 Jul 2014 14:19:03 +0800
+Subject: [PATCH] ENGR00325255 pcie:enable pcie support on imx6sx sd
+
+Enable pcie support in uboot on imx6sx sd boards
+- enable_pcie_clock should be call before ssp_en is set,
+  since that ssp_en control the phy_ref clk gate, turn on
+  it after the source of the pcie clks are stable.
+- add debug info
+- add rx_eq of gpr12 on imx6sx
+- there are random link down issue on imx6sx. It's
+  pcie ep reset issue.
+  solution:reset ep, then retry link can fix it.
+
+Signed-off-by: Richard Zhu <r65037@freescale.com>
+(cherry picked from commit ec78595a24b5ff1020baa97b6d6e79a3a3326307)
+Signed-off-by: Peng Fan <Peng.Fan@freescale.com>
+
+Conflicts:
+	arch/arm/cpu/armv7/mx6/clock.c
+	arch/arm/include/asm/arch-mx6/iomux.h
+	drivers/pci/pcie_imx.c
+	include/configs/mx6sxsabresd.h
+
+Note:
+  There is an upstream patch 1b8ad74a6f8cea55a727dc4b399baac46d0daef1
+  to add support for mx6solox.
+  This patch is to add more stuff from our vendor imx_v2014.04 branch.
+---
+ arch/arm/cpu/armv7/mx6/clock.c           | 32 ++++++++++++++++++++++++++------
+ arch/arm/cpu/armv7/mx6/soc.c             | 10 ++++++++++
+ arch/arm/include/asm/arch-mx6/imx-regs.h |  2 ++
+ 3 files changed, 38 insertions(+), 6 deletions(-)
+
+diff --git a/arch/arm/cpu/armv7/mx6/clock.c b/arch/arm/cpu/armv7/mx6/clock.c
+index 434a0b8..90dcd6d 100644
+--- a/arch/arm/cpu/armv7/mx6/clock.c
++++ b/arch/arm/cpu/armv7/mx6/clock.c
+@@ -851,6 +851,15 @@ static void ungate_sata_clock(void)
+ 	/* Enable SATA clock. */
+ 	setbits_le32(&imx_ccm->CCGR5, MXC_CCM_CCGR5_SATA_MASK);
+ }
++#else
++static void ungate_disp_axi_clock(void)
++{
++	struct mxc_ccm_reg *const imx_ccm =
++		(struct mxc_ccm_reg *)CCM_BASE_ADDR;
++
++	/* Enable display axi clock. */
++	setbits_le32(&imx_ccm->CCGR3, MXC_CCM_CCGR3_DISP_AXI_MASK);
++}
+ #endif
+ 
+ static void ungate_pcie_clock(void)
+@@ -885,6 +894,9 @@ int enable_pcie_clock(void)
+ 	struct mxc_ccm_reg *ccm_regs = (struct mxc_ccm_reg *)CCM_BASE_ADDR;
+ 	u32 lvds1_clk_sel;
+ 
++	/* PCIe reference clock sourced from AXI. */
++	clrbits_le32(&ccm_regs->cbcmr, MXC_CCM_CBCMR_PCIE_AXI_CLK_SEL);
++
+ 	/*
+ 	 * Here be dragons!
+ 	 *
+@@ -908,22 +920,30 @@ int enable_pcie_clock(void)
+ 	else
+ 		lvds1_clk_sel = ANADIG_ANA_MISC1_LVDS1_CLK_SEL_SATA_REF;
+ 
++#ifndef CONFIG_MX6SX
++	/* lvds_clk1 is sourced from sata ref on imx6q/dl/solo */
+ 	clrsetbits_le32(&anatop_regs->ana_misc1,
+ 			ANADIG_ANA_MISC1_LVDSCLK1_IBEN |
+ 			ANADIG_ANA_MISC1_LVDS1_CLK_SEL_MASK,
+ 			ANADIG_ANA_MISC1_LVDSCLK1_OBEN | lvds1_clk_sel);
+ 
+-	/* PCIe reference clock sourced from AXI. */
+-	clrbits_le32(&ccm_regs->cbcmr, MXC_CCM_CBCMR_PCIE_AXI_CLK_SEL);
+-
+ 	/* Party time! Ungate the clock to the PCIe. */
+-#ifndef CONFIG_MX6SX
+ 	ungate_sata_clock();
+-#endif
+ 	ungate_pcie_clock();
+ 
+ 	return enable_enet_pll(BM_ANADIG_PLL_ENET_ENABLE_SATA |
+-			       BM_ANADIG_PLL_ENET_ENABLE_PCIE);
++			BM_ANADIG_PLL_ENET_ENABLE_PCIE);
++#else
++	/* lvds_clk1 is sourced from pcie ref on imx6sx */
++	clrsetbits_le32(&anatop_regs->ana_misc1,
++			ANADIG_ANA_MISC1_LVDSCLK1_IBEN |
++			ANADIG_ANA_MISC1_LVDS1_CLK_SEL_MASK,
++			ANADIG_ANA_MISC1_LVDSCLK1_OBEN | lvds1_clk_sel);
++
++	ungate_disp_axi_clock();
++	ungate_pcie_clock();
++	return enable_enet_pll(BM_ANADIG_PLL_ENET_ENABLE_PCIE);
++#endif
+ }
+ 
+ #ifdef CONFIG_SECURE_BOOT
+diff --git a/arch/arm/cpu/armv7/mx6/soc.c b/arch/arm/cpu/armv7/mx6/soc.c
+index e584306..df374f4 100644
+--- a/arch/arm/cpu/armv7/mx6/soc.c
++++ b/arch/arm/cpu/armv7/mx6/soc.c
+@@ -355,6 +355,16 @@ void vadc_power_down(void)
+ 	val &= ~IMX6SX_GPR5_CSI1_MUX_CTRL_MASK,
+ 	writel(val, &iomux->gpr[5]);
+ }
++
++void pcie_power_up(void)
++{
++	set_ldo_voltage(LDO_PU, 1100);	/* Set VDDPU to 1.1V */
++}
++
++void pcie_power_off(void)
++{
++	set_ldo_voltage(LDO_PU, 0);	/* Set VDDPU to 1.1V */
++}
+ #endif
+ 
+ static void imx_set_vddpu_power_down(void)
+diff --git a/arch/arm/include/asm/arch-mx6/imx-regs.h b/arch/arm/include/asm/arch-mx6/imx-regs.h
+index 20273e4..a1f3dcc 100644
+--- a/arch/arm/include/asm/arch-mx6/imx-regs.h
++++ b/arch/arm/include/asm/arch-mx6/imx-regs.h
+@@ -1151,6 +1151,8 @@ struct rdc_sema_regs {
+ #ifdef CONFIG_MX6SX
+ extern void vadc_power_up(void);
+ extern void vadc_power_down(void);
++extern void pcie_power_up(void);
++extern void pcie_power_off(void);
+ #endif
+ 
+ #endif /* __ASSEMBLER__*/
+-- 
+1.8.0
+

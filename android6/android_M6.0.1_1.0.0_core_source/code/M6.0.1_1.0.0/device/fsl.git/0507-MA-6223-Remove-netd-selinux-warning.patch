@@ -1,0 +1,27 @@
+From 2fd0f3ac18f676b577936e77e77c93f8152265fc Mon Sep 17 00:00:00 2001
+From: Haoran Wang <b50027@freescale.com>
+Date: Tue, 7 Jul 2015 14:58:59 +0800
+Subject: [PATCH 507/602] MA-6223 Remove netd selinux warning
+
+Added missed netd selinux policy to remove below
+warning:
+
+type=1400 audit(13426.800:13): avc: denied { sys_module } for pid=425
+comm="netd" capability=16 scontext=u:r:netd:s0 tcontext=u:r:netd:s0
+tclass=capability
+
+Signed-off-by: Haoran Wang <b50027@freescale.com>
+---
+ imx7/sepolicy/netd.te | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/imx7/sepolicy/netd.te b/imx7/sepolicy/netd.te
+index f1bf0e7..767edb8 100644
+--- a/imx7/sepolicy/netd.te
++++ b/imx7/sepolicy/netd.te
+@@ -1 +1,2 @@
+ allow netd kernel:system { module_request };
++dontaudit netd self:capability sys_module;
+-- 
+1.8.0
+

@@ -1,0 +1,30 @@
+From 76969dba8226648babafe8e104ea0d9f73f0c61a Mon Sep 17 00:00:00 2001
+From: Bao Xiahong <b50906@freescale.com>
+Date: Thu, 4 Dec 2014 17:34:10 +0800
+Subject: [PATCH 402/602] MA-5872 updata libav codec
+
+update imx6.mk because libav codec is updated.
+
+Signed-off-by: Bao Xiahong <b50906@freescale.com>
+---
+ imx6/imx6.mk | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/imx6/imx6.mk b/imx6/imx6.mk
+index b1d017b..1f2787b 100644
+--- a/imx6/imx6.mk
++++ b/imx6/imx6.mk
+@@ -262,8 +262,8 @@ omx_libs := \
+ 	lib_omx_ac3toiec937_arm11_elinux \
+         lib_omx_ec3_dec_v2_arm11_elinux \
+ 	lib_omx_libav_video_dec_arm11_elinux \
+-	libavcodec-55 \
+-	libavutil-53 \
++	libavcodec \
++	libavutil \
+ 	lib_omx_libav_audio_dec_arm11_elinux \
+ 
+ 
+-- 
+1.8.0
+

@@ -1,0 +1,83 @@
+From af3ff6334d1b7b0e1e17311edba599eae2a5bd4d Mon Sep 17 00:00:00 2001
+From: Peng Fan <Peng.Fan@freescale.com>
+Date: Fri, 20 Mar 2015 14:05:07 +0800
+Subject: [PATCH] MLK-10774-37 imx:mx7d fix qspi probe error
+
+We should use CONFIG_FSL_QSPI, but not CONFIG_QSPI
+
+Signed-off-by: Peng Fan <Peng.Fan@freescale.com>
+---
+ board/freescale/mx7d_12x12_lpddr3_arm2/mx7d_12x12_lpddr3_arm2.c | 4 ++--
+ board/freescale/mx7d_19x19_ddr3_arm2/mx7d_19x19_ddr3_arm2.c     | 4 ++--
+ board/freescale/mx7dsabresd/mx7dsabresd.c                       | 4 ++--
+ 3 files changed, 6 insertions(+), 6 deletions(-)
+
+diff --git a/board/freescale/mx7d_12x12_lpddr3_arm2/mx7d_12x12_lpddr3_arm2.c b/board/freescale/mx7d_12x12_lpddr3_arm2/mx7d_12x12_lpddr3_arm2.c
+index 6122308..7aa54e9 100644
+--- a/board/freescale/mx7d_12x12_lpddr3_arm2/mx7d_12x12_lpddr3_arm2.c
++++ b/board/freescale/mx7d_12x12_lpddr3_arm2/mx7d_12x12_lpddr3_arm2.c
+@@ -298,7 +298,7 @@ static void setup_iomux_uart(void)
+ 	imx_iomux_v3_setup_multiple_pads(uart1_pads, ARRAY_SIZE(uart1_pads));
+ }
+ 
+-#ifdef CONFIG_QSPI
++#ifdef CONFIG_FSL_QSPI
+ 
+ static iomux_v3_cfg_t const quadspi_pads[] = {
+ 	MX7D_PAD_EPDC_DATA00__QSPI_A_DATA0 | MUX_PAD_CTRL(QSPI_PAD_CTRL),
+@@ -571,7 +571,7 @@ int board_init(void)
+ 	setup_spinor();
+ #endif
+ 
+-#ifdef CONFIG_QSPI
++#ifdef CONFIG_FSL_QSPI
+ 	board_qspi_init();
+ #endif
+ 
+diff --git a/board/freescale/mx7d_19x19_ddr3_arm2/mx7d_19x19_ddr3_arm2.c b/board/freescale/mx7d_19x19_ddr3_arm2/mx7d_19x19_ddr3_arm2.c
+index 5c108f2..b7766a2 100644
+--- a/board/freescale/mx7d_19x19_ddr3_arm2/mx7d_19x19_ddr3_arm2.c
++++ b/board/freescale/mx7d_19x19_ddr3_arm2/mx7d_19x19_ddr3_arm2.c
+@@ -300,7 +300,7 @@ static void setup_iomux_uart(void)
+ 	imx_iomux_v3_setup_multiple_pads(uart1_pads, ARRAY_SIZE(uart1_pads));
+ }
+ 
+-#ifdef CONFIG_QSPI
++#ifdef CONFIG_FSL_QSPI
+ 
+ static iomux_v3_cfg_t const quadspi_pads[] = {
+ 	MX7D_PAD_EPDC_DATA00__QSPI_A_DATA0 | MUX_PAD_CTRL(QSPI_PAD_CTRL),
+@@ -574,7 +574,7 @@ int board_init(void)
+ 	setup_fec();
+ #endif
+ 
+-#ifdef CONFIG_QSPI
++#ifdef CONFIG_FSL_QSPI
+ 	board_qspi_init();
+ #endif
+ 
+diff --git a/board/freescale/mx7dsabresd/mx7dsabresd.c b/board/freescale/mx7dsabresd/mx7dsabresd.c
+index f7188af..a653c08 100644
+--- a/board/freescale/mx7dsabresd/mx7dsabresd.c
++++ b/board/freescale/mx7dsabresd/mx7dsabresd.c
+@@ -538,7 +538,7 @@ static void setup_iomux_uart(void)
+ 	imx_iomux_v3_setup_multiple_pads(uart1_pads, ARRAY_SIZE(uart1_pads));
+ }
+ 
+-#ifdef CONFIG_QSPI
++#ifdef CONFIG_FSL_QSPI
+ static iomux_v3_cfg_t const quadspi_pads[] = {
+ 	MX7D_PAD_EPDC_DATA00__QSPI_A_DATA0 | MUX_PAD_CTRL(QSPI_PAD_CTRL),
+ 	MX7D_PAD_EPDC_DATA01__QSPI_A_DATA1 | MUX_PAD_CTRL(QSPI_PAD_CTRL),
+@@ -773,7 +773,7 @@ int board_init(void)
+ 	setup_gpmi_nand();
+ #endif
+ 
+-#ifdef CONFIG_QSPI
++#ifdef CONFIG_FSL_QSPI
+ 	board_qspi_init();
+ #endif
+ 
+-- 
+1.8.0
+

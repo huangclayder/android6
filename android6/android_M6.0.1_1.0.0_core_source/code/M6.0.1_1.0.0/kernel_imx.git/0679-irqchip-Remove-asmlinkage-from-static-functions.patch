@@ -1,0 +1,49 @@
+From e2618403024d2551561f597ca0b7a4af58a59e74 Mon Sep 17 00:00:00 2001
+From: Christoffer Dall <christoffer.dall@linaro.org>
+Date: Thu, 2 Oct 2014 20:49:55 +0200
+Subject: [PATCH] irqchip: Remove asmlinkage from static functions
+
+LTO patches add __visible to the asmlinkage define, causing
+compilation warnings like:
+
+  drivers/irqchip/irq-gic.c:283:1: warning: 'externally_visible'
+  attribute have effect only on public objects [-Wattributes]
+
+Drop asmlinkage here to avoid such warnings.
+
+  [ Modified for LSK from it's origin commit (see below) to only touch
+    the irq-gic.c file so that we have a natural progression of the code
+    before factoring out code bits into a library file for GICv3 support
+    later - Christoffer ]
+
+Reported-by: Olof's autobuilder <build@lixom.net>
+Signed-off-by: Stephen Boyd <sboyd@codeaurora.org>
+Cc: linux-arm-kernel@lists.infradead.org
+Cc: khilman@linaro.org
+Cc: Russell King <linux@arm.linux.org.uk>
+Cc: Josh Cartwright <joshc@codeaurora.org>
+Cc: Andi Kleen <ak@linux.intel.com>
+Link: http://lkml.kernel.org/r/1393980030-17770-1-git-send-email-sboyd@codeaurora.org
+Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
+(cherry picked from commit 8783dd3a37a5853689e1a8fa728827a50905b912)
+Signed-off-by: Christoffer Dall <christoffer.dall@linaro.org>
+---
+ drivers/irqchip/irq-gic.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/irqchip/irq-gic.c b/drivers/irqchip/irq-gic.c
+index 3641362..4300b66 100644
+--- a/drivers/irqchip/irq-gic.c
++++ b/drivers/irqchip/irq-gic.c
+@@ -279,7 +279,7 @@ static int gic_set_wake(struct irq_data *d, unsigned int on)
+ #define gic_set_wake	NULL
+ #endif
+ 
+-static asmlinkage void __exception_irq_entry gic_handle_irq(struct pt_regs *regs)
++static void __exception_irq_entry gic_handle_irq(struct pt_regs *regs)
+ {
+ 	u32 irqstat, irqnr;
+ 	struct gic_chip_data *gic = &gic_data[0];
+-- 
+1.8.0
+

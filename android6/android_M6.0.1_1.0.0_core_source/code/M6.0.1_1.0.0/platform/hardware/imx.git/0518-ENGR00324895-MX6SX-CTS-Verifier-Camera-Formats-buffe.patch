@@ -1,0 +1,92 @@
+From 6e185409cd6abfea7135e0486902077e56f6ed13 Mon Sep 17 00:00:00 2001
+From: Fang Hui <b31070@freescale.com>
+Date: Thu, 31 Jul 2014 13:04:42 +0800
+Subject: [PATCH 518/635] ENGR00324895 MX6SX CTS-Verifier/Camera Formats:
+ buffer size of all
+
+YUY2 formats were mismatched.
+
+Preview frame size is just YUYV, no need to use NV12
+
+Signed-off-by: Fang Hui <b31070@freescale.com>
+---
+ mx6/libcamera/CameraBridge.cpp | 15 ++++++++-------
+ mx6/libcamera/CameraBridge.h   |  3 ++-
+ 2 files changed, 10 insertions(+), 8 deletions(-)
+
+diff --git a/mx6/libcamera/CameraBridge.cpp b/mx6/libcamera/CameraBridge.cpp
+index dfa2472..a754fd6 100644
+--- a/mx6/libcamera/CameraBridge.cpp
++++ b/mx6/libcamera/CameraBridge.cpp
+@@ -1,6 +1,6 @@
+ /*
+  * Copyright (C) 2008 The Android Open Source Project
+- * Copyright (C) 2012-2013 Freescale Semiconductor, Inc.
++ * Copyright (C) 2012-2014 Freescale Semiconductor, Inc.
+  *
+  * Licensed under the Apache License, Version 2.0 (the "License");
+  * you may not use this file except in compliance with the License.
+@@ -24,7 +24,7 @@ CameraBridge::CameraBridge()
+       mDataCbTimestamp(NULL), mRequestMemory(NULL), mCallbackCookie(NULL),
+       mMsgEnabled(0), mBridgeState(BRIDGE_INVALID),
+       mRecording(false), mVideoWidth(0), mVideoHeight(0),
+-      mBufferCount(0), mBufferSize(0), mMetaDataBufsSize(0),
++      mBufferCount(0), mBufferSize(0), mPreviewBufferSize(0), mMetaDataBufsSize(0),
+       mPreviewMemory(NULL), mVideoMemory(NULL)
+ {
+     memset(mSupprotedThumbnailSizes, 0, sizeof(mSupprotedThumbnailSizes));
+@@ -434,6 +434,8 @@ status_t CameraBridge::start()
+         return NO_INIT;
+     }
+ 
++    mPreviewBufferSize = mFrameProvider->getFrameSize();
++
+ #ifdef EVK_6SL //driver provide yuyv, but h264enc need nv12
+     int bufSize = mFrameProvider->getFrameSize() * 3/4;
+ #else
+@@ -446,7 +448,7 @@ status_t CameraBridge::start()
+             mPreviewMemory = NULL;
+         }
+ 
+-        mPreviewMemory = mRequestMemory(-1, bufSize, bufCnt, NULL);
++        mPreviewMemory = mRequestMemory(-1, mPreviewBufferSize, bufCnt, NULL);
+         if (mPreviewMemory == NULL) {
+             FLOGE("CameraBridge: notifyBufferCreat mRequestMemory failed");
+         }
+@@ -791,10 +793,9 @@ void CameraBridge::sendPreviewFrame(CameraFrame *frame)
+     int bufIdx = frame->mIndex;
+     FSL_ASSERT(bufIdx >= 0);
+ 
+-    convertNV12toYUV420SP((uint8_t *)(frame->mVirtAddr),
+-                          (uint8_t *)((unsigned char *)mPreviewMemory->data +
+-                                      bufIdx * mBufferSize),
+-                          frame->mWidth, frame->mHeight);
++    memcpy((uint8_t *)((unsigned char *)mPreviewMemory->data + bufIdx * mPreviewBufferSize),
++        (uint8_t *)(frame->mVirtAddr), mPreviewBufferSize);
++
+     mDataCb(CAMERA_MSG_PREVIEW_FRAME,
+             mPreviewMemory,
+             bufIdx,
+diff --git a/mx6/libcamera/CameraBridge.h b/mx6/libcamera/CameraBridge.h
+index 69ed9bd..0e5e733 100644
+--- a/mx6/libcamera/CameraBridge.h
++++ b/mx6/libcamera/CameraBridge.h
+@@ -1,6 +1,6 @@
+ /*
+  * Copyright (C) 2008 The Android Open Source Project
+- * Copyright (C) 2012-2013 Freescale Semiconductor, Inc.
++ * Copyright (C) 2012-2014 Freescale Semiconductor, Inc.
+  *
+  * Licensed under the Apache License, Version 2.0 (the "License");
+  * you may not use this file except in compliance with the License.
+@@ -158,6 +158,7 @@ private:
+ 
+     int mBufferCount;
+     int mBufferSize;
++	int mPreviewBufferSize;
+     int mMetaDataBufsSize;
+     camera_memory_t *mPreviewMemory;
+     camera_memory_t *mVideoMemory;
+-- 
+1.8.0
+

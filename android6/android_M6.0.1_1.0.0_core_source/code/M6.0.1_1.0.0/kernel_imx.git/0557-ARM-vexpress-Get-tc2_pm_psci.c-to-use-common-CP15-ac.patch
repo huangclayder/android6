@@ -1,0 +1,56 @@
+From 15dfc7df76f6c38a4b286c6a595c332ff77f5cb5 Mon Sep 17 00:00:00 2001
+From: Jon Medhurst <tixy@linaro.org>
+Date: Thu, 21 Mar 2013 12:00:09 +0000
+Subject: [PATCH] ARM: vexpress: Get tc2_pm_psci.c to use common CP15 accessor
+ functions
+
+Signed-off-by: Jon Medhurst <tixy@linaro.org>
+(cherry picked from commit 204b1624c2c060a8ff7c2b0a70b8639c4f01433b)
+Signed-off-by: Alex Shi <alex.shi@linaro.org>
+---
+ arch/arm/mach-vexpress/tc2_pm_psci.c | 19 ++++---------------
+ 1 file changed, 4 insertions(+), 15 deletions(-)
+
+diff --git a/arch/arm/mach-vexpress/tc2_pm_psci.c b/arch/arm/mach-vexpress/tc2_pm_psci.c
+index 04d83d2..5a5e4f5 100644
+--- a/arch/arm/mach-vexpress/tc2_pm_psci.c
++++ b/arch/arm/mach-vexpress/tc2_pm_psci.c
+@@ -23,6 +23,7 @@
+ #include <asm/psci.h>
+ #include <asm/atomic.h>
+ #include <asm/cputype.h>
++#include <asm/cp15.h>
+ 
+ #include <mach/motherboard.h>
+ #include <mach/tc2.h>
+@@ -83,24 +84,12 @@ static void tc2_pm_psci_power_down(void)
+ 		 * Overtaken by a power up. Flush caches, exit coherency,
+ 		 * return & fake a reset
+ 		 */
+-		asm volatile (
+-			"mrc	p15, 0, ip, c1, c0, 0 \n\t"
+-			"bic	ip, ip, #(1 << 2) @ clear C bit \n\t"
+-			"mcr	p15, 0, ip, c1, c0, 0 \n\t"
+-			"dsb \n\t"
+-			"isb"
+-			: : : "ip" );
++		set_cr(get_cr() & ~CR_C);
+ 
+ 		flush_cache_louis();
+ 
+-		asm volatile (
+-			"clrex	\n\t"
+-			"mrc	p15, 0, ip, c1, c0, 1 \n\t"
+-			"bic	ip, ip, #(1 << 6) @ clear SMP bit \n\t"
+-			"mcr	p15, 0, ip, c1, c0, 1 \n\t"
+-			"isb \n\t"
+-			"dsb"
+-			: : : "ip" );
++		asm volatile ("clrex");
++		set_auxcr(get_auxcr() & ~(1 << 6));
+ 
+ 		return;
+ 	case 0:
+-- 
+1.8.0
+

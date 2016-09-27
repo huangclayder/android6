@@ -1,0 +1,166 @@
+From 4555dc664642013332a701ecb0beb1ae51d1b13d Mon Sep 17 00:00:00 2001
+From: zhang sanshan <b51434@freescale.com>
+Date: Thu, 20 Aug 2015 16:04:59 +0800
+Subject: [PATCH] MA-6995 Support wakeup_reason for 3.14 android kernel
+
+dd /sys/kernel/wakeup_reasons/last_resume_reason in android.
+This node record the wake_up intterupt number and intterupt info.
+Store wake_up interrupt in log_wakeup_reason.
+
+Signed-off-by: zhang sanshan <b51434@freescale.com>
+---
+ arch/arm/mach-imx/pm-imx6.c | 28 +++++++++++++++++++++++++++-
+ arch/arm/mach-imx/pm-imx7.c | 28 ++++++++++++++++++++++++++++
+ 2 files changed, 55 insertions(+), 1 deletion(-)
+
+diff --git a/arch/arm/mach-imx/pm-imx6.c b/arch/arm/mach-imx/pm-imx6.c
+index e1a45e2..1172002 100644
+--- a/arch/arm/mach-imx/pm-imx6.c
++++ b/arch/arm/mach-imx/pm-imx6.c
+@@ -29,6 +29,7 @@
+ #include <linux/of_platform.h>
+ #include <linux/regmap.h>
+ #include <linux/suspend.h>
++#include <linux/wakeup_reason.h>
+ #include <asm/cacheflush.h>
+ #include <asm/fncpy.h>
+ #include <asm/mach/map.h>
+@@ -129,6 +130,8 @@
+ #define QSPI_LCKER_LOCK		0x1
+ #define QSPI_LCKER_UNLOCK	0x2
+ 
++#define IMX6_GPC_IMR1_OFFSET  0x8
++#define IMX6_GPC_ISR1_OFFSET  0x18
+ enum qspi_regs_valuetype {
+ 	QSPI_PREDEFINED,
+ 	QSPI_RETRIEVED,
+@@ -273,6 +276,7 @@ static void __iomem *qspi_base;
+ static unsigned int ocram_size;
+ static void __iomem *ccm_base;
+ static void __iomem *suspend_ocram_base;
++static void __iomem *gpc_mem_base;
+ static void (*imx6_suspend_in_ocram_fn)(void __iomem *ocram_vbase);
+ struct regmap *romcp;
+ /*
+@@ -688,7 +692,9 @@ static int imx6q_pm_enter(suspend_state_t state)
+ {
+ 	unsigned int console_saved_reg[11] = {0};
+ 	static unsigned int ccm_ccgr4, ccm_ccgr6;
+-
++#ifdef CONFIG_SUSPEND
++	u32 imr[4], isr[4], i, irq_num, gpc_isr;
++#endif
+ 	if (imx_src_is_m4_enabled()) {
+ 		if (imx_gpc_is_m4_sleeping() && imx_mu_is_m4_in_low_freq()) {
+ 			imx_gpc_hold_m4_in_sleep();
+@@ -792,6 +798,25 @@ static int imx6q_pm_enter(suspend_state_t state)
+ 		return -EINVAL;
+ 	}
+ 
++#ifdef CONFIG_SUSPEND
++	for (i = 0; i < 4; i++) {
++		imr[i] = readl_relaxed(gpc_mem_base +
++					IMX6_GPC_IMR1_OFFSET + i * 4);
++		isr[i] = readl_relaxed(gpc_mem_base +
++					IMX6_GPC_ISR1_OFFSET + i * 4);
++		irq_num = (i + 1)*32;
++		if ((~imr[i]) & isr[i]) {
++			gpc_isr = (~imr[i]) & isr[i];
++			while (gpc_isr) {
++				if (gpc_isr & 0x1)
++					log_wakeup_reason(irq_num);
++				irq_num++;
++				gpc_isr /= 2;
++			}
++		}
++	}
++#endif
++
+ 	if (imx_src_is_m4_enabled()) {
+ 		imx_mu_enable_m4_irqs_in_gic(false);
+ 		imx_gpc_release_m4_in_sleep();
+@@ -1019,6 +1044,7 @@ static int __init imx6q_suspend_init(const struct imx6_pm_socdata *socdata)
+ 	pm_info->mmdc_num = socdata->mmdc_num;
+ 	mmdc_offset_array = socdata->mmdc_offset;
+ 
++	gpc_mem_base = pm_info->gpc_base.vbase;
+ 	/* initialize MMDC IO settings */
+ 	for (i = 0; i < pm_info->mmdc_io_num; i++) {
+ 		pm_info->mmdc_io_val[i][0] =
+diff --git a/arch/arm/mach-imx/pm-imx7.c b/arch/arm/mach-imx/pm-imx7.c
+index 95a2b17..84c5c27 100644
+--- a/arch/arm/mach-imx/pm-imx7.c
++++ b/arch/arm/mach-imx/pm-imx7.c
+@@ -28,6 +28,7 @@
+ #include <linux/of_platform.h>
+ #include <linux/regmap.h>
+ #include <linux/suspend.h>
++#include <linux/wakeup_reason.h>
+ #include <asm/cacheflush.h>
+ #include <asm/fncpy.h>
+ #include <asm/mach/map.h>
+@@ -58,6 +59,9 @@
+ #define UART_UBRC	0xac
+ #define UART_UTS	0xb4
+ 
++#define IMX7_GPC_IMR1_CORE0_A7_OFFSET  0x30
++#define IMX7_GPC_ISR1_A7_OFFSET  0x70
++
+ #define MAX_IOMUXC_GPR			23
+ #define MAX_UART_IO			4
+ #define MAX_CCM_LPCG			167
+@@ -129,6 +133,7 @@ static void __iomem *gpt1_base;
+ static void __iomem *system_counter_ctrl_base;
+ static void __iomem *system_counter_cmp_base;
+ static void __iomem *gpio1_base;
++static void __iomem *gpc_mem_base;
+ static void (*imx7_suspend_in_ocram_fn)(void __iomem *ocram_vbase);
+ struct imx7_cpu_pm_info *pm_info;
+ static bool lpsr_enabled;
+@@ -660,6 +665,10 @@ static int imx7_pm_is_resume_from_lpsr(void)
+ 
+ static int imx7_pm_enter(suspend_state_t state)
+ {
++#ifdef CONFIG_SUSPEND
++	u32 imr[4], isr[4], i, irq_num, gpc_isr;
++#endif
++
+ 	unsigned int console_saved_reg[10] = {0};
+ 
+ 	if (!iram_tlb_base_addr) {
+@@ -726,6 +735,24 @@ static int imx7_pm_enter(suspend_state_t state)
+ 	default:
+ 		return -EINVAL;
+ 	}
++#ifdef CONFIG_SUSPEND
++	for (i = 0; i < 4; i++) {
++		imr[i] = readl_relaxed(gpc_mem_base +
++					IMX7_GPC_IMR1_CORE0_A7_OFFSET + i * 4);
++		isr[i] = readl_relaxed(gpc_mem_base +
++					IMX7_GPC_ISR1_A7_OFFSET + i * 4);
++		irq_num = (i + 1)*32;
++		if ((~imr[i]) & isr[i]) {
++			gpc_isr =  (~imr[i]) & isr[i];
++			while (gpc_isr)  {
++				if (gpc_isr & 0x1)
++					log_wakeup_reason(irq_num);
++			irq_num++;
++			gpc_isr /= 2;
++			}
++		}
++	}
++#endif
+ 
+ 	return 0;
+ }
+@@ -923,6 +950,7 @@ static int __init imx7_suspend_init(const struct imx7_pm_socdata *socdata)
+ 	pm_info->ddrc_phy_num = socdata->ddrc_phy_num;
+ 	ddrc_phy_offset_array = socdata->ddrc_phy_offset;
+ 
++	gpc_mem_base = pm_info->gpc_base.vbase;
+ 	/* initialize DDRC settings */
+ 	for (i = 0; i < pm_info->ddrc_num; i++) {
+ 		pm_info->ddrc_val[i][0] = ddrc_offset_array[i][0];
+-- 
+1.8.0
+

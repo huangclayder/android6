@@ -1,0 +1,29 @@
+From 56c63af6d53644128ebf5fe209a324bbba621c5e Mon Sep 17 00:00:00 2001
+From: Wang Haoran <b50027@freescale.com>
+Date: Tue, 29 Jul 2014 16:45:25 +0800
+Subject: [PATCH 350/602] ENGR00324018 fix light sensor on sabreauto board
+
+Modify the correct node into the property. So that
+the light sensor works well.
+
+Signed-off-by: Wang Haoran <b50027@freescale.com>
+---
+ sabreauto_6q/init.rc | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/sabreauto_6q/init.rc b/sabreauto_6q/init.rc
+index ab0e260..d296f40 100644
+--- a/sabreauto_6q/init.rc
++++ b/sabreauto_6q/init.rc
+@@ -93,7 +93,7 @@ on boot
+     chmod 0660 /sys/class/backlight/pwm-backlight.0/brightness
+ 
+     # Set light sensor sysfs path and light sensor threshold lux value
+-    setprop ro.hardware.lightsensor "/sys/class/i2c-dev/i2c-2/device/2-0044/"
++    setprop ro.hardware.lightsensor "/sys/class/i2c-dev/i2c-1/device/1-0044/"
+     setprop ro.lightsensor.threshold  20
+ 
+     # No bluetooth hardware present
+-- 
+1.8.0
+

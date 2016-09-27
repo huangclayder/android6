@@ -1,0 +1,44 @@
+From cd71ea40cd2756db8c8a50209df468fb600024db Mon Sep 17 00:00:00 2001
+From: "Ye.Li" <B37916@freescale.com>
+Date: Mon, 30 Jun 2014 11:06:29 +0800
+Subject: [PATCH] ENGR00320350 iMX6SLEVK: Fix build warning of PCIE Phy power
+ down
+
+Since the iMX6SL does not have PCIE module, should not define the
+function "imx_set_pcie_phy_power_down" for it. Otherwise, get the
+build warning below:
+
+arch/arm/cpu/armv7/mx6/soc.c:446:13: warning: 'imx_set_pcie_phy_power_down'
+defined but not used [-Wunused-function]
+ static void imx_set_pcie_phy_power_down(void)
+
+Signed-off-by: Ye.Li <B37916@freescale.com>
+(cherry picked from commit 987c48c07c9ef62fa3fe55faa6f7369b30637127)
+Signed-off-by: Peng Fan <Peng.Fan@freescale.com>
+---
+ arch/arm/cpu/armv7/mx6/soc.c | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/arch/arm/cpu/armv7/mx6/soc.c b/arch/arm/cpu/armv7/mx6/soc.c
+index 496148d..51631ce 100644
+--- a/arch/arm/cpu/armv7/mx6/soc.c
++++ b/arch/arm/cpu/armv7/mx6/soc.c
+@@ -370,6 +370,7 @@ static void imx_set_vddpu_power_down(void)
+ 	writel(val, &anatop->reg_core_clr);
+ }
+ 
++#ifndef CONFIG_MX6SL
+ static void imx_set_pcie_phy_power_down(void)
+ {
+ 	u32 val;
+@@ -378,6 +379,7 @@ static void imx_set_pcie_phy_power_down(void)
+ 	val |= 0x1 << 18;
+ 	writel(val, IOMUXC_BASE_ADDR + 0x4);
+ }
++#endif
+ 
+ int arch_cpu_init(void)
+ {
+-- 
+1.8.0
+

@@ -1,0 +1,49 @@
+From fad3158429a433fa15e3101934888597b5c1ef8f Mon Sep 17 00:00:00 2001
+From: Haoran Wang <b50027@freescale.com>
+Date: Tue, 23 Jun 2015 16:50:42 +0800
+Subject: [PATCH 588/635] MA-6746 Increase sensor min delay to 10ms.
+
+As the mma8451 and mag3110 support 800Hz max data
+sample rate. So we increase to 100Hz in sensor HAL.
+
+That will fix the CTS case failure while it receive
+less data from the sensor device.
+
+Signed-off-by: Haoran Wang <b50027@freescale.com>
+---
+ libsensors/sensors.cpp | 8 ++++----
+ 1 file changed, 4 insertions(+), 4 deletions(-)
+
+diff --git a/libsensors/sensors.cpp b/libsensors/sensors.cpp
+index 1590fe4..622fdf3 100755
+--- a/libsensors/sensors.cpp
++++ b/libsensors/sensors.cpp
+@@ -1,5 +1,5 @@
+ /*
+- * Copyright (C) 2011-2014 Freescale Semiconductor, Inc.
++ * Copyright (C) 2011-2015 Freescale Semiconductor, Inc.
+  * Copyright (C) 2008 The Android Open Source Project
+  *
+  * Licensed under the Apache License, Version 2.0 (the "License");
+@@ -70,15 +70,15 @@ static const struct sensor_t sSensorList[] = {
+         { "Freescale 3-axis Accelerometer",
+           "Freescale Semiconductor Inc.",
+           1, SENSORS_ACCELERATION_HANDLE,
+-          SENSOR_TYPE_ACCELEROMETER, RANGE_A, CONVERT_A, 0.30f, 20000, 0, 32},
++          SENSOR_TYPE_ACCELEROMETER, RANGE_A, CONVERT_A, 0.30f, 10000, 0, 32},
+         { "Freescale 3-axis Magnetic field sensor",
+           "Freescale Semiconductor Inc.",
+           1, SENSORS_MAGNETIC_FIELD_HANDLE,
+-          SENSOR_TYPE_MAGNETIC_FIELD, 1500.0f, CONVERT_M, 0.50f, 100000, 0, 0},
++          SENSOR_TYPE_MAGNETIC_FIELD, 1500.0f, CONVERT_M, 0.50f, 10000, 0, 0},
+         { "Freescale Orientation sensor",
+           "Freescale Semiconductor Inc.",
+           1, SENSORS_ORIENTATION_HANDLE,
+-          SENSOR_TYPE_ORIENTATION, 360.0f, CONVERT_O, 0.50f, 100000, 0, 0},
++          SENSOR_TYPE_ORIENTATION, 360.0f, CONVERT_O, 0.50f, 10000, 0, 0},
+         { "ISL29023 Light sensor",
+           "Intersil",
+           1, SENSORS_LIGHT_HANDLE,
+-- 
+1.8.0
+

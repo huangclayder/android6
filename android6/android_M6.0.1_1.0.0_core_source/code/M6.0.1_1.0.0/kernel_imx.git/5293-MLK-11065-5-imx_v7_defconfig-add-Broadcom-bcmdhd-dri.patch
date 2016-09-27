@@ -1,0 +1,33 @@
+From a59be469da8b9db0d766c884e131917efaa7ecd3 Mon Sep 17 00:00:00 2001
+From: Dong Aisheng <b29396@freescale.com>
+Date: Thu, 12 Mar 2015 17:26:19 +0800
+Subject: [PATCH] MLK-11065-5 imx_v7_defconfig: add Broadcom bcmdhd driver
+ support
+
+Add Broadcom bcmdhd driver support.
+BTW, the in kernel upstream brcmfmac driver is removed to avoid confusion.
+
+Signed-off-by: Dong Aisheng <b29396@freescale.com>
+---
+ arch/arm/configs/imx_v7_defconfig | 5 ++++-
+ 1 file changed, 4 insertions(+), 1 deletion(-)
+
+diff --git a/arch/arm/configs/imx_v7_defconfig b/arch/arm/configs/imx_v7_defconfig
+index 0979b1a..034aae9 100644
+--- a/arch/arm/configs/imx_v7_defconfig
++++ b/arch/arm/configs/imx_v7_defconfig
+@@ -155,7 +155,10 @@ CONFIG_USB_NET_CDC_EEM=m
+ CONFIG_ATH_CARDS=y
+ CONFIG_ATH6KL=m
+ CONFIG_ATH6KL_SDIO=m
+-CONFIG_BRCMFMAC=m
++CONFIG_BCMDHD=m
++CONFIG_BCMDHD_SDIO=y
++CONFIG_BCMDHD_FW_PATH="/lib/firmware/bcm/fw_bcmdhd.bin"
++CONFIG_BCMDHD_NVRAM_PATH="/lib/firmware/bcm/bcmdhd.cal"
+ # CONFIG_INPUT_MOUSEDEV_PSAUX is not set
+ CONFIG_INPUT_EVDEV=y
+ CONFIG_INPUT_EVBUG=m
+-- 
+1.8.0
+

@@ -1,0 +1,39 @@
+From e2c7345dc0646aa697bdba53d2e9ea19e27b2599 Mon Sep 17 00:00:00 2001
+From: Peng Fan <Peng.Fan@freescale.com>
+Date: Mon, 30 Mar 2015 13:01:09 +0800
+Subject: [PATCH] MLK-10503 imx:mx6qp add missed macro
+
+is_mx6dqp should be only applied for MX6
+
+Signed-off-by: Peng Fan <Peng.Fan@freescale.com>
+(cherry picked from commit d860559f7913f16f7cb248f7b44140e8c1aa3ee9)
+---
+ arch/arm/imx-common/cpu.c | 5 ++++-
+ 1 file changed, 4 insertions(+), 1 deletion(-)
+
+diff --git a/arch/arm/imx-common/cpu.c b/arch/arm/imx-common/cpu.c
+index 74c08d7..7d0e5c0 100644
+--- a/arch/arm/imx-common/cpu.c
++++ b/arch/arm/imx-common/cpu.c
+@@ -175,6 +175,7 @@ int print_cpuinfo(void)
+ 
+ 	cpurev = get_cpu_rev();
+ 
++#if defined(CONFIG_MX6)
+ 	if (is_mx6dqp()) {
+ 		printf("CPU:   Freescale i.MX%sP rev%d.%d at %d MHz\n",
+ 			get_imx_type((cpurev & 0xFF000) >> 12),
+@@ -182,7 +183,9 @@ int print_cpuinfo(void)
+ 			(cpurev & 0x0000F) >> 0,
+ 			mxc_get_clock(MXC_ARM_CLK) / 1000000);
+ 
+-	} else {
++	} else
++#endif
++	{
+ 		printf("CPU:   Freescale i.MX%s rev%d.%d at %d MHz\n",
+ 			get_imx_type((cpurev & 0xFF000) >> 12),
+ 			(cpurev & 0x000F0) >> 4,
+-- 
+1.8.0
+

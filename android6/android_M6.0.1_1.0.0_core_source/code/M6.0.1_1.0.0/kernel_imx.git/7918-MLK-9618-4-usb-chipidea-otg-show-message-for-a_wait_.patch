@@ -1,0 +1,31 @@
+From 64861cfb2fb126d2b6f3eb6c0112c1b41ef33731 Mon Sep 17 00:00:00 2001
+From: Li Jun <b47624@freescale.com>
+Date: Thu, 16 Oct 2014 22:17:57 +0800
+Subject: [PATCH] MLK-9618-4 usb: chipidea: otg: show message for a_wait_bcon
+ time out
+
+When a host start a session and wait b device to connnect within
+TA_WAIT_BCON, if failed, should show a message 'Device no response'
+according to otg and EH compliance plan version 1.2 section 6.7.22
+
+Signed-off-by: Li Jun <b47624@freescale.com>
+(cherry picked from commit 1762592ead672d27b281df8becf90f8c7d7fe61c)
+---
+ drivers/usb/chipidea/otg_fsm.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/drivers/usb/chipidea/otg_fsm.c b/drivers/usb/chipidea/otg_fsm.c
+index 6f8d788..215ea57 100644
+--- a/drivers/usb/chipidea/otg_fsm.c
++++ b/drivers/usb/chipidea/otg_fsm.c
+@@ -358,6 +358,7 @@ static int a_wait_vfall_tmout(struct ci_hdrc *ci)
+ static int a_wait_bcon_tmout(struct ci_hdrc *ci)
+ {
+ 	ci->fsm.a_wait_bcon_tmout = 1;
++	dev_warn(ci->dev, "Device No Response\n");
+ 	return 0;
+ }
+ 
+-- 
+1.8.0
+

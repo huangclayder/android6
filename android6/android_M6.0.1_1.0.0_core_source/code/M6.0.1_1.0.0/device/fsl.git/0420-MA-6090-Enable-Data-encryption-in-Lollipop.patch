@@ -1,0 +1,30 @@
+From 7cc66d40558583be5f280451ba856fce6158faff Mon Sep 17 00:00:00 2001
+From: "guoyin.chen" <guoyin.chen@freescale.com>
+Date: Tue, 6 Jan 2015 11:44:43 +0800
+Subject: [PATCH 420/602] MA-6090 Enable Data encryption in Lollipop
+
+defaultcrypto need to be triggered for Data decryption
+Also support forceencrypt in fstab fir Data partition
+
+Signed-off-by: guoyin.chen <guoyin.chen@freescale.com>
+---
+ imx6/etc/init.rc | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/imx6/etc/init.rc b/imx6/etc/init.rc
+index 8c927e7..c1a4734 100755
+--- a/imx6/etc/init.rc
++++ b/imx6/etc/init.rc
+@@ -531,6 +531,9 @@ on property:sys.interactive="active"
+     chown system system /sys/devices/system/cpu/cpufreq/interactive/io_is_busy
+     chmod 0660 /sys/devices/system/cpu/cpufreq/interactive/io_is_busy
+ 
++on property:vold.decrypt=trigger_default_encryption
++    start defaultcrypto
++
+ on property:vold.decrypt=trigger_encryption
+     start surfaceflinger
+     start encrypt
+-- 
+1.8.0
+

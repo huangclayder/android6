@@ -1,0 +1,95 @@
+From 0f5dfb0b3d2072108c264a311a2f3974bf24874b Mon Sep 17 00:00:00 2001
+From: Haoran Wang <b50027@freescale.com>
+Date: Tue, 12 May 2015 10:18:27 +0800
+Subject: [PATCH 12/22] MA-6450 Added bcm wifi support
+
+Added bcm_supplicant for BCM4339.
+
+Signed-off-by: Haoran Wang <b50027@freescale.com>
+---
+ hostapd/Android.mk        | 25 +++++++++++++++++++++++++
+ wpa_supplicant/Android.mk | 32 ++++++++++++++++++++++++++++++++
+ 2 files changed, 57 insertions(+)
+
+diff --git a/hostapd/Android.mk b/hostapd/Android.mk
+index a4fa0b6..6d47908 100644
+--- a/hostapd/Android.mk
++++ b/hostapd/Android.mk
+@@ -914,6 +914,31 @@ include $(BUILD_EXECUTABLE)
+ 
+ ########################
+ include $(CLEAR_VARS)
++LOCAL_MODULE := bcm_hostapd
++LOCAL_MODULE_TAGS := optional
++ifdef CONFIG_DRIVER_CUSTOM
++LOCAL_STATIC_LIBRARIES := libCustomWifi
++endif
++ifneq ($(BOARD_HOSTAPD_PRIVATE_LIB_QCOM),)
++LOCAL_STATIC_LIBRARIES += $(BOARD_HOSTAPD_PRIVATE_LIB_BCM)
++endif
++LOCAL_SHARED_LIBRARIES := libc libcutils liblog libcrypto libssl
++ifdef CONFIG_DRIVER_NL80211
++ifneq ($(wildcard external/libnl),)
++LOCAL_SHARED_LIBRARIES += libnl
++else
++LOCAL_STATIC_LIBRARIES += libnl_2
++endif
++endif
++LOCAL_CFLAGS := $(L_CFLAGS)
++LOCAL_SRC_FILES := $(OBJS)
++LOCAL_C_INCLUDES := $(INCLUDES)
++include $(BUILD_EXECUTABLE)
++
++########################
++
++########################
++include $(CLEAR_VARS)
+ LOCAL_MODULE := hostapd
+ LOCAL_MODULE_TAGS := optional
+ ifdef CONFIG_DRIVER_CUSTOM
+diff --git a/wpa_supplicant/Android.mk b/wpa_supplicant/Android.mk
+index bb24c18..986eb60 100644
+--- a/wpa_supplicant/Android.mk
++++ b/wpa_supplicant/Android.mk
+@@ -1546,6 +1546,38 @@ include $(BUILD_EXECUTABLE)
+ 
+ ########################
+ include $(CLEAR_VARS)
++LOCAL_MODULE := bcm_supplicant
++ifdef CONFIG_DRIVER_CUSTOM
++LOCAL_STATIC_LIBRARIES := libCustomWifi
++endif
++ifneq ($(BOARD_WPA_SUPPLICANT_PRIVATE_LIB_QCOM),)
++LOCAL_STATIC_LIBRARIES += $(BOARD_WPA_SUPPLICANT_PRIVATE_LIB_BCM)
++endif
++LOCAL_SHARED_LIBRARIES := libc libcutils liblog
++ifdef CONFIG_EAP_PROXY
++LOCAL_STATIC_LIBRARIES += $(LIB_STATIC_EAP_PROXY)
++LOCAL_SHARED_LIBRARIES += $(LIB_SHARED_EAP_PROXY)
++endif
++ifeq ($(CONFIG_TLS), openssl)
++LOCAL_SHARED_LIBRARIES += libcrypto libssl libkeystore_binder
++endif
++ifdef CONFIG_DRIVER_NL80211
++ifneq ($(wildcard external/libnl),)
++LOCAL_SHARED_LIBRARIES += libnl
++else
++LOCAL_STATIC_LIBRARIES += libnl_2
++endif
++endif
++LOCAL_CFLAGS := $(L_CFLAGS)
++LOCAL_CFLAGS += -DREALTEK_WIFI_VENDOR
++LOCAL_SRC_FILES := $(OBJS)
++LOCAL_C_INCLUDES := $(INCLUDES)
++include $(BUILD_EXECUTABLE)
++
++########################
++
++########################
++include $(CLEAR_VARS)
+ LOCAL_MODULE := wpa_supplicant
+ ifdef CONFIG_DRIVER_CUSTOM
+ LOCAL_STATIC_LIBRARIES := libCustomWifi
+-- 
+1.8.0
+

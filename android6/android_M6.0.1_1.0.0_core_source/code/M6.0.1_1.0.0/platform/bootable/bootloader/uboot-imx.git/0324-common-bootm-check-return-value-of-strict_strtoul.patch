@@ -1,0 +1,40 @@
+From 79757d63a38c11751c9ff773915a28f5d2641349 Mon Sep 17 00:00:00 2001
+From: Peng Fan <Peng.Fan@freescale.com>
+Date: Tue, 24 Nov 2015 16:54:20 +0800
+Subject: [PATCH] common: bootm: check return value of strict_strtoul
+
+Before continue, check return value of strict_strtoul.
+
+Signed-off-by: Peng Fan <Peng.Fan@freescale.com>
+Cc: Albert Aribaud <albert.u.boot@aribaud.net>
+Cc: Simon Glass <sjg@chromium.org>
+Cc: Jan Kiszka <jan.kiszka@siemens.com>
+Cc: Joe Hershberger <joe.hershberger@ni.com>
+Cc: Hans de Goede <hdegoede@redhat.com>
+Cc: York Sun <yorksun@freescale.com>
+Cc: Tom Rini <trini@konsulko.com>
+Reviewed-by: Simon Glass <sjg@chromium.org>
+(cherry picked from commit bc3c89b1308281edceb67051a44026545dc7b505)
+---
+ arch/arm/lib/bootm.c | 5 ++++-
+ 1 file changed, 4 insertions(+), 1 deletion(-)
+
+diff --git a/arch/arm/lib/bootm.c b/arch/arm/lib/bootm.c
+index 2d6b676..ac24f6b 100644
+--- a/arch/arm/lib/bootm.c
++++ b/arch/arm/lib/bootm.c
+@@ -289,7 +289,10 @@ static void boot_jump_linux(bootm_headers_t *images, int flag)
+ 
+ 	s = getenv("machid");
+ 	if (s) {
+-		strict_strtoul(s, 16, &machid);
++		if (strict_strtoul(s, 16, &machid) < 0) {
++			debug("strict_strtoul failed!\n");
++			return;
++		}
+ 		printf("Using machid 0x%lx from environment\n", machid);
+ 	}
+ 
+-- 
+1.8.0
+

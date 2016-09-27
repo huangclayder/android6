@@ -1,0 +1,46 @@
+From 3b7fc13431ca1dd8dac91e7afd3a5dc241f7950e Mon Sep 17 00:00:00 2001
+From: Haoran Wang <b50027@freescale.com>
+Date: Thu, 31 Dec 2015 15:09:04 +0800
+Subject: [PATCH 4/4] MA-7398 Revert "Remove check for stream type in a2dp
+ hal_callbacks."
+
+This reverts commit a4f66355a304e869d22195fb7177756bb2243cff.
+The patch will route all of the event to the A2dpSink HAL callback.
+If the A2dpSink HAL cb exist it will receive the wrong event and
+will crash the Audio Service.
+
+Signed-off-by: Haoran Wang <b50027@freescale.com>
+---
+ btif/src/btif_av.c | 8 ++++----
+ 1 file changed, 4 insertions(+), 4 deletions(-)
+
+diff --git a/btif/src/btif_av.c b/btif/src/btif_av.c
+index a477072..b093e9f 100644
+--- a/btif/src/btif_av.c
++++ b/btif/src/btif_av.c
+@@ -246,18 +246,18 @@ static void btif_initiate_av_open_tmr_hdlr(TIMER_LIST_ENT *tle)
+ 
+ static void btif_report_connection_state(btav_connection_state_t state, bt_bdaddr_t *bd_addr)
+ {
+-    if (bt_av_sink_callbacks != NULL) {
++    if (btif_av_cb.peer_sep == AVDT_TSEP_SRC && bt_av_sink_callbacks != NULL) {
+         HAL_CBACK(bt_av_sink_callbacks, connection_state_cb, state, bd_addr);
+-    } else if (bt_av_src_callbacks != NULL) {
++    } else if (btif_av_cb.peer_sep == AVDT_TSEP_SNK && bt_av_src_callbacks != NULL) {
+         HAL_CBACK(bt_av_src_callbacks, connection_state_cb, state, bd_addr);
+     }
+ }
+ 
+ static void btif_report_audio_state(btav_audio_state_t state, bt_bdaddr_t *bd_addr)
+ {
+-    if (bt_av_sink_callbacks != NULL) {
++    if (btif_av_cb.peer_sep == AVDT_TSEP_SRC && bt_av_sink_callbacks != NULL) {
+         HAL_CBACK(bt_av_sink_callbacks, audio_state_cb, state, bd_addr);
+-    } else if (bt_av_src_callbacks != NULL) {
++    } else if (btif_av_cb.peer_sep == AVDT_TSEP_SNK && bt_av_src_callbacks != NULL) {
+         HAL_CBACK(bt_av_src_callbacks, audio_state_cb, state, bd_addr);
+     }
+ }
+-- 
+1.8.0
+

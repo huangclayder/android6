@@ -1,0 +1,21 @@
+From a5073a1d534d7192316673d5b05a014706c4b87f Mon Sep 17 00:00:00 2001
+From: Riku Voipio <riku.voipio@linaro.org>
+Date: Tue, 19 Feb 2013 10:07:17 +0200
+Subject: [PATCH] thumb2 kernels broken as kvm guests
+
+---
+ linaro/configs/kvm-guest.conf | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/linaro/configs/kvm-guest.conf b/linaro/configs/kvm-guest.conf
+index ff2da8b..ba20f8c 100644
+--- a/linaro/configs/kvm-guest.conf
++++ b/linaro/configs/kvm-guest.conf
+@@ -9,3 +9,4 @@ CONFIG_VIRTIO_BALLOON=y
+ CONFIG_VIRTIO_MMIO=y
+ CONFIG_VIRTIO_MMIO_CMDLINE_DEVICES=y
+ CONFIG_VIRTUALIZATION=y
++# CONFIG_THUMB2_KERNEL is not set
+-- 
+1.8.0
+

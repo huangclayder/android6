@@ -1,0 +1,34 @@
+From b7f3f9a6100519c784085ea9f6e575162555fb42 Mon Sep 17 00:00:00 2001
+From: Peng Fan <Peng.Fan@freescale.com>
+Date: Tue, 28 Apr 2015 18:30:26 +0800
+Subject: [PATCH] MLK-10774-52 nand: mxs correct MXS_DMA_ALIGNMENT
+
+We should align MXS_DMA_ALIGNMENT with ARCH_DMA_MINALIGN, otherwise
+we may encounter errors,
+"
+NAND:  ERROR: v7_dcache_inval_range - start address is not aligned - 0xbdf1d1a0
+ERROR: v7_dcache_inval_range - stop address is not aligned - 0xbdf1f4a0
+ERROR: v7_dcache_inval_range - start address is not aligned - 0xbdf1d1a0
+"
+
+Signed-off-by: Peng Fan <Peng.Fan@freescale.com>
+---
+ arch/arm/include/asm/imx-common/dma.h | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/arch/arm/include/asm/imx-common/dma.h b/arch/arm/include/asm/imx-common/dma.h
+index d38d2bf..c1aced9 100644
+--- a/arch/arm/include/asm/imx-common/dma.h
++++ b/arch/arm/include/asm/imx-common/dma.h
+@@ -22,7 +22,7 @@
+ #define	DMA_PIO_WORDS		CONFIG_ARCH_DMA_PIO_WORDS
+ #endif
+ 
+-#define MXS_DMA_ALIGNMENT	32
++#define MXS_DMA_ALIGNMENT	ARCH_DMA_MINALIGN
+ 
+ /*
+  * MXS DMA channels
+-- 
+1.8.0
+

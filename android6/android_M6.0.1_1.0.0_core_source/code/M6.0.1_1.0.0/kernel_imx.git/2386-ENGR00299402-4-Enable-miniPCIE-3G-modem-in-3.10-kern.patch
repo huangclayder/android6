@@ -1,0 +1,30 @@
+From 2e62538076275e7d76eb2c276ec5bc72e877c7ac Mon Sep 17 00:00:00 2001
+From: "guoyin.chen" <guoyin.chen@freescale.com>
+Date: Mon, 17 Feb 2014 16:37:00 +0800
+Subject: [PATCH] ENGR00299402-4 Enable miniPCIE 3G modem in 3.10 kernel
+
+Add minipcie_ctrl to control the power supply to miniPCIE 3G modem
+
+Signed-off-by: guoyin.chen <guoyin.chen@freescale.com>
+---
+ arch/arm/boot/dts/imx6qdl-sabresd.dtsi | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/arch/arm/boot/dts/imx6qdl-sabresd.dtsi b/arch/arm/boot/dts/imx6qdl-sabresd.dtsi
+index d6d54de..d1dc6aa 100644
+--- a/arch/arm/boot/dts/imx6qdl-sabresd.dtsi
++++ b/arch/arm/boot/dts/imx6qdl-sabresd.dtsi
+@@ -241,6 +241,10 @@
+ 		reset-delay-us = <50>;
+ 		#reset-cells = <0>;
+ 	};
++
++	minipcie_ctrl {
++		power-on-gpio = <&gpio3 19 0>;
++	};
+ };
+ 
+ &audmux {
+-- 
+1.8.0
+

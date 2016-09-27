@@ -1,0 +1,38 @@
+From fe66b4446d1c919e5f320ce2b3e5e80a4b289d3b Mon Sep 17 00:00:00 2001
+From: Richard Liu <r66033@freescale.com>
+Date: Fri, 9 Oct 2015 21:48:38 +0800
+Subject: [PATCH 32/45] MA-6455 add prop sys.device.type to control
+ avigationBar behavior
+
+NavigationBar will not show up on mx7d default display panel,
+the avigationBar layout behavior is auto controled by density,
+here we add prop sys.device.type to control avigationBar behavior
+to meet our request, we will set this prop to force enable
+avigationBar and forbid NavigationBar move on mx7d.
+
+Signed-off-by: Richard Liu <r66033@freescale.com>
+---
+ .../core/java/com/android/server/policy/PhoneWindowManager.java    | 7 +++++++
+ 1 file changed, 7 insertions(+)
+
+diff --git a/services/core/java/com/android/server/policy/PhoneWindowManager.java b/services/core/java/com/android/server/policy/PhoneWindowManager.java
+index 0d96ca6..6ce109c 100644
+--- a/services/core/java/com/android/server/policy/PhoneWindowManager.java
++++ b/services/core/java/com/android/server/policy/PhoneWindowManager.java
+@@ -1662,6 +1662,13 @@ public class PhoneWindowManager implements WindowManagerPolicy {
+             mHasNavigationBar = true;
+         }
+ 
++        //if device type is tablet force enable NavigationBar and forbid NavigationBar move
++        String deviceType = SystemProperties.get("sys.device.type");
++        if (! "".equals(deviceType) && deviceType.equals("tablet")) {
++            mNavigationBarCanMove = false;
++            mHasNavigationBar = true;
++        }
++
+         // For demo purposes, allow the rotation of the HDMI display to be controlled.
+         // By default, HDMI locks rotation to landscape.
+         if ("portrait".equals(SystemProperties.get("persist.demo.hdmirotation"))) {
+-- 
+1.8.0
+

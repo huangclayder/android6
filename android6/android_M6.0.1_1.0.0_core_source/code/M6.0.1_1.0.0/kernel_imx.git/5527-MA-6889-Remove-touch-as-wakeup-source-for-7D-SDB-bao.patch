@@ -1,0 +1,29 @@
+From f196acbdbfb03c497ae273ebae67f9e6902a49c0 Mon Sep 17 00:00:00 2001
+From: "guoyin.chen" <guoyin.chen@freescale.com>
+Date: Wed, 15 Jul 2015 13:42:33 +0800
+Subject: [PATCH] MA-6889 Remove touch as wakeup source for 7D SDB baord
+
+Remove wakeup define in 7D SDB touch dts
+
+Signed-off-by: guoyin.chen <guoyin.chen@freescale.com>
+---
+ arch/arm/boot/dts/imx7d-sdb-touch.dts | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/arch/arm/boot/dts/imx7d-sdb-touch.dts b/arch/arm/boot/dts/imx7d-sdb-touch.dts
+index ce94b42..dfba31e 100644
+--- a/arch/arm/boot/dts/imx7d-sdb-touch.dts
++++ b/arch/arm/boot/dts/imx7d-sdb-touch.dts
+@@ -27,7 +27,8 @@
+ 		ti,pressure-max = /bits/ 16 <0>;
+ 		ti,x-plat-ohms = /bits/ 16 <400>;
+ 		ti,yx_swap_en;
+-		linux,wakeup;
++		/* comment out wakeup for android requirement */
++		/* linux,wakeup;*/
+ 	};
+ };
+ 
+-- 
+1.8.0
+

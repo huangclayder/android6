@@ -1,0 +1,41 @@
+From bce2749afb96a11d00d8cc32001b611bc4a177a4 Mon Sep 17 00:00:00 2001
+From: Zhang Sanshan <b51434@freescale.com>
+Date: Tue, 5 May 2015 09:35:49 +0800
+Subject: [PATCH 095/115] MA-6610 [Android_MX7D_SD] OTA: Got error message
+ 'Server don't have upgrade package' when started to
+ upgrade. 100%
+
+add imx7 ota update package name.
+This patch enable imx7d online ota update.
+
+Signed-off-by: Zhang Sanshan <b51434@freescale.com>
+---
+ FSLOta/src/com/fsl/android/ota/OTAServerConfig.java | 5 ++++-
+ 1 file changed, 4 insertions(+), 1 deletion(-)
+
+diff --git a/FSLOta/src/com/fsl/android/ota/OTAServerConfig.java b/FSLOta/src/com/fsl/android/ota/OTAServerConfig.java
+index 2415fd0..9ed50a4 100644
+--- a/FSLOta/src/com/fsl/android/ota/OTAServerConfig.java
++++ b/FSLOta/src/com/fsl/android/ota/OTAServerConfig.java
+@@ -73,6 +73,7 @@ public class OTAServerConfig {
+ 			fileaddr = new String(product + "_" + android_name + "_" + version + "/" + product + ".ota.zip");
+ 			buildconfigAddr = new String(product + "_" + android_name + "_" + version + "/" + "build.prop");
+                         String boottype = SystemProperties.get("ro.boot.storage_type");
++			if (machineString.indexOf("i.MX6") != -1) {
+ 			if (machineString.indexOf("DualLite") != -1) {
+                                if (boottype.equals("sd"))
+                                   {fileaddr = fileaddr + ".imx6dl_sd";}
+@@ -96,7 +97,9 @@ public class OTAServerConfig {
+                               else
+ 			      fileaddr = fileaddr + ".imx6sx";
+ 			}
+-
++			} else if (machineString.indexOf("i.MX7") != -1) {
++			      fileaddr = fileaddr + ".imx7d";	
++			}
+ 			updatePackageURL = new URL(default_protocol, server, port, fileaddr);
+ 			buildpropURL = new URL(default_protocol, server, port, buildconfigAddr);
+ 		} catch (Exception e) {
+-- 
+1.8.0
+

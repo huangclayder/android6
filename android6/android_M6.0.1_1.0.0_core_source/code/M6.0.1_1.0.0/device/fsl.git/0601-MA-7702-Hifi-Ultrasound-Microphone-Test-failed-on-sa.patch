@@ -1,0 +1,319 @@
+From e1f5047e28cf17fff17859dce71d89d1270a59df Mon Sep 17 00:00:00 2001
+From: fang hui <hui.fang@nxp.com>
+Date: Thu, 3 Mar 2016 15:42:34 +0800
+Subject: [PATCH 601/602] MA-7702 - [Hifi Ultrasound Microphone Test]: failed
+ on sabresd-6dl, mm6.0
+
+The preprocess(aec, agc, ns) will filter out the high frenquncy signal.
+So there's litte 18000Hz - 20000Hz in the record file.
+
+Ref to nexus7, remove these preprocess.
+
+Signed-off-by: fang hui <hui.fang@nxp.com>
+---
+ evk_6sl/audio_effects.conf       | 34 ----------------------------------
+ evk_6ul/audio_effects.conf       | 34 ----------------------------------
+ sabreauto_6q/audio_effects.conf  | 34 ----------------------------------
+ sabreauto_6sx/audio_effects.conf | 34 ----------------------------------
+ sabresd_6dq/audio_effects.conf   | 34 ----------------------------------
+ sabresd_6sx/audio_effects.conf   | 34 ----------------------------------
+ sabresd_7d/audio_effects.conf    | 34 ----------------------------------
+ 7 files changed, 238 deletions(-)
+
+diff --git a/evk_6sl/audio_effects.conf b/evk_6sl/audio_effects.conf
+index 97bc7e1..6231e26 100755
+--- a/evk_6sl/audio_effects.conf
++++ b/evk_6sl/audio_effects.conf
+@@ -140,37 +140,3 @@ effects {
+ # TODO: add default audio pre processor configurations after debug and tuning phase
+ #
+ 
+-pre_processing {
+-  mic {
+-      ns {
+-      }
+-      agc {
+-      }
+-      aec {
+-      }
+-  }
+-  voice_communication {
+-      ns {
+-      }
+-      agc {
+-      }
+-      aec {
+-      }
+-  }
+-  camcorder {
+-      ns {
+-      }
+-      agc {
+-      }
+-      aec {
+-      }
+-  }
+-  voice_recognition {
+-      ns {
+-      }
+-      agc {
+-      }
+-      aec {
+-      }
+-  }
+-}
+diff --git a/evk_6ul/audio_effects.conf b/evk_6ul/audio_effects.conf
+index 97bc7e1..6231e26 100755
+--- a/evk_6ul/audio_effects.conf
++++ b/evk_6ul/audio_effects.conf
+@@ -140,37 +140,3 @@ effects {
+ # TODO: add default audio pre processor configurations after debug and tuning phase
+ #
+ 
+-pre_processing {
+-  mic {
+-      ns {
+-      }
+-      agc {
+-      }
+-      aec {
+-      }
+-  }
+-  voice_communication {
+-      ns {
+-      }
+-      agc {
+-      }
+-      aec {
+-      }
+-  }
+-  camcorder {
+-      ns {
+-      }
+-      agc {
+-      }
+-      aec {
+-      }
+-  }
+-  voice_recognition {
+-      ns {
+-      }
+-      agc {
+-      }
+-      aec {
+-      }
+-  }
+-}
+diff --git a/sabreauto_6q/audio_effects.conf b/sabreauto_6q/audio_effects.conf
+index 97bc7e1..6231e26 100644
+--- a/sabreauto_6q/audio_effects.conf
++++ b/sabreauto_6q/audio_effects.conf
+@@ -140,37 +140,3 @@ effects {
+ # TODO: add default audio pre processor configurations after debug and tuning phase
+ #
+ 
+-pre_processing {
+-  mic {
+-      ns {
+-      }
+-      agc {
+-      }
+-      aec {
+-      }
+-  }
+-  voice_communication {
+-      ns {
+-      }
+-      agc {
+-      }
+-      aec {
+-      }
+-  }
+-  camcorder {
+-      ns {
+-      }
+-      agc {
+-      }
+-      aec {
+-      }
+-  }
+-  voice_recognition {
+-      ns {
+-      }
+-      agc {
+-      }
+-      aec {
+-      }
+-  }
+-}
+diff --git a/sabreauto_6sx/audio_effects.conf b/sabreauto_6sx/audio_effects.conf
+index 97bc7e1..6231e26 100644
+--- a/sabreauto_6sx/audio_effects.conf
++++ b/sabreauto_6sx/audio_effects.conf
+@@ -140,37 +140,3 @@ effects {
+ # TODO: add default audio pre processor configurations after debug and tuning phase
+ #
+ 
+-pre_processing {
+-  mic {
+-      ns {
+-      }
+-      agc {
+-      }
+-      aec {
+-      }
+-  }
+-  voice_communication {
+-      ns {
+-      }
+-      agc {
+-      }
+-      aec {
+-      }
+-  }
+-  camcorder {
+-      ns {
+-      }
+-      agc {
+-      }
+-      aec {
+-      }
+-  }
+-  voice_recognition {
+-      ns {
+-      }
+-      agc {
+-      }
+-      aec {
+-      }
+-  }
+-}
+diff --git a/sabresd_6dq/audio_effects.conf b/sabresd_6dq/audio_effects.conf
+index 97bc7e1..6231e26 100644
+--- a/sabresd_6dq/audio_effects.conf
++++ b/sabresd_6dq/audio_effects.conf
+@@ -140,37 +140,3 @@ effects {
+ # TODO: add default audio pre processor configurations after debug and tuning phase
+ #
+ 
+-pre_processing {
+-  mic {
+-      ns {
+-      }
+-      agc {
+-      }
+-      aec {
+-      }
+-  }
+-  voice_communication {
+-      ns {
+-      }
+-      agc {
+-      }
+-      aec {
+-      }
+-  }
+-  camcorder {
+-      ns {
+-      }
+-      agc {
+-      }
+-      aec {
+-      }
+-  }
+-  voice_recognition {
+-      ns {
+-      }
+-      agc {
+-      }
+-      aec {
+-      }
+-  }
+-}
+diff --git a/sabresd_6sx/audio_effects.conf b/sabresd_6sx/audio_effects.conf
+index 97bc7e1..6231e26 100644
+--- a/sabresd_6sx/audio_effects.conf
++++ b/sabresd_6sx/audio_effects.conf
+@@ -140,37 +140,3 @@ effects {
+ # TODO: add default audio pre processor configurations after debug and tuning phase
+ #
+ 
+-pre_processing {
+-  mic {
+-      ns {
+-      }
+-      agc {
+-      }
+-      aec {
+-      }
+-  }
+-  voice_communication {
+-      ns {
+-      }
+-      agc {
+-      }
+-      aec {
+-      }
+-  }
+-  camcorder {
+-      ns {
+-      }
+-      agc {
+-      }
+-      aec {
+-      }
+-  }
+-  voice_recognition {
+-      ns {
+-      }
+-      agc {
+-      }
+-      aec {
+-      }
+-  }
+-}
+diff --git a/sabresd_7d/audio_effects.conf b/sabresd_7d/audio_effects.conf
+index 97bc7e1..6231e26 100755
+--- a/sabresd_7d/audio_effects.conf
++++ b/sabresd_7d/audio_effects.conf
+@@ -140,37 +140,3 @@ effects {
+ # TODO: add default audio pre processor configurations after debug and tuning phase
+ #
+ 
+-pre_processing {
+-  mic {
+-      ns {
+-      }
+-      agc {
+-      }
+-      aec {
+-      }
+-  }
+-  voice_communication {
+-      ns {
+-      }
+-      agc {
+-      }
+-      aec {
+-      }
+-  }
+-  camcorder {
+-      ns {
+-      }
+-      agc {
+-      }
+-      aec {
+-      }
+-  }
+-  voice_recognition {
+-      ns {
+-      }
+-      agc {
+-      }
+-      aec {
+-      }
+-  }
+-}
+-- 
+1.8.0
+

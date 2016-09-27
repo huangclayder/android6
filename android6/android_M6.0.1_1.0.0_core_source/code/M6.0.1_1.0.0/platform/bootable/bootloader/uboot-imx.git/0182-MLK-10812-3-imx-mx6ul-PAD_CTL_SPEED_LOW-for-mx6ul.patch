@@ -1,0 +1,28 @@
+From 6d383f8b190cf9749fa93780ac19a48239bdb7f0 Mon Sep 17 00:00:00 2001
+From: Peng Fan <Peng.Fan@freescale.com>
+Date: Mon, 4 May 2015 14:30:34 +0800
+Subject: [PATCH] MLK-10812-3 imx:mx6ul PAD_CTL_SPEED_LOW for mx6ul
+
+PAD_CTL_SPEED_LOW for mx6ul same with mx6sx.
+
+Signed-off-by: Peng Fan <Peng.Fan@freescale.com>
+---
+ arch/arm/include/asm/imx-common/iomux-v3.h | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/arch/arm/include/asm/imx-common/iomux-v3.h b/arch/arm/include/asm/imx-common/iomux-v3.h
+index 49c21d6..c1ceb51 100644
+--- a/arch/arm/include/asm/imx-common/iomux-v3.h
++++ b/arch/arm/include/asm/imx-common/iomux-v3.h
+@@ -128,7 +128,7 @@ typedef u64 iomux_v3_cfg_t;
+ 
+ #define PAD_CTL_ODE		(1 << 11)
+ 
+-#ifdef CONFIG_MX6SX
++#if defined(CONFIG_MX6SX) || defined(CONFIG_MX6UL)
+ #define PAD_CTL_SPEED_LOW	(0 << 6)
+ #else
+ #define PAD_CTL_SPEED_LOW	(1 << 6)
+-- 
+1.8.0
+

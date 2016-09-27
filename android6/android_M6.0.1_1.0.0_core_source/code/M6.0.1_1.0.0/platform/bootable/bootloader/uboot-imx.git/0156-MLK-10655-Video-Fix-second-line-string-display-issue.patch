@@ -1,0 +1,50 @@
+From bd265a064c8f797e542955352d170e7f20f7b0d1 Mon Sep 17 00:00:00 2001
+From: "Ye.Li" <B37916@freescale.com>
+Date: Tue, 14 Apr 2015 17:27:14 +0800
+Subject: [PATCH] MLK-10655 Video: Fix second line string display issue
+
+The string display on second line repeats the last word of
+first line and does not show full.
+This is the bug introduced by the fixing to MLK-10542.
+
+Signed-off-by: Ye.Li <B37916@freescale.com>
+(cherry picked from commit ac430cee8c42f0acad9e126631d772b99f1166ea)
+(cherry picked from commit ff62c5b275a9b5e47d570d3eb10622799bf12070)
+---
+ drivers/video/cfb_console.c | 9 +++++----
+ 1 file changed, 5 insertions(+), 4 deletions(-)
+
+diff --git a/drivers/video/cfb_console.c b/drivers/video/cfb_console.c
+index 9079ac4..6a6f650 100644
+--- a/drivers/video/cfb_console.c
++++ b/drivers/video/cfb_console.c
+@@ -2043,12 +2043,14 @@ static void *video_logo(void)
+ 
+ 	if (len > space) {
+ 		int xx = VIDEO_INFO_X, yy = VIDEO_INFO_Y;
++		uchar *p = (uchar *) info;
+ 		while (len) {
+ 			if (len > space) {
+-				video_drawchars(xx, yy,
+-					(uchar *) info + (y_off * space), space);
++				video_drawchars(xx, yy, p, space);
+ 				len -= space;
+ 
++				p = (uchar *) p + space;
++
+ 				if (!y_off) {
+ 					xx += VIDEO_FONT_WIDTH;
+ 					space--;
+@@ -2057,8 +2059,7 @@ static void *video_logo(void)
+ 
+ 				y_off++;
+ 			} else {
+-				video_drawchars(xx, yy,
+-					(uchar *) info + (y_off * space), len);
++				video_drawchars(xx, yy, p, len);
+ 				len = 0;
+ 			}
+ 		}
+-- 
+1.8.0
+

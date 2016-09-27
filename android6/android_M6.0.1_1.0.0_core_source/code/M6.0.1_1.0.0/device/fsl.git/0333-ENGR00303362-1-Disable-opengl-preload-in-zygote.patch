@@ -1,0 +1,29 @@
+From a7ddce5a2c9ee2f1108cc29fa443bbf172a5a0e1 Mon Sep 17 00:00:00 2001
+From: "guoyin.chen" <guoyin.chen@freescale.com>
+Date: Mon, 17 Mar 2014 14:27:21 +0800
+Subject: [PATCH 333/602] ENGR00303362-1 Disable opengl preload in zygote
+
+Follow the init.rc way to define property's value
+
+Signed-off-by: guoyin.chen <guoyin.chen@freescale.com>
+---
+ imx6/etc/init.rc | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/imx6/etc/init.rc b/imx6/etc/init.rc
+index 9c3244c..7d1ee52 100755
+--- a/imx6/etc/init.rc
++++ b/imx6/etc/init.rc
+@@ -393,6 +393,9 @@ on boot
+     setprop ro.FSL_FLAC_PARSER 1
+     setprop ro.FSL_MPG2_PARSER 1
+ 
++# don't preload OpenGL in Zygote, the Vivante drivers do not like it
++    setprop ro.zygote.disable_gl_preload true
++
+ # ALSA mixer naming define
+     setprop alsa.mixer.playback.master Playback
+     setprop alsa.mixer.capture.master Capture
+-- 
+1.8.0
+

@@ -1,0 +1,101 @@
+From e28e695d4c9e3e23a0f08ce694f6f9ceab0fbaae Mon Sep 17 00:00:00 2001
+From: "guoyin.chen" <guoyin.chen@freescale.com>
+Date: Thu, 26 Mar 2015 14:54:02 +0800
+Subject: [PATCH] MA-6461-2 Enable pstore ram console for android
+
+Add ramoops to imx7d sdb board with reserved memory
+from memblock
+
+Signed-off-by: guoyin.chen <guoyin.chen@freescale.com>
+---
+ arch/arm/boot/dts/imx7d-sdb.dts |  9 +++++++++
+ arch/arm/mach-imx/mach-imx7d.c  | 41 +++++++++++++++++++++++++++++++++++++++++
+ 2 files changed, 50 insertions(+)
+
+diff --git a/arch/arm/boot/dts/imx7d-sdb.dts b/arch/arm/boot/dts/imx7d-sdb.dts
+index 262b310..2e30249 100644
+--- a/arch/arm/boot/dts/imx7d-sdb.dts
++++ b/arch/arm/boot/dts/imx7d-sdb.dts
+@@ -94,6 +94,15 @@
+ 			spi-max-frequency = <100000>;
+ 		};
+ 	};
++
++    ramoops_device {
++		compatible = "fsl,mxc_ramoops";
++		record_size = <524288>; /*512K*/
++		console_size= <262144>; /*256K*/
++		ftrace_size= <262144>;  /*256K*/
++		dump_oops = <1>;
++		status = "okay";
++	};
+ };
+ 
+ &fec1 {
+diff --git a/arch/arm/mach-imx/mach-imx7d.c b/arch/arm/mach-imx/mach-imx7d.c
+index 5a61da5..eef09de 100644
+--- a/arch/arm/mach-imx/mach-imx7d.c
++++ b/arch/arm/mach-imx/mach-imx7d.c
+@@ -14,6 +14,8 @@
+ #include <linux/regmap.h>
+ #include <linux/mfd/syscon.h>
+ #include <linux/mfd/syscon/imx7-iomuxc-gpr.h>
++#include <linux/memblock.h>
++#include <asm/setup.h>
+ 
+ #include "common.h"
+ 
+@@ -120,11 +122,50 @@ static void __init imx7d_map_io(void)
+ 	imx7_pm_map_io();
+ }
+ 
++extern unsigned long int ramoops_phys_addr;
++extern unsigned long int ramoops_mem_size;
++static void imx7d_reserve(void)
++{
++	phys_addr_t phys;
++	phys_addr_t max_phys;
++	struct meminfo *mi;
++	struct membank *bank;
++
++#ifdef CONFIG_PSTORE_RAM
++	mi = &meminfo;
++	if (!mi) {
++		pr_err("no memory reserve for ramoops.\n");
++		return;
++	}
++	/* use memmory bank 0 for ram console store */
++	bank = &mi->bank[0];
++	if (!bank) {
++		pr_err("no memory reserve for ramoops.\n");
++		return;
++	}
++	max_phys = bank->start + bank->size;
++	/* reserve 256M for uboot avoid ram console data is cleaned by uboot */
++	phys = memblock_alloc_base(SZ_1M, SZ_4K, max_phys - SZ_256M);
++	if (phys) {
++		memblock_remove(phys, SZ_1M);
++		memblock_reserve(phys, SZ_1M);
++		ramoops_phys_addr = phys;
++		ramoops_mem_size = SZ_1M;
++	} else {
++		ramoops_phys_addr = 0;
++		ramoops_mem_size = 0;
++		pr_err("no memory reserve for ramoops.\n");
++	}
++#endif
++	return;
++}
++
+ DT_MACHINE_START(IMX7D, "Freescale i.MX7 Dual (Device Tree)")
+ 	.map_io		= imx7d_map_io,
+ 	.smp            = smp_ops(imx_smp_ops),
+ 	.init_irq	= imx7d_init_irq,
+ 	.init_machine	= imx7d_init_machine,
+ 	.dt_compat	= imx7d_dt_compat,
++	.reserve     = imx7d_reserve,
+ 	.restart	= mxc_restart,
+ MACHINE_END
+-- 
+1.8.0
+

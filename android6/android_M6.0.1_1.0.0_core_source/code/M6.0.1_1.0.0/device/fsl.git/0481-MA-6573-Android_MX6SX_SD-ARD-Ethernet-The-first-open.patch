@@ -1,0 +1,29 @@
+From ed5a8bc0f848cf57d817d9e9dd8965b4c5996998 Mon Sep 17 00:00:00 2001
+From: Zhang Sanshan <b51434@freescale.com>
+Date: Fri, 24 Apr 2015 17:17:59 +0800
+Subject: [PATCH 481/602] MA-6573 [Android_MX6SX_SD/ARD] Ethernet: The first
+ open time of ethernet more than 5 sceonds . 80%
+
+fix ethernet apk selinux issue.
+
+Signed-off-by: Zhang Sanshan <b51434@freescale.com>
+---
+ imx6/sepolicy/system_app.te | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/imx6/sepolicy/system_app.te b/imx6/sepolicy/system_app.te
+index dc3f9af..cf90a3a 100644
+--- a/imx6/sepolicy/system_app.te
++++ b/imx6/sepolicy/system_app.te
+@@ -2,4 +2,8 @@ allow system_app system_app_data_file:notdevfile_class_set rw_file_perms;
+ allow system_app cache_file:dir { rw_file_perms add_name create };
+ allow system_app cache_file:file  { rw_file_perms create };
+ allow system_app caam_device:chr_file  rw_file_perms;
++allow system_app net_radio_prop:property_service  { set };
++allow system_app net_radio_prop:property_service  { set };
++allow system_app ctl_default_prop:property_service  { set };
++allow system_app dhcp_prop:property_service  { set };
+ 
+-- 
+1.8.0
+

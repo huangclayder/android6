@@ -1,0 +1,31 @@
+From abb1fb93b264f082c6a908cd5a9a69db99ec64c6 Mon Sep 17 00:00:00 2001
+From: Nimrod Andy <B38611@freescale.com>
+Date: Thu, 11 Dec 2014 09:20:32 +0800
+Subject: [PATCH] net: fec: clear all interrupt events to support i.MX6SX
+
+For i.MX6SX FEC controller, there have interrupt mask and event
+field extension. To support all SOCs FEC, we clear all interrupt
+events during MAVC initial process.
+
+Signed-off-by: Fugang Duan <B38611@freescale.com>
+Signed-off-by: David S. Miller <davem@davemloft.net>
+---
+ drivers/net/ethernet/freescale/fec_main.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/net/ethernet/freescale/fec_main.c b/drivers/net/ethernet/freescale/fec_main.c
+index ba0a702..1782209 100644
+--- a/drivers/net/ethernet/freescale/fec_main.c
++++ b/drivers/net/ethernet/freescale/fec_main.c
+@@ -944,7 +944,7 @@ fec_restart(struct net_device *ndev)
+ 	}
+ 
+ 	/* Clear any outstanding interrupt. */
+-	writel(0xffc00000, fep->hwp + FEC_IEVENT);
++	writel(0xffffffff, fep->hwp + FEC_IEVENT);
+ 
+ 	fec_enet_bd_init(ndev);
+ 
+-- 
+1.8.0
+

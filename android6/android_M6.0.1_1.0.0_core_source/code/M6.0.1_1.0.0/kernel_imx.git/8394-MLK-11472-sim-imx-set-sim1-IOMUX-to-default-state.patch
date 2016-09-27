@@ -1,0 +1,40 @@
+From ab4f79c78b250505d925dde079b9d0f5a19dcc54 Mon Sep 17 00:00:00 2001
+From: Gao Pan <b54642@freescale.com>
+Date: Tue, 1 Sep 2015 13:14:08 +0800
+Subject: [PATCH] MLK-11472 sim: imx: set sim1 IOMUX to default state
+
+SIM1 IOMUX is changed into reset state in LPSR mode.As a result,
+sim can't work again.
+
+This patch sets sim1 IOMUX to default state after existing from LPSR mode.
+
+Signed-off-by: Gao Pan <b54642@freescale.com>
+---
+ drivers/mxc/sim/imx_sim.c | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/drivers/mxc/sim/imx_sim.c b/drivers/mxc/sim/imx_sim.c
+index 13c11e8..318f9d7 100755
+--- a/drivers/mxc/sim/imx_sim.c
++++ b/drivers/mxc/sim/imx_sim.c
+@@ -1842,6 +1842,8 @@ static int sim_suspend(struct platform_device *pdev, pm_message_t state)
+ 	if (sim->open_cnt)
+ 		clk_disable_unprepare(sim->clk);
+ 
++	pinctrl_pm_select_sleep_state(&pdev->dev);
++
+ 	return 0;
+ }
+ 
+@@ -1852,6 +1854,8 @@ static int sim_resume(struct platform_device *pdev)
+ 	if (sim->open_cnt)
+ 		clk_prepare_enable(sim->clk);
+ 
++	pinctrl_pm_select_default_state(&pdev->dev);
++
+ 	return 0;
+ }
+ #else
+-- 
+1.8.0
+

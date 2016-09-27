@@ -1,0 +1,47 @@
+From c9f3cca3a136a76a5658601f55251f0305729413 Mon Sep 17 00:00:00 2001
+From: Victor Kamensky <victor.kamensky@linaro.org>
+Date: Thu, 12 Jun 2014 09:30:12 -0700
+Subject: [PATCH] ARM64: KVM: set and get of sys registers in BE case
+
+Since size of all sys registers is always 8 bytes. Current
+code is actually endian agnostic. Just clean it up a bit.
+Removed comment about little endian. Change type of pointer
+from 'void *' to 'u64 *' to enforce stronger type checking.
+
+Signed-off-by: Victor Kamensky <victor.kamensky@linaro.org>
+Acked-by: Christoffer Dall <christoffer.dall@linaro.org>
+Acked-by: Marc Zyngier <marc.zyngier@arm.com>
+Signed-off-by: Marc Zyngier <marc.zyngier@arm.com>
+(cherry picked from commit 26c99af1018c35020cfad1d20f02acb224807655)
+Signed-off-by: Christoffer Dall <christoffer.dall@linaro.org>
+---
+ arch/arm64/kvm/sys_regs.c | 6 ++----
+ 1 file changed, 2 insertions(+), 4 deletions(-)
+
+diff --git a/arch/arm64/kvm/sys_regs.c b/arch/arm64/kvm/sys_regs.c
+index 34f25a5..f0cecef 100644
+--- a/arch/arm64/kvm/sys_regs.c
++++ b/arch/arm64/kvm/sys_regs.c
+@@ -776,17 +776,15 @@ static struct sys_reg_desc invariant_sys_regs[] = {
+ 	  NULL, get_ctr_el0 },
+ };
+ 
+-static int reg_from_user(void *val, const void __user *uaddr, u64 id)
++static int reg_from_user(u64 *val, const void __user *uaddr, u64 id)
+ {
+-	/* This Just Works because we are little endian. */
+ 	if (copy_from_user(val, uaddr, KVM_REG_SIZE(id)) != 0)
+ 		return -EFAULT;
+ 	return 0;
+ }
+ 
+-static int reg_to_user(void __user *uaddr, const void *val, u64 id)
++static int reg_to_user(void __user *uaddr, const u64 *val, u64 id)
+ {
+-	/* This Just Works because we are little endian. */
+ 	if (copy_to_user(uaddr, val, KVM_REG_SIZE(id)) != 0)
+ 		return -EFAULT;
+ 	return 0;
+-- 
+1.8.0
+

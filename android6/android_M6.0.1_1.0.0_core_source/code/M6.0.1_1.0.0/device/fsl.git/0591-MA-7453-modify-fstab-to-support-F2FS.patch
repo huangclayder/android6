@@ -1,0 +1,141 @@
+From abd482e9dffd72c5188d290deb55a549bc66411d Mon Sep 17 00:00:00 2001
+From: Chu Tingqiang <Chu Tingqiang@freescale.com>
+Date: Mon, 4 Jan 2016 16:36:57 +0800
+Subject: [PATCH 591/602] MA-7453 modify fstab to support F2FS
+
+modify device/fsl/xxx/xxx-f2fs.freescale to support data and cache partition as f2fs
+modify device/fsl/common/tools/fsl-sdcard-partition-f2fs.sh to support formate cache patitionas f2fs
+
+Signed-off-by: Tingqiang.Chu <b57177@freescale.com>
+---
+ common/tools/fsl-sdcard-partition-f2fs.sh | 2 +-
+ evk_6sl/fstab-f2fs.freescale              | 3 ++-
+ sabreauto_6q/fstab-f2fs.freescale         | 3 ++-
+ sabreauto_6sx/fstab-f2fs.freescale        | 3 ++-
+ sabresd_6dq/fstab-f2fs.freescale          | 3 ++-
+ sabresd_6dq/fstab_sd-f2fs.freescale       | 3 ++-
+ sabresd_6sx/fstab-f2fs.freescale          | 3 ++-
+ sabresd_7d/fstab-f2fs.freescale           | 3 ++-
+ 8 files changed, 15 insertions(+), 8 deletions(-)
+
+diff --git a/common/tools/fsl-sdcard-partition-f2fs.sh b/common/tools/fsl-sdcard-partition-f2fs.sh
+index fed808d..36403b4 100755
+--- a/common/tools/fsl-sdcard-partition-f2fs.sh
++++ b/common/tools/fsl-sdcard-partition-f2fs.sh
+@@ -89,7 +89,7 @@ function format_android
+     echo "formating android images"
+     mkfs.f2fs ${node}${part}4 -l data
+     mkfs.ext4 ${node}${part}5 -Lsystem
+-    mkfs.ext4 ${node}${part}6 -Lcache
++    mkfs.f2fs ${node}${part}6 -l cache
+     mkfs.ext4 ${node}${part}7 -Ldevice
+ }
+ 
+diff --git a/evk_6sl/fstab-f2fs.freescale b/evk_6sl/fstab-f2fs.freescale
+index eda6e45..9a4577e 100644
+--- a/evk_6sl/fstab-f2fs.freescale
++++ b/evk_6sl/fstab-f2fs.freescale
+@@ -6,8 +6,9 @@
+ /devices/soc0/soc.1/2100000.aips-bus/2190000.usdhc/mmc_host* auto auto defaults voldmanaged=sdcard:auto,encryptable=userdata
+ /devices/soc0/soc.1/2100000.aips-bus/2184200.usb/ci_hdrc.1* auto auto defaults voldmanaged=usb:auto
+ /dev/block/mmcblk1p5    /system      ext4    ro                                                                               wait
+-/dev/block/mmcblk1p4    /data        f2fs    nosuid,nodev,noatime    wait,encryptable=/dev/block/mmcblk1p9
++/dev/block/mmcblk1p4    /data        f2fs    noatime,nosuid,nodev                          				       wait,check,encryptable=/dev/block/mmcblk1p9
+ /dev/block/mmcblk1p4    /data        ext4    nosuid,nodev,nodiratime,noatime,nomblk_io_submit,noauto_da_alloc,errors=panic    wait,encryptable=/dev/block/mmcblk1p9
++/dev/block/mmcblk1p6    /cache       f2fs    noatime,nosuid,nodev                 	   				       wait,check
+ /dev/block/mmcblk1p6    /cache       ext4    nosuid,nodev,nomblk_io_submit                                                    wait
+ /dev/block/mmcblk1p7    /device      ext4    ro,nosuid,nodev                                                                  wait
+ /dev/block/mmcblk1p1    /boot        emmc    defaults                                                                         defaults
+diff --git a/sabreauto_6q/fstab-f2fs.freescale b/sabreauto_6q/fstab-f2fs.freescale
+index f6e3656..b5cb5cd 100644
+--- a/sabreauto_6q/fstab-f2fs.freescale
++++ b/sabreauto_6q/fstab-f2fs.freescale
+@@ -6,8 +6,9 @@
+ /devices/soc0/soc.0/2100000.aips-bus/2190000.usdhc/mmc_host* auto auto defaults voldmanaged=sdcard:auto,encryptable=userdata
+ /devices/soc0/soc.0/2100000.aips-bus/2184000.usb/ci_hdrc.0*  auto auto defaults voldmanaged=usb:auto
+ /dev/block/mmcblk2p5    /system      ext4    ro                                                                               wait
+-/dev/block/mmcblk2p4    /data        f2fs    nosuid,nodev,noatime    wait,encryptable=/dev/block/mmcblk2p9
++/dev/block/mmcblk2p4    /data        f2fs    noatime,nosuid,nodev  	                  				       wait,check,encryptable=/dev/block/mmcblk2p9
+ /dev/block/mmcblk2p4    /data        ext4    nosuid,nodev,nodiratime,noatime,nomblk_io_submit,noauto_da_alloc,errors=panic    wait,encryptable=/dev/block/mmcblk2p9
++/dev/block/mmcblk2p6    /cache       f2fs    noatime,nosuid,nodev       	             				       wait,check
+ /dev/block/mmcblk2p6    /cache       ext4    nosuid,nodev,nomblk_io_submit                                                    wait
+ /dev/block/mmcblk2p7    /device      ext4    ro,nosuid,nodev                                                                  wait
+ /dev/block/mmcblk2p1    /boot        emmc    defaults                                                                         defaults
+diff --git a/sabreauto_6sx/fstab-f2fs.freescale b/sabreauto_6sx/fstab-f2fs.freescale
+index 00a6ed4..bdda022 100644
+--- a/sabreauto_6sx/fstab-f2fs.freescale
++++ b/sabreauto_6sx/fstab-f2fs.freescale
+@@ -6,8 +6,9 @@
+ /devices/soc0/soc.0/2100000.aips-bus/219c000.usdhc/mmc_host* auto auto defaults voldmanaged=sdcard:auto,encryptable=userdata
+ /devices/soc0/soc.0/2100000.aips-bus/2184000.usb/ci_hdrc.0*  auto auto defaults voldmanaged=usb:auto
+ /dev/block/mmcblk2p5    /system      ext4    ro                                                                               wait
+-/dev/block/mmcblk2p4    /data        f2fs    nosuid,nodev,noatime    wait,encryptable=/dev/block/mmcblk2p9
++/dev/block/mmcblk2p4    /data        f2fs    noatime,nosuid,nodev  	                                                       wait,check,encryptable=/dev/block/mmcblk2p9
+ /dev/block/mmcblk2p4    /data        ext4    nosuid,nodev,nodiratime,noatime,nomblk_io_submit,noauto_da_alloc,errors=panic    wait,encryptable=/dev/block/mmcblk2p9
++/dev/block/mmcblk2p6    /cache       f2fs    noatime,nosuid,nodev         	                                               wait,check
+ /dev/block/mmcblk2p6    /cache       ext4    nosuid,nodev,nomblk_io_submit                                                    wait
+ /dev/block/mmcblk2p7    /device      ext4    ro,nosuid,nodev                                                                  wait
+ /dev/block/mmcblk2p1    /boot        emmc    defaults                                                                         defaults
+diff --git a/sabresd_6dq/fstab-f2fs.freescale b/sabresd_6dq/fstab-f2fs.freescale
+index 94ce50c..b78a290 100644
+--- a/sabresd_6dq/fstab-f2fs.freescale
++++ b/sabresd_6dq/fstab-f2fs.freescale
+@@ -6,8 +6,9 @@
+ /devices/soc0/soc.0/2100000.aips-bus/2198000.usdhc/mmc_host* auto auto defaults voldmanaged=sdcard:auto,encryptable=userdata
+ /devices/soc0/soc.0/2100000.aips-bus/2184000.usb/ci_hdrc.0*  auto auto defaults voldmanaged=usb:auto
+ /dev/block/mmcblk3p5    /system      ext4    ro                                                                               wait
+-/dev/block/mmcblk3p4    /data        f2fs    nosuid,nodev,noatime    wait,encryptable=/dev/block/mmcblk3p9
++/dev/block/mmcblk3p4    /data        f2fs    noatime,nosuid,nodev  	                                                       wait,check,encryptable=/dev/block/mmcblk3p9
+ /dev/block/mmcblk3p4    /data        ext4    nosuid,nodev,nodiratime,noatime,nomblk_io_submit,noauto_da_alloc,errors=panic    wait,encryptable=/dev/block/mmcblk3p9
++/dev/block/mmcblk3p6    /cache       f2fs    noatime,nosuid,nodev	                                                       wait,check
+ /dev/block/mmcblk3p6    /cache       ext4    nosuid,nodev,nomblk_io_submit                                                    wait
+ /dev/block/mmcblk3p7    /device      ext4    ro,nosuid,nodev                                                                  wait
+ /dev/block/mmcblk3p1    /boot        emmc    defaults                                                                         defaults
+diff --git a/sabresd_6dq/fstab_sd-f2fs.freescale b/sabresd_6dq/fstab_sd-f2fs.freescale
+index 6a62ec7..6d187d2 100644
+--- a/sabresd_6dq/fstab_sd-f2fs.freescale
++++ b/sabresd_6dq/fstab_sd-f2fs.freescale
+@@ -6,8 +6,9 @@
+ /devices/soc0/soc.0/2100000.aips-bus/2194000.usdhc/mmc_host* auto auto defaults voldmanaged=sdcard:auto,encryptable=userdata
+ /devices/soc0/soc.0/2100000.aips-bus/2184000.usb/ci_hdrc.0*  auto auto defaults voldmanaged=usb:auto
+ /dev/block/mmcblk2p5    /system      ext4    ro                                                                               wait
+-/dev/block/mmcblk2p4    /data        f2fs    nosuid,nodev,noatime    wait,encryptable=/dev/block/mmcblk2p9
++/dev/block/mmcblk2p4    /data        f2fs    noatime,nosuid,nodev    	                                                       wait,check,encryptable=/dev/block/mmcblk2p9
+ /dev/block/mmcblk2p4    /data        ext4    nosuid,nodev,nodiratime,noatime,nomblk_io_submit,noauto_da_alloc,errors=panic    wait,encryptable=/dev/block/mmcblk2p9
++/dev/block/mmcblk2p6    /cache       f2fs    noatime,nosuid,nodev	                                                       wait,check
+ /dev/block/mmcblk2p6    /cache       ext4    nosuid,nodev,nomblk_io_submit                                                    wait
+ /dev/block/mmcblk2p7    /device      ext4    ro,nosuid,nodev                                                                  wait
+ /dev/block/mmcblk2p1    /boot        emmc    defaults                                                                         defaults
+diff --git a/sabresd_6sx/fstab-f2fs.freescale b/sabresd_6sx/fstab-f2fs.freescale
+index 16a30d4..2dc391c 100644
+--- a/sabresd_6sx/fstab-f2fs.freescale
++++ b/sabresd_6sx/fstab-f2fs.freescale
+@@ -6,8 +6,9 @@
+ /devices/soc0/soc.0/2100000.aips-bus/2198000.usdhc/mmc_host* auto auto defaults voldmanaged=sdcard:auto,encryptable=userdata
+ /devices/soc0/soc.0/2100000.aips-bus/2184200.usb/ci_hdrc.1*  auto auto defaults voldmanaged=usb:auto
+ /dev/block/mmcblk3p5    /system      ext4    ro                                                                               wait
+-/dev/block/mmcblk3p4    /data        f2fs    nosuid,nodev,noatime    wait,encryptable=/dev/block/mmcblk3p9
++/dev/block/mmcblk3p4    /data        f2fs    noatime,nosuid,nodev                	                                       wait,check,encryptable=/dev/block/mmcblk3p9
+ /dev/block/mmcblk3p4    /data        ext4    nosuid,nodev,nodiratime,noatime,nomblk_io_submit,noauto_da_alloc,errors=panic    wait,encryptable=/dev/block/mmcblk3p9
++/dev/block/mmcblk3p6    /cache       f2fs    noatime,nosuid,nodev        	                                               wait,check
+ /dev/block/mmcblk3p6    /cache       ext4    nosuid,nodev,nomblk_io_submit                                                    wait
+ /dev/block/mmcblk3p7    /device      ext4    ro,nosuid,nodev                                                                  wait
+ /dev/block/mmcblk3p1    /boot        emmc    defaults                                                                         defaults
+diff --git a/sabresd_7d/fstab-f2fs.freescale b/sabresd_7d/fstab-f2fs.freescale
+index 1c226fe..8579fff 100644
+--- a/sabresd_7d/fstab-f2fs.freescale
++++ b/sabresd_7d/fstab-f2fs.freescale
+@@ -4,8 +4,9 @@
+ # specify MF_CHECK, and must come before any filesystems that do specify MF_CHECK
+ /devices/soc.3/30800000.aips-bus/30b20000.usb/ci_hdrc.1* auto auto defaults voldmanaged=usb:auto
+ /dev/block/mmcblk0p5    /system      ext4    ro                                                                               wait
+-/dev/block/mmcblk0p4    /data        f2fs    nosuid,nodev,noatime    wait,encryptable=/dev/block/mmcblk0p9
++/dev/block/mmcblk0p4    /data        f2fs    noatime,nosuid,nodev    	                                                       wait,check,encryptable=/dev/block/mmcblk0p9
+ /dev/block/mmcblk0p4    /data        ext4    nosuid,nodev,nodiratime,noatime,nomblk_io_submit,noauto_da_alloc,errors=panic    wait,encryptable=/dev/block/mmcblk0p9
++/dev/block/mmcblk0p6    /cache       f2fs    noatime,nosuid,nodev                                                             wait,check
+ /dev/block/mmcblk0p6    /cache       ext4    nosuid,nodev,nomblk_io_submit                                                    wait
+ /dev/block/mmcblk0p7    /device      ext4    ro,nosuid,nodev                                                                  wait
+ /dev/block/mmcblk0p1    /boot        emmc    defaults                                                                         defaults
+-- 
+1.8.0
+

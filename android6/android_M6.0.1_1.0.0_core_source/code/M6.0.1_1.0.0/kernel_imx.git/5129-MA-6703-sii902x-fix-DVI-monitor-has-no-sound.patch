@@ -1,0 +1,30 @@
+From 2089866c464b4c7345bef07eade2c93d18291030 Mon Sep 17 00:00:00 2001
+From: Shengjiu Wang <shengjiu.wang@freescale.com>
+Date: Tue, 26 May 2015 13:08:21 +0800
+Subject: [PATCH] MA-6703: sii902x: fix DVI monitor has no sound
+
+When HDMI device, export the uevent, otherwise, don't export the
+hotplugin/out event.
+
+Signed-off-by: Shengjiu Wang <shengjiu.wang@freescale.com>
+---
+ drivers/video/mxc/mxsfb_sii902x.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/drivers/video/mxc/mxsfb_sii902x.c b/drivers/video/mxc/mxsfb_sii902x.c
+index d841f12..caca07a 100644
+--- a/drivers/video/mxc/mxsfb_sii902x.c
++++ b/drivers/video/mxc/mxsfb_sii902x.c
+@@ -309,7 +309,8 @@ static void det_worker(struct work_struct *work)
+ 		sprintf(event_string, "EVENT=plugin");
+ 		sii902x_cable_connected();
+ #ifdef CONFIG_SWITCH
+-		switch_set_state(&sii902x.sdev_audio, 1);
++		if (sii902x.edid_cfg.hdmi_cap)
++			switch_set_state(&sii902x.sdev_audio, 1);
+ #endif
+ 	} else {
+ 		sii902x.cable_plugin = 0;
+-- 
+1.8.0
+

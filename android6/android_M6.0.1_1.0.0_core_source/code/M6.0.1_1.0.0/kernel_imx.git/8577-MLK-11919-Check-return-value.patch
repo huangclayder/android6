@@ -1,0 +1,40 @@
+From 182b7584cf0469e3bdf6dfe34aeeb16510882db5 Mon Sep 17 00:00:00 2001
+From: Hongzhang Yang <Hongzhang.Yang@freescale.com>
+Date: Fri, 27 Nov 2015 14:35:30 +0800
+Subject: [PATCH] MLK-11919 Check return value
+
+Coverity reported:
+CID 17590 (#1 of 1): Unchecked return value (CHECKED_RETURN)
+1. check_return: Calling device_reset without checking return value
+
+Fixed the warning by checking return value of device_reset.
+
+Signed-off-by: Hongzhang Yang <Hongzhang.Yang@freescale.com>
+---
+ drivers/mxc/vpu/mxc_vpu.c | 5 +++--
+ 1 file changed, 3 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/mxc/vpu/mxc_vpu.c b/drivers/mxc/vpu/mxc_vpu.c
+index 6a2a699..2dba082 100644
+--- a/drivers/mxc/vpu/mxc_vpu.c
++++ b/drivers/mxc/vpu/mxc_vpu.c
+@@ -1,5 +1,5 @@
+ /*
+- * Copyright 2006-2014 Freescale Semiconductor, Inc. All Rights Reserved.
++ * Copyright 2006-2015 Freescale Semiconductor, Inc. All Rights Reserved.
+  */
+ 
+ /*
+@@ -175,7 +175,8 @@ static int cpu_is_mx6q(void)
+ static void vpu_reset(void)
+ {
+ #if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 10, 0)
+-	device_reset(vpu_dev);
++	if (device_reset(vpu_dev))
++		dev_err(vpu_dev, "failed to reset vpu\n");
+ #elif LINUX_VERSION_CODE >= KERNEL_VERSION(3, 5, 0)
+ 	imx_src_reset_vpu();
+ #else
+-- 
+1.8.0
+

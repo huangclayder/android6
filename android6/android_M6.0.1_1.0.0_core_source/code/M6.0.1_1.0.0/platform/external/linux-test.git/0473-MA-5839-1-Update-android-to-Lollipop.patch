@@ -1,0 +1,27 @@
+From c4fc95051b8292697b7a4ae587136bfe02452d60 Mon Sep 17 00:00:00 2001
+From: "guoyin.chen" <guoyin.chen@freescale.com>
+Date: Mon, 10 Nov 2014 10:32:02 +0800
+Subject: [PATCH 473/505] MA-5839-1 Update android to Lollipop
+
+Add mx6sx_modules.c into Android.mk
+
+Signed-off-by: guoyin.chen <guoyin.chen@freescale.com>
+---
+ test/memtool/Android.mk | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/test/memtool/Android.mk b/test/memtool/Android.mk
+index 0ae363d..b0ba623 100755
+--- a/test/memtool/Android.mk
++++ b/test/memtool/Android.mk
+@@ -6,6 +6,7 @@ LOCAL_SRC_FILES := \
+        memtool.c \
+        mx6dl_modules.c \
+        mx6q_modules.c \
++       mx6sx_modules.c \
+        mx6sl_modules.c
+ 
+ #LOCAL_CFLAGS += -DBUILD_FOR_ANDROID
+-- 
+1.8.0
+

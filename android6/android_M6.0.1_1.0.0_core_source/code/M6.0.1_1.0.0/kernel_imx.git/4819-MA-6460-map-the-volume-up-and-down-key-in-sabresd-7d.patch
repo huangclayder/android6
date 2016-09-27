@@ -1,0 +1,66 @@
+From a4c7540bb4805efbbef21ff0a3cb06e39d0e96c9 Mon Sep 17 00:00:00 2001
+From: Zhang Sanshan <b51434@freescale.com>
+Date: Wed, 25 Mar 2015 21:48:49 +0800
+Subject: [PATCH] MA-6460 map the volume up and down key in sabresd-7d board
+
+map volume up key to s1
+map volume down key to s3
+
+Signed-off-by: Zhang Sanshan <b51434@freescale.com>
+---
+ arch/arm/boot/dts/imx7d-sdb.dts |  6 ++++++
+ arch/arm/boot/dts/imx7d.dtsi    | 21 +++++++++++++++++++++
+ 2 files changed, 27 insertions(+)
+
+diff --git a/arch/arm/boot/dts/imx7d-sdb.dts b/arch/arm/boot/dts/imx7d-sdb.dts
+index f32ba1d..262b310 100644
+--- a/arch/arm/boot/dts/imx7d-sdb.dts
++++ b/arch/arm/boot/dts/imx7d-sdb.dts
+@@ -313,6 +313,12 @@
+ 				MX7D_PAD_UART3_CTS_B__GPIO4_IO7	0x14
+ 			>;
+ 		};
++		pinctrl_gpio_keys: gpio_keysgrp {
++			fsl,pins = <
++				MX7D_PAD_SD2_RESET_B__GPIO5_IO11	0x59
++				MX7D_PAD_SD2_WP__GPIO5_IO10  		0x59
++                        >;
++                };
+ 
+ 		pinctrl_enet1: enet1grp {
+ 			fsl,pins = <
+diff --git a/arch/arm/boot/dts/imx7d.dtsi b/arch/arm/boot/dts/imx7d.dtsi
+index b3c6b111..9f82805 100644
+--- a/arch/arm/boot/dts/imx7d.dtsi
++++ b/arch/arm/boot/dts/imx7d.dtsi
+@@ -87,6 +87,27 @@
+ 		};
+ 
+ 	};
++	gpio-keys {
++		compatible = "gpio-keys";
++		pinctrl-names = "default";
++		pinctrl-0 = <&pinctrl_gpio_keys>;
++
++
++                /* map vol up and vol down key in Android*/
++		volume-up {
++			label = "Volume Up";
++			gpios = <&gpio5 11 1>;
++			gpio-key;
++			linux,code = <KEY_VOLUMEUP>;
++		};
++		volume-down {
++			label = "Volume Down";
++			gpios = <&gpio5 10 1>;
++			gpio-key;
++			linux,code = <KEY_VOLUMEDOWN>;
++		};
++
++	};
+ 
+ 	timer {
+ 		compatible = "arm,armv7-timer";
+-- 
+1.8.0
+

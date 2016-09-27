@@ -1,0 +1,288 @@
+From f1be3cae0320a472db7944c43485eed378b74f58 Mon Sep 17 00:00:00 2001
+From: Peng Fan <Peng.Fan@freescale.com>
+Date: Fri, 31 Jul 2015 10:44:11 +0800
+Subject: [PATCH] MLK-11263-2 video: epdc: move setup_waveform_file to board
+ common
+
+Since setup_waveform_file in different boards code have same implementation,
+move setup_waveform_file to board common code. Also rename it to
+board_setup_waveform_file
+
+This patch also fix a bug when using flush_cache. We should pass
+'waveform_buf' to flush_cache, but not a string named 'addr'.
+
+Signed-off-by: Peng Fan <Peng.Fan@freescale.com>
+---
+ board/freescale/common/epdc_setup.c                | 36 ++++++++++++++++++++++
+ board/freescale/mx6sabresd/mx6sabresd.c            | 36 ----------------------
+ board/freescale/mx6slevk/mx6slevk.c                | 36 ----------------------
+ .../mx7d_12x12_lpddr3_arm2.c                       | 36 ----------------------
+ board/freescale/mx7dsabresd/mx7dsabresd.c          | 36 ----------------------
+ drivers/video/mxc_epdc_fb.c                        |  2 +-
+ include/mxc_epdc_fb.h                              |  2 +-
+ 7 files changed, 38 insertions(+), 146 deletions(-)
+
+diff --git a/board/freescale/common/epdc_setup.c b/board/freescale/common/epdc_setup.c
+index 30622b8..8ca3595 100644
+--- a/board/freescale/common/epdc_setup.c
++++ b/board/freescale/common/epdc_setup.c
+@@ -22,6 +22,42 @@ __weak int check_mmc_autodetect(void)
+ 	return 0;
+ }
+ 
++int board_setup_waveform_file(ulong waveform_buf)
++{
++	char *fs_argv[5];
++	char addr[17];
++	ulong file_len, mmc_dev;
++
++	if (!check_mmc_autodetect())
++		mmc_dev = getenv_ulong("mmcdev", 10, 0);
++	else
++		mmc_dev = mmc_get_env_devno();
++
++	sprintf(addr, "%lx", waveform_buf);
++
++	fs_argv[0] = "fatload";
++	fs_argv[1] = "mmc";
++	fs_argv[2] = simple_itoa(mmc_dev);
++	fs_argv[3] = addr;
++	fs_argv[4] = getenv("epdc_waveform");
++
++	if (!fs_argv[4])
++		fs_argv[4] = "epdc_splash.bin";
++
++	if (do_fat_fsload(NULL, 0, 5, fs_argv)) {
++		printf("File %s not found on MMC Device %lu!\n", fs_argv[4], mmc_dev);
++		return -1;
++	}
++
++	file_len = getenv_hex("filesize", 0);
++	if (!file_len)
++		return -1;
++
++	flush_cache(waveform_buf, file_len);
++
++	return 0;
++}
++
+ int board_setup_logo_file(void *display_buf)
+ {
+ 	int logo_width, logo_height;
+diff --git a/board/freescale/mx6sabresd/mx6sabresd.c b/board/freescale/mx6sabresd/mx6sabresd.c
+index ca67658..e145912 100644
+--- a/board/freescale/mx6sabresd/mx6sabresd.c
++++ b/board/freescale/mx6sabresd/mx6sabresd.c
+@@ -549,42 +549,6 @@ static void setup_epdc_power(void)
+ 	gpio_direction_output(IMX_GPIO_NR(2, 20), 1);
+ }
+ 
+-int setup_waveform_file(ulong waveform_buf)
+-{
+-	char *fs_argv[5];
+-	char addr[17];
+-	ulong file_len, mmc_dev;
+-
+-	if (!check_mmc_autodetect())
+-		mmc_dev = getenv_ulong("mmcdev", 10, 0);
+-	else
+-		mmc_dev = mmc_get_env_devno();
+-
+-	sprintf(addr, "%lx", waveform_buf);
+-
+-	fs_argv[0] = "fatload";
+-	fs_argv[1] = "mmc";
+-	fs_argv[2] = simple_itoa(mmc_dev);
+-	fs_argv[3] = addr;
+-	fs_argv[4] = getenv("epdc_waveform");
+-
+-	if (!fs_argv[4])
+-		fs_argv[4] = "epdc_splash.bin";
+-
+-	if (do_fat_fsload(NULL, 0, 5, fs_argv)) {
+-		printf("MMC Device %lu not found\n", mmc_dev);
+-		return -1;
+-	}
+-
+-	file_len = getenv_hex("filesize", 0);
+-	if (!file_len)
+-		return -1;
+-
+-	flush_cache((ulong)addr, file_len);
+-
+-	return 0;
+-}
+-
+ static void epdc_enable_pins(void)
+ {
+ 	/* epdc iomux settings */
+diff --git a/board/freescale/mx6slevk/mx6slevk.c b/board/freescale/mx6slevk/mx6slevk.c
+index 93e56c1..b796175 100644
+--- a/board/freescale/mx6slevk/mx6slevk.c
++++ b/board/freescale/mx6slevk/mx6slevk.c
+@@ -606,42 +606,6 @@ static void setup_epdc_power(void)
+ 	gpio_direction_output(IMX_GPIO_NR(2, 7), 1);
+ }
+ 
+-int setup_waveform_file(ulong waveform_buf)
+-{
+-	char *fs_argv[5];
+-	char addr[17];
+-	ulong file_len, mmc_dev;
+-
+-	if (!check_mmc_autodetect())
+-		mmc_dev = getenv_ulong("mmcdev", 10, 0);
+-	else
+-		mmc_dev = mmc_get_env_devno();
+-
+-	sprintf(addr, "%lx", waveform_buf);
+-
+-	fs_argv[0] = "fatload";
+-	fs_argv[1] = "mmc";
+-	fs_argv[2] = simple_itoa(mmc_dev);
+-	fs_argv[3] = addr;
+-	fs_argv[4] = getenv("epdc_waveform");
+-
+-	if (!fs_argv[4])
+-		fs_argv[4] = "epdc_splash.bin";
+-
+-	if (do_fat_fsload(NULL, 0, 5, fs_argv)) {
+-		printf("MMC Device %lu not found\n", mmc_dev);
+-		return -1;
+-	}
+-
+-	file_len = getenv_hex("filesize", 0);
+-	if (!file_len)
+-		return -1;
+-
+-	flush_cache((ulong)addr, file_len);
+-
+-	return 0;
+-}
+-
+ static void epdc_enable_pins(void)
+ {
+ 	/* epdc iomux settings */
+diff --git a/board/freescale/mx7d_12x12_lpddr3_arm2/mx7d_12x12_lpddr3_arm2.c b/board/freescale/mx7d_12x12_lpddr3_arm2/mx7d_12x12_lpddr3_arm2.c
+index 7bed3ad..41892a4 100644
+--- a/board/freescale/mx7d_12x12_lpddr3_arm2/mx7d_12x12_lpddr3_arm2.c
++++ b/board/freescale/mx7d_12x12_lpddr3_arm2/mx7d_12x12_lpddr3_arm2.c
+@@ -672,42 +672,6 @@ static void setup_epdc_power(void)
+ 	gpio_direction_output(IMX_GPIO_NR(4, 20), 1);
+ }
+ 
+-int setup_waveform_file(ulong waveform_buf)
+-{
+-	char *fs_argv[5];
+-	char addr[17];
+-	ulong file_len, mmc_dev;
+-
+-	if (!check_mmc_autodetect())
+-		mmc_dev = getenv_ulong("mmcdev", 10, 0);
+-	else
+-		mmc_dev = mmc_get_env_devno();
+-
+-	sprintf(addr, "%lx", waveform_buf);
+-
+-	fs_argv[0] = "fatload";
+-	fs_argv[1] = "mmc";
+-	fs_argv[2] = simple_itoa(mmc_dev);
+-	fs_argv[3] = addr;
+-	fs_argv[4] = getenv("epdc_waveform");
+-
+-	if (!fs_argv[4])
+-		fs_argv[4] = "epdc_splash.bin";
+-
+-	if (do_fat_fsload(NULL, 0, 5, fs_argv)) {
+-		printf("File %s not found on MMC Device %lu \n", fs_argv[4], mmc_dev);
+-		return -1;
+-	}
+-
+-	file_len = getenv_hex("filesize", 0);
+-	if (!file_len)
+-		return -1;
+-
+-	flush_cache((ulong)addr, file_len);
+-
+-	return 0;
+-}
+-
+ static void epdc_enable_pins(void)
+ {
+ 	/* epdc iomux settings */
+diff --git a/board/freescale/mx7dsabresd/mx7dsabresd.c b/board/freescale/mx7dsabresd/mx7dsabresd.c
+index 8d15b63..30d4b29 100644
+--- a/board/freescale/mx7dsabresd/mx7dsabresd.c
++++ b/board/freescale/mx7dsabresd/mx7dsabresd.c
+@@ -782,42 +782,6 @@ static void setup_epdc_power(void)
+ 	gpio_direction_output(IMX_GPIO_NR(2, 30), 1);
+ }
+ 
+-int setup_waveform_file(ulong waveform_buf)
+-{
+-	char *fs_argv[5];
+-	char addr[17];
+-	ulong file_len, mmc_dev;
+-
+-	if (!check_mmc_autodetect())
+-		mmc_dev = getenv_ulong("mmcdev", 10, 0);
+-	else
+-		mmc_dev = mmc_get_env_devno();
+-
+-	sprintf(addr, "%lx", waveform_buf);
+-
+-	fs_argv[0] = "fatload";
+-	fs_argv[1] = "mmc";
+-	fs_argv[2] = simple_itoa(mmc_dev);
+-	fs_argv[3] = addr;
+-	fs_argv[4] = getenv("epdc_waveform");
+-
+-	if (!fs_argv[4])
+-		fs_argv[4] = "epdc_splash.bin";
+-
+-	if (do_fat_fsload(NULL, 0, 5, fs_argv)) {
+-		printf("File %s not found on MMC Device %lu \n", fs_argv[4], mmc_dev);
+-		return -1;
+-	}
+-
+-	file_len = getenv_hex("filesize", 0);
+-	if (!file_len)
+-		return -1;
+-
+-	flush_cache((ulong)addr, file_len);
+-
+-	return 0;
+-}
+-
+ static void epdc_enable_pins(void)
+ {
+ 	/* epdc iomux settings */
+diff --git a/drivers/video/mxc_epdc_fb.c b/drivers/video/mxc_epdc_fb.c
+index f50c509..6bbb905 100644
+--- a/drivers/video/mxc_epdc_fb.c
++++ b/drivers/video/mxc_epdc_fb.c
+@@ -439,7 +439,7 @@ void lcd_ctrl_init(void *lcdbase)
+ 		REG_WR(EPDC_BASE, EPDC_WB_ADDR_TCE, panel_info.epdc_data.working_buf_addr);
+ 
+ 	/* Get waveform data address and offset */
+-	if (setup_waveform_file(panel_info.epdc_data.waveform_buf_addr)) {
++	if (board_setup_waveform_file(panel_info.epdc_data.waveform_buf_addr)) {
+ 		printf("Can't load waveform data!\n");
+ 		return;
+ 	}
+diff --git a/include/mxc_epdc_fb.h b/include/mxc_epdc_fb.h
+index 4f16a96..d5a2136 100644
+--- a/include/mxc_epdc_fb.h
++++ b/include/mxc_epdc_fb.h
+@@ -555,7 +555,7 @@ enum {
+ 	EPDC_VERSION_STEP_OFFSET = 0,
+ };
+ 
+-int setup_waveform_file(ulong waveform_buf);
++int board_setup_waveform_file(ulong waveform_buf);
+ int board_setup_logo_file(void *display_buf);
+ void epdc_power_on(void);
+ void epdc_power_off(void);
+-- 
+1.8.0
+

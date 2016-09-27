@@ -1,0 +1,29 @@
+From 32b9263ca863573ed7432c668181b306620ecac9 Mon Sep 17 00:00:00 2001
+From: Haoran Wang <b50027@freescale.com>
+Date: Mon, 11 May 2015 13:23:27 +0800
+Subject: [PATCH] MA-6376-3 Enable sensors in Android for sabresd_7d
+
+Enable FXAS2700, FXOS8700 and MPL3115 in Android.
+
+Signed-off-by: Haoran Wang <b50027@freescale.com>
+---
+ arch/arm/configs/imx_v7_android_defconfig | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/arch/arm/configs/imx_v7_android_defconfig b/arch/arm/configs/imx_v7_android_defconfig
+index 7cc3c7b..152bd50 100644
+--- a/arch/arm/configs/imx_v7_android_defconfig
++++ b/arch/arm/configs/imx_v7_android_defconfig
+@@ -326,6 +326,9 @@ CONFIG_SABRESD_MAX8903=y
+ CONFIG_IMX6_USB_CHARGER=y
+ CONFIG_SENSORS_MAX17135=y
+ CONFIG_SENSORS_MAG3110=y
++CONFIG_SENSORS_FXOS8700=y
++CONFIG_SENSORS_FXAS2100X=y
++CONFIG_INPUT_MPL3115=y
+ CONFIG_THERMAL=y
+ CONFIG_CPU_THERMAL=y
+ CONFIG_IMX_THERMAL=y
+-- 
+1.8.0
+

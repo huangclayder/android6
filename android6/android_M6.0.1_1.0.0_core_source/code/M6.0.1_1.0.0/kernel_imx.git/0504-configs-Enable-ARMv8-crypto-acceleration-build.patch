@@ -1,0 +1,22 @@
+From 6f8987b4c3ef57669152d95bbf133b15906d0842 Mon Sep 17 00:00:00 2001
+From: Mark Brown <broonie@linaro.org>
+Date: Mon, 16 Jun 2014 23:09:06 +0100
+Subject: [PATCH] configs: Enable ARMv8 crypto acceleration build
+
+Signed-off-by: Mark Brown <broonie@linaro.org>
+---
+ linaro/configs/vexpress64.conf | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/linaro/configs/vexpress64.conf b/linaro/configs/vexpress64.conf
+index d6a7146..c9b66a1 100644
+--- a/linaro/configs/vexpress64.conf
++++ b/linaro/configs/vexpress64.conf
+@@ -52,3 +52,4 @@ CONFIG_GENERIC_CPUFREQ_CPU0=y
+ CONFIG_ARM_BIG_LITTLE_CPUFREQ=y
+ CONFIG_ARM_DT_BL_CPUFREQ=y
+ CONFIG_ARM64_CPUIDLE=y
++CONFIG_ARM64_CRYPTO=y
+-- 
+1.8.0
+

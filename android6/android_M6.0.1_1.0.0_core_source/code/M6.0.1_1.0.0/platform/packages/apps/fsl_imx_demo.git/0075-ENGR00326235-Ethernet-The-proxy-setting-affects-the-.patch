@@ -1,0 +1,77 @@
+From 7a05a611390b0bfa65ddfa5dc1fa0469d665f9bb Mon Sep 17 00:00:00 2001
+From: Huangshan <huang.shan@freescale.com>
+Date: Tue, 12 Aug 2014 16:50:45 +0800
+Subject: [PATCH 075/115] ENGR00326235 Ethernet:The proxy setting affects the
+ network if using wifi.
+
+Add the code to enable setting the proxy only when the ethernet is connect.
+
+Signed-off-by: Huangshan <huang.shan@freescale.com>
+---
+ Ethernet/com/fsl/ethernet/EthernetAdvDialog.java | 26 ++++++++++++++----------
+ Ethernet/com/fsl/ethernet/EthernetManager.java   |  3 +++
+ Ethernet/res/values/strings.xml                  |  1 +
+ 3 files changed, 19 insertions(+), 11 deletions(-)
+
+diff --git a/Ethernet/com/fsl/ethernet/EthernetAdvDialog.java b/Ethernet/com/fsl/ethernet/EthernetAdvDialog.java
+index 0ee46aa..962f47c 100644
+--- a/Ethernet/com/fsl/ethernet/EthernetAdvDialog.java
++++ b/Ethernet/com/fsl/ethernet/EthernetAdvDialog.java
+@@ -76,17 +76,21 @@ public class EthernetAdvDialog extends AlertDialog implements DialogInterface.On
+     }
+ 
+     public void handle_saveconf() {
+-        EthernetDevInfo info = new EthernetDevInfo();
+-        String [] DevName = mEthEnabler.getManager().getDeviceNameList();
+-        info.setIfName(DevName[0]);
+-        info.setConnectMode(mEthEnabler.getManager().getSharedPreMode());
+-        info.setIpAddress(mEthEnabler.getManager().getSharedPreIpAddress());
+-        info.setDnsAddr(mEthEnabler.getManager().getSharedPreDnsAddress());
+-        info.setProxyAddr(mProxyIp.getText().toString());
+-        info.setProxyPort(mProxyPort.getText().toString());
+-        info.setProxyExclusionList(mProxyExclusionList.getText().toString());
+-        mEthEnabler.getManager().updateDevInfo(info);
+-        mEthEnabler.getManager().setProxy();
++        if(mEthEnabler.getManager().isEthernetConnect()){
++            EthernetDevInfo info = new EthernetDevInfo();
++            String [] DevName = mEthEnabler.getManager().getDeviceNameList();
++            info.setIfName(DevName[0]);
++            info.setConnectMode(mEthEnabler.getManager().getSharedPreMode());
++            info.setIpAddress(mEthEnabler.getManager().getSharedPreIpAddress());
++            info.setDnsAddr(mEthEnabler.getManager().getSharedPreDnsAddress());
++            info.setProxyAddr(mProxyIp.getText().toString());
++            info.setProxyPort(mProxyPort.getText().toString());
++            info.setProxyExclusionList(mProxyExclusionList.getText().toString());
++            mEthEnabler.getManager().updateDevInfo(info);
++            mEthEnabler.getManager().setProxy();
++        }else{
++           Toast.makeText(this.getContext(),R.string.show_connect_ethernet,Toast.LENGTH_SHORT).show();
++        }
+     }
+ 
+     public void onClick(DialogInterface dialog, int which) {
+diff --git a/Ethernet/com/fsl/ethernet/EthernetManager.java b/Ethernet/com/fsl/ethernet/EthernetManager.java
+index 26672f2..896b9e1 100644
+--- a/Ethernet/com/fsl/ethernet/EthernetManager.java
++++ b/Ethernet/com/fsl/ethernet/EthernetManager.java
+@@ -400,4 +400,7 @@ public class EthernetManager {
+             setProxy();
+ 	}
+     }
++    public boolean isEthernetConnect(){
++        return mConnMgr.getNetworkInfo(ConnectivityManager.TYPE_ETHERNET).isConnected();
++    }
+ }
+diff --git a/Ethernet/res/values/strings.xml b/Ethernet/res/values/strings.xml
+index 564d7e2..236c0f3 100644
+--- a/Ethernet/res/values/strings.xml
++++ b/Ethernet/res/values/strings.xml
+@@ -33,4 +33,5 @@
+     <string name="show_need_setting">You should setting the static IP and DNS address in this mode</string>
+     <string name="advanced_need_setting">You should not set the Proxy address and Proxy port null</string>
+     <string name="bypass_hint">You should put valid addresses split by \",\"</string>
++    <string name="show_connect_ethernet">Connect the Ethernet before setting the proxy.</string>
+ </resources>
+-- 
+1.8.0
+

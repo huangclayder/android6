@@ -1,0 +1,37 @@
+From bd7b8d043e3b4aec1a927781019d3473589ab322 Mon Sep 17 00:00:00 2001
+From: Haoran Wang <b50027@freescale.com>
+Date: Thu, 6 Aug 2015 13:44:38 +0800
+Subject: [PATCH 527/602] MA-6198 Added property permission for system_app
+
+Added default_prop set permission for system_app.
+Then the Ethernet APK can set rw.PROXY for mediaserver.
+
+Signed-off-by: Haoran Wang <b50027@freescale.com>
+---
+ imx6/sepolicy/system_app.te | 1 +
+ imx7/sepolicy/system_app.te | 2 +-
+ 2 files changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/imx6/sepolicy/system_app.te b/imx6/sepolicy/system_app.te
+index cf90a3a..0241913 100644
+--- a/imx6/sepolicy/system_app.te
++++ b/imx6/sepolicy/system_app.te
+@@ -6,4 +6,5 @@ allow system_app net_radio_prop:property_service  { set };
+ allow system_app net_radio_prop:property_service  { set };
+ allow system_app ctl_default_prop:property_service  { set };
+ allow system_app dhcp_prop:property_service  { set };
++allow system_app default_prop:property_service { set };
+ 
+diff --git a/imx7/sepolicy/system_app.te b/imx7/sepolicy/system_app.te
+index cf90a3a..b41fb8d 100644
+--- a/imx7/sepolicy/system_app.te
++++ b/imx7/sepolicy/system_app.te
+@@ -6,4 +6,4 @@ allow system_app net_radio_prop:property_service  { set };
+ allow system_app net_radio_prop:property_service  { set };
+ allow system_app ctl_default_prop:property_service  { set };
+ allow system_app dhcp_prop:property_service  { set };
+-
++allow system_app default_prop:property_service { set };
+-- 
+1.8.0
+

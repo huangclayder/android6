@@ -1,0 +1,34 @@
+From bbddb98393e3ae1a35d50db4a7269a184ea1db96 Mon Sep 17 00:00:00 2001
+From: Peng Fan <Peng.Fan@freescale.com>
+Date: Fri, 5 Sep 2014 10:40:11 +0800
+Subject: [PATCH] ENGR00329484-2 ARM:MX6: Clear Align bit in SCTLR
+
+This problem is found when debugging QuadSPI. When "A" bit is enabled,
+unaligned access will cause data abort exception. Actually, we do not
+want this exception. So clear the align bit for MX6 SOCs.
+
+Tested this code with android team colleague and did not find problem.
+
+Signed-off-by: Peng Fan <Peng.Fan@freescale.com>
+(cherry picked from commit aa76a7e472e34bc59554f9932d611b1047d24590)
+---
+ arch/arm/cpu/armv7/mx6/soc.c | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/arch/arm/cpu/armv7/mx6/soc.c b/arch/arm/cpu/armv7/mx6/soc.c
+index eda7e12..5f66103 100644
+--- a/arch/arm/cpu/armv7/mx6/soc.c
++++ b/arch/arm/cpu/armv7/mx6/soc.c
+@@ -419,6 +419,9 @@ static void imx_set_pcie_phy_power_down(void)
+ 
+ int arch_cpu_init(void)
+ {
++	/* Clear the Align bit in SCTLR */
++	set_cr(get_cr() & ~CR_A);
++
+ #if !defined(CONFIG_MX6SX) && !defined(CONFIG_MX6SL)
+ 	/*
+ 	 * imx6sl doesn't have pcie at all.
+-- 
+1.8.0
+

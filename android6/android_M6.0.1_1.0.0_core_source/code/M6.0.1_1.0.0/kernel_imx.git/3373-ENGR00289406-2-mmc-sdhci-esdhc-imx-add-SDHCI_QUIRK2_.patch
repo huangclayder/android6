@@ -1,0 +1,54 @@
+From ed2d3a58b21d962f1146a358a08b3c6a5d974393 Mon Sep 17 00:00:00 2001
+From: Dong Aisheng <b29396@freescale.com>
+Date: Fri, 22 Nov 2013 20:39:15 +0800
+Subject: [PATCH] ENGR00289406-2 mmc: sdhci-esdhc-imx: add
+ SDHCI_QUIRK2_NOSTD_TIMEOUT_COUNTER
+
+The max timeout counter for uSDHC is SDCLK x (1 << 28), not as standard
+controller defined as TMCLK x (1 <<27).
+Add SDHCI_QUIRK2_NOSTD_TIMEOUT_COUNTER quirk to handle it.
+
+Signed-off-by: Dong Aisheng <b29396@freescale.com>
+(cherry picked from commit 93d508770f5e6c12febff13b8d6fad9b0d9c6a12)
+---
+ drivers/mmc/host/sdhci-esdhc-imx.c | 10 +++++++++-
+ 1 file changed, 9 insertions(+), 1 deletion(-)
+
+diff --git a/drivers/mmc/host/sdhci-esdhc-imx.c b/drivers/mmc/host/sdhci-esdhc-imx.c
+index 7e25373..fbb449b 100644
+--- a/drivers/mmc/host/sdhci-esdhc-imx.c
++++ b/drivers/mmc/host/sdhci-esdhc-imx.c
+@@ -881,6 +881,11 @@ static int esdhc_set_uhs_signaling(struct sdhci_host *host, unsigned int uhs)
+ 	return esdhc_change_pinstate(host, uhs);
+ }
+ 
++static unsigned int esdhc_get_max_timeout_counter(struct sdhci_host *host)
++{
++	return 1 << 28;
++}
++
+ static struct sdhci_ops sdhci_esdhc_ops = {
+ 	.read_l = esdhc_readl_le,
+ 	.read_w = esdhc_readw_le,
+@@ -1033,7 +1038,8 @@ static int sdhci_esdhc_imx_probe(struct platform_device *pdev)
+ 	 */
+ 	if (esdhc_is_usdhc(imx_data)) {
+ 		writel(0x08100810, host->ioaddr + ESDHC_WTMK_LVL);
+-		host->quirks2 |= SDHCI_QUIRK2_PRESET_VALUE_BROKEN;
++		host->quirks2 |= SDHCI_QUIRK2_PRESET_VALUE_BROKEN |
++					SDHCI_QUIRK2_NOSTD_TIMEOUT_COUNTER;
+ 		host->mmc->caps |= MMC_CAP_1_8V_DDR;
+ 
+ 		/*
+@@ -1041,6 +1047,8 @@ static int sdhci_esdhc_imx_probe(struct platform_device *pdev)
+ 		 * TO1.1, it's harmless for MX6SL
+ 		 */
+ 		writel(readl(host->ioaddr + 0x6c) | BIT(7), host->ioaddr + 0x6c);
++		sdhci_esdhc_ops.get_max_timeout_counter =
++					esdhc_get_max_timeout_counter;
+ 	}
+ 
+ 	if (imx_data->socdata->flags & ESDHC_FLAG_MAN_TUNING)
+-- 
+1.8.0
+

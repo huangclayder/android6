@@ -1,0 +1,34 @@
+From 445a9514f9910fefc48b5680cec58c8e4a19aa4a Mon Sep 17 00:00:00 2001
+From: Liu Xiaowen <b37945@freescale.com>
+Date: Thu, 13 Nov 2014 14:33:15 +0800
+Subject: [PATCH 5/8] MA-5839-2 Update android to Lollipop.
+
+Capabilities.getSupportedVideoSizes() always return valid list object.
+So, it can't judge camera support video sizes by comparing with null.
+It should check the return list object size.
+
+Signed-off-by: Liu Xiaowen <b37945@freescale.com>
+
+Conflicts:
+	src/com/android/camera/VideoModule.java
+---
+ src/com/android/camera/VideoModule.java | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/src/com/android/camera/VideoModule.java b/src/com/android/camera/VideoModule.java
+index 9f5650f..6222967 100644
+--- a/src/com/android/camera/VideoModule.java
++++ b/src/com/android/camera/VideoModule.java
+@@ -822,7 +822,8 @@ public class VideoModule extends CameraModule
+      */
+     private static Point getDesiredPreviewSize(CameraCapabilities capabilities,
+           CamcorderProfile profile, Point previewScreenSize) {
+-        if (capabilities.getSupportedVideoSizes() == null) {
++        List<Size> videoSizes = capabilities.getSupportedVideoSizes();
++        if (videoSizes == null || videoSizes.size() == 0) {
+             // Driver doesn't support separate outputs for preview and video.
+             return new Point(profile.videoFrameWidth, profile.videoFrameHeight);
+         }
+-- 
+1.8.0
+

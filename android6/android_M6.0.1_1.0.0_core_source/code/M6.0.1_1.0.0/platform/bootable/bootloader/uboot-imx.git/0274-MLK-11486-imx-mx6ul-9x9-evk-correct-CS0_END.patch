@@ -1,0 +1,43 @@
+From 70ba74f0e7ab55f1e17370a5ace81f59d3520949 Mon Sep 17 00:00:00 2001
+From: Peng Fan <Peng.Fan@freescale.com>
+Date: Wed, 2 Sep 2015 13:29:34 +0800
+Subject: [PATCH] MLK-11486 imx: mx6ul 9x9 evk correct CS0_END
+
+The lpddr2 memsize of mx6ul_9x9_evk is 256MB, not 512M, so
+the CS0_END should be 0x47, but not 0x4F.
+
+Signed-off-by: Peng Fan <Peng.Fan@freescale.com>
+---
+ board/freescale/mx6ul_14x14_evk/imximage_lpddr2.cfg | 2 +-
+ board/freescale/mx6ul_14x14_evk/plugin.S            | 2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/board/freescale/mx6ul_14x14_evk/imximage_lpddr2.cfg b/board/freescale/mx6ul_14x14_evk/imximage_lpddr2.cfg
+index 13b43de..b8dfa5e 100644
+--- a/board/freescale/mx6ul_14x14_evk/imximage_lpddr2.cfg
++++ b/board/freescale/mx6ul_14x14_evk/imximage_lpddr2.cfg
+@@ -105,7 +105,7 @@ DATA 4 0x021B0018 0x00001748
+ DATA 4 0x021B001C 0x00008000
+ DATA 4 0x021B002C 0x0F9F0682
+ DATA 4 0x021B0030 0x009F0010
+-DATA 4 0x021B0040 0x0000004F
++DATA 4 0x021B0040 0x00000047
+ DATA 4 0x021B0000 0x83100000
+ DATA 4 0x021B001C 0x003F8030
+ DATA 4 0x021B001C 0xFF0A8030
+diff --git a/board/freescale/mx6ul_14x14_evk/plugin.S b/board/freescale/mx6ul_14x14_evk/plugin.S
+index 0fa8633..c1fe17b 100644
+--- a/board/freescale/mx6ul_14x14_evk/plugin.S
++++ b/board/freescale/mx6ul_14x14_evk/plugin.S
+@@ -201,7 +201,7 @@
+ 	str r1, [r0, #0x02C]
+ 	ldr r1, =0x009F0010
+ 	str r1, [r0, #0x030]
+-	ldr r1, =0x0000004F
++	ldr r1, =0x00000047
+ 	str r1, [r0, #0x040]
+ 	ldr r1, =0x83100000
+ 	str r1, [r0, #0x000]
+-- 
+1.8.0
+

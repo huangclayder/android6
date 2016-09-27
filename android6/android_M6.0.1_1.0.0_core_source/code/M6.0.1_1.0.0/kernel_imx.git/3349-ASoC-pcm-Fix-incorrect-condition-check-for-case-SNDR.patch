@@ -1,0 +1,32 @@
+From 9c9b351e28aed2c7537d10594c2bba1a0e485ed2 Mon Sep 17 00:00:00 2001
+From: Nicolin Chen <Guangyu.Chen@freescale.com>
+Date: Mon, 12 May 2014 20:12:05 +0800
+Subject: [PATCH] ASoC: pcm: Fix incorrect condition check for case
+ SNDRV_PCM_TRIGGER_SUSPEND
+
+The regular state before we execute SNDRV_PCM_TRIGGER_SUSPEND should be
+SNDRV_PCM_TRIGGER_START, not SNDRV_PCM_TRIGGER_STOP. Thus fix it.
+
+Signed-off-by: Nicolin Chen <Guangyu.Chen@freescale.com>
+Signed-off-by: Mark Brown <broonie@linaro.org>
+(cherry picked from commit 868a6ca84ee7e547ae01a5e04e232e4a392c50b8)
+---
+ sound/soc/soc-pcm.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/sound/soc/soc-pcm.c b/sound/soc/soc-pcm.c
+index e28704e..c34ec2a 100644
+--- a/sound/soc/soc-pcm.c
++++ b/sound/soc/soc-pcm.c
+@@ -1637,7 +1637,7 @@ int dpcm_be_dai_trigger(struct snd_soc_pcm_runtime *fe, int stream,
+ 			be->dpcm[stream].state = SND_SOC_DPCM_STATE_STOP;
+ 			break;
+ 		case SNDRV_PCM_TRIGGER_SUSPEND:
+-			if (be->dpcm[stream].state != SND_SOC_DPCM_STATE_STOP)
++			if (be->dpcm[stream].state != SND_SOC_DPCM_STATE_START)
+ 				continue;
+ 
+ 			if (!snd_soc_dpcm_can_be_free_stop(fe, be, stream))
+-- 
+1.8.0
+

@@ -1,0 +1,28 @@
+From 2769c66c8a6a8a83abda2738592398a540b90db3 Mon Sep 17 00:00:00 2001
+From: Peng Fan <Peng.Fan@freescale.com>
+Date: Thu, 19 Mar 2015 17:29:31 +0800
+Subject: [PATCH] MLK-10774-34 imx:mx7d android fix build error
+
+Add CONFIG_CMD_FASTBOOT
+
+Signed-off-by: Peng Fan <Peng.Fan@freescale.com>
+---
+ include/configs/mx7dsabresdandroid.h | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/include/configs/mx7dsabresdandroid.h b/include/configs/mx7dsabresdandroid.h
+index 6efe69c..d523a07 100644
+--- a/include/configs/mx7dsabresdandroid.h
++++ b/include/configs/mx7dsabresdandroid.h
+@@ -14,6 +14,8 @@
+ #define CONFIG_IMX_UDC		       1
+ #define OTG_BASE_ADDR USBOTG1_IPS_BASE_ADDR
+ 
++#define CONFIG_CMD_FASTBOOT
++
+ #define CONFIG_FASTBOOT		       1
+ #define CONFIG_FASTBOOT_VENDOR_ID      0x18d1
+ #define CONFIG_FASTBOOT_PRODUCT_ID     0x0d02
+-- 
+1.8.0
+

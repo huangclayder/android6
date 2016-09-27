@@ -1,0 +1,28 @@
+From 659c4a757b6a30d25810d76e95107918f69fe1c6 Mon Sep 17 00:00:00 2001
+From: Robin Gong <b38343@freescale.com>
+Date: Tue, 15 Sep 2015 12:53:57 +0800
+Subject: [PATCH] MLK-11550-2: ARM: dts: imx7d-12x12-lpddr3-arm2: add
+ 'fsl,lpsr-mode' for pfuze3000
+
+Add 'fsl,lpsr-mode' property to support LPSR mode on arm2 board.
+
+Signed-off-by: Robin Gong <b38343@freescale.com>
+---
+ arch/arm/boot/dts/imx7d-12x12-lpddr3-arm2.dts | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/arch/arm/boot/dts/imx7d-12x12-lpddr3-arm2.dts b/arch/arm/boot/dts/imx7d-12x12-lpddr3-arm2.dts
+index 99844d5..79b5790 100644
+--- a/arch/arm/boot/dts/imx7d-12x12-lpddr3-arm2.dts
++++ b/arch/arm/boot/dts/imx7d-12x12-lpddr3-arm2.dts
+@@ -270,6 +270,7 @@
+ 	pmic: pfuze3000@08 {
+ 		compatible = "fsl,pfuze3000";
+ 		reg = <0x08>;
++		fsl,lpsr-mode;
+ 
+ 		regulators {
+ 			sw1a_reg: sw1a {
+-- 
+1.8.0
+

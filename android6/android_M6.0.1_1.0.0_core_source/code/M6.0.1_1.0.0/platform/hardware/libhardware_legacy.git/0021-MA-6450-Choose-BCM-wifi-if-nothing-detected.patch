@@ -1,0 +1,78 @@
+From afe52c17777ef4cdc96d3654c9f33a6a08b829ca Mon Sep 17 00:00:00 2001
+From: Haoran Wang <b50027@freescale.com>
+Date: Tue, 20 Oct 2015 10:57:36 +0800
+Subject: [PATCH 21/25] MA-6450 Choose BCM wifi if nothing detected
+
+As BCM wifi will not power on when boot. The mmc
+driver will not get the wifi vendor info.
+So choose BCM wifi if nothing detected.
+
+Signed-off-by: Haoran Wang <b50027@freescale.com>
+---
+ wifi/wifi_unite.c | 28 +++++++++++++---------------
+ 1 file changed, 13 insertions(+), 15 deletions(-)
+
+diff --git a/wifi/wifi_unite.c b/wifi/wifi_unite.c
+index cf9e4c9..7d4d77a 100644
+--- a/wifi/wifi_unite.c
++++ b/wifi/wifi_unite.c
+@@ -235,8 +235,11 @@ int get_wifi_vendor_info(int* model)
+         }
+     }
+     if (f == NULL)
+-        return -1;
+-    if (fgets(linebuf, sizeof(linebuf) -1, f))
++    {
++        ALOGD("Nothing detected but we consider to detect the BCM card");
++        property_set(DRIVER_VENDOR_NAME, "broadcom");
++        vendor = BCM;
++    } else if (fgets(linebuf, sizeof(linebuf) -1, f))
+     {
+         ALOGD("read vendor info: %s", linebuf);
+         value = strtol(linebuf, NULL, 16);
+@@ -252,18 +255,14 @@ int get_wifi_vendor_info(int* model)
+             fclose(f);
+             return ATHEROS;
+         }
+-        else if (value == 0x02d0) {
+-            ALOGD("detect the BCM card");
++        else {
++            ALOGD(" Nothing detected but we consider to detect the BCM card");
+             property_set(DRIVER_VENDOR_NAME, "broadcom");
+             vendor = BCM;
+         }
+-        else {
+-            fclose(f);
+-            *model = UNKNOWN_MODEL;
+-            return UNKNOWN;
+-        }
+     }
+-    fclose(f);
++    if (f)
++        fclose(f);
+     f = NULL;
+     f = fopen(sdio_device_path[i], "r");
+     if (f)
+@@ -289,15 +288,14 @@ int get_wifi_vendor_info(int* model)
+                      *model = UNKNOWN_MODEL;
+                  }
+             } else if (vendor == BCM) {
+-                if (value == 0x4335 || value == 0x4339) {
+                     ALOGD("bcm 4335/4339 detected!");
+                     *model = BCM4335_4339;
+-                }
+             }
+         }
+-    } else
+-    {
+-        ALOGE("error: Unable to read device file %s ", sdio_device_path[i]);
++        fclose(f);
++    } else {
++        ALOGD("Nothing detected but we consider to detect the BCM4339 card");
++        *model = BCM4335_4339;
+     }
+     return vendor;
+ }
+-- 
+1.8.0
+

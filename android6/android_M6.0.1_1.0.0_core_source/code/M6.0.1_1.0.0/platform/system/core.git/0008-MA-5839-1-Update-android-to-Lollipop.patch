@@ -1,0 +1,134 @@
+From ac6551c869d23a711f9bc0f3b8d323379ac1760b Mon Sep 17 00:00:00 2001
+From: Fang Hui <b31070@freescale.com>
+Date: Tue, 29 Jul 2014 13:53:29 +0800
+Subject: [PATCH 08/22] MA-5839-1 Update android to Lollipop
+
+Merge ion from in kk4.4.3.
+Since directory and file struct changes a lot, so
+not auto merge 0001-ENGR00236857-revert-libion-back-to-jb4.1.x-version.patch.
+Just manual merge.
+
+Change-Id: Ia32a6f8c70caddb9ff5123b508b3dcceffbaa4d6
+Signed-off-by: Fang Hui <b31070@freescale.com>
+---
+ libion/include/ion/ion.h     |  2 ++
+ libion/include/ion/mxc_ion.h | 30 ++++++++++++++++++++++++++++++
+ libion/ion.c                 | 28 ++++++++++++++++++++++++++++
+ 3 files changed, 60 insertions(+)
+
+diff --git a/libion/include/ion/ion.h b/libion/include/ion/ion.h
+old mode 100644
+new mode 100755
+index f47793d..94de99e
+--- a/libion/include/ion/ion.h
++++ b/libion/include/ion/ion.h
+@@ -4,6 +4,7 @@
+  * Memory Allocator functions for ion
+  *
+  *   Copyright 2011 Google, Inc
++ *   Copyright (C) 2014 Freescale Semiconductor, Inc.
+  *
+  *  Licensed under the Apache License, Version 2.0 (the "License");
+  *  you may not use this file except in compliance with the License.
+@@ -40,6 +41,7 @@ int ion_map(int fd, ion_user_handle_t handle, size_t length, int prot,
+             int flags, off_t offset, unsigned char **ptr, int *map_fd);
+ int ion_share(int fd, ion_user_handle_t handle, int *share_fd);
+ int ion_import(int fd, int share_fd, ion_user_handle_t *handle);
++unsigned long ion_phys(int fd,  ion_user_handle_t handle);
+ 
+ __END_DECLS
+ 
+diff --git a/libion/include/ion/mxc_ion.h b/libion/include/ion/mxc_ion.h
+new file mode 100644
+index 0000000..954570c
+--- /dev/null
++++ b/libion/include/ion/mxc_ion.h
+@@ -0,0 +1,30 @@
++/*
++ * drivers/gpu/mxc/mxc_ion.h
++ *
++ * Copyright (C) 2011 Google, Inc.
++ * Copyright (C) 2012-2014 Freescale Semiconductor, Inc.
++ *
++ * This software is licensed under the terms of the GNU General Public
++ * License version 2, as published by the Free Software Foundation, and
++ * may be copied, distributed, and modified under those terms.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ */
++
++#ifndef _LINUX_MXC_ION_H
++#define _LINUX_MXC_ION_H
++
++#include <linux/ion.h>
++
++struct ion_phys_data {
++        ion_user_handle_t handle;
++        unsigned long phys;
++};
++
++#define ION_IOC_PHYS   _IOWR(ION_IOC_MAGIC, 7, struct ion_phys_data)
++
++#endif
+diff --git a/libion/ion.c b/libion/ion.c
+old mode 100644
+new mode 100755
+index d1984bd..3853316
+--- a/libion/ion.c
++++ b/libion/ion.c
+@@ -4,6 +4,7 @@
+  * Memory Allocator functions for ion
+  *
+  *   Copyright 2011 Google, Inc
++ *   Copyright (C) 2012-2014 Freescale Semiconductor, Inc.
+  *
+  *  Licensed under the Apache License, Version 2.0 (the "License");
+  *  you may not use this file except in compliance with the License.
+@@ -30,6 +31,7 @@
+ 
+ #include <linux/ion.h>
+ #include <ion/ion.h>
++#include <ion/mxc_ion.h>
+ 
+ int ion_open()
+ {
+@@ -118,6 +120,32 @@ int ion_map(int fd, ion_user_handle_t handle, size_t length, int prot,
+     return ret;
+ }
+ 
++static int ion_custom(int fd, void *arg)
++{
++	int ret;
++	ret = ion_ioctl(fd, ION_IOC_CUSTOM, arg);
++	return ret;
++}
++
++unsigned long ion_phys(int fd, ion_user_handle_t handle)
++{
++        int ret;
++        struct ion_phys_data data = {
++                .handle = handle,
++		.phys = 0,
++        };
++
++	struct ion_custom_data custom = {
++		.cmd = ION_IOC_PHYS,
++		.arg = (int)&data,
++	};
++
++        ret = ion_custom(fd, &custom);
++        if (ret == 0)
++            return data.phys;
++
++        return 0;
++}
+ int ion_share(int fd, ion_user_handle_t handle, int *share_fd)
+ {
+     int ret;
+-- 
+1.8.0
+

@@ -1,0 +1,231 @@
+From 1062d5e38b136914b141074e122de051d09240e7 Mon Sep 17 00:00:00 2001
+From: fang hui <b31070@freescale.com>
+Date: Thu, 17 Dec 2015 17:37:02 +0800
+Subject: [PATCH 619/635] MA-7361 - [audio HAL] refine code
+
+replace tab to space
+initialize point
+add control.h
+
+Signed-off-by: fang hui <b31070@freescale.com>
+---
+ alsa/Android.mk      |  4 ++--
+ alsa/config_wm8960.h | 12 +++++-------
+ alsa/control.c       | 33 +++++++--------------------------
+ alsa/control.h       | 52 ++++++++++++++++++++++++++++++++++++++++++++++++++++
+ alsa/tinyalsa_hal.c  |  2 +-
+ 5 files changed, 67 insertions(+), 36 deletions(-)
+ create mode 100755 alsa/control.h
+
+diff --git a/alsa/Android.mk b/alsa/Android.mk
+index 5c64bba..9193743 100755
+--- a/alsa/Android.mk
++++ b/alsa/Android.mk
+@@ -12,7 +12,7 @@
+ # See the License for the specific language governing permissions and
+ # limitations under the License.
+ 
+-# This is the Freescale ALSA module for i.MX
++# This is the Freescale ALSA module for i.MX.
+ 
+ ifeq ($(strip $(BOARD_USES_ALSA_AUDIO)),true)
+ 
+@@ -47,7 +47,7 @@ LOCAL_C_INCLUDES += \
+ 	system/media/audio_effects/include
+ LOCAL_SHARED_LIBRARIES := liblog libcutils libtinyalsa libaudioutils libdl
+ LOCAL_MODULE_TAGS := optional
+-LOCAL_CPPFLAGS += -DBRILLO
++LOCAL_CFLAGS += -DBRILLO
+ include $(BUILD_SHARED_LIBRARY)
+ 
+ endif
+\ No newline at end of file
+diff --git a/alsa/config_wm8960.h b/alsa/config_wm8960.h
+index 37a5424..a250cc0 100644
+--- a/alsa/config_wm8960.h
++++ b/alsa/config_wm8960.h
+@@ -36,15 +36,14 @@
+ #define MIXER_WM8960_ADC_PCM_CAPTURE_VOLUME         "ADC PCM Capture Volume"
+ 
+ #ifdef BRILLO
+-#define	MIXER_WM8960_LEFT_INPUT1_SWITCH  			"Left Boost Mixer LINPUT1 Switch"
+-#define	MIXER_WM8960_LEFT_INPUT2_SWITCH  			"Left Boost Mixer LINPUT2 Switch"
+-#define	MIXER_WM8960_LEFT_INPUT3_SWITCH  			"Left Boost Mixer LINPUT3 Switch"
++#define MIXER_WM8960_LEFT_INPUT1_SWITCH             "Left Boost Mixer LINPUT1 Switch"
++#define MIXER_WM8960_LEFT_INPUT2_SWITCH             "Left Boost Mixer LINPUT2 Switch"
++#define MIXER_WM8960_LEFT_INPUT3_SWITCH             "Left Boost Mixer LINPUT3 Switch"
+ #define MIXER_WM8960_RIGHT_INPUT_SWITCH             "Right Input Mixer Boost Switch"
+-#define	MIXER_WM8960_RIGHT_INPUT1_SWITCH  			"Right Boost Mixer LINPUT1 Switch"
+-#define	MIXER_WM8960_RIGHT_INPUT2_SWITCH  			"Right Boost Mixer LINPUT2 Switch"
++#define MIXER_WM8960_RIGHT_INPUT1_SWITCH            "Right Boost Mixer LINPUT1 Switch"
++#define MIXER_WM8960_RIGHT_INPUT2_SWITCH            "Right Boost Mixer LINPUT2 Switch"
+ #endif
+ 
+-
+ static struct route_setting speaker_output_wm8960[] = {
+     {
+         .ctl_name = MIXER_WM8960_LEFT_OUTPUT_SWITCH,
+@@ -71,7 +70,6 @@ static struct route_setting speaker_output_wm8960[] = {
+     },
+ };
+ 
+-
+ static struct route_setting mm_main_mic_input_wm8960[] = {
+     {
+         .ctl_name = MIXER_WM8960_ALC_FUNCTION,
+diff --git a/alsa/control.c b/alsa/control.c
+index 165392e..69fe7c7 100755
+--- a/alsa/control.c
++++ b/alsa/control.c
+@@ -33,29 +33,10 @@
+ #include <fcntl.h>
+ #include <errno.h>
+ #include <ctype.h>
+-
+ #include <linux/ioctl.h>
+-#define __force
+-#define __bitwise
+-#define __user
+ #include <sound/asound.h>
+-
+ #include <tinyalsa/asoundlib.h>
+-
+-struct ctl_pcm_info {
+-    struct snd_pcm_info      *info;
+-    struct ctl_pcm_info      *next;
+-};
+-
+-
+-struct control {
+-    int fd;
+-    struct snd_ctl_card_info *card_info;
+-    struct ctl_pcm_info      *pcm_info_p;
+-    unsigned int count_p;
+-    struct ctl_pcm_info      *pcm_info_c;
+-    unsigned int count_c;
+-};
++#include "control.h"
+ 
+ struct control *control_open(unsigned int card)
+ {
+@@ -65,7 +46,7 @@ struct control *control_open(unsigned int card)
+     int fd;
+     char fn[256];
+     int device = -1;
+-    struct ctl_pcm_info      *current;
++    struct ctl_pcm_info      *current = NULL;
+ 
+     snprintf(fn, sizeof(fn), "/dev/snd/controlC%u", card);
+     fd = open(fn, O_RDWR);
+@@ -160,8 +141,8 @@ fail:
+ void control_close(struct control *control)
+ {
+     unsigned int n,m;
+-    struct ctl_pcm_info      *current;
+-    struct ctl_pcm_info      *p;
++    struct ctl_pcm_info      *current = NULL;
++    struct ctl_pcm_info      *p = NULL;
+ 
+     if (!control)
+         return;
+@@ -221,7 +202,7 @@ const char *control_card_info_get_name(struct control *control)
+ 
+ int control_pcm_next_device(struct control *control, int *device, int stream)
+ {
+-    struct ctl_pcm_info      *current;
++    struct ctl_pcm_info      *current = NULL;
+     if (!control)
+         return -EINVAL;
+ 
+@@ -240,7 +221,7 @@ int control_pcm_next_device(struct control *control, int *device, int stream)
+ 
+ const char *control_pcm_info_get_id(struct control *control, unsigned int device, int stream)
+ {
+-    struct ctl_pcm_info      *current;
++    struct ctl_pcm_info      *current = NULL;
+     if (!control)
+         return "";
+ 
+@@ -256,7 +237,7 @@ const char *control_pcm_info_get_id(struct control *control, unsigned int device
+ 
+ const char *control_pcm_info_get_name(struct control *control, unsigned int device, int stream)
+ {
+-    struct ctl_pcm_info      *current;
++    struct ctl_pcm_info      *current = NULL;
+     if (!control)
+         return "";
+ 
+diff --git a/alsa/control.h b/alsa/control.h
+new file mode 100755
+index 0000000..916f06a
+--- /dev/null
++++ b/alsa/control.h
+@@ -0,0 +1,52 @@
++/*
++** Copyright 2015, The Android Open Source Project
++** Copyright (C) 2015 Freescale Semiconductor, Inc.
++**
++** Redistribution and use in source and binary forms, with or without
++** modification, are permitted provided that the following conditions are met:
++**     * Redistributions of source code must retain the above copyright
++**       notice, this list of conditions and the following disclaimer.
++**     * Redistributions in binary form must reproduce the above copyright
++**       notice, this list of conditions and the following disclaimer in the
++**       documentation and/or other materials provided with the distribution.
++**     * Neither the name of The Android Open Source Project nor the names of
++**       its contributors may be used to endorse or promote products derived
++**       from this software without specific prior written permission.
++**
++** THIS SOFTWARE IS PROVIDED BY The Android Open Source Project ``AS IS'' AND
++** ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
++** IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
++** ARE DISCLAIMED. IN NO EVENT SHALL The Android Open Source Project BE LIABLE
++** FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
++** DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
++** SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
++** CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
++** LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
++** OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
++** DAMAGE.
++*/
++
++#ifndef _CONTROL_H
++#define _CONTROL_H
++
++struct ctl_pcm_info {
++    struct snd_pcm_info      *info;
++    struct ctl_pcm_info      *next;
++};
++
++struct control {
++    int fd;
++    struct snd_ctl_card_info *card_info;
++    struct ctl_pcm_info      *pcm_info_p;
++    unsigned int count_p;
++    struct ctl_pcm_info      *pcm_info_c;
++    unsigned int count_c;
++};
++
++struct control *control_open(unsigned int card);
++void control_close(struct control *control);
++const char *control_card_info_get_id(struct control *control);
++const char *control_card_info_get_driver(struct control *control);
++const char *control_card_info_get_name(struct control *control);
++
++#endif //_CONTROL_H
+diff --git a/alsa/tinyalsa_hal.c b/alsa/tinyalsa_hal.c
+index 83ae4b0..6ab494e 100644
+--- a/alsa/tinyalsa_hal.c
++++ b/alsa/tinyalsa_hal.c
+@@ -276,7 +276,7 @@ static int convert_record_data(void *src, void *dst, unsigned int frames, bool b
+ static int set_route_by_array(struct mixer *mixer, struct route_setting *route,
+                               int enable)
+ {
+-    struct mixer_ctl *ctl;
++    struct mixer_ctl *ctl = NULL;
+     unsigned int i, j;
+ 
+     if(!mixer) return 0;
+-- 
+1.8.0
+

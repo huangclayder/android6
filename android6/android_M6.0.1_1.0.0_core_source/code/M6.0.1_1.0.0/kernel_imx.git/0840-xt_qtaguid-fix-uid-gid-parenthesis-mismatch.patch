@@ -1,0 +1,42 @@
+From ec1500b314274b7822ceb2cb5c57703d40611478 Mon Sep 17 00:00:00 2001
+From: Amit Pundir <amit.pundir@linaro.org>
+Date: Mon, 3 Nov 2014 16:13:08 +0530
+Subject: [PATCH] xt_qtaguid: fix uid/gid parenthesis mismatch
+
+uid/gid code is not working at all due to parenthesis mismatch.
+
+Bug (and subsequent fix) reported by an external tester.
+Signed-off-by: Amit Pundir <amit.pundir@linaro.org>
+---
+ net/netfilter/xt_qtaguid.c | 8 ++++----
+ 1 file changed, 4 insertions(+), 4 deletions(-)
+
+diff --git a/net/netfilter/xt_qtaguid.c b/net/netfilter/xt_qtaguid.c
+index 8e5eba4..f0a670a 100644
+--- a/net/netfilter/xt_qtaguid.c
++++ b/net/netfilter/xt_qtaguid.c
+@@ -1774,8 +1774,8 @@ static bool qtaguid_mt(const struct sk_buff *skb, struct xt_action_param *par)
+ 		kuid_t uid_min = make_kuid(&init_user_ns, info->uid_min);
+ 		kuid_t uid_max = make_kuid(&init_user_ns, info->uid_max);
+ 
+-		if (uid_gte(filp->f_cred->fsuid, uid_min) &&
+-		     uid_lte(filp->f_cred->fsuid, uid_max) ^
++		if ((uid_gte(filp->f_cred->fsuid, uid_min) &&
++		     uid_lte(filp->f_cred->fsuid, uid_max)) ^
+ 		    !(info->invert & XT_QTAGUID_UID)) {
+ 			MT_DEBUG("qtaguid[%d]: leaving uid not matching\n",
+ 				 par->hooknum);
+@@ -1787,8 +1787,8 @@ static bool qtaguid_mt(const struct sk_buff *skb, struct xt_action_param *par)
+ 		kgid_t gid_min = make_kgid(&init_user_ns, info->gid_min);
+ 		kgid_t gid_max = make_kgid(&init_user_ns, info->gid_max);
+ 
+-		if (gid_gte(filp->f_cred->fsgid, gid_min) &&
+-				gid_lte(filp->f_cred->fsgid, gid_max) ^
++		if ((gid_gte(filp->f_cred->fsgid, gid_min) &&
++				gid_lte(filp->f_cred->fsgid, gid_max)) ^
+ 			!(info->invert & XT_QTAGUID_GID)) {
+ 			MT_DEBUG("qtaguid[%d]: leaving gid not matching\n",
+ 				par->hooknum);
+-- 
+1.8.0
+

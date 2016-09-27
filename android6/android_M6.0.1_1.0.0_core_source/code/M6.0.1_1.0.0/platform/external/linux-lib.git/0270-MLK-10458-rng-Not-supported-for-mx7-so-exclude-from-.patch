@@ -1,0 +1,24 @@
+From 1eb8733ac9765a6b301ef148b77d54967b1159b4 Mon Sep 17 00:00:00 2001
+From: Lauren Post <lauren.post@freescale.com>
+Date: Mon, 23 Mar 2015 09:55:24 -0500
+Subject: [PATCH 270/280] MLK-10458 rng: Not supported for mx7 so exclude from
+ build
+
+Signed-off-by: Lauren Post <lauren.post@freescale.com>
+---
+ rng/Makefile | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/rng/Makefile b/rng/Makefile
+index afc8943..4c0b042 100644
+--- a/rng/Makefile
++++ b/rng/Makefile
+@@ -1,4 +1,4 @@
+-EXCLUDE_LIST:= IMX6Q IMX6S
++EXCLUDE_LIST:= IMX6Q IMX6S IMX7
+ 
+ ifeq (,$(findstring $(PLATFORM), $(EXCLUDE_LIST)))
+ AR = ar -crv
+-- 
+1.8.0
+

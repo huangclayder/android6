@@ -1,0 +1,44 @@
+From 167d1ac65b3cf259da11595ec8eabb44cd302345 Mon Sep 17 00:00:00 2001
+From: Huang Shijie <b32955@freescale.com>
+Date: Wed, 11 Jun 2014 13:12:07 +0800
+Subject: [PATCH] ENGR00318938-2 serial: imx: terminate the RX DMA when the
+ UART is suspending
+
+When the uart port is suspending, the RX data is useless.
+So in this case, we can terminate the RX DMA right now.
+
+(cherry picked from commit 49b44d48c6887df2e85ae73481689c5cb0b3a048)
+
+Signed-off-by: Huang Shijie <b32955@freescale.com>
+---
+ drivers/tty/serial/imx.c | 14 ++++++++------
+ 1 file changed, 8 insertions(+), 6 deletions(-)
+
+diff --git a/drivers/tty/serial/imx.c b/drivers/tty/serial/imx.c
+index 62c0cd5..7a33b1d 100644
+--- a/drivers/tty/serial/imx.c
++++ b/drivers/tty/serial/imx.c
+@@ -436,12 +436,14 @@ static void imx_stop_rx(struct uart_port *port)
+ 	struct imx_port *sport = (struct imx_port *)port;
+ 	unsigned long temp;
+ 
+-	/*
+-	 * We are maybe in the SMP context, so if the DMA TX thread is running
+-	 * on other cpu, we have to wait for it to finish.
+-	 */
+-	if (sport->dma_is_enabled && sport->dma_is_rxing)
+-		return;
++	if (sport->dma_is_enabled && sport->dma_is_rxing) {
++		if (sport->port.suspended) {
++			dmaengine_terminate_all(sport->dma_chan_rx);
++			sport->dma_is_rxing = 0;
++		} else {
++			return;
++		}
++	}
+ 
+ 	temp = readl(sport->port.membase + UCR2);
+ 	writel(temp & ~UCR2_RXEN, sport->port.membase + UCR2);
+-- 
+1.8.0
+

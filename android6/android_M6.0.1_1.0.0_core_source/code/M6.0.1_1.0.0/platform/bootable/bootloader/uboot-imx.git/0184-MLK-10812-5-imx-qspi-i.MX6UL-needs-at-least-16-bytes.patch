@@ -1,0 +1,32 @@
+From e552c624a0721baaeba3a0e5f5f80d4987561567 Mon Sep 17 00:00:00 2001
+From: Peng Fan <Peng.Fan@freescale.com>
+Date: Thu, 23 Apr 2015 13:20:30 +0800
+Subject: [PATCH] MLK-10812-5 imx: qspi i.MX6UL needs at least 16 bytes when
+ write
+
+i.MX6UL qspi controller also needs at least 16 bytes when writing.
+
+Signed-off-by: Peng Fan <Peng.Fan@freescale.com>
+---
+ drivers/spi/fsl_qspi.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/spi/fsl_qspi.c b/drivers/spi/fsl_qspi.c
+index 6c33c91..bb5c236 100644
+--- a/drivers/spi/fsl_qspi.c
++++ b/drivers/spi/fsl_qspi.c
+@@ -810,9 +810,9 @@ static void fsl_qspi_write_data(struct fsl_qspi *q, int len, u8* txbuf)
+ 		writel(tmp, q->iobase + QUADSPI_TBDR);
+ 	}
+ 
+-#if defined(CONFIG_MX7D)
++#if defined(CONFIG_MX7D) || defined(CONFIG_MX6UL)
+ 	u32 t3;
+-	/* iMX7D TXFIFO must be at least 16 bytes*/
++	/* iMX7D and MX6UL TXFIFO must be at least 16 bytes*/
+ 	t3 = t1 + ((t2 + 3) >> 2);
+ 	for (; t3 < 4; t3++)
+ 		writel(0, q->iobase + QUADSPI_TBDR);
+-- 
+1.8.0
+

@@ -1,0 +1,28 @@
+From 093eb5850b2b1c2fc5d3b02c93cd3366164dc14f Mon Sep 17 00:00:00 2001
+From: Robin Gong <b38343@freescale.com>
+Date: Fri, 8 May 2015 15:37:08 +0800
+Subject: [PATCH] MLK-10864-2: ARM: imx: enable WDOG_B to reboot
+
+Add WDOG_B reset support for i.mx7d.
+
+Signed-off-by: Robin Gong <b38343@freescale.com>
+---
+ arch/arm/mach-imx/system.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/arch/arm/mach-imx/system.c b/arch/arm/mach-imx/system.c
+index 5669336..fa3e8cd 100644
+--- a/arch/arm/mach-imx/system.c
++++ b/arch/arm/mach-imx/system.c
+@@ -57,7 +57,7 @@ void mxc_restart(enum reboot_mode mode, const char *cmd)
+ 	 * workaround qspi-nor reboot issue whatever ldo-bypass or not.
+ 	 */
+ 	else if ((wdog_source == 2 && (cpu_is_imx6q() || cpu_is_imx6dl() ||
+-			cpu_is_imx6sl())) || cpu_is_imx6sx())
++			cpu_is_imx6sl())) || cpu_is_imx6sx() || cpu_is_imx7d())
+ 		wcr_enable = 0x14;
+ 	else
+ 		wcr_enable = (1 << 2);
+-- 
+1.8.0
+

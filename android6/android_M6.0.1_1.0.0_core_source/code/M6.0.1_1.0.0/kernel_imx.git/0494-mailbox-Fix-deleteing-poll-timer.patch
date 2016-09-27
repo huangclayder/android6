@@ -1,0 +1,31 @@
+From b48f08e4efb575f03ebf782f4ebba41d59929b8a Mon Sep 17 00:00:00 2001
+From: LeyFoon Tan <lftan.linux@gmail.com>
+Date: Thu, 12 Jun 2014 22:32:22 +0530
+Subject: [PATCH] mailbox: Fix deleteing poll timer
+
+Try to delete the timer only if it was init/used.
+
+Signed-off-by: LeyFoon Tan <lftan.linux@gmail.com>
+Signed-off-by: Jassi Brar <jaswinder.singh@linaro.org>
+Signed-off-by: Mark Brown <broonie@linaro.org>
+---
+ drivers/mailbox/mailbox.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/drivers/mailbox/mailbox.c b/drivers/mailbox/mailbox.c
+index 336fa10..ae4abd9 100644
+--- a/drivers/mailbox/mailbox.c
++++ b/drivers/mailbox/mailbox.c
+@@ -480,7 +480,8 @@ void mbox_controller_unregister(struct mbox_controller *mbox)
+ 	for (i = 0; i < mbox->num_chans; i++)
+ 		mbox_free_channel(&mbox->chans[i]);
+ 
+-	del_timer_sync(&mbox->poll);
++	if (mbox->txdone_poll)
++		del_timer_sync(&mbox->poll);
+ 
+ 	mutex_unlock(&con_mutex);
+ }
+-- 
+1.8.0
+

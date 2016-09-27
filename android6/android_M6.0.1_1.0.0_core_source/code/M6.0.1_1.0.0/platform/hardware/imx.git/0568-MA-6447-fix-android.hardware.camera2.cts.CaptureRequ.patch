@@ -1,0 +1,53 @@
+From 947f01da7d7f075f2843af8be8d13c21fa79d75e Mon Sep 17 00:00:00 2001
+From: Liu Xiaowen <xiaowen.liu@freescale.com>
+Date: Tue, 24 Mar 2015 11:52:52 +0800
+Subject: [PATCH 568/635] MA-6447 fix
+ android.hardware.camera2.cts.CaptureRequestTest
+ failure on 6sx.
+
+fix android.hardware.camera2.cts.CaptureRequestTest failure on 6sx.
+add ANTIBANDING_AUTO which is required by 5.0 CTS.
+change KEY_ZOOM_SUPPORTED from true to false to pass CTS.
+
+Signed-off-by: Liu Xiaowen <xiaowen.liu@freescale.com>
+---
+ mx6/libcamera/CameraBridge.cpp | 10 ++++++++--
+ 1 file changed, 8 insertions(+), 2 deletions(-)
+
+diff --git a/mx6/libcamera/CameraBridge.cpp b/mx6/libcamera/CameraBridge.cpp
+index dc52c5f..074b6c6 100644
+--- a/mx6/libcamera/CameraBridge.cpp
++++ b/mx6/libcamera/CameraBridge.cpp
+@@ -1,6 +1,6 @@
+ /*
+  * Copyright (C) 2008 The Android Open Source Project
+- * Copyright (C) 2012-2014 Freescale Semiconductor, Inc.
++ * Copyright (C) 2012-2015 Freescale Semiconductor, Inc.
+  *
+  * Licensed under the Apache License, Version 2.0 (the "License");
+  * you may not use this file except in compliance with the License.
+@@ -259,6 +259,12 @@ status_t CameraBridge::initParameters(CameraParameters& params)
+             (const char *)PARAMS_DELIMITER,
+             CAMER_PARAM_BUFFER_SIZE);
+     strncat((char *)tmpBuffer,
++            (const char *)CameraParameters::ANTIBANDING_AUTO,
++            CAMER_PARAM_BUFFER_SIZE);
++    strncat((char *)tmpBuffer,
++            (const char *)PARAMS_DELIMITER,
++            CAMER_PARAM_BUFFER_SIZE);
++    strncat((char *)tmpBuffer,
+             (const char *)CameraParameters::ANTIBANDING_OFF,
+             CAMER_PARAM_BUFFER_SIZE);
+     params.set(CameraParameters::KEY_SUPPORTED_ANTIBANDING, tmpBuffer);
+@@ -271,7 +277,7 @@ status_t CameraBridge::initParameters(CameraParameters& params)
+             CAMER_PARAM_BUFFER_SIZE);
+     params.set(CameraParameters::KEY_SUPPORTED_FLASH_MODES, tmpBuffer);
+     params.set(CameraParameters::KEY_FLASH_MODE, CameraParameters::FLASH_MODE_OFF);
+-    params.set(CameraParameters::KEY_ZOOM_SUPPORTED, "true");
++    params.set(CameraParameters::KEY_ZOOM_SUPPORTED, "false");
+ 
+     // params.set(CameraParameters::KEY_ZOOM_SUPPORTED, CameraParameters::TRUE);
+     params.set(CameraParameters::KEY_MAX_ZOOM, "1");
+-- 
+1.8.0
+

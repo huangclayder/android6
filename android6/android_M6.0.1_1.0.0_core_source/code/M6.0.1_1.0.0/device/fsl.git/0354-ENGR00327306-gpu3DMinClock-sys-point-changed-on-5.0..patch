@@ -1,0 +1,32 @@
+From bb9590dc7cccd387b5d14d7caedd5cc13b8764ca Mon Sep 17 00:00:00 2001
+From: Richard Liu <r66033@freescale.com>
+Date: Fri, 15 Aug 2014 14:57:10 +0800
+Subject: [PATCH 354/602] ENGR00327306 gpu3DMinClock sys point changed on
+ 5.0.11p1
+
+gpu3DMinClock sys point changed on 5.0.11p1
+vivante kernel platform change, BSP has do the matched
+change in kernel commit is 16e7b6c80cb35a9af, android
+need to write the correct sys point.
+
+Signed-off-by: Richard Liu <r66033@freescale.com>
+---
+ imx6/etc/init.rc | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/imx6/etc/init.rc b/imx6/etc/init.rc
+index 0693a59..f02b8c8 100755
+--- a/imx6/etc/init.rc
++++ b/imx6/etc/init.rc
+@@ -428,7 +428,7 @@ on boot
+     setprop ro.adb.secure 1
+ 
+ #  Set GPU 3D minimum clock to 3/64
+-   write /sys/module/galcore/parameters/gpu3DMinClock 3
++   write /sys/bus/platform/drivers/galcore/gpu3DMinClock 3
+ 
+ # set this to not let jni check crash, just warnning message.
+     setprop dalvik.vm.jniopts warnonly
+-- 
+1.8.0
+

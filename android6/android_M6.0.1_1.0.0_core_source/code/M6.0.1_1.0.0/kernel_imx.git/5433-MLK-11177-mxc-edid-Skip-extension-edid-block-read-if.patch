@@ -1,0 +1,41 @@
+From 19618a5ccfa7110e47b2bf3454029a9b42510fc3 Mon Sep 17 00:00:00 2001
+From: Sandor Yu <R01008@freescale.com>
+Date: Tue, 14 Apr 2015 13:53:41 +0800
+Subject: [PATCH] MLK-11177: mxc edid: Skip extension edid block read if more
+ than 3
+
+HDMI driver allocate 512 bytes memory to save edid data.
+so mxc edid MAX support 3 extension block.
+Skip extension edid block read if extension block num more than 3.
+
+Signed-off-by: Sandor Yu <R01008@freescale.com>
+---
+ drivers/video/mxc/mxc_edid.c | 7 +++++--
+ 1 file changed, 5 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/video/mxc/mxc_edid.c b/drivers/video/mxc/mxc_edid.c
+index d791bfe..998b2d4 100644
+--- a/drivers/video/mxc/mxc_edid.c
++++ b/drivers/video/mxc/mxc_edid.c
+@@ -1,5 +1,5 @@
+ /*
+- * Copyright 2009-2014 Freescale Semiconductor, Inc. All Rights Reserved.
++ * Copyright 2009-2015 Freescale Semiconductor, Inc. All Rights Reserved.
+  */
+ 
+ /*
+@@ -744,7 +744,10 @@ int mxc_edid_read(struct i2c_adapter *adp, unsigned short addr,
+ 
+ 		/* FIXME: mxc_edid_readsegblk() won't read more than 2 blocks
+ 		 * and the for-loop will read past the end of the buffer! :-( */
+-		BUG_ON(extblknum > 3);
++		if (extblknum > 3) {
++			WARN_ON(true);
++			return -EINVAL;
++		}
+ 
+ 		/* need read segment block? */
+ 		if (extblknum > 1) {
+-- 
+1.8.0
+

@@ -1,0 +1,30 @@
+From 5361539457414d2d85d870ba9f77cdf4fcb5af4d Mon Sep 17 00:00:00 2001
+From: Ke Qinghua <qinghua.ke@freescale.com>
+Date: Thu, 26 Jun 2014 11:28:23 +0800
+Subject: [PATCH 513/635] ENGR00305254 imx6sx sarbesd board bring up
+
+Add sabresd 6sx bluetooth config file
+
+Signed-off-by: Ke Qinghua <qinghua.ke@freescale.com>
+---
+ libbt-ath3k/include/vnd_sabresd_6sx.txt | 8 ++++++++
+ 1 file changed, 8 insertions(+)
+ create mode 100644 libbt-ath3k/include/vnd_sabresd_6sx.txt
+
+diff --git a/libbt-ath3k/include/vnd_sabresd_6sx.txt b/libbt-ath3k/include/vnd_sabresd_6sx.txt
+new file mode 100644
+index 0000000..6600e3e
+--- /dev/null
++++ b/libbt-ath3k/include/vnd_sabresd_6sx.txt
+@@ -0,0 +1,8 @@
++BLUETOOTH_UART_DEVICE_PORT = "/dev/ttymxc4"
++FW_PATCHFILE_LOCATION = "/system/etc/firmware/ar3k/"
++LPM_IDLE_TIMEOUT_MULTIPLE = 5
++SCO_USE_I2S_INTERFACE = TRUE
++BTVND_DBG = FALSE
++BTHW_DBG = TRUE
++VNDUSERIAL_DBG = FALSE
++UPIO_DBG = FALSE
+-- 
+1.8.0
+

@@ -1,0 +1,30 @@
+From c48612a986a0071f1de71e632d0b56fa62ae944a Mon Sep 17 00:00:00 2001
+From: fang hui <hui.fang@nxp.com>
+Date: Fri, 26 Feb 2016 16:25:05 +0800
+Subject: [PATCH 634/635] MA-7678-2 - [sabresd_6dl]: cts
+ testAudioRecordLocalMono16Bit failed
+
+As capture period size is change from 1024 to 192,
+to avoid overrun, change period count from 4 to 16.
+
+Signed-off-by: fang hui <hui.fang@nxp.com>
+---
+ alsa/tinyalsa_hal.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/alsa/tinyalsa_hal.c b/alsa/tinyalsa_hal.c
+index 787c1cd..fdd5e6e 100644
+--- a/alsa/tinyalsa_hal.c
++++ b/alsa/tinyalsa_hal.c
+@@ -98,7 +98,7 @@
+ /* number of periods for capture */
+ #define CAPTURE_PERIOD_SIZE  192
+ /* number of periods for capture */
+-#define CAPTURE_PERIOD_COUNT 4
++#define CAPTURE_PERIOD_COUNT 16
+ /* minimum sleep time in out_write() when write threshold is not reached */
+ #define MIN_WRITE_SLEEP_US 5000
+ 
+-- 
+1.8.0
+

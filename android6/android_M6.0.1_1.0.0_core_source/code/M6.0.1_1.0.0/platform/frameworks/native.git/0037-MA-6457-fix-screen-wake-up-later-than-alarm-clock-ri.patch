@@ -1,0 +1,43 @@
+From 893fae12972f26ccf3657580bc4ff6e6b4c0fb35 Mon Sep 17 00:00:00 2001
+From: Liu Xiaowen <xiaowen.liu@freescale.com>
+Date: Thu, 2 Apr 2015 16:50:44 +0800
+Subject: [PATCH 37/43] MA-6457 fix screen wake up later than alarm clock
+ ring.
+
+The root cause is EventThread used for SurfaceFlinger doesn't
+call onScreenRleased which use software Vsync when screen is off.
+When suspend, it should switch to software Vsync to schedule composite.
+Add onScreenAcquired and onScreenReleased when set screen to on or off.
+
+Signed-off-by: Liu Xiaowen <xiaowen.liu@freescale.com>
+---
+ services/surfaceflinger/SurfaceFlinger.cpp | 6 ++++++
+ 1 file changed, 6 insertions(+)
+
+diff --git a/services/surfaceflinger/SurfaceFlinger.cpp b/services/surfaceflinger/SurfaceFlinger.cpp
+index 1bdb9d5..1c6b654 100644
+--- a/services/surfaceflinger/SurfaceFlinger.cpp
++++ b/services/surfaceflinger/SurfaceFlinger.cpp
+@@ -2567,6 +2567,9 @@ void SurfaceFlinger::setPowerModeInternal(const sp<DisplayDevice>& hw,
+         getHwComposer().setPowerMode(type, mode);
+         if (type == DisplayDevice::DISPLAY_PRIMARY) {
+             // FIXME: eventthread only knows about the main display right now
++#ifdef VSYNC_DIRECT_REFRESH
++            mSFEventThread->onScreenAcquired();
++#endif
+             mEventThread->onScreenAcquired();
+             resyncToHardwareVsync(true);
+         }
+@@ -2579,6 +2582,9 @@ void SurfaceFlinger::setPowerModeInternal(const sp<DisplayDevice>& hw,
+             disableHardwareVsync(true); // also cancels any in-progress resync
+ 
+             // FIXME: eventthread only knows about the main display right now
++#ifdef VSYNC_DIRECT_REFRESH
++            mSFEventThread->onScreenReleased();
++#endif
+             mEventThread->onScreenReleased();
+         }
+ 
+-- 
+1.8.0
+

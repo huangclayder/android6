@@ -1,0 +1,31 @@
+From a21684248fae33d4648643ba3a9367ed9e3f6675 Mon Sep 17 00:00:00 2001
+From: Wang Haoran <b50027@freescale.com>
+Date: Mon, 1 Dec 2014 20:16:02 +0800
+Subject: [PATCH 395/602] MA-5913 Use Atheros check_wifi_mac script
+
+Use check_wifi_mac.sh to create the softmac
+for Atheros wifi
+
+Signed-off-by: Wang Haoran <b50027@freescale.com>
+---
+ imx6/etc/init.rc | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/imx6/etc/init.rc b/imx6/etc/init.rc
+index 5e90c2c..8c927e7 100755
+--- a/imx6/etc/init.rc
++++ b/imx6/etc/init.rc
+@@ -806,6 +806,10 @@ service pppd_gprs /etc/ppp/init.gprs-pppd
+     disabled
+     oneshot
+ 
++service wifi_mac /system/bin/sh /system/etc/check_wifi_mac.sh
++    class late_start
++    oneshot
++
+ 
+ # virtual sdcard daemon running as media_rw (1023)
+ # default 4 threads have better performance to 2 threads.
+-- 
+1.8.0
+

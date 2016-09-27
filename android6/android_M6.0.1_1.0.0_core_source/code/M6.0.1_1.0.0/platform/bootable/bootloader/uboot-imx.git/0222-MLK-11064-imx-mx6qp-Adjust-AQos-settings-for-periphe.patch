@@ -1,0 +1,32 @@
+From 11906c712a52e7a20caf71d7c5da4e951a59db29 Mon Sep 17 00:00:00 2001
+From: "Ye.Li" <B37916@freescale.com>
+Date: Fri, 5 Jun 2015 22:11:41 +0800
+Subject: [PATCH] MLK-11064 imx: mx6qp: Adjust AQos settings for peripherals
+
+To resolve USB camera bandwidth issue, the patch sets recommended AQoS
+setting from IC team value for peripheral and only on imx6qp.
+
+The address is: 0xbb0608, the value is: 0x80000201
+
+Signed-off-by: Ye.Li <B37916@freescale.com>
+---
+ arch/arm/cpu/armv7/mx6/soc.c | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/arch/arm/cpu/armv7/mx6/soc.c b/arch/arm/cpu/armv7/mx6/soc.c
+index 3f4b094..febf96e 100644
+--- a/arch/arm/cpu/armv7/mx6/soc.c
++++ b/arch/arm/cpu/armv7/mx6/soc.c
+@@ -508,6 +508,9 @@ int arch_cpu_init(void)
+ #endif
+ 
+ 	init_src();
++	
++	if (is_mx6dqp())
++		writel(0x80000201, 0xbb0608);
+ 
+ 	return 0;
+ }
+-- 
+1.8.0
+

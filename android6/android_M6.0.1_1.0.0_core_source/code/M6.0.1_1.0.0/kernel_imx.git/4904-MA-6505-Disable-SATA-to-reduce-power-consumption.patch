@@ -1,0 +1,47 @@
+From 54f2817654aa3b3592fb80d6e647d4f8049e0368 Mon Sep 17 00:00:00 2001
+From: Ke Qinghua <qinghua.ke@freescale.com>
+Date: Wed, 16 Jul 2014 10:29:47 +0800
+Subject: [PATCH] MA-6505 Disable SATA to reduce power consumption
+
+Cherry-pick below commit:
+commit 8bda07492fa4704542a5517c116bc192f86f01e5
+Author: Ke Qinghua <qinghua.ke@freescale.com>
+Date:   Wed Jul 16 10:29:47 2014 +0800
+
+ENGR00322956 disable SATA in android
+
+Disable SATA function in DTS
+
+Signed-off-by: guoyin.chen <guoyin.chen@freescale.com>
+---
+ arch/arm/boot/dts/imx6q-sabreauto.dts | 4 ----
+ arch/arm/boot/dts/imx6q-sabresd.dts   | 4 ----
+ 2 files changed, 8 deletions(-)
+
+diff --git a/arch/arm/boot/dts/imx6q-sabreauto.dts b/arch/arm/boot/dts/imx6q-sabreauto.dts
+index ddd4931..73dcf89 100644
+--- a/arch/arm/boot/dts/imx6q-sabreauto.dts
++++ b/arch/arm/boot/dts/imx6q-sabreauto.dts
+@@ -45,7 +45,3 @@
+ &mxcfb4 {
+ 	status = "okay";
+ };
+-
+-&sata {
+-	status = "okay";
+-};
+diff --git a/arch/arm/boot/dts/imx6q-sabresd.dts b/arch/arm/boot/dts/imx6q-sabresd.dts
+index 44ea024..33a8592 100644
+--- a/arch/arm/boot/dts/imx6q-sabresd.dts
++++ b/arch/arm/boot/dts/imx6q-sabresd.dts
+@@ -51,7 +51,3 @@
+ &mxcfb4 {
+ 	status = "okay";
+ };
+-
+-&sata {
+-	status = "okay";
+-};
+-- 
+1.8.0
+

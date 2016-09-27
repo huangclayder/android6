@@ -1,0 +1,754 @@
+From a31dcdafb0963381e7213c59f79a340ef27ec2e2 Mon Sep 17 00:00:00 2001
+From: "Ye.Li" <B37916@freescale.com>
+Date: Thu, 12 Jun 2014 19:47:27 +0800
+Subject: [PATCH] ENGR00315894-81 gis: Add gis module
+
+Add gis module, current gis is support vadc input.
+Add power down function to lcdif driver.
+
+Signed-off-by: Sandor Yu <R01008@freescale.com>
+Signed-off-by: Ye.Li <B37916@freescale.com>
+(cherry picked from commit a007b00dd8ef9f773dfdebef0b1deb0990281793)
+
+Conflicts:
+	drivers/video/Makefile
+---
+ arch/arm/imx-common/cpu.c |   8 +
+ drivers/video/Makefile    |   5 +
+ drivers/video/mxc_gis.c   | 392 ++++++++++++++++++++++++++++++++++++++++++++++
+ drivers/video/mxc_gis.h   | 175 +++++++++++++++++++++
+ drivers/video/mxsfb.c     |  31 ++++
+ include/gis.h             |  19 +++
+ include/mxsfb.h           |  10 ++
+ 7 files changed, 640 insertions(+)
+
+diff --git a/arch/arm/imx-common/cpu.c b/arch/arm/imx-common/cpu.c
+index 0a7d476..e097a29 100644
+--- a/arch/arm/imx-common/cpu.c
++++ b/arch/arm/imx-common/cpu.c
+@@ -20,6 +20,10 @@
+ #include <thermal.h>
+ #include <sata.h>
+ 
++#ifdef CONFIG_VIDEO_GIS
++#include <gis.h>
++#endif
++
+ #ifdef CONFIG_FSL_ESDHC
+ #include <fsl_esdhc.h>
+ #endif
+@@ -237,6 +241,10 @@ void arch_preboot_os(void)
+ 	/* disable video before launching O/S */
+ 	ipuv3_fb_shutdown();
+ #endif
++#ifdef CONFIG_VIDEO_GIS
++	/* Entry for GIS */
++	mxc_disable_gis();
++#endif
+ }
+ 
+ void set_chipselect_size(int const cs_size)
+diff --git a/drivers/video/Makefile b/drivers/video/Makefile
+index 22a316b..bfca032 100644
+--- a/drivers/video/Makefile
++++ b/drivers/video/Makefile
+@@ -47,3 +47,8 @@ obj-$(CONFIG_VIDEO_VESA) += vesa_fb.o
+ obj-$(CONFIG_FORMIKE) += formike.o
+ obj-$(CONFIG_AM335X_LCD) += am335x-fb.o
+ obj-$(CONFIG_VIDEO_PARADE) += parade.o
++obj-$(CONFIG_MXC_EPDC) += mxc_epdc_fb.o
++obj-$(CONFIG_VIDEO_VADC) += mxc_vadc.o
++obj-$(CONFIG_VIDEO_CSI) += mxc_csi.o
++obj-$(CONFIG_VIDEO_PXP) += mxc_pxp.o
++obj-$(CONFIG_VIDEO_GIS) += mxc_gis.o
+diff --git a/drivers/video/mxc_gis.c b/drivers/video/mxc_gis.c
+new file mode 100644
+index 0000000..01befb3
+--- /dev/null
++++ b/drivers/video/mxc_gis.c
+@@ -0,0 +1,392 @@
++/*
++ * Copyright (C) 2014 Freescale Semiconductor, Inc. All Rights Reserved.
++ *
++ * SPDX-License-Identifier:	GPL-2.0+
++ */
++
++#include <common.h>
++#include <malloc.h>
++#include <video_fb.h>
++
++#include <asm/arch/imx-regs.h>
++#include <asm/arch/sys_proto.h>
++#include <asm/errno.h>
++#include <asm/io.h>
++
++#include <linux/string.h>
++#include <linux/list.h>
++#include <linux/fb.h>
++#include <gis.h>
++#include <mxsfb.h>
++
++#include "mxc_gis.h"
++#include "mxc_csi.h"
++#include "mxc_pxp.h"
++#include "mxc_vadc.h"
++
++#define CHANNEL_OFFSET 36
++#define COMMAND_OFFSET 8
++#define REG_OFFSET 4
++#define COMMAND_OPCODE_SHIFT 8
++
++enum {
++	CMD_SET_ACC = 0,
++	CMD_WR_DATA,
++	CMD_WR_ACC,
++	CMD_WR_ALU,
++	CMD_MOV_ACC,
++	CMD_RD_DATA,
++	CMD_RD_ALU,
++	CMD_WR_FB_CSI,
++	CMD_WR_FB_PXP_IN,
++	CMD_WR_FB_PXP_OUT,
++	CMD_WR_FB_LCDIF,
++};
++
++enum {
++	ALU_AND = 0,
++	ALU_OR,
++	ALU_XOR,
++	ALU_ADD,
++	ALU_SUB,
++};
++
++enum {
++	CH_MAPPING_CSI_ISR = 0,
++	CH_MAPPING_CSI_FB_UPDATE,
++	CH_MAPPING_PXP_ISR,
++	CH_MAPPING_LCDIF_FB_UPDATE,
++	CH_MAPPING_PXP_KICK,
++	CH_MAPPING_CHANNEL_UNUSED = 0xf,
++};
++
++enum {
++	LCDIF1_SEL = 0x10,
++	LCDIF0_SEL = 0x8,
++	PXP_SEL    = 0x4,
++	CSI1_SEL   = 0x2,
++	CSI0_SEL   = 0x1,
++};
++
++struct command_opcode {
++	unsigned opcode:4;
++	unsigned alu:3;
++	unsigned acc_neg:1;
++};
++
++struct command_param {
++	union {
++		struct command_opcode cmd_bits;
++		u8  cmd_opc;
++	};
++	u32 addr;
++	u32 data;
++};
++
++struct channel_param {
++	u32 ch_num;
++	u32 ch_map;
++	u32 cmd_num;
++	struct command_param cmd_data[4];
++};
++
++static void *csibuf0, *csibuf1, *fb0, *fb1;
++static struct mxs_gis_regs *gis_regs;
++static struct mxs_pxp_regs *pxp_regs;
++static struct mxs_csi_regs *csi_regs;
++static struct mxs_lcdif_regs *lcdif_regs;
++static u32 lcdif_sel;
++static bool gis_running;
++
++static void config_channel(struct channel_param *ch)
++{
++	u32 val, i;
++	u32 reg_offset;
++
++	/* Config channel map and command */
++	switch (ch->ch_num) {
++	case 0:
++		val = readl(&gis_regs->hw_gis_config0);
++		val &= ~(GIS_CONFIG0_CH0_MAPPING_MASK | GIS_CONFIG0_CH0_NUM_MASK);
++		val |= ch->ch_map << GIS_CONFIG0_CH0_MAPPING_SHIFT;
++		val |= ch->cmd_num << GIS_CONFIG0_CH0_NUM_SHIFT;
++		writel(val, &gis_regs->hw_gis_config0);
++		break;
++	case 1:
++		val = readl(&gis_regs->hw_gis_config0);
++		val &= ~(GIS_CONFIG0_CH1_MAPPING_MASK | GIS_CONFIG0_CH1_NUM_MASK);
++		val |= ch->ch_map << GIS_CONFIG0_CH1_MAPPING_SHIFT;
++		val |= ch->cmd_num << GIS_CONFIG0_CH1_NUM_SHIFT;
++		writel(val, &gis_regs->hw_gis_config0);
++		break;
++	case 2:
++		val = readl(&gis_regs->hw_gis_config0);
++		val &= ~(GIS_CONFIG0_CH2_MAPPING_MASK | GIS_CONFIG0_CH2_NUM_MASK);
++		val |= ch->ch_map << GIS_CONFIG0_CH2_MAPPING_SHIFT;
++		val |= ch->cmd_num << GIS_CONFIG0_CH2_NUM_SHIFT;
++		writel(val, &gis_regs->hw_gis_config0);
++		break;
++	case 3:
++		val = readl(&gis_regs->hw_gis_config0);
++		val &= ~(GIS_CONFIG0_CH3_MAPPING_MASK | GIS_CONFIG0_CH3_NUM_MASK);
++		val |= ch->ch_map << GIS_CONFIG0_CH3_MAPPING_SHIFT;
++		val |= ch->cmd_num << GIS_CONFIG0_CH3_NUM_SHIFT;
++		writel(val, &gis_regs->hw_gis_config0);
++		break;
++	case 4:
++		val = readl(&gis_regs->hw_gis_config1);
++		val &= ~(GIS_CONFIG1_CH4_MAPPING_MASK | GIS_CONFIG1_CH4_NUM_MASK);
++		val |= ch->ch_map << GIS_CONFIG1_CH4_MAPPING_SHIFT;
++		val |= ch->cmd_num << GIS_CONFIG1_CH4_NUM_SHIFT;
++		writel(val, &gis_regs->hw_gis_config1);
++		break;
++	case 5:
++		val = readl(&gis_regs->hw_gis_config1);
++		val &= ~(GIS_CONFIG1_CH5_MAPPING_MASK | GIS_CONFIG1_CH5_NUM_MASK);
++		val |= ch->ch_map << GIS_CONFIG1_CH5_MAPPING_SHIFT;
++		val |= ch->cmd_num << GIS_CONFIG1_CH5_NUM_SHIFT;
++		writel(val, &gis_regs->hw_gis_config1);
++		break;
++	default:
++		printf("Error channel num\n");
++	}
++
++	/* Config command  */
++	for (i = 0; i < ch->cmd_num; i++) {
++		val = readl(&gis_regs->hw_gis_ch0_ctrl + ch->ch_num * CHANNEL_OFFSET);
++		val &= ~(0xFF << (COMMAND_OPCODE_SHIFT * i));
++		val |= ch->cmd_data[i].cmd_opc << (COMMAND_OPCODE_SHIFT * i);
++		writel(val, &gis_regs->hw_gis_ch0_ctrl + ch->ch_num * CHANNEL_OFFSET);
++
++		reg_offset = ch->ch_num * CHANNEL_OFFSET + i * COMMAND_OFFSET;
++		writel(ch->cmd_data[i].addr, &gis_regs->hw_gis_ch0_addr0 + reg_offset);
++		writel(ch->cmd_data[i].data, &gis_regs->hw_gis_ch0_data0 + reg_offset);
++	}
++}
++
++static void gis_channel_init(void)
++{
++	struct channel_param ch;
++	int ret;
++	u32 addr0, data0, addr1, data1;
++	u32 val;
++
++	/* Restart the GIS block */
++	ret = mxs_reset_block(&gis_regs->hw_gis_ctrl_reg);
++	if (ret) {
++		debug("MXS GIS: Block reset timeout\n");
++		return;
++	}
++
++	writel((u32)csibuf0, &gis_regs->hw_gis_fb0);
++	writel((u32)csibuf1, &gis_regs->hw_gis_fb1);
++	writel((u32)fb0, &gis_regs->hw_gis_pxp_fb0);
++	writel((u32)fb1, &gis_regs->hw_gis_pxp_fb1);
++
++	/* Config channel 0 -- CSI clean interrupt  */
++	addr0 = (u32)&csi_regs->csi_csisr;
++	data0 = BIT_DMA_TSF_DONE_FB1 | BIT_DMA_TSF_DONE_FB2 | BIT_SOF_INT;
++	ch.ch_num = 0;
++	ch.ch_map = CH_MAPPING_CSI_ISR;
++	ch.cmd_num = 1;
++	ch.cmd_data[0].cmd_bits.opcode = CMD_WR_DATA;
++	ch.cmd_data[0].cmd_bits.alu = ALU_AND;
++	ch.cmd_data[0].cmd_bits.acc_neg = GIS_CH_CTRL_CMD_ACC_NO_NEGATE;
++	ch.cmd_data[0].addr = CSI0_SEL << GIS_CH_ADDR_SEL_SHIFT | addr0;
++	ch.cmd_data[0].data = data0;
++	config_channel(&ch);
++
++	/* Config channel 1 -- CSI set next framebuffer addr  */
++	addr0 = (u32)&csi_regs->csi_csidmasa_fb1;
++	data0 = (u32)&csi_regs->csi_csidmasa_fb2;
++	ch.ch_num = 1;
++	ch.ch_map = CH_MAPPING_CSI_FB_UPDATE;
++	ch.cmd_num = 1;
++	ch.cmd_data[0].cmd_bits.opcode = CMD_WR_FB_CSI;
++	ch.cmd_data[0].cmd_bits.alu = ALU_AND;
++	ch.cmd_data[0].cmd_bits.acc_neg = GIS_CH_CTRL_CMD_ACC_NO_NEGATE;
++	ch.cmd_data[0].addr = CSI0_SEL << GIS_CH_ADDR_SEL_SHIFT | addr0;
++	ch.cmd_data[0].data = data0;
++	config_channel(&ch);
++
++	/* Config channel 2 -- PXP clear interrupt and set framebuffer */
++	addr0 = (u32)&pxp_regs->pxp_stat_clr;
++	data0 = BM_PXP_STAT_IRQ;
++	addr1 = (u32)&pxp_regs->pxp_out_buf;
++	data1 = 0;
++	ch.ch_num = 2;
++	ch.ch_map = CH_MAPPING_PXP_ISR;
++	ch.cmd_num = 2;
++	ch.cmd_data[0].cmd_bits.opcode = CMD_WR_DATA;
++	ch.cmd_data[0].cmd_bits.alu = ALU_AND;
++	ch.cmd_data[0].cmd_bits.acc_neg = GIS_CH_CTRL_CMD_ACC_NO_NEGATE;
++	ch.cmd_data[0].addr = PXP_SEL << GIS_CH_ADDR_SEL_SHIFT | addr0;
++	ch.cmd_data[0].data = data0;
++	ch.cmd_data[1].cmd_bits.opcode = CMD_WR_FB_PXP_OUT;
++	ch.cmd_data[1].cmd_bits.alu = ALU_AND;
++	ch.cmd_data[1].cmd_bits.acc_neg = GIS_CH_CTRL_CMD_ACC_NO_NEGATE;
++	ch.cmd_data[1].addr = PXP_SEL << GIS_CH_ADDR_SEL_SHIFT | addr1;
++	ch.cmd_data[1].data = data1;
++	config_channel(&ch);
++
++	/* Config channel 3 -- LCDIF set framebuffer to display */
++	addr0 = (u32)&lcdif_regs->hw_lcdif_next_buf;
++	data0 = 0;
++	ch.ch_num = 3;
++	ch.ch_map = CH_MAPPING_LCDIF_FB_UPDATE;
++	ch.cmd_num = 1;
++	ch.cmd_data[0].cmd_bits.opcode = CMD_WR_FB_LCDIF;
++	ch.cmd_data[0].cmd_bits.alu = ALU_AND;
++	ch.cmd_data[0].cmd_bits.acc_neg = GIS_CH_CTRL_CMD_ACC_NO_NEGATE;
++	ch.cmd_data[0].addr = ((lcdif_sel == 0) ? LCDIF0_SEL : LCDIF1_SEL) << GIS_CH_ADDR_SEL_SHIFT | addr0;
++	ch.cmd_data[0].data = data0;
++	config_channel(&ch);
++
++	/* Config channel 4 -- PXP kick to process next framebuffer */
++	addr0 = (u32)&pxp_regs->pxp_ps_buf;
++	data0 = 0;
++	addr1 = (u32)&pxp_regs->pxp_ctrl;
++	data1 = BM_PXP_CTRL_IRQ_ENABLE | BM_PXP_CTRL_ENABLE;
++	ch.ch_num = 4;
++	ch.ch_map = CH_MAPPING_PXP_KICK;
++	ch.cmd_num = 2;
++	ch.cmd_data[0].cmd_bits.opcode = CMD_WR_FB_PXP_IN;
++	ch.cmd_data[0].cmd_bits.alu = ALU_AND;
++	ch.cmd_data[0].cmd_bits.acc_neg = GIS_CH_CTRL_CMD_ACC_NO_NEGATE;
++	ch.cmd_data[0].addr = PXP_SEL << GIS_CH_ADDR_SEL_SHIFT | addr0;
++	ch.cmd_data[0].data = data0;
++	ch.cmd_data[1].cmd_bits.opcode = CMD_WR_DATA;
++	ch.cmd_data[1].cmd_bits.alu = ALU_AND;
++	ch.cmd_data[1].cmd_bits.acc_neg = GIS_CH_CTRL_CMD_ACC_NO_NEGATE;
++	ch.cmd_data[1].addr = PXP_SEL << GIS_CH_ADDR_SEL_SHIFT | addr1;
++	ch.cmd_data[1].data = data1;
++	config_channel(&ch);
++
++	/* start gis  */
++	val = readl(&gis_regs->hw_gis_ctrl);
++	if (lcdif_sel == 1)
++		val |= GIS_CTRL_ENABLE_SET | GIS_CTRL_LCDIF_SEL_LCDIF1;
++	else
++		val |= GIS_CTRL_ENABLE_SET | GIS_CTRL_LCDIF_SEL_LCDIF0;
++	writel(val, &gis_regs->hw_gis_ctrl);
++}
++
++void mxc_disable_gis(void)
++{
++	u32 val;
++
++	if (!gis_running)
++		return;
++
++	/* Stop gis */
++	val = GIS_CTRL_SFTRST_SET | GIS_CTRL_CLK_GATE_SET;
++	writel(val, &gis_regs->hw_gis_ctrl);
++
++	/* Stop pxp */
++	mxs_reset_block(&pxp_regs->pxp_ctrl_reg);
++	val = BM_PXP_CTRL_SFTRST | BM_PXP_CTRL_CLKGATE;
++	writel(val , &pxp_regs->pxp_ctrl);
++
++	csi_disable();
++
++	vadc_power_down();
++}
++
++void mxc_enable_gis(void)
++{
++	struct sensor_data sensor;
++	struct csi_conf_param csi_conf;
++	struct pxp_config_data pxp_conf;
++	struct display_panel panel;
++	u32 csimemsize, pxpmemsize;
++	char const *gis_input = getenv("gis");
++
++	gis_regs = (struct mxs_gis_regs *)GIS_BASE_ADDR;
++	pxp_regs = (struct mxs_pxp_regs *)PXP_BASE_ADDR;
++	csi_regs = (struct mxs_csi_regs *)CSI1_BASE_ADDR;
++
++	gis_running = false;
++
++	if (!strcmp(gis_input, "vadc")) {
++		printf("gis input --- vadc\n");
++		/* vadc_in 0 */
++		vadc_config(0);
++
++		/* Get vadc mode */
++		vadc_get_std(&sensor);
++	} else {
++		printf("gis input --- No input\n");
++		return;
++	}
++
++	/* Get display mode */
++	mxs_lcd_get_panel(&panel);
++
++	lcdif_regs = (struct mxs_lcdif_regs *)panel.reg_base;
++	if (panel.reg_base == LCDIF2_BASE_ADDR)
++		lcdif_sel = 1;
++	else
++		lcdif_sel = 0;
++
++	/* Allocate csi buffer */
++	if (sensor.pixel_fmt == FMT_YUV444) {
++		csimemsize = sensor.width * sensor.height * 4;
++		csi_conf.bpp = 32;
++	} else {
++		csimemsize = sensor.width * sensor.height * 2;
++		csi_conf.bpp = 16;
++	}
++
++	pxpmemsize = panel.width * panel.height * panel.gdfbytespp;
++	csibuf0 = malloc(csimemsize);
++	csibuf1 = malloc(csimemsize);
++	fb0 = malloc(pxpmemsize);
++	fb1 = malloc(pxpmemsize);
++	if (!csibuf0 || !csibuf1 || !fb0 || !fb1) {
++		printf("MXSGIS: Error allocating csibuffer!\n");
++		return;
++	}
++	/* Wipe framebuffer */
++	memset(csibuf0, 0, csimemsize);
++	memset(csibuf1, 0, csimemsize);
++	memset(fb0, 0, pxpmemsize);
++	memset(fb1, 0, pxpmemsize);
++
++	/*config csi  */
++	csi_conf.width = sensor.width;
++	csi_conf.height = sensor.height;
++	csi_conf.btvmode = true;
++	csi_conf.std = sensor.std_id;
++	csi_conf.fb0addr = csibuf0;
++	csi_conf.fb1addr = csibuf1;
++	csi_config(&csi_conf);
++
++	/* config pxp */
++	pxp_conf.s0_param.pixel_fmt = sensor.pixel_fmt;
++	pxp_conf.s0_param.width = sensor.width;
++	pxp_conf.s0_param.height = sensor.height;
++	pxp_conf.s0_param.stride = sensor.width * csi_conf.bpp/8;
++	pxp_conf.s0_param.paddr = csibuf0;
++
++	switch (panel.gdfindex) {
++	case GDF_32BIT_X888RGB:
++		pxp_conf.out_param.pixel_fmt = FMT_RGB888;
++		break;
++	case GDF_16BIT_565RGB:
++		pxp_conf.out_param.pixel_fmt = FMT_RGB565;
++		break;
++	default:
++		printf("GIS unsupported format!");
++	}
++
++	pxp_conf.out_param.width = panel.width;
++	pxp_conf.out_param.height = panel.height;
++	pxp_conf.out_param.stride = pxp_conf.out_param.width * panel.gdfbytespp;
++	pxp_conf.out_param.paddr = fb0;
++	pxp_config(&pxp_conf);
++
++	gis_running = true;
++
++	/* Config gis */
++	gis_channel_init();
++}
+diff --git a/drivers/video/mxc_gis.h b/drivers/video/mxc_gis.h
+new file mode 100644
+index 0000000..93bff95
+--- /dev/null
++++ b/drivers/video/mxc_gis.h
+@@ -0,0 +1,175 @@
++/*
++ * Copyright (C) 2014 Freescale Semiconductor, Inc. All Rights Reserved.
++ *
++ * SPDX-License-Identifier:	GPL-2.0+
++ */
++
++#ifndef MXC_GIS_H
++#define MXC_GIS_H
++
++#include <asm/imx-common/regs-common.h>
++
++struct mxs_gis_regs {
++	mxs_reg_32(hw_gis_ctrl)				/* 0x00 */
++	mxs_reg_32(hw_gis_config0)			/* 0x10 */
++	mxs_reg_32(hw_gis_config1)			/* 0x20 */
++	mxs_reg_32(hw_gis_fb0)				/* 0x30 */
++	mxs_reg_32(hw_gis_fb1)				/* 0x40 */
++	mxs_reg_32(hw_gis_pxp_fb0)			/* 0x50 */
++	mxs_reg_32(hw_gis_pxp_fb1)			/* 0x60 */
++
++	mxs_reg_32(hw_gis_ch0_ctrl)			/* 0x70 */
++	mxs_reg_32(hw_gis_ch0_addr0)		/* 0x80 */
++	mxs_reg_32(hw_gis_ch0_data0)		/* 0x90 */
++	mxs_reg_32(hw_gis_ch0_addr1)		/* 0xa0 */
++	mxs_reg_32(hw_gis_ch0_data1)		/* 0xb0 */
++	mxs_reg_32(hw_gis_ch0_addr2)		/* 0xc0 */
++	mxs_reg_32(hw_gis_ch0_data2)		/* 0xd0 */
++	mxs_reg_32(hw_gis_ch0_addr3)		/* 0xe0 */
++	mxs_reg_32(hw_gis_ch0_data3)		/* 0xf0 */
++
++	mxs_reg_32(hw_gis_ch1_ctrl)			/* 0x100 */
++	mxs_reg_32(hw_gis_ch1_addr0)		/* 0x110 */
++	mxs_reg_32(hw_gis_ch1_data0)		/* 0x120 */
++	mxs_reg_32(hw_gis_ch1_addr1)		/* 0x130 */
++	mxs_reg_32(hw_gis_ch1_data1)		/* 0x140 */
++	mxs_reg_32(hw_gis_ch1_addr2)		/* 0x150 */
++	mxs_reg_32(hw_gis_ch1_data2)		/* 0x160 */
++	mxs_reg_32(hw_gis_ch1_addr3)		/* 0x170 */
++	mxs_reg_32(hw_gis_ch1_data3)		/* 0x180 */
++
++	mxs_reg_32(hw_gis_ch2_ctrl)			/* 0x190 */
++	mxs_reg_32(hw_gis_ch2_addr0)		/* 0x1a0 */
++	mxs_reg_32(hw_gis_ch2_data0)		/* 0x1b0 */
++	mxs_reg_32(hw_gis_ch2_addr1)		/* 0x1c0 */
++	mxs_reg_32(hw_gis_ch2_data1)		/* 0x1d0 */
++	mxs_reg_32(hw_gis_ch2_addr2)		/* 0x1e0 */
++	mxs_reg_32(hw_gis_ch2_data2)		/* 0x1f0 */
++	mxs_reg_32(hw_gis_ch2_addr3)		/* 0x200 */
++	mxs_reg_32(hw_gis_ch2_data3)		/* 0x210 */
++
++	mxs_reg_32(hw_gis_ch3_ctrl)			/* 0x220 */
++	mxs_reg_32(hw_gis_ch3_addr0)		/* 0x230 */
++	mxs_reg_32(hw_gis_ch3_data0)		/* 0x240 */
++	mxs_reg_32(hw_gis_ch3_addr1)		/* 0x250 */
++	mxs_reg_32(hw_gis_ch3_data1)		/* 0x260 */
++	mxs_reg_32(hw_gis_ch3_addr2)		/* 0x270 */
++	mxs_reg_32(hw_gis_ch3_data2)		/* 0x280 */
++	mxs_reg_32(hw_gis_ch3_addr3)		/* 0x290 */
++	mxs_reg_32(hw_gis_ch3_data3)		/* 0x2a0 */
++
++	mxs_reg_32(hw_gis_ch4_ctrl)			/* 0x2b0 */
++	mxs_reg_32(hw_gis_ch4_addr0)		/* 0x2c0 */
++	mxs_reg_32(hw_gis_ch4_data0)		/* 0x2d0 */
++	mxs_reg_32(hw_gis_ch4_addr1)		/* 0x2e0 */
++	mxs_reg_32(hw_gis_ch4_data1)		/* 0x2f0 */
++	mxs_reg_32(hw_gis_ch4_addr2)		/* 0x300 */
++	mxs_reg_32(hw_gis_ch4_data2)		/* 0x310 */
++	mxs_reg_32(hw_gis_ch4_addr3)		/* 0x320 */
++	mxs_reg_32(hw_gis_ch4_data3)		/* 0x330 */
++
++	mxs_reg_32(hw_gis_ch5_ctrl)			/* 0x340 */
++	mxs_reg_32(hw_gis_ch5_addr0)		/* 0x350 */
++	mxs_reg_32(hw_gis_ch5_data0)		/* 0x360 */
++	mxs_reg_32(hw_gis_ch5_addr1)		/* 0x370 */
++	mxs_reg_32(hw_gis_ch5_data1)		/* 0x380 */
++	mxs_reg_32(hw_gis_ch5_addr2)		/* 0x390 */
++	mxs_reg_32(hw_gis_ch5_data2)		/* 0x3a0 */
++	mxs_reg_32(hw_gis_ch5_addr3)		/* 0x3b0 */
++	mxs_reg_32(hw_gis_ch5_data3)		/* 0x3c0 */
++
++	mxs_reg_32(hw_gis_debug0)			/* 0x3d0 */
++	mxs_reg_32(hw_gis_debug1)			/* 0x3e0 */
++	mxs_reg_32(hw_gis_version)			/* 0x3f0 */
++};
++
++/* register bit */
++#define GIS_CTRL_SFTRST_CLR				0
++#define GIS_CTRL_SFTRST_SET				(1 << 31)
++#define GIS_CTRL_CLK_GATE_CLR			0
++#define GIS_CTRL_CLK_GATE_SET			(1 << 30)
++#define GIS_CTRL_LCDIF1_IRQ_POL_LOW		0
++#define GIS_CTRL_LCDIF1_IRQ_POL_HIGH	(1 << 8)
++#define GIS_CTRL_LCDIF0_IRQ_POL_LOW		0
++#define GIS_CTRL_LCDIF0_IRQ_POL_HIGH	(1 << 7)
++#define GIS_CTRL_PXP_IRQ_POL_LOW		0
++#define GIS_CTRL_PXP_IRQ_POL_HIGH		(1 << 6)
++#define GIS_CTRL_CSI1_IRQ_POL_LOW		0
++#define GIS_CTRL_CSI1_IRQ_POL_HIGH		(1 << 5)
++#define GIS_CTRL_CSI0_IRQ_POL_LOW		0
++#define GIS_CTRL_CSI0_IRQ_POL_HIGH		(1 << 4)
++#define GIS_CTRL_CSI_SEL_CSI0			0
++#define GIS_CTRL_CSI_SEL_CSI1			(1 << 3)
++#define GIS_CTRL_LCDIF_SEL_LCDIF0		0
++#define GIS_CTRL_LCDIF_SEL_LCDIF1		(1 << 2)
++#define GIS_CTRL_FB_START_FB0			0
++#define GIS_CTRL_FB_START_FB1			(1 << 1)
++#define GIS_CTRL_ENABLE_CLR				0
++#define GIS_CTRL_ENABLE_SET				(1 << 0)
++
++#define GIS_CONFIG0_CH3_NUM_MASK		(0x7 << 27)
++#define GIS_CONFIG0_CH3_NUM_SHIFT		27
++#define GIS_CONFIG0_CH3_MAPPING_MASK	(0x7 << 24)
++#define GIS_CONFIG0_CH3_MAPPING_SHIFT	24
++#define GIS_CONFIG0_CH2_NUM_MASK		(0x7 << 19)
++#define GIS_CONFIG0_CH2_NUM_SHIFT		19
++#define GIS_CONFIG0_CH2_MAPPING_MASK	(0x7 << 16)
++#define GIS_CONFIG0_CH2_MAPPING_SHIFT	16
++#define GIS_CONFIG0_CH1_NUM_MASK		(0x7 << 11)
++#define GIS_CONFIG0_CH1_NUM_SHIFT		11
++#define GIS_CONFIG0_CH1_MAPPING_MASK	(0x7 << 8)
++#define GIS_CONFIG0_CH1_MAPPING_SHIFT	8
++#define GIS_CONFIG0_CH0_NUM_MASK		(0x7 << 3)
++#define GIS_CONFIG0_CH0_NUM_SHIFT		3
++#define GIS_CONFIG0_CH0_MAPPING_MASK	(0x7 << 0)
++#define GIS_CONFIG0_CH0_MAPPING_SHIFT	0
++
++#define GIS_CONFIG1_CH5_NUM_MASK		(0x7 << 11)
++#define GIS_CONFIG1_CH5_NUM_SHIFT		11
++#define GIS_CONFIG1_CH5_MAPPING_MASK	(0x7 << 8)
++#define GIS_CONFIG1_CH5_MAPPING_SHIFT	8
++#define GIS_CONFIG1_CH4_NUM_MASK		(0x7 << 3)
++#define GIS_CONFIG1_CH4_NUM_SHIFT		3
++#define GIS_CONFIG1_CH4_MAPPING_MASK	(0x7 << 0)
++#define GIS_CONFIG1_CH4_MAPPING_SHIFT	0
++
++#define GIS_CH_CTRL_CMD3_ACC_MASK		(0x1 << 31)
++#define GIS_CH_CTRL_CMD3_ACC_SHIFT		31
++#define GIS_CH_CTRL_CMD3_ALU_MASK		(0x7 << 28)
++#define GIS_CH_CTRL_CMD3_ALU_SHIFT		28
++#define GIS_CH_CTRL_CMD3_OPCODE_MASK	(0xF << 24)
++#define GIS_CH_CTRL_CMD3_OPCODE_SHIFT	24
++#define GIS_CH_CTRL_CMD2_ACC_MASK		(0x1 << 23)
++#define GIS_CH_CTRL_CMD2_ACC_SHIFT		23
++#define GIS_CH_CTRL_CMD2_ALU_MASK		(0xF << 20)
++#define GIS_CH_CTRL_CMD2_ALU_SHIFT		20
++#define GIS_CH_CTRL_CMD2_OPCODE_MASK	(0xF << 16)
++#define GIS_CH_CTRL_CMD2_OPCODE_SHIFT	16
++#define GIS_CH_CTRL_CMD1_ACC_MASK		(0x1 << 15)
++#define GIS_CH_CTRL_CMD1_ACC_SHIFT		15
++#define GIS_CH_CTRL_CMD1_ALU_MASK		(0x7 << 12)
++#define GIS_CH_CTRL_CMD1_ALU_SHIFT		12
++#define GIS_CH_CTRL_CMD1_OPCODE_MASK	(0xF << 8)
++#define GIS_CH_CTRL_CMD1_OPCODE_SHIFT	8
++#define GIS_CH_CTRL_CMD0_ACC_MASK		(0x1 << 7)
++#define GIS_CH_CTRL_CMD0_ACC_SHIFT		7
++#define GIS_CH_CTRL_CMD0_ALU_MASK		(0x7 << 4)
++#define GIS_CH_CTRL_CMD0_ALU_SHIFT		4
++#define GIS_CH_CTRL_CMD0_OPCODE_MASK	(0xF << 0)
++#define GIS_CH_CTRL_CMD0_OPCODE_SHIFT	0
++
++#define GIS_CH_CTRL_CMD_ACC_NO_NEGATE	0
++#define GIS_CH_CTRL_CMD_ACC_NEGATE		1
++
++#define GIS_CH_ADDR_SEL_MASK			(0xF8 << 27)
++#define GIS_CH_ADDR_SEL_LCDIF1			(0x1 << 31)
++#define GIS_CH_ADDR_SEL_LCDIF0			(0x1 << 30)
++#define GIS_CH_ADDR_SEL_PXP				(0x1 << 29)
++#define GIS_CH_ADDR_SEL_CSI1			(0x1 << 28)
++#define GIS_CH_ADDR_SEL_CSI0			(0x1 << 27)
++#define GIS_CH_ADDR_SEL_SHIFT			27
++#define GIS_CH_ADDR_ADDR_MASK			0x7FFFFFF
++#define GIS_CH_ADDR_ADDR_SHIFT			0
++
++#endif
++
+diff --git a/drivers/video/mxsfb.c b/drivers/video/mxsfb.c
+index e9978c2..571b6f0 100644
+--- a/drivers/video/mxsfb.c
++++ b/drivers/video/mxsfb.c
+@@ -21,7 +21,11 @@
+ #include <linux/string.h>
+ #include <linux/list.h>
+ #include <linux/fb.h>
++#include <mxsfb.h>
+ 
++#ifdef CONFIG_VIDEO_GIS
++#include <gis.h>
++#endif
+ 
+ #define	PS2KHZ(ps)	(1000000000UL / (ps))
+ 
+@@ -55,6 +59,15 @@ int mxs_lcd_panel_setup(struct fb_videomode mode, int bpp,
+ 	return 0;
+ }
+ 
++void mxs_lcd_get_panel(struct display_panel *dispanel)
++{
++	dispanel->width = fbmode.xres;
++	dispanel->height = fbmode.yres;
++	dispanel->reg_base = panel.isaBase;
++	dispanel->gdfindex = panel.gdfIndex;
++	dispanel->gdfbytespp = panel.gdfBytesPP;
++}
++
+ /*
+  * DENX M28EVK:
+  * setenv videomode
+@@ -151,6 +164,19 @@ static void mxs_lcd_init(GraphicDevice *panel,
+ 	writel(LCDIF_CTRL_RUN, &regs->hw_lcdif_ctrl_set);
+ }
+ 
++void lcdif_power_down()
++{
++	u32 val;
++	struct mxs_lcdif_regs *regs = (struct mxs_lcdif_regs *)(panel.isaBase);
++
++	writel(panel.frameAdrs, &regs->hw_lcdif_cur_buf);
++	writel(panel.frameAdrs, &regs->hw_lcdif_next_buf);
++
++	/* Stop lcdif */
++	val = LCDIF_CTRL_SFTRST | LCDIF_CTRL_CLKGATE;
++	writel(val, &regs->hw_lcdif_ctrl);
++}
++
+ void *video_hw_init(void)
+ {
+ 	int bpp = -1;
+@@ -259,5 +285,10 @@ void *video_hw_init(void)
+ 	mxs_dma_circ_start(MXS_DMA_CHANNEL_AHB_APBH_LCDIF, &desc);
+ #endif
+ 
++#ifdef CONFIG_VIDEO_GIS
++	/* Entry for GIS */
++	mxc_enable_gis();
++#endif
++
+ 	return (void *)&panel;
+ }
+diff --git a/include/gis.h b/include/gis.h
+new file mode 100644
+index 0000000..e156743
+--- /dev/null
++++ b/include/gis.h
+@@ -0,0 +1,19 @@
++/*
++ * Copyright (C) 2014 Freescale Semiconductor, Inc. All Rights Reserved.
++ *
++ * SPDX-License-Identifier:	GPL-2.0+
++ */
++
++#ifndef GIS_H
++#define GIS_H
++
++#define FMT_YUV444		0
++#define FMT_YUYV		1
++#define FMT_UYVY		2
++#define FMT_RGB565		3
++#define FMT_RGB888		4
++
++void mxc_enable_gis(void);
++void mxc_disable_gis(void);
++
++#endif
+diff --git a/include/mxsfb.h b/include/mxsfb.h
+index a4e27a8..ddea7aa 100644
+--- a/include/mxsfb.h
++++ b/include/mxsfb.h
+@@ -8,6 +8,16 @@
+ #define __MXSFB_H__
+ 
+ #ifdef CONFIG_VIDEO_MXS
++struct display_panel {
++	unsigned int reg_base;
++	unsigned int width;
++	unsigned int height;
++	unsigned int gdfindex;
++	unsigned int gdfbytespp;
++};
++
++void mxs_lcd_get_panel(struct display_panel *panel);
++void lcdif_power_down(void);
+ int mxs_lcd_panel_setup(struct fb_videomode mode, int bpp,
+ 	uint32_t base_addr);
+ #endif
+-- 
+1.8.0
+

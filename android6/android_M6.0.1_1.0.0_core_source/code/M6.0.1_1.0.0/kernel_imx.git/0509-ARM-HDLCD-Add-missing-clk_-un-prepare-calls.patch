@@ -1,0 +1,35 @@
+From 6e5d816ae9ff789cc69e6c7e03092d8d59c463a7 Mon Sep 17 00:00:00 2001
+From: Jon Medhurst <tixy@linaro.org>
+Date: Wed, 13 Jun 2012 09:45:43 +0100
+Subject: [PATCH] ARM HDLCD: Add missing clk_{un}prepare calls
+
+Signed-off-by: Jon Medhurst <tixy@linaro.org>
+(cherry picked from commit 043d125c5ca6cc04ce02b3f1edf240266335c2ef)
+Signed-off-by: Alex Shi <alex.shi@linaro.org>
+---
+ drivers/video/arm-hdlcd.c | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/drivers/video/arm-hdlcd.c b/drivers/video/arm-hdlcd.c
+index 3e103a5..2210043 100644
+--- a/drivers/video/arm-hdlcd.c
++++ b/drivers/video/arm-hdlcd.c
+@@ -219,6 +219,7 @@ static int hdlcd_set_par(struct fb_info *info)
+ 
+ 	hdlcd_set_output_mode(hdlcd->fb.var.xres, hdlcd->fb.var.yres);
+ 
++	clk_prepare(hdlcd->clk);
+ 	clk_set_rate(hdlcd->clk, (1000000000 / hdlcd->fb.var.pixclock) * 1000);
+ 	clk_enable(hdlcd->clk);
+ 
+@@ -674,6 +675,7 @@ static int hdlcd_remove(struct platform_device *pdev)
+ 	struct hdlcd_device *hdlcd = platform_get_drvdata(pdev);
+ 
+ 	clk_disable(hdlcd->clk);
++	clk_unprepare(hdlcd->clk);
+ 	clk_put(hdlcd->clk);
+ 
+ 	/* unmap memory */
+-- 
+1.8.0
+

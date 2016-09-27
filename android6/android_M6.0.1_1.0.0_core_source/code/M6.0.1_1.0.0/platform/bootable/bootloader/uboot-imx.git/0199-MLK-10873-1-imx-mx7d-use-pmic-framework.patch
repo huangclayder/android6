@@ -1,0 +1,259 @@
+From 67d51f7521b773b5d7daddfad6cd17ec82acb0c0 Mon Sep 17 00:00:00 2001
+From: Peng Fan <Peng.Fan@freescale.com>
+Date: Mon, 11 May 2015 13:42:29 +0800
+Subject: [PATCH] MLK-10873-1 imx:mx7d use pmic framework
+
+Use pmic framework to simplify code and make code clean.
+
+Signed-off-by: Peng Fan <Peng.Fan@freescale.com>
+---
+ .../mx7d_12x12_ddr3_arm2/mx7d_12x12_ddr3_arm2.c    | 68 +++++++++-------------
+ .../mx7d_19x19_ddr3_arm2/mx7d_19x19_ddr3_arm2.c    | 64 ++++++++------------
+ include/configs/mx7d_12x12_ddr3_arm2.h             |  9 ++-
+ include/configs/mx7d_12x12_lpddr3_arm2.h           |  1 -
+ include/configs/mx7d_19x19_ddr3_arm2.h             |  9 ++-
+ 5 files changed, 58 insertions(+), 93 deletions(-)
+
+diff --git a/board/freescale/mx7d_12x12_ddr3_arm2/mx7d_12x12_ddr3_arm2.c b/board/freescale/mx7d_12x12_ddr3_arm2/mx7d_12x12_ddr3_arm2.c
+index c7a9efe..225539a 100644
+--- a/board/freescale/mx7d_12x12_ddr3_arm2/mx7d_12x12_ddr3_arm2.c
++++ b/board/freescale/mx7d_12x12_ddr3_arm2/mx7d_12x12_ddr3_arm2.c
+@@ -18,6 +18,9 @@
+ #include <mmc.h>
+ #include <miiphy.h>
+ #include <netdev.h>
++#include <power/pmic.h>
++#include <power/pfuze300_pmic.h>
++#include "../common/pfuze.h"
+ #ifdef CONFIG_SYS_I2C_MXC
+ #include <i2c.h>
+ #include <asm/imx-common/mxc_i2c.h>
+@@ -287,42 +290,31 @@ static const struct boot_mode board_boot_modes[] = {
+ };
+ #endif
+ 
+-#ifdef CONFIG_PFUZE3000_PMIC_I2C
+-#define PFUZE_DEVICEID	0x0
+-#define PFUZE_REVID	0x3
+-#define PFUZE_FABID	0x4
++#ifdef CONFIG_POWER
++#define I2C_PMIC	0
++int power_init_board(void)
++{
++	struct pmic *p;
++	int ret;
++	unsigned int reg, rev_id;
+ 
+-#define PFUZE_LDOGCTL	0x69
++	ret = power_pfuze300_init(I2C_PMIC);
++	if (ret)
++		return ret;
+ 
+-static int setup_pmic_voltages(void)
+-{
+-	unsigned char value, rev_id = 0;
+-
+-	i2c_set_bus_num(CONFIG_PMIC_I2C_BUS);
+-
+-	i2c_init(CONFIG_SYS_I2C_SPEED, CONFIG_PMIC_I2C_SLAVE);
+-	if (!i2c_probe(CONFIG_PMIC_I2C_SLAVE)) {
+-		if (i2c_read(CONFIG_PMIC_I2C_SLAVE, PFUZE_DEVICEID, 1, &value, 1)) {
+-			printf("Read device ID error!\n");
+-			return -1;
+-		}
+-		if (i2c_read(CONFIG_PMIC_I2C_SLAVE, PFUZE_REVID, 1, &rev_id, 1)) {
+-			printf("Read Rev ID error!\n");
+-			return -1;
+-		}
+-		printf("Found PFUZE300! deviceid 0x%x, revid 0x%x\n", value, rev_id);
+-
+-		/* disable Low Power Mode during standby mode */
+-		if (i2c_read(CONFIG_PMIC_I2C_SLAVE, PFUZE_LDOGCTL, 1, &value, 1)) {
+-			printf("Read LDOCTL error!\n");
+-			return -1;
+-		}
+-		value |= 0x1;
+-		if (i2c_write(CONFIG_PMIC_I2C_SLAVE, PFUZE_LDOGCTL, 1, &value, 1)) {
+-			printf("Set LDOCTL error!\n");
+-			return -1;
+-		}
+-	}
++	p = pmic_get("PFUZE300");
++	ret = pmic_probe(p);
++	if (ret)
++		return ret;
++
++	pmic_reg_read(p, PFUZE300_DEVICEID, &reg);
++	pmic_reg_read(p, PFUZE300_REVID, &rev_id);
++	printf("PMIC: PFUZE300 DEV_ID=0x%x REV_ID=0x%x\n", reg, rev_id);
++
++	/* disable Low Power Mode during standby mode */
++	pmic_reg_read(p, PFUZE300_LDOGCTL, &reg);
++	reg |= 0x1;
++	pmic_reg_write(p, PFUZE300_LDOGCTL, reg);
+ 
+ 	return 0;
+ }
+@@ -334,14 +326,6 @@ int board_late_init(void)
+ 	add_board_boot_modes(board_boot_modes);
+ #endif
+ 
+-#ifdef CONFIG_PFUZE3000_PMIC_I2C
+-	int ret = 0;
+-
+-	ret = setup_pmic_voltages();
+-	if (ret)
+-		return ret;
+-#endif
+-
+ #ifdef CONFIG_ENV_IS_IN_MMC
+ 	board_late_mmc_init();
+ #endif
+diff --git a/board/freescale/mx7d_19x19_ddr3_arm2/mx7d_19x19_ddr3_arm2.c b/board/freescale/mx7d_19x19_ddr3_arm2/mx7d_19x19_ddr3_arm2.c
+index b3b4152..a746cc9 100644
+--- a/board/freescale/mx7d_19x19_ddr3_arm2/mx7d_19x19_ddr3_arm2.c
++++ b/board/freescale/mx7d_19x19_ddr3_arm2/mx7d_19x19_ddr3_arm2.c
+@@ -18,6 +18,9 @@
+ #include <mmc.h>
+ #include <miiphy.h>
+ #include <netdev.h>
++#include <power/pmic.h>
++#include <power/pfuze300_pmic.h>
++#include "../common/pfuze.h"
+ #ifdef CONFIG_SYS_I2C_MXC
+ #include <i2c.h>
+ #include <asm/imx-common/mxc_i2c.h>
+@@ -597,42 +600,31 @@ static const struct boot_mode board_boot_modes[] = {
+ };
+ #endif
+ 
+-#ifdef CONFIG_PFUZE3000_PMIC_I2C
+-#define PFUZE_DEVICEID	0x0
+-#define PFUZE_REVID	0x3
+-#define PFUZE_FABID	0x4
+-
+-#define PFUZE_LDOGCTL	0x69
+-
+-static int setup_pmic_voltages(void)
++#ifdef CONFIG_POWER
++#define I2C_PMIC	0
++int power_init_board(void)
+ {
+-	unsigned char value, rev_id = 0;
++	struct pmic *p;
++	int ret;
++	unsigned int reg, rev_id;
+ 
+-	i2c_set_bus_num(CONFIG_PMIC_I2C_BUS);
++	ret = power_pfuze300_init(I2C_PMIC);
++	if (ret)
++		return ret;
+ 
+-	i2c_init(CONFIG_SYS_I2C_SPEED, CONFIG_PMIC_I2C_SLAVE);
+-	if (!i2c_probe(CONFIG_PMIC_I2C_SLAVE)) {
+-		if (i2c_read(CONFIG_PMIC_I2C_SLAVE, PFUZE_DEVICEID, 1, &value, 1)) {
+-			printf("Read device ID error!\n");
+-			return -1;
+-		}
+-		if (i2c_read(CONFIG_PMIC_I2C_SLAVE, PFUZE_REVID, 1, &rev_id, 1)) {
+-			printf("Read Rev ID error!\n");
+-			return -1;
+-		}
+-		printf("Found PFUZE300! deviceid 0x%x, revid 0x%x\n", value, rev_id);
++	p = pmic_get("PFUZE300");
++	ret = pmic_probe(p);
++	if (ret)
++		return ret;
+ 
+-		/* disable Low Power Mode during standby mode */
+-		if (i2c_read(CONFIG_PMIC_I2C_SLAVE, PFUZE_LDOGCTL, 1, &value, 1)) {
+-			printf("Read LDOCTL error!\n");
+-			return -1;
+-		}
+-		value |= 0x1;
+-		if (i2c_write(CONFIG_PMIC_I2C_SLAVE, PFUZE_LDOGCTL, 1, &value, 1)) {
+-			printf("Set LDOCTL error!\n");
+-			return -1;
+-		}
+-	}
++	pmic_reg_read(p, PFUZE300_DEVICEID, &reg);
++	pmic_reg_read(p, PFUZE300_REVID, &rev_id);
++	printf("PMIC: PFUZE300 DEV_ID=0x%x REV_ID=0x%x\n", reg, rev_id);
++
++	/* disable Low Power Mode during standby mode */
++	pmic_reg_read(p, PFUZE300_LDOGCTL, &reg);
++	reg |= 0x1;
++	pmic_reg_write(p, PFUZE300_LDOGCTL, reg);
+ 
+ 	return 0;
+ }
+@@ -644,14 +636,6 @@ int board_late_init(void)
+ 	add_board_boot_modes(board_boot_modes);
+ #endif
+ 
+-#ifdef CONFIG_PFUZE3000_PMIC_I2C
+-	int ret = 0;
+-
+-	ret = setup_pmic_voltages();
+-	if (ret)
+-		return ret;
+-#endif
+-
+ #ifdef CONFIG_ENV_IS_IN_MMC
+ 	board_late_mmc_init();
+ #endif
+diff --git a/include/configs/mx7d_12x12_ddr3_arm2.h b/include/configs/mx7d_12x12_ddr3_arm2.h
+index b6c07db..5ff3625 100644
+--- a/include/configs/mx7d_12x12_ddr3_arm2.h
++++ b/include/configs/mx7d_12x12_ddr3_arm2.h
+@@ -33,11 +33,10 @@
+ #define CONFIG_SYS_I2C_MXC
+ #define CONFIG_SYS_I2C_SPEED		100000
+ /* PMIC */
+-#define CONFIG_PFUZE3000_PMIC_I2C
+-#ifdef CONFIG_PFUZE3000_PMIC_I2C
+-#define CONFIG_PMIC_I2C_BUS		0
+-#define CONFIG_PMIC_I2C_SLAVE		0x8
+-#endif
++#define CONFIG_POWER
++#define CONFIG_POWER_I2C
++#define CONFIG_POWER_PFUZE300
++#define CONFIG_POWER_PFUZE300_I2C_ADDR	0x08
+ #endif
+ 
+ #ifdef CONFIG_SYS_USE_SPINOR
+diff --git a/include/configs/mx7d_12x12_lpddr3_arm2.h b/include/configs/mx7d_12x12_lpddr3_arm2.h
+index ece93b1..1ad45c1 100644
+--- a/include/configs/mx7d_12x12_lpddr3_arm2.h
++++ b/include/configs/mx7d_12x12_lpddr3_arm2.h
+@@ -45,7 +45,6 @@
+ #endif
+ 
+ /* PMIC */
+-/* PMIC */
+ #define CONFIG_POWER
+ #define CONFIG_POWER_I2C
+ #define CONFIG_POWER_PFUZE300
+diff --git a/include/configs/mx7d_19x19_ddr3_arm2.h b/include/configs/mx7d_19x19_ddr3_arm2.h
+index dddc248..d855d00 100644
+--- a/include/configs/mx7d_19x19_ddr3_arm2.h
++++ b/include/configs/mx7d_19x19_ddr3_arm2.h
+@@ -53,11 +53,10 @@
+ #define CONFIG_SYS_I2C_MXC
+ #define CONFIG_SYS_I2C_SPEED		100000
+ /* PMIC */
+-#define CONFIG_PFUZE3000_PMIC_I2C
+-#ifdef CONFIG_PFUZE3000_PMIC_I2C
+-#define CONFIG_PMIC_I2C_BUS		0
+-#define CONFIG_PMIC_I2C_SLAVE		0x8
+-#endif
++#define CONFIG_POWER
++#define CONFIG_POWER_I2C
++#define CONFIG_POWER_PFUZE300
++#define CONFIG_POWER_PFUZE300_I2C_ADDR	0x08
+ #endif
+ 
+ #ifdef CONFIG_SYS_USE_SPINOR
+-- 
+1.8.0
+

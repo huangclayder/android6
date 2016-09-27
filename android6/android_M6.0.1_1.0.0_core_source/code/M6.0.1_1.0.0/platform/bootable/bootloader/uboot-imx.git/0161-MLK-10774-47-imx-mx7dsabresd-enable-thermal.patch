@@ -1,0 +1,28 @@
+From d174546149b6ca341bdb638da2c0e366236f2481 Mon Sep 17 00:00:00 2001
+From: Peng Fan <Peng.Fan@freescale.com>
+Date: Tue, 28 Apr 2015 09:08:50 +0800
+Subject: [PATCH] MLK-10774-47 imx: mx7dsabresd enable thermal
+
+Enable thermal for mx7dsabresd board.
+
+Signed-off-by: Peng Fan <Peng.Fan@freescale.com>
+---
+ include/configs/mx7dsabresd.h | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/include/configs/mx7dsabresd.h b/include/configs/mx7dsabresd.h
+index f851779..de88c8f 100644
+--- a/include/configs/mx7dsabresd.h
++++ b/include/configs/mx7dsabresd.h
+@@ -423,6 +423,8 @@
+ #define CONFIG_MXC_USB_FLAGS   0
+ #define CONFIG_USB_MAX_CONTROLLER_COUNT 2
+ 
++#define CONFIG_IMX_THERMAL
++
+ #if defined(CONFIG_MXC_EPDC) && defined(CONFIG_SYS_USE_QSPI)
+ #error "EPDC Pins conflicts QSPI, Either EPDC or QSPI can be enabled!"
+ #endif
+-- 
+1.8.0
+

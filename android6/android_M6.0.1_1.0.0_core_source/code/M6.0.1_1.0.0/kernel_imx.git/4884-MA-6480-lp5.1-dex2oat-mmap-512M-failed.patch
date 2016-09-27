@@ -1,0 +1,33 @@
+From 2049291bc136e8fa36866f647beb290fef2dcaab Mon Sep 17 00:00:00 2001
+From: fang hui <b31070@freescale.com>
+Date: Mon, 30 Mar 2015 16:56:36 +0800
+Subject: [PATCH] MA-6480 - [lp5.1]: dex2oat, mmap 512M failed
+
+In lp5.1, has below change in parsed_options.cc
+// Enable hspace compaction on OOM by default.
+  use_homogeneous_space_compaction_for_oom_ = true;
+
+Which will lead to mmap an extra 512M space.
+An resolution is change virtual space to 3G/1G (user/kernel).
+
+Signed-off-by: fang hui <b31070@freescale.com>
+---
+ arch/arm/configs/imx_v7_android_defconfig | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/arch/arm/configs/imx_v7_android_defconfig b/arch/arm/configs/imx_v7_android_defconfig
+index 2a8fdf0..2d8d28e 100644
+--- a/arch/arm/configs/imx_v7_android_defconfig
++++ b/arch/arm/configs/imx_v7_android_defconfig
+@@ -39,7 +39,7 @@ CONFIG_MX6_RAMOOPS=y
+ # CONFIG_SWP_EMULATE is not set
+ CONFIG_SMP=y
+ CONFIG_HAVE_ARM_ARCH_TIMER=y
+-CONFIG_VMSPLIT_2G=y
++CONFIG_VMSPLIT_3G=y
+ CONFIG_PREEMPT=y
+ CONFIG_AEABI=y
+ CONFIG_HIGHMEM=y
+-- 
+1.8.0
+

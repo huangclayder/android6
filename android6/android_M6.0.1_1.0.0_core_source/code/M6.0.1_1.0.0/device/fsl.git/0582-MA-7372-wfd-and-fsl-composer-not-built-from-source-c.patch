@@ -1,0 +1,37 @@
+From 05c2523cbe789443ae6e0326749b81a0f94c5875 Mon Sep 17 00:00:00 2001
+From: "guoyin.chen" <guoyin.chen@freescale.com>
+Date: Sun, 20 Dec 2015 21:10:50 +0800
+Subject: [PATCH 582/602] MA-7372 wfd and fsl composer not built from source
+ code in user build
+
+Add the module name defined Android.mk to PRODUCT_PACKAGES
+source code's Android.mk define the module name as libxxx
+prebuilt lib's Android.mk define the name as libxxx.so
+
+Signed-off-by: guoyin.chen <guoyin.chen@freescale.com>
+---
+ imx6/imx6.mk | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/imx6/imx6.mk b/imx6/imx6.mk
+index e48be31..f9bd48c 100644
+--- a/imx6/imx6.mk
++++ b/imx6/imx6.mk
+@@ -23,10 +23,14 @@ PRODUCT_PACKAGES += \
+     A2dpSinkApp                             \
+ 	ethernet                                \
+ 	libfsl_wfd.so                           \
++	libfsl_wfd                           \
+ 	fsl.imx.jar                             \
+ 	libfsl_hdcp_blob.so                     \
++	libfsl_hdcp_blob                     \
+ 	libstagefright_hdcp.so                  \
++	libstagefright_hdcp                  \
+ 	hwcomposer_fsl.imx6.so                  \
++	hwcomposer_fsl.imx6                  \
+ 	VideoEditor				\
+ 	FSLProfileApp				\
+ 	FSLProfileService			\
+-- 
+1.8.0
+

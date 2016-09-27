@@ -1,0 +1,186 @@
+From 25e3d0cc8713de576b4d78c4c80dea7220f40858 Mon Sep 17 00:00:00 2001
+From: "Ye.Li" <B37916@freescale.com>
+Date: Fri, 28 Aug 2015 14:09:52 +0800
+Subject: [PATCH] MLK-11427 imx: mx7d: Update DDR script for mx7d sabresd
+ board
+
+Updated items:
+    memory set 0x307a0000 32 0x03040001 --> memory set 0x307a0000 32 0x01040001
+    This is just enable when LPDDR4 is enabled .
+
+    memory set 0x307a0064 32 0x0040005e --> memory set 0x307a0064 32 0x00400046
+    T_RFC_MIN this should be: RU(260ns*528Mhz)/2=69 (0x45)
+
+    memory set 0x307a00d0 32 0x00020001 --> memory set 0x307a00d0 32 0x00020083
+    PRE_CKE_X1024 be (500us*528Mhz/2)/1024 = 129, or 0x81
+
+    memory set 0x307a00d4 32 0x00010000 --> memory set 0x307a00d4 32 0x00690000
+    DRAM_RSTN_X1024 (200us*528Mhz)/1024=104, or 0x68
+
+    memory set 0x307a00e4 32 0x00090004 --> memory set 0x307a00e4 32 0x00100004
+    DEV_ZQINIT_X32 . Should be 16 clocks
+
+    memory set 0x307a0100 32 0x0908120a --> memory set 0x307a0100 32 0x09081109
+    T_FAW=(40ns*528Mhz)/2)=11
+
+    memory set 0x307a0104 32 0x0002020e --> memory set 0x307a0104 32 0x0007020d
+    tXPDLL=24ns*528Mhz=13clocks
+
+File:
+    MX7D_EVK_DDR3_1GB_32bit.ds
+
+Test result:
+    3 boards pass 2 days stress test.
+
+Signed-off-by: Ye.Li <B37916@freescale.com>
+---
+ board/freescale/mx7dsabresd/imximage.cfg | 26 ++++++++++++++------------
+ board/freescale/mx7dsabresd/plugin.S     | 26 +++++++++++++++-----------
+ 2 files changed, 29 insertions(+), 23 deletions(-)
+
+diff --git a/board/freescale/mx7dsabresd/imximage.cfg b/board/freescale/mx7dsabresd/imximage.cfg
+index 9b23949..3de45bb 100644
+--- a/board/freescale/mx7dsabresd/imximage.cfg
++++ b/board/freescale/mx7dsabresd/imximage.cfg
+@@ -53,38 +53,40 @@ CSF CONFIG_CSF_SIZE
+ DATA 4 0x30340004 0x4F400005
+ 
+ DATA 4 0x30391000 0x00000002
+-DATA 4 0x307a0000 0x03040001
++DATA 4 0x307a0000 0x01040001
+ DATA 4 0x307a01a0 0x80400003
+ DATA 4 0x307a01a4 0x00100020
+ DATA 4 0x307a01a8 0x80100004
+-DATA 4 0x307a0064 0x0040005e
++DATA 4 0x307a0064 0x00400046
+ DATA 4 0x307a0490 0x00000001
+-DATA 4 0x307a00d0 0x00020001
+-DATA 4 0x307a00d4 0x00010000
++DATA 4 0x307a00d0 0x00020083
++DATA 4 0x307a00d4 0x00690000
+ DATA 4 0x307a00dc 0x09300004
+ DATA 4 0x307a00e0 0x04080000
+-DATA 4 0x307a00e4 0x00090004
++DATA 4 0x307a00e4 0x00100004
+ DATA 4 0x307a00f4 0x0000033f
+-DATA 4 0x307a0100 0x0908120a
+-DATA 4 0x307a0104 0x0002020e
++DATA 4 0x307a0100 0x09081109
++DATA 4 0x307a0104 0x0007020d
+ DATA 4 0x307a0108 0x03040407
+ DATA 4 0x307a010c 0x00002006
+-DATA 4 0x307a0110 0x04020204
++DATA 4 0x307a0110 0x04020205
+ DATA 4 0x307a0114 0x03030202
+-DATA 4 0x307a0120 0x03030803
++DATA 4 0x307a0120 0x00000803
+ DATA 4 0x307a0180 0x00800020
++DATA 4 0x307a0184 0x02000100
+ DATA 4 0x307a0190 0x02098204
+ DATA 4 0x307a0194 0x00030303
+ DATA 4 0x307a0200 0x00000016
+ DATA 4 0x307a0204 0x00171717
+ DATA 4 0x307a0214 0x04040404
+-DATA 4 0x307a0218 0x00040404
+-DATA 4 0x307a0240 0x06000601
+-DATA 4 0x307a0244 0x00001323
++DATA 4 0x307a0218 0x0f040404
++DATA 4 0x307a0240 0x06000604
++DATA 4 0x307a0244 0x00000001
+ DATA 4 0x30391000 0x00000000
+ DATA 4 0x30790000 0x17420f40
+ DATA 4 0x30790004 0x10210100
+ DATA 4 0x30790010 0x00060807
++DATA 4 0x307900b0 0x1010007e
+ DATA 4 0x3079009c 0x00000d6e
+ DATA 4 0x30790020 0x08080808
+ DATA 4 0x30790030 0x08080808
+diff --git a/board/freescale/mx7dsabresd/plugin.S b/board/freescale/mx7dsabresd/plugin.S
+index 1ee5cdf..77e098b 100644
+--- a/board/freescale/mx7dsabresd/plugin.S
++++ b/board/freescale/mx7dsabresd/plugin.S
+@@ -19,7 +19,7 @@
+ 	str r1, [r0, r2]
+ 
+ 	ldr r0, =DDRC_IPS_BASE_ADDR
+-	ldr r1, =0x03040001
++	ldr r1, =0x01040001
+ 	str r1, [r0]
+ 	ldr r1, =0x80400003
+ 	str r1, [r0, #0x1a0]
+@@ -27,38 +27,40 @@
+ 	str r1, [r0, #0x1a4]
+ 	ldr r1, =0x80100004
+ 	str r1, [r0, #0x1a8]
+-	ldr r1, =0x0040005e
++	ldr r1, =0x00400046
+ 	str r1, [r0, #0x64]
+ 	ldr r1, =0x1
+ 	str r1, [r0, #0x490]
+ 	ldr r1, =0x00020001
+ 	str r1, [r0, #0xd0]
+-	ldr r1, =0x00010000
++	ldr r1, =0x00690000
+ 	str r1, [r0, #0xd4]
+ 	ldr r1, =0x09300004
+ 	str r1, [r0, #0xdc]
+ 	ldr r1, =0x04080000
+ 	str r1, [r0, #0xe0]
+-	ldr r1, =0x00090004
++	ldr r1, =0x00100004
+ 	str r1, [r0, #0xe4]
+ 	ldr r1, =0x33f
+ 	str r1, [r0, #0xf4]
+-	ldr r1, =0x0908120a
++	ldr r1, =0x09081109
+ 	str r1, [r0, #0x100]
+-	ldr r1, =0x0002020e
++	ldr r1, =0x0007020d
+ 	str r1, [r0, #0x104]
+ 	ldr r1, =0x03040407
+ 	str r1, [r0, #0x108]
+ 	ldr r1, =0x00002006
+ 	str r1, [r0, #0x10c]
+-	ldr r1, =0x04020204
++	ldr r1, =0x04020205
+ 	str r1, [r0, #0x110]
+ 	ldr r1, =0x03030202
+ 	str r1, [r0, #0x114]
+-	ldr r1, =0x03030803
++	ldr r1, =0x00000803
+ 	str r1, [r0, #0x120]
+ 	ldr r1, =0x00800020
+ 	str r1, [r0, #0x180]
++	ldr r1, =0x02000100
++	str r1, [r0, #0x184]
+ 	ldr r1, =0x02098204
+ 	str r1, [r0, #0x190]
+ 	ldr r1, =0x00030303
+@@ -70,12 +72,12 @@
+ 	str r1, [r0, #0x204]
+ 	ldr r1, =0x04040404
+ 	str r1, [r0, #0x214]
+-	ldr r1, =0x00040404
++	ldr r1, =0x0f040404
+ 	str r1, [r0, #0x218]
+ 
+-	ldr r1, =0x06000601
++	ldr r1, =0x06000604
+ 	str r1, [r0, #0x240]
+-	ldr r1, =0x00001323
++	ldr r1, =0x00000001
+ 	str r1, [r0, #0x244]
+ 
+ 	ldr r0, =SRC_BASE_ADDR
+@@ -90,6 +92,8 @@
+ 	str r1, [r0, #0x4]
+ 	ldr r1, =0x00060807
+ 	str r1, [r0, #0x10]
++	ldr r1, =0x1010007e
++	str r1, [r0, #0xb0]
+ 	ldr r1, =0x00000d6e
+ 	str r1, [r0, #0x9c]
+ 	ldr r1, =0x08080808
+-- 
+1.8.0
+

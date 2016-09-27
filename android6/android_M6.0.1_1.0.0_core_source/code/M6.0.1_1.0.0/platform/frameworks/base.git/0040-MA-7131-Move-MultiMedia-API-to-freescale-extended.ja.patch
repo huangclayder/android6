@@ -1,0 +1,114 @@
+From 9dd5e40c680816fe4ad81a22734c1fa9703fecc2 Mon Sep 17 00:00:00 2001
+From: MJm <B55507@freescale.com>
+Date: Tue, 20 Oct 2015 09:46:51 +0800
+Subject: [PATCH 40/45] MA-7131 Move MultiMedia API to freescale-extended.jar
+
+Remove the setPlaySpeed(int[]) and MP3 API from api/current.txt
+
+Signed-off-by: Ma Jiamin<b55507@freescale.com>
+---
+ api/current.txt                             |  2 --
+ api/system-current.txt                      |  2 --
+ media/java/android/media/MediaPlayer.java   | 16 +---------------
+ media/java/android/media/MediaRecorder.java |  4 +---
+ 4 files changed, 2 insertions(+), 22 deletions(-)
+
+diff --git a/api/current.txt b/api/current.txt
+index 90d5f37..d7fdb2d 100644
+--- a/api/current.txt
++++ b/api/current.txt
+@@ -16134,7 +16134,6 @@ package android.media {
+     method public void setOnTimedTextListener(android.media.MediaPlayer.OnTimedTextListener);
+     method public void setOnVideoSizeChangedListener(android.media.MediaPlayer.OnVideoSizeChangedListener);
+     method public void setPlaybackParams(android.media.PlaybackParams);
+-    method public void setPlaySpeed(int[]);
+     method public void setScreenOnWhilePlaying(boolean);
+     method public void setSurface(android.view.Surface);
+     method public void setSyncParams(android.media.SyncParams);
+@@ -16263,7 +16262,6 @@ package android.media {
+     field public static final int AMR_WB = 2; // 0x2
+     field public static final int DEFAULT = 0; // 0x0
+     field public static final int HE_AAC = 4; // 0x4
+-    field public static final int MP3 = 7; // 0x7
+     field public static final int VORBIS = 6; // 0x6
+   }
+ 
+diff --git a/api/system-current.txt b/api/system-current.txt
+index 140cf06..3c88e59 100644
+--- a/api/system-current.txt
++++ b/api/system-current.txt
+@@ -17400,7 +17400,6 @@ package android.media {
+     method public void setOnTimedTextListener(android.media.MediaPlayer.OnTimedTextListener);
+     method public void setOnVideoSizeChangedListener(android.media.MediaPlayer.OnVideoSizeChangedListener);
+     method public void setPlaybackParams(android.media.PlaybackParams);
+-    method public void setPlaySpeed(int[]);
+     method public void setScreenOnWhilePlaying(boolean);
+     method public void setSurface(android.view.Surface);
+     method public void setSyncParams(android.media.SyncParams);
+@@ -17529,7 +17528,6 @@ package android.media {
+     field public static final int AMR_WB = 2; // 0x2
+     field public static final int DEFAULT = 0; // 0x0
+     field public static final int HE_AAC = 4; // 0x4
+-    field public static final int MP3 = 7; // 0x7
+     field public static final int VORBIS = 6; // 0x6
+   }
+ 
+diff --git a/media/java/android/media/MediaPlayer.java b/media/java/android/media/MediaPlayer.java
+index 6b21e2c..e22323f 100644
+--- a/media/java/android/media/MediaPlayer.java
++++ b/media/java/android/media/MediaPlayer.java
+@@ -14,7 +14,7 @@
+  * limitations under the License.
+  */
+ 
+-/* Copyright 2009-2013 Freescale Semiconductor Inc. */
++/* Copyright 2009-2015 Freescale Semiconductor, Inc. */
+ 
+ package android.media;
+ 
+@@ -1860,20 +1860,6 @@ public class MediaPlayer implements SubtitleController.Listener
+      * When normalized speed is [0.1, 1.9] audio is outputted, otherwise audio
+      * is not outputted.
+      */
+-    public void setPlaySpeed(int[] Speed) {
+-        Parcel request = Parcel.obtain();
+-        Parcel reply = Parcel.obtain();
+-        try {
+-            request.writeInterfaceToken(IMEDIA_PLAYER);
+-            request.writeInt(INVOKE_ID_SET_PLAY_SPEED);
+-            request.writeInt(Speed[0]);
+-            invoke(request, reply);
+-            Speed[0] = reply.readInt();
+-        } finally {
+-            request.recycle();
+-            reply.recycle();
+-        }
+-    }
+ 
+     /**
+      * Sets the send level of the player to the attached auxiliary effect.
+diff --git a/media/java/android/media/MediaRecorder.java b/media/java/android/media/MediaRecorder.java
+index 995157d..008bc80 100644
+--- a/media/java/android/media/MediaRecorder.java
++++ b/media/java/android/media/MediaRecorder.java
+@@ -14,7 +14,7 @@
+  * limitations under the License.
+  */
+ 
+-/* Copyright 2009-2013 Freescale Semiconductor Inc. */
++/* Copyright 2009-2015 Freescale Semiconductor, Inc. */
+ 
+ package android.media;
+ 
+@@ -371,8 +371,6 @@ public class MediaRecorder
+         public static final int AAC_ELD = 5;
+         /** Ogg Vorbis audio codec */
+         public static final int VORBIS = 6;
+-        /** MP3 audio codec */
+-        public static final int MP3 = 7;
+     }
+ 
+     /**
+-- 
+1.8.0
+

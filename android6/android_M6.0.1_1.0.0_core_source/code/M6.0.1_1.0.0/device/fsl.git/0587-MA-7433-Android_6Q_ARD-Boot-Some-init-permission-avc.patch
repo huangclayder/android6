@@ -1,0 +1,153 @@
+From a795cca80672cbed7ad23c89f5bfb0d953a48252 Mon Sep 17 00:00:00 2001
+From: zhang sanshan <b51434@freescale.com>
+Date: Tue, 5 Jan 2016 14:43:15 +0800
+Subject: [PATCH 587/602] MA-7433 [Android_6Q_ARD]Boot: Some init
+ permission&avc et. denied logs print during boot
+ up. 100%
+
+1 Add some selinux policy
+2 delete go_maxspeed_load for kernel have remove it.
+  go_hispeed_load can take replace it.
+
+Signed-off-by: Zhang Sanshan <pete.zhang@nxp.com>
+---
+ evk_6sl/init.rc              | 1 -
+ evk_6ul/init.rc              | 1 -
+ imx6/sepolicy/kernel.te      | 3 +++
+ imx6/sepolicy/mediaserver.te | 1 +
+ imx7/sepolicy/kernel.te      | 3 +++
+ imx7/sepolicy/mediaserver.te | 1 +
+ sabreauto_6q/init.rc         | 1 -
+ sabreauto_6sx/init.rc        | 1 -
+ sabresd_6dq/init.rc          | 1 -
+ sabresd_6sx/init.rc          | 1 -
+ sabresd_7d/init.rc           | 1 -
+ 11 files changed, 8 insertions(+), 7 deletions(-)
+
+diff --git a/evk_6sl/init.rc b/evk_6sl/init.rc
+index ea53695..2580e79 100644
+--- a/evk_6sl/init.rc
++++ b/evk_6sl/init.rc
+@@ -146,7 +146,6 @@ on property:sys.boot_completed=1
+ # Set default CPU frequency governor
+ # Set timer 40ms, min sample 60ms,hispeed at cpufreq MAX freq in freq_table at load 40%
+     write /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor interactive
+-    write /sys/devices/system/cpu/cpufreq/interactive/go_maxspeed_load 80
+     write /sys/devices/system/cpu/cpufreq/interactive/timer_rate 40000
+     write /sys/devices/system/cpu/cpufreq/interactive/min_sample_time 60000
+     write /sys/devices/system/cpu/cpufreq/interactive/go_hispeed_load 40
+diff --git a/evk_6ul/init.rc b/evk_6ul/init.rc
+index 9e3116c..d73d571 100644
+--- a/evk_6ul/init.rc
++++ b/evk_6ul/init.rc
+@@ -146,7 +146,6 @@ on property:sys.boot_completed=1
+ # Set default CPU frequency governor
+ # Set timer 40ms, min sample 60ms,hispeed at cpufreq MAX freq in freq_table at load 40%
+     write /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor interactive
+-    write /sys/devices/system/cpu/cpufreq/interactive/go_maxspeed_load 80
+     write /sys/devices/system/cpu/cpufreq/interactive/timer_rate 40000
+     write /sys/devices/system/cpu/cpufreq/interactive/min_sample_time 60000
+     write /sys/devices/system/cpu/cpufreq/interactive/go_hispeed_load 40
+diff --git a/imx6/sepolicy/kernel.te b/imx6/sepolicy/kernel.te
+index 7e1f767..41c1ccf 100644
+--- a/imx6/sepolicy/kernel.te
++++ b/imx6/sepolicy/kernel.te
+@@ -28,3 +28,6 @@ allow gatekeeperd kernel:system  { module_request };
+ allow dhcp kernel:system  { module_request };
+ allow adbd kernel:system  { module_request };
+ allow dnsmasq kernel:system  { module_request };
++allow sgdisk kernel:system  { module_request };
++allow blkid_untrusted kernel:system  { module_request };
++allow fsck_untrusted kernel:system  { module_request };
+diff --git a/imx6/sepolicy/mediaserver.te b/imx6/sepolicy/mediaserver.te
+index 7bfc384..6e2698a 100644
+--- a/imx6/sepolicy/mediaserver.te
++++ b/imx6/sepolicy/mediaserver.te
+@@ -3,3 +3,4 @@ allow mediaserver tmpfs:file rw_file_perms;
+ allow mediaserver mediaserver_tmpfs:dir create_dir_perms;
+ allow mediaserver mediaserver_tmpfs:file create_file_perms;
+ allow mediaserver system_file:file execmod;
++allow mediaserver mediaserver:netlink_kobject_uevent_socket { create setopt bind read };
+diff --git a/imx7/sepolicy/kernel.te b/imx7/sepolicy/kernel.te
+index 7e1f767..41c1ccf 100644
+--- a/imx7/sepolicy/kernel.te
++++ b/imx7/sepolicy/kernel.te
+@@ -28,3 +28,6 @@ allow gatekeeperd kernel:system  { module_request };
+ allow dhcp kernel:system  { module_request };
+ allow adbd kernel:system  { module_request };
+ allow dnsmasq kernel:system  { module_request };
++allow sgdisk kernel:system  { module_request };
++allow blkid_untrusted kernel:system  { module_request };
++allow fsck_untrusted kernel:system  { module_request };
+diff --git a/imx7/sepolicy/mediaserver.te b/imx7/sepolicy/mediaserver.te
+index 7bfc384..6e2698a 100644
+--- a/imx7/sepolicy/mediaserver.te
++++ b/imx7/sepolicy/mediaserver.te
+@@ -3,3 +3,4 @@ allow mediaserver tmpfs:file rw_file_perms;
+ allow mediaserver mediaserver_tmpfs:dir create_dir_perms;
+ allow mediaserver mediaserver_tmpfs:file create_file_perms;
+ allow mediaserver system_file:file execmod;
++allow mediaserver mediaserver:netlink_kobject_uevent_socket { create setopt bind read };
+diff --git a/sabreauto_6q/init.rc b/sabreauto_6q/init.rc
+index e0c763f..d6d6619 100644
+--- a/sabreauto_6q/init.rc
++++ b/sabreauto_6q/init.rc
+@@ -143,7 +143,6 @@ on property:sys.boot_completed=1
+ # Set default CPU frequency governor
+ # Set timer 40ms, min sample 60ms,hispeed at cpufreq MAX freq in freq_table at load 40%
+     write /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor interactive
+-    write /sys/devices/system/cpu/cpufreq/interactive/go_maxspeed_load 80
+     write /sys/devices/system/cpu/cpufreq/interactive/timer_rate 40000
+     write /sys/devices/system/cpu/cpufreq/interactive/min_sample_time 60000
+     write /sys/devices/system/cpu/cpufreq/interactive/go_hispeed_load 40
+diff --git a/sabreauto_6sx/init.rc b/sabreauto_6sx/init.rc
+index 627eb18..023e5af 100755
+--- a/sabreauto_6sx/init.rc
++++ b/sabreauto_6sx/init.rc
+@@ -145,7 +145,6 @@ on property:sys.boot_completed=1
+ # Set default CPU frequency governor
+ # Set timer 40ms, min sample 60ms,hispeed at cpufreq MAX freq in freq_table at load 40%
+     write /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor interactive
+-    write /sys/devices/system/cpu/cpufreq/interactive/go_maxspeed_load 80
+     write /sys/devices/system/cpu/cpufreq/interactive/timer_rate 40000
+     write /sys/devices/system/cpu/cpufreq/interactive/min_sample_time 60000
+     write /sys/devices/system/cpu/cpufreq/interactive/go_hispeed_load 40
+diff --git a/sabresd_6dq/init.rc b/sabresd_6dq/init.rc
+index eb73160..4f504cd 100755
+--- a/sabresd_6dq/init.rc
++++ b/sabresd_6dq/init.rc
+@@ -158,7 +158,6 @@ on property:sys.boot_completed=1
+ # Set default CPU frequency governor
+ # Set timer 40ms, min sample 60ms,hispeed at cpufreq MAX freq in freq_table at load 40%
+     write /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor interactive
+-    write /sys/devices/system/cpu/cpufreq/interactive/go_maxspeed_load 80
+     write /sys/devices/system/cpu/cpufreq/interactive/timer_rate 40000
+     write /sys/devices/system/cpu/cpufreq/interactive/min_sample_time 60000
+     write /sys/devices/system/cpu/cpufreq/interactive/go_hispeed_load 40
+diff --git a/sabresd_6sx/init.rc b/sabresd_6sx/init.rc
+index 32e33b2..a33830a 100755
+--- a/sabresd_6sx/init.rc
++++ b/sabresd_6sx/init.rc
+@@ -158,7 +158,6 @@ on property:sys.boot_completed=1
+ # Set default CPU frequency governor
+ # Set timer 40ms, min sample 60ms,hispeed at cpufreq MAX freq in freq_table at load 40%
+     write /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor interactive
+-    write /sys/devices/system/cpu/cpufreq/interactive/go_maxspeed_load 80
+     write /sys/devices/system/cpu/cpufreq/interactive/timer_rate 40000
+     write /sys/devices/system/cpu/cpufreq/interactive/min_sample_time 60000
+     write /sys/devices/system/cpu/cpufreq/interactive/go_hispeed_load 40
+diff --git a/sabresd_7d/init.rc b/sabresd_7d/init.rc
+index f01f683..c4e101c 100644
+--- a/sabresd_7d/init.rc
++++ b/sabresd_7d/init.rc
+@@ -151,7 +151,6 @@ on property:sys.boot_completed=1
+ # Set default CPU frequency governor
+ # Set timer 40ms, min sample 60ms,hispeed at cpufreq MAX freq in freq_table at load 40%
+     write /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor interactive
+-    write /sys/devices/system/cpu/cpufreq/interactive/go_maxspeed_load 80
+     write /sys/devices/system/cpu/cpufreq/interactive/timer_rate 40000
+     write /sys/devices/system/cpu/cpufreq/interactive/min_sample_time 60000
+     write /sys/devices/system/cpu/cpufreq/interactive/go_hispeed_load 40
+-- 
+1.8.0
+

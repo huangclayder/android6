@@ -1,0 +1,31 @@
+From d515faa067e6058811008fe88006d2907c950675 Mon Sep 17 00:00:00 2001
+From: Stephen Boyd <sboyd@codeaurora.org>
+Date: Mon, 6 Jan 2014 14:56:17 -0800
+Subject: [PATCH] clocksource: arch_timer: Set dynamic irq affinity on mmio
+ clockevent
+
+Set the CLOCK_EVT_FEAT_DYNIRQ flag on the memory mapped
+clockevent so that we save power by waking up the CPU with the
+next event when this timer is used in broadcast mode.
+
+Signed-off-by: Stephen Boyd <sboyd@codeaurora.org>
+Signed-off-by: Daniel Lezcano <daniel.lezcano@linaro.org>
+---
+ drivers/clocksource/arm_arch_timer.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/drivers/clocksource/arm_arch_timer.c b/drivers/clocksource/arm_arch_timer.c
+index 95fb944..57e823c 100644
+--- a/drivers/clocksource/arm_arch_timer.c
++++ b/drivers/clocksource/arm_arch_timer.c
+@@ -277,6 +277,7 @@ static void __arch_timer_setup(unsigned type,
+ 			clk->set_next_event = arch_timer_set_next_event_phys;
+ 		}
+ 	} else {
++		clk->features |= CLOCK_EVT_FEAT_DYNIRQ;
+ 		clk->name = "arch_mem_timer";
+ 		clk->rating = 400;
+ 		clk->cpumask = cpu_all_mask;
+-- 
+1.8.0
+

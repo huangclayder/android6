@@ -1,0 +1,31 @@
+From c45fd70768bdf8a5f8cda542c83f225494b6d1d5 Mon Sep 17 00:00:00 2001
+From: Li Jun <jun.li@freescale.com>
+Date: Fri, 3 Jul 2015 14:04:55 +0800
+Subject: [PATCH] MLK-11123-21 ARM: dts: disable otg features for
+ imx6q-sabrelite board
+
+Disable all otg features for otg1 port of imx6q-sabrelite board, then
+the otg port can only do role swtich by ID pin state.
+
+Signed-off-by: Li Jun <jun.li@freescale.com>
+---
+ arch/arm/boot/dts/imx6q-sabrelite.dts | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/arch/arm/boot/dts/imx6q-sabrelite.dts b/arch/arm/boot/dts/imx6q-sabrelite.dts
+index 4d9d8a8..ce1f8b6 100644
+--- a/arch/arm/boot/dts/imx6q-sabrelite.dts
++++ b/arch/arm/boot/dts/imx6q-sabrelite.dts
+@@ -263,6 +263,9 @@
+ 	pinctrl-names = "default";
+ 	pinctrl-0 = <&pinctrl_usbotg>;
+ 	disable-over-current;
++	srp-disable;
++	hnp-disable;
++	adp-disable;
+ 	status = "okay";
+ };
+ 
+-- 
+1.8.0
+

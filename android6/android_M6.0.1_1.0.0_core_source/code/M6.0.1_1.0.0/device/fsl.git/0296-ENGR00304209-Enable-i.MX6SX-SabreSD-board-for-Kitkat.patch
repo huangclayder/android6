@@ -1,0 +1,1703 @@
+From 7934a6dd98a843a1dcfd01e20996e961902a4975 Mon Sep 17 00:00:00 2001
+From: "guoyin.chen" <guoyin.chen@freescale.com>
+Date: Wed, 19 Mar 2014 16:30:17 +0800
+Subject: [PATCH 296/602] ENGR00304209 Enable i.MX6SX SabreSD board for Kitkat
+
+Create new board as sabresd_6sx, which is based on sabresd_6dq
+Remove SMP/IPU/VPU config for imx6sx.mk
+
+Signed-off-by: guoyin.chen <guoyin.chen@freescale.com>
+---
+ imx6/AndroidProducts.mk                            |   1 +
+ imx6/sabresd_6sx.mk                                |  53 +++++
+ imx6/soc/imx6sx.mk                                 |  18 ++
+ imx6/vendorsetup.sh                                |   2 +
+ sabresd_6sx/AndroidBoard.mk                        |   7 +
+ sabresd_6sx/BoardConfig.mk                         | 112 +++++++++++
+ sabresd_6sx/audio_effects.conf                     | 169 ++++++++++++++++
+ sabresd_6sx/audio_policy.conf                      |  93 +++++++++
+ sabresd_6sx/bluetooth/bdroid_buildcfg.h            |  32 +++
+ sabresd_6sx/build_id.mk                            |  22 ++
+ sabresd_6sx/fstab.freescale                        |  14 ++
+ sabresd_6sx/gpsreset.sh                            |   3 +
+ sabresd_6sx/init.rc                                | 179 +++++++++++++++++
+ .../frameworks/base/core/res/res/values/config.xml | 223 +++++++++++++++++++++
+ .../base/core/res/res/xml/power_profile.xml        |  61 ++++++
+ .../base/core/res/res/xml/storage_list.xml         |  49 +++++
+ .../SettingsProvider/res/values/defaults.xml       |  22 ++
+ .../apps/Launcher2/res/values-sw720dp/dimens.xml   |  20 ++
+ .../packages/apps/Launcher2/res/values/config.xml  |   3 +
+ .../res/xml-sw600dp/default_workspace.xml          |  91 +++++++++
+ .../res/xml-sw720dp/default_workspace.xml          |  61 ++++++
+ .../apps/Launcher2/res/xml/default_workspace.xml   |  91 +++++++++
+ .../packages/apps/Settings/res/values/bools.xml    |  19 ++
+ .../packages/apps/Settings/res/values/config.xml   |  21 ++
+ .../packages/apps/Settings/res/values/strings.xml  |  22 ++
+ sabresd_6sx/required_hardware.xml                  |  46 +++++
+ sabresd_6sx/ubi/ubinize.ini                        |  33 +++
+ 27 files changed, 1467 insertions(+)
+ create mode 100644 imx6/sabresd_6sx.mk
+ create mode 100644 imx6/soc/imx6sx.mk
+ create mode 100644 sabresd_6sx/AndroidBoard.mk
+ create mode 100755 sabresd_6sx/BoardConfig.mk
+ create mode 100644 sabresd_6sx/audio_effects.conf
+ create mode 100644 sabresd_6sx/audio_policy.conf
+ create mode 100644 sabresd_6sx/bluetooth/bdroid_buildcfg.h
+ create mode 100644 sabresd_6sx/build_id.mk
+ create mode 100644 sabresd_6sx/fstab.freescale
+ create mode 100755 sabresd_6sx/gpsreset.sh
+ create mode 100755 sabresd_6sx/init.rc
+ create mode 100755 sabresd_6sx/overlay/frameworks/base/core/res/res/values/config.xml
+ create mode 100644 sabresd_6sx/overlay/frameworks/base/core/res/res/xml/power_profile.xml
+ create mode 100644 sabresd_6sx/overlay/frameworks/base/core/res/res/xml/storage_list.xml
+ create mode 100644 sabresd_6sx/overlay/frameworks/base/packages/SettingsProvider/res/values/defaults.xml
+ create mode 100644 sabresd_6sx/overlay/packages/apps/Launcher2/res/values-sw720dp/dimens.xml
+ create mode 100644 sabresd_6sx/overlay/packages/apps/Launcher2/res/values/config.xml
+ create mode 100644 sabresd_6sx/overlay/packages/apps/Launcher2/res/xml-sw600dp/default_workspace.xml
+ create mode 100644 sabresd_6sx/overlay/packages/apps/Launcher2/res/xml-sw720dp/default_workspace.xml
+ create mode 100644 sabresd_6sx/overlay/packages/apps/Launcher2/res/xml/default_workspace.xml
+ create mode 100644 sabresd_6sx/overlay/packages/apps/Settings/res/values/bools.xml
+ create mode 100644 sabresd_6sx/overlay/packages/apps/Settings/res/values/config.xml
+ create mode 100644 sabresd_6sx/overlay/packages/apps/Settings/res/values/strings.xml
+ create mode 100644 sabresd_6sx/required_hardware.xml
+ create mode 100644 sabresd_6sx/ubi/ubinize.ini
+
+diff --git a/imx6/AndroidProducts.mk b/imx6/AndroidProducts.mk
+index 2f60da1..61d11be 100644
+--- a/imx6/AndroidProducts.mk
++++ b/imx6/AndroidProducts.mk
+@@ -33,3 +33,4 @@ PRODUCT_MAKEFILES := \
+   $(LOCAL_DIR)/sabreauto_6q.mk \
+   $(LOCAL_DIR)/sabresd_6dq.mk \
+   $(LOCAL_DIR)/hdmidongle_6dq.mk \
++  $(LOCAL_DIR)/sabresd_6sx.mk \
+diff --git a/imx6/sabresd_6sx.mk b/imx6/sabresd_6sx.mk
+new file mode 100644
+index 0000000..c721f1c
+--- /dev/null
++++ b/imx6/sabresd_6sx.mk
+@@ -0,0 +1,53 @@
++# This is a FSL Android Reference Design platform based on i.MX6Q ARD board
++# It will inherit from FSL core product which in turn inherit from Google generic
++
++$(call inherit-product, device/fsl/imx6/imx6.mk)
++$(call inherit-product-if-exists,vendor/google/products/gms.mk)
++
++ifneq ($(wildcard device/fsl/sabresd_6sx/fstab_nand.freescale),)
++$(shell touch device/fsl/sabresd_6sx/fstab_nand.freescale)
++endif
++
++ifneq ($(wildcard device/fsl/sabresd_6sx/fstab.freescale),)
++$(shell touch device/fsl/sabresd_6sx/fstab.freescale)
++endif
++
++# Overrides
++PRODUCT_NAME := sabresd_6sx
++PRODUCT_DEVICE := sabresd_6sx
++
++PRODUCT_COPY_FILES += \
++	device/fsl/sabresd_6sx/required_hardware.xml:system/etc/permissions/required_hardware.xml \
++	device/fsl/sabresd_6sx/init.rc:root/init.freescale.rc \
++	device/fsl/sabresd_6sx/gpsreset.sh:system/etc/gpsreset.sh \
++	device/fsl/sabresd_6sx/audio_policy.conf:system/etc/audio_policy.conf \
++	device/fsl/sabresd_6sx/audio_effects.conf:system/vendor/etc/audio_effects.conf
++
++# GPU files
++
++DEVICE_PACKAGE_OVERLAYS := device/fsl/sabresd_6sx/overlay
++
++PRODUCT_CHARACTERISTICS := tablet
++
++PRODUCT_AAPT_CONFIG += xlarge large tvdpi hdpi
++
++PRODUCT_COPY_FILES += \
++	frameworks/native/data/etc/android.hardware.location.gps.xml:system/etc/permissions/android.hardware.location.gps.xml \
++	frameworks/native/data/etc/android.hardware.wifi.xml:system/etc/permissions/android.hardware.wifi.xml \
++	frameworks/native/data/etc/android.hardware.wifi.direct.xml:system/etc/permissions/android.hardware.wifi.direct.xml \
++	frameworks/native/data/etc/android.hardware.sensor.light.xml:system/etc/permissions/android.hardware.sensor.light.xml \
++	frameworks/native/data/etc/android.hardware.sensor.accelerometer.xml:system/etc/permissions/android.hardware.sensor.accelerometer.xml \
++	frameworks/native/data/etc/android.hardware.faketouch.xml:system/etc/permissions/android.hardware.faketouch.xml \
++	frameworks/native/data/etc/android.hardware.touchscreen.multitouch.jazzhand.xml:system/etc/permissions/android.hardware.touchscreen.multitouch.jazzhand.xml \
++	frameworks/native/data/etc/android.software.sip.voip.xml:system/etc/permissions/android.software.sip.voip.xml \
++	frameworks/native/data/etc/android.hardware.usb.host.xml:system/etc/permissions/android.hardware.usb.host.xml \
++	frameworks/native/data/etc/android.hardware.usb.accessory.xml:system/etc/permissions/android.hardware.usb.accessory.xml \
++	frameworks/native/data/etc/android.hardware.bluetooth_le.xml:system/etc/permissions/android.hardware.bluetooth_le.xml \
++	frameworks/native/data/etc/android.hardware.consumerir.xml:system/etc/permissions/android.hardware.consumerir.xml
++
++# for PDK build, include only when the dir exists
++# too early to use $(TARGET_BUILD_PDK)
++ifneq ($(wildcard packages/wallpapers/LivePicker),)
++PRODUCT_COPY_FILES += \
++	packages/wallpapers/LivePicker/android.software.live_wallpaper.xml:system/etc/permissions/android.software.live_wallpaper.xml
++endif
+diff --git a/imx6/soc/imx6sx.mk b/imx6/soc/imx6sx.mk
+new file mode 100644
+index 0000000..352c859
+--- /dev/null
++++ b/imx6/soc/imx6sx.mk
+@@ -0,0 +1,18 @@
++#
++# SoC-specific compile-time definitions.
++#
++
++BOARD_SOC_TYPE := IMX6SX
++BOARD_HAVE_VPU := false
++HAVE_FSL_IMX_GPU2D := true
++HAVE_FSL_IMX_GPU3D := true
++HAVE_FSL_IMX_IPU := false
++BOARD_KERNEL_BASE := 0x80800000
++LOAD_KERNEL_ENTRY := 0x80008000
++TARGET_KERNEL_DEFCONF := imx_v7_android_defconfig
++-include external/fsl_vpu_omx/codec_env.mk
++TARGET_HAVE_IMX_GRALLOC := true
++TARGET_HAVE_IMX_HWCOMPOSER = true
++USE_OPENGL_RENDERER := true
++TARGET_CPU_SMP := false
++
+diff --git a/imx6/vendorsetup.sh b/imx6/vendorsetup.sh
+index 2c3eb35..588a522 100644
+--- a/imx6/vendorsetup.sh
++++ b/imx6/vendorsetup.sh
+@@ -9,5 +9,7 @@ add_lunch_combo arm2_6sl-eng
+ add_lunch_combo arm2_6sl-user
+ add_lunch_combo evk_6sl-eng
+ add_lunch_combo evk_6sl-user
++add_lunch_combo sabresd_6sx-eng
++add_lunch_combo sabresd_6sx-user
+ add_lunch_combo hdmidongle_6dq-eng
+ add_lunch_combo hdmidongle_6dq-user
+diff --git a/sabresd_6sx/AndroidBoard.mk b/sabresd_6sx/AndroidBoard.mk
+new file mode 100644
+index 0000000..b70e905
+--- /dev/null
++++ b/sabresd_6sx/AndroidBoard.mk
+@@ -0,0 +1,7 @@
++LOCAL_PATH := $(call my-dir)
++
++ifeq ($(PREBUILT_FSL_IMX_CODEC),true)
++-include device/fsl-codec/fsl-codec.mk
++endif
++include device/fsl-proprietary/media-profile/media-profile.mk
++include device/fsl-proprietary/sensor/fsl-sensor.mk
+diff --git a/sabresd_6sx/BoardConfig.mk b/sabresd_6sx/BoardConfig.mk
+new file mode 100755
+index 0000000..e6bb810
+--- /dev/null
++++ b/sabresd_6sx/BoardConfig.mk
+@@ -0,0 +1,112 @@
++#
++# Product-specific compile-time definitions.
++#
++
++include device/fsl/imx6/soc/imx6sx.mk
++include device/fsl/sabresd_6sx/build_id.mk
++include device/fsl/imx6/BoardConfigCommon.mk
++include device/fsl-proprietary/gpu-viv/fsl-gpu.mk
++# sabresd_6sx default target for EXT4
++BUILD_TARGET_FS ?= ext4
++include device/fsl/imx6/imx6_target_fs.mk
++
++ifeq ($(BUILD_TARGET_FS),ubifs)
++TARGET_RECOVERY_FSTAB = device/fsl/sabresd_6sx/fstab_nand.freescale
++# build ubifs for nand devices
++PRODUCT_COPY_FILES +=	\
++	device/fsl/sabresd_6sx/fstab_nand.freescale:root/fstab.freescale
++else
++TARGET_RECOVERY_FSTAB = device/fsl/sabresd_6sx/fstab.freescale
++# build for ext4
++PRODUCT_COPY_FILES +=	\
++	device/fsl/sabresd_6sx/fstab.freescale:root/fstab.freescale
++endif # BUILD_TARGET_FS
++
++
++TARGET_BOOTLOADER_BOARD_NAME := SABRESD
++PRODUCT_MODEL := SABRESD-MX6SX
++
++# UNITE is a virtual device support both atheros and realtek wifi(ar6103 and rtl8723as)
++BOARD_WLAN_DEVICE            := UNITE
++WPA_SUPPLICANT_VERSION       := VER_0_8_UNITE
++TARGET_KERNEL_MODULES        := \
++                                kernel_imx/drivers/net/wireless/rtlwifi/rtl8723as/8723as.ko:system/lib/modules/8723as.ko \
++                                kernel_imx/net/wireless/cfg80211.ko:system/lib/modules/cfg80211_realtek.ko
++BOARD_WPA_SUPPLICANT_DRIVER  := NL80211
++BOARD_HOSTAPD_DRIVER         := NL80211
++
++BOARD_HOSTAPD_PRIVATE_LIB_QCOM              := lib_driver_cmd_qcwcn
++BOARD_WPA_SUPPLICANT_PRIVATE_LIB_QCOM       := lib_driver_cmd_qcwcn
++BOARD_HOSTAPD_PRIVATE_LIB_RTL               := lib_driver_cmd_rtl
++BOARD_WPA_SUPPLICANT_PRIVATE_LIB_RTL        := lib_driver_cmd_rtl
++#for intel vendor
++ifeq ($(BOARD_WLAN_VENDOR),INTEL)
++BOARD_HOSTAPD_PRIVATE_LIB                := private_lib_driver_cmd
++BOARD_WPA_SUPPLICANT_PRIVATE_LIB         := private_lib_driver_cmd
++WPA_SUPPLICANT_VERSION                   := VER_0_8_X
++HOSTAPD_VERSION                          := VER_0_8_X
++BOARD_WPA_SUPPLICANT_PRIVATE_LIB         := private_lib_driver_cmd_intel
++WIFI_DRIVER_MODULE_PATH                  := "/system/lib/modules/iwlagn.ko"
++WIFI_DRIVER_MODULE_NAME                  := "iwlagn"
++WIFI_DRIVER_MODULE_PATH                  ?= auto
++endif
++
++BOARD_MODEM_VENDOR := AMAZON
++
++USE_ATHR_GPS_HARDWARE := true
++USE_QEMU_GPS_HARDWARE := false
++
++#for accelerator sensor, need to define sensor type here
++BOARD_HAS_SENSOR := true
++SENSOR_MMA8451 := true
++
++# for recovery service
++TARGET_SELECT_KEY := 28
++
++# we don't support sparse image.
++TARGET_USERIMAGES_SPARSE_EXT_DISABLED := true
++
++# uncomment below lins if use NAND
++#TARGET_USERIMAGES_USE_UBIFS = true
++
++
++ifeq ($(TARGET_USERIMAGES_USE_UBIFS),true)
++UBI_ROOT_INI := device/fsl/sabresd_6sx/ubi/ubinize.ini
++TARGET_MKUBIFS_ARGS := -m 4096 -e 516096 -c 4096 -x none
++TARGET_UBIRAW_ARGS := -m 4096 -p 512KiB $(UBI_ROOT_INI)
++endif
++
++ifeq ($(TARGET_USERIMAGES_USE_UBIFS),true)
++ifeq ($(TARGET_USERIMAGES_USE_EXT4),true)
++$(error "TARGET_USERIMAGES_USE_UBIFS and TARGET_USERIMAGES_USE_EXT4 config open in same time, please only choose one target file system image")
++endif
++endif
++
++BOARD_KERNEL_CMDLINE := console=ttymxc0,115200 init=/init androidboot.console=ttymxc0 androidboot.hardware=freescale
++
++ifeq ($(TARGET_USERIMAGES_USE_UBIFS),true)
++#UBI boot command line.
++# Note: this NAND partition table must align with MFGTool's config.
++BOARD_KERNEL_CMDLINE +=  mtdparts=gpmi-nand:16m(bootloader),16m(bootimg),128m(recovery),-(root) gpmi_debug_init ubi.mtd=3
++endif
++
++# atheros 3k BT
++BOARD_USE_AR3K_BLUETOOTH := true
++BOARD_BLUETOOTH_BDROID_BUILDCFG_INCLUDE_DIR := device/fsl/sabresd_6sx/bluetooth
++
++USE_ION_ALLOCATOR := false
++USE_GPU_ALLOCATOR := true
++
++# camera hal v2
++IMX_CAMERA_HAL_V2 := true
++
++# define frame buffer count
++NUM_FRAMEBUFFER_SURFACE_BUFFERS := 3
++
++#define consumer IR HAL support
++IMX6_CONSUMER_IR_HAL := true
++
++TARGET_BOOTLOADER_CONFIG := imx6sx:mx6sxsabresdandroid
++TARGET_BOARD_DTS_CONFIG := imx6sx:imx6sx-sdb.dtb
++
++
+diff --git a/sabresd_6sx/audio_effects.conf b/sabresd_6sx/audio_effects.conf
+new file mode 100644
+index 0000000..44caa8d
+--- /dev/null
++++ b/sabresd_6sx/audio_effects.conf
+@@ -0,0 +1,169 @@
++# List of effect libraries to load. Each library element must contain a "path" element
++# giving the full path of the library .so file.
++#    libraries {
++#        <lib name> {
++#          path <lib path>
++#        }
++#    }
++libraries {
++  bundle {
++    path /system/lib/soundfx/libbundlewrapper.so
++  }
++  reverb {
++    path /system/lib/soundfx/libreverbwrapper.so
++  }
++  visualizer {
++    path /system/lib/soundfx/libvisualizer.so
++  }
++  downmix {
++    path /system/lib/soundfx/libdownmix.so
++  }
++  pre_processing {
++    path /system/lib/soundfx/libaudiopreprocessing.so
++  }
++}
++
++# list of effects to load. Each effect element must contain a "library" and a "uuid" element.
++# The value of the "library" element must correspond to the name of one library element in the
++# "libraries" element.
++# The name of the effect element is indicative, only the value of the "uuid" element
++# designates the effect.
++# The uuid is the implementation specific UUID as specified by the effect vendor. This is not the
++# generic effect type UUID.
++#    effects {
++#        <fx name> {
++#            library <lib name>
++#            uuid <effect uuid>
++#        }
++#        ...
++#    }
++
++effects {
++  bassboost {
++    library bundle
++    uuid 8631f300-72e2-11df-b57e-0002a5d5c51b
++  }
++  virtualizer {
++    library bundle
++    uuid 1d4033c0-8557-11df-9f2d-0002a5d5c51b
++  }
++  equalizer {
++    library bundle
++    uuid ce772f20-847d-11df-bb17-0002a5d5c51b
++  }
++  volume {
++    library bundle
++    uuid 119341a0-8469-11df-81f9-0002a5d5c51b
++  }
++  reverb_env_aux {
++    library reverb
++    uuid 4a387fc0-8ab3-11df-8bad-0002a5d5c51b
++  }
++  reverb_env_ins {
++    library reverb
++    uuid c7a511a0-a3bb-11df-860e-0002a5d5c51b
++  }
++  reverb_pre_aux {
++    library reverb
++    uuid f29a1400-a3bb-11df-8ddc-0002a5d5c51b
++  }
++  reverb_pre_ins {
++    library reverb
++    uuid 172cdf00-a3bc-11df-a72f-0002a5d5c51b
++  }
++  visualizer {
++    library visualizer
++    uuid d069d9e0-8329-11df-9168-0002a5d5c51b
++  }
++  downmix {
++    library downmix
++    uuid 93f04452-e4fe-41cc-91f9-e475b6d1d69f
++  }
++  agc {
++    library pre_processing
++    uuid aa8130e0-66fc-11e0-bad0-0002a5d5c51b
++  }
++  aec {
++    library pre_processing
++    uuid bb392ec0-8d4d-11e0-a896-0002a5d5c51b
++  }
++  ns {
++    library pre_processing
++    uuid c06c8400-8e06-11e0-9cb6-0002a5d5c51b
++  }
++}
++
++# Audio preprocessor configurations.
++# The pre processor configuration consists in a list of elements each describing
++# pre processor settings for a given input source. Valid input source names are:
++# "mic", "camcorder", "voice_recognition", "voice_communication"
++# Each input source element contains a list of effects elements. The name of the effect
++# element must be the name of one of the effects in the "effects" list of the file.
++# Each effect element may optionally contain a list of parameters and their
++# default value to apply when the pre processor effect is created.
++# A parameter is defined by a "param" element and a "value" element. Each of these elements
++# consists in one or more elements specifying a type followed by a value.
++# The types defined are: "int", "short", "float", "bool" and "string"
++# When both "param" and "value" are a single int, a simple form is allowed where just
++# the param and value pair is present in the parameter description
++#    pre_processing {
++#        <input source name> {
++#            <fx name> {
++#                <param 1 name> {
++#                    param {
++#                        int|short|float|bool|string <value>
++#                        [ int|short|float|bool|string <value> ]
++#                        ...
++#                    }
++#                    value {
++#                        int|short|float|bool|string <value>
++#                        [ int|short|float|bool|string <value> ]
++#                        ...
++#                    }
++#                }
++#                <param 2 name > {<param> <value>}
++#                ...
++#            }
++#            ...
++#        }
++#        ...
++#    }
++
++#
++# TODO: add default audio pre processor configurations after debug and tuning phase
++#
++
++pre_processing {
++  mic {
++      ns {
++      }
++      agc {
++      }
++      aec {
++      }
++  }
++  voice_communication {
++      ns {
++      }
++      agc {
++      }
++      aec {
++      }
++  }
++  camcorder {
++      ns {
++      }
++      agc {
++      }
++      aec {
++      }
++  }
++  voice_recognition {
++      ns {
++      }
++      agc {
++      }
++      aec {
++      }
++  }
++}
+diff --git a/sabresd_6sx/audio_policy.conf b/sabresd_6sx/audio_policy.conf
+new file mode 100644
+index 0000000..b61a0fe
+--- /dev/null
++++ b/sabresd_6sx/audio_policy.conf
+@@ -0,0 +1,93 @@
++# Global configuration section: lists input and output devices always present on the device
++# as well as the output device selected by default.
++# Devices are designated by a string that corresponds to the enum in audio.h
++
++global_configuration {
++  attached_output_devices AUDIO_DEVICE_OUT_SPEAKER
++  default_output_device AUDIO_DEVICE_OUT_SPEAKER
++  attached_input_devices AUDIO_DEVICE_IN_BUILTIN_MIC|AUDIO_DEVICE_IN_REMOTE_SUBMIX
++}
++
++# audio hardware module section: contains descriptors for all audio hw modules present on the
++# device. Each hw module node is named after the corresponding hw module library base name.
++# For instance, "primary" corresponds to audio.primary.<device>.so.
++# The "primary" module is mandatory and must include at least one output with
++# AUDIO_OUTPUT_FLAG_PRIMARY flag.
++# Each module descriptor contains one or more output profile descriptors and zero or more
++# input profile descriptors. Each profile lists all the parameters supported by a given output
++# or input stream category.
++# The "channel_masks", "formats", "devices" and "flags" are specified using strings corresponding
++# to enums in audio.h and audio_policy.h. They are concatenated by use of "|" without space or "\n".
++
++audio_hw_modules {
++  primary {
++    outputs {
++      primary {
++        sampling_rates 44100
++        channel_masks AUDIO_CHANNEL_OUT_STEREO
++        formats AUDIO_FORMAT_PCM_16_BIT
++        devices AUDIO_DEVICE_OUT_SPEAKER|AUDIO_DEVICE_OUT_WIRED_HEADSET|AUDIO_DEVICE_OUT_WIRED_HEADPHONE|AUDIO_DEVICE_OUT_AUX_DIGITAL
++        flags AUDIO_OUTPUT_FLAG_PRIMARY
++      }
++      hdmi {
++        sampling_rates dynamic
++        channel_masks dynamic
++        formats AUDIO_FORMAT_PCM_16_BIT
++        devices AUDIO_DEVICE_OUT_AUX_DIGITAL
++        flags AUDIO_OUTPUT_FLAG_DIRECT
++      }
++    }
++    inputs {
++      primary {
++        sampling_rates 8000|11025|16000|22050|24000|32000|44100|48000
++        channel_masks AUDIO_CHANNEL_IN_MONO|AUDIO_CHANNEL_IN_STEREO
++        formats AUDIO_FORMAT_PCM_16_BIT
++        devices AUDIO_DEVICE_IN_BUILTIN_MIC|AUDIO_DEVICE_IN_WIRED_HEADSET|AUDIO_DEVICE_IN_USB_DEVICE
++      }
++    }
++  }
++  a2dp {
++    outputs {
++      a2dp {
++        sampling_rates 44100
++        channel_masks AUDIO_CHANNEL_OUT_STEREO
++        formats AUDIO_FORMAT_PCM_16_BIT
++        devices AUDIO_DEVICE_OUT_ALL_A2DP
++      }
++    }
++  }
++  r_submix {
++    outputs {
++      submix {
++        sampling_rates 48000
++        channel_masks AUDIO_CHANNEL_OUT_STEREO
++        formats AUDIO_FORMAT_PCM_16_BIT
++        devices AUDIO_DEVICE_OUT_REMOTE_SUBMIX
++      }
++    }
++    inputs {
++      submix {
++        sampling_rates 48000
++        channel_masks AUDIO_CHANNEL_IN_STEREO
++        formats AUDIO_FORMAT_PCM_16_BIT
++        devices AUDIO_DEVICE_IN_REMOTE_SUBMIX
++      }
++    }
++  }
++ usb {
++    outputs {
++      usb_accessory {
++        sampling_rates 44100
++        channel_masks AUDIO_CHANNEL_OUT_STEREO
++        formats AUDIO_FORMAT_PCM_16_BIT
++        devices AUDIO_DEVICE_OUT_USB_ACCESSORY
++      }
++      usb_device {
++        sampling_rates 44100
++        channel_masks AUDIO_CHANNEL_OUT_STEREO
++        formats AUDIO_FORMAT_PCM_16_BIT
++        devices AUDIO_DEVICE_OUT_USB_DEVICE
++      }
++    }
++  }
++}
+diff --git a/sabresd_6sx/bluetooth/bdroid_buildcfg.h b/sabresd_6sx/bluetooth/bdroid_buildcfg.h
+new file mode 100644
+index 0000000..d6f4c4b
+--- /dev/null
++++ b/sabresd_6sx/bluetooth/bdroid_buildcfg.h
+@@ -0,0 +1,32 @@
++/*
++ * Copyright (C) 2012 The Android Open Source Project
++ *
++ * Licensed under the Apache License, Version 2.0 (the "License");
++ * you may not use this file except in compliance with the License.
++ * You may obtain a copy of the License at
++ *
++ *      http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++
++/* Copyright (C) 2013 Freescale Semiconductor, Inc. */
++
++#ifndef _BDROID_BUILDCFG_H
++#define _BDROID_BUILDCFG_H
++
++#define BTM_DEF_LOCAL_NAME "iMX6"
++
++// Networking, Capturing, Object Transfer
++// MAJOR CLASS: COMPUTER
++// MINOR CLASS: PALM SIZE PC/PDA
++#define BTA_DM_COD {0x1A, 0x01, 0x14}
++
++#define BTIF_HF_SERVICES (BTA_HSP_SERVICE_MASK)
++#define BTIF_HF_SERVICE_NAMES  { BTIF_HSAG_SERVICE_NAME }
++
++#endif
+diff --git a/sabresd_6sx/build_id.mk b/sabresd_6sx/build_id.mk
+new file mode 100644
+index 0000000..013f595
+--- /dev/null
++++ b/sabresd_6sx/build_id.mk
+@@ -0,0 +1,22 @@
++#
++# Copyright (C) 2008 The Android Open Source Project
++#
++# Licensed under the Apache License, Version 2.0 (the "License");
++# you may not use this file except in compliance with the License.
++# You may obtain a copy of the License at
++#
++#      http://www.apache.org/licenses/LICENSE-2.0
++#
++# Unless required by applicable law or agreed to in writing, software
++# distributed under the License is distributed on an "AS IS" BASIS,
++# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++# See the License for the specific language governing permissions and
++# limitations under the License.
++#
++# BUILD_ID is usually used to specify the branch name
++# (like "MAIN") or a branch name and a release candidate
++# (like "CRB01").  It must be a single word, and is
++# capitalized by convention.
++
++export BUILD_ID=1.0.0-alpha-rc2
++export BUILD_NUMBER=20140110
+diff --git a/sabresd_6sx/fstab.freescale b/sabresd_6sx/fstab.freescale
+new file mode 100644
+index 0000000..8e6981c
+--- /dev/null
++++ b/sabresd_6sx/fstab.freescale
+@@ -0,0 +1,14 @@
++# Android fstab file.
++#<src>                                                  <mnt_point>         <type>    <mnt_flags and options>                       <fs_mgr_flags>
++# The filesystem that contains the filesystem checker binary (typically /system) cannot
++# specify MF_CHECK, and must come before any filesystems that do specify MF_CHECK
++
++/devices/platform/sdhci-esdhc-imx.2/mmc_host/mmc1 /mnt/media_rw/extsd vfat defaults voldmanaged=extsd:auto
++/devices/platform/fsl-ehci /mnt/media_rw/udisk vfat defaults voldmanaged=udisk:auto
++/dev/block/mmcblk0p5    /system      ext4    ro                                                                               wait
++/dev/block/mmcblk0p4    /data        ext4    nosuid,nodev,nodiratime,noatime,nomblk_io_submit,noauto_da_alloc,errors=panic    wait,encryptable=footer
++/dev/block/mmcblk0p6    /cache       ext4    nosuid,nodev,nomblk_io_submit                                                    wait
++/dev/block/mmcblk0p7    /device      ext4    ro,nosuid,nodev                                                                  wait
++/dev/block/mmcblk0p1    /boot        emmc    defaults                                                                         defaults
++/dev/block/mmcblk0p2    /recovery    emmc    defaults                                                                         defaults
++/dev/block/mmcblk0p8    /misc        emmc    defaults                                                                         defaults
+diff --git a/sabresd_6sx/gpsreset.sh b/sabresd_6sx/gpsreset.sh
+new file mode 100755
+index 0000000..30e58b5
+--- /dev/null
++++ b/sabresd_6sx/gpsreset.sh
+@@ -0,0 +1,3 @@
++echo "0" > /sys/class/gpio/gpio60/value
++sleep 0.1
++echo "1" > /sys/class/gpio/gpio60/value
+\ No newline at end of file
+diff --git a/sabresd_6sx/init.rc b/sabresd_6sx/init.rc
+new file mode 100755
+index 0000000..9e9f555
+--- /dev/null
++++ b/sabresd_6sx/init.rc
+@@ -0,0 +1,179 @@
++import init.${ro.hardware}.usb.rc
++
++on init
++    start watchdogd
++
++    # See storage config details at http://source.android.com/tech/storage/
++    mkdir /mnt/shell/emulated 0700 shell shell
++    mkdir /storage/emulated 0555 root root
++
++    export EXTERNAL_STORAGE /storage/emulated/legacy
++    export EMULATED_STORAGE_SOURCE /mnt/shell/emulated
++    export EMULATED_STORAGE_TARGET /storage/emulated
++
++    # Support legacy paths
++    symlink /storage/emulated/legacy /sdcard
++    symlink /storage/emulated/legacy /mnt/sdcard
++    symlink /storage/emulated/legacy /storage/sdcard0
++    symlink /mnt/shell/emulated/0 /storage/emulated/legacy
++
++on boot
++
++    # Set permission for IIM node
++    symlink /dev/mxs_viim /dev/mxc_mem
++
++    # Set GPS serial and reset GPIO pin
++    setprop ro.kernel.android.gps /dev/athrnmea
++    setprop persist.gps.oacmode @f
++    symlink /dev/ttymxc2 /dev/gpsdevice
++    write /sys/class/gpio/export 60
++    write /sys/class/gpio/gpio60/direction "out"
++    write /sys/class/gpio/gpio60/value 1
++
++    # Enable Tethering in the Settings
++    setprop ro.tether.denied false
++
++    # 3D acceleration property
++    setprop debug.sf.showfps    0
++    setprop debug.sf.enable_hgl 1
++    setprop debug.egl.hw	1
++
++    setprop hwc.stretch.filter  1
++    setprop hwc.enable_dither   1
++
++    # fsl omx graphic manager media framework property
++    setprop media.omxgm.enable-player 1
++    setprop media.omxgm.enable-record 1
++    setprop media.omxgm.enable-scan 1
++    setprop rw.VIDEO_RENDER_NAME video_render.surface
++
++    #Define the config for dual camera
++    setprop camera.disable_zsl_mode 1
++    #For landscape mode, orient is 0
++    #For portrait mode, orient is 90
++    #the android before honycomb are all in portrait mode
++    setprop back_camera_name ov5640_mipi
++    setprop back_camera_orient 0
++    setprop front_camera_name uvc,ov5642_camera,ov5640_camera
++    setprop front_camera_orient 0
++
++    # Set OpenGLES version
++    setprop ro.opengles.version 131072
++
++    # Set rotation to 270 to cofigure as portrait mode
++    setprop ro.sf.hwrotation 0
++
++    # Set the density to 160dpi, default 128dpi is not good
++    setprop ro.sf.lcd_density 160
++
++    # Set extsd access permission
++    setprop persist.sampling_profiler 1
++
++# change for FSL specific service
++    chown root system /sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq
++    chmod 0664 /sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq
++    chown root system /sys/devices/system/cpu/cpu0/cpufreq/scaling_min_freq
++    chmod 0664 /sys/devices/system/cpu/cpu0/cpufreq/scaling_min_freq
++    chown root system /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor
++    chmod 0664 /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor
++    chown root system /sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_cur_freq
++    chmod 0440 /sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_cur_freq
++    chown root system /sys/devices/system/cpu/cpu0/cpufreq/scaling_available_frequencies
++    chown root system /sys/devices/system/cpu/cpu0/online
++    chmod 0664 /sys/devices/system/cpu/cpu0/online
++    chown root system /sys/devices/system/cpu/cpu1/online
++    chmod 0664 /sys/devices/system/cpu/cpu1/online
++    chown root system /sys/devices/system/cpu/cpu2/online
++    chmod 0664 /sys/devices/system/cpu/cpu2/online
++    chown root system /sys/devices/system/cpu/cpu3/online
++    chmod 0664 /sys/devices/system/cpu/cpu3/online
++
++    # prepare for ril
++    setprop gsm.ril.delay 15
++    setprop ro.ril.wake_lock_timeout 300
++
++    # Default backlight device
++    setprop hw.backlight.dev "pwm-backlight.0"
++    # Chmod/chown FSL specific sys entry
++    chown system system /sys/class/backlight/pwm-backlight.0/brightness
++    chmod 0660 /sys/class/backlight/pwm-backlight.0/brightness
++
++    # Set light sensor sysfs path and light sensor threshold lux value
++    setprop ro.hardware.lightsensor "/sys/class/i2c-dev/i2c-2/device/2-0044/"
++    setprop ro.lightsensor.threshold  20
++
++    # No bluetooth hardware present
++    setprop wlan.interface wlan0
++
++# mount the debugfs
++    mount debugfs none /sys/kernel/debug/
++
++on charger
++    # Enable Power modes and set the CPU Freq Sampling rates
++    write /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor "powersave"
++    write /sys/devices/system/cpu/cpufreq/ondemand/up_threshold 90
++    write /sys/devices/system/cpu/cpufreq/ondemand/sampling_rate 50000
++    write /sys/devices/system/cpu/cpufreq/ondemand/io_is_busy 1
++    write /sys/devices/system/cpu/cpufreq/ondemand/sampling_down_factor 4
++    write /sys/devices/system/cpu/cpu1/online 0
++    write /sys/devices/system/cpu/cpu2/online 0
++    write /sys/devices/system/cpu/cpu3/online 0
++
++
++service p2p_supplicant /system/bin/wpa_supplicant \
++    -ip2p0 -Dnl80211 -c/data/misc/wifi/p2p_supplicant.conf \
++    -I/system/etc/wifi/p2p_supplicant_overlay.conf -N \
++    -iwlan0 -Dnl80211 -c/data/misc/wifi/wpa_supplicant.conf \
++    -I/system/etc/wifi/wpa_supplicant_overlay.conf \
++    -O/data/misc/wifi/sockets -puse_p2p_group_interface=1 \
++    -e/data/misc/wifi/entropy.bin -g@android:wpa_wlan0
++    class late_start
++    socket wpa_wlan0 dgram 660 wifi wifi
++    disabled
++    oneshot
++
++service rtw_suppl_con /system/bin/rtl_wpa_supplicant \
++    -ip2p0 -Dnl80211 -c/data/misc/wifi/p2p_supplicant.conf \
++    -I/system/etc/wifi/p2p_supplicant_overlay.conf -N \
++    -iwlan0 -Dnl80211 -c/data/misc/wifi/wpa_supplicant.conf \
++    -I/system/etc/wifi/wpa_supplicant_overlay.conf \
++    -O/data/misc/wifi/sockets -puse_p2p_group_interface=1 \
++    -e/data/misc/wifi/entropy.bin -g@android:wpa_wlan0
++    class late_start
++    socket wpa_wlan0 dgram 660 wifi wifi
++    disabled
++    oneshot
++
++service wpa_supplicant /system/bin/wpa_supplicant \
++    -iwlan0 -Dnl80211 -c/data/misc/wifi/wpa_supplicant.conf \
++    -I/system/etc/wifi/wpa_supplicant_overlay.conf \
++    -O/data/misc/wifi/sockets \
++    -e/data/misc/wifi/entropy.bin -g@android:wpa_wlan0
++    socket wpa_wlan0 dgram 660 wifi wifi
++    class late_start
++    disabled
++    oneshot
++
++# magd daemon
++service magd /system/bin/magd
++    class main
++    user system
++    group input
++    oneshot
++
++# Orion InG
++service ing /system/bin/ingsvcd -c /system/etc/gps/Orion.ini
++    socket athrkv9988    stream 666 system system
++    socket athrshmsocket stream 666 system system
++    socket athrsupl59991 stream 666 system system
++    class late_start
++    user root
++    group gps
++    oneshot
++
++service charger /charger
++    class charger
++
++on fs
++# mount ext4 partitions
++    mount_all /fstab.freescale
+diff --git a/sabresd_6sx/overlay/frameworks/base/core/res/res/values/config.xml b/sabresd_6sx/overlay/frameworks/base/core/res/res/values/config.xml
+new file mode 100755
+index 0000000..17a281f
+--- /dev/null
++++ b/sabresd_6sx/overlay/frameworks/base/core/res/res/values/config.xml
+@@ -0,0 +1,223 @@
++<?xml version="1.0" encoding="utf-8"?>
++<!--
++/*
++** Copyright 2011, The Android Open Source Project
++**
++** Licensed under the Apache License, Version 2.0 (the "License");
++** you may not use this file except in compliance with the License.
++** You may obtain a copy of the License at
++**
++**     http://www.apache.org/licenses/LICENSE-2.0
++**
++** Unless required by applicable law or agreed to in writing, software
++** distributed under the License is distributed on an "AS IS" BASIS,
++** WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++** See the License for the specific language governing permissions and
++** limitations under the License.
++*/
++-->
++
++<!-- These resources are around just to allow their values to be customized
++     for different hardware and product builds. -->
++<resources>
++
++    <!-- List of regexpressions describing the interface (if any) that represent tetherable
++         USB interfaces.  If the device doesn't want to support tething over USB this should
++         be empty.  An example would be "usb.*" -->
++     <string-array translatable="false" name="config_tether_usb_regexs">
++       <item>rndis0</item>
++     </string-array>
++
++    <!-- List of regexpressions describing the interface (if any) that represent tetherable
++         Wifi interfaces.  If the device doesn't want to support tethering over Wifi this
++         should be empty.  An example would be "softap.*" -->
++    <string-array translatable="false" name="config_tether_wifi_regexs">
++      <item>"wlan0"</item>
++    </string-array>
++    <!-- List of regexpressions describing the interface (if any) that represent tetherable
++         bluetooth interfaces.  If the device doesn't want to support tethering over bluetooth this
++         should be empty. -->
++    <string-array translatable="false" name="config_tether_bluetooth_regexs">
++      <item>"bt-pan"</item>
++    </string-array>
++
++    <!-- Flag indicating whether we should enable the automatic brightness in Settings.
++         config_hardware_automatic_brightness_available is not set, so we will use software implementation -->
++    <bool name="config_automatic_brightness_available">false</bool>
++
++    <!-- An Array of "[ConnectivityManager connectionType],
++                      [# simultaneous connection types]"  -->
++    <string-array translatable="false" name="radioAttributes">
++        <item>"1,1"</item>
++        <item>"0,1"</item>
++        <item>"7,1"</item>
++        <item>"9,1"</item>
++    </string-array>
++
++    <!-- An Array of "[Connection name],[ConnectivityManager.TYPE_xxxx],
++         [associated radio-type],[priority],[restoral-timer(ms)],[dependencyMet]  -->
++    <!-- the 5th element "resore-time" indicates the number of milliseconds to delay
++         before automatically restore the default connection.  Set -1 if the connection
++         does not require auto-restore. -->
++    <!-- the 6th element indicates boot-time dependency-met value. -->
++    <string-array translatable="false" name="networkAttributes">
++        <item>"wifi,1,1,1,-1,true"</item>
++        <item>"mobile,0,0,0,-1,true"</item>
++        <item>"mobile_mms,2,0,3,60000,true"</item>
++        <item>"mobile_supl,3,0,3,60000,true"</item>
++        <item>"mobile_hipri,5,0,4,60000,true"</item>
++        <item>"mobile_fota,10,0,3,60000,true"</item>
++        <item>"mobile_ims,11,0,3,60000,true"</item>
++        <item>"mobile_cbs,12,0,3,60000,true"</item>
++        <item>"bluetooth,7,7,2,-1,true"</item>
++        <item>"ethernet,9,9,2,-1,true"</item>
++    </string-array>
++
++    <bool name="config_automatic_brightness_available">true</bool>
++
++    <!-- Array of light sensor LUX values to define our levels for auto backlight brightness support.
++         The N entries of this array define N + 1 zones as follows:
++
++         Zone 0:        0 <= LUX < array[0]
++         Zone 1:        array[0] <= LUX < array[1]
++         ...
++         Zone N:        array[N - 1] <= LUX < array[N]
++         Zone N + 1:    array[N] <= LUX < infinity
++
++         Must be overridden in platform specific overlays -->
++    <integer-array name="config_autoBrightnessLevels">
++        <item>5</item>
++        <item>15</item>
++        <item>50</item>
++        <item>100</item>
++        <item>200</item>
++        <item>400</item>
++        <item>1000</item>
++        <item>2000</item>
++        <item>3000</item>
++        <item>5000</item>
++        <item>10000</item>
++        <item>30000</item>
++    </integer-array>
++
++    <!-- Array of output values for LCD backlight corresponding to the LUX values
++         in the config_autoBrightnessLevels array.  This array should have size one greater
++         than the size of the config_autoBrightnessLevels array.
++         This must be overridden in platform specific overlays -->
++    <integer-array name="config_autoBrightnessLcdBacklightValues">
++        <item>5</item>    <!-- 0-5 -->
++        <item>20</item>   <!-- 5-15 -->
++        <item>30</item>   <!-- 15-50 -->
++        <item>40</item>   <!-- 50-100 -->
++        <item>50</item>   <!-- 100-200 -->
++        <item>60</item>   <!-- 200-400 -->
++        <item>70</item>   <!-- 400-1000 -->
++        <item>80</item>   <!-- 1000-2000 -->
++        <item>130</item>  <!-- 2000-3000 -->
++        <item>180</item>  <!-- 3000-5000 -->
++        <item>255</item>  <!-- 5000-10000 -->
++        <item>255</item>  <!-- 10000-30000 -->
++        <item>255</item>  <!-- 30000+ -->
++    </integer-array>
++
++    <!-- Array of output values for button backlight corresponding to the LUX values
++         in the config_autoBrightnessLevels array.  This array should have size one greater
++         than the size of the config_autoBrightnessLevels array.
++         This must be overridden in platform specific overlays -->
++    <integer-array name="config_autoBrightnessButtonBacklightValues">
++        <item>0</item>
++        <item>0</item>
++        <item>0</item>
++        <item>0</item>
++        <item>0</item>
++        <item>0</item>
++        <item>0</item>
++        <item>0</item>
++        <item>0</item>
++        <item>0</item>
++        <item>0</item>
++        <item>0</item>
++        <item>0</item>
++        <item>0</item>
++        <item>0</item>
++        <item>0</item>
++        <item>0</item>
++    </integer-array>
++
++    <!-- Array of output values for keyboard backlight corresponding to the LUX values
++         in the config_autoBrightnessLevels array.  This array should have size one greater
++         than the size of the config_autoBrightnessLevels array.
++         This must be overridden in platform specific overlays -->
++    <integer-array name="config_autoBrightnessKeyboardBacklightValues">
++        <item>0</item>
++        <item>0</item>
++        <item>0</item>
++        <item>0</item>
++        <item>0</item>
++        <item>0</item>
++        <item>0</item>
++        <item>0</item>
++        <item>0</item>
++        <item>0</item>
++        <item>0</item>
++        <item>0</item>
++        <item>0</item>
++        <item>0</item>
++        <item>0</item>
++        <item>0</item>
++        <item>0</item>
++    </integer-array>
++
++    <integer name="config_screenBrightnessDim">5</integer>
++
++    <!-- Base "touch slop" value used by ViewConfiguration as a
++         movement threshold where scrolling should begin. -->
++    <dimen name="config_viewConfigurationTouchSlop">24dp</dimen>
++
++    <!--  Maximum number of supported users -->
++    <integer name="config_multiuserMaximumUsers">8</integer>
++
++    <!-- Whether a software navigation bar should be shown. NOTE: in the future this may be
++         autodetected from the Configuration. -->
++    <bool name="config_showNavigationBar">true</bool>
++
++    <integer name="config_undockedHdmiRotation">0</integer>
++
++    <!-- This device is not "voice capable"; it's data-only. -->
++    <bool name="config_voice_capable">false</bool>
++
++    <!-- Max space (in MB) allocated to DownloadManager to store the downloaded files
++         if they are to be stored in DownloadManager's data dir,
++         which typically is /data/data/com.android.providers.downloads/files. -->
++    <integer name="config_downloadDataDirSize">200</integer>
++
++    <!-- When the free space available in DownloadManager's data dir falls
++         below the percentage value specified by this param, DownloadManager
++         starts removing files to try to make percentage of available
++         free space above this threshold value. -->
++    <integer name="config_downloadDataDirLowSpaceThreshold">10</integer>
++
++    <!-- Boolean indicating whether the wifi chipset has dual frequency band support -->
++    <bool translatable="false" name="config_wifi_dual_band_support">true</bool>
++
++    <!-- Whether WiFi display is supported by this device.
++         There are many prerequisites for this feature to work correctly.
++         Here are a few of them:
++         * The WiFi radio must support WiFi P2P.
++         * The WiFi radio must support concurrent connections to the WiFi display and
++           to an access point.
++         * The Audio Flinger audio_policy.conf file must specify a rule for the "r_submix"
++           remote submix module.  This module is used to record and stream system
++           audio output to the WiFi display encoder in the media server.
++         * The remote submix module "audio.r_submix.default" must be installed on the device.
++         * The device must be provisioned with HDCP keys (for protected content).
++    -->
++    <bool name="config_enableWifiDisplay">true</bool>
++
++    <!-- Disables fading edges when marquee is enabled in TextView.
++         The fading edge effect will bring performance drop when
++	 the hardware rendering is used.
++    -->
++    <bool name="config_ui_enableFadingMarquee">false</bool>
++
++</resources>
+diff --git a/sabresd_6sx/overlay/frameworks/base/core/res/res/xml/power_profile.xml b/sabresd_6sx/overlay/frameworks/base/core/res/res/xml/power_profile.xml
+new file mode 100644
+index 0000000..5c7a78c
+--- /dev/null
++++ b/sabresd_6sx/overlay/frameworks/base/core/res/res/xml/power_profile.xml
+@@ -0,0 +1,61 @@
++<?xml version="1.0" encoding="utf-8"?>
++<!--
++**
++** Copyright 2009, The Android Open Source Project
++*  Copyright (C) 2012 Freescale Semiconductor, Inc.
++**
++** Licensed under the Apache License, Version 2.0 (the "License")
++** you may not use this file except in compliance with the License.
++** You may obtain a copy of the License at
++**
++**     http://www.apache.org/licenses/LICENSE-2.0
++**
++** Unless required by applicable law or agreed to in writing, software
++** distributed under the License is distributed on an "AS IS" BASIS,
++** WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++** See the License for the specific language governing permissions and
++** limitations under the License.
++*/
++-->
++
++<device name="Android">
++  <!-- All values are in mAh except as noted -->
++  <item name="none">0</item>
++  <item name="screen.on">71</item>
++  <item name="bluetooth.active">17</item>
++  <item name="bluetooth.on">17</item> <!--sabresd don't have BT device -->
++  <item name="screen.full">200</item>
++  <item name="wifi.on">80</item>
++  <item name="wifi.active">96</item>
++  <item name="wifi.scan">70</item>
++  <item name="dsp.audio">40</item>
++  <item name="dsp.video">280</item>
++  <item name="radio.active">250</item>
++  <!-- The current consumed by the radio when it is scanning for a signal -->
++  <item name="radio.scanning">82</item>
++  <item name="gps.on">29.7</item>
++  <!-- Current consumed by the radio at different signal strengths, when paging -->
++  <array name="radio.on"> <!-- Strength 0 to BINS-1 -->
++      <value>0.1</value>
++      <value>3.4</value>
++  </array>
++  <!-- Different CPU speeds as reported in
++       /sys/devices/system/cpu/cpu0/cpufreq/stats/time_in_state -->
++  <array name="cpu.speeds">
++      <value>996000</value> <!-- 996 MHz CPU speed -->
++      <value>792000</value> <!-- 792 MHz CPU speed -->
++      <value>396000</value> <!-- 396 MHz CPU speed -->
++      <value>198000</value> <!-- 198 MHz CPU speed -->
++  </array>
++  <!-- Power consumption when CPU is idle -->
++  <item name="cpu.idle">36</item>
++  <!-- Power consumption at different speeds -->
++  <array name="cpu.active">
++      <value>480</value>
++      <value>320</value>
++      <value>130</value>
++      <value>40</value>
++  </array>
++  <!-- This is the battery capacity in mAh -->
++  <item name="battery.capacity">4800</item>
++</device>
+diff --git a/sabresd_6sx/overlay/frameworks/base/core/res/res/xml/storage_list.xml b/sabresd_6sx/overlay/frameworks/base/core/res/res/xml/storage_list.xml
+new file mode 100644
+index 0000000..3639bdc
+--- /dev/null
++++ b/sabresd_6sx/overlay/frameworks/base/core/res/res/xml/storage_list.xml
+@@ -0,0 +1,49 @@
++<?xml version="1.0" encoding="utf-8"?>
++<!--
++**
++** Copyright 2011, The Android Open Source Project
++**
++** Licensed under the Apache License, Version 2.0 (the "License")
++** you may not use this file except in compliance with the License.
++** You may obtain a copy of the License at
++**
++**     http://www.apache.org/licenses/LICENSE-2.0
++**
++** Unless required by applicable law or agreed to in writing, software
++** distributed under the License is distributed on an "AS IS" BASIS,
++** WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++** See the License for the specific language governing permissions and
++** limitations under the License.
++*/
++-->
++
++<!-- The <device> element should contain one or more <storage> elements.
++     Exactly one of these should have the attribute primary="true".
++     This storage will be the primary external storage and should have path="/mnt/sdcard".
++     Each storage should have both a path and description attribute set.
++     The following boolean attributes are optional:
++
++        primary:    this storage is the primary external storage
++        removable:  this is removable storage (for example, a real SD card)
++        emulated:   the storage is emulated via the FUSE sdcard daemon
++        mtp-reserve: number of megabytes of storage MTP should reserve for free storage
++                     (used for emulated storage that is shared with system's data partition)
++
++      A storage should not have both emulated and removable set to true
++-->
++
++<StorageList xmlns:android="http://schemas.android.com/apk/res/android">
++    <storage android:storageDescription="@string/storage_internal"
++             android:primary="true"
++             android:emulated="true"
++             android:mtpReserve="100" />
++    <storage android:mountPoint="/storage/extsd"
++             android:storageDescription="@string/storage_sd_card"
++             android:primary="false"
++             android:removable="true" />
++    <storage android:mountPoint="/storage/udisk"
++             android:storageDescription="@string/storage_usb"
++             android:primary="false"
++             android:removable="true" />
++</StorageList>
++
+diff --git a/sabresd_6sx/overlay/frameworks/base/packages/SettingsProvider/res/values/defaults.xml b/sabresd_6sx/overlay/frameworks/base/packages/SettingsProvider/res/values/defaults.xml
+new file mode 100644
+index 0000000..3f2232a
+--- /dev/null
++++ b/sabresd_6sx/overlay/frameworks/base/packages/SettingsProvider/res/values/defaults.xml
+@@ -0,0 +1,22 @@
++<?xml version="1.0" encoding="utf-8"?>
++<!--
++/**
++ * Copyright (c) 2009, The Android Open Source Project
++ *
++ * Licensed under the Apache License, Version 2.0 (the "License");
++ * you may not use this file except in compliance with the License.
++ * You may obtain a copy of the License at
++ *
++ *     http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++-->
++<resources>
++    <!-- Default for Settings.Secure.USER_SETUP_COMPLETE -->
++    <bool name="def_user_setup_complete">true</bool>
++</resources>
+diff --git a/sabresd_6sx/overlay/packages/apps/Launcher2/res/values-sw720dp/dimens.xml b/sabresd_6sx/overlay/packages/apps/Launcher2/res/values-sw720dp/dimens.xml
+new file mode 100644
+index 0000000..d55a391
+--- /dev/null
++++ b/sabresd_6sx/overlay/packages/apps/Launcher2/res/values-sw720dp/dimens.xml
+@@ -0,0 +1,20 @@
++<?xml version="1.0" encoding="utf-8"?>
++<!-- Copyright (C) 2011 The Android Open Source Project
++
++     Licensed under the Apache License, Version 2.0 (the "License");
++     you may not use this file except in compliance with the License.
++     You may obtain a copy of the License at
++
++          http://www.apache.org/licenses/LICENSE-2.0
++
++     Unless required by applicable law or agreed to in writing, software
++     distributed under the License is distributed on an "AS IS" BASIS,
++     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++     See the License for the specific language governing permissions and
++     limitations under the License.
++-->
++
++<resources>
++    <dimen name="workspace_width_gap_land">32dp</dimen>
++</resources>
++
+diff --git a/sabresd_6sx/overlay/packages/apps/Launcher2/res/values/config.xml b/sabresd_6sx/overlay/packages/apps/Launcher2/res/values/config.xml
+new file mode 100644
+index 0000000..3b82809
+--- /dev/null
++++ b/sabresd_6sx/overlay/packages/apps/Launcher2/res/values/config.xml
+@@ -0,0 +1,3 @@
++<resources>
++    <bool name="config_largeHeap">true</bool>
++</resources>
+diff --git a/sabresd_6sx/overlay/packages/apps/Launcher2/res/xml-sw600dp/default_workspace.xml b/sabresd_6sx/overlay/packages/apps/Launcher2/res/xml-sw600dp/default_workspace.xml
+new file mode 100644
+index 0000000..b5bb7cd
+--- /dev/null
++++ b/sabresd_6sx/overlay/packages/apps/Launcher2/res/xml-sw600dp/default_workspace.xml
+@@ -0,0 +1,91 @@
++<?xml version="1.0" encoding="utf-8"?>
++<!-- Copyright (C) 2012 The Android Open Source Project
++
++     Licensed under the Apache License, Version 2.0 (the "License");
++     you may not use this file except in compliance with the License.
++     You may obtain a copy of the License at
++
++          http://www.apache.org/licenses/LICENSE-2.0
++
++     Unless required by applicable law or agreed to in writing, software
++     distributed under the License is distributed on an "AS IS" BASIS,
++     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++     See the License for the specific language governing permissions and
++     limitations under the License.
++-->
++
++<favorites xmlns:launcher="http://schemas.android.com/apk/res/com.android.launcher">
++    <!-- Far-left screen [0] -->
++
++    <!-- Left screen [1] -->
++    <appwidget
++        launcher:packageName="com.android.settings"
++        launcher:className="com.android.settings.widget.SettingsAppWidgetProvider"
++        launcher:screen="1"
++        launcher:x="0"
++        launcher:y="3"
++        launcher:spanX="4"
++        launcher:spanY="1" />
++
++    <!-- Middle screen [2] -->
++    <appwidget
++        launcher:packageName="com.android.deskclock"
++        launcher:className="com.android.alarmclock.AnalogAppWidgetProvider"
++        launcher:screen="2"
++        launcher:x="1"
++        launcher:y="0"
++        launcher:spanX="2"
++        launcher:spanY="2" />
++    <favorite
++        launcher:packageName="com.android.gallery3d"
++        launcher:className="com.android.camera.CameraLauncher"
++        launcher:screen="2"
++        launcher:x="0"
++        launcher:y="3" />
++
++    <!-- Right screen [3] -->
++    <favorite
++        launcher:packageName="com.android.gallery3d"
++        launcher:className="com.android.gallery3d.app.Gallery"
++        launcher:screen="3"
++        launcher:x="1"
++        launcher:y="3" />
++    <favorite
++        launcher:packageName="com.android.settings"
++        launcher:className="com.android.settings.Settings"
++        launcher:screen="3"
++        launcher:x="2"
++        launcher:y="3" />
++
++    <!-- Far-right screen [4] -->
++
++    <!-- Hotseat (We use the screen as the position of the item in the hotseat) -->
++    <favorite
++        launcher:packageName="com.android.contacts"
++        launcher:className="com.android.contacts.activities.DialtactsActivity"
++        launcher:container="-101"
++        launcher:screen="1"
++        launcher:x="1"
++        launcher:y="0" />
++    <favorite
++        launcher:packageName="com.android.contacts"
++        launcher:className="com.android.contacts.activities.PeopleActivity"
++        launcher:container="-101"
++        launcher:screen="2"
++        launcher:x="2"
++        launcher:y="0" />
++    <favorite
++        launcher:packageName="com.android.mms"
++        launcher:className="com.android.mms.ui.ConversationList"
++        launcher:container="-101"
++        launcher:screen="4"
++        launcher:x="4"
++        launcher:y="0" />
++    <favorite
++        launcher:packageName="com.android.browser"
++        launcher:className="com.android.browser.BrowserActivity"
++        launcher:container="-101"
++        launcher:screen="5"
++        launcher:x="5"
++        launcher:y="0" />
++</favorites>
+diff --git a/sabresd_6sx/overlay/packages/apps/Launcher2/res/xml-sw720dp/default_workspace.xml b/sabresd_6sx/overlay/packages/apps/Launcher2/res/xml-sw720dp/default_workspace.xml
+new file mode 100644
+index 0000000..1defd4c
+--- /dev/null
++++ b/sabresd_6sx/overlay/packages/apps/Launcher2/res/xml-sw720dp/default_workspace.xml
+@@ -0,0 +1,61 @@
++<?xml version="1.0" encoding="utf-8"?>
++<!-- Copyright (C) 2009 The Android Open Source Project
++
++     Licensed under the Apache License, Version 2.0 (the "License");
++     you may not use this file except in compliance with the License.
++     You may obtain a copy of the License at
++
++          http://www.apache.org/licenses/LICENSE-2.0
++
++     Unless required by applicable law or agreed to in writing, software
++     distributed under the License is distributed on an "AS IS" BASIS,
++     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++     See the License for the specific language governing permissions and
++     limitations under the License.
++-->
++
++<favorites xmlns:launcher="http://schemas.android.com/apk/res/com.android.launcher">
++    <!-- Far-left screen [0] -->
++
++    <!-- Left screen [1] -->
++    <appwidget
++        launcher:packageName="com.android.settings"
++        launcher:className="com.android.settings.widget.SettingsAppWidgetProvider"
++        launcher:screen="1"
++        launcher:x="0"
++        launcher:y="3"
++        launcher:spanX="4"
++        launcher:spanY="1" />
++
++    <!-- Middle screen [2] -->
++    <appwidget
++        launcher:packageName="com.android.deskclock"
++        launcher:className="com.android.alarmclock.AnalogAppWidgetProvider"
++        launcher:screen="2"
++        launcher:x="1"
++        launcher:y="0"
++        launcher:spanX="2"
++        launcher:spanY="2" />
++    <favorite
++        launcher:packageName="com.android.gallery3d"
++        launcher:className="com.android.camera.CameraLauncher"
++        launcher:screen="2"
++        launcher:x="0"
++        launcher:y="3" />
++
++    <!-- Right screen [3] -->
++    <favorite
++        launcher:packageName="com.android.gallery3d"
++        launcher:className="com.android.gallery3d.app.Gallery"
++        launcher:screen="3"
++        launcher:x="1"
++        launcher:y="3" />
++    <favorite
++        launcher:packageName="com.android.settings"
++        launcher:className="com.android.settings.Settings"
++        launcher:screen="3"
++        launcher:x="2"
++        launcher:y="3" />
++
++    <!-- Far-right screen [4] -->
++</favorites>
+diff --git a/sabresd_6sx/overlay/packages/apps/Launcher2/res/xml/default_workspace.xml b/sabresd_6sx/overlay/packages/apps/Launcher2/res/xml/default_workspace.xml
+new file mode 100644
+index 0000000..86a2a69
+--- /dev/null
++++ b/sabresd_6sx/overlay/packages/apps/Launcher2/res/xml/default_workspace.xml
+@@ -0,0 +1,91 @@
++<?xml version="1.0" encoding="utf-8"?>
++<!-- Copyright (C) 2009 The Android Open Source Project
++
++     Licensed under the Apache License, Version 2.0 (the "License");
++     you may not use this file except in compliance with the License.
++     You may obtain a copy of the License at
++
++          http://www.apache.org/licenses/LICENSE-2.0
++
++     Unless required by applicable law or agreed to in writing, software
++     distributed under the License is distributed on an "AS IS" BASIS,
++     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++     See the License for the specific language governing permissions and
++     limitations under the License.
++-->
++
++<favorites xmlns:launcher="http://schemas.android.com/apk/res/com.android.launcher">
++    <!-- Far-left screen [0] -->
++
++    <!-- Left screen [1] -->
++    <appwidget
++        launcher:packageName="com.android.settings"
++        launcher:className="com.android.settings.widget.SettingsAppWidgetProvider"
++        launcher:screen="1"
++        launcher:x="0"
++        launcher:y="3"
++        launcher:spanX="4"
++        launcher:spanY="1" />
++
++    <!-- Middle screen [2] -->
++    <appwidget
++        launcher:packageName="com.android.deskclock"
++        launcher:className="com.android.alarmclock.AnalogAppWidgetProvider"
++        launcher:screen="2"
++        launcher:x="1"
++        launcher:y="0"
++        launcher:spanX="2"
++        launcher:spanY="2" />
++    <favorite
++        launcher:packageName="com.android.gallery3d"
++        launcher:className="com.android.camera.CameraLauncher"
++        launcher:screen="2"
++        launcher:x="0"
++        launcher:y="3" />
++
++    <!-- Right screen [3] -->
++    <favorite
++        launcher:packageName="com.android.gallery3d"
++        launcher:className="com.android.gallery3d.app.Gallery"
++        launcher:screen="3"
++        launcher:x="1"
++        launcher:y="3" />
++    <favorite
++        launcher:packageName="com.android.settings"
++        launcher:className="com.android.settings.Settings"
++        launcher:screen="3"
++        launcher:x="2"
++        launcher:y="3" />
++
++    <!-- Far-right screen [4] -->
++
++    <!-- Hotseat (We use the screen as the position of the item in the hotseat) -->
++    <favorite
++        launcher:packageName="com.android.contacts"
++        launcher:className="com.android.contacts.activities.DialtactsActivity"
++        launcher:container="-101"
++        launcher:screen="0"
++        launcher:x="0"
++        launcher:y="0" />
++    <favorite
++        launcher:packageName="com.android.contacts"
++        launcher:className="com.android.contacts.activities.PeopleActivity"
++        launcher:container="-101"
++        launcher:screen="1"
++        launcher:x="1"
++        launcher:y="0" />
++    <favorite
++        launcher:packageName="com.android.mms"
++        launcher:className="com.android.mms.ui.ConversationList"
++        launcher:container="-101"
++        launcher:screen="3"
++        launcher:x="3"
++        launcher:y="0" />
++    <favorite
++        launcher:packageName="com.android.browser"
++        launcher:className="com.android.browser.BrowserActivity"
++        launcher:container="-101"
++        launcher:screen="4"
++        launcher:x="4"
++        launcher:y="0" />
++</favorites>
+diff --git a/sabresd_6sx/overlay/packages/apps/Settings/res/values/bools.xml b/sabresd_6sx/overlay/packages/apps/Settings/res/values/bools.xml
+new file mode 100644
+index 0000000..e9f565d
+--- /dev/null
++++ b/sabresd_6sx/overlay/packages/apps/Settings/res/values/bools.xml
+@@ -0,0 +1,19 @@
++<?xml version="1.0" encoding="utf-8"?>
++<!-- Copyright (C) 2009 The Android Open Source Project
++
++     Licensed under the Apache License, Version 2.0 (the "License");
++     you may not use this file except in compliance with the License.
++     You may obtain a copy of the License at
++  
++          http://www.apache.org/licenses/LICENSE-2.0
++  
++     Unless required by applicable law or agreed to in writing, software
++     distributed under the License is distributed on an "AS IS" BASIS,
++     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++     See the License for the specific language governing permissions and
++     limitations under the License.
++-->
++
++<resources>
++    <bool name="config_additional_system_update_setting_enable">true</bool>
++</resources>
+diff --git a/sabresd_6sx/overlay/packages/apps/Settings/res/values/config.xml b/sabresd_6sx/overlay/packages/apps/Settings/res/values/config.xml
+new file mode 100644
+index 0000000..5380d2d
+--- /dev/null
++++ b/sabresd_6sx/overlay/packages/apps/Settings/res/values/config.xml
+@@ -0,0 +1,21 @@
++<?xml version="1.0" encoding="utf-8"?>
++<!-- Copyright (C) 2007 The Android Open Source Project
++
++     Licensed under the Apache License, Version 2.0 (the "License");
++     you may not use this file except in compliance with the License.
++     You may obtain a copy of the License at
++
++          http://www.apache.org/licenses/LICENSE-2.0
++
++     Unless required by applicable law or agreed to in writing, software
++     distributed under the License is distributed on an "AS IS" BASIS,
++     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++     See the License for the specific language governing permissions and
++     limitations under the License.
++-->
++
++<resources xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
++    <string name="additional_system_update" translatable="false">com.fsl.android.ota</string>
++    <string name="additional_system_update_menu" translatable="false">com.fsl.android.ota.OtaAppActivity</string>
++
++</resources>
+diff --git a/sabresd_6sx/overlay/packages/apps/Settings/res/values/strings.xml b/sabresd_6sx/overlay/packages/apps/Settings/res/values/strings.xml
+new file mode 100644
+index 0000000..00f0cda
+--- /dev/null
++++ b/sabresd_6sx/overlay/packages/apps/Settings/res/values/strings.xml
+@@ -0,0 +1,22 @@
++<?xml version="1.0" encoding="utf-8"?>
++<!-- Copyright (C) 2007 The Android Open Source Project
++
++     Licensed under the Apache License, Version 2.0 (the "License");
++     you may not use this file except in compliance with the License.
++     You may obtain a copy of the License at
++
++          http://www.apache.org/licenses/LICENSE-2.0
++
++     Unless required by applicable law or agreed to in writing, software
++     distributed under the License is distributed on an "AS IS" BASIS,
++     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++     See the License for the specific language governing permissions and
++     limitations under the License.
++-->
++<resources xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
++    <!--  Help URLs for some screens. Not specified here. Specified in product overlays --><skip/>
++    <!-- Help menu label [CHAR LIMIT=20] -->
++    <!-- Help URL, WiFi [DO NOT TRANSLATE] -->
++    <string name="help_url_wifi" translatable="false">http://support.google.com/wifi</string>
++    <string name="help_url_accounts" translatable="false">http://support.google.com/accounts</string>
++</resources>
+diff --git a/sabresd_6sx/required_hardware.xml b/sabresd_6sx/required_hardware.xml
+new file mode 100644
+index 0000000..1c1dbc2
+--- /dev/null
++++ b/sabresd_6sx/required_hardware.xml
+@@ -0,0 +1,46 @@
++<?xml version="1.0" encoding="utf-8"?>
++<!-- Copyright (C) 2009 The Android Open Source Project
++
++     Licensed under the Apache License, Version 2.0 (the "License");
++     you may not use this file except in compliance with the License.
++     You may obtain a copy of the License at
++
++          http://www.apache.org/licenses/LICENSE-2.0
++
++     Unless required by applicable law or agreed to in writing, software
++     distributed under the License is distributed on an "AS IS" BASIS,
++     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++     See the License for the specific language governing permissions and
++     limitations under the License.
++-->
++
++<!-- XXX: This file is a clone of :frameworks/native/data/etc/tablet_core_hardware.xml file,
++           except the bluetooth is removed and android.software.live_wallpaper was added.
++-->
++<permissions>
++    <feature name="android.hardware.camera.any" />
++    <feature name="android.hardware.camera" />
++    <feature name="android.hardware.camera.front" />
++    <feature name="android.hardware.camera.flash" />
++    <feature name="android.hardware.location" />
++    <feature name="android.hardware.location.network" />
++    <feature name="android.hardware.sensor.accelerometer" />
++    <feature name="android.hardware.sensor.compass" />
++    <feature name="android.hardware.bluetooth" />
++    <feature name="android.hardware.touchscreen" />
++    <feature name="android.hardware.touchscreen.multitouch" />
++    <feature name="android.hardware.touchscreen.multitouch.distinct" />
++    <feature name="android.hardware.microphone" />
++    <feature name="android.hardware.screen.portrait" />
++    <feature name="android.hardware.screen.landscape" />
++    <feature name="android.software.app_widgets" />
++    <feature name="android.software.home_screen" />
++    <feature name="android.software.input_methods" />
++    <!-- Feature to specify if the device supports adding device admins. -->
++    <feature name="android.software.device_admin" />
++
++    <!-- This is added by FSL. -->
++    <feature name="android.software.live_wallpaper" />
++
++
++</permissions>
+diff --git a/sabresd_6sx/ubi/ubinize.ini b/sabresd_6sx/ubi/ubinize.ini
+new file mode 100644
+index 0000000..95d6efc
+--- /dev/null
++++ b/sabresd_6sx/ubi/ubinize.ini
+@@ -0,0 +1,33 @@
++[system]
++mode=ubi
++image=./out/target/product/sabresd_6sx/system.img
++vol_id=0
++vol_size=360MiB
++vol_type=dynamic
++vol_name=system
++vol_alignment=1
++
++[cache]
++mode=ubi
++vol_id=1
++vol_size=180MiB
++vol_type=dynamic
++vol_name=cache
++vol_alignment=1
++
++[device]
++mode=ubi
++vol_id=2
++vol_size=10MiB
++vol_type=dynamic
++vol_name=device
++vol_aligment=1
++
++[data]
++mode=ubi
++vol_id=3
++vol_size=280MiB
++vol_type=dynamic
++vol_name=data
++vol_alignment=1
++vol_flags=autoresize
+-- 
+1.8.0
+

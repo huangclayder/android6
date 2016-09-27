@@ -1,0 +1,31 @@
+From 503cf997cfe5b9ef549a62b1a0176d2503a77833 Mon Sep 17 00:00:00 2001
+From: Haoran Wang <b50027@freescale.com>
+Date: Wed, 17 Jun 2015 17:02:41 +0800
+Subject: [PATCH] MA-6450 Enable BCM4339 in defconfig
+
+Make BCM4339 drivers and configure its
+firmware position.
+
+Signed-off-by: Haoran Wang <b50027@freescale.com>
+---
+ arch/arm/configs/imx_v7_android_defconfig | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/arch/arm/configs/imx_v7_android_defconfig b/arch/arm/configs/imx_v7_android_defconfig
+index a065454..b212ad5 100644
+--- a/arch/arm/configs/imx_v7_android_defconfig
++++ b/arch/arm/configs/imx_v7_android_defconfig
+@@ -274,6 +274,10 @@ CONFIG_USB_NET_CDC_EEM=y
+ CONFIG_ATH_CARDS=m
+ CONFIG_ATH6KL=m
+ CONFIG_ATH6KL_SDIO=m
++CONFIG_BCMDHD=m
++CONFIG_BCMDHD_SDIO=y
++CONFIG_BCMDHD_FW_PATH="/system/etc/firmware/bcm/fw_bcmdhd.bin"
++CONFIG_BCMDHD_NVRAM_PATH="/system/etc/firmware/bcm/bcmdhd.cal"
+ CONFIG_BRCMFMAC=m
+ CONFIG_RTL8821AS=m
+ # CONFIG_INPUT_MOUSEDEV_PSAUX is not set
+-- 
+1.8.0
+

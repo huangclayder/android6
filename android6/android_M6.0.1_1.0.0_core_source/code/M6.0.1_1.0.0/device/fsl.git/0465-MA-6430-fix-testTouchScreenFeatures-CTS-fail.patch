@@ -1,0 +1,41 @@
+From 99ce94d2831829367999279c0e62e84195153552 Mon Sep 17 00:00:00 2001
+From: Richard Liu <r66033@freescale.com>
+Date: Thu, 26 Mar 2015 14:07:59 +0800
+Subject: [PATCH 465/602] MA-6430 fix testTouchScreenFeatures CTS fail
+
+Indicate support android.hardware.faketouch feature on sabresd board
+by adding android.hardware.faketouch.xml.
+
+Signed-off-by: Richard Liu <r66033@freescale.com>
+---
+ imx6/sabresd_6dq.mk | 1 +
+ imx6/sabresd_6sx.mk | 1 +
+ 2 files changed, 2 insertions(+)
+
+diff --git a/imx6/sabresd_6dq.mk b/imx6/sabresd_6dq.mk
+index 93dd989..56cef9d 100644
+--- a/imx6/sabresd_6dq.mk
++++ b/imx6/sabresd_6dq.mk
+@@ -49,6 +49,7 @@ PRODUCT_COPY_FILES += \
+ 	frameworks/native/data/etc/android.hardware.wifi.xml:system/etc/permissions/android.hardware.wifi.xml \
+ 	frameworks/native/data/etc/android.hardware.wifi.direct.xml:system/etc/permissions/android.hardware.wifi.direct.xml \
+ 	frameworks/native/data/etc/android.hardware.sensor.light.xml:system/etc/permissions/android.hardware.sensor.light.xml \
++	frameworks/native/data/etc/android.hardware.faketouch.xml:system/etc/permissions/android.hardware.faketouch.xml \
+ 	frameworks/native/data/etc/android.software.sip.voip.xml:system/etc/permissions/android.software.sip.voip.xml \
+ 	frameworks/native/data/etc/android.hardware.usb.host.xml:system/etc/permissions/android.hardware.usb.host.xml \
+ 	frameworks/native/data/etc/android.hardware.usb.accessory.xml:system/etc/permissions/android.hardware.usb.accessory.xml \
+diff --git a/imx6/sabresd_6sx.mk b/imx6/sabresd_6sx.mk
+index 9f9826f..45944b6 100644
+--- a/imx6/sabresd_6sx.mk
++++ b/imx6/sabresd_6sx.mk
+@@ -39,6 +39,7 @@ PRODUCT_COPY_FILES += \
+ 	frameworks/native/data/etc/android.hardware.wifi.xml:system/etc/permissions/android.hardware.wifi.xml \
+ 	frameworks/native/data/etc/android.hardware.wifi.direct.xml:system/etc/permissions/android.hardware.wifi.direct.xml \
+ 	frameworks/native/data/etc/android.hardware.sensor.light.xml:system/etc/permissions/android.hardware.sensor.light.xml \
++	frameworks/native/data/etc/android.hardware.faketouch.xml:system/etc/permissions/android.hardware.faketouch.xml \
+ 	frameworks/native/data/etc/android.software.sip.voip.xml:system/etc/permissions/android.software.sip.voip.xml \
+ 	frameworks/native/data/etc/android.hardware.usb.host.xml:system/etc/permissions/android.hardware.usb.host.xml \
+ 	frameworks/native/data/etc/android.hardware.usb.accessory.xml:system/etc/permissions/android.hardware.usb.accessory.xml \
+-- 
+1.8.0
+

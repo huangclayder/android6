@@ -1,0 +1,79 @@
+From f14e960b79e9bd589b0a8303cd02e2119b9dbe3b Mon Sep 17 00:00:00 2001
+From: Liu Xiaowen <b37945@freescale.com>
+Date: Tue, 11 Mar 2014 09:57:31 +0800
+Subject: [PATCH 20/43] ENGR00302495 add setFramebufferTargetScissor
+ interface.
+
+add setFramebufferTargetScissor interface to pass display frame
+change to hwcomposer.
+
+Signed-off-by: Liu Xiaowen <b37945@freescale.com>
+---
+ .../surfaceflinger/DisplayHardware/HWComposer.cpp     | 19 +++++++++++++++++++
+ services/surfaceflinger/DisplayHardware/HWComposer.h  |  1 +
+ services/surfaceflinger/SurfaceFlinger.cpp            |  7 +++++++
+ 3 files changed, 27 insertions(+)
+
+diff --git a/services/surfaceflinger/DisplayHardware/HWComposer.cpp b/services/surfaceflinger/DisplayHardware/HWComposer.cpp
+index 353007f..224310c 100644
+--- a/services/surfaceflinger/DisplayHardware/HWComposer.cpp
++++ b/services/surfaceflinger/DisplayHardware/HWComposer.cpp
+@@ -661,6 +661,25 @@ status_t HWComposer::setFramebufferTarget(int32_t id,
+     return NO_ERROR;
+ }
+ 
++status_t HWComposer::setFramebufferTargetScissor(int32_t id, const Rect& scissor)
++{
++    if (uint32_t(id)>31 || !mAllocatedDisplayIDs.hasBit(id)) {
++        return BAD_INDEX;
++    }
++    DisplayData& disp(mDisplayData[id]);
++    if (!disp.framebufferTarget) {
++        // this should never happen, but apparently eglCreateWindowSurface()
++        // triggers a Surface::queueBuffer()  on some
++        // devices (!?) -- log and ignore.
++        ALOGE("HWComposer: framebufferTarget is null");
++        return NO_ERROR;
++    }
++
++    memcpy(&disp.framebufferTarget->displayFrame, &scissor,
++               sizeof(disp.framebufferTarget->displayFrame));
++    return NO_ERROR;
++}
++
+ status_t HWComposer::prepare() {
+     Mutex::Autolock _l(mDisplayLock);
+     for (size_t i=0 ; i<mNumDisplays ; i++) {
+diff --git a/services/surfaceflinger/DisplayHardware/HWComposer.h b/services/surfaceflinger/DisplayHardware/HWComposer.h
+index 5e0b3d8..814272d 100644
+--- a/services/surfaceflinger/DisplayHardware/HWComposer.h
++++ b/services/surfaceflinger/DisplayHardware/HWComposer.h
+@@ -138,6 +138,7 @@ public:
+     status_t setOutputBuffer(int32_t id, const sp<Fence>& acquireFence,
+             const sp<GraphicBuffer>& buf);
+ 
++    status_t setFramebufferTargetScissor(int32_t id, const Rect& scissor);
+     // Get the retire fence for the last committed frame. This fence will
+     // signal when the h/w composer is completely finished with the frame.
+     // For physical displays, it is no longer being displayed. For virtual
+diff --git a/services/surfaceflinger/SurfaceFlinger.cpp b/services/surfaceflinger/SurfaceFlinger.cpp
+index 9b798ee..7cc2999 100644
+--- a/services/surfaceflinger/SurfaceFlinger.cpp
++++ b/services/surfaceflinger/SurfaceFlinger.cpp
+@@ -2070,6 +2070,13 @@ bool SurfaceFlinger::doComposeSurfaces(const sp<const DisplayDevice>& hw, const
+             }
+         }
+     }
++    else {
++        // when display scissor changed, the letterbox region should transfer
++        // to hwc to handle it. just like 3D do above.
++        // here, the DisplayDevice'frame change can tell this.
++        int id = hw->getHwcDisplayId();
++        hwc.setFramebufferTargetScissor(id, hw->getFrame());
++    }
+ 
+     /*
+      * and then, render the layers targeted at the framebuffer
+-- 
+1.8.0
+

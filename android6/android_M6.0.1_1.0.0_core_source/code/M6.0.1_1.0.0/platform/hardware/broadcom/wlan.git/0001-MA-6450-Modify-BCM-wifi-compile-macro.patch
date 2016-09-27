@@ -1,0 +1,56 @@
+From 5c29ee2ef1d4290b3ebdbd95c5caf651e8450426 Mon Sep 17 00:00:00 2001
+From: Haoran Wang <b50027@freescale.com>
+Date: Fri, 15 May 2015 10:04:56 +0800
+Subject: [PATCH] MA-6450 Modify BCM wifi compile macro
+
+Compile bcm wpa_supplicant private lib.
+
+Signed-off-by: Haoran Wang <b50027@freescale.com>
+---
+ bcmdhd/Android.mk                      | 2 +-
+ bcmdhd/config/Android.mk               | 2 ++
+ bcmdhd/wpa_supplicant_8_lib/Android.mk | 2 +-
+ 3 files changed, 4 insertions(+), 2 deletions(-)
+
+diff --git a/bcmdhd/Android.mk b/bcmdhd/Android.mk
+index 5b43128..6a09f06 100644
+--- a/bcmdhd/Android.mk
++++ b/bcmdhd/Android.mk
+@@ -1,3 +1,3 @@
+-ifeq ($(BOARD_WLAN_DEVICE),bcmdhd)
++ifeq ($(BOARD_WLAN_DEVICE),UNITE)
+     include $(call all-subdir-makefiles)
+ endif
+diff --git a/bcmdhd/config/Android.mk b/bcmdhd/config/Android.mk
+index b125897..c1b8f3a 100644
+--- a/bcmdhd/config/Android.mk
++++ b/bcmdhd/config/Android.mk
+@@ -13,6 +13,7 @@
+ # See the License for the specific language governing permissions and
+ # limitations under the License.
+ #
++ifeq ($(BCM_WIFI_ONLY), true)
+ LOCAL_PATH := $(call my-dir)
+ 
+ ########################
+@@ -37,3 +38,4 @@ else
+ endif
+ endif
+ #######################
++endif
+diff --git a/bcmdhd/wpa_supplicant_8_lib/Android.mk b/bcmdhd/wpa_supplicant_8_lib/Android.mk
+index c1d3c34..9f75b7b 100644
+--- a/bcmdhd/wpa_supplicant_8_lib/Android.mk
++++ b/bcmdhd/wpa_supplicant_8_lib/Android.mk
+@@ -15,7 +15,7 @@
+ #
+ LOCAL_PATH := $(call my-dir)
+ 
+-ifeq ($(WPA_SUPPLICANT_VERSION),VER_0_8_X)
++ifeq ($(WPA_SUPPLICANT_VERSION),VER_0_8_UNITE)
+ 
+ ifneq ($(BOARD_WPA_SUPPLICANT_DRIVER),)
+   CONFIG_DRIVER_$(BOARD_WPA_SUPPLICANT_DRIVER) := y
+-- 
+1.8.0
+

@@ -1,0 +1,73 @@
+From 8cb414661deffb10842411ff28e68996ea43d231 Mon Sep 17 00:00:00 2001
+From: "guoyin.chen" <guoyin.chen@freescale.com>
+Date: Thu, 28 Mar 2013 17:05:26 +0800
+Subject: [PATCH 06/45] ENGR00256175 Android reboot if setup multi-user with
+ space running out
+
+Create new user if there is enough space(32M) in data partition.
+
+Signed-off-by: guoyin.chen <guoyin.chen@freescale.com>
+
+Conflicts:
+	services/java/com/android/server/pm/UserManagerService.java
+
+Conflicts:
+	services/core/java/com/android/server/pm/UserManagerService.java
+---
+ .../com/android/server/pm/UserManagerService.java     | 19 +++++++++++++++++++
+ 1 file changed, 19 insertions(+)
+
+diff --git a/services/core/java/com/android/server/pm/UserManagerService.java b/services/core/java/com/android/server/pm/UserManagerService.java
+index 06c3682..7dd4745 100644
+--- a/services/core/java/com/android/server/pm/UserManagerService.java
++++ b/services/core/java/com/android/server/pm/UserManagerService.java
+@@ -31,6 +31,7 @@ import android.graphics.Bitmap;
+ import android.os.Binder;
+ import android.os.Bundle;
+ import android.os.Environment;
++import android.os.StatFs;
+ import android.os.FileUtils;
+ import android.os.Handler;
+ import android.os.IUserManager;
+@@ -147,6 +148,8 @@ public class UserManagerService extends IUserManager.Stub {
+     static final int WRITE_USER_MSG = 1;
+     static final int WRITE_USER_DELAY = 2*1000;  // 2 seconds
+ 
++    private static final long MIN_AVAILABLE_SPACE = 32 * 1024 * 1024;
++
+     private static final String XATTR_SERIAL = "user.serial";
+ 
+     private final Context mContext;
+@@ -647,6 +650,21 @@ public class UserManagerService extends IUserManager.Stub {
+     }
+ 
+     /**
++     * Check if we've enough space for new user.
++     */
++    private static final boolean isNoFreeSpace() {
++        final String path = Environment.getDataDirectory().getPath();
++        StatFs fileStats = new StatFs(path);
++        long restM = fileStats.getAvailableBlocks() * fileStats.getBlockSize();
++        Slog.w(LOG_TAG, "remain size for data is " + restM);
++        if ( restM < MIN_AVAILABLE_SPACE)
++            return true;
++        else
++            return false;
++    }
++
++
++    /**
+      * Enforces that only the system UID or root's UID or apps that have the
+      * {@link android.Manifest.permission#MANAGE_USERS MANAGE_USERS}
+      * permission can make certain calls to the UserManager.
+@@ -1263,6 +1281,7 @@ public class UserManagerService extends IUserManager.Stub {
+                     if (isGuest && findCurrentGuestUserLocked() != null) {
+                         return null;
+                     }
++                    if (isNoFreeSpace()) return null;
+                     userId = getNextAvailableIdLocked();
+                     userInfo = new UserInfo(userId, name, null, flags);
+                     userInfo.serialNumber = mNextSerialNumber++;
+-- 
+1.8.0
+

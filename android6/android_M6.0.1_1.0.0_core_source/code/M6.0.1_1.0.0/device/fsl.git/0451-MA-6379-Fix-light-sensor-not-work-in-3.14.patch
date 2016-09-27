@@ -1,0 +1,35 @@
+From 7b2d5a52571b11868bd8ac3dc13b622614047e38 Mon Sep 17 00:00:00 2001
+From: Wang Haoran <Haoran.Wang@freescale.com>
+Date: Wed, 11 Mar 2015 10:15:40 +0800
+Subject: [PATCH 451/602] MA-6379 Fix light sensor not work in 3.14
+
+Change the device node of isl29023 to kernel 3.14
+for fixing light sensor not working issue.
+
+Signed-off-by: Wang Haoran <Haoran.Wang@freescale.com>
+---
+ imx6/etc/ueventd.freescale.rc | 8 ++++----
+ 1 file changed, 4 insertions(+), 4 deletions(-)
+
+diff --git a/imx6/etc/ueventd.freescale.rc b/imx6/etc/ueventd.freescale.rc
+index 1d6f3a2..a666615 100644
+--- a/imx6/etc/ueventd.freescale.rc
++++ b/imx6/etc/ueventd.freescale.rc
+@@ -40,10 +40,10 @@
+ /sys/devices/platform/mxsdhci.2/mmc_host/mmc0/mmc0:000* boot_bus_config 0660 root root
+ /sys/devices/platform/mxsdhci.2/mmc_host/mmc0/mmc0:000* boot_config 0660 root root
+ # for sabresd
+-/sys/devices/soc0/soc.1/2100000.aips-bus/21a8000.i2c/i2c-2/2-0044 mode 0660 system system
+-/sys/devices/soc0/soc.1/2100000.aips-bus/21a8000.i2c/i2c-2/2-0044 lux 0660 system system
+-/sys/devices/soc0/soc.1/2100000.aips-bus/21a8000.i2c/i2c-2/2-0044 int_lt_lux 0660 system system
+-/sys/devices/soc0/soc.1/2100000.aips-bus/21a8000.i2c/i2c-2/2-0044 int_ht_lux 0660 system system
++/sys/devices/soc0/soc.0/2100000.aips-bus/21a8000.i2c/i2c-2/2-0044 mode 0660 system system
++/sys/devices/soc0/soc.0/2100000.aips-bus/21a8000.i2c/i2c-2/2-0044 lux 0660 system system
++/sys/devices/soc0/soc.0/2100000.aips-bus/21a8000.i2c/i2c-2/2-0044 int_lt_lux 0660 system system
++/sys/devices/soc0/soc.0/2100000.aips-bus/21a8000.i2c/i2c-2/2-0044 int_ht_lux 0660 system system
+ # for sabreauto
+ /sys/devices/soc0/soc.1/2100000.aips-bus/21a8000.i2c/i2c-1/1-0044 mode 0660 system system
+ /sys/devices/soc0/soc.1/2100000.aips-bus/21a8000.i2c/i2c-1/1-0044 lux 0660 system system
+-- 
+1.8.0
+

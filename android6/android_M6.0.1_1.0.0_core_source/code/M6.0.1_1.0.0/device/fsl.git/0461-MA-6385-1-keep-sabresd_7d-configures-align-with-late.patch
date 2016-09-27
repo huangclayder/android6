@@ -1,0 +1,247 @@
+From b4318e2b29dc500eb886809a013cf6900fa8d60f Mon Sep 17 00:00:00 2001
+From: "xuegang.liu" <xuegang.liu@freescale.com>
+Date: Wed, 25 Mar 2015 10:29:32 +0800
+Subject: [PATCH 461/602] MA-6385-1 keep sabresd_7d configures align with
+ latest imx6
+
+sabresd_7d bring up code base is old, update to
+keep align with latest evk_6sl.
+
+Signed-off-by: Richard Liu <r66033@freescale.com>
+---
+ imx7/etc/init.rc                 | 27 ++++++++++++---------------
+ imx7/etc/ueventd.freescale.rc    |  9 +++++----
+ imx7/imx7.mk                     | 16 +++++-----------
+ imx7/sepolicy/device.te          |  1 +
+ imx7/sepolicy/file_contexts      |  1 +
+ imx7/sepolicy/system_app.te      |  1 +
+ sabresd_7d/BoardConfig.mk        |  5 +++--
+ sabresd_7d/build_id.mk           |  4 ++--
+ sabresd_7d/fstab.freescale       |  2 +-
+ sabresd_7d/init.rc               |  2 --
+ sabresd_7d/required_hardware.xml |  2 ++
+ 11 files changed, 33 insertions(+), 37 deletions(-)
+ create mode 100644 imx7/sepolicy/device.te
+
+diff --git a/imx7/etc/init.rc b/imx7/etc/init.rc
+index c1a4734..013553d 100755
+--- a/imx7/etc/init.rc
++++ b/imx7/etc/init.rc
+@@ -138,25 +138,18 @@ on init
+     mount cgroup none /dev/cpuctl cpu
+     chown system system /dev/cpuctl
+     chown system system /dev/cpuctl/tasks
+-    chmod 0660 /dev/cpuctl/tasks
++    chmod 0666 /dev/cpuctl/tasks
+     write /dev/cpuctl/cpu.shares 1024
+-    write /dev/cpuctl/cpu.rt_runtime_us 950000
++    write /dev/cpuctl/cpu.rt_runtime_us 800000
+     write /dev/cpuctl/cpu.rt_period_us 1000000
+ 
+-    mkdir /dev/cpuctl/apps
+-    chown system system /dev/cpuctl/apps/tasks
+-    chmod 0666 /dev/cpuctl/apps/tasks
+-    write /dev/cpuctl/apps/cpu.shares 1024
+-    write /dev/cpuctl/apps/cpu.rt_runtime_us 800000
+-    write /dev/cpuctl/apps/cpu.rt_period_us 1000000
+-
+-    mkdir /dev/cpuctl/apps/bg_non_interactive
+-    chown system system /dev/cpuctl/apps/bg_non_interactive/tasks
+-    chmod 0666 /dev/cpuctl/apps/bg_non_interactive/tasks
++    mkdir /dev/cpuctl/bg_non_interactive
++    chown system system /dev/cpuctl/bg_non_interactive/tasks
++    chmod 0666 /dev/cpuctl/bg_non_interactive/tasks
+     # 5.0 %
+-    write /dev/cpuctl/apps/bg_non_interactive/cpu.shares 52
+-    write /dev/cpuctl/apps/bg_non_interactive/cpu.rt_runtime_us 700000
+-    write /dev/cpuctl/apps/bg_non_interactive/cpu.rt_period_us 1000000
++    write /dev/cpuctl/bg_non_interactive/cpu.shares 52
++    write /dev/cpuctl/bg_non_interactive/cpu.rt_runtime_us 700000
++    write /dev/cpuctl/bg_non_interactive/cpu.rt_period_us 1000000
+ 
+     # qtaguid will limit access to specific data based on group memberships.
+     #   net_bw_acct grants impersonation of socket owners.
+@@ -341,6 +334,8 @@ on post-fs-data
+     # the following directory.
+     mkdir /data/mediadrm 0770 mediadrm mediadrm
+ 
++    mkdir /data/adb 0700 root root
++
+     # symlink to bugreport storage location
+     symlink /data/data/com.android.shell/files/bugreports /data/bugreports
+ 
+@@ -462,6 +457,8 @@ on boot
+     setprop ro.FSL_MKV_PARSER 1
+     setprop ro.FSL_FLAC_PARSER 1
+     setprop ro.FSL_MPG2_PARSER 1
++#real parser and decoder support
++    setprop ro.FSL_REAL_PARSER 0
+ 
+     # don't preload OpenGL in Zygote, the Vivante drivers do not like it
+     setprop ro.zygote.disable_gl_preload true
+diff --git a/imx7/etc/ueventd.freescale.rc b/imx7/etc/ueventd.freescale.rc
+index 3659f85..a666615 100644
+--- a/imx7/etc/ueventd.freescale.rc
++++ b/imx7/etc/ueventd.freescale.rc
+@@ -22,6 +22,7 @@
+ /dev/watchdog             0660   system     root
+ /dev/ir                   0660   system     system
+ /dev/mma8x5x              0640   compass     system
++/dev/caam_kb              0660   system     system
+ 
+ # sysfs properties
+ /sys/devices/virtual/input/input*   name        0660  root   input
+@@ -39,10 +40,10 @@
+ /sys/devices/platform/mxsdhci.2/mmc_host/mmc0/mmc0:000* boot_bus_config 0660 root root
+ /sys/devices/platform/mxsdhci.2/mmc_host/mmc0/mmc0:000* boot_config 0660 root root
+ # for sabresd
+-/sys/devices/soc0/soc.1/2100000.aips-bus/21a8000.i2c/i2c-2/2-0044 mode 0660 system system
+-/sys/devices/soc0/soc.1/2100000.aips-bus/21a8000.i2c/i2c-2/2-0044 lux 0660 system system
+-/sys/devices/soc0/soc.1/2100000.aips-bus/21a8000.i2c/i2c-2/2-0044 int_lt_lux 0660 system system
+-/sys/devices/soc0/soc.1/2100000.aips-bus/21a8000.i2c/i2c-2/2-0044 int_ht_lux 0660 system system
++/sys/devices/soc0/soc.0/2100000.aips-bus/21a8000.i2c/i2c-2/2-0044 mode 0660 system system
++/sys/devices/soc0/soc.0/2100000.aips-bus/21a8000.i2c/i2c-2/2-0044 lux 0660 system system
++/sys/devices/soc0/soc.0/2100000.aips-bus/21a8000.i2c/i2c-2/2-0044 int_lt_lux 0660 system system
++/sys/devices/soc0/soc.0/2100000.aips-bus/21a8000.i2c/i2c-2/2-0044 int_ht_lux 0660 system system
+ # for sabreauto
+ /sys/devices/soc0/soc.1/2100000.aips-bus/21a8000.i2c/i2c-1/1-0044 mode 0660 system system
+ /sys/devices/soc0/soc.1/2100000.aips-bus/21a8000.i2c/i2c-1/1-0044 lux 0660 system system
+diff --git a/imx7/imx7.mk b/imx7/imx7.mk
+index 1bb8749..03e1648 100644
+--- a/imx7/imx7.mk
++++ b/imx7/imx7.mk
+@@ -132,17 +132,6 @@ PRODUCT_PACKAGES += \
+ 	iwlwifi-5000-5.ucode			\
+ 	iwlagn.ko
+ 
+-# gps related lib
+-PRODUCT_PACKAGES += \
+-	gps.SABRESD				\
+-	gps.ARM2				\
+-	gps.SABREAUTO				\
+-	Orion.ini 				\
+-	AR1520A-Auto.img 			\
+-	ingsvcd 				\
+-	libOrionCtl.so 				\
+-	OrionSys.so
+-
+ # drm related lib
+ PRODUCT_PACKAGES += \
+ 	drmserver                   		\
+@@ -276,6 +265,11 @@ omx_excluded_libs :=					\
+ 	lib_ac3d_wrap_arm11_elinux_android \
+         lib_ddpd_wrap_arm12_elinux_android \
+         lib_ddplus_dec_v2_arm12_elinux \
++        lib_realad_wrap_arm11_elinux_android \
++        lib_realaudio_dec_v2_arm11_elinux \
++        lib_rm_parser_arm11_elinux.3.0 \
++        lib_omx_ra_dec_v2_arm11_elinux \
++
+ 
+ 
+ PRODUCT_PACKAGES += $(omx_libs) $(omx_excluded_libs)
+diff --git a/imx7/sepolicy/device.te b/imx7/sepolicy/device.te
+new file mode 100644
+index 0000000..09bbbbf
+--- /dev/null
++++ b/imx7/sepolicy/device.te
+@@ -0,0 +1 @@
++type caam_device, dev_type;
+diff --git a/imx7/sepolicy/file_contexts b/imx7/sepolicy/file_contexts
+index 9786716..f3e5e85 100644
+--- a/imx7/sepolicy/file_contexts
++++ b/imx7/sepolicy/file_contexts
+@@ -16,3 +16,4 @@
+ /dev/ubi0_3                     u:object_r:block_device:s0
+ /dev/galcore                    u:object_r:gpu_device:s0
+ /dev/sda[0-8]*			u:object_r:sdcard_internal:s0
++/dev/caam_kb                    u:object_r:caam_device:s0
+diff --git a/imx7/sepolicy/system_app.te b/imx7/sepolicy/system_app.te
+index 493ce62..dc3f9af 100644
+--- a/imx7/sepolicy/system_app.te
++++ b/imx7/sepolicy/system_app.te
+@@ -1,4 +1,5 @@
+ allow system_app system_app_data_file:notdevfile_class_set rw_file_perms;
+ allow system_app cache_file:dir { rw_file_perms add_name create };
+ allow system_app cache_file:file  { rw_file_perms create };
++allow system_app caam_device:chr_file  rw_file_perms;
+ 
+diff --git a/sabresd_7d/BoardConfig.mk b/sabresd_7d/BoardConfig.mk
+index 5390572..8a612a8 100644
+--- a/sabresd_7d/BoardConfig.mk
++++ b/sabresd_7d/BoardConfig.mk
+@@ -37,7 +37,6 @@ PRODUCT_MODEL := SABRESD_MX7D
+ BOARD_WLAN_DEVICE            := UNITE
+ WPA_SUPPLICANT_VERSION       := VER_0_8_UNITE
+ TARGET_KERNEL_MODULES        := \
+-                                kernel_imx/drivers/net/wireless/rtlwifi/rtl8723as/8723as.ko:system/lib/modules/8723as.ko \
+                                 kernel_imx/net/wireless/cfg80211.ko:system/lib/modules/cfg80211_realtek.ko \
+                                 kernel_imx/drivers/net/wireless/rtlwifi/rtl8821as/8821as.ko:system/lib/modules/8821as.ko
+ BOARD_WPA_SUPPLICANT_DRIVER  := NL80211
+@@ -81,6 +80,7 @@ USE_GPU_ALLOCATOR := true
+ 
+ # camera hal v2
+ IMX_CAMERA_HAL_V2 := false
++TARGET_VSYNC_DIRECT_REFRESH := true
+ 
+ BOARD_KERNEL_CMDLINE := console=ttymxc0,115200 init=/init androidboot.console=ttymxc0 consoleblank=0 androidboot.hardware=freescale 
+ TARGET_BOOTLOADER_CONFIG := imx7d:mx7dsabresdandroid_config
+@@ -106,4 +106,5 @@ BOARD_SEPOLICY_UNION := \
+        netd.te \
+        bootanim.te \
+        dnsmasq.te \
+-       recovery.te
++       recovery.te \
++       device.te
+diff --git a/sabresd_7d/build_id.mk b/sabresd_7d/build_id.mk
+index 5b9d9d2..2a6698a 100755
+--- a/sabresd_7d/build_id.mk
++++ b/sabresd_7d/build_id.mk
+@@ -18,5 +18,5 @@
+ # (like "CRB01").  It must be a single word, and is
+ # capitalized by convention.
+ 
+-export BUILD_ID=1.0.0-alpha-rc1
+-export BUILD_NUMBER=20141213
++export BUILD_ID=1.0.0-beta-rc3
++export BUILD_NUMBER=20150323
+diff --git a/sabresd_7d/fstab.freescale b/sabresd_7d/fstab.freescale
+index 9698fde..fe502f1 100644
+--- a/sabresd_7d/fstab.freescale
++++ b/sabresd_7d/fstab.freescale
+@@ -5,7 +5,7 @@
+ 
+ /devices/soc0/soc.2/2100000.aips-bus/2190000.usdhc/mmc_host /mnt/media_rw/extsd vfat defaults voldmanaged=extsd:auto
+ /devices/soc0/soc.2/2100000.aips-bus/2184200.usb/ci_hdrc.1 /mnt/media_rw/udisk vfat defaults voldmanaged=udisk:auto
+-/dev/block/mmcblk0p5    /system      ext4    ro                                                                               wait
++/dev/block/mmcblk0p5    /system      ext4    ro,barrier=1                                                                     wait,verify
+ /dev/block/mmcblk0p4    /data        ext4    nosuid,nodev,nodiratime,noatime,nomblk_io_submit,noauto_da_alloc,errors=panic    wait,encryptable=/dev/block/mmcblk1p9
+ /dev/block/mmcblk0p6    /cache       ext4    nosuid,nodev,nomblk_io_submit                                                    wait
+ /dev/block/mmcblk0p7    /device      ext4    ro,nosuid,nodev                                                                  wait
+diff --git a/sabresd_7d/init.rc b/sabresd_7d/init.rc
+index 4342843..8f0e1d4 100644
+--- a/sabresd_7d/init.rc
++++ b/sabresd_7d/init.rc
+@@ -25,8 +25,6 @@ on boot
+     # Set permission for IIM node
+     symlink /dev/mxs_viim /dev/mxc_mem
+ 
+-    symlink /dev/ttymxc1 /dev/gpsdevice
+-
+     # Enable Tethering in the Settings
+     setprop ro.tether.denied false
+ 
+diff --git a/sabresd_7d/required_hardware.xml b/sabresd_7d/required_hardware.xml
+index 3e87bef..adee65f 100644
+--- a/sabresd_7d/required_hardware.xml
++++ b/sabresd_7d/required_hardware.xml
+@@ -23,4 +23,6 @@
+     <feature name="android.hardware.microphone" />
+     <feature name="android.software.home_screen" />
+     <feature name="android.software.input_methods" />
++    <feature name="android.hardware.location" />
++    <feature name="android.hardware.location.network" />
+ </permissions>
+-- 
+1.8.0
+

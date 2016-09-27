@@ -1,0 +1,28 @@
+From b8e014350e67355d1f0ed9a5218f775ce90fee37 Mon Sep 17 00:00:00 2001
+From: Paolo Bonzini <pbonzini@redhat.com>
+Date: Tue, 3 Jun 2014 13:44:17 +0200
+Subject: [PATCH] KVM: add missing cleanup_srcu_struct
+
+Reported-by: hrg <hrgstephen@gmail.com>
+Signed-off-by: Paolo Bonzini <pbonzini@redhat.com>
+(cherry picked from commit 820b3fcdeb80d30410f4427d2cbf9161c35fdeef)
+Signed-off-by: Christoffer Dall <christoffer.dall@linaro.org>
+---
+ virt/kvm/kvm_main.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/virt/kvm/kvm_main.c b/virt/kvm/kvm_main.c
+index 0b76d19..bf6cc06 100644
+--- a/virt/kvm/kvm_main.c
++++ b/virt/kvm/kvm_main.c
+@@ -608,6 +608,7 @@ static void kvm_destroy_vm(struct kvm *kvm)
+ 	kvm_arch_destroy_vm(kvm);
+ 	kvm_destroy_devices(kvm);
+ 	kvm_free_physmem(kvm);
++	cleanup_srcu_struct(&kvm->irq_srcu);
+ 	cleanup_srcu_struct(&kvm->srcu);
+ 	kvm_arch_free_vm(kvm);
+ 	hardware_disable_all();
+-- 
+1.8.0
+

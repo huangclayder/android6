@@ -1,0 +1,38 @@
+From 9687aa5bbf5dd91b57f6e8b4b8ce69bf20e29c43 Mon Sep 17 00:00:00 2001
+From: Shengjiu Wang <shengjiu.wang@freescale.com>
+Date: Wed, 20 May 2015 18:01:00 +0800
+Subject: [PATCH] MLK-11004-1: ASoC: cs42888: Add regcache mask dirty in
+ suspend
+
+Add regcache mask dirty in suspend, otherwise the register is not
+synced with cache in resume.
+
+Signed-off-by: Shengjiu Wang <shengjiu.wang@freescale.com>
+---
+ sound/soc/codecs/cs42xx8.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/sound/soc/codecs/cs42xx8.c b/sound/soc/codecs/cs42xx8.c
+index b7f7db5..41a82ab 100644
+--- a/sound/soc/codecs/cs42xx8.c
++++ b/sound/soc/codecs/cs42xx8.c
+@@ -1,7 +1,7 @@
+ /*
+  * Cirrus Logic CS42448/CS42888 Audio CODEC Digital Audio Interface (DAI) driver
+  *
+- * Copyright (C) 2014 Freescale Semiconductor, Inc.
++ * Copyright (C) 2014-2015 Freescale Semiconductor, Inc.
+  *
+  * Author: Nicolin Chen <Guangyu.Chen@freescale.com>
+  *
+@@ -664,6 +664,7 @@ static int cs42xx8_runtime_suspend(struct device *dev)
+ {
+ 	struct cs42xx8_priv *cs42xx8 = dev_get_drvdata(dev);
+ 
++	regcache_mark_dirty(cs42xx8->regmap);
+ 	regcache_cache_only(cs42xx8->regmap, true);
+ 
+ 	regulator_bulk_disable(ARRAY_SIZE(cs42xx8->supplies),
+-- 
+1.8.0
+

@@ -1,0 +1,50 @@
+From a89a4c179d8ffd0ecdecf7e3ffd27923e43f3609 Mon Sep 17 00:00:00 2001
+From: Mark Brown <broonie@linaro.org>
+Date: Wed, 11 Dec 2013 12:49:15 +0000
+Subject: [PATCH] arm64: dts: Add panel for ARMv8 4xA53 4xA57 FVP
+
+This is not in mainline since the panel bindings have not yet been merged
+into mainline.
+
+Signed-off-by: Mark Brown <broonie@linaro.org>
+(cherry picked from commit 94eb302681ca87d0078ffb88dfc6d0e4a9b1141d)
+Signed-off-by: Alex Shi <alex.shi@linaro.org>
+---
+ arch/arm64/boot/dts/fvp-base-gicv2-psci.dts | 23 +++++++++++++++++++++++
+ 1 file changed, 23 insertions(+)
+
+diff --git a/arch/arm64/boot/dts/fvp-base-gicv2-psci.dts b/arch/arm64/boot/dts/fvp-base-gicv2-psci.dts
+index 452ba22..79ddd46 100644
+--- a/arch/arm64/boot/dts/fvp-base-gicv2-psci.dts
++++ b/arch/arm64/boot/dts/fvp-base-gicv2-psci.dts
+@@ -261,4 +261,27 @@
+ 
+ 		/include/ "rtsm_ve-motherboard.dtsi"
+ 	};
++
++	panels {
++		panel@0 {
++			compatible	= "panel";
++			mode		= "XVGA";
++			refresh		= <60>;
++			xres		= <1024>;
++			yres		= <768>;
++			pixclock	= <15748>;
++			left_margin	= <152>;
++			right_margin	= <48>;
++			upper_margin	= <23>;
++			lower_margin	= <3>;
++			hsync_len	= <104>;
++			vsync_len	= <4>;
++			sync		= <0>;
++			vmode		= "FB_VMODE_NONINTERLACED";
++			tim2		= "TIM2_BCD", "TIM2_IPC";
++			cntl		= "CNTL_LCDTFT", "CNTL_BGR", "CNTL_LCDVCOMP(1)";
++			caps		= "CLCD_CAP_5551", "CLCD_CAP_565", "CLCD_CAP_888";
++			bpp		= <16>;
++		};
++	};
+ };
+-- 
+1.8.0
+

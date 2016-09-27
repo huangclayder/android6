@@ -1,0 +1,51 @@
+From f0323cc81765da8812af352ca630a68b1d94faf3 Mon Sep 17 00:00:00 2001
+From: Lauren Post <lauren.post@freescale.com>
+Date: Wed, 20 May 2015 12:30:49 -0500
+Subject: [PATCH 272/280] MLK-10941 pxp:  Add IMX6UL support to generate pxp
+ libraries
+
+EXCLUDE 6UL for sahara and rng
+
+Signed-off-by: Lauren Post <lauren.post@freescale.com>
+---
+ pxp/Makefile     | 2 +-
+ rng/Makefile     | 2 +-
+ sahara2/Makefile | 2 +-
+ 3 files changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/pxp/Makefile b/pxp/Makefile
+index 2d4938d..cf08c98 100644
+--- a/pxp/Makefile
++++ b/pxp/Makefile
+@@ -3,7 +3,7 @@ AR ?=$(CROSS_COMPILE)ar
+ CFLAGS ?=-O2
+ 
+ # list of platforms which want this test case
+-INCLUDE_LIST:=IMX50 IMX51 IMX5 IMX6Q IMX6S IMX7
++INCLUDE_LIST:=IMX50 IMX51 IMX5 IMX6Q IMX6S IMX7 IMX6UL
+ 
+ OBJ = pxp_lib.o
+ 
+diff --git a/rng/Makefile b/rng/Makefile
+index 4c0b042..4665d32 100644
+--- a/rng/Makefile
++++ b/rng/Makefile
+@@ -1,4 +1,4 @@
+-EXCLUDE_LIST:= IMX6Q IMX6S IMX7
++EXCLUDE_LIST:= IMX6Q IMX6S IMX7 IMX6UL
+ 
+ ifeq (,$(findstring $(PLATFORM), $(EXCLUDE_LIST)))
+ AR = ar -crv
+diff --git a/sahara2/Makefile b/sahara2/Makefile
+index 4f483c7..bf05dfd 100644
+--- a/sahara2/Makefile
++++ b/sahara2/Makefile
+@@ -1,4 +1,4 @@
+-EXCLUDE_LIST:= IMX6Q IMX6S IMX7
++EXCLUDE_LIST:= IMX6Q IMX6S IMX7 IMX6UL
+ 
+ ifeq (,$(findstring $(PLATFORM), $(EXCLUDE_LIST)))
+ AR = ar -crv
+-- 
+1.8.0
+

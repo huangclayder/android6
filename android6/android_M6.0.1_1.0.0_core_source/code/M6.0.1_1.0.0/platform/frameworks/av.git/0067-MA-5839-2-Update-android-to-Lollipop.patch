@@ -1,0 +1,244 @@
+From abe90383893db3e5cdeb72c1bffd4e5e5046431d Mon Sep 17 00:00:00 2001
+From: Liu Xiaowen <b37945@freescale.com>
+Date: Tue, 11 Nov 2014 13:03:15 +0800
+Subject: [PATCH 67/95] MA-5839-2 Update android to Lollipop.
+
+updata setDataSource interface to 5.0.
+HTTPBase::Create() static function is obsolete.
+A new class IMediaHTTPService is provided to control http connection.
+Modify Route Widevine to StageFright code to match 5.0 upgrade.
+
+Signed-off-by: Liu Xiaowen <b37945@freescale.com>
+
+Conflicts:
+	media/libmediaplayerservice/MediaPlayerFactory.cpp
+---
+ include/media/OMXMetadataRetriever.h               |  4 +--
+ include/media/OMXPlayer.h                          |  4 +--
+ media/libmediaplayerservice/Android.mk             |  1 +
+ media/libmediaplayerservice/MediaPlayerFactory.cpp | 33 ++++++++++++++--------
+ media/libmediaplayerservice/MediaPlayerFactory.h   |  7 +++--
+ media/libmediaplayerservice/MediaPlayerService.cpp |  5 ++--
+ 6 files changed, 34 insertions(+), 20 deletions(-)
+
+diff --git a/include/media/OMXMetadataRetriever.h b/include/media/OMXMetadataRetriever.h
+index cc0b02b..42673f5 100644
+--- a/include/media/OMXMetadataRetriever.h
++++ b/include/media/OMXMetadataRetriever.h
+@@ -15,7 +15,7 @@
+ ** limitations under the License.
+ */
+ 
+-/* Copyright 2009-2013 Freescale Semiconductor Inc. */
++/* Copyright 2009-2014 Freescale Semiconductor, Inc. */
+ 
+ #ifndef ANDROID_OMXMETADATARETRIEVER_H
+ #define ANDROID_OMXMETADATARETRIEVER_H
+@@ -39,7 +39,7 @@ public:
+     virtual             ~OMXMetadataRetriever();
+ 
+     virtual status_t    setDataSource(const char *url);
+-    virtual status_t    setDataSource(const char *url, const KeyedVector<String8, String8> *headers = NULL);
++    virtual status_t    setDataSource(const sp<IMediaHTTPService> &httpService, const char *url, const KeyedVector<String8, String8> *headers = NULL);
+     virtual status_t    setDataSource(int fd, int64_t offset, int64_t length);
+     virtual status_t    setMode(int mode);
+     virtual status_t    getMode(int* mode) const;
+diff --git a/include/media/OMXPlayer.h b/include/media/OMXPlayer.h
+index 42e23ea..bfe0d90 100644
+--- a/include/media/OMXPlayer.h
++++ b/include/media/OMXPlayer.h
+@@ -14,7 +14,7 @@
+  * limitations under the License.
+  */
+ 
+-/* Copyright 2009-2013 Freescale Semiconductor, Inc. */
++/* Copyright 2009-2014 Freescale Semiconductor, Inc. */
+ 
+ #ifndef ANDROID_OMXPLAYER_H
+ #define ANDROID_OMXPLAYER_H
+@@ -34,7 +34,7 @@ public:
+     virtual             ~OMXPlayer();
+ 
+     virtual status_t    initCheck();
+-    virtual status_t    setDataSource(const char *url, const KeyedVector<String8, String8> *headers);
++    virtual status_t    setDataSource(const sp<IMediaHTTPService> &httpService, const char *url, const KeyedVector<String8, String8> *headers);
+     virtual status_t    setDataSource(int fd, int64_t offset, int64_t length);
+     virtual status_t    setVideoSurfaceTexture(const sp<IGraphicBufferProducer>& surfaceTexture);
+     virtual status_t    prepare();
+diff --git a/media/libmediaplayerservice/Android.mk b/media/libmediaplayerservice/Android.mk
+index b01cef9..561774f 100644
+--- a/media/libmediaplayerservice/Android.mk
++++ b/media/libmediaplayerservice/Android.mk
+@@ -63,6 +63,7 @@ LOCAL_C_INCLUDES :=                                                 \
+     $(TOP)/frameworks/av/media/libstagefright/wifi-display          \
+     $(TOP)/frameworks/av/media/libstagefright/webm                  \
+     $(TOP)/frameworks/native/include/media/openmax                  \
++    $(TOP)/frameworks/av/media/libstagefright               	    \
+     $(TOP)/external/tremolo/Tremolo                                 \
+ 
+ LOCAL_CFLAGS += -Werror -Wno-error=deprecated-declarations -Wall
+diff --git a/media/libmediaplayerservice/MediaPlayerFactory.cpp b/media/libmediaplayerservice/MediaPlayerFactory.cpp
+index 0d1e507..6463ec2 100644
+--- a/media/libmediaplayerservice/MediaPlayerFactory.cpp
++++ b/media/libmediaplayerservice/MediaPlayerFactory.cpp
+@@ -15,7 +15,7 @@
+ ** limitations under the License.
+ */
+ 
+-/* Copyright (C) 2013 Freescale Semiconductor, Inc. */
++/* Copyright (C) 2013-2014 Freescale Semiconductor, Inc. */
+ 
+ //#define LOG_NDEBUG 0
+ 
+@@ -27,6 +27,8 @@
+ #include <media/stagefright/DataSource.h>
+ #include <media/stagefright/FileSource.h>
+ #include <media/stagefright/foundation/ADebug.h>
++#include <media/IMediaHTTPConnection.h>
++#include <media/stagefright/MediaHTTP.h>
+ #include <utils/Errors.h>
+ #include <utils/misc.h>
+ #include <../libstagefright/include/WVMExtractor.h>
+@@ -126,7 +128,8 @@ void MediaPlayerFactory::unregisterFactory(player_type type) {
+ 
+ player_type MediaPlayerFactory::getPlayerType(const sp<IMediaPlayer>& client,
+                                               const char* url,
+-                                              const KeyedVector<String8, String8> *headers) {
++                                              const KeyedVector<String8, String8> *headers,
++                                              const IMediaHTTPService* httpService) {
+     GET_PLAYER_TYPE_IMPL(client, url, bestScore, headers);
+ }
+ 
+@@ -199,7 +202,8 @@ enum {
+ };
+ 
+ bool isWVM(const char* url,
+-           const KeyedVector<String8, String8> *headers) {
++           const KeyedVector<String8, String8> *headers,
++           IMediaHTTPService* httpService) {
+     sp<DataSource> dataSource;
+     String8 mUri;
+     KeyedVector<String8, String8> mUriHeaders;
+@@ -234,10 +238,12 @@ bool isWVM(const char* url,
+ 
+     if (!strncasecmp("http://", mUri.string(), 7)
+             || !strncasecmp("https://", mUri.string(), 8)) {
+-        mConnectingDataSource = HTTPBase::Create(
+-                (mFlags & INCOGNITO)
+-                    ? HTTPBase::kFlagIncognito
+-                    : 0);
++        if (httpService == NULL) {
++            ALOGI("Attempt to get video from http URI without HTTP service.");
++            return false;
++        }
++        sp<IMediaHTTPConnection> conn = httpService->makeHTTPConnection();
++        mConnectingDataSource = new MediaHTTP(conn);
+ 
+         String8 cacheConfig;
+         bool disconnectAtHighwatermark;
+@@ -272,7 +278,7 @@ bool isWVM(const char* url,
+         // without this prefill.
+ 
+     } else {
+-        dataSource = DataSource::CreateFromURI(mUri.string(), &mUriHeaders);
++        dataSource = DataSource::CreateFromURI(httpService, mUri.string(), &mUriHeaders);
+     }
+ 
+     if (dataSource == NULL) {
+@@ -332,7 +338,8 @@ class OMXPlayerFactory : public MediaPlayerFactory::IFactory {
+         virtual float scoreFactory(const sp<IMediaPlayer>& client,
+                 const char* url,
+                 float curScore,
+-                const KeyedVector<String8, String8> *headers) {
++                const KeyedVector<String8, String8> *headers,
++                const IMediaHTTPService* httpService) {
+             static const float kOurScore = 1.0;
+             static const char* const FILE_EXTS[] = {
+                 ".avi",
+@@ -379,7 +386,7 @@ class OMXPlayerFactory : public MediaPlayerFactory::IFactory {
+                 return 0.0;
+ 
+             if (!strncasecmp(url, "http://", 7)) { 
+-                if (isWVM(url, headers))
++                if (isWVM(url, headers, (IMediaHTTPService*)httpService))
+                 return 0.0;
+             }
+             
+@@ -508,7 +515,8 @@ class NuPlayerFactory : public MediaPlayerFactory::IFactory {
+     virtual float scoreFactory(const sp<IMediaPlayer>& /*client*/,
+                                const char* url,
+                                float curScore,
+-                               const KeyedVector<String8, String8> *headers) {
++                               const KeyedVector<String8, String8> *headers,
++                               const IMediaHTTPService* httpService) {
+         static const float kOurScore = 0.8;
+ 
+         if (kOurScore <= curScore)
+@@ -562,7 +570,8 @@ class TestPlayerFactory : public MediaPlayerFactory::IFactory {
+     virtual float scoreFactory(const sp<IMediaPlayer>& /*client*/,
+                                const char* url,
+                                float /*curScore*/,
+-                               const KeyedVector<String8, String8> *headers) {
++                               const KeyedVector<String8, String8> *headers,
++                               const IMediaHTTPService* httpService) {
+         if (TestPlayerStub::canBeUsed(url)) {
+             return 1.0;
+         }
+diff --git a/media/libmediaplayerservice/MediaPlayerFactory.h b/media/libmediaplayerservice/MediaPlayerFactory.h
+index 20a3e89..34c77f4 100644
+--- a/media/libmediaplayerservice/MediaPlayerFactory.h
++++ b/media/libmediaplayerservice/MediaPlayerFactory.h
+@@ -20,6 +20,7 @@
+ 
+ #include <media/MediaPlayerInterface.h>
+ #include <media/stagefright/foundation/ABase.h>
++#include <media/IMediaHTTPService.h>
+ 
+ namespace android {
+ 
+@@ -32,7 +33,8 @@ class MediaPlayerFactory {
+         virtual float scoreFactory(const sp<IMediaPlayer>& /*client*/,
+                                    const char* /*url*/,
+                                    float /*curScore*/,
+-                                   const KeyedVector<String8, String8> *headers = NULL) { return 0.0; }
++                                   const KeyedVector<String8, String8> *headers = NULL,
++                                   const IMediaHTTPService* httpService = NULL) { return 0.0; }
+ 
+         virtual float scoreFactory(const sp<IMediaPlayer>& /*client*/,
+                                    int /*fd*/,
+@@ -56,7 +58,8 @@ class MediaPlayerFactory {
+     static void unregisterFactory(player_type type);
+     static player_type getPlayerType(const sp<IMediaPlayer>& client,
+                                      const char* url,
+-                                     const KeyedVector<String8, String8> *headers = NULL);
++                                     const KeyedVector<String8, String8> *headers = NULL,
++                                     const IMediaHTTPService* httpService = NULL);
+     static player_type getPlayerType(const sp<IMediaPlayer>& client,
+                                      int fd,
+                                      int64_t offset,
+diff --git a/media/libmediaplayerservice/MediaPlayerService.cpp b/media/libmediaplayerservice/MediaPlayerService.cpp
+index 66d5ca2..177d774 100644
+--- a/media/libmediaplayerservice/MediaPlayerService.cpp
++++ b/media/libmediaplayerservice/MediaPlayerService.cpp
+@@ -15,7 +15,7 @@
+ ** limitations under the License.
+ */
+ 
+-/* Copyright 2009-2013 Freescale Semiconductor, Inc. */
++/* Copyright 2009-2014 Freescale Semiconductor, Inc. */
+ 
+ // Proxy for media player implementations
+ 
+@@ -726,7 +726,8 @@ status_t MediaPlayerService::Client::setDataSource(
+         close(fd);
+         return mStatus;
+     } else {
+-        player_type playerType = MediaPlayerFactory::getPlayerType(this, url, headers);
++        player_type playerType = MediaPlayerFactory::getPlayerType(this, url,
++                                                 headers, httpService.get());
+         sp<MediaPlayerBase> p = setDataSource_pre(playerType);
+         if (p == NULL) {
+             return NO_INIT;
+-- 
+1.8.0
+

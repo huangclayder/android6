@@ -1,0 +1,28 @@
+From fe934fa13a4f1525442ff82ea61ed3fe50f94e4a Mon Sep 17 00:00:00 2001
+From: Luwei Zhou <b45643@freescale.com>
+Date: Thu, 4 Dec 2014 09:10:50 +0800
+Subject: [PATCH] MLK-9952 ARM: dts: Enable the imx6sx-17x17-arm2-mlb.dts in
+ the device tree makefile list.
+
+Enable the imx6sx-17x17-arm2-mlb.dts in the device tree makefile list
+
+Signed-off-by: Luwei Zhou <b45643@freescale.com>
+---
+ arch/arm/boot/dts/Makefile | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/arch/arm/boot/dts/Makefile b/arch/arm/boot/dts/Makefile
+index 264a19c..97be1c1 100644
+--- a/arch/arm/boot/dts/Makefile
++++ b/arch/arm/boot/dts/Makefile
+@@ -190,6 +190,7 @@ dtb-$(CONFIG_ARCH_MXC) += \
+ 	imx6sx-17x17-arm2.dtb \
+ 	imx6sx-17x17-arm2-ecspi.dtb \
+ 	imx6sx-17x17-arm2-gpmi-weim.dtb \
++	imx6sx-17x17-arm2-mlb.dtb \
+ 	imx6sx-19x19-arm2.dtb \
+ 	imx6sx-19x19-arm2-csi.dtb \
+ 	imx6sx-19x19-arm2-gpmi-weim.dtb \
+-- 
+1.8.0
+

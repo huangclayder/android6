@@ -1,0 +1,190 @@
+From fdb8b85b0d31fa123cc2bda256d7589771573af5 Mon Sep 17 00:00:00 2001
+From: Sudeep KarkadaNagesha <sudeep.karkadanagesha@arm.com>
+Date: Tue, 25 Sep 2012 18:40:12 +0100
+Subject: [PATCH] ARM: perf: save/restore pmu registers in pm notifier
+
+This adds core support for saving and restoring CPU PMU registers
+for suspend/resume support i.e. deeper C-states in cpuidle terms.
+This patch adds support only to ARMv7 PMU registers save/restore.
+It needs to be extended to xscale and ARMv6 if needed.
+
+Signed-off-by: Sudeep KarkadaNagesha <sudeep.karkadanagesha@arm.com>
+(cherry picked from commit cd67bcd2230245b21f06d054c3e072e9278e903b)
+Signed-off-by: Alex Shi <alex.shi@linaro.org>
+---
+ arch/arm/include/asm/pmu.h       | 11 ++++++++++
+ arch/arm/kernel/perf_event_cpu.c | 36 +++++++++++++++++++++++++++++-
+ arch/arm/kernel/perf_event_v7.c  | 47 ++++++++++++++++++++++++++++++++++++++++
+ 3 files changed, 93 insertions(+), 1 deletion(-)
+
+diff --git a/arch/arm/include/asm/pmu.h b/arch/arm/include/asm/pmu.h
+index 3713e57..0cd7824 100644
+--- a/arch/arm/include/asm/pmu.h
++++ b/arch/arm/include/asm/pmu.h
+@@ -62,6 +62,15 @@ struct pmu_hw_events {
+ 	raw_spinlock_t		pmu_lock;
+ };
+ 
++struct cpupmu_regs {
++	u32 pmc;
++	u32 pmcntenset;
++	u32 pmuseren;
++	u32 pmintenset;
++	u32 pmxevttype[8];
++	u32 pmxevtcnt[8];
++};
++
+ struct arm_pmu {
+ 	struct pmu	pmu;
+ 	cpumask_t	active_irqs;
+@@ -82,6 +91,8 @@ struct arm_pmu {
+ 	int		(*request_irq)(struct arm_pmu *, irq_handler_t handler);
+ 	void		(*free_irq)(struct arm_pmu *);
+ 	int		(*map_event)(struct perf_event *event);
++	void		(*save_regs)(struct arm_pmu *, struct cpupmu_regs *);
++	void		(*restore_regs)(struct arm_pmu *, struct cpupmu_regs *);
+ 	int		num_events;
+ 	atomic_t	active_events;
+ 	struct mutex	reserve_mutex;
+diff --git a/arch/arm/kernel/perf_event_cpu.c b/arch/arm/kernel/perf_event_cpu.c
+index 24176cf..31c5cde 100644
+--- a/arch/arm/kernel/perf_event_cpu.c
++++ b/arch/arm/kernel/perf_event_cpu.c
+@@ -19,6 +19,7 @@
+ #define pr_fmt(fmt) "CPU PMU: " fmt
+ 
+ #include <linux/bitmap.h>
++#include <linux/cpu_pm.h>
+ #include <linux/export.h>
+ #include <linux/kernel.h>
+ #include <linux/of.h>
+@@ -37,6 +38,8 @@ static DEFINE_PER_CPU(struct perf_event * [ARMPMU_MAX_HWEVENTS], hw_events);
+ static DEFINE_PER_CPU(unsigned long [BITS_TO_LONGS(ARMPMU_MAX_HWEVENTS)], used_mask);
+ static DEFINE_PER_CPU(struct pmu_hw_events, cpu_hw_events);
+ 
++static DEFINE_PER_CPU(struct cpupmu_regs, cpu_pmu_regs);
++
+ /*
+  * Despite the names, these two functions are CPU-specific and are used
+  * by the OProfile/perf code.
+@@ -179,10 +182,33 @@ static int cpu_pmu_notify(struct notifier_block *b, unsigned long action,
+ 	return NOTIFY_OK;
+ }
+ 
++static int cpu_pmu_pm_notify(struct notifier_block *b,
++				    unsigned long action, void *hcpu)
++{
++	int cpu = smp_processor_id();
++	struct arm_pmu *pmu = per_cpu(cpu_pmu, cpu);
++	struct cpupmu_regs *pmuregs = &per_cpu(cpu_pmu_regs, cpu);
++
++	if (!pmu)
++		return NOTIFY_DONE;
++
++	if (action == CPU_PM_ENTER && pmu->save_regs) {
++		pmu->save_regs(pmu, pmuregs);
++	} else if (action == CPU_PM_EXIT && pmu->restore_regs) {
++		pmu->restore_regs(pmu, pmuregs);
++	}
++
++	return NOTIFY_OK;
++}
++
+ static struct notifier_block cpu_pmu_hotplug_notifier = {
+ 	.notifier_call = cpu_pmu_notify,
+ };
+ 
++static struct notifier_block cpu_pmu_pm_notifier = {
++	.notifier_call = cpu_pmu_pm_notify,
++};
++
+ /*
+  * PMU platform driver and devicetree bindings.
+  */
+@@ -341,9 +367,17 @@ static int __init register_pmu_driver(void)
+ 	if (err)
+ 		return err;
+ 
++	err = cpu_pm_register_notifier(&cpu_pmu_pm_notifier);
++	if (err) {
++		unregister_cpu_notifier(&cpu_pmu_hotplug_notifier);
++		return err;
++	}
++
+ 	err = platform_driver_register(&cpu_pmu_driver);
+-	if (err)
++	if (err) {
++		cpu_pm_unregister_notifier(&cpu_pmu_pm_notifier);
+ 		unregister_cpu_notifier(&cpu_pmu_hotplug_notifier);
++	}
+ 
+ 	return err;
+ }
+diff --git a/arch/arm/kernel/perf_event_v7.c b/arch/arm/kernel/perf_event_v7.c
+index 16a0455..654db50 100644
+--- a/arch/arm/kernel/perf_event_v7.c
++++ b/arch/arm/kernel/perf_event_v7.c
+@@ -950,6 +950,51 @@ static void armv7_pmnc_dump_regs(struct arm_pmu *cpu_pmu)
+ }
+ #endif
+ 
++static void armv7pmu_save_regs(struct arm_pmu *cpu_pmu,
++					struct cpupmu_regs *regs)
++{
++	unsigned int cnt;
++	asm volatile("mrc p15, 0, %0, c9, c12, 0" : "=r" (regs->pmc));
++	if (!(regs->pmc & ARMV7_PMNC_E))
++		return;
++
++	asm volatile("mrc p15, 0, %0, c9, c12, 1" : "=r" (regs->pmcntenset));
++	asm volatile("mrc p15, 0, %0, c9, c14, 0" : "=r" (regs->pmuseren));
++	asm volatile("mrc p15, 0, %0, c9, c14, 1" : "=r" (regs->pmintenset));
++	asm volatile("mrc p15, 0, %0, c9, c13, 0" : "=r" (regs->pmxevtcnt[0]));
++	for (cnt = ARMV7_IDX_COUNTER0;
++			cnt <= ARMV7_IDX_COUNTER_LAST(cpu_pmu); cnt++) {
++		armv7_pmnc_select_counter(cnt);
++		asm volatile("mrc p15, 0, %0, c9, c13, 1"
++					: "=r"(regs->pmxevttype[cnt]));
++		asm volatile("mrc p15, 0, %0, c9, c13, 2"
++					: "=r"(regs->pmxevtcnt[cnt]));
++	}
++	return;
++}
++
++static void armv7pmu_restore_regs(struct arm_pmu *cpu_pmu,
++					struct cpupmu_regs *regs)
++{
++	unsigned int cnt;
++	if (!(regs->pmc & ARMV7_PMNC_E))
++		return;
++
++	asm volatile("mcr p15, 0, %0, c9, c12, 1" : : "r" (regs->pmcntenset));
++	asm volatile("mcr p15, 0, %0, c9, c14, 0" : : "r" (regs->pmuseren));
++	asm volatile("mcr p15, 0, %0, c9, c14, 1" : : "r" (regs->pmintenset));
++	asm volatile("mcr p15, 0, %0, c9, c13, 0" : : "r" (regs->pmxevtcnt[0]));
++	for (cnt = ARMV7_IDX_COUNTER0;
++			cnt <= ARMV7_IDX_COUNTER_LAST(cpu_pmu); cnt++) {
++		armv7_pmnc_select_counter(cnt);
++		asm volatile("mcr p15, 0, %0, c9, c13, 1"
++					: : "r"(regs->pmxevttype[cnt]));
++		asm volatile("mcr p15, 0, %0, c9, c13, 2"
++					: : "r"(regs->pmxevtcnt[cnt]));
++	}
++	asm volatile("mcr p15, 0, %0, c9, c12, 0" : : "r" (regs->pmc));
++}
++
+ static void armv7pmu_enable_event(struct perf_event *event)
+ {
+ 	unsigned long flags;
+@@ -1223,6 +1268,8 @@ static void armv7pmu_init(struct arm_pmu *cpu_pmu)
+ 	cpu_pmu->start		= armv7pmu_start;
+ 	cpu_pmu->stop		= armv7pmu_stop;
+ 	cpu_pmu->reset		= armv7pmu_reset;
++	cpu_pmu->save_regs	= armv7pmu_save_regs;
++	cpu_pmu->restore_regs	= armv7pmu_restore_regs;
+ 	cpu_pmu->max_period	= (1LLU << 32) - 1;
+ };
+ 
+-- 
+1.8.0
+

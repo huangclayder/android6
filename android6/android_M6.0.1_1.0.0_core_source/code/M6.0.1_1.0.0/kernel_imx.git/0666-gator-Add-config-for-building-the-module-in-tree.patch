@@ -1,0 +1,53 @@
+From 43bc6d5b076e30d55b59daedeb205063cb6e54a2 Mon Sep 17 00:00:00 2001
+From: Jon Medhurst <tixy@linaro.org>
+Date: Thu, 10 May 2012 17:35:03 +0100
+Subject: [PATCH] gator: Add config for building the module in-tree
+
+Signed-off-by: Jon Medhurst <tixy@linaro.org>
+Signed-off-by: Mark Brown <broonie@linaro.org>
+
+Conflicts:
+	drivers/Kconfig
+	drivers/Makefile
+---
+ drivers/Kconfig       | 2 ++
+ drivers/Makefile      | 2 ++
+ drivers/gator/Kconfig | 1 -
+ 3 files changed, 4 insertions(+), 1 deletion(-)
+
+diff --git a/drivers/Kconfig b/drivers/Kconfig
+index b3138fb..c1e4021 100644
+--- a/drivers/Kconfig
++++ b/drivers/Kconfig
+@@ -170,4 +170,6 @@ source "drivers/phy/Kconfig"
+ 
+ source "drivers/powercap/Kconfig"
+ 
++source "drivers/gator/Kconfig"
++
+ endmenu
+diff --git a/drivers/Makefile b/drivers/Makefile
+index 8e3b8b0..7edd884 100644
+--- a/drivers/Makefile
++++ b/drivers/Makefile
+@@ -155,3 +155,5 @@ obj-$(CONFIG_IPACK_BUS)		+= ipack/
+ obj-$(CONFIG_NTB)		+= ntb/
+ obj-$(CONFIG_FMC)		+= fmc/
+ obj-$(CONFIG_POWERCAP)		+= powercap/
++
++obj-$(CONFIG_GATOR)		+= gator/
+diff --git a/drivers/gator/Kconfig b/drivers/gator/Kconfig
+index e46ccb9..31f0c6f 100644
+--- a/drivers/gator/Kconfig
++++ b/drivers/gator/Kconfig
+@@ -3,7 +3,6 @@ config GATOR
+ 	default m if (ARM || ARM64)
+ 	depends on PROFILING
+ 	depends on HIGH_RES_TIMERS
+-	depends on LOCAL_TIMERS || !(ARM && SMP)
+ 	depends on PERF_EVENTS
+ 	depends on HW_PERF_EVENTS || !(ARM || ARM64)
+ 	select TRACING
+-- 
+1.8.0
+

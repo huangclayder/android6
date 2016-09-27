@@ -1,0 +1,47 @@
+From 9ff1af2bd78b817156e9980c00970caca22f821f Mon Sep 17 00:00:00 2001
+From: "guoyin.chen" <guoyin.chen@freescale.com>
+Date: Tue, 29 Apr 2014 14:48:57 +0800
+Subject: [PATCH] ENGR00311026 Factory reset function in eMMC cost more than
+ 10m to finish
+
+The ioctl BLKSECDISCARD cost more than 10m to finished in eMMC driver
+Directly use BLKDISCARD which is aligned with SDCard
+Revert this commit once eMMC can perform a quick BLKSECDISCARD
+
+Signed-off-by: guoyin.chen <guoyin.chen@freescale.com>
+---
+ ext4_utils/wipe.c | 17 ++++++-----------
+ 1 file changed, 6 insertions(+), 11 deletions(-)
+
+diff --git a/ext4_utils/wipe.c b/ext4_utils/wipe.c
+index 5766632..831b57a 100644
+--- a/ext4_utils/wipe.c
++++ b/ext4_utils/wipe.c
+@@ -44,18 +44,13 @@ int wipe_block_device(int fd, s64 len)
+ 
+ 	range[0] = 0;
+ 	range[1] = len;
+-	ret = ioctl(fd, BLKSECDISCARD, &range);
++	ret = ioctl(fd, BLKDISCARD, &range);
+ 	if (ret < 0) {
+-		range[0] = 0;
+-		range[1] = len;
+-		ret = ioctl(fd, BLKDISCARD, &range);
+-		if (ret < 0) {
+-			warn("Discard failed\n");
+-			return 1;
+-		} else {
+-			warn("Wipe via secure discard failed, used discard instead\n");
+-			return 0;
+-		}
++		warn("Discard failed\n");
++		return 1;
++	} else {
++		warn("Wipe via secure discard failed, used discard instead\n");
++		return 0;
+ 	}
+ 
+ 	return 0;
+-- 
+1.8.0
+

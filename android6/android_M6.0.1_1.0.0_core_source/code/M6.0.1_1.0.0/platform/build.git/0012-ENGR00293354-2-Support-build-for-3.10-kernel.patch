@@ -1,0 +1,37 @@
+From 9041b4ef973d8bcb663649884f29c58f9e399887 Mon Sep 17 00:00:00 2001
+From: Ke Qinghua <qinghua.ke@freescale.com>
+Date: Tue, 18 Feb 2014 13:44:46 +0800
+Subject: [PATCH 12/34] ENGR00293354-2 Support build for 3.10 kernel
+
+Enable recovery image generate for 3.10 kernel
+
+Signed-off-by: Ke Qinghua <qinghua.ke@freescale.com>
+
+Conflicts:
+	core/Makefile
+---
+ core/Makefile | 8 ++++++++
+ 1 file changed, 8 insertions(+)
+
+diff --git a/core/Makefile b/core/Makefile
+index 2e864ea..60d88dd 100644
+--- a/core/Makefile
++++ b/core/Makefile
+@@ -928,6 +928,14 @@ define build-recoveryimage-target
+   $(if $(filter true,$(PRODUCTS.$(INTERNAL_PRODUCT).PRODUCT_SUPPORTS_VBOOT)), \
+     $(VBOOT_SIGNER) $(FUTILITY) $(1).unsigned $(PRODUCTS.$(INTERNAL_PRODUCT).PRODUCT_VBOOT_SIGNING_KEY).vbpubk $(PRODUCTS.$(INTERNAL_PRODUCT).PRODUCT_VBOOT_SIGNING_KEY).vbprivk $(PRODUCTS.$(INTERNAL_PRODUCT).PRODUCT_VBOOT_SIGNING_SUBKEY).vbprivk $(1).keyblock $(1))
+   $(hide) $(call assert-max-image-size,$(1),$(BOARD_RECOVERYIMAGE_PARTITION_SIZE))
++  for dtsplat in $(TARGET_BOARD_DTS_CONFIG); do \
++	DTS_PLATFORM=`echo $$dtsplat | cut -d':' -f1`; \
++	DTS_BOARD=`echo $$dtsplat | cut -d':' -f2`; \
++	RECOVERY_IMAGE_BOARD=$(patsubst %.img,%-$$DTS_PLATFORM.img,$(1)); \
++    $(MKBOOTIMG) $(INTERNAL_RECOVERYIMAGE_ARGS) --second kernel_imx/arch/arm/boot/dts/$$DTS_BOARD $(BOARD_MKBOOTIMG_ARGS) --output $(1); \
++    $(call assert-max-image-size,$(1),$(BOARD_RECOVERYIMAGE_PARTITION_SIZE),raw); \
++    cp -f $@ $$RECOVERY_IMAGE_BOARD; \
++  done
+   @echo ----- Made recovery image: $(1) --------
+ endef
+ 
+-- 
+1.8.0
+

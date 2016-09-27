@@ -1,0 +1,130 @@
+From c4ffaef6bc6ea9e10a4245c2986510cef8fd9568 Mon Sep 17 00:00:00 2001
+From: fang hui <hui.fang@nxp.com>
+Date: Fri, 26 Feb 2016 10:18:57 +0800
+Subject: [PATCH 598/602] MA-7677 - [sabreauto]: cts testPlayStaticData failed
+
+It's caused by commit c27987b12ebaa.
+On auto board, 8 channls will go directly output, to fix MA-7487,
+track is set to direct output.
+But setPosition will failed for direct output track.
+
+In audio_policy_cts.conf, remove 8 channel from direct output.
+
+Signed-off-by: fang hui <hui.fang@nxp.com>
+---
+ imx6/sabreauto_6q.mk               |  1 +
+ sabreauto_6q/audio_policy_cts.conf | 90 ++++++++++++++++++++++++++++++++++++++
+ 2 files changed, 91 insertions(+)
+ create mode 100644 sabreauto_6q/audio_policy_cts.conf
+
+diff --git a/imx6/sabreauto_6q.mk b/imx6/sabreauto_6q.mk
+index ed0827c..fc3770a 100644
+--- a/imx6/sabreauto_6q.mk
++++ b/imx6/sabreauto_6q.mk
+@@ -22,6 +22,7 @@ PRODUCT_COPY_FILES += \
+ 	device/fsl/sabreauto_6q/init.i.MX6DL.rc:root/init.freescale.i.MX6DL.rc \
+ 	device/fsl/sabreauto_6q/init.i.MX6QP.rc:root/init.freescale.i.MX6QP.rc \
+ 	device/fsl/sabreauto_6q/audio_policy.conf:system/etc/audio_policy.conf \
++	device/fsl/sabreauto_6q/audio_policy_cts.conf:system/etc/audio_policy_cts.conf \
+ 	device/fsl/sabreauto_6q/audio_effects.conf:system/vendor/etc/audio_effects.conf
+ 
+ PRODUCT_COPY_FILES +=	\
+diff --git a/sabreauto_6q/audio_policy_cts.conf b/sabreauto_6q/audio_policy_cts.conf
+new file mode 100644
+index 0000000..ff47a9e
+--- /dev/null
++++ b/sabreauto_6q/audio_policy_cts.conf
+@@ -0,0 +1,90 @@
++# Global configuration section: lists input and output devices always present on the device
++# as well as the output device selected by default.
++# Devices are designated by a string that corresponds to the enum in audio.h
++
++global_configuration {
++  attached_output_devices AUDIO_DEVICE_OUT_SPEAKER
++  default_output_device AUDIO_DEVICE_OUT_SPEAKER
++  attached_input_devices AUDIO_DEVICE_IN_BUILTIN_MIC|AUDIO_DEVICE_IN_REMOTE_SUBMIX
++}
++
++# audio hardware module section: contains descriptors for all audio hw modules present on the
++# device. Each hw module node is named after the corresponding hw module library base name.
++# For instance, "primary" corresponds to audio.primary.<device>.so.
++# The "primary" module is mandatory and must include at least one output with
++# AUDIO_OUTPUT_FLAG_PRIMARY flag.
++# Each module descriptor contains one or more output profile descriptors and zero or more
++# input profile descriptors. Each profile lists all the parameters supported by a given output
++# or input stream category.
++# The "channel_masks", "formats", "devices" and "flags" are specified using strings corresponding
++# to enums in audio.h and audio_policy.h. They are concatenated by use of "|" without space or "\n".
++
++audio_hw_modules {
++  primary {
++    outputs {
++      primary {
++        sampling_rates 48000
++        channel_masks AUDIO_CHANNEL_OUT_STEREO
++        formats AUDIO_FORMAT_PCM_16_BIT
++        devices AUDIO_DEVICE_OUT_SPEAKER|AUDIO_DEVICE_OUT_WIRED_HEADSET|AUDIO_DEVICE_OUT_WIRED_HEADPHONE|AUDIO_DEVICE_OUT_AUX_DIGITAL|AUDIO_DEVICE_OUT_DGTL_DOCK_HEADSET
++        flags AUDIO_OUTPUT_FLAG_PRIMARY
++      }
++      hdmi {
++        sampling_rates dynamic
++        channel_masks dynamic
++        formats AUDIO_FORMAT_PCM_16_BIT
++        devices AUDIO_DEVICE_OUT_AUX_DIGITAL
++        flags AUDIO_OUTPUT_FLAG_DIRECT
++      }
++      esai {
++        sampling_rates 48000
++        channel_masks AUDIO_CHANNEL_OUT_5POINT1
++        formats AUDIO_FORMAT_PCM_16_BIT
++        devices AUDIO_DEVICE_OUT_SPEAKER
++        flags AUDIO_OUTPUT_FLAG_DIRECT
++      }
++    }
++    inputs {
++      primary {
++        sampling_rates 8000|11025|16000|22050|24000|32000|44100|48000
++        channel_masks AUDIO_CHANNEL_IN_MONO|AUDIO_CHANNEL_IN_STEREO
++        formats AUDIO_FORMAT_PCM_16_BIT
++        devices AUDIO_DEVICE_IN_BUILTIN_MIC|AUDIO_DEVICE_IN_WIRED_HEADSET|AUDIO_DEVICE_IN_USB_DEVICE|AUDIO_DEVICE_IN_AUX_DIGITAL|AUDIO_DEVICE_IN_DGTL_DOCK_HEADSET
++      }
++    }
++  }
++  usb {
++    outputs {
++      usb_accessory {
++        sampling_rates 44100
++        channel_masks AUDIO_CHANNEL_OUT_STEREO
++        formats AUDIO_FORMAT_PCM_16_BIT
++        devices AUDIO_DEVICE_OUT_USB_ACCESSORY
++      }
++      usb_device {
++        sampling_rates 44100
++        channel_masks AUDIO_CHANNEL_OUT_STEREO
++        formats AUDIO_FORMAT_PCM_16_BIT
++        devices AUDIO_DEVICE_OUT_USB_DEVICE
++      }
++    }
++  }
++  r_submix {
++    outputs {
++      submix {
++        sampling_rates 48000
++        channel_masks AUDIO_CHANNEL_OUT_STEREO
++        formats AUDIO_FORMAT_PCM_16_BIT
++        devices AUDIO_DEVICE_OUT_REMOTE_SUBMIX
++      }
++    }
++    inputs {
++      submix {
++        sampling_rates 48000
++        channel_masks AUDIO_CHANNEL_IN_STEREO
++        formats AUDIO_FORMAT_PCM_16_BIT
++        devices AUDIO_DEVICE_IN_REMOTE_SUBMIX
++      }
++    }
++  }
++}
+-- 
+1.8.0
+

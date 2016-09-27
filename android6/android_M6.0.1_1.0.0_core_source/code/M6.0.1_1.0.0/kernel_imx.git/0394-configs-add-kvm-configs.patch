@@ -1,0 +1,50 @@
+From 9ee9617bed11721aae1ba39f020d28abd2e86b17 Mon Sep 17 00:00:00 2001
+From: Riku Voipio <riku.voipio@linaro.org>
+Date: Thu, 14 Feb 2013 17:28:40 +0200
+Subject: [PATCH] configs: add kvm configs
+
+kvm-host is for any target where we want to run kvm
+ - currently only arndale
+kvm-guest is for
+ - currently only vexpress
+---
+ linaro/configs/kvm-guest.conf | 11 +++++++++++
+ linaro/configs/kvm-host.conf  | 10 ++++++++++
+ 2 files changed, 21 insertions(+)
+
+diff --git a/linaro/configs/kvm-guest.conf b/linaro/configs/kvm-guest.conf
+new file mode 100644
+index 0000000..ff2da8b
+--- /dev/null
++++ b/linaro/configs/kvm-guest.conf
+@@ -0,0 +1,11 @@
++CONFIG_BALLOON_COMPACTION=y
++CONFIG_VIRTIO_BLK=y
++CONFIG_VIRTIO_NET=y
++CONFIG_HVC_DRIVER=y
++CONFIG_VIRTIO_CONSOLE=y
++CONFIG_MMC_DEBUG=y
++CONFIG_VIRTIO=y
++CONFIG_VIRTIO_BALLOON=y
++CONFIG_VIRTIO_MMIO=y
++CONFIG_VIRTIO_MMIO_CMDLINE_DEVICES=y
++CONFIG_VIRTUALIZATION=y
+diff --git a/linaro/configs/kvm-host.conf b/linaro/configs/kvm-host.conf
+new file mode 100644
+index 0000000..ae280ac
+--- /dev/null
++++ b/linaro/configs/kvm-host.conf
+@@ -0,0 +1,10 @@
++CONFIG_ARM_LPAE=y
++CONFIG_ARM_VIRT_EXT=y
++CONFIG_HAVE_KVM_IRQCHIP=y
++CONFIG_KVM_ARM_HOST=y
++CONFIG_KVM_ARM_MAX_VCPUS=4
++CONFIG_KVM_ARM_TIMER=y
++CONFIG_KVM_ARM_VGIC=y
++CONFIG_KVM_MMIO=y
++CONFIG_KVM=y
++
+-- 
+1.8.0
+

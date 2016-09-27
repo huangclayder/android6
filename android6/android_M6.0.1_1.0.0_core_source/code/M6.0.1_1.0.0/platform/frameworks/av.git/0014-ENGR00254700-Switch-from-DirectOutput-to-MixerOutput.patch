@@ -1,0 +1,30 @@
+From 423927024858d0d20ee9f4290f1205b060ff71f9 Mon Sep 17 00:00:00 2001
+From: Xiaowen Liu <xiaowen.liu@freescale.com>
+Date: Sat, 10 Oct 2015 11:11:23 -0400
+Subject: [PATCH 14/95] ENGR00254700 Switch from DirectOutput to MixerOutput,
+ the video pause about 2s
+
+There is a issue in insertCommand_l() function, which is to sort
+the audio command(setparameter,setvolume) by time, then thread will handle
+the command in order. But sometimes the order is not correct.
+
+Signed-off-by: Xiaowen Liu <xiaowen.liu@freescale.com>
+---
+ services/audiopolicy/service/AudioPolicyService.cpp | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/services/audiopolicy/service/AudioPolicyService.cpp b/services/audiopolicy/service/AudioPolicyService.cpp
+index c77cc45..8fcdc04 100644
+--- a/services/audiopolicy/service/AudioPolicyService.cpp
++++ b/services/audiopolicy/service/AudioPolicyService.cpp
+@@ -982,6 +982,7 @@ void AudioPolicyService::AudioCommandThread::insertCommand_l(sp<AudioCommand>& c
+             if (mAudioCommands[k].get() == removedCommands[j].get()) {
+                 ALOGV("suppressing command: %d", mAudioCommands[k]->mCommand);
+                 mAudioCommands.removeAt(k);
++                i = k - 1;
+                 break;
+             }
+         }
+-- 
+1.8.0
+

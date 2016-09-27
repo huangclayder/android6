@@ -1,0 +1,31 @@
+From de7f82d566bda47d34938f681f38a2104148efb3 Mon Sep 17 00:00:00 2001
+From: Liu Ying <Ying.Liu@freescale.com>
+Date: Thu, 15 Jan 2015 11:04:18 +0800
+Subject: [PATCH] MLK-10099 ARM: dts: imx6qdl: Add VDOA support
+
+This patch adds VDOA device tree node support.
+
+Signed-off-by: Liu Ying <Ying.Liu@freescale.com>
+---
+ arch/arm/boot/dts/imx6qdl.dtsi | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/arch/arm/boot/dts/imx6qdl.dtsi b/arch/arm/boot/dts/imx6qdl.dtsi
+index 7cb7c22..9f4b965 100644
+--- a/arch/arm/boot/dts/imx6qdl.dtsi
++++ b/arch/arm/boot/dts/imx6qdl.dtsi
+@@ -1064,8 +1064,11 @@
+ 			};
+ 
+ 			vdoa@021e4000 {
++				compatible = "fsl,imx6q-vdoa";
+ 				reg = <0x021e4000 0x4000>;
+ 				interrupts = <0 18 IRQ_TYPE_LEVEL_HIGH>;
++				clocks = <&clks IMX6QDL_CLK_VDOA>;
++				iram = <&ocram>;
+ 			};
+ 
+ 			uart2: serial@021e8000 {
+-- 
+1.8.0
+

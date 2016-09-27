@@ -1,0 +1,292 @@
+From c98c620cd99dfb3fb41f3173ad981a8692130480 Mon Sep 17 00:00:00 2001
+From: Xiaowen Liu <xiaowen.liu@freescale.com>
+Date: Mon, 12 Oct 2015 12:15:07 -0400
+Subject: [PATCH 81/95] MA-7089 Upgrade android to Mashmallow 6.0 version.
+
+fix some build errors:
+1) add new interface for OMX class.
+2) comment unused function parameters.
+3) adjust class member initialization order.
+4) initialize variable before its used.
+5) comment unused variable.
+
+Signed-off-by: Xiaowen Liu <xiaowen.liu@freescale.com>
+---
+ include/media/IStreamSource.h                      |  3 +++
+ include/media/OMXMediaRecorder.h                   |  3 ++-
+ include/media/OMXMetadataRetriever.h               |  3 ++-
+ include/media/stagefright/MediaExtractor.h         |  2 +-
+ media/libmediaplayerservice/MediaPlayerFactory.cpp | 24 ++++++++++++----------
+ media/libmediaplayerservice/MediaPlayerFactory.h   |  4 ++--
+ media/libstagefright/SurfaceUtils.cpp              |  2 +-
+ media/libstagefright/include/AwesomePlayer.h       |  2 +-
+ .../wifi-display/source/WifiDisplaySource.cpp      | 24 +++++++++++-----------
+ 9 files changed, 37 insertions(+), 30 deletions(-)
+
+diff --git a/include/media/IStreamSource.h b/include/media/IStreamSource.h
+index 4a6aafd..d55f07f 100644
+--- a/include/media/IStreamSource.h
++++ b/include/media/IStreamSource.h
+@@ -40,6 +40,9 @@ struct IStreamSource : public IInterface {
+ 
+         // Timestamps are in ALooper::GetNowUs() units.
+         kFlagIsRealTimeData   = 2,
++
++        // Will discard data if buffered too much data to keep low latency.
++        kFlagKeepLowLatency   = 4,
+     };
+     virtual uint32_t flags() const { return 0; }
+ };
+diff --git a/include/media/OMXMediaRecorder.h b/include/media/OMXMediaRecorder.h
+index 29987c7..0a83e0e 100644
+--- a/include/media/OMXMediaRecorder.h
++++ b/include/media/OMXMediaRecorder.h
+@@ -14,7 +14,7 @@
+  * limitations under the License.
+  */
+ 
+-/* Copyright (C) 2011-2013 Freescale Semiconductor, Inc. */
++/* Copyright (C) 2011-2015 Freescale Semiconductor, Inc. */
+ 
+ #ifndef OMX_RECORDER_H_
+ #define OMX_RECORDER_H_
+@@ -56,6 +56,7 @@ struct OMXRecorder : public MediaRecorderBase {
+     virtual status_t dump(int fd, const Vector<String16>& args) const;
+     status_t ProcessEvent(int msg, int ext1, int ext2);
+     // Querying a SurfaceMediaSourcer
++    virtual status_t setInputSurface(const sp<IGraphicBufferConsumer>& surface);
+     virtual sp<IGraphicBufferProducer> querySurfaceMediaSource() const;
+ 
+ private:
+diff --git a/include/media/OMXMetadataRetriever.h b/include/media/OMXMetadataRetriever.h
+index 42673f5..3ffa299 100644
+--- a/include/media/OMXMetadataRetriever.h
++++ b/include/media/OMXMetadataRetriever.h
+@@ -15,7 +15,7 @@
+ ** limitations under the License.
+ */
+ 
+-/* Copyright 2009-2014 Freescale Semiconductor, Inc. */
++/* Copyright 2009-2015 Freescale Semiconductor, Inc. */
+ 
+ #ifndef ANDROID_OMXMETADATARETRIEVER_H
+ #define ANDROID_OMXMETADATARETRIEVER_H
+@@ -39,6 +39,7 @@ public:
+     virtual             ~OMXMetadataRetriever();
+ 
+     virtual status_t    setDataSource(const char *url);
++    virtual status_t    setDataSource(const sp<DataSource>& source);
+     virtual status_t    setDataSource(const sp<IMediaHTTPService> &httpService, const char *url, const KeyedVector<String8, String8> *headers = NULL);
+     virtual status_t    setDataSource(int fd, int64_t offset, int64_t length);
+     virtual status_t    setMode(int mode);
+diff --git a/include/media/stagefright/MediaExtractor.h b/include/media/stagefright/MediaExtractor.h
+index 183933a..1f3f18f 100644
+--- a/include/media/stagefright/MediaExtractor.h
++++ b/include/media/stagefright/MediaExtractor.h
+@@ -23,7 +23,7 @@
+ namespace android {
+ 
+ class DataSource;
+-class MediaSource;
++struct MediaSource;
+ class MetaData;
+ 
+ class MediaExtractor : public RefBase {
+diff --git a/media/libmediaplayerservice/MediaPlayerFactory.cpp b/media/libmediaplayerservice/MediaPlayerFactory.cpp
+index f79c0c7..d4ed4ea 100644
+--- a/media/libmediaplayerservice/MediaPlayerFactory.cpp
++++ b/media/libmediaplayerservice/MediaPlayerFactory.cpp
+@@ -129,7 +129,7 @@ void MediaPlayerFactory::unregisterFactory(player_type type) {
+ player_type MediaPlayerFactory::getPlayerType(const sp<IMediaPlayer>& client,
+                                               const char* url,
+                                               const KeyedVector<String8, String8> *headers,
+-                                              const IMediaHTTPService* httpService) {
++                                              const IMediaHTTPService* /*httpService*/) {
+     GET_PLAYER_TYPE_IMPL(client, url, bestScore, headers);
+ }
+ 
+@@ -147,7 +147,7 @@ player_type MediaPlayerFactory::getPlayerType(const sp<IMediaPlayer>& client,
+ 
+ player_type MediaPlayerFactory::getPlayerType(const sp<IMediaPlayer>& client,
+                                               const sp<DataSource> &source) {
+-    GET_PLAYER_TYPE_IMPL(client, source);
++    GET_PLAYER_TYPE_IMPL(client, source, bestScore);
+ }
+ 
+ #undef GET_PLAYER_TYPE_IMPL
+@@ -209,7 +209,7 @@ bool isWVM(const char* url,
+     KeyedVector<String8, String8> mUriHeaders;
+     sp<HTTPBase> mConnectingDataSource;
+     sp<NuCachedSource2> mCachedSource;
+-    uint32_t mFlags;
++    uint32_t mFlags = 0;
+ 
+     mUri = url;
+ 
+@@ -335,7 +335,7 @@ bool isWVM(int fd,
+ 
+ class OMXPlayerFactory : public MediaPlayerFactory::IFactory {
+     public:
+-        virtual float scoreFactory(const sp<IMediaPlayer>& client,
++        virtual float scoreFactory(const sp<IMediaPlayer>& /*client*/,
+                 const char* url,
+                 float curScore,
+                 const KeyedVector<String8, String8> *headers,
+@@ -412,7 +412,7 @@ class OMXPlayerFactory : public MediaPlayerFactory::IFactory {
+             return 0.0;
+         }
+ 
+-        virtual float scoreFactory(const sp<IMediaPlayer>& client,
++        virtual float scoreFactory(const sp<IMediaPlayer>& /*client*/,
+                 int fd,
+                 int64_t offset,
+                 int64_t length,
+@@ -445,7 +445,7 @@ class OMXPlayerFactory : public MediaPlayerFactory::IFactory {
+             return 0.0;
+         }
+ 
+-        virtual sp<MediaPlayerBase> createPlayer() {
++        virtual sp<MediaPlayerBase> createPlayer(pid_t /*pid*/) {
+             ALOGV(" create OMXPlayer");
+             return new OMXPlayer();
+         }
+@@ -487,7 +487,9 @@ class StagefrightPlayerFactory :
+ 
+     virtual float scoreFactory(const sp<IMediaPlayer>& /*client*/,
+                                const char* url,
+-                               float /*curScore*/) {
++                               float /*curScore*/,
++                               const KeyedVector<String8, String8> *,
++                               const IMediaHTTPService*) {
+         if (legacyDrm() && !strncasecmp("widevine://", url, 11)) {
+             return 1.0;
+         }
+@@ -514,8 +516,8 @@ class NuPlayerFactory : public MediaPlayerFactory::IFactory {
+     virtual float scoreFactory(const sp<IMediaPlayer>& /*client*/,
+                                const char* url,
+                                float curScore,
+-                               const KeyedVector<String8, String8> *headers,
+-                               const IMediaHTTPService* httpService) {
++                               const KeyedVector<String8, String8> * /*headers*/,
++                               const IMediaHTTPService* /*httpService*/) {
+         static const float kOurScore = 0.8;
+ 
+         if (kOurScore <= curScore)
+@@ -569,8 +571,8 @@ class TestPlayerFactory : public MediaPlayerFactory::IFactory {
+     virtual float scoreFactory(const sp<IMediaPlayer>& /*client*/,
+                                const char* url,
+                                float /*curScore*/,
+-                               const KeyedVector<String8, String8> *headers,
+-                               const IMediaHTTPService* httpService) {
++                               const KeyedVector<String8, String8> * /*headers*/,
++                               const IMediaHTTPService* /*httpService*/) {
+         if (TestPlayerStub::canBeUsed(url)) {
+             return 1.0;
+         }
+diff --git a/media/libmediaplayerservice/MediaPlayerFactory.h b/media/libmediaplayerservice/MediaPlayerFactory.h
+index 34c77f4..cf581d0 100644
+--- a/media/libmediaplayerservice/MediaPlayerFactory.h
++++ b/media/libmediaplayerservice/MediaPlayerFactory.h
+@@ -33,8 +33,8 @@ class MediaPlayerFactory {
+         virtual float scoreFactory(const sp<IMediaPlayer>& /*client*/,
+                                    const char* /*url*/,
+                                    float /*curScore*/,
+-                                   const KeyedVector<String8, String8> *headers = NULL,
+-                                   const IMediaHTTPService* httpService = NULL) { return 0.0; }
++                                   const KeyedVector<String8, String8> * headers __unused = NULL,
++                                   const IMediaHTTPService* httpService __unused = NULL) { return 0.0; }
+ 
+         virtual float scoreFactory(const sp<IMediaPlayer>& /*client*/,
+                                    int /*fd*/,
+diff --git a/media/libstagefright/SurfaceUtils.cpp b/media/libstagefright/SurfaceUtils.cpp
+index c7dc92c..64e26ea 100644
+--- a/media/libstagefright/SurfaceUtils.cpp
++++ b/media/libstagefright/SurfaceUtils.cpp
+@@ -50,7 +50,7 @@ status_t setNativeWindowSizeFormatAndUsage(
+             color_fmt = HAL_PIXEL_FORMAT_YCbCr_422_P;
+             break;
+         default:
+-            ALOGE("Not supported color format %d by surface!", def.format.video.eC
++            ALOGE("Not supported color format %d by surface!", format);
+             return UNKNOWN_ERROR;
+     }
+ 
+diff --git a/media/libstagefright/include/AwesomePlayer.h b/media/libstagefright/include/AwesomePlayer.h
+index 758b2c9..16b9218 100644
+--- a/media/libstagefright/include/AwesomePlayer.h
++++ b/media/libstagefright/include/AwesomePlayer.h
+@@ -36,7 +36,7 @@ class AudioPlayer;
+ struct ClockEstimator;
+ class IDataSource;
+ class MediaBuffer;
+-struct MediaExtractor;
++class MediaExtractor;
+ struct MediaSource;
+ struct NuCachedSource2;
+ class IGraphicBufferProducer;
+diff --git a/media/libstagefright/wifi-display/source/WifiDisplaySource.cpp b/media/libstagefright/wifi-display/source/WifiDisplaySource.cpp
+index f5364d1..62dc39d 100644
+--- a/media/libstagefright/wifi-display/source/WifiDisplaySource.cpp
++++ b/media/libstagefright/wifi-display/source/WifiDisplaySource.cpp
+@@ -74,22 +74,22 @@ WifiDisplaySource::WifiDisplaySource(
+       mAbs_x_max(-1),
+       mAbs_y_min(-1),
+       mAbs_y_max(-1),
++      mStopReplyID(NULL),
++      mChosenRTPPort(-1),
++      mUsingPCMAudio(false),
++      mClientSessionID(0),
++      mReaperPending(false),
++      mNextCSeq(1),
+       resolutionWidth(0),
+       resolutionHeigh(0),
+-      uibc_calc_data_Ss(0),
+-      uibc_calc_data_Wbs(0),
+-      uibc_calc_data_Hbs(0),
+       mResolution_RealW(0),
+       mResolution_RealH(0),
+       mResolution_NativeW(0),
+       mResolution_NativeH(0),
++      uibc_calc_data_Ss(0),
++      uibc_calc_data_Wbs(0),
++      uibc_calc_data_Hbs(0),
+       mUibcMouseID(-1),
+-      mStopReplyID(NULL),
+-      mChosenRTPPort(-1),
+-      mUsingPCMAudio(false),
+-      mClientSessionID(0),
+-      mReaperPending(false),
+-      mNextCSeq(1),
+       mUsingHDCP(false),
+       mIsHDCP2_0(false),
+       mHDCPPort(0),
+@@ -195,7 +195,7 @@ status_t WifiDisplaySource::start(const char *iface) {
+ status_t WifiDisplaySource::startUibc(const int32_t port) {
+ 
+     status_t err = OK;
+-    sp<AMessage> notify = new AMessage(kWhatUIBCNotify, id());
++    sp<AMessage> notify = new AMessage(kWhatUIBCNotify, this);
+     ALOGI("source will create uibc channel");
+     err = mNetSession->createTCPDatagramSession(
+             mInterfaceAddr,
+@@ -245,7 +245,7 @@ int WifiDisplaySource::write_event(int fd, int type, int code, int value)
+     event.type = type;
+     event.code = code;
+     event.value = value;
+-    if(write(fd, &event, sizeof(event)) < sizeof(event)) {
++    if(write(fd, &event, sizeof(event)) < (int)sizeof(event)) {
+         ALOGI("write event failed[%d]: %s", errno, strerror(errno));
+         return -1;
+     }
+@@ -255,7 +255,7 @@ int WifiDisplaySource::write_event(int fd, int type, int code, int value)
+ int WifiDisplaySource::calc_uibc_parameter(size_t width, size_t height)
+ {
+     //scan and select touch input device
+-    struct input_absinfo absinfo;
++    //struct input_absinfo absinfo;
+     float this_w, this_h, dw, dh, vWidth = (float) width, vHeight = (float) height;
+ 
+     this_w = mResolution_RealW;
+-- 
+1.8.0
+

@@ -1,0 +1,40 @@
+From cfe52587255fcdfd92d475fbd756c5cca887a9f4 Mon Sep 17 00:00:00 2001
+From: Xiaowen Liu <xiaowen.liu@freescale.com>
+Date: Sat, 10 Oct 2015 11:37:58 -0400
+Subject: [PATCH 24/95] ENGR00265111 Video freezed for a short while when
+ audio direct output
+
+Add CBLK_DISABLED_ON flag for direct output, when underrun happened,
+AudioTrack can restart the DirectOutput thread.
+
+cherry-picked from 8b1881715a8f7bb775c36c918bca061655a57ff4
+
+Signed-off-by: Xiaowen Liu <xiaowen.liu@freescale.com>
+---
+ services/audioflinger/Threads.cpp | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/services/audioflinger/Threads.cpp b/services/audioflinger/Threads.cpp
+index 71fc498..5169d66 100644
+--- a/services/audioflinger/Threads.cpp
++++ b/services/audioflinger/Threads.cpp
+@@ -1,6 +1,7 @@
+ /*
+ **
+ ** Copyright 2012, The Android Open Source Project
++** Copyright (C) 2013 Freescale Semiconductor, Inc.
+ **
+ ** Licensed under the Apache License, Version 2.0 (the "License");
+ ** you may not use this file except in compliance with the License.
+@@ -4666,6 +4667,8 @@ AudioFlinger::PlaybackThread::mixer_state AudioFlinger::DirectOutputThread::prep
+                     // it will then automatically call start() when data is available
+                     android_atomic_or(CBLK_DISABLED, &cblk->mFlags);
+                 } else if (last) {
++                    android_atomic_or(CBLK_DISABLED, &cblk->mFlags);
++                } else if (i == (count -1)){
+                     ALOGW("pause because of UNDERRUN, framesReady = %zu,"
+                             "minFrames = %u, mFormat = %#x",
+                             track->framesReady(), minFrames, mFormat);
+-- 
+1.8.0
+

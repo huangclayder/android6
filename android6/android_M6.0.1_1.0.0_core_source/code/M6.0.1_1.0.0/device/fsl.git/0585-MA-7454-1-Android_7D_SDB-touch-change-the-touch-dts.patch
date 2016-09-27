@@ -1,0 +1,32 @@
+From 481109a4f7e47c215aa242f4cd94b3258b195bed Mon Sep 17 00:00:00 2001
+From: zhang sanshan <b51434@freescale.com>
+Date: Mon, 4 Jan 2016 15:44:39 +0800
+Subject: [PATCH 585/602] MA-7454-1 [Android_7D_SDB]touch: change the touch
+ dts
+
+Do not support 7d touch for TO1.0 anymore for removing touch dts.
+For TO1.1 version, boot-imx7d.img also support 7d touch.
+
+Signed-off-by: zhang sanshan <b51434@freescale.com>
+---
+ sabresd_7d/BoardConfig.mk | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/sabresd_7d/BoardConfig.mk b/sabresd_7d/BoardConfig.mk
+index 74fd21a..e180efa 100644
+--- a/sabresd_7d/BoardConfig.mk
++++ b/sabresd_7d/BoardConfig.mk
+@@ -90,8 +90,8 @@ IMX_CAMERA_HAL_V1 := true
+ TARGET_VSYNC_DIRECT_REFRESH := true
+ 
+ BOARD_KERNEL_CMDLINE := console=ttymxc0,115200 init=/init androidboot.console=ttymxc0 consoleblank=0 androidboot.hardware=freescale 
+-TARGET_BOOTLOADER_CONFIG := imx7d:mx7dsabresdandroid_config imx7d-touch:mx7dsabresdandroid_config imx7d-epdc:mx7dsabresdandroid_config
+-TARGET_BOARD_DTS_CONFIG := imx7d:imx7d-sdb.dtb imx7d-touch:imx7d-sdb-touch.dtb imx7d-epdc:imx7d-sdb-epdc.dtb
++TARGET_BOOTLOADER_CONFIG := imx7d:mx7dsabresdandroid_config imx7d-epdc:mx7dsabresdandroid_config
++TARGET_BOARD_DTS_CONFIG := imx7d:imx7d-sdb.dtb imx7d-epdc:imx7d-sdb-epdc.dtb
+ 
+ BOARD_SEPOLICY_DIRS := \
+        device/fsl/imx7/sepolicy \
+-- 
+1.8.0
+

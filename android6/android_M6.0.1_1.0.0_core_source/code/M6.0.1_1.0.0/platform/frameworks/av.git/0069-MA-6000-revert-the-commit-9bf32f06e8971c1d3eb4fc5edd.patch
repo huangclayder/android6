@@ -1,0 +1,34 @@
+From 58563cc5469eea47fc9f99eeb9e8270bb638b477 Mon Sep 17 00:00:00 2001
+From: Ming Zhou <b42586@freescale.com>
+Date: Tue, 23 Dec 2014 17:26:52 +0800
+Subject: [PATCH 69/95] MA-6000: revert the commit
+ 9bf32f06e8971c1d3eb4fc5edd74b69557f97212
+
+in lollipop 5.0 for wifi display.
+
+Signed-off-by: Ming Zhou <b42586@freescale.com>
+---
+ media/libstagefright/mpeg2ts/ATSParser.cpp | 5 ++++-
+ 1 file changed, 4 insertions(+), 1 deletion(-)
+
+diff --git a/media/libstagefright/mpeg2ts/ATSParser.cpp b/media/libstagefright/mpeg2ts/ATSParser.cpp
+index d94bde1..cf81c94 100644
+--- a/media/libstagefright/mpeg2ts/ATSParser.cpp
++++ b/media/libstagefright/mpeg2ts/ATSParser.cpp
+@@ -624,9 +624,12 @@ ATSParser::Stream::Stream(
+             break;
+ 
+         case STREAMTYPE_LPCM_AC3:
++            mQueue = new ElementaryStreamQueue(
++               ElementaryStreamQueue::PCM_AUDIO);
++           break;
+         case STREAMTYPE_AC3:
+             mQueue = new ElementaryStreamQueue(
+-                    ElementaryStreamQueue::AC3);
++               ElementaryStreamQueue::AC3);
+             break;
+ 
+         case STREAMTYPE_METADATA:
+-- 
+1.8.0
+

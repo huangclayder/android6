@@ -1,0 +1,37 @@
+From 0ee21cb9a00b4dd266c43f87f08515d0460c621d Mon Sep 17 00:00:00 2001
+From: Haoran Wang <b50027@freescale.com>
+Date: Wed, 5 Aug 2015 15:15:54 +0800
+Subject: [PATCH 2/2] MA-6944 Catch illegal state for ethernet interface
+
+Ethernet interface especially ethernet phy chip may be
+unstable. Then the set interface configuration will get
+some exception.
+Catch the exception in EthernetNetworkFactory will prevent
+crash in system_server.
+
+Signed-off-by: Haoran Wang <b50027@freescale.com>
+---
+ java/com/android/server/ethernet/EthernetNetworkFactory.java | 7 ++++++-
+ 1 file changed, 6 insertions(+), 1 deletion(-)
+
+diff --git a/java/com/android/server/ethernet/EthernetNetworkFactory.java b/java/com/android/server/ethernet/EthernetNetworkFactory.java
+index 495cf7a..78d45ca 100644
+--- a/java/com/android/server/ethernet/EthernetNetworkFactory.java
++++ b/java/com/android/server/ethernet/EthernetNetworkFactory.java
+@@ -199,7 +199,12 @@ class EthernetNetworkFactory {
+             return false;
+ 
+         Log.d(TAG, "Started tracking interface " + iface);
+-        setInterfaceUp(iface);
++        try {
++            setInterfaceUp(iface);
++        } catch (IllegalStateException e) {
++            Log.e(TAG, e.toString() + " (Ethernet IF abnormal)");
++            return false;
++        }
+         return true;
+     }
+ 
+-- 
+1.8.0
+

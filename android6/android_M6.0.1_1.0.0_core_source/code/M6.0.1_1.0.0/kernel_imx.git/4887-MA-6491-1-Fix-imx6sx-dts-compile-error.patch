@@ -1,0 +1,45 @@
+From 2d8bca817717f45d01dc84746f083dd7875d9189 Mon Sep 17 00:00:00 2001
+From: Haoran Wang <b50027@freescale.com>
+Date: Tue, 31 Mar 2015 17:23:29 +0800
+Subject: [PATCH] MA-6491-1 Fix imx6sx dts compile error
+
+Fix dts compile error on imx6sx-sdb.dts.
+
+Signed-off-by: Haoran Wang <b50027@freescale.com>
+---
+ arch/arm/boot/dts/imx6sx-sdb.dts | 12 ++++++------
+ 1 file changed, 6 insertions(+), 6 deletions(-)
+
+diff --git a/arch/arm/boot/dts/imx6sx-sdb.dts b/arch/arm/boot/dts/imx6sx-sdb.dts
+index 6020a56..83365aa 100644
+--- a/arch/arm/boot/dts/imx6sx-sdb.dts
++++ b/arch/arm/boot/dts/imx6sx-sdb.dts
+@@ -196,6 +196,12 @@
+ 		status = "disabled";
+ 	};
+ 
++    bt_rfkill {
++        compatible = "fsl,mxc_bt_rfkill";
++        bt-power-gpios = <&gpio4 10 0>;
++        status = "okay";
++    };
++
+ 	ramoops_device {
+ 		compatible = "fsl,mxc_ramoops";
+ 		record_size = <524288>; /*512K*/
+@@ -222,12 +228,6 @@
+ 	status = "okay";
+ };
+ 
+-bt_rfkill {
+-    compatible = "fsl,mxc_bt_rfkill";
+-    bt-power-gpios = <&gpio4 10 0>;
+-    status = "okay";
+-};
+-
+ &csi1 {
+ 	status = "okay";
+ 
+-- 
+1.8.0
+

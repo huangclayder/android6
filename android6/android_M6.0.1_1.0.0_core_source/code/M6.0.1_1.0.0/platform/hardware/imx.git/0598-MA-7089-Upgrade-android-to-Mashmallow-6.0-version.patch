@@ -1,0 +1,166 @@
+From c05237db35b4f983400f793cb11c854b1bde1ab8 Mon Sep 17 00:00:00 2001
+From: Xiaowen Liu <xiaowen.liu@freescale.com>
+Date: Tue, 13 Oct 2015 08:39:45 -0400
+Subject: [PATCH 598/635] MA-7089 Upgrade android to Mashmallow 6.0 version.
+
+fix camera and gralloc hal build error.
+1) add set_torch_mode and init interface.
+2) change HAL_PIXEL_FORMAT_RAW_SENSOR to HAL_PIXEL_FORMAT_RAW16.
+3) change HAL_PIXEL_FORMAT_sRGB_X_8888 to HAL_PIXEL_FORMAT_RGBA_4444.
+
+Signed-off-by: Xiaowen Liu <xiaowen.liu@freescale.com>
+---
+ mx6/libcamera/CameraModule.cpp           | 4 +++-
+ mx6/libcamera2/CameraModule.cpp          | 4 +++-
+ mx6/libcamera2/MetadaManager.cpp         | 4 ++--
+ mx6/libcamera2/NV12_resize.c             | 2 +-
+ mx6/libcamera2/OvDevice.cpp              | 4 ++--
+ mx6/libcamera2/TVINDevice.cpp            | 4 ++--
+ mx6/libcamera2/UvcDevice.cpp             | 2 +-
+ mx6/libgralloc_wrapper/BufferManager.cpp | 2 +-
+ 8 files changed, 15 insertions(+), 11 deletions(-)
+
+diff --git a/mx6/libcamera/CameraModule.cpp b/mx6/libcamera/CameraModule.cpp
+index c125099..39b20f9 100644
+--- a/mx6/libcamera/CameraModule.cpp
++++ b/mx6/libcamera/CameraModule.cpp
+@@ -1,6 +1,6 @@
+ /*
+  * Copyright (C) Freescale - http://www.Freescale.com/
+- * Copyright (C) 2012-2014 Freescale Semiconductor, Inc.
++ * Copyright (C) 2012-2015 Freescale Semiconductor, Inc.
+  *
+  * Licensed under the Apache License, Version 2.0 (the "License");
+  * you may not use this file except in compliance with the License.
+@@ -63,6 +63,8 @@ camera_module_t HAL_MODULE_INFO_SYM = {
+     set_callbacks: NULL,
+     get_vendor_tag_ops: NULL,
+     open_legacy: NULL,
++    set_torch_mode: NULL,
++    init: NULL,
+     reserved: {0}
+ };
+ 
+diff --git a/mx6/libcamera2/CameraModule.cpp b/mx6/libcamera2/CameraModule.cpp
+index 610d3ce..ba70ecd 100755
+--- a/mx6/libcamera2/CameraModule.cpp
++++ b/mx6/libcamera2/CameraModule.cpp
+@@ -1,6 +1,6 @@
+ /*
+  * Copyright (C) Freescale - http://www.Freescale.com/
+- * Copyright (C) 2012-2014 Freescale Semiconductor, Inc.
++ * Copyright (C) 2012-2015 Freescale Semiconductor, Inc.
+  *
+  * Licensed under the Apache License, Version 2.0 (the "License");
+  * you may not use this file except in compliance with the License.
+@@ -61,6 +61,8 @@ camera_module_t HAL_MODULE_INFO_SYM = {
+     set_callbacks: NULL,
+     get_vendor_tag_ops: NULL,
+     open_legacy: NULL,
++    set_torch_mode: NULL,
++    init: NULL,
+     reserved: {0}
+ };
+ 
+diff --git a/mx6/libcamera2/MetadaManager.cpp b/mx6/libcamera2/MetadaManager.cpp
+index b9cd985..3233862 100755
+--- a/mx6/libcamera2/MetadaManager.cpp
++++ b/mx6/libcamera2/MetadaManager.cpp
+@@ -1,5 +1,5 @@
+ /*
+- * Copyright (C) 2012-2014 Freescale Semiconductor, Inc.
++ * Copyright (C) 2012-2015 Freescale Semiconductor, Inc.
+  *
+  * Licensed under the Apache License, Version 2.0 (the "License");
+  * you may not use this file except in compliance with the License.
+@@ -739,7 +739,7 @@ status_t MetadaManager::createStaticInfo(camera_metadata_t **info, bool sizeRequ
+             mSensorInfo->mAvailableFormatCount);
+ #if 0
+     const uint32_t kAvailableFormats[3] = {
+-        HAL_PIXEL_FORMAT_RAW_SENSOR,
++        HAL_PIXEL_FORMAT_RAW16,
+         HAL_PIXEL_FORMAT_BLOB,
+         HAL_PIXEL_FORMAT_YCrCb_420_SP
+     };
+diff --git a/mx6/libcamera2/NV12_resize.c b/mx6/libcamera2/NV12_resize.c
+index cdd11bc..20b7afe 100755
+--- a/mx6/libcamera2/NV12_resize.c
++++ b/mx6/libcamera2/NV12_resize.c
+@@ -28,7 +28,7 @@ VT_resizeFrame_Video_opt2_lp
+  structConvImage* i_img_ptr,        /* Points to the input image           */
+  structConvImage* o_img_ptr,        /* Points to the output image          */
+  IC_rect_type*  cropout,          /* how much to resize to in final image */
+- mmUint16 dummy                         /* Transparent pixel value              */
++ mmUint16 dummy __unused          /* Transparent pixel value              */
+  )
+ {
+   ALOGV("VT_resizeFrame_Video_opt2_lp+");
+diff --git a/mx6/libcamera2/OvDevice.cpp b/mx6/libcamera2/OvDevice.cpp
+index 9c8999a..cceabce 100755
+--- a/mx6/libcamera2/OvDevice.cpp
++++ b/mx6/libcamera2/OvDevice.cpp
+@@ -1,5 +1,5 @@
+ /*
+- * Copyright (C) 2012-2014 Freescale Semiconductor, Inc.
++ * Copyright (C) 2012-2015 Freescale Semiconductor, Inc.
+  *
+  * Licensed under the Apache License, Version 2.0 (the "License");
+  * you may not use this file except in compliance with the License.
+@@ -43,7 +43,7 @@ status_t OvDevice::changeSensorFormats(int *src, int len)
+                 break;
+ 
+             case v4l2_fourcc('R', 'A', 'W', 'S'):
+-                mAvailableFormats[k++] = HAL_PIXEL_FORMAT_RAW_SENSOR;
++                mAvailableFormats[k++] = HAL_PIXEL_FORMAT_RAW16;
+                 break;
+ 
+             default:
+diff --git a/mx6/libcamera2/TVINDevice.cpp b/mx6/libcamera2/TVINDevice.cpp
+index 4f2c24c..1c9ddf7 100755
+--- a/mx6/libcamera2/TVINDevice.cpp
++++ b/mx6/libcamera2/TVINDevice.cpp
+@@ -1,5 +1,5 @@
+ /*
+- * Copyright (C) 2012-2014 Freescale Semiconductor, Inc.
++ * Copyright (C) 2012-2015 Freescale Semiconductor, Inc.
+  *
+  * Licensed under the Apache License, Version 2.0 (the "License");
+  * you may not use this file except in compliance with the License.
+@@ -43,7 +43,7 @@ status_t TVINDevice::changeSensorFormats(int *src, int len)
+                 break;
+ 
+             case v4l2_fourcc('R', 'A', 'W', 'S'):
+-                mAvailableFormats[k++] = HAL_PIXEL_FORMAT_RAW_SENSOR;
++                mAvailableFormats[k++] = HAL_PIXEL_FORMAT_RAW16;
+                 break;
+ 
+             default:
+diff --git a/mx6/libcamera2/UvcDevice.cpp b/mx6/libcamera2/UvcDevice.cpp
+index 07ab30e..32ff571 100644
+--- a/mx6/libcamera2/UvcDevice.cpp
++++ b/mx6/libcamera2/UvcDevice.cpp
+@@ -57,7 +57,7 @@ void UvcDevice::adjustSensorFormats(int *src, int len)
+                 break;
+ 
+             case v4l2_fourcc('R', 'A', 'W', 'S'):
+-                mSensorFormats[k++] = HAL_PIXEL_FORMAT_RAW_SENSOR;
++                mSensorFormats[k++] = HAL_PIXEL_FORMAT_RAW16;
+                 break;
+ 
+             default:
+diff --git a/mx6/libgralloc_wrapper/BufferManager.cpp b/mx6/libgralloc_wrapper/BufferManager.cpp
+index 70f4d21..4fcd54b 100755
+--- a/mx6/libgralloc_wrapper/BufferManager.cpp
++++ b/mx6/libgralloc_wrapper/BufferManager.cpp
+@@ -168,7 +168,7 @@ bool BufferManager::useFSLGralloc(int format, int usage)
+     }
+ 
+     //RGB format and without video encoder flag
+-    if ((format >= HAL_PIXEL_FORMAT_RGBA_8888 && format <= HAL_PIXEL_FORMAT_sRGB_X_8888)
++    if ((format >= HAL_PIXEL_FORMAT_RGBA_8888 && format <= HAL_PIXEL_FORMAT_RGBA_4444)
+        && !(usage & GRALLOC_USAGE_HW_VIDEO_ENCODER)) {
+         bUseFSLGralloc = false;
+     }
+-- 
+1.8.0
+

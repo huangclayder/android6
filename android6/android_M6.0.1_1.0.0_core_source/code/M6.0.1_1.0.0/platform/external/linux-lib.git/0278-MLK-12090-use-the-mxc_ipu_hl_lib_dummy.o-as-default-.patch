@@ -1,0 +1,33 @@
+From 337bb72f54490c207e516555d90026cbeda069d3 Mon Sep 17 00:00:00 2001
+From: Gao Pan <pandy.gao@nxp.com>
+Date: Mon, 28 Dec 2015 10:43:20 +0800
+Subject: [PATCH 278/280] MLK-12090 use the mxc_ipu_hl_lib_dummy.o as default
+ object
+
+Use the mxc_ipu_hl_lib_dummy.o as default object
+
+Signed-off-by: Gao Pan <pandy.gao@nxp.com>
+---
+ ipu/Makefile | 5 -----
+ 1 file changed, 5 deletions(-)
+
+diff --git a/ipu/Makefile b/ipu/Makefile
+index 86b0545..6518180 100644
+--- a/ipu/Makefile
++++ b/ipu/Makefile
+@@ -2,12 +2,7 @@ CC ?=$(CROSS_COMPILE)gcc
+ AR ?=$(CROSS_COMPILE)ar
+ CFLAGS ?=-O2
+ 
+-ifeq ($(PLATFORM), IMX6Q)
+ OBJS = mxc_ipu_hl_lib_dummy.o
+-else
+-OBJS = mxc_ipu_hl_lib.o mxc_ipu_lib.o
+-endif
+-
+ 
+ LIBNAME=libipu
+ SONAMEVERSION=0
+-- 
+1.8.0
+

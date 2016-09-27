@@ -1,0 +1,214 @@
+From 891432d6bcb547678fe20423ab89e22d0ea40c44 Mon Sep 17 00:00:00 2001
+From: Hongzhang Yang <Hongzhang.Yang@freescale.com>
+Date: Mon, 30 Jun 2014 13:54:01 +0800
+Subject: [PATCH 452/505] ENGR00320208 VPU test bug fixes
+
+1) IOGetVirtMem detects failure incorrectly
+Bug:
+Many callers of this routine tested the return value for <= 0 to detect failure.
+In some kernel, a negative number (!= -1) is a valid (successful) return value.
+
+Solution:
+Only check -1 for failure.
+
+2) build break with LOGE/ALOGE
+
+Signed-off-by: Hongzhang Yang <Hongzhang.Yang@freescale.com>
+---
+ test/mxc_vpu_test/android_display.cpp | 10 +++-------
+ test/mxc_vpu_test/dec.c               |  2 +-
+ test/mxc_vpu_test/enc.c               |  4 ++--
+ test/mxc_vpu_test/fb.c                |  8 +++-----
+ test/mxc_vpu_test/loopback.c          | 10 +++++-----
+ test/mxc_vpu_test/transcode.c         |  8 ++++----
+ 6 files changed, 18 insertions(+), 24 deletions(-)
+
+diff --git a/test/mxc_vpu_test/android_display.cpp b/test/mxc_vpu_test/android_display.cpp
+index e2e00b7..07ca0ed 100644
+--- a/test/mxc_vpu_test/android_display.cpp
++++ b/test/mxc_vpu_test/android_display.cpp
+@@ -1,5 +1,5 @@
+ /*
+- * Copyright (C) 2013 Freescale Semiconductor, Inc.
++ * Copyright (C) 2013-2014 Freescale Semiconductor, Inc.
+  * All rights reserved.
+  */
+ 
+@@ -26,10 +26,6 @@
+ #include <gui/SurfaceComposerClient.h>
+ #include "gralloc_priv.h"
+ 
+-#ifndef LOGE
+-#define LOGE ALOGE
+-#endif
+-
+ extern "C" {
+ #include "vpu_test.h"
+     struct vpu_display *android_display_open(struct decode *dec, int nframes, struct rot rotation, Rect cropRect);
+@@ -374,14 +370,14 @@ struct ANativeWindow *android_get_display_surface(struct android_display_context
+     dispctx->g2d_control = dispctx->g2d_client->createSurface(String8("VPU Renderer Surface"), disp_width, disp_height, PIXEL_FORMAT_RGB_565, 0);
+     if(dispctx->g2d_control == NULL)
+     {
+-        LOGE("%s %d error !!!", __FUNCTION__, __LINE__);
++        err_msg("%s %d error !!!", __FUNCTION__, __LINE__);
+         return NULL;
+     }
+ 
+     dispctx->g2d_surface = dispctx->g2d_control->getSurface();
+     if( dispctx->g2d_surface == NULL)
+     {
+-        LOGE("%s %d error !!!", __FUNCTION__, __LINE__);
++        err_msg("%s %d error !!!", __FUNCTION__, __LINE__);
+         return NULL;
+     }
+ 
+diff --git a/test/mxc_vpu_test/dec.c b/test/mxc_vpu_test/dec.c
+index 91e6f36..4d5fe4d 100644
+--- a/test/mxc_vpu_test/dec.c
++++ b/test/mxc_vpu_test/dec.c
+@@ -2481,7 +2481,7 @@ decode_test(void *arg)
+ 		goto err;
+ 	}
+ 
+-	if (IOGetVirtMem(&mem_desc) <= 0) {
++	if (IOGetVirtMem(&mem_desc) == -1) {
+ 		err_msg("Unable to obtain virtual mem\n");
+ 		ret = -1;
+ 		goto err;
+diff --git a/test/mxc_vpu_test/enc.c b/test/mxc_vpu_test/enc.c
+index fcfabe7..a801b0c 100644
+--- a/test/mxc_vpu_test/enc.c
++++ b/test/mxc_vpu_test/enc.c
+@@ -1216,14 +1216,14 @@ encode_test(void *arg)
+ 	}
+ 
+ 	/* mmap that physical buffer */
+-	enc->virt_bsbuf_addr = IOGetVirtMem(&mem_desc);
+-	if (enc->virt_bsbuf_addr <= 0) {
++	if (IOGetVirtMem(&mem_desc) == -1) {
+ 		err_msg("Unable to map physical memory\n");
+ 		ret = -1;
+ 		goto err;
+ 	}
+ 
+ 	enc->phy_bsbuf_addr = mem_desc.phy_addr;
++	enc->virt_bsbuf_addr = mem_desc.virt_uaddr;
+ 	enc->cmdl = cmdl;
+ 
+ 	if (enc->cmdl->format == STD_MJPG)
+diff --git a/test/mxc_vpu_test/fb.c b/test/mxc_vpu_test/fb.c
+index 66e2468..131b2f3 100644
+--- a/test/mxc_vpu_test/fb.c
++++ b/test/mxc_vpu_test/fb.c
+@@ -1,5 +1,5 @@
+ /*
+- * Copyright 2004-2013 Freescale Semiconductor, Inc.
++ * Copyright 2004-2014 Freescale Semiconductor, Inc.
+  *
+  * Copyright (c) 2006, Chips & Media.  All rights reserved.
+  */
+@@ -57,8 +57,7 @@ struct frame_buf *framebuf_alloc(struct frame_buf *fb, int stdMode, int format,
+ 	if (mvCol)
+ 		fb->mvColBuf = fb->addrCr + strideY / divX * height / divY;
+ 
+-	fb->desc.virt_uaddr = IOGetVirtMem(&(fb->desc));
+-	if (fb->desc.virt_uaddr <= 0) {
++	if (IOGetVirtMem(&(fb->desc)) == -1) {
+ 		IOFreePhyMem(&fb->desc);
+ 		memset(&(fb->desc), 0, sizeof(vpu_mem_desc));
+ 		return NULL;
+@@ -177,8 +176,7 @@ struct frame_buf *tiled_framebuf_alloc(struct frame_buf *fb, int stdMode, int fo
+ 		return NULL;
+ 	}
+ 
+-	fb->desc.virt_uaddr = IOGetVirtMem(&(fb->desc));
+-	if (fb->desc.virt_uaddr <= 0) {
++	if (IOGetVirtMem(&(fb->desc)) == -1) {
+ 		IOFreePhyMem(&fb->desc);
+ 		memset(&(fb->desc), 0, sizeof(vpu_mem_desc));
+ 		return NULL;
+diff --git a/test/mxc_vpu_test/loopback.c b/test/mxc_vpu_test/loopback.c
+index 26f713f..2df62ff 100644
+--- a/test/mxc_vpu_test/loopback.c
++++ b/test/mxc_vpu_test/loopback.c
+@@ -1,5 +1,5 @@
+ /*
+- * Copyright 2004-2013 Freescale Semiconductor, Inc.
++ * Copyright 2004-2014 Freescale Semiconductor, Inc.
+  *
+  * Copyright (c) 2006, Chips & Media.  All rights reserved.
+  */
+@@ -396,14 +396,14 @@ encdec_test(void *arg)
+ 	}
+ 
+ 	/* mmap that physical buffer */
+-	enc->virt_bsbuf_addr = IOGetVirtMem(&enc_mem_desc);
+-	if (enc->virt_bsbuf_addr <= 0) {
++	if (IOGetVirtMem(&enc_mem_desc) == -1) {
+ 		err_msg("Unable to map physical memory\n");
+ 		ret = -1;
+ 		goto err;
+ 	}
+ 
+ 	enc->phy_bsbuf_addr = enc_mem_desc.phy_addr;
++	enc->virt_bsbuf_addr = enc_mem_desc.virt_uaddr;
+ 	enc->cmdl = cmdl;
+ 	enc->src_picwidth = 176;
+ 	enc->src_picheight = 144;
+@@ -422,14 +422,14 @@ encdec_test(void *arg)
+ 		goto err1;
+ 	}
+ 
+-	dec->virt_bsbuf_addr = IOGetVirtMem(&dec_mem_desc);
+-	if (dec->virt_bsbuf_addr <= 0) {
++	if (IOGetVirtMem(&dec_mem_desc) == -1) {
+ 		err_msg("Unable to obtain virtual mem\n");
+ 		ret = -1;
+ 		goto err1;
+ 	}
+ 
+ 	dec->phy_bsbuf_addr = dec_mem_desc.phy_addr;
++	dec->virt_bsbuf_addr = dec_mem_desc.virt_uaddr;
+ 	dec->cmdl = cmdl;
+ 
+ 	if (cmdl->format == STD_AVC) {
+diff --git a/test/mxc_vpu_test/transcode.c b/test/mxc_vpu_test/transcode.c
+index 55d9354..4dcf900 100644
+--- a/test/mxc_vpu_test/transcode.c
++++ b/test/mxc_vpu_test/transcode.c
+@@ -1,5 +1,5 @@
+ /*
+- * Copyright (C) 2012-2013 Freescale Semiconductor, Inc.
++ * Copyright (C) 2012-2014 Freescale Semiconductor, Inc.
+  *
+  * Copyright (c) 2006, Chips & Media.  All rights reserved.
+  */
+@@ -1186,7 +1186,7 @@ transcode_test(void *arg)
+ 		goto err;
+ 	}
+ 
+-	if (IOGetVirtMem(&mem_desc) <= 0) {
++	if (IOGetVirtMem(&mem_desc) == -1) {
+ 		err_msg("Unable to obtain virtual mem\n");
+ 		ret = -1;
+ 		goto err;
+@@ -1285,14 +1285,14 @@ transcode_test(void *arg)
+ 	}
+ 
+ 	/* mmap that physical buffer */
+-	enc->virt_bsbuf_addr = IOGetVirtMem(&enc_mem_desc);
+-	if (enc->virt_bsbuf_addr <= 0) {
++	if (IOGetVirtMem(&enc_mem_desc) == -1) {
+ 		err_msg("Unable to map physical memory\n");
+ 		ret = -1;
+ 		goto err2;
+ 	}
+ 
+ 	enc->phy_bsbuf_addr = enc_mem_desc.phy_addr;
++	enc->virt_bsbuf_addr = enc_mem_desc.virt_uaddr;
+ 	enc->cmdl = cmdl;
+ 	enc->cmdl->format = STD_AVC;
+ 
+-- 
+1.8.0
+

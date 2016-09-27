@@ -1,0 +1,36 @@
+From 1892e639b357d601a192e713d6a8925f215264fc Mon Sep 17 00:00:00 2001
+From: Richard Liu <r66033@freescale.com>
+Date: Tue, 1 Mar 2016 17:17:01 +0800
+Subject: [PATCH 2/2] MA-7665 skip build Email on the platform without GPU 3D
+
+Skip build Email apk on 6sl_evk and sabresd_7d platform.
+Email apk will call webview, but webview doesn't work well
+without OpenGL ES 2.0 support on android6.0, so we skip build
+this apk on the platforms which don't have GPU 3D to support
+OpenGL ES 2.0.
+
+Signed-off-by: Richard Liu <r66033@freescale.com>
+---
+ Android.mk | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/Android.mk b/Android.mk
+index b6a4bd9..c0ed5d9 100644
+--- a/Android.mk
++++ b/Android.mk
+@@ -12,6 +12,7 @@
+ # See the License for the specific language governing permissions and
+ # limitations under the License.
+ 
++ifeq ($(HAVE_FSL_IMX_GPU3D),true)
+ LOCAL_PATH := $(call my-dir)
+ 
+ # Build the Email application itself, along with its tests and tests for the emailcommon
+@@ -74,3 +75,4 @@ ifeq ($(strip $(LOCAL_PACKAGE_OVERRIDES)),)
+ # additionally, build unit tests in a separate .apk
+ include $(call all-makefiles-under,$(LOCAL_PATH))
+ endif
++endif
+-- 
+1.8.0
+

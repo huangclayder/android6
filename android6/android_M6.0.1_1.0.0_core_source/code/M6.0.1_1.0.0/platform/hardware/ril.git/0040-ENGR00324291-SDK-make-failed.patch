@@ -1,0 +1,49 @@
+From 57f6f71cb3cf31eb8024044821ddfa910708efc8 Mon Sep 17 00:00:00 2001
+From: Wang Haoran <b50027@freescale.com>
+Date: Thu, 24 Jul 2014 19:05:53 +0800
+Subject: [PATCH 40/43] ENGR00324291 SDK make failed
+
+Modify the BOARD_HAVE_MODEM to BOARD_NOT_HAVE_MODEM
+let sdk make libreference-ril.
+
+Signed-off-by: Wang Haoran <b50027@freescale.com>
+---
+ reference-ril/Android.mk      | 2 +-
+ reference-ril/reference-ril.c | 2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/reference-ril/Android.mk b/reference-ril/Android.mk
+index d6e5142..2921421 100644
+--- a/reference-ril/Android.mk
++++ b/reference-ril/Android.mk
+@@ -3,7 +3,7 @@
+ # XXX using libutils for simulator build only...
+ #
+ ifneq ($(PREBUILT_3G_MODEM_RIL),true)
+-ifeq ($(BOARD_HAVE_MODEM),true)
++ifneq ($(BOARD_NOT_HAVE_MODEM),true)
+ 
+ LOCAL_PATH:= $(call my-dir)
+ include $(CLEAR_VARS)
+diff --git a/reference-ril/reference-ril.c b/reference-ril/reference-ril.c
+index a6835da..ec80390 100755
+--- a/reference-ril/reference-ril.c
++++ b/reference-ril/reference-ril.c
+@@ -1,5 +1,6 @@
+ /* //device/system/reference-ril/reference-ril.c
+ **
++** Copyright (C) 2011-2014 Freescale Semiconductor, Inc. 
+ ** Copyright 2006, The Android Open Source Project
+ **
+ ** Licensed under the Apache License, Version 2.0 (the "License");
+@@ -20,7 +21,6 @@
+  * Author: Kim Tommy Humborstad <kim.tommy.humborstad@stericsson.com>
+ */
+ /* Copyright (C) ST-Ericsson AB 2008-2010 */
+-/* Copyright (C) 2011-2013 Freescale Semiconductor, Inc. */
+ 
+ #include <telephony/ril_cdma_sms.h>
+ #include <telephony/librilutils.h>
+-- 
+1.8.0
+

@@ -1,0 +1,32 @@
+From db34277c5ae2af8000316ecf912f5d179fd94769 Mon Sep 17 00:00:00 2001
+From: Ron <ron@debian.org>
+Date: Sun, 16 Mar 2014 04:01:08 +1030
+Subject: [PATCH] mtd: nand: use the nand_read_subpage index everywhere
+
+Now that the index variable is correctly set earlier in this function
+we can use it in other places that compute the same thing too.
+
+Signed-off-by: Ron Lee <ron@debian.org>
+Signed-off-by: Brian Norris <computersforpeace@gmail.com>
+Signed-off-by: Huang Shijie <b32955@freescale.com>
+---
+ drivers/mtd/nand/nand_base.c | 3 +--
+ 1 file changed, 1 insertion(+), 2 deletions(-)
+
+diff --git a/drivers/mtd/nand/nand_base.c b/drivers/mtd/nand/nand_base.c
+index 368041d..9c87545 100644
+--- a/drivers/mtd/nand/nand_base.c
++++ b/drivers/mtd/nand/nand_base.c
+@@ -1205,8 +1205,7 @@ static int nand_read_subpage(struct mtd_info *mtd, struct nand_chip *chip,
+ 	 * ecc.pos. Let's make sure that there are no gaps in ECC positions.
+ 	 */
+ 	for (i = 0; i < eccfrag_len - 1; i++) {
+-		if (eccpos[i + start_step * chip->ecc.bytes] + 1 !=
+-			eccpos[i + start_step * chip->ecc.bytes + 1]) {
++		if (eccpos[i + index] + 1 != eccpos[i + index + 1]) {
+ 			gaps = 1;
+ 			break;
+ 		}
+-- 
+1.8.0
+

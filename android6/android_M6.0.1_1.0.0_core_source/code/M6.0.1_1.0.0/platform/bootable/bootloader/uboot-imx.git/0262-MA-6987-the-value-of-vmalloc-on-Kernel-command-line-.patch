@@ -1,0 +1,39 @@
+From 045f4dbcc664ec5f34722ae36b5774124823e9a2 Mon Sep 17 00:00:00 2001
+From: zhang sanshan <b51434@freescale.com>
+Date: Thu, 13 Aug 2015 15:34:01 +0800
+Subject: [PATCH] MA-6987 the value of vmalloc on Kernel command line still
+ display 400M after we change it to other values(sabresd dq
+ and auto 6qp 0812 daily build)
+
+Correct the bootargs which is printed.
+It should be newbootargs rather than bootimage's bootargs.
+
+Signed-off-by: zhang sanshan <b51434@freescale.com>
+---
+ common/image-android.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/common/image-android.c b/common/image-android.c
+index 5cd3a8c..d56380d 100644
+--- a/common/image-android.c
++++ b/common/image-android.c
+@@ -46,7 +46,6 @@ int android_image_get_kernel(const struct andr_img_hdr *hdr, int verify,
+ 
+ 	int len = 0;
+ 	if (*hdr->cmdline) {
+-		printf("Kernel command line: %s\n", hdr->cmdline);
+ 		len += strlen(hdr->cmdline);
+ 	}
+ 
+@@ -66,6 +65,8 @@ int android_image_get_kernel(const struct andr_img_hdr *hdr, int verify,
+ 	} else if (*hdr->cmdline) {
+ 		strcat(newbootargs, hdr->cmdline);
+ 	}
++
++	printf("Kernel command line: %s\n", newbootargs);
+ #ifdef CONFIG_SERIAL_TAG
+ 	struct tag_serialnr serialnr;
+ 	char commandline[ANDR_BOOT_ARGS_SIZE];
+-- 
+1.8.0
+

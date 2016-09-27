@@ -1,0 +1,62 @@
+From 7dcc233b90133941747d594920a4fff83816a9b4 Mon Sep 17 00:00:00 2001
+From: Mark Brown <broonie@linaro.org>
+Date: Wed, 11 Dec 2013 12:10:15 +0000
+Subject: [PATCH] arm64: dts: Add CPU topology properties for ARMv8 4xA53
+ 4xA57 FVP
+
+This provides for discovery of the clusters using the CPU topology
+bindings, it is added as a separate commit to aid testing of the code
+for systems without explicit topology bindings.
+
+Signed-off-by: Mark Brown <broonie@linaro.org>
+(cherry picked from commit d09f1f75c5e8f3b930cc3803af50c694eb903849)
+Signed-off-by: Alex Shi <alex.shi@linaro.org>
+---
+ arch/arm64/boot/dts/fvp-base-gicv2-psci.dts | 31 +++++++++++++++++++++++++++++
+ 1 file changed, 31 insertions(+)
+
+diff --git a/arch/arm64/boot/dts/fvp-base-gicv2-psci.dts b/arch/arm64/boot/dts/fvp-base-gicv2-psci.dts
+index 736f546..452ba22 100644
+--- a/arch/arm64/boot/dts/fvp-base-gicv2-psci.dts
++++ b/arch/arm64/boot/dts/fvp-base-gicv2-psci.dts
+@@ -119,6 +119,37 @@
+ 			enable-method = "psci";
+ 			clock-frequency = <1000000>;
+ 		};
++
++		cpu-map {
++			cluster0 {
++				core0 {
++					cpu = <&big0>;
++				};
++				core1 {
++					cpu = <&big1>;
++				};
++				core2 {
++					cpu = <&big2>;
++				};
++				core3 {
++					cpu = <&big3>;
++				};
++			};
++			cluster1 {
++				core0 {
++					cpu = <&little0>;
++				};
++				core1 {
++					cpu = <&little1>;
++				};
++				core2 {
++					cpu = <&little2>;
++				};
++				core3 {
++					cpu = <&little3>;
++				};
++			};
++		};
+ 	};
+ 
+ 	memory@80000000 {
+-- 
+1.8.0
+

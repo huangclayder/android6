@@ -1,0 +1,36 @@
+From dea49f320f33e1f723301a0bfa18573c0f7b5fb1 Mon Sep 17 00:00:00 2001
+From: Zidan Wang <zidan.wang@freescale.com>
+Date: Fri, 27 Nov 2015 14:44:51 +0800
+Subject: [PATCH] MLK-11915-08 ASoC: imx-si476x: init fm_np to avoid wild
+ pointer
+
+init fm_np to avoid wild pointer. Reported by Coverity.
+
+Signed-off-by: Zidan Wang <zidan.wang@freescale.com>
+---
+ sound/soc/fsl/imx-si476x.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/sound/soc/fsl/imx-si476x.c b/sound/soc/fsl/imx-si476x.c
+index 986b86b..95dcd49 100644
+--- a/sound/soc/fsl/imx-si476x.c
++++ b/sound/soc/fsl/imx-si476x.c
+@@ -1,5 +1,5 @@
+ /*
+- * Copyright (C) 2008-2014 Freescale Semiconductor, Inc. All Rights Reserved.
++ * Copyright (C) 2008-2015 Freescale Semiconductor, Inc. All Rights Reserved.
+  */
+ 
+ /*
+@@ -106,7 +106,7 @@ static int imx_si476x_probe(struct platform_device *pdev)
+ 	struct device_node *ssi_np, *np = pdev->dev.of_node;
+ 	struct platform_device *ssi_pdev;
+ 	struct i2c_client *fm_dev;
+-	struct device_node *fm_np;
++	struct device_node *fm_np = NULL;
+ 	int int_port, ext_port, ret;
+ 
+ 	ret = of_property_read_u32(np, "mux-int-port", &int_port);
+-- 
+1.8.0
+

@@ -1,0 +1,31 @@
+From 0a8e074918c629666c55f3b0cc6ba6597d32d225 Mon Sep 17 00:00:00 2001
+From: Wang Haoran <b50027@freescale.com>
+Date: Wed, 9 Jul 2014 16:24:08 +0800
+Subject: [PATCH 341/602] ENGR00321695 Cannot access Internet via eth0
+
+The Android source EthernetDataTracker has some
+issue when board has more than one ethernet ports.
+Replace the resource string make the board use the
+eth0 as the default ethernet port.
+
+Signed-off-by: Wang Haoran <b50027@freescale.com>
+---
+ sabresd_6sx/overlay/frameworks/base/core/res/res/values/config.xml | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/sabresd_6sx/overlay/frameworks/base/core/res/res/values/config.xml b/sabresd_6sx/overlay/frameworks/base/core/res/res/values/config.xml
+index b9d0d9b..25436d3 100755
+--- a/sabresd_6sx/overlay/frameworks/base/core/res/res/values/config.xml
++++ b/sabresd_6sx/overlay/frameworks/base/core/res/res/values/config.xml
+@@ -21,6 +21,8 @@
+      for different hardware and product builds. -->
+ <resources>
+ 
++    <!--For Android we support eth0 now -->
++    <string translatable="false" name="config_ethernet_iface_regex">eth0</string>
+     <!-- List of regexpressions describing the interface (if any) that represent tetherable
+          USB interfaces.  If the device doesn't want to support tething over USB this should
+          be empty.  An example would be "usb.*" -->
+-- 
+1.8.0
+

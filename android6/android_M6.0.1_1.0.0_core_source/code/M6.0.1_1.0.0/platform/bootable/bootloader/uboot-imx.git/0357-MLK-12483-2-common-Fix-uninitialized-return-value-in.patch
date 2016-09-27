@@ -1,0 +1,31 @@
+From f5002ba4f61dbdbcb39a098a1e663ea8905048de Mon Sep 17 00:00:00 2001
+From: Ye Li <ye.li@nxp.com>
+Date: Wed, 2 Mar 2016 01:00:05 +0800
+Subject: [PATCH] MLK-12483-2 common: Fix uninitialized return value in
+ image_fdt
+
+When using ft_system_setup, the return value fdt_ret is not assigned,
+so the fdt_strerror(fdt_ret) uses a uninitialized value.
+
+Signed-off-by: Ye Li <ye.li@nxp.com>
+---
+ common/image-fdt.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/common/image-fdt.c b/common/image-fdt.c
+index c306794..04de749 100644
+--- a/common/image-fdt.c
++++ b/common/image-fdt.c
+@@ -514,7 +514,8 @@ int image_setup_libfdt(bootm_headers_t *images, void *blob,
+ 		}
+ 	}
+ 	if (IMAGE_OF_SYSTEM_SETUP) {
+-		if (ft_system_setup(blob, gd->bd)) {
++		fdt_ret = ft_system_setup(blob, gd->bd);
++		if (fdt_ret) {
+ 			printf("ERROR: system-specific fdt fixup failed: %s\n",
+ 			       fdt_strerror(fdt_ret));
+ 			goto err;
+-- 
+1.8.0
+

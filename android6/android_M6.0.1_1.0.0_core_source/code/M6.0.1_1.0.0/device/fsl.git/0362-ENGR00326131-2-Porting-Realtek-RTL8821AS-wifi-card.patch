@@ -1,0 +1,158 @@
+From c4b54882662ccd0327a14d65d1ba246913f00d37 Mon Sep 17 00:00:00 2001
+From: Wang Haoran <b50027@freescale.com>
+Date: Fri, 5 Sep 2014 10:24:06 +0800
+Subject: [PATCH 362/602] ENGR00326131-2 Porting Realtek RTL8821AS wifi card
+
+Add a special service for RTL8821AS to force use
+Channel 1 in p2p. Use another .conf file to configure
+the wpa_supplicant.
+
+Signed-off-by: Wang Haoran <b50027@freescale.com>
+---
+ common/wifi/Android.mk                          |  8 ++++++++
+ common/wifi/p2p_supplicant_advance_overlay.conf |  5 +++++
+ evk_6sl/init.rc                                 | 12 ++++++++++++
+ imx6/imx6.mk                                    |  1 +
+ sabreauto_6q/init.rc                            | 12 ++++++++++++
+ sabresd_6dq/init.rc                             | 12 ++++++++++++
+ sabresd_6sx/init.rc                             | 12 ++++++++++++
+ 7 files changed, 62 insertions(+)
+ create mode 100644 common/wifi/p2p_supplicant_advance_overlay.conf
+
+diff --git a/common/wifi/Android.mk b/common/wifi/Android.mk
+index 1cea14d..60a11fc 100644
+--- a/common/wifi/Android.mk
++++ b/common/wifi/Android.mk
+@@ -43,6 +43,14 @@ LOCAL_SRC_FILES    := $(LOCAL_MODULE)
+ LOCAL_MODULE_PATH  := $(TARGET_OUT_ETC)/wifi
+ include $(BUILD_PREBUILT)
+ 
++include $(CLEAR_VARS)
++LOCAL_MODULE       := p2p_supplicant_advance_overlay.conf
++LOCAL_MODULE_TAGS  := optional
++LOCAL_MODULE_CLASS := ETC
++LOCAL_SRC_FILES    := $(LOCAL_MODULE)
++LOCAL_MODULE_PATH  := $(TARGET_OUT_ETC)/wifi
++include $(BUILD_PREBUILT)
++
+ endif
+ 
+ include $(call first-makefiles-under,$(LOCAL_PATH))
+diff --git a/common/wifi/p2p_supplicant_advance_overlay.conf b/common/wifi/p2p_supplicant_advance_overlay.conf
+new file mode 100644
+index 0000000..565b73c
+--- /dev/null
++++ b/common/wifi/p2p_supplicant_advance_overlay.conf
+@@ -0,0 +1,5 @@
++disable_scan_offload=1
++p2p_listen_reg_class=81
++p2p_listen_channel=1
++p2p_oper_reg_class=81
++p2p_oper_channel=1
+diff --git a/evk_6sl/init.rc b/evk_6sl/init.rc
+index ef68a39..c4ffa5f 100644
+--- a/evk_6sl/init.rc
++++ b/evk_6sl/init.rc
+@@ -126,6 +126,18 @@ service rtw_suppl_con /system/bin/rtl_wpa_supplicant -dddd \
+     disabled
+     oneshot
+ 
++service rtw_supplc_adv /system/bin/rtl_wpa_supplicant \
++    -ip2p0 -Dnl80211 -c/data/misc/wifi/p2p_supplicant.conf \
++    -I/system/etc/wifi/p2p_supplicant_advance_overlay.conf -N \
++    -iwlan0 -Dnl80211 -c/data/misc/wifi/wpa_supplicant.conf \
++    -I/system/etc/wifi/wpa_supplicant_overlay.conf \
++    -O/data/misc/wifi/sockets -puse_p2p_group_interface=1 \
++    -e/data/misc/wifi/entropy.bin -g@android:wpa_wlan0
++    class late_start
++    socket wpa_wlan0 dgram 660 wifi wifi
++    disabled
++    oneshot
++
+ service wpa_supplicant /system/bin/wpa_supplicant \
+     -iwlan0 -Dnl80211 -c/data/misc/wifi/wpa_supplicant.conf \
+     -I/system/etc/wifi/wpa_supplicant_overlay.conf \
+diff --git a/imx6/imx6.mk b/imx6/imx6.mk
+index a2ab159..a5a2e3f 100644
+--- a/imx6/imx6.mk
++++ b/imx6/imx6.mk
+@@ -43,6 +43,7 @@ PRODUCT_PACKAGES += \
+ 	wpa_supplicant.conf			\
+ 	p2p_supplicant_overlay.conf			\
+ 	wpa_supplicant_overlay.conf			\
++    p2p_supplicant_advance_overlay.conf \
+ 	dispd					\
+ 	ts_calibrator				\
+ 	libion                                  \
+diff --git a/sabreauto_6q/init.rc b/sabreauto_6q/init.rc
+index 5180832..63b94c7 100644
+--- a/sabreauto_6q/init.rc
++++ b/sabreauto_6q/init.rc
+@@ -129,6 +129,18 @@ service rtw_suppl_con /system/bin/rtl_wpa_supplicant \
+     disabled
+     oneshot
+ 
++service rtw_supplc_adv /system/bin/rtl_wpa_supplicant \
++    -ip2p0 -Dnl80211 -c/data/misc/wifi/p2p_supplicant.conf \
++    -I/system/etc/wifi/p2p_supplicant_advance_overlay.conf -N \
++    -iwlan0 -Dnl80211 -c/data/misc/wifi/wpa_supplicant.conf \
++    -I/system/etc/wifi/wpa_supplicant_overlay.conf \
++    -O/data/misc/wifi/sockets -puse_p2p_group_interface=1 \
++    -e/data/misc/wifi/entropy.bin -g@android:wpa_wlan0
++    class late_start
++    socket wpa_wlan0 dgram 660 wifi wifi
++    disabled
++    oneshot
++
+ service wpa_supplicant /system/bin/wpa_supplicant \
+     -iwlan0 -Dnl80211 -c/data/misc/wifi/wpa_supplicant.conf \
+     -I/system/etc/wifi/wpa_supplicant_overlay.conf \
+diff --git a/sabresd_6dq/init.rc b/sabresd_6dq/init.rc
+index 3b720ac..c0ef53e 100755
+--- a/sabresd_6dq/init.rc
++++ b/sabresd_6dq/init.rc
+@@ -151,6 +151,18 @@ service rtw_suppl_con /system/bin/rtl_wpa_supplicant \
+     disabled
+     oneshot
+ 
++service rtw_supplc_adv /system/bin/rtl_wpa_supplicant \
++    -ip2p0 -Dnl80211 -c/data/misc/wifi/p2p_supplicant.conf \
++    -I/system/etc/wifi/p2p_supplicant_advance_overlay.conf -N \
++    -iwlan0 -Dnl80211 -c/data/misc/wifi/wpa_supplicant.conf \
++    -I/system/etc/wifi/wpa_supplicant_overlay.conf \
++    -O/data/misc/wifi/sockets -puse_p2p_group_interface=1 \
++    -e/data/misc/wifi/entropy.bin -g@android:wpa_wlan0
++    class late_start
++    socket wpa_wlan0 dgram 660 wifi wifi
++    disabled
++    oneshot
++
+ service wpa_supplicant /system/bin/wpa_supplicant \
+     -iwlan0 -Dnl80211 -c/data/misc/wifi/wpa_supplicant.conf \
+     -I/system/etc/wifi/wpa_supplicant_overlay.conf \
+diff --git a/sabresd_6sx/init.rc b/sabresd_6sx/init.rc
+index a9f7237..dfe3233 100755
+--- a/sabresd_6sx/init.rc
++++ b/sabresd_6sx/init.rc
+@@ -150,6 +150,18 @@ service rtw_suppl_con /system/bin/rtl_wpa_supplicant \
+     disabled
+     oneshot
+ 
++service rtw_supplc_adv /system/bin/rtl_wpa_supplicant \
++    -ip2p0 -Dnl80211 -c/data/misc/wifi/p2p_supplicant.conf \
++    -I/system/etc/wifi/p2p_supplicant_advance_overlay.conf -N \
++    -iwlan0 -Dnl80211 -c/data/misc/wifi/wpa_supplicant.conf \
++    -I/system/etc/wifi/wpa_supplicant_overlay.conf \
++    -O/data/misc/wifi/sockets -puse_p2p_group_interface=1 \
++    -e/data/misc/wifi/entropy.bin -g@android:wpa_wlan0
++    class late_start
++    socket wpa_wlan0 dgram 660 wifi wifi
++    disabled
++    oneshot
++
+ service wpa_supplicant /system/bin/wpa_supplicant \
+     -iwlan0 -Dnl80211 -c/data/misc/wifi/wpa_supplicant.conf \
+     -I/system/etc/wifi/wpa_supplicant_overlay.conf \
+-- 
+1.8.0
+

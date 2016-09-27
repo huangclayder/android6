@@ -1,0 +1,87 @@
+From 5505a1674023e19088052d7ab63eb525663c40f3 Mon Sep 17 00:00:00 2001
+From: Marc Zyngier <marc.zyngier@arm.com>
+Date: Wed, 26 Jun 2013 15:16:40 +0100
+Subject: [PATCH] arm64: KVM: remove __kvm_hyp_code_{start,end} from hyp.S
+
+We already have __hyp_text_{start,end} to express the boundaries
+of the HYP text section, and __kvm_hyp_code_{start,end} are getting
+in the way of a more modular world switch code.
+
+Just turn __kvm_hyp_code_{start,end} into #defines mapping the
+linker-emited symbols.
+
+Acked-by: Catalin Marinas <catalin.marinas@arm.com>
+Reviewed-by: Christoffer Dall <christoffer.dall@linaro.org>
+Signed-off-by: Marc Zyngier <marc.zyngier@arm.com>
+(cherry picked from commit 45451914c875bba44903ce4f1445e047b7992bf7)
+Signed-off-by: Christoffer Dall <christoffer.dall@linaro.org>
+---
+ arch/arm64/include/asm/kvm_asm.h | 6 ++++--
+ arch/arm64/include/asm/virt.h    | 4 ++++
+ arch/arm64/kvm/hyp.S             | 6 ------
+ 3 files changed, 8 insertions(+), 8 deletions(-)
+
+diff --git a/arch/arm64/include/asm/kvm_asm.h b/arch/arm64/include/asm/kvm_asm.h
+index 9fcd54b..d0bfc4b 100644
+--- a/arch/arm64/include/asm/kvm_asm.h
++++ b/arch/arm64/include/asm/kvm_asm.h
+@@ -18,6 +18,8 @@
+ #ifndef __ARM_KVM_ASM_H__
+ #define __ARM_KVM_ASM_H__
+ 
++#include <asm/virt.h>
++
+ /*
+  * 0 is reserved as an invalid value.
+  * Order *must* be kept in sync with the hyp switch code.
+@@ -96,8 +98,8 @@ extern char __kvm_hyp_init_end[];
+ 
+ extern char __kvm_hyp_vector[];
+ 
+-extern char __kvm_hyp_code_start[];
+-extern char __kvm_hyp_code_end[];
++#define	__kvm_hyp_code_start	__hyp_text_start
++#define	__kvm_hyp_code_end	__hyp_text_end
+ 
+ extern void __kvm_flush_vm_context(void);
+ extern void __kvm_tlb_flush_vmid_ipa(struct kvm *kvm, phys_addr_t ipa);
+diff --git a/arch/arm64/include/asm/virt.h b/arch/arm64/include/asm/virt.h
+index 130e2be..290fb66 100644
+--- a/arch/arm64/include/asm/virt.h
++++ b/arch/arm64/include/asm/virt.h
+@@ -63,6 +63,10 @@ static inline bool is_hyp_mode_mismatched(void)
+ 	return __boot_cpu_mode[0] != __boot_cpu_mode[1];
+ }
+ 
++/* The section containing the hypervisor text */
++extern char __hyp_text_start[];
++extern char __hyp_text_end[];
++
+ #endif /* __ASSEMBLY__ */
+ 
+ #endif /* ! __ASM__VIRT_H */
+diff --git a/arch/arm64/kvm/hyp.S b/arch/arm64/kvm/hyp.S
+index 877d82a1..9c5d0ac 100644
+--- a/arch/arm64/kvm/hyp.S
++++ b/arch/arm64/kvm/hyp.S
+@@ -36,9 +36,6 @@
+ 	.pushsection	.hyp.text, "ax"
+ 	.align	PAGE_SHIFT
+ 
+-__kvm_hyp_code_start:
+-	.globl __kvm_hyp_code_start
+-
+ .macro save_common_regs
+ 	// x2: base address for cpu context
+ 	// x3: tmp register
+@@ -880,7 +877,4 @@ ENTRY(__kvm_hyp_vector)
+ 	ventry	el1_error_invalid		// Error 32-bit EL1
+ ENDPROC(__kvm_hyp_vector)
+ 
+-__kvm_hyp_code_end:
+-	.globl	__kvm_hyp_code_end
+-
+ 	.popsection
+-- 
+1.8.0
+

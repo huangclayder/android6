@@ -1,0 +1,33 @@
+From 923474f08ac52dc8a9825a8d85cb997e655531a1 Mon Sep 17 00:00:00 2001
+From: Fugang Duan <b38611@freescale.com>
+Date: Mon, 11 Jan 2016 15:44:28 +0800
+Subject: [PATCH] MLK-12180 net: fec: add return value check after calling
+ .of_property_read_u32()
+
+Add return value check after calling .of_property_read_u32() to avoid
+the warning reported by coverity.
+
+Signed-off-by: Fugang Duan <B38611@freescale.com>
+---
+ drivers/net/ethernet/freescale/fec_main.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/net/ethernet/freescale/fec_main.c b/drivers/net/ethernet/freescale/fec_main.c
+index 30ad399..bccb927 100644
+--- a/drivers/net/ethernet/freescale/fec_main.c
++++ b/drivers/net/ethernet/freescale/fec_main.c
+@@ -3253,9 +3253,9 @@ static void fec_reset_phy(struct platform_device *pdev)
+ 	if (!np)
+ 		return;
+ 
+-	of_property_read_u32(np, "phy-reset-duration", &msec);
++	err = of_property_read_u32(np, "phy-reset-duration", &msec);
+ 	/* A sane reset duration should not be longer than 1s */
+-	if (msec > 1000)
++	if (!err && msec > 1000)
+ 		msec = 1;
+ 
+ 	phy_reset = of_get_named_gpio(np, "phy-reset-gpios", 0);
+-- 
+1.8.0
+

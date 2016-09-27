@@ -1,0 +1,28 @@
+From bece2c2fe47c203681ae693a69f786401b008370 Mon Sep 17 00:00:00 2001
+From: xumao <b34688@freescale.com>
+Date: Wed, 2 Dec 2015 13:52:29 +0800
+Subject: [PATCH 90/95] MA-6561 Support recording from video surface in
+ OMXRecorder
+
+Support recording from video surface in OMXRecorder
+
+Signed-off-by: xumao <b34688@freescale.com>
+---
+ include/media/OMXMediaRecorder.h | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/include/media/OMXMediaRecorder.h b/include/media/OMXMediaRecorder.h
+index 0a83e0e..8c8df98 100644
+--- a/include/media/OMXMediaRecorder.h
++++ b/include/media/OMXMediaRecorder.h
+@@ -72,6 +72,7 @@ private:
+     sp<IGraphicBufferProducer> mPreviewSurface;
+     String16 mClientName;
+     uid_t mClientUid;
++    sp<IGraphicBufferConsumer> mBufferConsumer;
+ 
+     OMXRecorder(const OMXRecorder &);
+     OMXRecorder &operator=(const OMXRecorder &);
+-- 
+1.8.0
+

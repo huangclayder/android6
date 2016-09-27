@@ -1,0 +1,45 @@
+From 2a703aa843a42ba6d9d64dd7ee057035c971a06e Mon Sep 17 00:00:00 2001
+From: Nicolas Pitre <nicolas.pitre@linaro.org>
+Date: Wed, 20 Mar 2013 00:33:24 -0400
+Subject: [PATCH] ARM: rtsm_ve-v2p-ca15x?-ca7x?.dts: update dcscb compatible
+ string
+
+... to match the version that was approved during upstream review.
+
+Signed-off-by: Nicolas Pitre <nico@linaro.org>
+(cherry picked from commit 75634a7d2ab728936cde95146afcd93163a80a8f)
+Signed-off-by: Alex Shi <alex.shi@linaro.org>
+---
+ arch/arm/boot/dts/rtsm_ve-v2p-ca15x1-ca7x1.dts | 2 +-
+ arch/arm/boot/dts/rtsm_ve-v2p-ca15x4-ca7x4.dts | 2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/arch/arm/boot/dts/rtsm_ve-v2p-ca15x1-ca7x1.dts b/arch/arm/boot/dts/rtsm_ve-v2p-ca15x1-ca7x1.dts
+index f3144c3..7b2425f 100644
+--- a/arch/arm/boot/dts/rtsm_ve-v2p-ca15x1-ca7x1.dts
++++ b/arch/arm/boot/dts/rtsm_ve-v2p-ca15x1-ca7x1.dts
+@@ -95,7 +95,7 @@
+ 	};
+ 
+ 	dcscb@60000000 {
+-		compatible = "arm,dcscb";
++		compatible = "arm,rtsm,dcscb";
+ 		reg = <0 0x60000000 0 0x1000>;
+ 	};
+ 
+diff --git a/arch/arm/boot/dts/rtsm_ve-v2p-ca15x4-ca7x4.dts b/arch/arm/boot/dts/rtsm_ve-v2p-ca15x4-ca7x4.dts
+index 3235344..82afbfd 100644
+--- a/arch/arm/boot/dts/rtsm_ve-v2p-ca15x4-ca7x4.dts
++++ b/arch/arm/boot/dts/rtsm_ve-v2p-ca15x4-ca7x4.dts
+@@ -173,7 +173,7 @@
+ 	};
+ 
+ 	dcscb@60000000 {
+-		compatible = "arm,dcscb";
++		compatible = "arm,rtsm,dcscb";
+ 		reg = <0 0x60000000 0 0x1000>;
+ 	};
+ 
+-- 
+1.8.0
+

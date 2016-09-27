@@ -1,0 +1,114 @@
+From 64271692eb1f31ab73ad75be51b8674968584d5e Mon Sep 17 00:00:00 2001
+From: Richard Liu <r66033@freescale.com>
+Date: Thu, 11 Dec 2014 10:29:37 +0800
+Subject: [PATCH 34/43] MA-6008 fix GPU 3D clock abnormal enable/disable
+
+GPU 3D clock abnormal enable/disable when there is no 3D usage,
+the issue is found when play a video in Gallery 3D. Root cause
+comes two parts, android framework and fsl hwcomposer.
+
+framework fix:
+skip adding gl fence for release buffer in compositor. It is not
+needed to create/add GL fence for buffers composed by HWC. It is
+even not needed for Vivante GL compositor, becaused eglSwapBuffers
+for compositor is synchronuous.
+
+fsl hwcomposer fix:
+hardware type not correct set when call _eglGetRenderBufferVIV()
+and _eglPostBufferVIV() in fsl hwcomposer, need g2d to wrappwer
+these two APIs and make sure hardware type is gcvHARDWARE_2D
+when fsl hwcomposer call them.
+
+this patch is the framework fix.
+
+Signed-off-by: Richard Liu <r66033@freescale.com>
+---
+ include/gui/GLConsumer.h          |  9 +++++++++
+ libs/gui/GLConsumer.cpp           | 11 ++++++++++-
+ services/surfaceflinger/Layer.cpp |  7 +++++++
+ 3 files changed, 26 insertions(+), 1 deletion(-)
+
+diff --git a/include/gui/GLConsumer.h b/include/gui/GLConsumer.h
+index c35c7be..17560c7 100644
+--- a/include/gui/GLConsumer.h
++++ b/include/gui/GLConsumer.h
+@@ -112,6 +112,12 @@ public:
+     // union fence.
+     void setReleaseFence(const sp<Fence>& fence);
+ 
++    // skip creating/adding another sync fence from OpenGL ES renderer when
++    // current buffer is released.
++    // In case fence(s) already added by setReleaseFence function or current
++    // buffer is not read since acquired, sync fence is not needed.
++    void setSkipGLReleaseFence(void);
++
+     // setDefaultMaxBufferCount sets the default limit on the maximum number
+     // of buffers that will be allocated at one time. The image producer may
+     // override the limit.
+@@ -473,6 +479,9 @@ private:
+     // attachToContext.
+     bool mAttached;
+ 
++    // see setSkipGLReleaseFence()
++    bool mSkipGLReleaseFence;
++
+     // protects static initialization
+     static Mutex sStaticInitLock;
+ 
+diff --git a/libs/gui/GLConsumer.cpp b/libs/gui/GLConsumer.cpp
+index d819a79..d898993 100644
+--- a/libs/gui/GLConsumer.cpp
++++ b/libs/gui/GLConsumer.cpp
+@@ -144,7 +144,8 @@ GLConsumer::GLConsumer(const sp<IGraphicBufferConsumer>& bq, uint32_t tex,
+     mEglDisplay(EGL_NO_DISPLAY),
+     mEglContext(EGL_NO_CONTEXT),
+     mCurrentTexture(BufferQueue::INVALID_BUFFER_SLOT),
+-    mAttached(true)
++    mAttached(true),
++    mSkipGLReleaseFence(false)
+ {
+     GLC_LOGV("GLConsumer");
+ 
+@@ -550,6 +551,10 @@ void GLConsumer::setReleaseFence(const sp<Fence>& fence) {
+     }
+ }
+ 
++void GLConsumer::setSkipGLReleaseFence(void) {
++    mSkipGLReleaseFence = true;
++}
++
+ status_t GLConsumer::detachFromContext() {
+     ATRACE_CALL();
+     GLC_LOGV("detachFromContext");
+@@ -653,6 +658,10 @@ status_t GLConsumer::syncForReleaseLocked(EGLDisplay dpy) {
+ 
+     if (mCurrentTexture != BufferQueue::INVALID_BUFFER_SLOT) {
+         if (SyncFeatures::getInstance().useNativeFenceSync()) {
++            if (mSkipGLReleaseFence) {
++                mSkipGLReleaseFence = false;
++                return NO_ERROR;
++            }
+             EGLSyncKHR sync = eglCreateSyncKHR(dpy,
+                     EGL_SYNC_NATIVE_FENCE_ANDROID, NULL);
+             if (sync == EGL_NO_SYNC_KHR) {
+diff --git a/services/surfaceflinger/Layer.cpp b/services/surfaceflinger/Layer.cpp
+index bdc48fb..da0becc 100644
+--- a/services/surfaceflinger/Layer.cpp
++++ b/services/surfaceflinger/Layer.cpp
+@@ -162,6 +162,13 @@ void Layer::onLayerDisplayed(const sp<const DisplayDevice>& /* hw */,
+     if (layer) {
+         layer->onDisplayed();
+         mSurfaceFlingerConsumer->setReleaseFence(layer->getAndResetReleaseFence());
++
++        // TODO: Fence is either not needed for 3D composed layer for Vivante EGL
++        if (layer->getCompositionType() == HWC_OVERLAY) {
++            // this layer is composed by HWC, avoid adding GL sync fence when it
++            // is released.
++            mSurfaceFlingerConsumer->setSkipGLReleaseFence();
++        }
+     }
+ }
+ 
+-- 
+1.8.0
+

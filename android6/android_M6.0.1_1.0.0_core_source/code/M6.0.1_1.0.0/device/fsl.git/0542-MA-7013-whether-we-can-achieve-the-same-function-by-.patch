@@ -1,0 +1,116 @@
+From f71d861512aa47daa0678a0b004d9359b484b2cd Mon Sep 17 00:00:00 2001
+From: MJm <B55507@freescale.com>
+Date: Mon, 12 Oct 2015 11:26:05 +0800
+Subject: [PATCH 542/602] MA-7013 whether we can achieve the same function by
+ removing the SHOW_SYSTEM_TIMEin api/current.txt
+
+Add the freescale-extended Module
+
+Signed-off-by: Ma Jiamin<b55507@freescale.com>
+---
+ common/extended/freescale-extended/Android.mk      | 17 ++++++++++++++
+ .../freescale-extended/freescale-extended.xml      |  4 ++++
+ .../java/com/freescale/provider/Developer.java     | 26 ++++++++++++++++++++++
+ imx6/imx6.mk                                       |  3 +++
+ imx7/imx7.mk                                       |  3 +++
+ 5 files changed, 53 insertions(+)
+ create mode 100755 common/extended/freescale-extended/Android.mk
+ create mode 100755 common/extended/freescale-extended/freescale-extended.xml
+ create mode 100755 common/extended/freescale-extended/java/com/freescale/provider/Developer.java
+
+diff --git a/common/extended/freescale-extended/Android.mk b/common/extended/freescale-extended/Android.mk
+new file mode 100755
+index 0000000..1025d77
+--- /dev/null
++++ b/common/extended/freescale-extended/Android.mk
+@@ -0,0 +1,17 @@
++LOCAL_PATH := $(call my-dir)
++
++include $(CLEAR_VARS)
++LOCAT_MODULE_TAGS = optional
++LOCAL_SRC_FILES := $(call all-subdir-java-files)
++LOCAL_MODULE := freescale-extended
++
++include $(BUILD_JAVA_LIBRARY)
++
++include $(CLEAR_VARS)
++LOCAL_MODULE := freescale-extended.xml
++LOCAL_MODULE_TAGS := eng
++LOCAL_MODULE_CLASS := ETC
++LOCAL_MODULE_PATH := $(TARGET_OUT_ETC)/permissions
++LOCAL_SRC_FILES := $(LOCAL_MODULE)
++
++include $(BUILD_PREBUILT)
+diff --git a/common/extended/freescale-extended/freescale-extended.xml b/common/extended/freescale-extended/freescale-extended.xml
+new file mode 100755
+index 0000000..7e19fb0
+--- /dev/null
++++ b/common/extended/freescale-extended/freescale-extended.xml
+@@ -0,0 +1,4 @@
++<?xml version="1.0" encoding="UTF-8"?>
++<permissions>
++	<library name="freescale-extended" file="/system/framework/freescale-extended.jar" />
++<permissions>
+diff --git a/common/extended/freescale-extended/java/com/freescale/provider/Developer.java b/common/extended/freescale-extended/java/com/freescale/provider/Developer.java
+new file mode 100755
+index 0000000..11f1ff0
+--- /dev/null
++++ b/common/extended/freescale-extended/java/com/freescale/provider/Developer.java
+@@ -0,0 +1,26 @@
++/*
++ * Copyright (C) 2015 Freescale Semiconductor, Inc.
++ *
++ * Licensed under the Apache License, Version 2.0 (the "License");
++ * you may not use this file except in compliance with the License.
++ * You may obtain a copy of the License at
++ *
++ *      http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++package com.freescale.provider;
++
++public final class Developer{
++	private String SHOW_SYSTEM_TIME = "show_system_time";
++
++	public String getShowSystemTime(){
++		return SHOW_SYSTEM_TIME;
++	}
++}
++
++
+diff --git a/imx6/imx6.mk b/imx6/imx6.mk
+index 0d50d51..308df66 100644
+--- a/imx6/imx6.mk
++++ b/imx6/imx6.mk
+@@ -54,6 +54,9 @@ PRODUCT_PACKAGES += \
+ 	display_mode_fb2.conf                   \
+ 	display_mode_fb4.conf
+ 
++#FREESCALE_EXTENDED
++PRODUCT_PACKAGES += freescale-extended
++
+ # Debug utils
+ PRODUCT_PACKAGES += \
+ 	busybox					\
+diff --git a/imx7/imx7.mk b/imx7/imx7.mk
+index b275495..2d4f597 100644
+--- a/imx7/imx7.mk
++++ b/imx7/imx7.mk
+@@ -48,6 +48,9 @@ PRODUCT_PACKAGES += \
+ 	display_mode_fb2.conf                   \
+ 	display_mode_fb4.conf
+ 
++#FREESCALE_EXTENDED
++PRODUCT_PACKAGES += freescale-extended
++
+ # Debug utils
+ PRODUCT_PACKAGES += \
+ 	busybox					\
+-- 
+1.8.0
+

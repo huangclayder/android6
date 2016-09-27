@@ -1,0 +1,52 @@
+From 639451490df0860cba20d3e709dbafcb28b6926d Mon Sep 17 00:00:00 2001
+From: Wang Haoran <b50027@freescale.com>
+Date: Tue, 9 Dec 2014 16:20:47 +0800
+Subject: [PATCH 403/602] MA-5040 Remove GPS related configuration from
+ Sabresd_6sx
+
+Removed the GPS configuration in init.rc and permissions.
+Our Sabresd_6sx doesn't support GPS.
+
+Signed-off-by: Wang Haoran <b50027@freescale.com>
+---
+ imx6/sabresd_6sx.mk |  1 -
+ sabresd_6sx/init.rc | 11 -----------
+ 2 files changed, 12 deletions(-)
+
+diff --git a/imx6/sabresd_6sx.mk b/imx6/sabresd_6sx.mk
+index 2725c41..7072a50 100644
+--- a/imx6/sabresd_6sx.mk
++++ b/imx6/sabresd_6sx.mk
+@@ -34,7 +34,6 @@ PRODUCT_COPY_FILES += \
+ 	frameworks/native/data/etc/tablet_core_hardware.xml:system/etc/permissions/tablet_core_hardware.xml \
+ 	frameworks/native/data/etc/android.hardware.camera.xml:system/etc/permissions/android.hardware.camera.xml \
+ 	frameworks/native/data/etc/android.hardware.camera.front.xml:system/etc/permissions/android.hardware.camera.front.xml \
+-	frameworks/native/data/etc/android.hardware.location.gps.xml:system/etc/permissions/android.hardware.location.gps.xml \
+ 	frameworks/native/data/etc/android.hardware.wifi.xml:system/etc/permissions/android.hardware.wifi.xml \
+ 	frameworks/native/data/etc/android.hardware.wifi.direct.xml:system/etc/permissions/android.hardware.wifi.direct.xml \
+ 	frameworks/native/data/etc/android.hardware.sensor.light.xml:system/etc/permissions/android.hardware.sensor.light.xml \
+diff --git a/sabresd_6sx/init.rc b/sabresd_6sx/init.rc
+index 7557403..479da0c 100755
+--- a/sabresd_6sx/init.rc
++++ b/sabresd_6sx/init.rc
+@@ -168,17 +168,6 @@ service magd /system/bin/magd
+     group input
+     oneshot
+ 
+-# Orion InG
+-service ing /system/bin/ingsvcd -c /system/etc/gps/Orion.ini
+-    socket athrkv9988    stream 666 system system
+-    socket athrshmsocket stream 666 system system
+-    socket athrsupl59991 stream 666 system system
+-    class late_start
+-    seclabel u:r:gpsd:s0
+-    user root
+-    group gps
+-    oneshot
+-
+ service charger /charger
+     class charger
+ 
+-- 
+1.8.0
+

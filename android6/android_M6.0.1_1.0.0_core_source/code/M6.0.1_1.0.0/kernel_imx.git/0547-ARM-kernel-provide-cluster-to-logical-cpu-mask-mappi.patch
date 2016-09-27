@@ -1,0 +1,79 @@
+From 66040515aaf64178a820a15bb495b5e443a62106 Mon Sep 17 00:00:00 2001
+From: Lorenzo Pieralisi <lorenzo.pieralisi@arm.com>
+Date: Mon, 10 Sep 2012 16:06:30 +0100
+Subject: [PATCH] ARM: kernel: provide cluster to logical cpu mask mapping API
+
+Some device drivers like PMU require to retrieve the logical cpu mask
+that corresponds to a given cluster id. This patch provides a hook in
+the topology code that, given an existing cluster id as input,
+initializes the corresponding cpumask passed as a pointer, reusing all
+existing topology information required by sched domains in the kernel.
+
+Signed-off-by: Lorenzo Pieralisi <lorenzo.pieralisi@arm.com>
+(cherry picked from commit e1103d96f28905cb0143dd289d2bc8605bebfe8a)
+Signed-off-by: Alex Shi <alex.shi@linaro.org>
+---
+ arch/arm/include/asm/topology.h |  3 +++
+ arch/arm/kernel/topology.c      | 27 +++++++++++++++++++++++++++
+ 2 files changed, 30 insertions(+)
+
+diff --git a/arch/arm/include/asm/topology.h b/arch/arm/include/asm/topology.h
+index 58b8b84..611edef 100644
+--- a/arch/arm/include/asm/topology.h
++++ b/arch/arm/include/asm/topology.h
+@@ -26,11 +26,14 @@ extern struct cputopo_arm cpu_topology[NR_CPUS];
+ void init_cpu_topology(void);
+ void store_cpu_topology(unsigned int cpuid);
+ const struct cpumask *cpu_coregroup_mask(int cpu);
++int cluster_to_logical_mask(unsigned int socket_id, cpumask_t *cluster_mask);
+ 
+ #else
+ 
+ static inline void init_cpu_topology(void) { }
+ static inline void store_cpu_topology(unsigned int cpuid) { }
++static inline int cluster_to_logical_mask(unsigned int socket_id,
++	cpumask_t *cluster_mask) { return -EINVAL; }
+ 
+ #endif
+ 
+diff --git a/arch/arm/kernel/topology.c b/arch/arm/kernel/topology.c
+index 0bc94b1..d325410 100644
+--- a/arch/arm/kernel/topology.c
++++ b/arch/arm/kernel/topology.c
+@@ -267,6 +267,33 @@ void store_cpu_topology(unsigned int cpuid)
+ }
+ 
+ /*
++ * cluster_to_logical_mask - return cpu logical mask of CPUs in a cluster
++ * @socket_id:		cluster HW identifier
++ * @cluster_mask:	the cpumask location to be initialized, modified by the
++ *			function only if return value == 0
++ *
++ * Return:
++ *
++ * 0 on success
++ * -EINVAL if cluster_mask is NULL or there is no record matching socket_id
++ */
++int cluster_to_logical_mask(unsigned int socket_id, cpumask_t *cluster_mask)
++{
++	int cpu;
++
++	if (!cluster_mask)
++		return -EINVAL;
++
++	for_each_online_cpu(cpu)
++		if (socket_id == topology_physical_package_id(cpu)) {
++			cpumask_copy(cluster_mask, topology_core_cpumask(cpu));
++			return 0;
++		}
++
++	return -EINVAL;
++}
++
++/*
+  * init_cpu_topology is called at boot when only one cpu is running
+  * which prevent simultaneous write access to cpu_topology array
+  */
+-- 
+1.8.0
+

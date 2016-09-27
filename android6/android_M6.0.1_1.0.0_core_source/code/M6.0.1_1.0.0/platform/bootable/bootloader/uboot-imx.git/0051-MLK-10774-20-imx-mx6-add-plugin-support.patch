@@ -1,0 +1,2922 @@
+From 2ebe0c77e3626c8d6de0e80060233a8507adcae0 Mon Sep 17 00:00:00 2001
+From: Peng Fan <Peng.Fan@freescale.com>
+Date: Wed, 18 Mar 2015 22:04:39 +0800
+Subject: [PATCH] MLK-10774-20 imx:mx6 add plugin support
+
+Add plugin support
+
+Signed-off-by: Peng Fan <Peng.Fan@freescale.com>
+---
+ arch/arm/include/asm/arch-mx6/mx6_plugin.S  |  145 ++++
+ board/freescale/mx6qarm2/Makefile           |    6 +-
+ board/freescale/mx6qarm2/plugin.S           | 1176 +++++++++++++++++++++++++++
+ board/freescale/mx6qsabreauto/Makefile      |    6 +-
+ board/freescale/mx6qsabreauto/imximage.cfg  |   28 +-
+ board/freescale/mx6qsabreauto/plugin.S      |  480 +++++++++++
+ board/freescale/mx6sabresd/Makefile         |    6 +-
+ board/freescale/mx6sabresd/mx6dlsabresd.cfg |   13 +-
+ board/freescale/mx6sabresd/plugin.S         |  480 +++++++++++
+ board/freescale/mx6slevk/Makefile           |    6 +-
+ board/freescale/mx6slevk/imximage.cfg       |   15 +-
+ board/freescale/mx6slevk/plugin.S           |  187 +++++
+ board/freescale/mx6sxsabresd/Makefile       |    6 +-
+ board/freescale/mx6sxsabresd/imximage.cfg   |   14 +
+ board/freescale/mx6sxsabresd/plugin.S       |  135 +++
+ 15 files changed, 2693 insertions(+), 10 deletions(-)
+
+diff --git a/arch/arm/include/asm/arch-mx6/mx6_plugin.S b/arch/arm/include/asm/arch-mx6/mx6_plugin.S
+new file mode 100644
+index 0000000..1f5ae83
+--- /dev/null
++++ b/arch/arm/include/asm/arch-mx6/mx6_plugin.S
+@@ -0,0 +1,145 @@
++/*
++ * Copyright (C) 2012-2014 Freescale Semiconductor, Inc.
++ *
++ * See file CREDITS for list of people who contributed to this
++ * project.
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ */
++
++#include <config.h>
++
++#ifdef CONFIG_ROM_UNIFIED_SECTIONS
++#define ROM_API_TABLE_BASE_ADDR_LEGACY		0x180
++#define ROM_VERSION_OFFSET               	0x80
++#else
++#define ROM_API_TABLE_BASE_ADDR_LEGACY		0xC0
++#define ROM_VERSION_OFFSET               	0x48
++#endif
++#define ROM_API_TABLE_BASE_ADDR_MX6DQ_TO15	0xC4
++#define ROM_API_TABLE_BASE_ADDR_MX6DL_TO12	0xC4
++#define ROM_API_HWCNFG_SETUP_OFFSET		0x08
++#define ROM_VERSION_TO10			0x10
++#define ROM_VERSION_TO12			0x12
++#define ROM_VERSION_TO15			0x15
++
++plugin_start:
++
++	push    {r0-r4, lr}
++
++	imx6_ddr_setting
++	imx6_clock_gating
++	imx6_qos_setting
++
++/*
++ * The following is to fill in those arguments for this ROM function
++ * pu_irom_hwcnfg_setup(void **start, size_t *bytes, const void *boot_data)
++ * This function is used to copy data from the storage media into DDR.
++ * start - Initial (possibly partial) image load address on entry.
++ *         Final image load address on exit.
++ * bytes - Initial (possibly partial) image size on entry.
++ *         Final image size on exit.
++ * boot_data - Initial @ref ivt Boot Data load address.
++ */
++	adr r0, boot_data2
++	adr r1, image_len2
++	adr r2, boot_data2
++
++#ifdef CONFIG_SYS_BOOT_EIMNOR
++#ifdef CONFIG_MX6SX
++	ldr r3, =ROM_VERSION_OFFSET
++	ldr r4, [r3]
++	cmp r4, #ROM_VERSION_TO10
++	bgt before_calling_rom___pu_irom_hwcnfg_setup
++	ldr r3, =0x00900b00
++	ldr r4, =0x50000000
++	str r4, [r3, #0x5c]
++#else
++	ldr r3, =0x00900800
++	ldr r4, =0x08000000
++	str r4, [r3, #0xc0]
++#endif
++#endif
++
++/*
++ * check the _pu_irom_api_table for the address
++ */
++before_calling_rom___pu_irom_hwcnfg_setup:
++	ldr r3, =ROM_VERSION_OFFSET
++	ldr r4, [r3]
++#if defined(CONFIG_MX6SOLO) || defined(CONFIG_MX6DL)
++	ldr r3, =ROM_VERSION_TO12
++	cmp r4, r3
++	ldrge r3, =ROM_API_TABLE_BASE_ADDR_MX6DL_TO12
++	ldrlt r3, =ROM_API_TABLE_BASE_ADDR_LEGACY
++#elif defined(CONFIG_MX6Q)
++	ldr r3, =ROM_VERSION_TO15
++	cmp r4, r3
++	ldrge r3, =ROM_API_TABLE_BASE_ADDR_MX6DQ_TO15
++	ldrlt r3, =ROM_API_TABLE_BASE_ADDR_LEGACY
++#else
++	ldr r3, =ROM_API_TABLE_BASE_ADDR_LEGACY
++#endif
++	ldr r4, [r3, #ROM_API_HWCNFG_SETUP_OFFSET]
++	blx r4
++after_calling_rom___pu_irom_hwcnfg_setup:
++
++
++/* To return to ROM from plugin, we need to fill in these argument.
++ * Here is what need to do:
++ * Need to construct the paramters for this function before return to ROM:
++ * plugin_download(void **start, size_t *bytes, UINT32 *ivt_offset)
++ */
++	pop {r0-r4, lr}
++	push {r5}
++	ldr r5, boot_data2
++	str r5, [r0]
++	ldr r5, image_len2
++	str r5, [r1]
++	ldr r5, second_ivt_offset
++	str r5, [r2]
++	mov r0, #1
++	pop {r5}
++
++	/* return back to ROM code */
++	bx lr
++
++/* make the following data right in the end of the output*/
++.ltorg
++
++#if (defined(CONFIG_SYS_BOOT_EIMNOR) || defined(CONFIG_SYS_BOOT_QSPI))
++#define FLASH_OFFSET 0x1000
++#else
++#define FLASH_OFFSET 0x400
++#endif
++
++/*
++ * second_ivt_offset is the offset from the "second_ivt_header" to
++ * "image_copy_start", which involves FLASH_OFFSET, plus the first
++ * ivt_header, the plugin code size itself recorded by "ivt2_header"
++ */
++
++second_ivt_offset:      .long (ivt2_header + 0x2C + FLASH_OFFSET)
++
++/*
++ * The following is the second IVT header plus the second boot data
++ */
++ivt2_header:            .long 0x0
++app2_code_jump_v:       .long 0x0
++reserv3:                .long 0x0
++dcd2_ptr:               .long 0x0
++boot_data2_ptr:         .long 0x0
++self_ptr2:              .long 0x0
++app_code_csf2:          .long 0x0
++reserv4:                .long 0x0
++boot_data2:             .long 0x0
++image_len2:             .long 0x0
++plugin2:                .long 0x0
+diff --git a/board/freescale/mx6qarm2/Makefile b/board/freescale/mx6qarm2/Makefile
+index 79401f4..35afae7 100644
+--- a/board/freescale/mx6qarm2/Makefile
++++ b/board/freescale/mx6qarm2/Makefile
+@@ -1,9 +1,13 @@
+ #
+ # Copyright (C) 2007, Guennadi Liakhovetski <lg@denx.de>
+ #
+-# (C) Copyright 2011 Freescale Semiconductor, Inc.
++# (C) Copyright 2011-2015 Freescale Semiconductor, Inc.
+ #
+ # SPDX-License-Identifier:	GPL-2.0+
+ #
+ 
+ obj-y	:= mx6qarm2.o
++
++extra-$(CONFIG_USE_PLUGIN) :=  plugin.bin
++$(obj)/plugin.bin: $(obj)/plugin.o
++	$(OBJCOPY) -O binary --gap-fill 0xff $< $@
+diff --git a/board/freescale/mx6qarm2/plugin.S b/board/freescale/mx6qarm2/plugin.S
+new file mode 100644
+index 0000000..82b4c81
+--- /dev/null
++++ b/board/freescale/mx6qarm2/plugin.S
+@@ -0,0 +1,1176 @@
++/*
++ * Copyright (C) 2012-2015 Freescale Semiconductor, Inc.
++ *
++ * Author: Fabio Estevam <fabio.estevam@freescale.com>
++ *
++ * SPDX-License-Identifier:	GPL-2.0+
++ */
++
++#include <config.h>
++
++.macro imx6dlarm2_ddr_setting
++	ldr r0, =CCM_BASE_ADDR
++	ldr r1, =0xffffffff
++	str r1, [r0, #0x068]
++	ldr r1, =0xffffffff
++	str r1, [r0, #0x06c]
++	ldr r1, =0xffffffff
++	str r1, [r0, #0x070]
++	ldr r1, =0xffffffff
++	str r1, [r0, #0x074]
++	ldr r1, =0xffffffff
++	str r1, [r0, #0x078]
++	ldr r1, =0xffffffff
++	str r1, [r0, #0x07c]
++	ldr r1, =0xffffffff
++	str r1, [r0, #0x080]
++	ldr r1, =0xffffffff
++	str r1, [r0, #0x084]
++
++	ldr r0, =IOMUXC_BASE_ADDR
++	ldr r1, =0x000c0000
++	str r1, [r0, #0x798]
++	ldr r1, =0x00000000
++	str r1, [r0, #0x758]
++
++	ldr r1, =0x00000030
++	str r1, [r0, #0x588]
++	str r1, [r0, #0x594]
++	str r1, [r0, #0x56c]
++	str r1, [r0, #0x578]
++	str r1, [r0, #0x74c]
++	str r1, [r0, #0x57c]
++
++	ldr r1, =0x00003000
++	str r1, [r0, #0x590]
++	str r1, [r0, #0x598]
++
++	ldr r1, =0x00000000
++	str r1, [r0, #0x58c]
++
++	ldr r1, =0x00003030
++	str r1, [r0, #0x59c]
++	str r1, [r0, #0x5a0]
++
++	ldr r1, =0x00000030
++	str r1, [r0, #0x78c]
++
++	ldr r1, =0x00020000
++	str r1, [r0, #0x750]
++
++	ldr r1, =0x00000030
++	str r1, [r0, #0x5a8]
++	str r1, [r0, #0x5b0]
++	str r1, [r0, #0x524]
++	str r1, [r0, #0x51c]
++	str r1, [r0, #0x518]
++	str r1, [r0, #0x50c]
++	str r1, [r0, #0x5b8]
++	str r1, [r0, #0x5c0]
++
++	ldr r1, =0x00020000
++	str r1, [r0, #0x774]
++
++	ldr r1, =0x00000030
++	str r1, [r0, #0x784]
++	str r1, [r0, #0x788]
++	str r1, [r0, #0x794]
++	str r1, [r0, #0x79c]
++	str r1, [r0, #0x7a0]
++	str r1, [r0, #0x7a4]
++	str r1, [r0, #0x7a8]
++	str r1, [r0, #0x748]
++	str r1, [r0, #0x5ac]
++	str r1, [r0, #0x5b4]
++	str r1, [r0, #0x528]
++	str r1, [r0, #0x520]
++	str r1, [r0, #0x514]
++	str r1, [r0, #0x510]
++	str r1, [r0, #0x5bc]
++	str r1, [r0, #0x5c4]
++
++	ldr r0, =MMDC_P0_BASE_ADDR
++	ldr r1, =MMDC_P1_BASE_ADDR
++	ldr r2, =0xa1390003
++	str r2, [r0, #0x800]
++	str r2, [r1, #0x800]
++
++	ldr r2, =0x001F001F
++	str r2, [r0, #0x80c]
++	str r2, [r0, #0x810]
++
++	ldr r2, =0x00370037
++	str r2, [r1, #0x80c]
++	str r2, [r1, #0x810]
++
++	ldr r2, =0x422f0220
++	str r2, [r0, #0x83c]
++	ldr r2, =0x021f0219
++	str r2, [r0, #0x840]
++
++	ldr r2, =0x422f0220
++	str r2, [r1, #0x83c]
++	ldr r2, =0x022d022f
++	str r2, [r1, #0x840]
++
++	ldr r2, =0x47494b49
++	str r2, [r0, #0x848]
++	ldr r2, =0x48484c47
++	str r2, [r1, #0x848]
++
++	ldr r2, =0x39382b2f
++	str r2, [r0, #0x850]
++	ldr r2, =0x2f35312c
++	str r2, [r1, #0x850]
++
++	ldr r2, =0x33333333
++	str r2, [r0, #0x81c]
++	str r2, [r0, #0x820]
++	str r2, [r0, #0x824]
++	str r2, [r0, #0x828]
++	str r2, [r1, #0x81c]
++	str r2, [r1, #0x820]
++	str r2, [r1, #0x824]
++	str r2, [r1, #0x828]
++
++	ldr r2, =0x00000800
++	str r2, [r0, #0x8b8]
++	ldr r2, =0x00000800
++	str r2, [r1, #0x8b8]
++
++	ldr r2, =0x0002002d
++	str r2, [r0, #0x004]
++	ldr r2, =0x00333030
++	str r2, [r0, #0x008]
++	ldr r2, =0x40445323
++	str r2, [r0, #0x00c]
++	ldr r2, =0xb66e8c63
++	str r2, [r0, #0x010]
++	ldr r2, =0x01ff00db
++	str r2, [r0, #0x014]
++	ldr r2, =0x00081740
++	str r2, [r0, #0x018]
++
++	ldr r2, =0x00008000
++	str r2, [r0, #0x01c]
++
++	ldr r2, =0x000026d2
++	str r2, [r0, #0x02c]
++	ldr r2, =0x00440e21
++	str r2, [r0, #0x030]
++
++#ifdef CONFIG_DDR_32BIT
++	ldr r2, =0x00000017
++	str r2, [r0, #0x040]
++	ldr r2, =0xc3190000
++	str r2, [r0, #0x000]
++#else
++	ldr r2, =0x00000027
++	str r2, [r0, #0x040]
++	ldr r2, =0xc31a0000
++	str r2, [r0, #0x000]
++#endif
++
++	ldr r2, =0x04008032
++	str r2, [r0, #0x01c]
++	ldr r2, =0x0400803a
++	str r2, [r0, #0x01c]
++
++	ldr r2, =0x00008033
++	str r2, [r0, #0x01c]
++	ldr r2, =0x0000803b
++	str r2, [r0, #0x01c]
++
++	ldr r2, =0x00428031
++	str r2, [r0, #0x01c]
++	ldr r2, =0x00428039
++	str r2, [r0, #0x01c]
++
++	ldr r2, =0x07208030
++	str r2, [r0, #0x01c]
++	ldr r2, =0x07208038
++	str r2, [r0, #0x01c]
++
++	ldr r2, =0x04008040
++	str r2, [r0, #0x01c]
++	ldr r2, =0x04008048
++	str r2, [r0, #0x01c]
++
++	ldr r2, =0x00005800
++	str r2, [r0, #0x020]
++
++	ldr r2, =0x00000007
++	str r2, [r0, #0x818]
++	str r2, [r1, #0x818]
++
++	ldr r2, =0x0002556d
++	str r2, [r0, #0x004]
++	ldr r2, =0x00011006
++	str r2, [r1, #0x004]
++	ldr r2, =0x00000000
++	str r2, [r0, #0x01c]
++.endm
++
++.macro imx6dqarm2_ddr_setting
++	ldr r0, =CCM_BASE_ADDR
++	ldr r1, =0xffffffff
++	str r1, [r0, #0x068]
++	ldr r1, =0xffffffff
++	str r1, [r0, #0x06c]
++	ldr r1, =0xffffffff
++	str r1, [r0, #0x070]
++	ldr r1, =0xffffffff
++	str r1, [r0, #0x074]
++	ldr r1, =0xffffffff
++	str r1, [r0, #0x078]
++	ldr r1, =0xffffffff
++	str r1, [r0, #0x07c]
++	ldr r1, =0xffffffff
++	str r1, [r0, #0x080]
++	ldr r1, =0xffffffff
++	str r1, [r0, #0x084]
++
++	ldr r0, =IOMUXC_BASE_ADDR
++	ldr r1, =0x000c0000
++	str r1, [r0, #0x798]
++	ldr r1, =0x00000000
++	str r1, [r0, #0x758]
++
++	ldr r1, =0x00000030
++	str r1, [r0, #0x588]
++	ldr r1, =0x00000030
++	str r1, [r0, #0x594]
++
++	ldr r1, =0x00000030
++	str r1, [r0, #0x56c]
++	ldr r1, =0x00000030
++	str r1, [r0, #0x578]
++	ldr r1, =0x00000030
++	str r1, [r0, #0x74c]
++
++	ldr r1, =0x00000030
++	str r1, [r0, #0x57c]
++
++	ldr r1, =0x00000000
++	str r1, [r0, #0x58c]
++	ldr r1, =0x00000030
++	str r1, [r0, #0x59c]
++	ldr r1, =0x00000030
++	str r1, [r0, #0x5a0]
++	ldr r1, =0x00000030
++	str r1, [r0, #0x78c]
++
++	ldr r1, =0x00000000
++	str r1, [r0, #0x750]
++
++	ldr r1, =0x00000038
++	str r1, [r0, #0x5a8]
++	ldr r1, =0x00000038
++	str r1, [r0, #0x5b0]
++	ldr r1, =0x00000038
++	str r1, [r0, #0x524]
++	ldr r1, =0x00000038
++	str r1, [r0, #0x51c]
++	ldr r1, =0x00000038
++	str r1, [r0, #0x518]
++	ldr r1, =0x00000038
++	str r1, [r0, #0x50c]
++	ldr r1, =0x00000038
++	str r1, [r0, #0x5b8]
++	ldr r1, =0x00000038
++	str r1, [r0, #0x5c0]
++
++	ldr r1, =0x00000000
++	str r1, [r0, #0x774]
++
++	ldr r1, =0x00000030
++	str r1, [r0, #0x784]
++	ldr r1, =0x00000030
++	str r1, [r0, #0x788]
++	ldr r1, =0x00000030
++	str r1, [r0, #0x794]
++	ldr r1, =0x00000030
++	str r1, [r0, #0x79c]
++	ldr r1, =0x00000030
++	str r1, [r0, #0x7a0]
++	ldr r1, =0x00000030
++	str r1, [r0, #0x7a4]
++	ldr r1, =0x00000030
++	str r1, [r0, #0x7a8]
++	ldr r1, =0x00000030
++	str r1, [r0, #0x748]
++
++	ldr r1, =0x00000030
++	str r1, [r0, #0x5ac]
++	ldr r1, =0x00000030
++	str r1, [r0, #0x5b4]
++	ldr r1, =0x00000030
++	str r1, [r0, #0x528]
++	ldr r1, =0x00000030
++	str r1, [r0, #0x520]
++	ldr r1, =0x00000030
++	str r1, [r0, #0x514]
++	ldr r1, =0x00000030
++	str r1, [r0, #0x510]
++	ldr r1, =0x00000030
++	str r1, [r0, #0x5bc]
++	ldr r1, =0x00000030
++	str r1, [r0, #0x5c4]
++
++	ldr r0, =MMDC_P0_BASE_ADDR
++	ldr r2, =0xa1390003
++	str r2, [r0, #0x800]
++
++	ldr r2, =0x001F001F
++	str r2, [r0, #0x80c]
++	ldr r2, =0x001F001F
++	str r2, [r0, #0x810]
++
++	ldr r1, =MMDC_P1_BASE_ADDR
++	ldr r2, =0x00440044
++	str r2, [r1, #0x80c]
++	ldr r2, =0x00440044
++	str r2, [r1, #0x810]
++
++	ldr r2, =0x4333033F
++	str r2, [r0, #0x83c]
++	ldr r2, =0x0339033E
++	str r2, [r0, #0x840]
++	ldr r2, =0x433F0343
++	str r2, [r1, #0x83c]
++	ldr r2, =0x03490320
++	str r2, [r1, #0x840]
++
++	ldr r2, =0x42363838
++	str r2, [r0, #0x848]
++	ldr r2, =0x3F343242
++	str r2, [r1, #0x848]
++
++	ldr r2, =0x37424844
++	str r2, [r0, #0x850]
++	ldr r2, =0x48264731
++	str r2, [r1, #0x850]
++
++	ldr r2, =0x33333333
++	str r2, [r0, #0x81c]
++	ldr r2, =0x33333333
++	str r2, [r0, #0x820]
++	ldr r2, =0x33333333
++	str r2, [r0, #0x824]
++	ldr r2, =0x33333333
++	str r2, [r0, #0x828]
++	ldr r2, =0x33333333
++	str r2, [r1, #0x81c]
++	ldr r2, =0x33333333
++	str r2, [r1, #0x820]
++	ldr r2, =0x33333333
++	str r2, [r1, #0x824]
++	ldr r2, =0x33333333
++	str r2, [r1, #0x828]
++
++	ldr r2, =0x00000800
++	str r2, [r0, #0x8b8]
++	ldr r2, =0x00000800
++	str r2, [r1, #0x8b8]
++
++	ldr r2, =0x00020036
++	str r2, [r0, #0x004]
++	ldr r2, =0x09444040
++	str r2, [r0, #0x008]
++	ldr r2, =0x555A7975
++	str r2, [r0, #0x00c]
++	ldr r2, =0xFF538F64
++	str r2, [r0, #0x010]
++	ldr r2, =0x01ff00db
++	str r2, [r0, #0x014]
++	ldr r2, =0x00081740
++	str r2, [r0, #0x018]
++
++	ldr r2, =0x00008000
++	str r2, [r0, #0x01c]
++
++	ldr r2, =0x000026d2
++	str r2, [r0, #0x02c]
++	ldr r2, =0x005a1023
++	str r2, [r0, #0x030]
++	ldr r2, =0x00000027
++	str r2, [r0, #0x040]
++
++	ldr r2, =0x11420000
++	str r2, [r0, #0x400]
++	ldr r2, =0x11420000
++	str r2, [r1, #0x400]
++
++	ldr r2, =0xc31a0000
++	str r2, [r0, #0x000]
++
++	ldr r2, =0x04088032
++	str r2, [r0, #0x01c]
++	ldr r2, =0x0408803a
++	str r2, [r0, #0x01c]
++
++	ldr r2, =0x00008033
++	str r2, [r0, #0x01c]
++	ldr r2, =0x0000803b
++	str r2, [r0, #0x01c]
++
++	ldr r2, =0x00048031
++	str r2, [r0, #0x01c]
++	ldr r2, =0x00048039
++	str r2, [r0, #0x01c]
++
++	ldr r2, =0x09408030
++	str r2, [r0, #0x01c]
++	ldr r2, =0x09408038
++	str r2, [r0, #0x01c]
++
++	ldr r2, =0x04008040
++	str r2, [r0, #0x01c]
++	ldr r2, =0x04008048
++	str r2, [r0, #0x01c]
++
++	ldr r2, =0x00005800
++	str r2, [r0, #0x020]
++
++	ldr r2, =0x00011117
++	str r2, [r0, #0x818]
++	str r2, [r1, #0x818]
++
++	ldr r2, =0x00025576
++	str r2, [r0, #0x004]
++	ldr r2, =0x00011006
++	str r2, [r0, #0x404]
++	ldr r2, =0x00000000
++	str r2, [r0, #0x01c]
++.endm
++
++.macro imx6dlarm2_lpddr2_setting
++	ldr r0, =CCM_BASE_ADDR
++	ldr r1, =0xffffffff
++	str r1, [r0, #0x068]
++	ldr r1, =0xffffffff
++	str r1, [r0, #0x06c]
++	ldr r1, =0xffffffff
++	str r1, [r0, #0x070]
++	ldr r1, =0xffffffff
++	str r1, [r0, #0x074]
++	ldr r1, =0xffffffff
++	str r1, [r0, #0x078]
++	ldr r1, =0xffffffff
++	str r1, [r0, #0x07c]
++	ldr r1, =0xffffffff
++	str r1, [r0, #0x080]
++	ldr r1, =0xffffffff
++	str r1, [r0, #0x084]
++
++	ldr r0, =IOMUXC_BASE_ADDR
++	ldr r1, =0x00003028
++	str r1, [r0, #0x4bc]
++	str r1, [r0, #0x4c0]
++	str r1, [r0, #0x4c4]
++	str r1, [r0, #0x4c8]
++	str r1, [r0, #0x4cc]
++	str r1, [r0, #0x4d0]
++	str r1, [r0, #0x4d4]
++	str r1, [r0, #0x4d8]
++
++	ldr r1, =0x00000038
++	str r1, [r0, #0x470]
++	str r1, [r0, #0x474]
++	str r1, [r0, #0x478]
++	str r1, [r0, #0x47c]
++	str r1, [r0, #0x480]
++	str r1, [r0, #0x484]
++	str r1, [r0, #0x488]
++	str r1, [r0, #0x48c]
++	str r1, [r0, #0x464]
++	str r1, [r0, #0x490]
++	str r1, [r0, #0x4ac]
++	str r1, [r0, #0x4b0]
++	str r1, [r0, #0x494]
++	str r1, [r0, #0x4a4]
++	str r1, [r0, #0x4a8]
++
++	ldr r1, =0x00000000
++	str r1, [r0, #0x4a0]
++	ldr r1, =0x00000038
++	str r1, [r0, #0x4b4]
++	str r1, [r0, #0x4b8]
++	str r1, [r0, #0x764]
++	str r1, [r0, #0x770]
++	str r1, [r0, #0x778]
++	str r1, [r0, #0x77c]
++	str r1, [r0, #0x780]
++	str r1, [r0, #0x784]
++	str r1, [r0, #0x78c]
++	str r1, [r0, #0x748]
++	str r1, [r0, #0x74c]
++	str r1, [r0, #0x76c]
++	ldr r1, =0x00020000
++	str r1, [r0, #0x750]
++	ldr r1, =0x00000000
++	str r1, [r0, #0x754]
++	ldr r1, =0x00020000
++	str r1, [r0, #0x760]
++	ldr r1, =0x00080000
++	str r1, [r0, #0x774]
++
++	ldr r0, =MMDC_P0_BASE_ADDR
++	ldr r1, =MMDC_P1_BASE_ADDR
++	ldr r2, =0x00008000
++	str r2, [r0, #0x1c]
++	str r2, [r1, #0x1c]
++	ldr r2, =0x1b5f01ff
++	str r2, [r0, #0x85c]
++	str r2, [r1, #0x85c]
++	ldr r2, =0xa1390003
++	str r2, [r0, #0x800]
++	ldr r2, =0x00400000
++	str r2, [r0, #0x890]
++	str r2, [r1, #0x890]
++	ldr r2, =0x00055555
++	str r2, [r1, #0x8bc]
++	ldr r2, =0x00000800
++	str r2, [r0, #0x8b8]
++	str r2, [r1, #0x8b8]
++
++	ldr r2, =0x33333333
++	str r2, [r0, #0x81c]
++	str r2, [r0, #0x820]
++	str r2, [r0, #0x824]
++	str r2, [r0, #0x828]
++	str r2, [r1, #0x81c]
++	str r2, [r1, #0x820]
++	str r2, [r1, #0x824]
++	str r2, [r1, #0x828]
++
++	ldr r2, =0x4b4b524f
++	str r2, [r0, #0x848]
++	ldr r2, =0x494f4c44
++	str r2, [r1, #0x848]
++
++	ldr r2, =0x3c3d303c
++	str r2, [r0, #0x850]
++	ldr r2, =0x3c343d38
++	str r2, [r1, #0x850]
++
++	ldr r2, =0x20000000
++	str r2, [r0, #0x83c]
++	str r2, [r1, #0x83c]
++	ldr r2, =0x00000000
++	str r2, [r0, #0x840]
++	str r2, [r1, #0x840]
++
++	ldr r2, =0x00000a00
++	str r2, [r0, #0x858]
++	str r2, [r1, #0x858]
++
++	ldr r2, =0x00000800
++	str r2, [r0, #0x8b8]
++	str r2, [r1, #0x8b8]
++
++	ldr r2, =0x34386145
++	str r2, [r0, #0xc]
++	ldr r2, =0x00020036
++	str r2, [r0, #0x4]
++	ldr r2, =0x00100c83
++	str r2, [r0, #0x10]
++	ldr r2, =0x000000Dc
++	str r2, [r0, #0x14]
++	ldr r2, =0x0000174C
++	str r2, [r0, #0x18]
++	ldr r2, =0x0f9f26d2
++	str r2, [r0, #0x2c]
++	ldr r2, =0x0000020e
++	str r2, [r0, #0x30]
++	ldr r2, =0x00190778
++	str r2, [r0, #0x38]
++	ldr r2, =0x00000000
++	str r2, [r0, #0x8]
++
++	ldr r2, =0x0000005f
++	str r2, [r0, #0x40]
++	ldr r2, =0x0000000f
++	str r2, [r0, #0x404]
++
++	ldr r2, =0xc3010000
++	str r2, [r0, #0x0]
++
++	ldr r2, =0x34386145
++	str r2, [r1, #0xc]
++
++	ldr r2, =0x00020036
++	str r2, [r1, #0x4]
++	ldr r2, =0x00100c83
++	str r2, [r1, #0x10]
++	ldr r2, =0x000000Dc
++	str r2, [r1, #0x14]
++	ldr r2, =0x0000174C
++	str r2, [r1, #0x18]
++	ldr r2, =0x0f9f26d2
++	str r2, [r1, #0x2c]
++	ldr r2, =0x0000020e
++	str r2, [r1, #0x30]
++	ldr r2, =0x00190778
++	str r2, [r1, #0x38]
++	ldr r2, =0x00000000
++	str r2, [r1, #0x8]
++
++	ldr r2, =0x0000003f
++	str r2, [r1, #0x40]
++
++	ldr r2, =0xc3010000
++	str r2, [r1, #0x0]
++
++	ldr r2, =0x003f8030
++	str r2, [r0, #0x1c]
++	ldr r2, =0xff0a8030
++	str r2, [r0, #0x1c]
++	ldr r2, =0xa2018030
++	str r2, [r0, #0x1c]
++	ldr r2, =0x06028030
++	str r2, [r0, #0x1c]
++	ldr r2, =0x01038030
++	str r2, [r0, #0x1c]
++
++	ldr r2, =0x003f8030
++	str r2, [r1, #0x1c]
++	ldr r2, =0xff0a8030
++	str r2, [r1, #0x1c]
++	ldr r2, =0xa2018030
++	str r2, [r1, #0x1c]
++	ldr r2, =0x06028030
++	str r2, [r1, #0x1c]
++	ldr r2, =0x01038030
++	str r2, [r1, #0x1c]
++
++	ldr r2, =0x00005800
++	str r2, [r0, #0x20]
++	str r2, [r1, #0x20]
++
++	ldr r2, =0x00000000
++	str r2, [r0, #0x818]
++	str r2, [r1, #0x818]
++
++	ldr r2, =0xa1310003
++	str r2, [r0, #0x800]
++
++	ldr r2, =0x00000800
++	str r2, [r0, #0x8b8]
++	str r2, [r1, #0x8b8]
++
++	ldr r2, =0x00000000
++	str r2, [r0, #0x1c]
++	str r2, [r1, #0x1c]
++
++	ldr r0, =IOMUXC_BASE_ADDR
++	ldr r1, =0xF00000CF
++	str r1, [r0, #0x10]
++	ldr r1, =0x007F007F
++	str r1, [r0, #0x18]
++	ldr r1, =0x007F007F
++	str r1, [r0, #0x1c]
++.endm
++
++.macro imx6dqarm2_lpddr2_setting
++	ldr r0, =CCM_BASE_ADDR
++	ldr r1, =0x60324
++	str r1, [r0, #0x18]
++	ldr r1, =0xffffffff
++	str r1, [r0, #0x068]
++	ldr r1, =0xffffffff
++	str r1, [r0, #0x06c]
++	ldr r1, =0xffffffff
++	str r1, [r0, #0x070]
++	ldr r1, =0xffffffff
++	str r1, [r0, #0x074]
++	ldr r1, =0xffffffff
++	str r1, [r0, #0x078]
++	ldr r1, =0xffffffff
++	str r1, [r0, #0x07c]
++	ldr r1, =0xffffffff
++	str r1, [r0, #0x080]
++	ldr r1, =0xffffffff
++	str r1, [r0, #0x084]
++
++	ldr r0, =IOMUXC_BASE_ADDR
++	ldr r1, =0x00003038
++	str r1, [r0, #0x5a8]
++	str r1, [r0, #0x5b0]
++	str r1, [r0, #0x524]
++	str r1, [r0, #0x51c]
++	str r1, [r0, #0x518]
++	str r1, [r0, #0x50c]
++	str r1, [r0, #0x5b8]
++	str r1, [r0, #0x5c0]
++
++	ldr r1, =0x00000038
++	str r1, [r0, #0x5ac]
++	str r1, [r0, #0x5b4]
++	str r1, [r0, #0x528]
++	str r1, [r0, #0x520]
++	str r1, [r0, #0x514]
++	str r1, [r0, #0x510]
++	str r1, [r0, #0x5bc]
++	str r1, [r0, #0x5c4]
++	str r1, [r0, #0x56c]
++	str r1, [r0, #0x578]
++	str r1, [r0, #0x588]
++	str r1, [r0, #0x594]
++	str r1, [r0, #0x57c]
++	str r1, [r0, #0x590]
++	str r1, [r0, #0x598]
++
++	ldr r1, =0x00000000
++	str r1, [r0, #0x58c]
++	ldr r1, =0x00000038
++	str r1, [r0, #0x59c]
++	str r1, [r0, #0x5a0]
++	str r1, [r0, #0x784]
++	str r1, [r0, #0x788]
++	str r1, [r0, #0x794]
++	str r1, [r0, #0x79c]
++	str r1, [r0, #0x7a0]
++	str r1, [r0, #0x7a4]
++	str r1, [r0, #0x7a8]
++	str r1, [r0, #0x748]
++	str r1, [r0, #0x74c]
++	ldr r1, =0x00020000
++	str r1, [r0, #0x750]
++	ldr r1, =0x00000000
++	str r1, [r0, #0x758]
++	ldr r1, =0x00020000
++	str r1, [r0, #0x774]
++	ldr r1, =0x00000038
++	str r1, [r0, #0x78c]
++	ldr r1, =0x00080000
++	str r1, [r0, #0x798]
++
++	ldr r0, =MMDC_P0_BASE_ADDR
++	ldr r1, =MMDC_P1_BASE_ADDR
++	ldr r2, =0x00008000
++	str r2, [r0, #0x1c]
++	str r2, [r1, #0x1c]
++	ldr r2, =0x1b5f01ff
++	str r2, [r0, #0x85c]
++	str r2, [r1, #0x85c]
++	ldr r2, =0xa1390000
++	str r2, [r0, #0x800]
++	str r2, [r1, #0x800]
++	ldr r2, =0x00400000
++	str r2, [r0, #0x890]
++	str r2, [r1, #0x890]
++	ldr r2, =0x00055555
++	str r2, [r1, #0x8bc]
++	ldr r2, =0x00000800
++	str r2, [r0, #0x8b8]
++	str r2, [r1, #0x8b8]
++
++	ldr r2, =0x33333333
++	str r2, [r0, #0x81c]
++	str r2, [r0, #0x820]
++	str r2, [r0, #0x824]
++	str r2, [r0, #0x828]
++	str r2, [r1, #0x81c]
++	str r2, [r1, #0x820]
++	str r2, [r1, #0x824]
++	str r2, [r1, #0x828]
++
++	ldr r2, =0xf3333333
++	str r2, [r0, #0x82c]
++	str r2, [r0, #0x830]
++	str r2, [r0, #0x834]
++	str r2, [r0, #0x838]
++	str r2, [r1, #0x82c]
++	str r2, [r1, #0x830]
++	str r2, [r1, #0x834]
++	str r2, [r1, #0x838]
++
++	ldr r2, =0x49383b39
++	str r2, [r0, #0x848]
++	ldr r2, =0x30364738
++	str r2, [r0, #0x850]
++
++	ldr r2, =0x3e3c3846
++	str r2, [r1, #0x848]
++	ldr r2, =0x4c294b35
++	str r2, [r1, #0x850]
++
++	ldr r2, =0x20000000
++	str r2, [r0, #0x83c]
++	str r2, [r1, #0x83c]
++	ldr r2, =0x00000000
++	str r2, [r0, #0x840]
++	str r2, [r1, #0x840]
++
++	ldr r2, =0x00000f00
++	str r2, [r0, #0x858]
++	str r2, [r1, #0x858]
++
++	ldr r2, =0x00000800
++	str r2, [r0, #0x8b8]
++	str r2, [r1, #0x8b8]
++
++	ldr r2, =0x555a61a5
++	str r2, [r0, #0xc]
++	ldr r2, =0x00020036
++	str r2, [r0, #0x4]
++	ldr r2, =0x00160e83
++	str r2, [r0, #0x10]
++	ldr r2, =0x000000dd
++	str r2, [r0, #0x14]
++	ldr r2, =0x0008174C
++	str r2, [r0, #0x18]
++	ldr r2, =0x0f9f26d2
++	str r2, [r0, #0x2c]
++	ldr r2, =0x0000020e
++	str r2, [r0, #0x30]
++	ldr r2, =0x200aac
++	str r2, [r0, #0x38]
++	ldr r2, =0x00000000
++	str r2, [r0, #0x8]
++
++	ldr r2, =0x0000005f
++	str r2, [r0, #0x40]
++
++	ldr r2, =0xc3010000
++	str r2, [r0, #0x0]
++
++	ldr r2, =0x555a61a5
++	str r2, [r1, #0xc]
++	ldr r2, =0x00020036
++	str r2, [r1, #0x4]
++	ldr r2, =0x00160e83
++	str r2, [r1, #0x10]
++	ldr r2, =0x000000dd
++	str r2, [r1, #0x14]
++	ldr r2, =0x0008174C
++	str r2, [r1, #0x18]
++	ldr r2, =0x0f9f26d2
++	str r2, [r1, #0x2c]
++	ldr r2, =0x0000020e
++	str r2, [r1, #0x30]
++	ldr r2, =0x00200aac
++	str r2, [r1, #0x38]
++	ldr r2, =0x00000000
++	str r2, [r1, #0x8]
++
++	ldr r2, =0x0000003f
++	str r2, [r1, #0x40]
++
++	ldr r2, =0xc3010000
++	str r2, [r1, #0x0]
++
++	ldr r2, =0x003f8030
++	str r2, [r0, #0x1c]
++	ldr r2, =0xff0a8030
++	str r2, [r0, #0x1c]
++	ldr r2, =0xc2018030
++	str r2, [r0, #0x1c]
++	ldr r2, =0x06028030
++	str r2, [r0, #0x1c]
++	ldr r2, =0x02038030
++	str r2, [r0, #0x1c]
++
++	ldr r2, =0x003f8030
++	str r2, [r1, #0x1c]
++	ldr r2, =0xff0a8030
++	str r2, [r1, #0x1c]
++	ldr r2, =0xc2018030
++	str r2, [r1, #0x1c]
++	ldr r2, =0x06028030
++	str r2, [r1, #0x1c]
++	ldr r2, =0x02038030
++	str r2, [r1, #0x1c]
++
++	ldr r2, =0xa1390003
++	str r2, [r0, #0x800]
++	str r2, [r1, #0x800]
++
++	ldr r2, =0x00007800
++	str r2, [r0, #0x20]
++	str r2, [r1, #0x20]
++
++	ldr r2, =0x00000000
++	str r2, [r0, #0x818]
++	str r2, [r1, #0x818]
++
++	ldr r2, =0xa1310003
++	str r2, [r0, #0x800]
++	str r2, [r1, #0x800]
++
++	ldr r2, =0x00000800
++	str r2, [r0, #0x8b8]
++	str r2, [r1, #0x8b8]
++
++	ldr r2, =0x00000000
++	str r2, [r0, #0x1c]
++	str r2, [r1, #0x1c]
++
++	ldr r2, =0x00011006
++	str r2, [r0, #0x404]
++
++	ldr r0, =IOMUXC_BASE_ADDR
++	ldr r1, =0xF00000CF
++	str r1, [r0, #0x10]
++	ldr r1, =0x007F007F
++	str r1, [r0, #0x18]
++	ldr r1, =0x007F007F
++	str r1, [r0, #0x1c]
++.endm
++
++.macro imx6dq_pop_arm2_lpddr2_setting
++	ldr r0, =CCM_BASE_ADDR
++	ldr r1, =0xffffffff
++	str r1, [r0, #0x068]
++	ldr r1, =0xffffffff
++	str r1, [r0, #0x06c]
++	ldr r1, =0xffffffff
++	str r1, [r0, #0x070]
++	ldr r1, =0xffffffff
++	str r1, [r0, #0x074]
++	ldr r1, =0xffffffff
++	str r1, [r0, #0x078]
++	ldr r1, =0xffffffff
++	str r1, [r0, #0x07c]
++	ldr r1, =0xffffffff
++	str r1, [r0, #0x080]
++	ldr r1, =0xffffffff
++	str r1, [r0, #0x084]
++
++	ldr r0, =IOMUXC_BASE_ADDR
++	ldr r1, =0x00080000
++	str r1, [r0, #0x798]
++	ldr r1, =0x00000000
++	str r1, [r0, #0x758]
++	ldr r1, =0x00000030
++	str r1, [r0, #0x588]
++	str r1, [r0, #0x594]
++	str r1, [r0, #0x56c]
++	str r1, [r0, #0x578]
++	str r1, [r0, #0x74c]
++	str r1, [r0, #0x57c]
++	str r1, [r0, #0x58c]
++	str r1, [r0, #0x59c]
++	str r1, [r0, #0x5a0]
++	str r1, [r0, #0x78c]
++
++	ldr r1, =0x00020000
++	str r1, [r0, #0x750]
++	ldr r1, =0x00003030
++	str r1, [r0, #0x5a8]
++	str r1, [r0, #0x5b0]
++	str r1, [r0, #0x524]
++	str r1, [r0, #0x51c]
++	str r1, [r0, #0x518]
++	str r1, [r0, #0x50c]
++	str r1, [r0, #0x5b8]
++	str r1, [r0, #0x5c0]
++
++	ldr r1, =0x00020000
++	str r1, [r0, #0x774]
++	ldr r1, =0x00000030
++	str r1, [r0, #0x784]
++	str r1, [r0, #0x788]
++	str r1, [r0, #0x794]
++	str r1, [r0, #0x79c]
++	str r1, [r0, #0x7a0]
++	str r1, [r0, #0x7a4]
++	str r1, [r0, #0x7a8]
++	str r1, [r0, #0x748]
++	str r1, [r0, #0x5ac]
++	str r1, [r0, #0x5b4]
++	str r1, [r0, #0x528]
++	str r1, [r0, #0x520]
++	str r1, [r0, #0x514]
++	str r1, [r0, #0x510]
++	str r1, [r0, #0x5bc]
++	str r1, [r0, #0x5c4]
++
++	ldr r0, =MMDC_P0_BASE_ADDR
++	ldr r1, =MMDC_P1_BASE_ADDR
++	ldr r2, =0x00008000
++	str r2, [r0, #0x1c]
++	str r2, [r1, #0x1c]
++	ldr r2, =0x1B5F0107
++	str r2, [r0, #0x85c]
++	str r2, [r1, #0x85c]
++	ldr r2, =0xA1390003
++	str r2, [r0, #0x800]
++	ldr r2, =0x00400000
++	str r2, [r0, #0x890]
++	str r2, [r1, #0x890]
++	ldr r2, =0x3C3A3A44
++	str r2, [r0, #0x848]
++	str r2, [r1, #0x848]
++	ldr r2, =0x4238423A
++	str r2, [r0, #0x850]
++	str r2, [r1, #0x850]
++
++	ldr r2, =0x20000000
++	str r2, [r0, #0x83c]
++	ldr r2, =0x00000000
++	str r2, [r0, #0x840]
++	ldr r2, =0x20000000
++	str r2, [r1, #0x83c]
++	ldr r2, =0x00000000
++	str r2, [r1, #0x840]
++
++	ldr r2, =0x33333333
++	str r2, [r0, #0x81c]
++	str r2, [r0, #0x820]
++	str r2, [r0, #0x824]
++	str r2, [r0, #0x828]
++	str r2, [r1, #0x81c]
++	str r2, [r1, #0x820]
++	str r2, [r1, #0x824]
++	str r2, [r1, #0x828]
++
++	ldr r2, =0xf3333333
++	str r2, [r0, #0x82c]
++	str r2, [r0, #0x830]
++	str r2, [r0, #0x834]
++	str r2, [r0, #0x838]
++	str r2, [r1, #0x82c]
++	str r2, [r1, #0x830]
++	str r2, [r1, #0x834]
++	str r2, [r1, #0x838]
++
++	ldr r2, =0x00000800
++	str r2, [r0, #0x8b8]
++	str r2, [r1, #0x8b8]
++
++	ldr r2, =0x00020036
++	str r2, [r0, #0x4]
++	ldr r2, =0x00000000
++	str r2, [r0, #0x8]
++	ldr r2, =0x444961A5
++	str r2, [r0, #0xc]
++	ldr r2, =0x00160E83
++	str r2, [r0, #0x10]
++	ldr r2, =0x000000DD
++	str r2, [r0, #0x14]
++
++	ldr r2, =0x0000174C
++	str r2, [r0, #0x18]
++	ldr r2, =0x00008000
++	str r2, [r0, #0x1c]
++	ldr r2, =0x149F26D2
++	str r2, [r0, #0x2c]
++	ldr r2, =0x00000010
++	str r2, [r0, #0x30]
++	ldr r2, =0x0021099B
++	str r2, [r0, #0x38]
++	ldr r2, =0x0000004F
++	str r2, [r0, #0x40]
++	ldr r2, =0x11420000
++	str r2, [r0, #0x400]
++	ldr r2, =0x83110000
++	str r2, [r0, #0x0]
++
++	ldr r2, =0x00020036
++	str r2, [r1, #0x4]
++	ldr r2, =0x00000000
++	str r2, [r1, #0x8]
++	ldr r2, =0x444961A5
++	str r2, [r1, #0xc]
++	ldr r2, =0x00160E83
++	str r2, [r1, #0x10]
++	ldr r2, =0x000000DD
++	str r2, [r1, #0x14]
++
++	ldr r2, =0x0000174C
++	str r2, [r1, #0x18]
++	ldr r2, =0x00008000
++	str r2, [r1, #0x1c]
++	ldr r2, =0x149F26D2
++	str r2, [r1, #0x2c]
++	ldr r2, =0x00000010
++	str r2, [r1, #0x30]
++	ldr r2, =0x0021099B
++	str r2, [r1, #0x38]
++	ldr r2, =0x00000017
++	str r2, [r1, #0x40]
++	ldr r2, =0x11420000
++	str r2, [r1, #0x400]
++	ldr r2, =0x83110000
++	str r2, [r1, #0x0]
++
++	ldr r2, =0x003F8030
++	str r2, [r0, #0x1c]
++	ldr r2, =0xFF0A8030
++	str r2, [r0, #0x1c]
++	ldr r2, =0xC2018030
++	str r2, [r0, #0x1c]
++	ldr r2, =0x06028030
++	str r2, [r0, #0x1c]
++	ldr r2, =0x02038030
++	str r2, [r0, #0x1c]
++
++	ldr r2, =0x003F8030
++	str r2, [r1, #0x1c]
++	ldr r2, =0xFF0A8030
++	str r2, [r1, #0x1c]
++	ldr r2, =0xC2018030
++	str r2, [r1, #0x1c]
++	ldr r2, =0x06028030
++	str r2, [r1, #0x1c]
++	ldr r2, =0x02038030
++	str r2, [r1, #0x1c]
++
++	ldr r2, =0xA1390003
++	str r2, [r0, #0x800]
++
++	ldr r2, =0x00001800
++	str r2, [r0, #0x20]
++	str r2, [r1, #0x20]
++
++	ldr r2, =0x00000000
++	str r2, [r0, #0x818]
++	str r2, [r1, #0x818]
++
++	ldr r2, =0x00025576
++	str r2, [r0, #0x4]
++	str r2, [r1, #0x4]
++
++	ldr r2, =0x00011006
++	str r2, [r0, #0x404]
++	str r2, [r1, #0x404]
++
++	ldr r2, =0x00000000
++	str r2, [r0, #0x1c]
++	str r2, [r1, #0x1c]
++
++	ldr r0, =IOMUXC_BASE_ADDR
++	ldr r1, =0xF00000CF
++	str r1, [r0, #0x10]
++	ldr r1, =0x007F007F
++	str r1, [r0, #0x18]
++	ldr r1, =0x007F007F
++	str r1, [r0, #0x1c]
++.endm
++
++.macro imx6_ddr_setting
++	#if defined (CONFIG_MX6DQ_POP_LPDDR2)
++        imx6dq_pop_arm2_lpddr2_setting
++	#elif defined (CONFIG_MX6DQ_LPDDR2)
++	imx6dqarm2_lpddr2_setting
++	#elif defined (CONFIG_MX6Q)
++	imx6dqarm2_ddr_setting
++	#elif defined (CONFIG_MX6DL_LPDDR2)
++	imx6dlarm2_lpddr2_setting
++	#elif defined (CONFIG_MX6DL)
++	imx6dlarm2_ddr_setting
++	#else
++	#error "SOC not configured"
++	#endif
++.endm
++
++.macro imx6_clock_gating
++.endm
++
++.macro imx6_qos_setting
++.endm
++
++/* include the common plugin code here */
++#include <asm/arch/mx6_plugin.S>
+diff --git a/board/freescale/mx6qsabreauto/Makefile b/board/freescale/mx6qsabreauto/Makefile
+index ac5bc81..33a7945 100644
+--- a/board/freescale/mx6qsabreauto/Makefile
++++ b/board/freescale/mx6qsabreauto/Makefile
+@@ -1,9 +1,13 @@
+ #
+ # Copyright (C) 2007, Guennadi Liakhovetski <lg@denx.de>
+ #
+-# (C) Copyright 2011 Freescale Semiconductor, Inc.
++# (C) Copyright 2011-2015 Freescale Semiconductor, Inc.
+ #
+ # SPDX-License-Identifier:	GPL-2.0+
+ #
+ 
+ obj-y  := mx6qsabreauto.o
++
++extra-$(CONFIG_USE_PLUGIN) :=  plugin.bin
++$(obj)/plugin.bin: $(obj)/plugin.o
++	$(OBJCOPY) -O binary --gap-fill 0xff $< $@
+diff --git a/board/freescale/mx6qsabreauto/imximage.cfg b/board/freescale/mx6qsabreauto/imximage.cfg
+index 16bf473..dacbe80 100644
+--- a/board/freescale/mx6qsabreauto/imximage.cfg
++++ b/board/freescale/mx6qsabreauto/imximage.cfg
+@@ -1,5 +1,5 @@
+ /*
+- * Copyright (C) 2012 Freescale Semiconductor, Inc.
++ * Copyright (C) 2012-2015 Freescale Semiconductor, Inc.
+  *
+  * SPDX-License-Identifier:	GPL-2.0+
+  *
+@@ -10,13 +10,34 @@
+  */
+ /* image version */
+ 
++#define __ASSEMBLY__
++#include <config.h>
++
+ IMAGE_VERSION 2
+ 
+ /*
+- * Boot Device : one of
+- * spi, sd (the board has no nand neither onenand)
++ * Boot Device : one of spi, sd, eimnor, nand, sata:
++ * spinor: flash_offset: 0x0400
++ * nand:   flash_offset: 0x0400
++ * sata:   flash_offset: 0x0400
++ * sd/mmc: flash_offset: 0x0400
++ * eimnor: flash_offset: 0x1000
+  */
++
++#if defined(CONFIG_SYS_BOOT_EIMNOR)
++BOOT_FROM	nor
++#else /* others has the same flash_offset as sd */
+ BOOT_FROM	sd
++#endif
++
++#ifdef CONFIG_USE_PLUGIN
++/*PLUGIN    plugin-binary-file    IRAM_FREE_START_ADDR*/
++PLUGIN	board/freescale/mx6qsabreauto/plugin.bin 0x00907000
++#else
++
++#ifdef CONFIG_SECURE_BOOT
++CSF 0x2000
++#endif
+ 
+ /*
+  * Device Configuration Data (DCD)
+@@ -127,3 +148,4 @@ DATA 4 0x020e0010 0xF00000CF
+ /* set IPU AXI-id0 Qos=0xf(bypass) AXI-id1 Qos=0x7 */
+ DATA 4 0x020e0018 0x007F007F
+ DATA 4 0x020e001c 0x007F007F
++#endif
+diff --git a/board/freescale/mx6qsabreauto/plugin.S b/board/freescale/mx6qsabreauto/plugin.S
+new file mode 100644
+index 0000000..eeecac1
+--- /dev/null
++++ b/board/freescale/mx6qsabreauto/plugin.S
+@@ -0,0 +1,480 @@
++/*
++ * Copyright (C) 2012-2014 Freescale Semiconductor, Inc.
++ *
++ * SPDX-License-Identifier:	GPL-2.0+
++ */
++
++#include <config.h>
++
++/* DDR script */
++.macro imx6dqsabreauto_ddr_setting
++	ldr r0, =IOMUXC_BASE_ADDR
++	ldr r1, =0x000c0000
++	str r1, [r0, #0x798]
++	ldr r1, =0x00000000
++	str r1, [r0, #0x758]
++
++	ldr r1, =0x00000030
++	str r1, [r0, #0x588]
++	str r1, [r0, #0x594]
++	str r1, [r0, #0x56c]
++	str r1, [r0, #0x578]
++	str r1, [r0, #0x74c]
++	str r1, [r0, #0x57c]
++
++	ldr r1, =0x00000000
++	str r1, [r0, #0x58c]
++
++	ldr r1, =0x00000030
++	str r1, [r0, #0x59c]
++	str r1, [r0, #0x5a0]
++	str r1, [r0, #0x78c]
++
++	ldr r1, =0x00020000
++	str r1, [r0, #0x750]
++
++	ldr r1, =0x00000028
++	str r1, [r0, #0x5a8]
++	str r1, [r0, #0x5b0]
++	str r1, [r0, #0x524]
++	str r1, [r0, #0x51c]
++	str r1, [r0, #0x518]
++	str r1, [r0, #0x50c]
++	str r1, [r0, #0x5b8]
++	str r1, [r0, #0x5c0]
++
++	ldr r1, =0x00020000
++	str r1, [r0, #0x774]
++
++	ldr r1, =0x00000028
++	str r1, [r0, #0x784]
++	str r1, [r0, #0x788]
++	str r1, [r0, #0x794]
++	str r1, [r0, #0x79c]
++	str r1, [r0, #0x7a0]
++	str r1, [r0, #0x7a4]
++	str r1, [r0, #0x7a8]
++	str r1, [r0, #0x748]
++	str r1, [r0, #0x5ac]
++	str r1, [r0, #0x5b4]
++	str r1, [r0, #0x528]
++	str r1, [r0, #0x520]
++	str r1, [r0, #0x514]
++	str r1, [r0, #0x510]
++	str r1, [r0, #0x5bc]
++	str r1, [r0, #0x5c4]
++
++	ldr r0, =MMDC_P0_BASE_ADDR
++	ldr r2, =0xa1390003
++	str r2, [r0, #0x800]
++
++	ldr r2, =0x001F001F
++	str r2, [r0, #0x80c]
++	str r2, [r0, #0x810]
++	ldr r1, =MMDC_P1_BASE_ADDR
++	str r2, [r1, #0x80c]
++	str r2, [r1, #0x810]
++
++	ldr r2, =0x43260335
++	str r2, [r0, #0x83c]
++	ldr r2, =0x031A030B
++	str r2, [r0, #0x840]
++
++	ldr r2, =0x4323033B
++	str r2, [r1, #0x83c]
++	ldr r2, =0x0323026F
++	str r2, [r1, #0x840]
++
++	ldr r2, =0x483D4545
++	str r2, [r0, #0x848]
++	ldr r2, =0x44433E48
++	str r2, [r1, #0x848]
++
++	ldr r2, =0x41444840
++	str r2, [r0, #0x850]
++	ldr r2, =0x4835483E
++	str r2, [r1, #0x850]
++
++	ldr r2, =0x33333333
++	str r2, [r0, #0x81c]
++	str r2, [r0, #0x820]
++	str r2, [r0, #0x824]
++	str r2, [r0, #0x828]
++	str r2, [r1, #0x81c]
++	str r2, [r1, #0x820]
++	str r2, [r1, #0x824]
++	str r2, [r1, #0x828]
++
++	ldr r2, =0x00000800
++	str r2, [r0, #0x8b8]
++	str r2, [r1, #0x8b8]
++
++	ldr r2, =0x00020036
++	str r2, [r0, #0x004]
++	ldr r2, =0x09444040
++	str r2, [r0, #0x008]
++
++	ldr r2, =0x8A8F7955
++	str r2, [r0, #0x00c]
++	ldr r2, =0xFF328F64
++	str r2, [r0, #0x010]
++
++	ldr r2, =0x01FF00DB
++	str r2, [r0, #0x014]
++	ldr r2, =0x00001740
++	str r2, [r0, #0x018]
++
++	ldr r2, =0x00008000
++	str r2, [r0, #0x01c]
++	ldr r2, =0x000026d2
++	str r2, [r0, #0x02c]
++	ldr r2, =0x008F1023
++	str r2, [r0, #0x030]
++	ldr r2, =0x00000047
++	str r2, [r0, #0x040]
++
++	ldr r2, =0x841A0000
++	str r2, [r0, #0x000]
++
++	ldr r2, =0x04088032
++	str r2, [r0, #0x01c]
++	ldr r2, =0x00008033
++	str r2, [r0, #0x01c]
++	ldr r2, =0x00048031
++	str r2, [r0, #0x01c]
++	ldr r2, =0x09408030
++	str r2, [r0, #0x01c]
++	ldr r2, =0x04008040
++	str r2, [r0, #0x01c]
++
++	ldr r2, =0x00005800
++	str r2, [r0, #0x020]
++	ldr r2, =0x00011117
++	str r2, [r0, #0x818]
++	str r2, [r1, #0x818]
++	ldr r2, =0x00025576
++	str r2, [r0, #0x004]
++	ldr r2, =0x00011006
++	str r2, [r0, #0x404]
++	ldr r2, =0x00000000
++	str r2, [r0, #0x01c]
++.endm
++
++.macro imx6dlsabreauto_ddr_setting
++	ldr r0, =IOMUXC_BASE_ADDR
++	ldr r1, =0x000c0000
++	str r1, [r0, #0x774]
++	ldr r1, =0x00000000
++	str r1, [r0, #0x754]
++
++	ldr r1, =0x00000030
++	str r1, [r0, #0x4ac]
++	str r1, [r0, #0x4b0]
++	str r1, [r0, #0x464]
++	str r1, [r0, #0x490]
++	str r1, [r0, #0x74c]
++	str r1, [r0, #0x494]
++
++	ldr r1, =0x00000000
++	str r1, [r0, #0x4a0]
++
++	ldr r1, =0x00000030
++	str r1, [r0, #0x4b4]
++	str r1, [r0, #0x4b8]
++	str r1, [r0, #0x76c]
++
++	ldr r1, =0x00020000
++	str r1, [r0, #0x750]
++
++	ldr r1, =0x00000028
++	str r1, [r0, #0x4bc]
++	str r1, [r0, #0x4c0]
++	str r1, [r0, #0x4c4]
++	str r1, [r0, #0x4c8]
++	str r1, [r0, #0x4cc]
++	str r1, [r0, #0x4d0]
++	str r1, [r0, #0x4d4]
++	str r1, [r0, #0x4d8]
++
++	ldr r1, =0x00020000
++	str r1, [r0, #0x760]
++
++	ldr r1, =0x00000028
++	str r1, [r0, #0x764]
++	str r1, [r0, #0x770]
++	str r1, [r0, #0x778]
++	str r1, [r0, #0x77c]
++	str r1, [r0, #0x780]
++	str r1, [r0, #0x784]
++	str r1, [r0, #0x78c]
++	str r1, [r0, #0x748]
++	str r1, [r0, #0x470]
++	str r1, [r0, #0x474]
++	str r1, [r0, #0x478]
++	str r1, [r0, #0x47c]
++	str r1, [r0, #0x480]
++	str r1, [r0, #0x484]
++	str r1, [r0, #0x488]
++	str r1, [r0, #0x48c]
++
++	ldr r0, =MMDC_P0_BASE_ADDR
++	ldr r2, =0xa1390003
++	str r2, [r0, #0x800]
++
++	ldr r2, =0x001f001f
++	str r2, [r0, #0x80c]
++	str r2, [r0, #0x810]
++	ldr r1, =MMDC_P1_BASE_ADDR
++	str r2, [r1, #0x80c]
++	str r2, [r1, #0x810]
++
++	ldr r2, =0x42190217
++	str r2, [r0, #0x83c]
++	ldr r2, =0x017b017b
++	str r2, [r0, #0x840]
++
++	ldr r2, =0x4176017b
++	str r2, [r1, #0x83c]
++	ldr r2, =0x015f016c
++	str r2, [r1, #0x840]
++
++	ldr r2, =0x4c4c4d4c
++	str r2, [r0, #0x848]
++	ldr r2, =0x4a4d4c48
++	str r2, [r1, #0x848]
++
++	ldr r2, =0x3f3f3f40
++	str r2, [r0, #0x850]
++	ldr r2, =0x3538382e
++	str r2, [r1, #0x850]
++
++	ldr r2, =0x33333333
++	str r2, [r0, #0x81c]
++	str r2, [r0, #0x820]
++	str r2, [r0, #0x824]
++	str r2, [r0, #0x828]
++	str r2, [r1, #0x81c]
++	str r2, [r1, #0x820]
++	str r2, [r1, #0x824]
++	str r2, [r1, #0x828]
++
++	ldr r2, =0x00000800
++	str r2, [r0, #0x8b8]
++	str r2, [r1, #0x8b8]
++
++	ldr r2, =0x00020025
++	str r2, [r0, #0x004]
++	ldr r2, =0x00333030
++	str r2, [r0, #0x008]
++
++	ldr r2, =0x676b5313
++	str r2, [r0, #0x00c]
++	ldr r2, =0xb66e8b63
++	str r2, [r0, #0x010]
++
++	ldr r2, =0x01ff00db
++	str r2, [r0, #0x014]
++	ldr r2, =0x00001740
++	str r2, [r0, #0x018]
++
++	ldr r2, =0x00008000
++	str r2, [r0, #0x01c]
++	ldr r2, =0x000026d2
++	str r2, [r0, #0x02c]
++	ldr r2, =0x006b1023
++	str r2, [r0, #0x030]
++	ldr r2, =0x00000047
++	str r2, [r0, #0x040]
++
++	ldr r2, =0x841a0000
++	str r2, [r0, #0x000]
++
++	ldr r2, =0x04008032
++	str r2, [r0, #0x01c]
++	ldr r2, =0x00008033
++	str r2, [r0, #0x01c]
++	ldr r2, =0x00048031
++	str r2, [r0, #0x01c]
++	ldr r2, =0x05208030
++	str r2, [r0, #0x01c]
++	ldr r2, =0x04008040
++	str r2, [r0, #0x01c]
++
++	ldr r2, =0x00005800
++	str r2, [r0, #0x020]
++	ldr r2, =0x00011117
++	str r2, [r0, #0x818]
++	str r2, [r1, #0x818]
++	ldr r2, =0x00025565
++	str r2, [r0, #0x004]
++	ldr r2, =0x00011006
++	str r2, [r0, #0x404]
++	ldr r2, =0x00000000
++	str r2, [r0, #0x01c]
++.endm
++
++.macro imx6solosabreauto_ddr_setting
++	ldr r0, =IOMUXC_BASE_ADDR
++	ldr r1, =0x000c0000
++	str r1, [r0, #0x774]
++	ldr r1, =0x00000000
++	str r1, [r0, #0x754]
++
++	ldr r1, =0x00000030
++	str r1, [r0, #0x4ac]
++	str r1, [r0, #0x4b0]
++	str r1, [r0, #0x464]
++	str r1, [r0, #0x490]
++	str r1, [r0, #0x74c]
++	str r1, [r0, #0x494]
++
++	ldr r1, =0x00000000
++	str r1, [r0, #0x4a0]
++
++	ldr r1, =0x00000030
++	str r1, [r0, #0x4b4]
++	str r1, [r0, #0x4b8]
++	str r1, [r0, #0x76c]
++
++	ldr r1, =0x00020000
++	str r1, [r0, #0x750]
++
++	ldr r1, =0x00000028
++	str r1, [r0, #0x4bc]
++	str r1, [r0, #0x4c0]
++	str r1, [r0, #0x4c4]
++	str r1, [r0, #0x4c8]
++
++	ldr r1, =0x00020000
++	str r1, [r0, #0x760]
++
++	ldr r1, =0x00000028
++	str r1, [r0, #0x764]
++	str r1, [r0, #0x770]
++	str r1, [r0, #0x778]
++	str r1, [r0, #0x77c]
++	str r1, [r0, #0x470]
++	str r1, [r0, #0x474]
++	str r1, [r0, #0x478]
++	str r1, [r0, #0x47c]
++
++	ldr r0, =MMDC_P0_BASE_ADDR
++	ldr r2, =0xa1390003
++	str r2, [r0, #0x800]
++
++	ldr r2, =0x001F001F
++	str r2, [r0, #0x80c]
++	str r2, [r0, #0x810]
++
++	ldr r2, =0x421C0216
++	str r2, [r0, #0x83c]
++	ldr r2, =0x017B017A
++	str r2, [r0, #0x840]
++
++	ldr r2, =0x4B4A4E4C
++	str r2, [r0, #0x848]
++
++	ldr r2, =0x3F3F3334
++	str r2, [r0, #0x850]
++
++	ldr r2, =0x33333333
++	str r2, [r0, #0x81c]
++	str r2, [r0, #0x820]
++	str r2, [r0, #0x824]
++	str r2, [r0, #0x828]
++
++	ldr r2, =0x00000800
++	str r2, [r0, #0x8b8]
++
++	ldr r2, =0x00020025
++	str r2, [r0, #0x004]
++	ldr r2, =0x00333030
++	str r2, [r0, #0x008]
++
++	ldr r2, =0x676B5313
++	str r2, [r0, #0x00c]
++	ldr r2, =0xB66E8B63
++	str r2, [r0, #0x010]
++
++	ldr r2, =0x01FF00DB
++	str r2, [r0, #0x014]
++	ldr r2, =0x00001740
++	str r2, [r0, #0x018]
++
++	ldr r2, =0x00008000
++	str r2, [r0, #0x01c]
++	ldr r2, =0x000026d2
++	str r2, [r0, #0x02c]
++	ldr r2, =0x006B1023
++	str r2, [r0, #0x030]
++	ldr r2, =0x00000027
++	str r2, [r0, #0x040]
++
++	ldr r2, =0x84190000
++	str r2, [r0, #0x000]
++
++	ldr r2, =0x04008032
++	str r2, [r0, #0x01c]
++	ldr r2, =0x00008033
++	str r2, [r0, #0x01c]
++	ldr r2, =0x00048031
++	str r2, [r0, #0x01c]
++	ldr r2, =0x05208030
++	str r2, [r0, #0x01c]
++	ldr r2, =0x04008040
++	str r2, [r0, #0x01c]
++
++	ldr r2, =0x00005800
++	str r2, [r0, #0x020]
++	ldr r2, =0x00011117
++	str r2, [r0, #0x818]
++	ldr r2, =0x00025565
++	str r2, [r0, #0x004]
++	ldr r2, =0x00011006
++	str r2, [r0, #0x404]
++	ldr r2, =0x00000000
++	str r2, [r0, #0x01c]
++.endm
++
++.macro imx6_clock_gating
++	ldr r0, =CCM_BASE_ADDR
++	ldr r1, =0x00C03F3F
++	str r1, [r0, #0x068]
++	ldr r1, =0x0030FC03
++	str r1, [r0, #0x06c]
++	ldr r1, =0x0FFFC000
++	str r1, [r0, #0x070]
++	ldr r1, =0x3FF00000
++	str r1, [r0, #0x074]
++	ldr r1, =0xFFFFF300
++	str r1, [r0, #0x078]
++	ldr r1, =0x0F0000C3
++	str r1, [r0, #0x07c]
++	ldr r1, =0x00000FFF
++	str r1, [r0, #0x080]
++.endm
++
++.macro imx6_qos_setting
++	ldr r0, =IOMUXC_BASE_ADDR
++	ldr r1, =0xF00000CF
++	str r1, [r0, #0x10]
++
++	ldr r1, =0x007F007F
++	str r1, [r0, #0x18]
++	str r1, [r0, #0x1c]
++.endm
++
++.macro imx6_ddr_setting
++#if defined (CONFIG_MX6SOLO)
++	imx6solosabreauto_ddr_setting
++#elif defined (CONFIG_MX6DL)
++	imx6dlsabreauto_ddr_setting
++#elif defined (CONFIG_MX6Q)
++	imx6dqsabreauto_ddr_setting
++#else
++	#error "SOC not configured"
++#endif
++.endm
++
++/* include the common plugin code here */
++#include <asm/arch/mx6_plugin.S>
+diff --git a/board/freescale/mx6sabresd/Makefile b/board/freescale/mx6sabresd/Makefile
+index cfca2ef..d84793a 100644
+--- a/board/freescale/mx6sabresd/Makefile
++++ b/board/freescale/mx6sabresd/Makefile
+@@ -1,9 +1,13 @@
+ #
+ # Copyright (C) 2007, Guennadi Liakhovetski <lg@denx.de>
+ #
+-# (C) Copyright 2011 Freescale Semiconductor, Inc.
++# (C) Copyright 2011-2015 Freescale Semiconductor, Inc.
+ #
+ # SPDX-License-Identifier:	GPL-2.0+
+ #
+ 
+ obj-y  := mx6sabresd.o
++
++extra-$(CONFIG_USE_PLUGIN) :=  plugin.bin
++$(obj)/plugin.bin: $(obj)/plugin.o
++	$(OBJCOPY) -O binary --gap-fill 0xff $< $@
+diff --git a/board/freescale/mx6sabresd/mx6dlsabresd.cfg b/board/freescale/mx6sabresd/mx6dlsabresd.cfg
+index f35f22e..0f77f7e 100644
+--- a/board/freescale/mx6sabresd/mx6dlsabresd.cfg
++++ b/board/freescale/mx6sabresd/mx6dlsabresd.cfg
+@@ -1,5 +1,5 @@
+ /*
+- * Copyright (C) 2014 Freescale Semiconductor, Inc.
++ * Copyright (C) 2014-2015 Freescale Semiconductor, Inc.
+  *
+  * SPDX-License-Identifier:	GPL-2.0+
+  *
+@@ -9,6 +9,8 @@
+  * The syntax is taken as close as possible with the kwbimage
+  */
+ 
++#define __ASSEMBLY__
++#include <config.h>
+ /* image version */
+ 
+ IMAGE_VERSION 2
+@@ -19,6 +21,14 @@ IMAGE_VERSION 2
+  */
+ 
+ BOOT_FROM	sd
++#ifdef CONFIG_USE_PLUGIN
++/*PLUGIN    plugin-binary-file    IRAM_FREE_START_ADDR*/
++PLUGIN board/freescale/mx6sabresd/plugin.bin 0x00907000
++#else
++
++#ifdef CONFIG_SECURE_BOOT
++CSF 0x2000
++#endif
+ 
+ /*
+  * Device Configuration Data (DCD)
+@@ -129,3 +139,4 @@ DATA 4 0x020e0010 0xF00000CF
+ /* set IPU AXI-id0 Qos=0xf(bypass) AXI-id1 Qos=0x7 */
+ DATA 4 0x020e0018 0x007F007F
+ DATA 4 0x020e001c 0x007F007F
++#endif
+diff --git a/board/freescale/mx6sabresd/plugin.S b/board/freescale/mx6sabresd/plugin.S
+new file mode 100644
+index 0000000..6e2a72a
+--- /dev/null
++++ b/board/freescale/mx6sabresd/plugin.S
+@@ -0,0 +1,480 @@
++/*
++ * Copyright (C) 2012-2014 Freescale Semiconductor, Inc.
++ *
++ * SPDX-License-Identifier:	GPL-2.0+
++ */
++
++#include <config.h>
++
++/* DDR script */
++.macro imx6dqsabresd_ddr_setting
++	ldr r0, =IOMUXC_BASE_ADDR
++	ldr r1, =0x000c0000
++	str r1, [r0, #0x798]
++	ldr r1, =0x00000000
++	str r1, [r0, #0x758]
++
++	ldr r1, =0x00000030
++	str r1, [r0, #0x588]
++	str r1, [r0, #0x594]
++	str r1, [r0, #0x56c]
++	str r1, [r0, #0x578]
++	str r1, [r0, #0x74c]
++	str r1, [r0, #0x57c]
++
++	ldr r1, =0x00000000
++	str r1, [r0, #0x58c]
++
++	ldr r1, =0x00000030
++	str r1, [r0, #0x59c]
++	str r1, [r0, #0x5a0]
++	str r1, [r0, #0x78c]
++
++	ldr r1, =0x00020000
++	str r1, [r0, #0x750]
++
++	ldr r1, =0x00000030
++	str r1, [r0, #0x5a8]
++	str r1, [r0, #0x5b0]
++	str r1, [r0, #0x524]
++	str r1, [r0, #0x51c]
++	str r1, [r0, #0x518]
++	str r1, [r0, #0x50c]
++	str r1, [r0, #0x5b8]
++	str r1, [r0, #0x5c0]
++
++	ldr r1, =0x00020000
++	str r1, [r0, #0x774]
++
++	ldr r1, =0x00000030
++	str r1, [r0, #0x784]
++	str r1, [r0, #0x788]
++	str r1, [r0, #0x794]
++	str r1, [r0, #0x79c]
++	str r1, [r0, #0x7a0]
++	str r1, [r0, #0x7a4]
++	str r1, [r0, #0x7a8]
++	str r1, [r0, #0x748]
++	str r1, [r0, #0x5ac]
++	str r1, [r0, #0x5b4]
++	str r1, [r0, #0x528]
++	str r1, [r0, #0x520]
++	str r1, [r0, #0x514]
++	str r1, [r0, #0x510]
++	str r1, [r0, #0x5bc]
++	str r1, [r0, #0x5c4]
++
++	ldr r0, =MMDC_P0_BASE_ADDR
++	ldr r2, =0xa1390003
++	str r2, [r0, #0x800]
++
++	ldr r2, =0x001F001F
++	str r2, [r0, #0x80c]
++	str r2, [r0, #0x810]
++	ldr r1, =MMDC_P1_BASE_ADDR
++	str r2, [r1, #0x80c]
++	str r2, [r1, #0x810]
++
++	ldr r2, =0x43270338
++	str r2, [r0, #0x83c]
++	ldr r2, =0x03200314
++	str r2, [r0, #0x840]
++
++	ldr r2, =0x431A032F
++	str r2, [r1, #0x83c]
++	ldr r2, =0x03200263
++	str r2, [r1, #0x840]
++
++	ldr r2, =0x4B434748
++	str r2, [r0, #0x848]
++	ldr r2, =0x4445404C
++	str r2, [r1, #0x848]
++
++	ldr r2, =0x38444542
++	str r2, [r0, #0x850]
++	ldr r2, =0x4935493A
++	str r2, [r1, #0x850]
++
++	ldr r2, =0x33333333
++	str r2, [r0, #0x81c]
++	str r2, [r0, #0x820]
++	str r2, [r0, #0x824]
++	str r2, [r0, #0x828]
++	str r2, [r1, #0x81c]
++	str r2, [r1, #0x820]
++	str r2, [r1, #0x824]
++	str r2, [r1, #0x828]
++
++	ldr r2, =0x00000800
++	str r2, [r0, #0x8b8]
++	str r2, [r1, #0x8b8]
++
++	ldr r2, =0x00020036
++	str r2, [r0, #0x004]
++	ldr r2, =0x09444040
++	str r2, [r0, #0x008]
++
++	ldr r2, =0x555A7975
++	str r2, [r0, #0x00c]
++	ldr r2, =0xFF538F64
++	str r2, [r0, #0x010]
++
++	ldr r2, =0x01FF00DB
++	str r2, [r0, #0x014]
++	ldr r2, =0x00001740
++	str r2, [r0, #0x018]
++
++	ldr r2, =0x00008000
++	str r2, [r0, #0x01c]
++	ldr r2, =0x000026d2
++	str r2, [r0, #0x02c]
++	ldr r2, =0x005A1023
++	str r2, [r0, #0x030]
++	ldr r2, =0x00000027
++	str r2, [r0, #0x040]
++
++	ldr r2, =0x831A0000
++	str r2, [r0, #0x000]
++
++	ldr r2, =0x04088032
++	str r2, [r0, #0x01c]
++	ldr r2, =0x00008033
++	str r2, [r0, #0x01c]
++	ldr r2, =0x00048031
++	str r2, [r0, #0x01c]
++	ldr r2, =0x09408030
++	str r2, [r0, #0x01c]
++	ldr r2, =0x04008040
++	str r2, [r0, #0x01c]
++
++	ldr r2, =0x00005800
++	str r2, [r0, #0x020]
++	ldr r2, =0x00011117
++	str r2, [r0, #0x818]
++	str r2, [r1, #0x818]
++	ldr r2, =0x00025576
++	str r2, [r0, #0x004]
++	ldr r2, =0x00011006
++	str r2, [r0, #0x404]
++	ldr r2, =0x00000000
++	str r2, [r0, #0x01c]
++.endm
++
++.macro imx6dlsabresd_ddr_setting
++	ldr r0, =IOMUXC_BASE_ADDR
++	ldr r1, =0x000c0000
++	str r1, [r0, #0x774]
++	ldr r1, =0x00000000
++	str r1, [r0, #0x754]
++
++	ldr r1, =0x00000030
++	str r1, [r0, #0x4ac]
++	str r1, [r0, #0x4b0]
++	str r1, [r0, #0x464]
++	str r1, [r0, #0x490]
++	str r1, [r0, #0x74c]
++	str r1, [r0, #0x494]
++
++	ldr r1, =0x00000000
++	str r1, [r0, #0x4a0]
++
++	ldr r1, =0x00000030
++	str r1, [r0, #0x4b4]
++	str r1, [r0, #0x4b8]
++	str r1, [r0, #0x76c]
++
++	ldr r1, =0x00020000
++	str r1, [r0, #0x750]
++
++	ldr r1, =0x00000030
++	str r1, [r0, #0x4bc]
++	str r1, [r0, #0x4c0]
++	str r1, [r0, #0x4c4]
++	str r1, [r0, #0x4c8]
++	str r1, [r0, #0x4cc]
++	str r1, [r0, #0x4d0]
++	str r1, [r0, #0x4d4]
++	str r1, [r0, #0x4d8]
++
++	ldr r1, =0x00020000
++	str r1, [r0, #0x760]
++
++	ldr r1, =0x00000030
++	str r1, [r0, #0x764]
++	str r1, [r0, #0x770]
++	str r1, [r0, #0x778]
++	str r1, [r0, #0x77c]
++	str r1, [r0, #0x780]
++	str r1, [r0, #0x784]
++	str r1, [r0, #0x78c]
++	str r1, [r0, #0x748]
++	str r1, [r0, #0x470]
++	str r1, [r0, #0x474]
++	str r1, [r0, #0x478]
++	str r1, [r0, #0x47c]
++	str r1, [r0, #0x480]
++	str r1, [r0, #0x484]
++	str r1, [r0, #0x488]
++	str r1, [r0, #0x48c]
++
++	ldr r0, =MMDC_P0_BASE_ADDR
++	ldr r2, =0xa1390003
++	str r2, [r0, #0x800]
++
++	ldr r2, =0x001f001f
++	str r2, [r0, #0x80c]
++	str r2, [r0, #0x810]
++	ldr r1, =MMDC_P1_BASE_ADDR
++	str r2, [r1, #0x80c]
++	str r2, [r1, #0x810]
++
++	ldr r2, =0x4220021F
++	str r2, [r0, #0x83c]
++	ldr r2, =0x0207017E
++	str r2, [r0, #0x840]
++
++	ldr r2, =0x4201020C
++	str r2, [r1, #0x83c]
++	ldr r2, =0x01660172
++	str r2, [r1, #0x840]
++
++	ldr r2, =0x4A4D4E4D
++	str r2, [r0, #0x848]
++	ldr r2, =0x4A4F5049
++	str r2, [r1, #0x848]
++
++	ldr r2, =0x3F3C3D31
++	str r2, [r0, #0x850]
++	ldr r2, =0x3238372B
++	str r2, [r1, #0x850]
++
++	ldr r2, =0x33333333
++	str r2, [r0, #0x81c]
++	str r2, [r0, #0x820]
++	str r2, [r0, #0x824]
++	str r2, [r0, #0x828]
++	str r2, [r1, #0x81c]
++	str r2, [r1, #0x820]
++	str r2, [r1, #0x824]
++	str r2, [r1, #0x828]
++
++	ldr r2, =0x00000800
++	str r2, [r0, #0x8b8]
++	str r2, [r1, #0x8b8]
++
++	ldr r2, =0x0002002D
++	str r2, [r0, #0x004]
++	ldr r2, =0x00333030
++	str r2, [r0, #0x008]
++
++	ldr r2, =0x3F435313
++	str r2, [r0, #0x00c]
++	ldr r2, =0xB66E8B63
++	str r2, [r0, #0x010]
++
++	ldr r2, =0x01FF00DB
++	str r2, [r0, #0x014]
++	ldr r2, =0x00001740
++	str r2, [r0, #0x018]
++
++	ldr r2, =0x00008000
++	str r2, [r0, #0x01c]
++	ldr r2, =0x000026d2
++	str r2, [r0, #0x02c]
++	ldr r2, =0x00431023
++	str r2, [r0, #0x030]
++	ldr r2, =0x00000027
++	str r2, [r0, #0x040]
++
++	ldr r2, =0x831A0000
++	str r2, [r0, #0x000]
++
++	ldr r2, =0x04008032
++	str r2, [r0, #0x01c]
++	ldr r2, =0x00008033
++	str r2, [r0, #0x01c]
++	ldr r2, =0x00048031
++	str r2, [r0, #0x01c]
++	ldr r2, =0x05208030
++	str r2, [r0, #0x01c]
++	ldr r2, =0x04008040
++	str r2, [r0, #0x01c]
++
++	ldr r2, =0x00005800
++	str r2, [r0, #0x020]
++	ldr r2, =0x00011117
++	str r2, [r0, #0x818]
++	str r2, [r1, #0x818]
++	ldr r2, =0x0002556D
++	str r2, [r0, #0x004]
++	ldr r2, =0x00011006
++	str r2, [r0, #0x404]
++	ldr r2, =0x00000000
++	str r2, [r0, #0x01c]
++.endm
++
++.macro imx6solosabresd_ddr_setting
++	ldr r0, =IOMUXC_BASE_ADDR
++	ldr r1, =0x000c0000
++	str r1, [r0, #0x774]
++	ldr r1, =0x00000000
++	str r1, [r0, #0x754]
++
++	ldr r1, =0x00000030
++	str r1, [r0, #0x4ac]
++	str r1, [r0, #0x4b0]
++	str r1, [r0, #0x464]
++	str r1, [r0, #0x490]
++	str r1, [r0, #0x74c]
++	str r1, [r0, #0x494]
++
++	ldr r1, =0x00000000
++	str r1, [r0, #0x4a0]
++
++	ldr r1, =0x00000030
++	str r1, [r0, #0x4b4]
++	str r1, [r0, #0x4b8]
++	str r1, [r0, #0x76c]
++
++	ldr r1, =0x00020000
++	str r1, [r0, #0x750]
++
++	ldr r1, =0x00000030
++	str r1, [r0, #0x4bc]
++	str r1, [r0, #0x4c0]
++	str r1, [r0, #0x4c4]
++	str r1, [r0, #0x4c8]
++
++	ldr r1, =0x00020000
++	str r1, [r0, #0x760]
++
++	ldr r1, =0x00000030
++	str r1, [r0, #0x764]
++	str r1, [r0, #0x770]
++	str r1, [r0, #0x778]
++	str r1, [r0, #0x77c]
++	str r1, [r0, #0x470]
++	str r1, [r0, #0x474]
++	str r1, [r0, #0x478]
++	str r1, [r0, #0x47c]
++
++	ldr r0, =MMDC_P0_BASE_ADDR
++	ldr r2, =0xa1390003
++	str r2, [r0, #0x800]
++
++	ldr r2, =0x001F001F
++	str r2, [r0, #0x80c]
++	str r2, [r0, #0x810]
++
++	ldr r2, =0x42190219
++	str r2, [r0, #0x83c]
++	ldr r2, =0x017B0177
++	str r2, [r0, #0x840]
++
++	ldr r2, =0x4B4D4E4D
++	str r2, [r0, #0x848]
++
++	ldr r2, =0x3F3E2D36
++	str r2, [r0, #0x850]
++
++	ldr r2, =0x33333333
++	str r2, [r0, #0x81c]
++	str r2, [r0, #0x820]
++	str r2, [r0, #0x824]
++	str r2, [r0, #0x828]
++
++	ldr r2, =0x00000800
++	str r2, [r0, #0x8b8]
++
++	ldr r2, =0x0002002D
++	str r2, [r0, #0x004]
++	ldr r2, =0x00333030
++	str r2, [r0, #0x008]
++
++	ldr r2, =0x3F435313
++	str r2, [r0, #0x00c]
++	ldr r2, =0xB66E8B63
++	str r2, [r0, #0x010]
++
++	ldr r2, =0x01FF00DB
++	str r2, [r0, #0x014]
++	ldr r2, =0x00001740
++	str r2, [r0, #0x018]
++
++	ldr r2, =0x00008000
++	str r2, [r0, #0x01c]
++	ldr r2, =0x000026d2
++	str r2, [r0, #0x02c]
++	ldr r2, =0x00431023
++	str r2, [r0, #0x030]
++	ldr r2, =0x00000017
++	str r2, [r0, #0x040]
++
++	ldr r2, =0x83190000
++	str r2, [r0, #0x000]
++
++	ldr r2, =0x04008032
++	str r2, [r0, #0x01c]
++	ldr r2, =0x00008033
++	str r2, [r0, #0x01c]
++	ldr r2, =0x00048031
++	str r2, [r0, #0x01c]
++	ldr r2, =0x05208030
++	str r2, [r0, #0x01c]
++	ldr r2, =0x04008040
++	str r2, [r0, #0x01c]
++
++	ldr r2, =0x00005800
++	str r2, [r0, #0x020]
++	ldr r2, =0x00011117
++	str r2, [r0, #0x818]
++	ldr r2, =0x0002556D
++	str r2, [r0, #0x004]
++	ldr r2, =0x00011006
++	str r2, [r0, #0x404]
++	ldr r2, =0x00000000
++	str r2, [r0, #0x01c]
++.endm
++.macro imx6_clock_gating
++	ldr r0, =CCM_BASE_ADDR
++	ldr r1, =0x00C03F3F
++	str r1, [r0, #0x068]
++	ldr r1, =0x0030FC03
++	str r1, [r0, #0x06c]
++	ldr r1, =0x0FFFC000
++	str r1, [r0, #0x070]
++	ldr r1, =0x3FF00000
++	str r1, [r0, #0x074]
++	ldr r1, =0x00FFF300
++	str r1, [r0, #0x078]
++	ldr r1, =0x0F0000C3
++	str r1, [r0, #0x07c]
++	ldr r1, =0x000003FF
++	str r1, [r0, #0x080]
++.endm
++
++.macro imx6_qos_setting
++	ldr r0, =IOMUXC_BASE_ADDR
++	ldr r1, =0xF00000CF
++	str r1, [r0, #0x10]
++
++	ldr r1, =0x007F007F
++	str r1, [r0, #0x18]
++	str r1, [r0, #0x1c]
++.endm
++
++.macro imx6_ddr_setting
++#if defined (CONFIG_MX6SOLO)
++	imx6solosabresd_ddr_setting
++#elif defined (CONFIG_MX6DL)
++	imx6dlsabresd_ddr_setting
++#elif defined (CONFIG_MX6Q)
++	imx6dqsabresd_ddr_setting
++#else
++	#error "SOC not configured"
++#endif
++
++.endm
++
++/* include the common plugin code here */
++#include <asm/arch/mx6_plugin.S>
+diff --git a/board/freescale/mx6slevk/Makefile b/board/freescale/mx6slevk/Makefile
+index 6e1971e..7c6b54c 100644
+--- a/board/freescale/mx6slevk/Makefile
++++ b/board/freescale/mx6slevk/Makefile
+@@ -1,6 +1,10 @@
+-# (C) Copyright 2013 Freescale Semiconductor, Inc.
++# (C) Copyright 2013-2015 Freescale Semiconductor, Inc.
+ #
+ # SPDX-License-Identifier:	GPL-2.0+
+ #
+ 
+ obj-y  := mx6slevk.o
++
++extra-$(CONFIG_USE_PLUGIN) :=  plugin.bin
++$(obj)/plugin.bin: $(obj)/plugin.o
++	$(OBJCOPY) -O binary --gap-fill 0xff $< $@
+diff --git a/board/freescale/mx6slevk/imximage.cfg b/board/freescale/mx6slevk/imximage.cfg
+index 16ea597..2dc5976 100644
+--- a/board/freescale/mx6slevk/imximage.cfg
++++ b/board/freescale/mx6slevk/imximage.cfg
+@@ -1,5 +1,5 @@
+ /*
+- * Copyright (C) 2013 Freescale Semiconductor, Inc.
++ * Copyright (C) 2013-2015 Freescale Semiconductor, Inc.
+  *
+  * SPDX-License-Identifier:	GPL-2.0+
+  *
+@@ -9,6 +9,9 @@
+  * The syntax is taken as close as possible with the kwbimage
+  */
+ 
++#define __ASSEMBLY__
++#include <config.h>
++
+ /* image version */
+ 
+ IMAGE_VERSION 2
+@@ -20,6 +23,15 @@ IMAGE_VERSION 2
+ 
+ BOOT_FROM	sd
+ 
++#ifdef CONFIG_USE_PLUGIN
++/*PLUGIN    plugin-binary-file    IRAM_FREE_START_ADDR*/
++PLUGIN	board/freescale/mx6slevk/plugin.bin 0x00907000
++#else
++
++#ifdef CONFIG_SECURE_BOOT
++CSF 0x2000
++#endif
++
+ /*
+  * Device Configuration Data (DCD)
+  *
+@@ -113,3 +125,4 @@ DATA 4 0x021b08b8 0x00000800
+ DATA 4 0x021b0004 0x00025564
+ DATA 4 0x021b0404 0x00011006
+ DATA 4 0x021b001c 0x00000000
++#endif
+diff --git a/board/freescale/mx6slevk/plugin.S b/board/freescale/mx6slevk/plugin.S
+new file mode 100644
+index 0000000..287dfed
+--- /dev/null
++++ b/board/freescale/mx6slevk/plugin.S
+@@ -0,0 +1,187 @@
++/*
++ * Copyright (C) 2014 Freescale Semiconductor, Inc.
++ *
++ * SPDX-License-Identifier:	GPL-2.0+
++ */
++
++#include <config.h>
++
++/* DDR script */
++.macro imx6slevk_ddr_setting
++	ldr r0, =CCM_BASE_ADDR
++	ldr r1, =0x00260324
++	str r1, [r0, #0x018]
++
++	ldr r0, =IOMUXC_BASE_ADDR
++	ldr r1, =0x00020000
++	str r1, [r0, #0x5c0]
++	ldr r1, =0x00000000
++	str r1, [r0, #0x5b4]
++
++	ldr r1, =0x00000028
++	str r1, [r0, #0x338]
++
++	ldr r1, =0x00000030
++	str r1, [r0, #0x300]
++	str r1, [r0, #0x31c]
++	str r1, [r0, #0x320]
++
++	ldr r1, =0x00000000
++	str r1, [r0, #0x32c]
++
++	ldr r1, =0x00000030
++	str r1, [r0, #0x5ac]
++	str r1, [r0, #0x5c8]
++
++	ldr r1, =0x00020000
++	str r1, [r0, #0x5b0]
++
++	ldr r1, =0x00003030
++	str r1, [r0, #0x344]
++	str r1, [r0, #0x348]
++	str r1, [r0, #0x34c]
++	str r1, [r0, #0x350]
++
++	ldr r1, =0x00080000
++	str r1, [r0, #0x5d0]
++
++	ldr r1, =0x00000030
++	str r1, [r0, #0x5c4]
++	str r1, [r0, #0x5cc]
++	str r1, [r0, #0x5d4]
++	str r1, [r0, #0x5d8]
++
++	str r1, [r0, #0x30c]
++	str r1, [r0, #0x310]
++	str r1, [r0, #0x314]
++	str r1, [r0, #0x318]
++
++	ldr r0, =MMDC_P0_BASE_ADDR
++	ldr r2, =0x00008000
++	str r2, [r0, #0x01c]
++
++	ldr r2, =0x1b4700c7
++	str r2, [r0, #0x85c]
++
++	ldr r2, =0xa1390003
++	str r2, [r0, #0x800]
++
++	ldr r2, =0x00300000
++	str r2, [r0, #0x890]
++
++	ldr r2, =0x00000800
++	str r2, [r0, #0x8b8]
++
++	ldr r2, =0x33333333
++	str r2, [r0, #0x81c]
++	str r2, [r0, #0x820]
++	str r2, [r0, #0x824]
++	str r2, [r0, #0x828]
++	str r2, [r0, #0x82c]
++	str r2, [r0, #0x830]
++	str r2, [r0, #0x834]
++	str r2, [r0, #0x838]
++
++	ldr r2, =0x4241444a
++	str r2, [r0, #0x848]
++
++	ldr r2, =0x3030312b
++	str r2, [r0, #0x850]
++
++	ldr r2, =0x20000000
++	str r2, [r0, #0x83c]
++
++	ldr r2, =0x00000000
++	str r2, [r0, #0x840]
++
++	ldr r2, =0x00000800
++	str r2, [r0, #0x8b8]
++
++	ldr r2, =0x33374133
++	str r2, [r0, #0x00c]
++
++	ldr r2, =0x00020024
++	str r2, [r0, #0x004]
++
++	ldr r2, =0x00100A82
++	str r2, [r0, #0x010]
++	ldr r2, =0x00000093
++	str r2, [r0, #0x014]
++	ldr r2, =0x00001688
++	str r2, [r0, #0x018]
++	ldr r2, =0x0F9F26D2
++	str r2, [r0, #0x02c]
++
++	ldr r2, =0x0000020E
++	str r2, [r0, #0x030]
++	ldr r2, =0x00190778
++	str r2, [r0, #0x038]
++	ldr r2, =0x00000000
++	str r2, [r0, #0x008]
++	ldr r2, =0x0000004F
++	str r2, [r0, #0x040]
++	ldr r2, =0xC3110000
++	str r2, [r0, #0x000]
++
++	ldr r2, =0x003F8030
++	str r2, [r0, #0x01c]
++	ldr r2, =0xFF0A8030
++	str r2, [r0, #0x01c]
++	ldr r2, =0x82018030
++	str r2, [r0, #0x01c]
++	ldr r2, =0x04028030
++	str r2, [r0, #0x01c]
++	ldr r2, =0x02038030
++	str r2, [r0, #0x01c]
++	ldr r2, =0xFF0A8038
++	str r2, [r0, #0x01c]
++	ldr r2, =0x82018038
++	str r2, [r0, #0x01c]
++	ldr r2, =0x04028038
++	str r2, [r0, #0x01c]
++	ldr r2, =0x02038038
++	str r2, [r0, #0x01c]
++
++	ldr r2, =0xa1310003
++	str r2, [r0, #0x800]
++
++	ldr r2, =0x00001800
++	str r2, [r0, #0x020]
++
++	ldr r2, =0x00000000
++	str r2, [r0, #0x818]
++
++	ldr r2, =0x00000800
++	str r2, [r0, #0x8b8]
++
++	ldr r2, =0x00025564
++	str r2, [r0, #0x004]
++
++	ldr r2, =0x00011006
++	str r2, [r0, #0x404]
++
++	ldr r2, =0x00000000
++	str r2, [r0, #0x01c]
++.endm
++.macro imx6_clock_gating
++	ldr r0, =CCM_BASE_ADDR
++	ldr r1, =0xffffffff
++	str r1, [r0, #0x068]
++	str r1, [r0, #0x06c]
++	str r1, [r0, #0x070]
++	str r1, [r0, #0x074]
++	str r1, [r0, #0x078]
++	str r1, [r0, #0x07c]
++	str r1, [r0, #0x080]
++	str r1, [r0, #0x084]
++.endm
++
++.macro imx6_qos_setting
++.endm
++
++.macro imx6_ddr_setting
++	imx6slevk_ddr_setting
++.endm
++
++/* include the common plugin code here */
++#include <asm/arch/mx6_plugin.S>
+diff --git a/board/freescale/mx6sxsabresd/Makefile b/board/freescale/mx6sxsabresd/Makefile
+index 97dbfda..fd8974f 100644
+--- a/board/freescale/mx6sxsabresd/Makefile
++++ b/board/freescale/mx6sxsabresd/Makefile
+@@ -1,6 +1,10 @@
+-# (C) Copyright 2014 Freescale Semiconductor, Inc.
++# (C) Copyright 2014-2015 Freescale Semiconductor, Inc.
+ #
+ # SPDX-License-Identifier:	GPL-2.0+
+ #
+ 
+ obj-y  := mx6sxsabresd.o
++
++extra-$(CONFIG_USE_PLUGIN) :=  plugin.bin
++$(obj)/plugin.bin: $(obj)/plugin.o
++	$(OBJCOPY) -O binary --gap-fill 0xff $< $@
+diff --git a/board/freescale/mx6sxsabresd/imximage.cfg b/board/freescale/mx6sxsabresd/imximage.cfg
+index c862617..de48fcf 100644
+--- a/board/freescale/mx6sxsabresd/imximage.cfg
++++ b/board/freescale/mx6sxsabresd/imximage.cfg
+@@ -16,7 +16,20 @@ IMAGE_VERSION 2
+  * spi/sd/nand/onenand, qspi/nor
+  */
+ 
++#ifdef CONFIG_SYS_BOOT_QSPI
++BOOT_FROM	qspi
++#else
+ BOOT_FROM	sd
++#endif
++
++#ifdef CONFIG_USE_PLUGIN
++/*PLUGIN    plugin-binary-file    IRAM_FREE_START_ADDR*/
++PLUGIN	board/freescale/mx6sxsabresd/plugin.bin 0x00907000
++#else
++
++#ifdef CONFIG_SECURE_BOOT
++CSF 0x2000
++#endif
+ 
+ /*
+  * Device Configuration Data (DCD)
+@@ -130,3 +143,4 @@ DATA 4 0x021b001c 0x04008040
+ DATA 4 0x021b0020 0x00000800
+ DATA 4 0x021b0818 0x00011117
+ DATA 4 0x021b001c 0x00000000
++#endif
+diff --git a/board/freescale/mx6sxsabresd/plugin.S b/board/freescale/mx6sxsabresd/plugin.S
+new file mode 100644
+index 0000000..667095f
+--- /dev/null
++++ b/board/freescale/mx6sxsabresd/plugin.S
+@@ -0,0 +1,135 @@
++/*
++ * Copyright (C) 2013-2014 Freescale Semiconductor, Inc.
++ *
++ * SPDX-License-Identifier:	GPL-2.0+
++ */
++
++#include <config.h>
++
++/* DDR script */
++.macro imx6sx_sabresd_ddr_setting
++	ldr r0, =IOMUXC_BASE_ADDR
++	ldr r1, =0x000c0000
++	str r1, [r0, #0x618]
++	ldr r1, =0x00000000
++	str r1, [r0, #0x5fc]
++	ldr r1, =0x00000030
++	str r1, [r0, #0x32c]
++
++	ldr r1, =0x00000020
++	str r1, [r0, #0x300]
++	str r1, [r0, #0x2fc]
++	str r1, [r0, #0x5f4]
++	str r1, [r0, #0x340]
++
++	ldr r1, =0x00000000
++	str r1, [r0, #0x320]
++	ldr r1, =0x00000020
++	str r1, [r0, #0x310]
++	str r1, [r0, #0x314]
++	str r1, [r0, #0x614]
++
++	ldr r1, =0x00020000
++	str r1, [r0, #0x5f8]
++	ldr r1, =0x00000028
++	str r1, [r0, #0x330]
++	str r1, [r0, #0x334]
++	str r1, [r0, #0x338]
++	str r1, [r0, #0x33c]
++	ldr r1, =0x00020000
++	str r1, [r0, #0x608]
++	ldr r1, =0x00000028
++	str r1, [r0, #0x60c]
++	str r1, [r0, #0x610]
++	str r1, [r0, #0x61c]
++	str r1, [r0, #0x620]
++	str r1, [r0, #0x2ec]
++	str r1, [r0, #0x2f0]
++	str r1, [r0, #0x2f4]
++	str r1, [r0, #0x2f8]
++
++	ldr r0, =MMDC_P0_BASE_ADDR
++	ldr r2, =0xa1390003
++	str r2, [r0, #0x800]
++	ldr r2, =0x00290025
++	str r2, [r0, #0x80c]
++	ldr r2, =0x00220022
++	str r2, [r0, #0x810]
++	ldr r2, =0x41480144
++	str r2, [r0, #0x83c]
++	ldr r2, =0x01340130
++	str r2, [r0, #0x840]
++	ldr r2, =0x3C3E4244
++	str r2, [r0, #0x848]
++	ldr r2, =0x34363638
++	str r2, [r0, #0x850]
++
++	ldr r2, =0x33333333
++	str r2, [r0, #0x81c]
++	str r2, [r0, #0x820]
++	str r2, [r0, #0x824]
++	str r2, [r0, #0x828]
++
++	ldr r2, =0x00000800
++	str r2, [r0, #0x8b8]
++	ldr r2, =0x0002002d
++	str r2, [r0, #0x004]
++	ldr r2, =0x00333030
++	str r2, [r0, #0x008]
++	ldr r2, =0x676b52f3
++	str r2, [r0, #0x00c]
++	ldr r2, =0xb66d8b63
++	str r2, [r0, #0x010]
++	ldr r2, =0x01ff00db
++	str r2, [r0, #0x014]
++	ldr r2, =0x00011740
++	str r2, [r0, #0x018]
++	ldr r2, =0x00008000
++	str r2, [r0, #0x01c]
++	ldr r2, =0x000026d2
++	str r2, [r0, #0x02c]
++	ldr r2, =0x006b1023
++	str r2, [r0, #0x030]
++	ldr r2, =0x0000005f
++	str r2, [r0, #0x040]
++	ldr r2, =0x84190000
++	str r2, [r0, #0x000]
++	ldr r2, =0x04008032
++	str r2, [r0, #0x01c]
++	ldr r2, =0x00008033
++	str r2, [r0, #0x01c]
++	ldr r2, =0x00048031
++	str r2, [r0, #0x01c]
++	ldr r2, =0x05208030
++	str r2, [r0, #0x01c]
++	ldr r2, =0x04008040
++	str r2, [r0, #0x01c]
++	ldr r2, =0x00000800
++	str r2, [r0, #0x020]
++	ldr r2, =0x00011117
++	str r2, [r0, #0x818]
++	ldr r2, =0x00000000
++	str r2, [r0, #0x01c]
++.endm
++.macro imx6_clock_gating
++	ldr r0, =CCM_BASE_ADDR
++	ldr r1, =0xffffffff
++	str r1, [r0, #0x068]
++	str r1, [r0, #0x06c]
++	str r1, [r0, #0x070]
++	str r1, [r0, #0x074]
++	str r1, [r0, #0x078]
++	str r1, [r0, #0x07c]
++	str r1, [r0, #0x080]
++	str r1, [r0, #0x084]
++.endm
++
++.macro imx6_qos_setting
++.endm
++
++.macro imx6_ddr_setting
++	imx6sx_sabresd_ddr_setting
++.endm
++
++/* include the common plugin code here */
++#include <asm/arch/mx6_plugin.S>
+-- 
+1.8.0
+

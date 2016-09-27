@@ -1,0 +1,93 @@
+From 0b631ea9c17d351d3601324e00436bfcb96167db Mon Sep 17 00:00:00 2001
+From: Haoran Wang <b50027@freescale.com>
+Date: Wed, 17 Jun 2015 18:11:22 +0800
+Subject: [PATCH] MA-6787 Remove rmmod 8821AS warning logs
+
+This patch fix two bugs:
+1. The wrong cfg80211_disconnect function which
+   caused the 8821AS suspend by NETLINK regression.
+
+2. The warning logs when rmmod 8821as like below:
+    [<c0015314>] (unwind_backtrace) from [<c0011c1c>] (show_stack+0x10/0x14)
+    [<c0011c1c>] (show_stack) from [<c0896110>] (dump_stack+0x6c/0xc8)
+    [<c0896110>] (dump_stack) from [<c0034690>]
+    (warn_slowpath_common+0x68/0x88)
+    [<c0034690>] (warn_slowpath_common) from [<c00346cc>]
+    (warn_slowpath_null+0x1c/0x24)
+    [<c00346cc>] (warn_slowpath_null) from [<bf0018ec>]
+    (cfg80211_netdev_notifier_call+0x328/0x4d4 [cfg80211])
+    [<bf0018ec>] (cfg80211_netdev_notifier_call [cfg80211]) from
+    [<c0052a7c>] (notifier_call_chain+0x44/0x84)
+    [<c0052a7c>] (notifier_call_chain) from [<c0052b84>]
+    (raw_notifier_call_chain+0x18/0x20)
+    [<c0052b84>] (raw_notifier_call_chain) from [<c071944c>]
+    (call_netdevice_notifiers+0x10/0x18)
+    [<c071944c>] (call_netdevice_notifiers) from [<c0719808>]
+    (rollback_registered_many+0x1d8/0x35c)
+    [<c0719808>] (rollback_registered_many) from [<c071c008>]
+    (unregister_netdevice_queue+0x74/0xe0)
+    [<c071c008>] (unregister_netdevice_queue) from [<c071c08c>]
+    (unregister_netdev+0x18/0x20)
+    [<c071c08c>] (unregister_netdev) from [<bf091fb8>]
+    (rtw_os_ndev_unregister+0x34/0x50 [8821as])
+    [<bf091fb8>] (rtw_os_ndev_unregister [8821as]) from [<bf092da8>]
+    (rtw_os_ndevs_unregister+0x2c/0x48 [8821as])
+    [<bf092da8>] (rtw_os_ndevs_unregister [8821as]) from [<bf094530>]
+    (rtw_dev_remove+0x28/0xf8 [8821as])
+    [<bf094530>] (rtw_dev_remove [8821as]) from [<c05f3dc8>]
+    (sdio_bus_remove+0x30/0xfc)
+    [<c05f3dc8>] (sdio_bus_remove) from [<c03f304c>]
+    (__device_release_driver+0x90/0xf0)
+    [<c03f304c>] (__device_release_driver) from [<c03f3888>]
+    (driver_detach+0xac/0xb0)
+    [<c03f3888>] (driver_detach) from [<c03f2e90>]
+    (bus_remove_driver+0x4c/0x90)
+    [<c03f2e90>] (bus_remove_driver) from [<bf164b34>]
+    (rtw_drv_halt+0x2c/0x68 [8821as])
+    [<bf164b34>] (rtw_drv_halt [8821as]) from [<c008e50c>]
+    (SyS_delete_module+0x11c/0x168)
+    [<c008e50c>] (SyS_delete_module) from [<c000e560>]
+    (ret_fast_syscall+0x0/0x30)
+
+Signed-off-by: Haoran Wang <b50027@freescale.com>
+Acked-by: Jason Liu
+---
+ .../net/wireless/rtlwifi/rtl8821as/os_dep/linux/ioctl_cfg80211.c | 1 -
+ drivers/net/wireless/rtlwifi/rtl8821as/os_dep/linux/os_intfs.c   | 9 +++++++++
+ 2 files changed, 9 insertions(+), 1 deletion(-)
+
+diff --git a/drivers/net/wireless/rtlwifi/rtl8821as/os_dep/linux/ioctl_cfg80211.c b/drivers/net/wireless/rtlwifi/rtl8821as/os_dep/linux/ioctl_cfg80211.c
+index edfc377..99742f9 100755
+--- a/drivers/net/wireless/rtlwifi/rtl8821as/os_dep/linux/ioctl_cfg80211.c
++++ b/drivers/net/wireless/rtlwifi/rtl8821as/os_dep/linux/ioctl_cfg80211.c
+@@ -3340,7 +3340,6 @@ static int cfg80211_rtw_disconnect(struct wiphy *wiphy, struct net_device *ndev,
+ 	}
+ 
+ 	padapter->mlmepriv.not_indic_disco = _FALSE;
+-    cfg80211_disconnected(padapter->pnetdev, 0, NULL, 0, GFP_ATOMIC);
+ 
+ 	DBG_871X(FUNC_NDEV_FMT" return 0\n", FUNC_NDEV_ARG(ndev));
+ 	return 0;
+diff --git a/drivers/net/wireless/rtlwifi/rtl8821as/os_dep/linux/os_intfs.c b/drivers/net/wireless/rtlwifi/rtl8821as/os_dep/linux/os_intfs.c
+index 695d546..f81398f 100755
+--- a/drivers/net/wireless/rtlwifi/rtl8821as/os_dep/linux/os_intfs.c
++++ b/drivers/net/wireless/rtlwifi/rtl8821as/os_dep/linux/os_intfs.c
+@@ -1023,6 +1023,15 @@ void rtw_os_ndev_unregister(_adapter *adapter)
+ 
+ 	netdev = adapter->pnetdev;
+ 
++#if (LINUX_VERSION_CODE >= KERNEL_VERSION(3, 11, 0)) \
++                   && defined(CONFIG_IOCTL_CFG80211)
++    if (adapter->rtw_wdev->current_bss) {
++        DBG_871X(FUNC_ADPT_FMT" clear current_bss by cfg80211_disconnected\n",
++                FUNC_ADPT_ARG(adapter));
++        cfg80211_disconnected(adapter->pnetdev, 0, NULL, 0, GFP_ATOMIC);
++    }
++#endif
++
+ 	if ((adapter->DriverState != DRIVER_DISAPPEAR) && netdev)
+ 		unregister_netdev(netdev); /* will call netdev_close() */
+ 
+-- 
+1.8.0
+

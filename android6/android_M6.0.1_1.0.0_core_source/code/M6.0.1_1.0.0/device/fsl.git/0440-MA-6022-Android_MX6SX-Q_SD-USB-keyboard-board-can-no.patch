@@ -1,0 +1,30 @@
+From a0d0a9e210546300a5452d249db436f8a1cbca98 Mon Sep 17 00:00:00 2001
+From: zhang sanshan <b51434@freescale.com>
+Date: Mon, 9 Feb 2015 15:44:00 +0800
+Subject: [PATCH 440/602] MA-6022 [Android_MX6SX/Q_SD]USB keyboard: board can
+ not distinguish capital letter.100%
+
+there are two ways to type capital letter: keep enter "shift" and enter the letter \
+enter capslock and enter the letter.
+This patch map caplocks 66 to CAPS_LOCK.
+
+Signed-off-by: zhang sanshan <b51434@freescale.com>
+---
+ common/input/Dell_Dell_USB_Keyboard.kl | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/common/input/Dell_Dell_USB_Keyboard.kl b/common/input/Dell_Dell_USB_Keyboard.kl
+index 3572a60..701b4f9 100644
+--- a/common/input/Dell_Dell_USB_Keyboard.kl
++++ b/common/input/Dell_Dell_USB_Keyboard.kl
+@@ -9,6 +9,7 @@ key 8     7
+ key 9     8
+ key 10    9
+ key 11    0
++key 58    CAPS_LOCK
+ key 1     BACK              WAKE     
+ key 230   SOFT_RIGHT        WAKE
+ key 60    SOFT_RIGHT        WAKE
+-- 
+1.8.0
+

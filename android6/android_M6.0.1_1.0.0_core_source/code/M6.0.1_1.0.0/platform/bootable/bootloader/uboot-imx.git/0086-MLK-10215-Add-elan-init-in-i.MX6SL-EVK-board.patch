@@ -1,0 +1,159 @@
+From b6ba68516b681a38025252bd0ef6a6ed3e8adfa0 Mon Sep 17 00:00:00 2001
+From: Haibo Chen <haibo.chen@freescale.com>
+Date: Tue, 28 Apr 2015 12:37:53 +0800
+Subject: [PATCH] MLK-10215 Add elan init in i.MX6SL-EVK board
+
+EPDC board contain a elan touch screen, this screen is a i2c
+slave. If this EPDC board connect to i.MX6SL-EVK board, after
+uboot boot up, if we do i2c operation, like i2c probe, then
+the i2c bus block. This is due to the elan touch screen i2c slave.
+This device needs to do some initialization opearation before its
+i2c operation, otherwise this i2c device pull down the i2c clk line,
+and make the i2c bus hang. This means elan needs a special flow on
+i2c before its address is acked, otherwise the i2c bus will be hang.
+
+This patch is a workaround, it add a void function which is defined
+as a weak symbol in i2c driver, and it is called before every i2c
+operation. In mx6slevk, this function was overwrite to execute elan
+initialization. So that, for mx6slevk board, it will  initialize
+elan before every i2c operation, but for other boards, it just work
+as before.
+
+Signed-off-by: Haibo Chen <haibo.chen@freescale.com>
+(cherry picked from commit 4c587b29c423ce61b2471ed20f31ff533d9d8a39)
+Signed-off-by: Peng Fan <Peng.Fan@freescale.com>
+
+Conflicts:
+	arch/arm/include/asm/arch-mx6/mx6sl_pins.h
+	board/freescale/mx6slevk/mx6slevk.c
+---
+ arch/arm/include/asm/arch-mx6/mx6sl_pins.h |  3 +++
+ board/freescale/mx6slevk/mx6slevk.c        | 42 ++++++++++++++++++++++++++++++
+ drivers/i2c/mxc_i2c.c                      | 14 ++++++++++
+ 3 files changed, 59 insertions(+)
+
+diff --git a/arch/arm/include/asm/arch-mx6/mx6sl_pins.h b/arch/arm/include/asm/arch-mx6/mx6sl_pins.h
+index 397f236..ad601fc 100644
+--- a/arch/arm/include/asm/arch-mx6/mx6sl_pins.h
++++ b/arch/arm/include/asm/arch-mx6/mx6sl_pins.h
+@@ -70,6 +70,7 @@ enum {
+ 
+ 	MX6_PAD_KEY_COL4__USB_USBOTG1_PWR			= IOMUX_PAD(0x0484, 0x017C, 6, 0x0000, 0, 0),
+ 	MX6_PAD_KEY_COL5__USB_USBOTG2_PWR			= IOMUX_PAD(0x0488, 0x0180, 6, 0x0000, 0, 0),
++	MX6_PAD_KEY_COL6__GPIO_4_4				= IOMUX_PAD(0x048C, 0x0184, 5, 0x0000, 0, 0),
+ 
+ 	MX6_PAD_I2C1_SDA__I2C1_SDA				= IOMUX_PAD(0x0450, 0x0160, 0x10, 0x0720, 2, 0),
+ 	MX6_PAD_I2C1_SDA__GPIO_3_13				= IOMUX_PAD(0x0450, 0x0160, 5, 0x0000, 0, 0),
+@@ -77,6 +78,8 @@ enum {
+ 	MX6_PAD_I2C1_SCL__GPIO_3_12				= IOMUX_PAD(0x044C, 0x015C, 5, 0x0000, 0, 0),
+ 
+ 	MX6_PAD_EPDC_PWRCOM__ANATOP_USBOTG1_ID			= IOMUX_PAD(0x03D0, 0x00E0, 4, 0x05DC, 0, 0),
++	MX6_PAD_EPDC_PWRCTRL2__GPIO_2_9				= IOMUX_PAD(0x03DC, 0x00EC, 5, 0x0000, 0, 0),
++	MX6_PAD_EPDC_PWRCTRL3__GPIO_2_10			= IOMUX_PAD(0x03E0, 0x00F0, 5, 0x0000, 0, 0),
+ 	MX6_PAD_EPDC_PWRSTAT__GPIO_2_13				= IOMUX_PAD(0x03E8, 0x00F8, 5, 0x0000, 0, 0),
+ 	MX6_PAD_EPDC_VCOM0__GPIO_2_3				= IOMUX_PAD(0x0410, 0x0120, 5, 0x0000, 0, 0),
+ 	MX6_PAD_EPDC_PWRWAKEUP__GPIO_2_14			= IOMUX_PAD(0x03EC, 0x00FC, 5, 0x0000, 0, 0),
+diff --git a/board/freescale/mx6slevk/mx6slevk.c b/board/freescale/mx6slevk/mx6slevk.c
+index 7c72216..db4b9f8 100644
+--- a/board/freescale/mx6slevk/mx6slevk.c
++++ b/board/freescale/mx6slevk/mx6slevk.c
+@@ -58,6 +58,8 @@ DECLARE_GLOBAL_DATA_PTR;
+ 			PAD_CTL_PUS_47K_UP | PAD_CTL_SPEED_LOW |\
+ 			PAD_CTL_DSE_80ohm | PAD_CTL_HYS |	\
+ 			PAD_CTL_SRE_FAST)
++#define ELAN_INTR_PAD_CTRL	(PAD_CTL_PUS_47K_UP | PAD_CTL_HYS)
++
+ #define EPDC_PAD_CTRL    (PAD_CTL_PKE | PAD_CTL_SPEED_MED |	\
+ 	PAD_CTL_DSE_40ohm | PAD_CTL_HYS)
+ 
+@@ -130,6 +132,12 @@ static iomux_v3_cfg_t const fec_pads[] = {
+ 	MX6_PAD_FEC_TX_CLK__GPIO_4_21 | MUX_PAD_CTRL(NO_PAD_CTRL),
+ };
+ 
++static iomux_v3_cfg_t const elan_pads[] = {
++	MX6_PAD_EPDC_PWRCTRL2__GPIO_2_9 | MUX_PAD_CTRL(NO_PAD_CTRL),
++	MX6_PAD_EPDC_PWRCTRL3__GPIO_2_10 | MUX_PAD_CTRL(ELAN_INTR_PAD_CTRL),
++	MX6_PAD_KEY_COL6__GPIO_4_4 | MUX_PAD_CTRL(EPDC_PAD_CTRL),
++};
++
+ #ifdef CONFIG_MXC_SPI
+ static iomux_v3_cfg_t ecspi1_pads[] = {
+ 	MX6_PAD_ECSPI1_MISO__ECSPI_MISO | MUX_PAD_CTRL(SPI_PAD_CTRL),
+@@ -784,8 +792,42 @@ int board_init(void)
+ 	return 0;
+ }
+ 
++void setup_elan_pads(void)
++{
++#define TOUCH_CS	IMX_GPIO_NR(2, 9)
++#define TOUCH_INT   IMX_GPIO_NR(2, 10)
++#define TOUCH_RST	IMX_GPIO_NR(4, 4)
++	imx_iomux_v3_setup_multiple_pads(elan_pads, ARRAY_SIZE(elan_pads));
++}
++
++void elan_init(void)
++{
++	gpio_direction_input(TOUCH_INT);
++	gpio_direction_output(TOUCH_CS , 1);
++	gpio_set_value(TOUCH_CS, 0);
++	gpio_direction_output(TOUCH_RST , 1);
++	gpio_set_value(TOUCH_RST, 0);
++	mdelay(10);
++	gpio_set_value(TOUCH_RST, 1);
++	gpio_set_value(TOUCH_CS, 1);
++	mdelay(100);
++}
++
++/*
++ * This function overwrite the function defined in
++ * drivers/i2c/mxc_i2c.c, which is a weak symbol
++ */
++void i2c_force_reset_slave(void)
++{
++	elan_init();
++}
++
+ int board_late_init(void)
+ {
++#ifdef CONFIG_SYS_I2C_MXC
++	setup_elan_pads();
++#endif
++
+ #ifdef CONFIG_ENV_IS_IN_MMC
+ 	board_late_mmc_env_init();
+ #endif
+diff --git a/drivers/i2c/mxc_i2c.c b/drivers/i2c/mxc_i2c.c
+index e328220..2bf4e01 100644
+--- a/drivers/i2c/mxc_i2c.c
++++ b/drivers/i2c/mxc_i2c.c
+@@ -246,6 +246,17 @@ static void i2c_imx_stop(struct mxc_i2c_regs *i2c_regs)
+ }
+ 
+ /*
++ * Stub implementations for outer i2c slave operations
++ * Any board has special requirement (i.mx6slevk) can
++ * overwrite the function
++ */
++void __i2c_force_reset_slave(void)
++{
++}
++void i2c_force_reset_slave(void)
++	__attribute__((weak, alias("__i2c_force_reset_slave")));
++
++/*
+  * Send start signal, chip address and
+  * write register address
+  */
+@@ -255,6 +266,9 @@ static int i2c_init_transfer_(struct mxc_i2c_regs *i2c_regs,
+ 	unsigned int temp;
+ 	int ret;
+ 
++	/* Reset i2c slave */
++	i2c_force_reset_slave();
++
+ 	/* Enable I2C controller */
+ #ifdef I2C_QUIRK_REG
+ 	if (readb(&i2c_regs->i2cr) & I2CR_IDIS) {
+-- 
+1.8.0
+

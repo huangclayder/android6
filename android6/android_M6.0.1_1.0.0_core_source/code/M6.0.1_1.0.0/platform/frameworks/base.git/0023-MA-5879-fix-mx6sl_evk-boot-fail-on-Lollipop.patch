@@ -1,0 +1,43 @@
+From 36027cf241c5ff4cff08291da65ec19c505843e1 Mon Sep 17 00:00:00 2001
+From: Richard Liu <r66033@freescale.com>
+Date: Wed, 19 Nov 2014 17:50:31 +0800
+Subject: [PATCH 23/45] MA-5879 fix mx6sl_evk boot fail on Lollipop
+
+mx6sl_evk boot up fail on Lollipop, root cause is MARCO USE_OPENGL_RENDERER not
+work well, we can't disable HW OpenGL Render by set USE_OPENGL_RENDERER=false.
+Here we add property sys.viewroot.hw to control HW OpenGL Render and will set
+sys.viewroot.hw to false in the init.rc file on mx6sl_evk board.
+
+Signed-off-by: Richard Liu <r66033@freescale.com>
+
+Conflicts:
+	core/java/android/view/ViewRootImpl.java
+---
+ core/java/android/view/ViewRootImpl.java | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
+
+diff --git a/core/java/android/view/ViewRootImpl.java b/core/java/android/view/ViewRootImpl.java
+index 42402eb..20f51f2 100644
+--- a/core/java/android/view/ViewRootImpl.java
++++ b/core/java/android/view/ViewRootImpl.java
+@@ -120,6 +120,7 @@ public final class ViewRootImpl implements ViewParent,
+      * at 60 Hz. This can be used to measure the potential framerate.
+      */
+     private static final String PROPERTY_PROFILE_RENDERING = "viewroot.profile_rendering";
++    private static final String PROPERTY_HW_RENDERING = "sys.viewroot.hw";
+ 
+     // properties used by emulator to determine display shape
+     public static final String PROPERTY_EMULATOR_WIN_OUTSET_BOTTOM_PX =
+@@ -716,7 +717,8 @@ public final class ViewRootImpl implements ViewParent,
+ 
+         // Try to enable hardware acceleration if requested
+         final boolean hardwareAccelerated =
+-                (attrs.flags & WindowManager.LayoutParams.FLAG_HARDWARE_ACCELERATED) != 0;
++                ((attrs.flags & WindowManager.LayoutParams.FLAG_HARDWARE_ACCELERATED) != 0)
++                && (SystemProperties.getBoolean(PROPERTY_HW_RENDERING, true));
+ 
+         if (hardwareAccelerated) {
+             if (!HardwareRenderer.isAvailable()) {
+-- 
+1.8.0
+

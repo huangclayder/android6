@@ -1,0 +1,32 @@
+From e3452cb6871e3986cea80e2d949515a84f159578 Mon Sep 17 00:00:00 2001
+From: Liu Xiaowen <b37945@freescale.com>
+Date: Wed, 12 Nov 2014 10:09:35 +0800
+Subject: [PATCH 544/635] MA-5839-4 Update android to Lollipop
+
+Framework requires max 3a regions.
+Enable camera hal max 3a regions to match framework requirement.
+
+Signed-off-by: Liu Xiaowen <b37945@freescale.com>
+---
+ mx6/libcamera2/MetadaManager.cpp | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/mx6/libcamera2/MetadaManager.cpp b/mx6/libcamera2/MetadaManager.cpp
+index 9c9b657..b9cd985 100755
+--- a/mx6/libcamera2/MetadaManager.cpp
++++ b/mx6/libcamera2/MetadaManager.cpp
+@@ -833,9 +833,9 @@ status_t MetadaManager::createStaticInfo(camera_metadata_t **info, bool sizeRequ
+     ADD_OR_SIZE(ANDROID_CONTROL_AVAILABLE_EFFECTS,
+             availableEffects, sizeof(availableEffects));
+ 
+-    int32_t max3aRegions = 0;
++    static const int32_t max3aRegions[] = {/*AE*/ 1,/*AWB*/ 1,/*AF*/ 1};
+     ADD_OR_SIZE(ANDROID_CONTROL_MAX_REGIONS,
+-            &max3aRegions, 1);
++            max3aRegions, sizeof(max3aRegions)/sizeof(max3aRegions[0]));
+ 
+     static const uint8_t availableAeModes[] = {
+             ANDROID_CONTROL_AE_MODE_OFF,
+-- 
+1.8.0
+

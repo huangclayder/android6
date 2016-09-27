@@ -1,0 +1,27 @@
+From 9d1c9abf58dff92f12a6b1ba8c2c237850d42185 Mon Sep 17 00:00:00 2001
+From: Shawn Guo <shawn.guo@freescale.com>
+Date: Tue, 17 Jun 2014 13:34:09 +0800
+Subject: [PATCH] ENGR00317981: ARM: enable SOC_IMX6SX in imx_v7_defconfig
+
+Enable i.MX6 SoloX support in imx_v7_defconfig.
+
+Signed-off-by: Shawn Guo <shawn.guo@freescale.com>
+---
+ arch/arm/configs/imx_v7_defconfig | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/arch/arm/configs/imx_v7_defconfig b/arch/arm/configs/imx_v7_defconfig
+index c36d72a..d773659 100644
+--- a/arch/arm/configs/imx_v7_defconfig
++++ b/arch/arm/configs/imx_v7_defconfig
+@@ -28,6 +28,7 @@ CONFIG_SOC_IMX50=y
+ CONFIG_SOC_IMX53=y
+ CONFIG_SOC_IMX6Q=y
+ CONFIG_SOC_IMX6SL=y
++CONFIG_SOC_IMX6SX=y
+ CONFIG_SOC_VF610=y
+ CONFIG_SMP=y
+ CONFIG_VMSPLIT_2G=y
+-- 
+1.8.0
+

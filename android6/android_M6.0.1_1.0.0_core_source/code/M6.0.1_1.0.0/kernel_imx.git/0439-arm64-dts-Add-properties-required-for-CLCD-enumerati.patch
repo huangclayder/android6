@@ -1,0 +1,29 @@
+From 8d10c6e9047615e22d74c2d8e50707ce33bdbdfa Mon Sep 17 00:00:00 2001
+From: Mark Brown <broonie@linaro.org>
+Date: Mon, 16 Dec 2013 16:26:36 +0000
+Subject: [PATCH] arm64: dts: Add properties required for CLCD enumeration
+
+Signed-off-by: Mark Brown <broonie@linaro.org>
+(cherry picked from commit 9c5050cb971c5a1c9c9df131066ae282c2981092)
+Signed-off-by: Alex Shi <alex.shi@linaro.org>
+---
+ arch/arm64/boot/dts/rtsm_ve-motherboard.dtsi | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/arch/arm64/boot/dts/rtsm_ve-motherboard.dtsi b/arch/arm64/boot/dts/rtsm_ve-motherboard.dtsi
+index 2f2ecd2..b683d47 100644
+--- a/arch/arm64/boot/dts/rtsm_ve-motherboard.dtsi
++++ b/arch/arm64/boot/dts/rtsm_ve-motherboard.dtsi
+@@ -182,6 +182,9 @@
+ 				interrupts = <14>;
+ 				clocks = <&v2m_oscclk1>, <&v2m_clk24mhz>;
+ 				clock-names = "clcdclk", "apb_pclk";
++				mode = "XVGA";
++				use_dma = <0>;
++				framebuffer = <0x18000000 0x00180000>;
+ 			};
+ 
+ 			virtio_block@0130000 {
+-- 
+1.8.0
+

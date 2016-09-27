@@ -1,0 +1,31 @@
+From 7d1bdbc029e1e1570c8626a46d01dddcc7103c64 Mon Sep 17 00:00:00 2001
+From: Robby Cai <r63905@freescale.com>
+Date: Mon, 3 Aug 2015 16:37:16 +0800
+Subject: [PATCH] MLK-11314-2 epdc: downgrade "clear working buffer"
+ information to debug level
+
+make the following message to debug level
+
+"imx_epdc_v2_fb 306f0000.epdc: PxP WFE_B to clear working buffer."
+
+Signed-off-by: Robby Cai <r63905@freescale.com>
+---
+ drivers/video/mxc/mxc_epdc_v2_fb.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/video/mxc/mxc_epdc_v2_fb.c b/drivers/video/mxc/mxc_epdc_v2_fb.c
+index c449261..86e59ae 100644
+--- a/drivers/video/mxc/mxc_epdc_v2_fb.c
++++ b/drivers/video/mxc/mxc_epdc_v2_fb.c
+@@ -5957,7 +5957,7 @@ static int pxp_clear_wb_work_func(struct mxc_epdc_fb_data *fb_data)
+ 	unsigned int hist_stat;
+ 	int ret;
+ 
+-	dev_info(fb_data->dev, "PxP WFE_B to clear working buffer.\n");
++	dev_dbg(fb_data->dev, "PxP WFE_B to clear working buffer.\n");
+ 
+ 	ret = pxp_wfe_b_process_clear_workingbuffer(fb_data, fb_data->cur_mode->vmode->xres, fb_data->cur_mode->vmode->yres);
+ 	if (ret) {
+-- 
+1.8.0
+

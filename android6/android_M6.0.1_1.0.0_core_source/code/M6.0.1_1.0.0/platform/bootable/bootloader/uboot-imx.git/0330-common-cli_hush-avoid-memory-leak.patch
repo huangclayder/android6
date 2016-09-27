@@ -1,0 +1,42 @@
+From 9c49010380b31923f012befebec0c171688b590e Mon Sep 17 00:00:00 2001
+From: Peng Fan <Peng.Fan@freescale.com>
+Date: Fri, 27 Nov 2015 10:12:02 +0800
+Subject: [PATCH] common: cli_hush: avoid memory leak
+
+Need to free memory avoid memory leak, when error.
+
+Signed-off-by: Peng Fan <Peng.Fan@freescale.com>
+Reviewed-by: Simon Glass <sjg@chromium.org>
+Cc: Simon Glass <sjg@chromium.org>
+Cc: Tom Rini <trini@konsulko.com>
+(cherry picked from commit c6bb23c819b5dcbc5c3491673f5e408c0b9c38b3)
+---
+ common/cli_hush.c | 9 +++++++--
+ 1 file changed, 7 insertions(+), 2 deletions(-)
+
+diff --git a/common/cli_hush.c b/common/cli_hush.c
+index 5d78463..5be7b0f 100644
+--- a/common/cli_hush.c
++++ b/common/cli_hush.c
+@@ -2470,11 +2470,16 @@ static int done_word(o_string *dest, struct p_context *ctx)
+ 		}
+ 		argc = ++child->argc;
+ 		child->argv = realloc(child->argv, (argc+1)*sizeof(*child->argv));
+-		if (child->argv == NULL) return 1;
++		if (child->argv == NULL) {
++			free(str);
++			return 1;
++		}
+ 		child->argv_nonnull = realloc(child->argv_nonnull,
+ 					(argc+1)*sizeof(*child->argv_nonnull));
+-		if (child->argv_nonnull == NULL)
++		if (child->argv_nonnull == NULL) {
++			free(str);
+ 			return 1;
++		}
+ 		child->argv[argc-1]=str;
+ 		child->argv_nonnull[argc-1] = dest->nonnull;
+ 		child->argv[argc]=NULL;
+-- 
+1.8.0
+

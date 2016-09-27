@@ -1,0 +1,133 @@
+From 178ddcab0e923f63bdae4376b4e1fcf220fe76da Mon Sep 17 00:00:00 2001
+From: Haoran Wang <b50027@freescale.com>
+Date: Thu, 12 Nov 2015 14:01:27 +0800
+Subject: [PATCH 23/25] MA-7250 Added a macro to control wifi driver load mode
+
+Added WIFI_UNITE_USE_KERNEL_MODULE macro to control
+whether wifi HAL load the .ko module for wifi drivers.
+
+For now the wifi driver bcmdhd is build-in kernel.
+
+Signed-off-by: Haoran Wang <b50027@freescale.com>
+---
+ wifi/wifi_unite.c | 33 +++++++++++++++++++++++++++++++++
+ 1 file changed, 33 insertions(+)
+
+diff --git a/wifi/wifi_unite.c b/wifi/wifi_unite.c
+index 80de308..5d9fcbb 100644
+--- a/wifi/wifi_unite.c
++++ b/wifi/wifi_unite.c
+@@ -200,6 +200,7 @@ static char supplicant_name[PROPERTY_VALUE_MAX];
+ /* Is either SUPP_PROP_NAME or P2P_PROP_NAME */
+ static char supplicant_prop_name[PROPERTY_KEY_MAX];
+ 
++#ifdef WIFI_UNITE_USE_KERNEL_MODULE
+ int get_wifi_vendor_info(int* model)
+ {
+ #define SYS_SDIO_BUS_BASE_PATH    "/sys/bus/sdio/devices/"
+@@ -299,6 +300,7 @@ int get_wifi_vendor_info(int* model)
+     }
+     return vendor;
+ }
++#endif
+ 
+ int get_wifi_ifname_from_prop(char *ifname)
+ {
+@@ -489,6 +491,9 @@ int check_wifi_driver_loaded_strict(const char *driver_module_name)
+ }
+ 
+ int is_wifi_driver_loaded() {
++
++#ifdef WIFI_UNITE_USE_KERNEL_MODULE
++
+     char driver_status[PROPERTY_VALUE_MAX];
+     if (!property_get(DRIVER_PROP_NAME, driver_status, NULL)
+             || strcmp(driver_status, "ok") != 0) {
+@@ -504,8 +509,14 @@ int is_wifi_driver_loaded() {
+         return check_wifi_driver_loaded_strict(DRIVER_MODULE_NAME_BCM);
+     } else
+         return 0;//Unkown driver
++#else
++
++    return 0;
++
++#endif
+ }
+ 
++#ifdef WIFI_UNITE_USE_KERNEL_MODULE
+ int wifi_insmod_driver_realtek()
+ {
+     if (insmod(DRIVER_SDIO_IF_MODULE_PATH_REALTEK, DRIVER_SDIO_IF_MODULE_ARG) < 0)
+@@ -520,6 +531,9 @@ int wifi_insmod_driver_realtek()
+     }
+     return 0;
+ }
++#endif
++
++#ifdef WIFI_UNITE_USE_KERNEL_MODULE
+ int wifi_insmod_driver_bcm()
+ {
+     if (insmod(DRIVER_SDIO_IF_MODULE_PATH_BCM, DRIVER_SDIO_IF_MODULE_ARG) < 0)
+@@ -529,6 +543,9 @@ int wifi_insmod_driver_bcm()
+         return -1;
+     return 0;
+ }
++#endif
++
++#ifdef WIFI_UNITE_USE_KERNEL_MODULE
+ int wifi_insmod_driver_atheros()
+ {
+     if (insmod(DRIVER_COMPAT_MODULE_PATH, DRIVER_COMPAT_MODULE_ARG) < 0)
+@@ -540,8 +557,11 @@ int wifi_insmod_driver_atheros()
+         return -1;
+     return 0;
+ }
++#endif 
++
+ int wifi_load_driver()
+ {
++#ifdef WIFI_UNITE_USE_KERNEL_MODULE
+     char driver_status[PROPERTY_VALUE_MAX];
+     int count = 100; /* wait at most 20 seconds for completion */
+     int ret;
+@@ -602,8 +622,15 @@ timeout:
+     property_set(DRIVER_PROP_NAME, "timeout");
+     wifi_unload_driver();
+     return -1;
++#else
++    WifiVendor = BCM;
++    WifiModel = BCM4335_4339;
++    property_set(DRIVER_VENDOR_NAME, "broadcom");
++    return 0;
++#endif
+ }
+ 
++#ifdef WIFI_UNITE_USE_KERNEL_MODULE
+ static int __wifi_unload_driver(const char* mod_name, bool supportCompat)
+ {
+     if (rmmod(mod_name) == 0) {
+@@ -632,8 +659,11 @@ static int __wifi_unload_driver(const char* mod_name, bool supportCompat)
+     } else
+         return -1;
+ }
++#endif
++
+ int wifi_unload_driver()
+ {
++#ifdef WIFI_UNITE_USE_KERNEL_MODULE
+     usleep(200000); /* allow to finish interface down */
+     if (WifiVendor == REALTEK)
+         return __wifi_unload_driver(DRIVER_MODULE_NAME_REALTEK[WifiModel], false);
+@@ -643,6 +673,9 @@ int wifi_unload_driver()
+         return __wifi_unload_driver(DRIVER_MODULE_NAME_BCM, false);
+     }
+         return -1;
++#else
++	return 0;
++#endif
+ }
+ 
+ int ensure_entropy_file_exists()
+-- 
+1.8.0
+

@@ -1,0 +1,254 @@
+From 63fcafd96e80a121a0e91337dd22cb1c2b492f1d Mon Sep 17 00:00:00 2001
+From: Richard Liu <r66033@freescale.com>
+Date: Tue, 13 Oct 2015 17:59:33 +0800
+Subject: [PATCH 537/602] MA-7100 storage configuration update in android 6.0
+ Mashmallow
+
+vold now manages external storage in a much more dynamic fashion,
+so we no longer need to define FUSE daemons or mount points.
+
+Signed-off-by: Richard Liu <r66033@freescale.com>
+---
+ evk_6sl/init.rc       | 20 +++-----------------
+ sabreauto_6q/init.rc  | 19 +++----------------
+ sabreauto_6sx/init.rc | 20 +++-----------------
+ sabresd_6dq/init.rc   | 19 ++-----------------
+ sabresd_6sx/init.rc   | 20 +++-----------------
+ sabresd_7d/init.rc    | 20 +++-----------------
+ 6 files changed, 17 insertions(+), 101 deletions(-)
+
+diff --git a/evk_6sl/init.rc b/evk_6sl/init.rc
+index b66db33..535feeb 100644
+--- a/evk_6sl/init.rc
++++ b/evk_6sl/init.rc
+@@ -3,19 +3,10 @@ import init.${ro.hardware}.usb.rc
+ on init
+     start watchdogd
+ 
+-    # See storage config details at http://source.android.com/tech/storage/
+-    mkdir /mnt/shell/emulated 0700 shell shell
+-    mkdir /storage/emulated 0555 root root
+-
+-    export EXTERNAL_STORAGE /storage/emulated/legacy
+-    export EMULATED_STORAGE_SOURCE /mnt/shell/emulated
+-    export EMULATED_STORAGE_TARGET /storage/emulated
+-
+     # Support legacy paths
+-    symlink /storage/emulated/legacy /sdcard
+-    symlink /storage/emulated/legacy /mnt/sdcard
+-    symlink /storage/emulated/legacy /storage/sdcard0
+-    symlink /mnt/shell/emulated/0 /storage/emulated/legacy
++    symlink /sdcard /mnt/sdcard
++    symlink /sdcard /storage/sdcard0
++
+     # setup the global environment
+     export SHM_MOUNTPOINT /mnt/shm
+     export LIGHTSENSOR_PATH /sys/class/i2c-adapter/i2c-1/1-0044
+@@ -302,11 +293,6 @@ service wifi_mac /system/bin/sh /system/etc/check_wifi_mac.sh
+     oneshot
+ 
+ 
+-# virtual sdcard daemon running as media_rw (1023)
+-# default 4 threads have better performance to 2 threads.
+-    service sdcard /system/bin/sdcard -l -t4 /data/media /mnt/shell/emulated 1023 1023
+-    class late_start
+-
+ on fs
+ # mount ext4 partitions
+     mount_all /fstab.freescale
+diff --git a/sabreauto_6q/init.rc b/sabreauto_6q/init.rc
+index ebd9911..a2b958f 100644
+--- a/sabreauto_6q/init.rc
++++ b/sabreauto_6q/init.rc
+@@ -4,19 +4,10 @@ import init.${ro.hardware}.${ro.soc}.rc
+ on init
+     start watchdogd
+ 
+-    # See storage config details at http://source.android.com/tech/storage/
+-    mkdir /mnt/shell/emulated 0700 shell shell
+-    mkdir /storage/emulated 0555 root root
+-
+-    export EXTERNAL_STORAGE /storage/emulated/legacy
+-    export EMULATED_STORAGE_SOURCE /mnt/shell/emulated
+-    export EMULATED_STORAGE_TARGET /storage/emulated
+-
+     # Support legacy paths
+-    symlink /storage/emulated/legacy /sdcard
+-    symlink /storage/emulated/legacy /mnt/sdcard
+-    symlink /storage/emulated/legacy /storage/sdcard0
+-    symlink /mnt/shell/emulated/0 /storage/emulated/legacy
++    symlink /sdcard /mnt/sdcard
++    symlink /sdcard /storage/sdcard0
++
+     # setup the global environment
+     export SHM_MOUNTPOINT /mnt/shm
+     export LIGHTSENSOR_PATH /sys/class/i2c-adapter/i2c-1/1-0044
+@@ -313,10 +304,6 @@ service wifi_mac /system/bin/sh /system/etc/check_wifi_mac.sh
+     oneshot
+ 
+ 
+-# virtual sdcard daemon running as media_rw (1023)
+-# default 4 threads have better performance to 2 threads.
+-    service sdcard /system/bin/sdcard -l -t4 /data/media /mnt/shell/emulated 1023 1023
+-    class late_start
+ on fs
+ # mount ext4 partitions
+     mount_all /fstab.freescale
+diff --git a/sabreauto_6sx/init.rc b/sabreauto_6sx/init.rc
+index 43389dd..ead6feb 100755
+--- a/sabreauto_6sx/init.rc
++++ b/sabreauto_6sx/init.rc
+@@ -3,19 +3,10 @@ import init.${ro.hardware}.usb.rc
+ on init
+     start watchdogd
+ 
+-    # See storage config details at http://source.android.com/tech/storage/
+-    mkdir /mnt/shell/emulated 0700 shell shell
+-    mkdir /storage/emulated 0555 root root
+-
+-    export EXTERNAL_STORAGE /storage/emulated/legacy
+-    export EMULATED_STORAGE_SOURCE /mnt/shell/emulated
+-    export EMULATED_STORAGE_TARGET /storage/emulated
+-
+     # Support legacy paths
+-    symlink /storage/emulated/legacy /sdcard
+-    symlink /storage/emulated/legacy /mnt/sdcard
+-    symlink /storage/emulated/legacy /storage/sdcard0
+-    symlink /mnt/shell/emulated/0 /storage/emulated/legacy
++    symlink /sdcard /mnt/sdcard
++    symlink /sdcard /storage/sdcard0
++
+     # setup the global environment
+     export SHM_MOUNTPOINT /mnt/shm
+     export LIGHTSENSOR_PATH /sys/class/i2c-adapter/i2c-1/1-0044
+@@ -318,11 +309,6 @@ service wifi_mac /system/bin/sh /system/etc/check_wifi_mac.sh
+     oneshot
+ 
+ 
+-# virtual sdcard daemon running as media_rw (1023)
+-# default 4 threads have better performance to 2 threads.
+-    service sdcard /system/bin/sdcard -l -t4 /data/media /mnt/shell/emulated 1023 1023
+-    class late_start
+-
+ on fs
+ # mount ext4 partitions
+     mount_all /fstab.freescale
+diff --git a/sabresd_6dq/init.rc b/sabresd_6dq/init.rc
+index d2a5aff..657d2e4 100755
+--- a/sabresd_6dq/init.rc
++++ b/sabresd_6dq/init.rc
+@@ -4,19 +4,9 @@ import init.${ro.hardware}.${ro.soc}.rc
+ on init
+     start watchdogd
+ 
+-    # See storage config details at http://source.android.com/tech/storage/
+-    mkdir /mnt/shell/emulated 0700 shell shell
+-    mkdir /storage/emulated 0555 root root
+-
+-    export EXTERNAL_STORAGE /storage/emulated/legacy
+-    export EMULATED_STORAGE_SOURCE /mnt/shell/emulated
+-    export EMULATED_STORAGE_TARGET /storage/emulated
+-
+     # Support legacy paths
+-    symlink /storage/emulated/legacy /sdcard
+-    symlink /storage/emulated/legacy /mnt/sdcard
+-    symlink /storage/emulated/legacy /storage/sdcard0
+-    symlink /mnt/shell/emulated/0 /storage/emulated/legacy
++    symlink /sdcard /mnt/sdcard
++    symlink /sdcard /storage/sdcard0
+ 
+     # setup the global environment
+     export SHM_MOUNTPOINT /mnt/shm
+@@ -329,11 +319,6 @@ service wifi_mac /system/bin/sh /system/etc/check_wifi_mac.sh
+     oneshot
+ 
+ 
+-# virtual sdcard daemon running as media_rw (1023)
+-# default 4 threads have better performance to 2 threads.
+-    service sdcard /system/bin/sdcard -l -t4 /data/media /mnt/shell/emulated 1023 1023
+-    class late_start
+-
+ on fs
+ # mount ext4 partitions
+     mount_all /fstab.freescale
+diff --git a/sabresd_6sx/init.rc b/sabresd_6sx/init.rc
+index b82a93c..b3c8cd2 100755
+--- a/sabresd_6sx/init.rc
++++ b/sabresd_6sx/init.rc
+@@ -3,19 +3,10 @@ import init.${ro.hardware}.usb.rc
+ on init
+     start watchdogd
+ 
+-    # See storage config details at http://source.android.com/tech/storage/
+-    mkdir /mnt/shell/emulated 0700 shell shell
+-    mkdir /storage/emulated 0555 root root
+-
+-    export EXTERNAL_STORAGE /storage/emulated/legacy
+-    export EMULATED_STORAGE_SOURCE /mnt/shell/emulated
+-    export EMULATED_STORAGE_TARGET /storage/emulated
+-
+     # Support legacy paths
+-    symlink /storage/emulated/legacy /sdcard
+-    symlink /storage/emulated/legacy /mnt/sdcard
+-    symlink /storage/emulated/legacy /storage/sdcard0
+-    symlink /mnt/shell/emulated/0 /storage/emulated/legacy
++    symlink /sdcard /mnt/sdcard
++    symlink /sdcard /storage/sdcard0
++
+     # setup the global environment
+     export SHM_MOUNTPOINT /mnt/shm
+     export LIGHTSENSOR_PATH /sys/class/i2c-adapter/i2c-1/1-0044
+@@ -326,11 +317,6 @@ service wifi_mac /system/bin/sh /system/etc/check_wifi_mac.sh
+     oneshot
+ 
+ 
+-# virtual sdcard daemon running as media_rw (1023)
+-# default 4 threads have better performance to 2 threads.
+-    service sdcard /system/bin/sdcard -l -t4 /data/media /mnt/shell/emulated 1023 1023
+-    class late_start
+-
+ on fs
+ # mount ext4 partitions
+     mount_all /fstab.freescale
+diff --git a/sabresd_7d/init.rc b/sabresd_7d/init.rc
+index 6417e4d..a190383 100644
+--- a/sabresd_7d/init.rc
++++ b/sabresd_7d/init.rc
+@@ -3,19 +3,10 @@ import init.${ro.hardware}.usb.rc
+ on init
+     start watchdogd
+ 
+-    # See storage config details at http://source.android.com/tech/storage/
+-    mkdir /mnt/shell/emulated 0700 shell shell
+-    mkdir /storage/emulated 0555 root root
+-
+-    export EXTERNAL_STORAGE /storage/emulated/legacy
+-    export EMULATED_STORAGE_SOURCE /mnt/shell/emulated
+-    export EMULATED_STORAGE_TARGET /storage/emulated
+-
+     # Support legacy paths
+-    symlink /storage/emulated/legacy /sdcard
+-    symlink /storage/emulated/legacy /mnt/sdcard
+-    symlink /storage/emulated/legacy /storage/sdcard0
+-    symlink /mnt/shell/emulated/0 /storage/emulated/legacy
++    symlink /sdcard /mnt/sdcard
++    symlink /sdcard /storage/sdcard0
++
+     # setup the global environment
+     export SHM_MOUNTPOINT /mnt/shm
+     export LIGHTSENSOR_PATH /sys/class/i2c-adapter/i2c-1/1-0044
+@@ -327,11 +318,6 @@ service wifi_mac /system/bin/sh /system/etc/check_wifi_mac.sh
+     oneshot
+ 
+ 
+-# virtual sdcard daemon running as media_rw (1023)
+-# default 4 threads have better performance to 2 threads.
+-    service sdcard /system/bin/sdcard -l -t4 /data/media /mnt/shell/emulated 1023 1023
+-    class late_start
+-
+ on fs
+ # mount ext4 partitions
+     mount_all /fstab.freescale
+-- 
+1.8.0
+

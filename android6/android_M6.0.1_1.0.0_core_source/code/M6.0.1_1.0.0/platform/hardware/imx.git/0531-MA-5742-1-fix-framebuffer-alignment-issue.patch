@@ -1,0 +1,113 @@
+From 039a4504596676977376f4e8b03f3dc495e1e060 Mon Sep 17 00:00:00 2001
+From: Liu Xiaowen <b37945@freescale.com>
+Date: Fri, 10 Oct 2014 16:52:49 +0800
+Subject: [PATCH 531/635] MA-5742-1 fix framebuffer alignment issue.
+
+Correct surface with RGB format height alignment to 16.
+Because when surface is used for tile rendering, the buffer
+address should be 16 pixel alignment.
+
+Signed-off-by: Liu Xiaowen <b37945@freescale.com>
+---
+ mx6/libgralloc_wrapper/BufferManager.cpp |  4 ++--
+ mx6/libgralloc_wrapper/framebuffer.cpp   | 18 +++++++++---------
+ 2 files changed, 11 insertions(+), 11 deletions(-)
+
+diff --git a/mx6/libgralloc_wrapper/BufferManager.cpp b/mx6/libgralloc_wrapper/BufferManager.cpp
+index 72f7d9d..eb51f31 100755
+--- a/mx6/libgralloc_wrapper/BufferManager.cpp
++++ b/mx6/libgralloc_wrapper/BufferManager.cpp
+@@ -107,13 +107,13 @@ int BufferManager::alloc(int w, int h, int format, int usage,
+             }
+ 
+             /*
+-             * XXX: Vivante HAL needs 16 pixel alignment in width and 4 pixel
++             * XXX: Vivante HAL needs 16 pixel alignment in width and 16 pixel
+              * alignment in height.
+              *
+              * Here we assume the buffer will be used by Vivante HAL...
+              */
+             alignedw = ALIGN_PIXEL_16(w);
+-            alignedh = ALIGN_PIXEL_4(h);
++            alignedh = ALIGN_PIXEL_16(h);
+             size = alignedw * alignedh * bpp;
+             break;
+ 
+diff --git a/mx6/libgralloc_wrapper/framebuffer.cpp b/mx6/libgralloc_wrapper/framebuffer.cpp
+index f160dc4..55ad7fc 100755
+--- a/mx6/libgralloc_wrapper/framebuffer.cpp
++++ b/mx6/libgralloc_wrapper/framebuffer.cpp
+@@ -128,7 +128,7 @@ int Display::postBuffer(struct framebuffer_device_t* dev, buffer_handle_t buffer
+         m->lock(buffer,
+                 private_module_t::PRIV_USAGE_LOCKED_FOR_POST,
+                 0, 0, ALIGN_PIXEL_16(display->mInfo.xres),
+-                ALIGN_PIXEL_4(display->mInfo.yres), &vaddr);
++                ALIGN_PIXEL_16(display->mInfo.yres), &vaddr);
+ 
+         const size_t offset = hnd->base - display->mFramebuffer->base;
+         display->mInfo.activate = FB_ACTIVATE_VBL;
+@@ -153,17 +153,17 @@ int Display::postBuffer(struct framebuffer_device_t* dev, buffer_handle_t buffer
+         m->lock(display->mFramebuffer,
+                 GRALLOC_USAGE_SW_WRITE_RARELY,
+                 0, 0, ALIGN_PIXEL_16(display->mInfo.xres),
+-                 ALIGN_PIXEL_4(display->mInfo.yres),
++                 ALIGN_PIXEL_16(display->mInfo.yres),
+                 &fb_vaddr);
+ 
+         m->lock(buffer,
+                 GRALLOC_USAGE_SW_READ_RARELY,
+                 0, 0, ALIGN_PIXEL_16(display->mInfo.xres),
+-                 ALIGN_PIXEL_4(display->mInfo.yres),
++                 ALIGN_PIXEL_16(display->mInfo.yres),
+                 &buffer_vaddr);
+ 
+         memcpy(fb_vaddr, buffer_vaddr,
+-        display->mFinfo.line_length * ALIGN_PIXEL_4(display->mInfo.yres));
++        display->mFinfo.line_length * ALIGN_PIXEL_16(display->mInfo.yres));
+ 
+         m->unlock(buffer);
+         m->unlock(display->mFramebuffer);
+@@ -195,7 +195,7 @@ int Display::checkFramebufferFormat(int fd, uint32_t &flags)
+     /*
+      * Request nr_framebuffers screens (at lest 2 for page flipping)
+      */
+-    info.yres_virtual = ALIGN_PIXEL_4(info.yres) * nr_framebuffers;
++    info.yres_virtual = ALIGN_PIXEL_16(info.yres) * nr_framebuffers;
+     /*
+      *note: 16 alignment here should align with BufferManager::alloc.
+      */
+@@ -307,11 +307,11 @@ int Display::checkFramebufferFormat(int fd, uint32_t &flags)
+         ALOGI("16bpp setting of Framebuffer with RGB565 format!");
+     }
+ 
+-    if (info.yres_virtual < ALIGN_PIXEL_4(info.yres) * 2) {
++    if (info.yres_virtual < ALIGN_PIXEL_16(info.yres) * 2) {
+         // we need at least 2 for page-flipping
+         flags &= ~PAGE_FLIP;
+         ALOGW("page flipping not supported (yres_virtual=%d, requested=%d)",
+-                info.yres_virtual, ALIGN_PIXEL_4(info.yres)*2);
++                info.yres_virtual, ALIGN_PIXEL_16(info.yres)*2);
+     }
+ 
+     return 0;
+@@ -453,7 +453,7 @@ int Display::initialize(int fb)
+     mFramebuffer = new private_handle_t(fd, fbSize,
+             private_handle_t::PRIV_FLAGS_FRAMEBUFFER);
+ 
+-    mNumBuffers = info.yres_virtual / ALIGN_PIXEL_4(info.yres);
++    mNumBuffers = info.yres_virtual / ALIGN_PIXEL_16(info.yres);
+     mBufferMask = 0;
+ 
+     void* vaddr = mmap(0, fbSize, PROT_READ|PROT_WRITE, MAP_SHARED, fd, 0);
+@@ -539,7 +539,7 @@ int Display::allocFrameBuffer(size_t size, int usage, buffer_handle_t* pHandle)
+ 
+     const uint32_t bufferMask = mBufferMask;
+     const uint32_t numBuffers = mNumBuffers;
+-    const size_t bufferSize = mFinfo.line_length * ALIGN_PIXEL_4(mInfo.yres);
++    const size_t bufferSize = mFinfo.line_length * ALIGN_PIXEL_16(mInfo.yres);
+     if (numBuffers < 2) {
+         ALOGE("%s framebuffer number less than 2", __FUNCTION__);
+         return -ENOMEM;
+-- 
+1.8.0
+

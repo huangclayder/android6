@@ -1,0 +1,29 @@
+From 2c6544d870d393c7b7ea48872857f7e634c53658 Mon Sep 17 00:00:00 2001
+From: Anson Huang <b20788@freescale.com>
+Date: Thu, 12 Mar 2015 16:30:29 +0800
+Subject: [PATCH] MLK-10425-3 ARM: dts: imx7d: enable mega/fast mix property
+
+Add Mega/Fast mix off feature in DSM for i.MX7D, if there is
+wakeup source in Mega/Fast domain enabled as wakeup event, it
+will NOT be off in DSM.
+
+Signed-off-by: Anson Huang <b20788@freescale.com>
+---
+ arch/arm/boot/dts/imx7d.dtsi | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/arch/arm/boot/dts/imx7d.dtsi b/arch/arm/boot/dts/imx7d.dtsi
+index 50c0264..e49b4d2 100644
+--- a/arch/arm/boot/dts/imx7d.dtsi
++++ b/arch/arm/boot/dts/imx7d.dtsi
+@@ -566,6 +566,7 @@
+ 				compatible = "fsl,imx7d-gpc";
+ 				reg = <0x303a0000 0x10000>;
+ 				interrupts = <GIC_SPI 87 IRQ_TYPE_LEVEL_HIGH>;
++				fsl,mf-mix-wakeup-irq = <0x4000000 0x0 0x0 0x0>;
+ 				#power-domain-cells = <1>;
+ 			};
+ 		};
+-- 
+1.8.0
+

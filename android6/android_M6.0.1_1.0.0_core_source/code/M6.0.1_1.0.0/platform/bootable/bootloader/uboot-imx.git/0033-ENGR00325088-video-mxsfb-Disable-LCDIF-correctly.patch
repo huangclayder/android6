@@ -1,0 +1,66 @@
+From 823e4975ecf30c59d949fafae47d8a37dd82f36c Mon Sep 17 00:00:00 2001
+From: Liu Ying <Ying.Liu@freescale.com>
+Date: Fri, 1 Aug 2014 12:49:03 +0800
+Subject: [PATCH] ENGR00325088 video: mxsfb: Disable LCDIF correctly
+
+Let's use the i.MX common miscellaneous reset API
+to reset the LCDIF block so that we may eliminate
+a random hang issue at the arch_preboot_os() stage
+when we disable the LCDIF.  This patch also waits
+for a VSYNC interrupt to guarantee the reset is
+done at the VSYNC edge, which somehow makes the
+LCDIF consume the display FIFO(?) and helps the
+LCDIF work normally at the kernel stage.
+
+Tested-by: Jason Liu <r64343@freescale.com>
+Tested-by: Sandor Yu <R01008@freescale.com>
+Tested-by: Ye.Li <B37916@freescale.com>
+Tested-by: Guo Sally <b38912@freescale.com>
+Signed-off-by: Liu Ying <Ying.Liu@freescale.com>
+(cherry picked from commit 45fa2ad38b846596e61ce8fc477713dede8a43e7)
+Signed-off-by: Peng Fan <Peng.Fan@freescale.com>
+(cherry picked from commit 9d782aa487c4ffe096c94bbda5867b44afd6a440)
+Signed-off-by: Peng Fan <Peng.Fan@freescale.com>
+---
+ drivers/video/mxsfb.c | 14 +++++++++-----
+ 1 file changed, 9 insertions(+), 5 deletions(-)
+
+diff --git a/drivers/video/mxsfb.c b/drivers/video/mxsfb.c
+index 571b6f0..44004b1 100644
+--- a/drivers/video/mxsfb.c
++++ b/drivers/video/mxsfb.c
+@@ -28,6 +28,7 @@
+ #endif
+ 
+ #define	PS2KHZ(ps)	(1000000000UL / (ps))
++#define	WAIT_FOR_VSYNC_TIMEOUT	1000000
+ 
+ static GraphicDevice panel;
+ struct mxs_dma_desc desc;
+@@ -166,15 +167,18 @@ static void mxs_lcd_init(GraphicDevice *panel,
+ 
+ void lcdif_power_down()
+ {
+-	u32 val;
+ 	struct mxs_lcdif_regs *regs = (struct mxs_lcdif_regs *)(panel.isaBase);
++	int timeout = WAIT_FOR_VSYNC_TIMEOUT;
+ 
+ 	writel(panel.frameAdrs, &regs->hw_lcdif_cur_buf);
+ 	writel(panel.frameAdrs, &regs->hw_lcdif_next_buf);
+-
+-	/* Stop lcdif */
+-	val = LCDIF_CTRL_SFTRST | LCDIF_CTRL_CLKGATE;
+-	writel(val, &regs->hw_lcdif_ctrl);
++	writel(LCDIF_CTRL1_VSYNC_EDGE_IRQ, &regs->hw_lcdif_ctrl1_clr);
++	while (--timeout) {
++		if (readl(&regs->hw_lcdif_ctrl1) & LCDIF_CTRL1_VSYNC_EDGE_IRQ)
++			break;
++		udelay(1);
++	}
++	mxs_reset_block((struct mxs_register_32 *)&regs->hw_lcdif_ctrl);
+ }
+ 
+ void *video_hw_init(void)
+-- 
+1.8.0
+

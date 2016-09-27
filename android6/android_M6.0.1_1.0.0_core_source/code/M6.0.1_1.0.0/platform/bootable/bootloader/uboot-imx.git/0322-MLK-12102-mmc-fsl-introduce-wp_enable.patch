@@ -1,0 +1,68 @@
+From a17c369ea9966f03f09e30cf806b4029e3a09766 Mon Sep 17 00:00:00 2001
+From: Peng Fan <peng.fan@nxp.com>
+Date: Wed, 30 Dec 2015 17:04:16 +0800
+Subject: [PATCH] MLK-12102 mmc: fsl: introduce wp_enable
+
+Introudce wp_enable. If want to check WPSPL, then in board code,
+need to set wp_enable to 1.
+
+Take i.MX6UL for example, to some boards, they do not use WP singal,
+so they does not configure USDHC1_WP_SELECT_INPUT, and its default
+value is 0(GPIO1_IO02). However GPIO1_IO02 is muxed for i2c usage and
+SION bit set. So USDHC controller can always get wp signal and WPSPL
+shows write protect and blocks driver continuing. This is not what
+we want to see, so add wp_enable, and if set to 0, just omit the
+WPSPL checking and this does not effect normal working of usdhc
+controller.
+
+Suggested-by: Ye.Li <ye.li@nxp.com>
+Signed-off-by: Peng Fan <peng.fan@nxp.com>
+---
+ drivers/mmc/fsl_esdhc.c | 9 ++++++---
+ include/fsl_esdhc.h     | 3 ++-
+ 2 files changed, 8 insertions(+), 4 deletions(-)
+
+diff --git a/drivers/mmc/fsl_esdhc.c b/drivers/mmc/fsl_esdhc.c
+index 7d002b5..e1fbb33 100644
+--- a/drivers/mmc/fsl_esdhc.c
++++ b/drivers/mmc/fsl_esdhc.c
+@@ -212,9 +212,12 @@ static int esdhc_setup_data(struct mmc *mmc, struct mmc_data *data)
+ #endif
+ 		if (wml_value > WML_WR_WML_MAX)
+ 			wml_value = WML_WR_WML_MAX_VAL;
+-		if ((esdhc_read32(&regs->prsstat) & PRSSTAT_WPSPL) == 0) {
+-			printf("\nThe SD card is locked. Can not write to a locked card.\n\n");
+-			return TIMEOUT;
++
++		if (cfg->wp_enable) {
++			if ((esdhc_read32(&regs->prsstat) & PRSSTAT_WPSPL) == 0) {
++				printf("\nThe SD card is locked. Can not write to a locked card.\n\n");
++				return TIMEOUT;
++			}
+ 		}
+ 
+ 		esdhc_clrsetbits32(&regs->wml, WML_WR_WML_MASK,
+diff --git a/include/fsl_esdhc.h b/include/fsl_esdhc.h
+index 90338e6..88ad6d8 100644
+--- a/include/fsl_esdhc.h
++++ b/include/fsl_esdhc.h
+@@ -2,7 +2,7 @@
+  * FSL SD/MMC Defines
+  *-------------------------------------------------------------------
+  *
+- * Copyright 2007-2008, 2010-2013 Freescale Semiconductor, Inc.
++ * Copyright 2007-2008, 2010-2015 Freescale Semiconductor, Inc.
+  *
+  * SPDX-License-Identifier:	GPL-2.0+
+  */
+@@ -168,6 +168,7 @@ struct fsl_esdhc_cfg {
+ 	u32	esdhc_base;
+ 	u32	sdhc_clk;
+ 	u8	max_bus_width;
++	u8	wp_enable;
+ 	struct mmc_config cfg;
+ };
+ 
+-- 
+1.8.0
+

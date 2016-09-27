@@ -1,0 +1,38 @@
+From c3c7c3e78a06c0a56fdf28d32a3a36a9d16af044 Mon Sep 17 00:00:00 2001
+From: zhang sanshan <b51434@freescale.com>
+Date: Mon, 29 Jun 2015 10:56:51 +0800
+Subject: [PATCH 14/21] MA-6818 [Android_MX6QP_ARD] NAND OTA over ADB: Error
+ alerts that 'E: Cannot load volume /misc' before and
+ after updating OTA package. 100%
+
+There is not misc partition when nand boot.
+This log is showed on screen in recovery mode, So need to delete it.
+
+Signed-off-by: zhang sanshan <b51434@freescale.com>
+---
+ bootloader.cpp | 2 --
+ 1 file changed, 2 deletions(-)
+
+diff --git a/bootloader.cpp b/bootloader.cpp
+index 600d238..5772ecb 100644
+--- a/bootloader.cpp
++++ b/bootloader.cpp
+@@ -34,7 +34,6 @@ static int set_bootloader_message_block(const struct bootloader_message *in, con
+ int get_bootloader_message(struct bootloader_message *out) {
+     Volume* v = volume_for_path("/misc");
+     if (v == NULL) {
+-      LOGE("Cannot load volume /misc!\n");
+       return -1;
+     }
+     if (strcmp(v->fs_type, "mtd") == 0) {
+@@ -49,7 +48,6 @@ int get_bootloader_message(struct bootloader_message *out) {
+ int set_bootloader_message(const struct bootloader_message *in) {
+     Volume* v = volume_for_path("/misc");
+     if (v == NULL) {
+-      LOGE("Cannot load volume /misc!\n");
+       return -1;
+     }
+     if (strcmp(v->fs_type, "mtd") == 0) {
+-- 
+1.8.0
+

@@ -1,0 +1,54 @@
+From 0e640bf5ac9dceb4cee22b99b51f29b56f6585df Mon Sep 17 00:00:00 2001
+From: "guoyin.chen" <guoyin.chen@freescale.com>
+Date: Tue, 3 Nov 2015 10:07:28 +0800
+Subject: [PATCH 554/602] MA-7199 Add extra flag to include viv HWC library
+
+TARGET_HAVE_IMX_HWCOMPOSER should only be used to include FSL hwc for both imx6&7
+TARGET_HAVE_VIV_HWCOMPOSER added to include viv HWC if the soc have viv GPU
+
+Signed-off-by: guoyin.chen <guoyin.chen@freescale.com>
+---
+ imx6/soc/imx6dq.mk | 1 +
+ imx6/soc/imx6sl.mk | 1 +
+ imx6/soc/imx6sx.mk | 1 +
+ 3 files changed, 3 insertions(+)
+
+diff --git a/imx6/soc/imx6dq.mk b/imx6/soc/imx6dq.mk
+index 5ef98de..86c06a9 100644
+--- a/imx6/soc/imx6dq.mk
++++ b/imx6/soc/imx6dq.mk
+@@ -14,6 +14,7 @@ TARGET_KERNEL_DEFCONF := imx_v7_android_defconfig
+ -include external/fsl_imx_omx/codec_env.mk
+ TARGET_HAVE_IMX_GRALLOC := true
+ TARGET_HAVE_IMX_HWCOMPOSER = true
++TARGET_HAVE_VIV_HWCOMPOSER = true
+ USE_OPENGL_RENDERER := true
+ TARGET_CPU_SMP := true
+ 
+diff --git a/imx6/soc/imx6sl.mk b/imx6/soc/imx6sl.mk
+index 990d992..32ce6a4 100644
+--- a/imx6/soc/imx6sl.mk
++++ b/imx6/soc/imx6sl.mk
+@@ -13,6 +13,7 @@ TARGET_KERNEL_DEFCONF := imx_v7_android_defconfig
+ -include external/fsl_imx_omx/codec_env.mk
+ TARGET_HAVE_IMX_GRALLOC := true
+ TARGET_HAVE_IMX_HWCOMPOSER = true
++TARGET_HAVE_VIV_HWCOMPOSER = true
+ USE_OPENGL_RENDERER := true
+ TARGET_CPU_SMP := false
+ 
+diff --git a/imx6/soc/imx6sx.mk b/imx6/soc/imx6sx.mk
+index a63f751..220d5d0 100644
+--- a/imx6/soc/imx6sx.mk
++++ b/imx6/soc/imx6sx.mk
+@@ -13,6 +13,7 @@ TARGET_KERNEL_DEFCONF := imx_v7_android_defconfig
+ -include external/fsl_imx_omx/codec_env.mk
+ TARGET_HAVE_IMX_GRALLOC := true
+ TARGET_HAVE_IMX_HWCOMPOSER = true
++TARGET_HAVE_VIV_HWCOMPOSER = true
+ USE_OPENGL_RENDERER := true
+ TARGET_CPU_SMP := false
+ 
+-- 
+1.8.0
+

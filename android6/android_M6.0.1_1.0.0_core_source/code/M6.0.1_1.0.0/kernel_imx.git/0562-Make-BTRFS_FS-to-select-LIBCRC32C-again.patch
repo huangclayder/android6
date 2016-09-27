@@ -1,0 +1,31 @@
+From bcfc1fcc9e6d2e34e0280540b7b3d046e0f09882 Mon Sep 17 00:00:00 2001
+From: Andrey Konovalov <andrey.konovalov@linaro.org>
+Date: Wed, 5 Feb 2014 13:17:33 +0400
+Subject: [PATCH] Make BTRFS_FS to select LIBCRC32C again
+
+Commit 14a958e "Btrfs: fix btrfs boot when compiled as built-in" has
+removed "select LIBCRC32C", but the btrfs code outside the initialization
+function still uses crc32c(). Kernel with btrfs support fails to build if
+LIBCRC32C is not enabled.
+
+Signed-off-by: Andrey Konovalov <andrey.konovalov@linaro.org>
+(cherry picked from commit 144ea7abcfb85fd066c1b9b3e4536d9db27c106b)
+Signed-off-by: Alex Shi <alex.shi@linaro.org>
+---
+ fs/btrfs/Kconfig | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/fs/btrfs/Kconfig b/fs/btrfs/Kconfig
+index a66768e..3def512 100644
+--- a/fs/btrfs/Kconfig
++++ b/fs/btrfs/Kconfig
+@@ -1,5 +1,6 @@
+ config BTRFS_FS
+ 	tristate "Btrfs filesystem support"
++	select LIBCRC32C
+ 	select CRYPTO
+ 	select CRYPTO_CRC32C
+ 	select ZLIB_INFLATE
+-- 
+1.8.0
+

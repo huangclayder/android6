@@ -1,0 +1,35 @@
+From ad9de9d0dee2d57aac09aac415d53589261e342a Mon Sep 17 00:00:00 2001
+From: Riku Voipio <riku.voipio@linaro.org>
+Date: Tue, 19 Feb 2013 12:08:09 +0200
+Subject: [PATCH] kvm-host: enable nfs for convinience
+
+---
+ linaro/configs/kvm-host.conf | 14 ++++++++++++++
+ 1 file changed, 14 insertions(+)
+
+diff --git a/linaro/configs/kvm-host.conf b/linaro/configs/kvm-host.conf
+index ae280ac..2d79d94 100644
+--- a/linaro/configs/kvm-host.conf
++++ b/linaro/configs/kvm-host.conf
+@@ -7,4 +7,18 @@ CONFIG_KVM_ARM_TIMER=y
+ CONFIG_KVM_ARM_VGIC=y
+ CONFIG_KVM_MMIO=y
+ CONFIG_KVM=y
++CONFIG_NFS_FS=m
++CONFIG_NFS_V2=m
++CONFIG_NFS_V3=m
++CONFIG_NFS_V3_ACL=y
++CONFIG_NFS_V4=m
++CONFIG_NFS_SWAP=y
++CONFIG_NFS_USE_KERNEL_DNS=y
++CONFIG_NFSD=m
++CONFIG_NFSD_V2_ACL=y
++CONFIG_NFSD_V3=y
++CONFIG_NFSD_V3_ACL=y
++CONFIG_NFSD_V4=y
++CONFIG_NFS_ACL_SUPPORT=m
++CONFIG_NFS_COMMON=y
+ 
+-- 
+1.8.0
+

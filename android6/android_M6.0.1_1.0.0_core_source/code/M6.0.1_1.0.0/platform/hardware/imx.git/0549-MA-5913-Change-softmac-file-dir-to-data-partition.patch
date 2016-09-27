@@ -1,0 +1,66 @@
+From dc23324e9b7c62cb0fca1eae7ef931ac81319767 Mon Sep 17 00:00:00 2001
+From: Wang Haoran <b50027@freescale.com>
+Date: Mon, 1 Dec 2014 20:26:08 +0800
+Subject: [PATCH 549/635] MA-5913 Change softmac file dir to data partition
+
+Currently check_wifi_mac.sh for Atheros wifi will create
+a file which contains a mac address in /device. That need
+some mount operation. The mount operation is not available
+in this script in Lollipop's security environment.
+So change the mac address file to /data now.
+
+Signed-off-by: Wang Haoran <b50027@freescale.com>
+---
+ wlan/atheros/compat-wireless/check_wifi_mac.sh            | 15 +++++++--------
+ .../drivers/net/wireless/ath/ath6kl/softmac.c             |  4 ++--
+ 2 files changed, 9 insertions(+), 10 deletions(-)
+
+diff --git a/wlan/atheros/compat-wireless/check_wifi_mac.sh b/wlan/atheros/compat-wireless/check_wifi_mac.sh
+index a47ad20..08d2509 100755
+--- a/wlan/atheros/compat-wireless/check_wifi_mac.sh
++++ b/wlan/atheros/compat-wireless/check_wifi_mac.sh
+@@ -1,13 +1,12 @@
+-if [ -e /device/wifi/softmac ]
++if [ -e /data/misc/wifi/softmac ]
+ then
+ 	echo "update softmac"
+ else
+-	mount -w -o remount /device
+-	mkdir /device/wifi
+-	touch /device/wifi/softmac
+-	echo 02:30:`busybox expr $RANDOM % 89 + 10`:`busybox expr $RANDOM % 89 + 10`:`busybox expr $RANDOM % 89 + 10`:`busybox expr $RANDOM % 89 + 10` > /device/wifi/softmac
++    mkdir /data/misc
++	mkdir /data/misc/wifi
++	touch /data/misc/wifi/softmac
++	echo 02:30:`busybox expr $RANDOM % 89 + 10`:`busybox expr $RANDOM % 89 + 10`:`busybox expr $RANDOM % 89 + 10`:`busybox expr $RANDOM % 89 + 10` > /data/misc/wifi/softmac
+ 	sync
+-	chmod 775 /device/wifi
+-	chmod 664 /device/wifi/softmac
+-	mount -r -o remount /device
++	chmod 775 /data/misc/wifi
++	chmod 664 /data/misc/wifi/softmac
+ fi
+diff --git a/wlan/atheros/compat-wireless/drivers/net/wireless/ath/ath6kl/softmac.c b/wlan/atheros/compat-wireless/drivers/net/wireless/ath/ath6kl/softmac.c
+index 7d2fca1..e8fcf11 100644
+--- a/wlan/atheros/compat-wireless/drivers/net/wireless/ath/ath6kl/softmac.c
++++ b/wlan/atheros/compat-wireless/drivers/net/wireless/ath/ath6kl/softmac.c
+@@ -1,6 +1,6 @@
+ /*
+  * Copyright (c) 2011 Atheros Communications Inc.
+- * Copyright (C) 2013 Freescale Semiconductor, Inc.
++ * Copyright (C) 2014 Freescale Semiconductor, Inc.
+  *
+  * Permission to use, copy, modify, and/or distribute this software for any
+  * purpose with or without fee is hereby granted, provided that the above
+@@ -19,7 +19,7 @@
+ #include "debug.h"
+ #include <linux/vmalloc.h>
+ #define MAC_FILE "ath6k/AR6003/hw2.1.1/softmac"
+-#define VENDOR_MAC_FILE "/device/wifi/softmac"
++#define VENDOR_MAC_FILE "/data/misc/wifi/softmac"
+ 
+ typedef char            A_CHAR;
+ extern int android_readwrite_file(const A_CHAR *filename, A_CHAR *rbuf, const A_CHAR *wbuf, size_t length);
+-- 
+1.8.0
+

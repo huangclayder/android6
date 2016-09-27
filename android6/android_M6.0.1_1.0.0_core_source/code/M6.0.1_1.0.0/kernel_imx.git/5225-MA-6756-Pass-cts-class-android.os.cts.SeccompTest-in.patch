@@ -1,0 +1,30 @@
+From 0cc47bc603800f1f75f3b7cf380b49dd7472650c Mon Sep 17 00:00:00 2001
+From: Zhang Sanshan <b51434@freescale.com>
+Date: Fri, 29 May 2015 17:58:48 +0800
+Subject: [PATCH] MA-6756 Pass cts class android.os.cts.SeccompTest in
+ lollipop linux3.14
+
+Seccomp filtering provides a means for a process to specify a filter for incoming system calls.
+It should be enable to pass the class android.os.cts.SeccompTest in cts test.
+
+Signed-off-by: Zhang Sanshan <b51434@freescale.com>
+---
+ arch/arm/configs/imx_v7_android_defconfig | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/arch/arm/configs/imx_v7_android_defconfig b/arch/arm/configs/imx_v7_android_defconfig
+index 91daefa..7a319af 100644
+--- a/arch/arm/configs/imx_v7_android_defconfig
++++ b/arch/arm/configs/imx_v7_android_defconfig
+@@ -15,6 +15,8 @@ CONFIG_BLK_DEV_INITRD=y
+ CONFIG_KALLSYMS_ALL=y
+ CONFIG_EMBEDDED=y
+ CONFIG_PERF_EVENTS=y
++CONFIG_SECCOMP=y
++CONFIG_SECCOMP_FILTER=y
+ # CONFIG_SLUB_DEBUG is not set
+ # CONFIG_COMPAT_BRK is not set
+ CONFIG_MODULES=y
+-- 
+1.8.0
+

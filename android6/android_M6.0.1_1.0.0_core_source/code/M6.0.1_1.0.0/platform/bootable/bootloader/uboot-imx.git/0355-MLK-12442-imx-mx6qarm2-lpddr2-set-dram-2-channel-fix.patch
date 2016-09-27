@@ -1,0 +1,115 @@
+From 21c6f85d0023a5c7edf17b31d4334beb966d8059 Mon Sep 17 00:00:00 2001
+From: Adrian Alonso <adrian.alonso@nxp.com>
+Date: Wed, 20 Jan 2016 15:16:08 -0600
+Subject: [PATCH] MLK-12442: imx: mx6qarm2: lpddr2 set dram 2 channel fixed
+ mode
+
+Setup MMDC in two channel fixed mode
+Initialize dram banks for two channel fixed mode
+DRAM bank = 0x00000000
+-> start  = 0x10000000
+-> size   = 0x20000000
+DRAM bank = 0x00000001
+-> start  = 0x80000000
+-> size   = 0x20000000
+
+Signed-off-by: Adrian Alonso <adrian.alonso@nxp.com>
+---
+ board/freescale/mx6qarm2/mt128x64mx32.cfg  |  4 ++--
+ board/freescale/mx6qarm2/mx6qarm2.c        |  9 +++++++++
+ configs/mx6qarm2_pop_lpddr2_revb_defconfig |  2 +-
+ include/configs/mx6qarm2.h                 | 14 +++++++++++++-
+ 4 files changed, 25 insertions(+), 4 deletions(-)
+
+diff --git a/board/freescale/mx6qarm2/mt128x64mx32.cfg b/board/freescale/mx6qarm2/mt128x64mx32.cfg
+index adc8c4b..35a686f 100644
+--- a/board/freescale/mx6qarm2/mt128x64mx32.cfg
++++ b/board/freescale/mx6qarm2/mt128x64mx32.cfg
+@@ -209,7 +209,7 @@ DATA 4 	0x021b002c	0x0F9F26D2	// MMDC0_MDRWD
+ DATA 4 	0x021b0030	0x009F0E10	// MMDC0_MDOR
+ DATA 4 	0x021b0038	0x001A0889	// MMDC0_MDCFG3LP
+ DATA 4 	0x021b0008	0x00000000	// MMDC0_MDOTC
+-DATA 4 	0x021b0040	0x00000053	// Chan0 CS0_END 2 channel with 4K-interleave mode
++DATA 4 	0x021b0040	0x0000004F	// Chan0 CS0_END 2 channel with 2 Channel fixed mode
+ // DATA 4  	0x021b0400	0x11420000      	//MMDC0_MAARCR ADOPT optimized priorities. Dyn jump disabled
+ DATA 4 	0x021b0000	0x83110000	// MMDC0_MDCTL
+ 
+@@ -224,7 +224,7 @@ DATA 4 	0x021b402c	0x0F9F26D2	// MMDC1_MDRWD
+ DATA 4 	0x021b4030	0x009F0E10	// MMDC1_MDOR
+ DATA 4 	0x021b4038	0x001A0889	// MMDC1_MDCFG3LP
+ DATA 4 	0x021b4008	0x00000000	// MMDC1_MDOTC
+-DATA 4 	0x021b4040	0x00000013	// Chan1 CS0_END
++DATA 4 	0x021b4040	0x00000017	// Chan1 CS0_END
+ // DATA 4  	0x021b4400	0x11420000      	//MMDC0_MAARCR ADOPT optimized priorities. Dyn jump disabled
+ DATA 4 	0x021b4000	0x83110000	// MMDC1_MDCTL
+ 
+diff --git a/board/freescale/mx6qarm2/mx6qarm2.c b/board/freescale/mx6qarm2/mx6qarm2.c
+index 188096b..72f59ef 100644
+--- a/board/freescale/mx6qarm2/mx6qarm2.c
++++ b/board/freescale/mx6qarm2/mx6qarm2.c
+@@ -47,6 +47,15 @@ int dram_init(void)
+ 	return 0;
+ }
+ 
++#if defined(CONFIG_MX6DQ_POP_LPDDR2)
++void dram_init_banksize(void) {
++	gd->bd->bi_dram[0].start = PHYS_SDRAM_0;
++	gd->bd->bi_dram[0].size = (phys_size_t)CONFIG_DDR_MB * 1024 * 1024;
++	gd->bd->bi_dram[1].start = PHYS_SDRAM_1;
++	gd->bd->bi_dram[1].size = (phys_size_t)CONFIG_DDR_MB * 1024 * 1024;
++}
++#endif
++
+ iomux_v3_cfg_t const uart4_pads[] = {
+ 	MX6_PAD_KEY_COL0__UART4_TX_DATA | MUX_PAD_CTRL(UART_PAD_CTRL),
+ 	MX6_PAD_KEY_ROW0__UART4_RX_DATA | MUX_PAD_CTRL(UART_PAD_CTRL),
+diff --git a/configs/mx6qarm2_pop_lpddr2_revb_defconfig b/configs/mx6qarm2_pop_lpddr2_revb_defconfig
+index 0f6e0c4..b50a9d2 100644
+--- a/configs/mx6qarm2_pop_lpddr2_revb_defconfig
++++ b/configs/mx6qarm2_pop_lpddr2_revb_defconfig
+@@ -1,4 +1,4 @@
+-CONFIG_SYS_EXTRA_OPTIONS="IMX_CONFIG=board/freescale/mx6qarm2/mt128x64mx32.cfg,MX6Q,MX6DQ_POP_LPDDR2,DDR_MB=1024"
++CONFIG_SYS_EXTRA_OPTIONS="IMX_CONFIG=board/freescale/mx6qarm2/mt128x64mx32.cfg,MX6Q,MX6DQ_POP_LPDDR2,DDR_MB=512"
+ CONFIG_ARM=y
+ CONFIG_TARGET_MX6QARM2=y
+ CONFIG_SYS_MALLOC_F=y
+diff --git a/include/configs/mx6qarm2.h b/include/configs/mx6qarm2.h
+index daeca9f..c1b9ed9 100644
+--- a/include/configs/mx6qarm2.h
++++ b/include/configs/mx6qarm2.h
+@@ -91,11 +91,17 @@
+ #define CONFIG_LOADADDR			0x12000000
+ #define CONFIG_SYS_TEXT_BASE		0x17800000
+ 
++#if defined(CONFIG_MX6DQ_POP_LPDDR2)
++#define CONFIG_DEFAULT_FDT_FILE "imx6q-pop-arm2.dtb"
++#else
++#define CONFIG_DEFAULT_FDT_FILE "imx6q-arm2.dtb"
++#endif
++
+ #define CONFIG_EXTRA_ENV_SETTINGS \
+ 	"script=boot.scr\0" \
+ 	"image=zImage\0" \
+ 	"console=ttymxc3\0" \
+-	"fdt_file=imx6q-arm2.dtb\0" \
++	"fdt_file=" CONFIG_DEFAULT_FDT_FILE "\0" \
+ 	"fdt_addr=0x18000000\0" \
+ 	"fdt_high=0xffffffff\0" \
+ 	"initrd_high=0xffffffff\0" \
+@@ -189,7 +195,13 @@
+ #define CONFIG_CMDLINE_EDITING
+ 
+ /* Physical Memory Map */
++#if defined(CONFIG_MX6DQ_POP_LPDDR2)
++#define CONFIG_NR_DRAM_BANKS		2
++#define PHYS_SDRAM_0			MMDC0_ARB_BASE_ADDR
++#define PHYS_SDRAM_1			MMDC1_ARB_BASE_ADDR
++#else
+ #define CONFIG_NR_DRAM_BANKS		1
++#endif
+ #define PHYS_SDRAM			MMDC0_ARB_BASE_ADDR
+ 
+ #define CONFIG_SYS_SDRAM_BASE		PHYS_SDRAM
+-- 
+1.8.0
+

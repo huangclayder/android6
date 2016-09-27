@@ -1,0 +1,84 @@
+From be4c05340e56938b4378734275de923a9f407c81 Mon Sep 17 00:00:00 2001
+From: Wang Haoran <b50027@freescale.com>
+Date: Sat, 20 Dec 2014 10:43:18 +0800
+Subject: [PATCH 5/6] MA-6029 Fixed file write error
+
+Use uncertain para in file write function instead
+of the previous one which write the pointer address
+value to the file.
+
+Signed-off-by: Wang Haoran <b50027@freescale.com>
+---
+ gpio.c  | 3 ++-
+ utils.c | 4 +++-
+ utils.h | 3 ++-
+ 3 files changed, 7 insertions(+), 3 deletions(-)
+
+diff --git a/gpio.c b/gpio.c
+index a6b819e..483e0d8 100644
+--- a/gpio.c
++++ b/gpio.c
+@@ -1,5 +1,6 @@
+ /*******************************************************************************
+  * Copyright (C) 2010, Linaro Limited.
++ * Copyright (C) 2014 Freescale Semiconductor, Inc.
+  *
+  * This file is part of PowerDebug.
+  *
+@@ -88,7 +89,7 @@ static inline int read_gpio_cb(struct tree *t, void *data)
+ 	struct gpio_info *gpio = t->private;
+ 	int gpio_num;
+ 	file_read_value(t->path, "base", "%d", &gpio_num);
+-	file_write_value("/sys/class/gpio", "export","%d", &gpio_num);
++    file_write_value("/sys/class/gpio", "export","%d", gpio_num);
+ 
+ 
+ 	file_read_value(t->path, "active_low", "%d", &gpio->active_low);
+diff --git a/utils.c b/utils.c
+index 1e000d4..03c9d6d 100644
+--- a/utils.c
++++ b/utils.c
+@@ -1,5 +1,6 @@
+ /*******************************************************************************
+  * Copyright (C) 2011, Linaro Limited.
++ * Copyright (C) 2014 Freescale Semiconductor, Inc.
+  *
+  * This file is part of PowerDebug.
+  *
+@@ -67,11 +68,12 @@ out_free:
+  * Returns 0 on success, -1 otherwise
+  */
+ int file_write_value(const char *path, const char *name,
+-                    const char *format, void *value)
++                    const char *format, ...)
+ {
+         FILE *file;
+         char *rpath;
+         int ret;
++        va_list value;
+ 
+         ret = asprintf(&rpath, "%s/%s", path, name);
+         if (ret < 0)
+diff --git a/utils.h b/utils.h
+index 44c2e11..f716f4d 100644
+--- a/utils.h
++++ b/utils.h
+@@ -1,5 +1,6 @@
+ /*******************************************************************************
+  * Copyright (C) 2011, Linaro Limited.
++ * Copyright (C) 2014 Freescale Semiconductor, Inc.
+  *
+  * This file is part of PowerDebug.
+  *
+@@ -18,7 +19,7 @@
+ extern int file_read_value(const char *path, const char *name,
+                            const char *format, void *value);
+ extern int file_write_value(const char *path, const char *name,
+-                           const char *format, void *value);
++                           const char *format, ...);
+ 
+ 
+ #endif
+-- 
+1.8.0
+

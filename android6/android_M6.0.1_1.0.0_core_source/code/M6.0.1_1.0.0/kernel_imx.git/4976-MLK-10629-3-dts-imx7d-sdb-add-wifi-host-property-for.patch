@@ -1,0 +1,31 @@
+From 64af464020aa9ffe9ba607fc3b6a106668e85a5d Mon Sep 17 00:00:00 2001
+From: Dong Aisheng <b29396@freescale.com>
+Date: Thu, 9 Apr 2015 16:19:35 +0800
+Subject: [PATCH] MLK-10629-3 dts: imx7d-sdb: add wifi-host property for
+ usdhc2
+
+There's a Broadcom WiFi on usdhc2.
+Add this property due to Broadcom WiFi driver needs call wifi_card_detect
+function.
+
+Signed-off-by: Dong Aisheng <b29396@freescale.com>
+(cherry picked from commit 9ebef8e2658efd9d63bc0519016359e773238c25)
+---
+ arch/arm/boot/dts/imx7d-sdb.dts | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/arch/arm/boot/dts/imx7d-sdb.dts b/arch/arm/boot/dts/imx7d-sdb.dts
+index 1708ea3..61afdcd 100644
+--- a/arch/arm/boot/dts/imx7d-sdb.dts
++++ b/arch/arm/boot/dts/imx7d-sdb.dts
+@@ -908,6 +908,7 @@
+ 	keep-power-in-suspend;
+ 	tuning-step = <2>;
+ 	non-removable;
++	wifi-host;
+ 	status = "okay";
+ };
+ 
+-- 
+1.8.0
+

@@ -1,0 +1,47 @@
+From 093d9cef18b417c20ab55def52d8416b0469ef89 Mon Sep 17 00:00:00 2001
+From: Bai Ping <b51503@freescale.com>
+Date: Thu, 26 Nov 2015 18:22:20 +0800
+Subject: [PATCH] MLK-11912 cpufreq: imx: fix dereference null return value
+ issue
+
+After coverity code check, it reports dereference NULL return value
+complain, so fix it.
+
+Signed-off-by: Bai Ping <b51503@freescale.com>
+(cherry picked from commit daa80d9632cced8514789cda4eb126b10b536a67)
+---
+ drivers/cpufreq/imx6q-cpufreq.c | 3 +++
+ drivers/cpufreq/imx7-cpufreq.c  | 3 +++
+ 2 files changed, 6 insertions(+)
+
+diff --git a/drivers/cpufreq/imx6q-cpufreq.c b/drivers/cpufreq/imx6q-cpufreq.c
+index 518d8a0..a9fd553 100644
+--- a/drivers/cpufreq/imx6q-cpufreq.c
++++ b/drivers/cpufreq/imx6q-cpufreq.c
+@@ -243,6 +243,9 @@ static int imx6_cpufreq_pm_notify(struct notifier_block *nb,
+ 	 * devices may be already suspended, to avoid such scenario,
+ 	 * we just increase cpufreq to highest setpoint before suspend.
+ 	 */
++	if (!data)
++		return NOTIFY_BAD;
++
+ 	switch (event) {
+ 	case PM_SUSPEND_PREPARE:
+ 		cpufreq_policy_min_pre_suspend = data->user_policy.min;
+diff --git a/drivers/cpufreq/imx7-cpufreq.c b/drivers/cpufreq/imx7-cpufreq.c
+index a620cf0..b076a68 100644
+--- a/drivers/cpufreq/imx7-cpufreq.c
++++ b/drivers/cpufreq/imx7-cpufreq.c
+@@ -136,6 +136,9 @@ static int imx7_cpufreq_pm_notify(struct notifier_block *nb,
+ 	 * devices may be already suspended, to avoid such scenario,
+ 	 * we just increase cpufreq to highest setpoint before suspend.
+ 	 */
++	if (!data)
++		return NOTIFY_BAD;
++
+ 	switch (event) {
+ 	case PM_SUSPEND_PREPARE:
+ 		cpufreq_policy_min_pre_suspend = data->user_policy.min;
+-- 
+1.8.0
+

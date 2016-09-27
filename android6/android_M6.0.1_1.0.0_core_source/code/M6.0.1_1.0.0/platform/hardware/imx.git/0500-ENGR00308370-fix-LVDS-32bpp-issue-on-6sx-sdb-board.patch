@@ -1,0 +1,243 @@
+From 3cbdb82defd14697a3c9f87dd80044212b8f1627 Mon Sep 17 00:00:00 2001
+From: Xiaowen Liu <b37945@freescale.com>
+Date: Tue, 15 Apr 2014 09:27:27 +0800
+Subject: [PATCH 500/635] ENGR00308370 fix LVDS 32bpp issue on 6sx sdb board.
+
+when initialize framebuffer, enum formats supported by
+android framework according to bpp and set to fb device.
+
+Signed-off-by: Xiaowen Liu <b37945@freescale.com>
+---
+ mx6/libgralloc_wrapper/framebuffer.cpp | 183 +++++++++++++++++++++++----------
+ 1 file changed, 128 insertions(+), 55 deletions(-)
+
+diff --git a/mx6/libgralloc_wrapper/framebuffer.cpp b/mx6/libgralloc_wrapper/framebuffer.cpp
+index c24abc3..deb5941 100755
+--- a/mx6/libgralloc_wrapper/framebuffer.cpp
++++ b/mx6/libgralloc_wrapper/framebuffer.cpp
+@@ -167,46 +167,8 @@ static int fb_compositionComplete(struct framebuffer_device_t* dev)
+     return 0;
+ }
+ 
+-/*****************************************************************************/
+-static int mapFrameBufferWithFbid(struct private_module_t* module, int fbid)
++static int checkFramebufferFormat(int fd, uint32_t &flags)
+ {
+-    // already initialized...
+-    if (module->framebuffer) {
+-        return 0;
+-    }
+-        
+-    char const * const device_template[] = {
+-            "/dev/graphics/fb%u",
+-            "/dev/fb%u",
+-            0 };
+-
+-    int fd = -1;
+-    int i=0;
+-    char name[64];
+-
+-    while ((fd==-1) && device_template[i]) {
+-        snprintf(name, 64, device_template[i], fbid);
+-        fd = open(name, O_RDWR, 0);
+-        i++;
+-    }
+-    if (fd < 0) {
+-        ALOGE("<%s,%d> open %s failed", __FUNCTION__, __LINE__, name);
+-        return -errno;
+-    }
+-
+-    if(fbid != 0) {
+-        int blank = FB_BLANK_UNBLANK;
+-        if(ioctl(fd, FBIOBLANK, blank) < 0) {
+-            ALOGE("<%s, %d> ioctl FBIOBLANK failed", __FUNCTION__, __LINE__);
+-        }
+-    }
+-
+-    struct fb_fix_screeninfo finfo;
+-    if (ioctl(fd, FBIOGET_FSCREENINFO, &finfo) == -1) {
+-        ALOGE("<%s,%d> FBIOGET_FSCREENINFO failed", __FUNCTION__, __LINE__);
+-        return -errno;
+-    }
+-
+     struct fb_var_screeninfo info;
+     if (ioctl(fd, FBIOGET_VSCREENINFO, &info) == -1) {
+         ALOGE("<%s,%d> FBIOGET_VSCREENINFO failed", __FUNCTION__, __LINE__);
+@@ -219,9 +181,13 @@ static int mapFrameBufferWithFbid(struct private_module_t* module, int fbid)
+     info.xoffset = 0;
+     info.yoffset = 0;
+     info.activate = FB_ACTIVATE_NOW;
++    /*
++     * Request nr_framebuffers screens (at lest 2 for page flipping)
++     */
++    info.yres_virtual = ALIGN_PIXEL_128(info.yres) * nr_framebuffers;
++    info.xres_virtual = ALIGN_PIXEL(info.xres);
+ 
+-    if(info.bits_per_pixel == 32){
+-        ALOGW("32bpp setting of Framebuffer catched!");
++    if (info.bits_per_pixel == 32) {
+         /*
+          * Explicitly request RGBA 8/8/8/8
+          */
+@@ -237,8 +203,59 @@ static int mapFrameBufferWithFbid(struct private_module_t* module, int fbid)
+         info.transp.offset    = 24;
+         info.transp.length    = 8;
+         info.transp.msb_right = 0;
++
++        if (ioctl(fd, FBIOPUT_VSCREENINFO, &info) == -1) {
++            flags &= ~PAGE_FLIP;
++            ALOGW("FBIOPUT_VSCREENINFO failed, page flipping not supported");
++        }
++
++        if (ioctl(fd, FBIOGET_VSCREENINFO, &info) == -1) {
++            ALOGE("<%s,%d> FBIOGET_VSCREENINFO failed", __FUNCTION__, __LINE__);
++            return -errno;
++        }
++        if (info.red.offset != 0 || info.red.length != 8 ||
++            info.green.offset != 8 || info.green.length != 8 ||
++            info.blue.offset != 16 || info.blue.length != 8) {
++            /*
++             * Explicitly request BGRA 8/8/8/8
++             */
++            info.red.offset       = 16;
++            info.red.length       = 8;
++            info.red.msb_right    = 0;
++            info.green.offset     = 8;
++            info.green.length     = 8;
++            info.green.msb_right  = 0;
++            info.blue.offset      = 0;
++            info.blue.length      = 8;
++            info.blue.msb_right   = 0;
++            info.transp.offset    = 24;
++            info.transp.length    = 8;
++            info.transp.msb_right = 0;
++
++            if (ioctl(fd, FBIOPUT_VSCREENINFO, &info) == -1) {
++                flags &= ~PAGE_FLIP;
++                ALOGW("FBIOPUT_VSCREENINFO failed, page flipping not supported");
++            }
++
++            if (ioctl(fd, FBIOGET_VSCREENINFO, &info) == -1) {
++                ALOGE("<%s,%d> FBIOGET_VSCREENINFO failed", __FUNCTION__, __LINE__);
++                return -errno;
++            }
++            if (info.red.offset != 16 || info.red.length != 8 ||
++                info.green.offset != 8 || info.green.length != 8 ||
++                info.blue.offset != 0 || info.blue.length != 8) {
++                ALOGE("display doesn't support RGBA8888 and BRGA8888 in 32bpp,"
++                       "which are supported in framework."
++                       "please configure 16bpp in commandline to have a try");
++                return -errno;
++            }
++            ALOGI("32bpp setting of Framebuffer with BGRA8888 format!");
++        }
++        else {
++            ALOGI("32bpp setting of Framebuffer with RGBA8888 format!");
++        }
+     }
+-    else{
++    else {
+         /*
+          * Explicitly request 5/6/5
+          */
+@@ -255,28 +272,84 @@ static int mapFrameBufferWithFbid(struct private_module_t* module, int fbid)
+         info.transp.offset    = 0;
+         info.transp.length    = 0;
+         info.transp.msb_right = 0;
+-    }
+-    /*
+-     * Request nr_framebuffers screens (at lest 2 for page flipping)
+-     */
+-    info.yres_virtual = ALIGN_PIXEL_128(info.yres) * nr_framebuffers;
+-    info.xres_virtual = ALIGN_PIXEL(info.xres);
+-    
+-    uint32_t flags = PAGE_FLIP;
+-    if (ioctl(fd, FBIOPUT_VSCREENINFO, &info) == -1) {
+-        info.yres_virtual = ALIGN_PIXEL_128(info.yres);
+-        flags &= ~PAGE_FLIP;
+-        ALOGW("FBIOPUT_VSCREENINFO failed, page flipping not supported");
++
++        if (ioctl(fd, FBIOPUT_VSCREENINFO, &info) == -1) {
++            flags &= ~PAGE_FLIP;
++            ALOGW("FBIOPUT_VSCREENINFO failed, page flipping not supported");
++        }
++
++        if (ioctl(fd, FBIOGET_VSCREENINFO, &info) == -1) {
++            ALOGE("<%s,%d> FBIOGET_VSCREENINFO failed", __FUNCTION__, __LINE__);
++            return -errno;
++        }
++        if (info.red.offset != 11 || info.red.length != 5 ||
++            info.green.offset != 5 || info.green.length != 6 ||
++            info.blue.offset != 0 || info.blue.length != 5) {
++            ALOGE("display doesn't support RGB565 in 16bpp,"
++                   "which is only support in framework");
++            return -errno;
++        }
++
++        ALOGI("16bpp setting of Framebuffer with RGB565 format!");
+     }
+ 
+     if (info.yres_virtual < ALIGN_PIXEL_128(info.yres) * 2) {
+         // we need at least 2 for page-flipping
+-        info.yres_virtual = ALIGN_PIXEL_128(info.yres);
+         flags &= ~PAGE_FLIP;
+         ALOGW("page flipping not supported (yres_virtual=%d, requested=%d)",
+                 info.yres_virtual, ALIGN_PIXEL_128(info.yres)*2);
+     }
+ 
++    return 0;
++}
++
++/*****************************************************************************/
++static int mapFrameBufferWithFbid(struct private_module_t* module, int fbid)
++{
++    // already initialized...
++    if (module->framebuffer) {
++        return 0;
++    }
++
++    char const * const device_template[] = {
++            "/dev/graphics/fb%u",
++            "/dev/fb%u",
++            0 };
++
++    int fd = -1;
++    int i=0;
++    char name[64];
++
++    while ((fd==-1) && device_template[i]) {
++        snprintf(name, 64, device_template[i], fbid);
++        fd = open(name, O_RDWR, 0);
++        i++;
++    }
++    if (fd < 0) {
++        ALOGE("<%s,%d> open %s failed", __FUNCTION__, __LINE__, name);
++        return -errno;
++    }
++
++    if(fbid != 0) {
++        int blank = FB_BLANK_UNBLANK;
++        if(ioctl(fd, FBIOBLANK, blank) < 0) {
++            ALOGE("<%s, %d> ioctl FBIOBLANK failed", __FUNCTION__, __LINE__);
++        }
++    }
++
++    struct fb_fix_screeninfo finfo;
++    if (ioctl(fd, FBIOGET_FSCREENINFO, &finfo) == -1) {
++        ALOGE("<%s,%d> FBIOGET_FSCREENINFO failed", __FUNCTION__, __LINE__);
++        return -errno;
++    }
++
++    uint32_t flags = PAGE_FLIP;
++    if (checkFramebufferFormat(fd, flags) != 0) {
++        ALOGE("<%s,%d> checkFramebufferFormat failed", __FUNCTION__, __LINE__);
++        return -errno;
++    }
++
++    struct fb_var_screeninfo info;
+     if (ioctl(fd, FBIOGET_VSCREENINFO, &info) == -1) {
+         ALOGE("<%s,%d> FBIOGET_VSCREENINFO failed", __FUNCTION__, __LINE__);
+         return -errno;
+-- 
+1.8.0
+

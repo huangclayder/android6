@@ -1,0 +1,25 @@
+From c98bce3a3a3f2273d6f64fa3e2cb2cc648e33a56 Mon Sep 17 00:00:00 2001
+From: Xu Mao <B34688@freescale.com>
+Date: Thu, 2 Jan 2014 14:52:05 +0800
+Subject: [PATCH 40/95] ENGR00133115 add m2ts into support list of omx player
+
+Signed-off-by: Xu Mao <B34688@freescale.com>
+---
+ media/libmediaplayerservice/MediaPlayerFactory.cpp | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/media/libmediaplayerservice/MediaPlayerFactory.cpp b/media/libmediaplayerservice/MediaPlayerFactory.cpp
+index d67d912..2089bda 100644
+--- a/media/libmediaplayerservice/MediaPlayerFactory.cpp
++++ b/media/libmediaplayerservice/MediaPlayerFactory.cpp
+@@ -351,6 +351,7 @@ class OMXPlayerFactory : public MediaPlayerFactory::IFactory {
+                 ".mpg",
+                 ".vob",
+                 ".ts", 
++                ".m2ts", 
+                 ".f4v",
+                 ".mp3",
+                 ".aac",
+-- 
+1.8.0
+

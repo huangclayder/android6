@@ -1,0 +1,30 @@
+From 6bca76aa3d452d46c4926341e1af3c0885873a44 Mon Sep 17 00:00:00 2001
+From: Xiaowen Liu <xiaowen.liu@freescale.com>
+Date: Thu, 12 Nov 2015 08:39:26 -0500
+Subject: [PATCH 41/43] MA-7089 Upgrade android to Mashmallow 6.0 version.
+
+Fix color show incorrect on 6SX platform.
+When upgrade to android 6.0_r26, there is new DISPLAY_ATTRIBUTES.
+The HWC_DISPLAY_FORMAT propery is lost which is added to support BGRA8888 format.
+Add back HWC_DISPLAY_FORMAT property to DISPLAY_ATTRIBUTES.
+
+Signed-off-by: Xiaowen Liu <xiaowen.liu@freescale.com>
+---
+ services/surfaceflinger/DisplayHardware/HWComposer.cpp | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/services/surfaceflinger/DisplayHardware/HWComposer.cpp b/services/surfaceflinger/DisplayHardware/HWComposer.cpp
+index 609da23..84543fc 100644
+--- a/services/surfaceflinger/DisplayHardware/HWComposer.cpp
++++ b/services/surfaceflinger/DisplayHardware/HWComposer.cpp
+@@ -336,6 +336,7 @@ static const uint32_t DISPLAY_ATTRIBUTES[] = {
+     HWC_DISPLAY_HEIGHT,
+     HWC_DISPLAY_DPI_X,
+     HWC_DISPLAY_DPI_Y,
++    HWC_DISPLAY_FORMAT,
+     HWC_DISPLAY_COLOR_TRANSFORM,
+     HWC_DISPLAY_NO_ATTRIBUTE,
+ };
+-- 
+1.8.0
+

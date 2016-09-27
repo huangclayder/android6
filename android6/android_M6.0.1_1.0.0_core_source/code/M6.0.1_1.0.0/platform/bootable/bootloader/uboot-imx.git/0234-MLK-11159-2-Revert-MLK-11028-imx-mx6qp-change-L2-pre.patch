@@ -1,0 +1,35 @@
+From 71c6ce1e85eb57888a87527df6b04ccf07c0c641 Mon Sep 17 00:00:00 2001
+From: Robby Cai <r63905@freescale.com>
+Date: Wed, 24 Jun 2015 11:44:51 +0800
+Subject: [PATCH] MLK-11159-2 Revert "MLK-11028 imx: mx6qp change L2 prefetch
+ offset to 0"
+
+This reverts commit 2bc93d766dee5d5dc33035446f82622c4f1fb784.
+
+After further investigation, find L2 prefetch offset setting of 0xF is not the
+root cause for USB stress reboot failure. With the fix in USB driver,
+and L2 prefetch offset setting of 0xF, the reboot stress test has passed 4-days
+both on imx6q and imx6qp sabreauto board.
+
+Signed-off-by: Robby Cai <r63905@freescale.com>
+(cherry picked from commit 6e9282c2567b2820699fa55d2c6bf0ab78e992d6)
+---
+ arch/arm/cpu/armv7/mx6/soc.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/arch/arm/cpu/armv7/mx6/soc.c b/arch/arm/cpu/armv7/mx6/soc.c
+index 291be76..2283702 100644
+--- a/arch/arm/cpu/armv7/mx6/soc.c
++++ b/arch/arm/cpu/armv7/mx6/soc.c
+@@ -985,7 +985,7 @@ void v7_outer_cache_enable(void)
+ 
+ 	/* Turn on the L2 I/D prefetch, double linefill */
+ 	/* Set prefetch offset with any value except 23 as per errata 765569 */
+-	val |= 0x70000000;
++	val |= 0x7000000f;
+ 
+ 	/*
+ 	 * The L2 cache controller(PL310) version on the i.MX6D/Q is r3p1-50rel0
+-- 
+1.8.0
+

@@ -1,0 +1,38 @@
+From ae362a1f1c1848dc3f5637f63bd1a75718be9179 Mon Sep 17 00:00:00 2001
+From: b37945 <b37945@freescale.com>
+Date: Thu, 18 Sep 2014 11:11:51 +0800
+Subject: [PATCH 528/635] ENGR00326697-1 change NV12/21 alignment to 16.
+
+The NV12/21 format alignment reduced to 16.
+In order to match GPU spec.
+
+Signed-off-by: b37945 <b37945@freescale.com>
+---
+ mx6/libgralloc_wrapper/BufferManager.cpp | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/mx6/libgralloc_wrapper/BufferManager.cpp b/mx6/libgralloc_wrapper/BufferManager.cpp
+index f6d41d8..bbb61ec 100755
+--- a/mx6/libgralloc_wrapper/BufferManager.cpp
++++ b/mx6/libgralloc_wrapper/BufferManager.cpp
+@@ -119,7 +119,7 @@ int BufferManager::alloc(int w, int h, int format, int usage,
+ 
+         case HAL_PIXEL_FORMAT_YCrCb_420_SP:
+         case HAL_PIXEL_FORMAT_YCbCr_420_SP:
+-            alignedw = ALIGN_PIXEL_32(w);
++            alignedw = ALIGN_PIXEL_16(w);
+             alignedh = ALIGN_PIXEL_4(h);
+             size = alignedw * alignedh * 3 / 2;
+             break;
+@@ -134,7 +134,7 @@ int BufferManager::alloc(int w, int h, int format, int usage,
+ 
+         case HAL_PIXEL_FORMAT_YCbCr_422_SP:
+         case HAL_PIXEL_FORMAT_YCbCr_422_I:
+-            alignedw = ALIGN_PIXEL_32(w);
++            alignedw = ALIGN_PIXEL_16(w);
+             alignedh = ALIGN_PIXEL_4(h);
+             size = alignedw * alignedh * 2;
+             break;
+-- 
+1.8.0
+

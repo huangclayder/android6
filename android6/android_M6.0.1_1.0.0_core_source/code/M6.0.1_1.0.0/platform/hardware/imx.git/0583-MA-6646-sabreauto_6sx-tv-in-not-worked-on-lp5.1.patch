@@ -1,0 +1,85 @@
+From d2f9bda41acf269320febfb0be51f6ac739dac92 Mon Sep 17 00:00:00 2001
+From: fang hui <b31070@freescale.com>
+Date: Tue, 12 May 2015 09:42:00 +0800
+Subject: [PATCH 583/635] MA-6646 - [sabreauto_6sx]: tv-in not worked on lp5.1
+
+in kernel 3.14,
+tv-in driver's name csi_v4l2 changed to mx6s-csi
+format Y444 should changed to YUV4
+some ioctl cmd not supported
+
+Signed-off-by: fang hui <b31070@freescale.com>
+---
+ mx6/libcamera/CameraUtil.h   |  2 +-
+ mx6/libcamera/TVINDevice.cpp | 11 +++++++----
+ 2 files changed, 8 insertions(+), 5 deletions(-)
+
+diff --git a/mx6/libcamera/CameraUtil.h b/mx6/libcamera/CameraUtil.h
+index 6fb571b..c7c90e4 100644
+--- a/mx6/libcamera/CameraUtil.h
++++ b/mx6/libcamera/CameraUtil.h
+@@ -70,7 +70,7 @@ using namespace android;
+ #define OV5640_SENSOR_NAME "csi"
+ #define OV5642_SENSOR_NAME "ov5642"
+ #define ADV7180_TVIN_NAME "adv7180_decoder"
+-#define VADC_TVIN_NAME "csi_v4l2"
++#define VADC_TVIN_NAME "mx6s-csi"
+ #define V4LSTREAM_WAKE_LOCK "V4LCapture"
+ 
+ #define MAX_PREVIEW_BUFFER      6
+diff --git a/mx6/libcamera/TVINDevice.cpp b/mx6/libcamera/TVINDevice.cpp
+index c3ba155..7a3eed3 100644
+--- a/mx6/libcamera/TVINDevice.cpp
++++ b/mx6/libcamera/TVINDevice.cpp
+@@ -1,6 +1,6 @@
+ /*
+  * Copyright (C) 2008 The Android Open Source Project
+- * Copyright (C) 2012-2014 Freescale Semiconductor, Inc.
++ * Copyright (C) 2012-2015 Freescale Semiconductor, Inc.
+  *
+  * Licensed under the Apache License, Version 2.0 (the "License");
+  * you may not use this file except in compliance with the License.
+@@ -175,18 +175,21 @@ status_t TVINDevice::setDeviceConfig(int         width,
+     }
+ 
+     status_t ret = NO_ERROR;
++
++#ifndef VADC_TVIN
+     int input    = 1;
+     ret = ioctl(mCameraHandle, VIDIOC_S_INPUT, &input);
+     if (ret < 0) {
+         FLOGE("Open: VIDIOC_S_INPUT Failed: %s", strerror(errno));
+         return ret;
+     }
++#endif
+ 
+     int vformat;
+ 
+ #ifdef VADC_TVIN
+     format; //avoid compile error
+-    vformat = v4l2_fourcc('Y', '4', '4', '4');
++    vformat = v4l2_fourcc('Y', 'U', 'V', '4');
+ #else
+     vformat = convertPixelFormatToV4L2Format(format);
+ #endif
+@@ -214,7 +217,7 @@ status_t TVINDevice::setDeviceConfig(int         width,
+     }
+ 
+ 
+-#ifdef VADC_TVIN
++#ifndef VADC_TVIN
+     ret = ioctl(mCameraHandle, VIDIOC_S_STD, &mSTD);
+     if(ret < 0)
+     {
+@@ -378,7 +381,7 @@ status_t TVINDevice::initParameters(CameraParameters& params,
+         vid_frmsize.index        = index++;
+ 
+ #ifdef VADC_TVIN
+-        vid_frmsize.pixel_format = v4l2_fourcc('Y', '4', '4', '4');
++        vid_frmsize.pixel_format = v4l2_fourcc('Y', 'U', 'V', '4');
+ #else
+         vid_frmsize.pixel_format = v4l2_fourcc('N', 'V', '1', '2');
+ #endif
+-- 
+1.8.0
+

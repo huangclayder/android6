@@ -1,0 +1,48 @@
+From 98da02e7a0b15e02f7aa099c4faef50805d76229 Mon Sep 17 00:00:00 2001
+From: Mark Brown <broonie@linaro.org>
+Date: Thu, 30 Jan 2014 22:16:41 +0000
+Subject: [PATCH] spi: Add a timeout when waiting for transfers
+
+Don't wait indefinitely for transfers to complete but time out after 10ms
+more than we expect the transfer to take on the wire.
+
+Signed-off-by: Mark Brown <broonie@linaro.org>
+(cherry picked from commit 16a0ce4e10edfe376b3071f161c71c4160c89d6b)
+(cherry picked from commit 21113987c8a44c4ece385c368cd7e9058311da10)
+---
+ drivers/spi/spi.c | 12 +++++++++++-
+ 1 file changed, 11 insertions(+), 1 deletion(-)
+
+diff --git a/drivers/spi/spi.c b/drivers/spi/spi.c
+index 7656af7..776bfc2 100644
+--- a/drivers/spi/spi.c
++++ b/drivers/spi/spi.c
+@@ -599,6 +599,7 @@ static int spi_transfer_one_message(struct spi_master *master,
+ 	bool cur_cs = true;
+ 	bool keep_cs = false;
+ 	int ret = 0;
++	int ms = 1;
+ 
+ 	spi_set_cs(msg->spi, true);
+ 
+@@ -616,7 +617,16 @@ static int spi_transfer_one_message(struct spi_master *master,
+ 
+ 		if (ret > 0) {
+ 			ret = 0;
+-			wait_for_completion(&master->xfer_completion);
++			ms = xfer->len * 8 * 1000 / xfer->speed_hz;
++			ms += 10; /* some tolerance */
++
++			ms = wait_for_completion_timeout(&master->xfer_completion,
++							 msecs_to_jiffies(ms));
++		}
++
++		if (ms == 0) {
++			dev_err(&msg->spi->dev, "SPI transfer timed out\n");
++			msg->status = -ETIMEDOUT;
+ 		}
+ 
+ 		trace_spi_transfer_stop(msg, xfer);
+-- 
+1.8.0
+

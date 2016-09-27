@@ -1,0 +1,27 @@
+From 273bee7d1e9e629b7ded40cf358d562e4a04cd22 Mon Sep 17 00:00:00 2001
+From: Mark Brown <broonie@linaro.org>
+Date: Mon, 14 Apr 2014 18:43:58 +0100
+Subject: [PATCH] configs: Turn on huge TLB options
+
+Backported to ARMv8 but may as well test everywhere.
+
+Signed-off-by: Mark Brown <broonie@linaro.org>
+---
+ linaro/configs/distribution.conf | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/linaro/configs/distribution.conf b/linaro/configs/distribution.conf
+index a89a2e2..729b9b8 100644
+--- a/linaro/configs/distribution.conf
++++ b/linaro/configs/distribution.conf
+@@ -43,3 +43,7 @@ CONFIG_SECURITY_SELINUX=y
+ CONFIG_SECURITY_SMACK=y
+ CONFIG_SECURITY_APPARMOR=y
+ CONFIG_DEFAULT_SECURITY_APPARMOR=y
++CONFIG_HUGETLBFS=y
++CONFIG_HUGETLB_PAGE=y
++CONFIG_TRANSPARENT_HUGEPAGE=y
++CONFIG_TRANSPARENT_HUGEPAGE_ALWAYS=y
+-- 
+1.8.0
+

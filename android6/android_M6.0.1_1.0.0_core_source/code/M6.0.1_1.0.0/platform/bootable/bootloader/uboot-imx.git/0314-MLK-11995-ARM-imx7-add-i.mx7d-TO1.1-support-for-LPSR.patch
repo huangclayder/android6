@@ -1,0 +1,62 @@
+From d5f1110c6805dd53ebf54e02397d16961c56f892 Mon Sep 17 00:00:00 2001
+From: Anson Huang <Anson.Huang@freescale.com>
+Date: Fri, 11 Dec 2015 01:40:22 +0800
+Subject: [PATCH] MLK-11995 ARM: imx7: add i.mx7d TO1.1 support for LPSR mode
+
+i.MX7D TO1.1 changes DDR retension mode control to IOMUXC_GPR,
+add support to this change for LPSR which needs to exit from
+DDR retension mode.
+
+Signed-off-by: Anson Huang <Anson.Huang@freescale.com>
+---
+ board/freescale/mx7d_12x12_lpddr3_arm2/plugin.S | 22 ++++++++++++++++------
+ 1 file changed, 16 insertions(+), 6 deletions(-)
+
+diff --git a/board/freescale/mx7d_12x12_lpddr3_arm2/plugin.S b/board/freescale/mx7d_12x12_lpddr3_arm2/plugin.S
+index 121e2f0..d075b3e 100644
+--- a/board/freescale/mx7d_12x12_lpddr3_arm2/plugin.S
++++ b/board/freescale/mx7d_12x12_lpddr3_arm2/plugin.S
+@@ -70,9 +70,6 @@
+ 	subs	r6, r6, #0x1
+ 	bne	1b
+ 
+-	ldr	r7, =0x0
+-	str	r7, [r1, #0x380]
+-
+ 	/* clear ddr_phy reset */
+ 	ldr	r6, =0x1000
+ 	ldr	r7, [r2, r6]
+@@ -206,14 +203,27 @@
+ 	bic	r7, r7, #0x2
+ 	str	r7, [r2, r6]
+ 
++	ldr	r7, [r1, #0x800]
++	and	r7, r7, #0x11
++	cmp	r7, #0x10
++	beq	2f
++
++	/* TO1.1 */
++	ldr	r7, [r11]
++	bic	r7, r7, #(1 << 27)
++	str	r7, [r11]
++	ldr	r7, [r11]
++	bic	r7, r7, #(1 << 29)
++	str	r7, [r11]
++2:
+ 	ldr	r7, =(0x1 << 30)
+ 	str	r7, [r1, #0x380]
+ 
+ 	/* need to delay ~5mS */
+-	ldr	r6, =0x1000000
+-2:
++	ldr	r6, =0x100000
++3:
+ 	subs	r6, r6, #0x1
+-	bne	2b
++	bne	3b
+ 
+ 	/* restore DDR PHY */
+ 	ldr	r6, =0x0
+-- 
+1.8.0
+

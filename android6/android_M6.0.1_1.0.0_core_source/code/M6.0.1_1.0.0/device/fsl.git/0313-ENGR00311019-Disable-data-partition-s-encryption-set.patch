@@ -1,0 +1,115 @@
+From 025e2a00b29328ead24c1d5c922c82175f60e783 Mon Sep 17 00:00:00 2001
+From: "guoyin.chen" <guoyin.chen@freescale.com>
+Date: Tue, 29 Apr 2014 14:37:57 +0800
+Subject: [PATCH 313/602] ENGR00311019 Disable data partition's encryption
+ setting
+
+MTG tool cannot support resever space for encryption rooter
+Disable it in fstab.freescale to align with MFG tool
+Revert this commit once MFG Tool support this feature
+
+Signed-off-by: guoyin.chen <guoyin.chen@freescale.com>
+---
+ arm2_6dq/fstab.freescale       | 2 +-
+ arm2_6sl/fstab.freescale       | 2 +-
+ evk_6sl/fstab.freescale        | 2 +-
+ hdmidongle_6dq/fstab.freescale | 2 +-
+ sabreauto_6q/fstab.freescale   | 2 +-
+ sabresd_6dq/fstab.freescale    | 2 +-
+ sabresd_6sx/fstab.freescale    | 2 +-
+ 7 files changed, 7 insertions(+), 7 deletions(-)
+
+diff --git a/arm2_6dq/fstab.freescale b/arm2_6dq/fstab.freescale
+index 898d2a1..f4e7167 100644
+--- a/arm2_6dq/fstab.freescale
++++ b/arm2_6dq/fstab.freescale
+@@ -6,7 +6,7 @@
+ /devices/platform/sdhci-esdhc-imx.2/mmc_host/mmc2 /mnt/media_rw/extsd vfat defaults voldmanaged=extsd:auto
+ /devices/platform/fsl-ehci /mnt/media_rw/udisk vfat defaults voldmanaged=udisk:auto
+ /dev/block/mmcblk0p5    /system      ext4    ro                                                                               wait
+-/dev/block/mmcblk0p4    /data        ext4    nosuid,nodev,nodiratime,noatime,nomblk_io_submit,noauto_da_alloc,errors=panic    wait,encryptable=footer
++/dev/block/mmcblk0p4    /data        ext4    nosuid,nodev,nodiratime,noatime,nomblk_io_submit,noauto_da_alloc,errors=panic    wait
+ /dev/block/mmcblk0p6    /cache       ext4    nosuid,nodev,nomblk_io_submit                                                    wait
+ /dev/block/mmcblk0p7    /device      ext4    ro,nosuid,nodev                                                                  wait
+ /dev/block/mmcblk0p1    /boot        emmc    defaults                                                                         defaults
+diff --git a/arm2_6sl/fstab.freescale b/arm2_6sl/fstab.freescale
+index e2e8adc..55418db 100644
+--- a/arm2_6sl/fstab.freescale
++++ b/arm2_6sl/fstab.freescale
+@@ -6,7 +6,7 @@
+ /devices/platform/sdhci-esdhc-imx.2/mmc_host/mmc1 /mnt/media_rw/extsd vfat defaults voldmanaged=extsd:auto
+ /devices/platform/fsl-ehci /mnt/media_rw/udisk vfat defaults voldmanaged=udisk:auto
+ /dev/block/mmcblk0p5    /system      ext4    ro                                                                               wait
+-/dev/block/mmcblk0p4    /data        ext4    nosuid,nodev,nodiratime,noatime,nomblk_io_submit,noauto_da_alloc,errors=panic    wait,encryptable=footer
++/dev/block/mmcblk0p4    /data        ext4    nosuid,nodev,nodiratime,noatime,nomblk_io_submit,noauto_da_alloc,errors=panic    wait
+ /dev/block/mmcblk0p6    /cache       ext4    nosuid,nodev,nomblk_io_submit                                                    wait
+ /dev/block/mmcblk0p7    /device      ext4    ro,nosuid,nodev                                                                  wait
+ /dev/block/mmcblk0p1    /boot        emmc    defaults                                                                         defaults
+diff --git a/evk_6sl/fstab.freescale b/evk_6sl/fstab.freescale
+index f1a8050..23dd266 100644
+--- a/evk_6sl/fstab.freescale
++++ b/evk_6sl/fstab.freescale
+@@ -6,7 +6,7 @@
+ /devices/soc0/soc.2/2100000.aips-bus/2190000.usdhc/mmc_host /mnt/media_rw/extsd vfat defaults voldmanaged=extsd:auto
+ /devices/soc0/soc.2/2100000.aips-bus/2184200.usb/ci_hdrc.1 /mnt/media_rw/udisk vfat defaults voldmanaged=udisk:auto
+ /dev/block/mmcblk0p5    /system      ext4    ro                                                                               wait
+-/dev/block/mmcblk0p4    /data        ext4    nosuid,nodev,nodiratime,noatime,nomblk_io_submit,noauto_da_alloc,errors=panic    wait,encryptable=footer
++/dev/block/mmcblk0p4    /data        ext4    nosuid,nodev,nodiratime,noatime,nomblk_io_submit,noauto_da_alloc,errors=panic    wait
+ /dev/block/mmcblk0p6    /cache       ext4    nosuid,nodev,nomblk_io_submit                                                    wait
+ /dev/block/mmcblk0p7    /device      ext4    ro,nosuid,nodev                                                                  wait
+ /dev/block/mmcblk0p1    /boot        emmc    defaults                                                                         defaults
+diff --git a/hdmidongle_6dq/fstab.freescale b/hdmidongle_6dq/fstab.freescale
+index de4661b..0cf2d34 100644
+--- a/hdmidongle_6dq/fstab.freescale
++++ b/hdmidongle_6dq/fstab.freescale
+@@ -6,7 +6,7 @@
+ /devices/platform/sdhci-esdhc-imx.1/mmc_host/mmc1 /mnt/media_rw/extsd vfat defaults voldmanaged=extsd:auto
+ /devices/platform/fsl-ehci /mnt/media_rw/udisk vfat defaults voldmanaged=udisk:auto
+ /dev/block/mmcblk0p5    /system      ext4    ro                                                                               wait
+-/dev/block/mmcblk0p4    /data        ext4    nosuid,nodev,nodiratime,noatime,nomblk_io_submit,noauto_da_alloc,errors=panic    wait,encryptable=footer
++/dev/block/mmcblk0p4    /data        ext4    nosuid,nodev,nodiratime,noatime,nomblk_io_submit,noauto_da_alloc,errors=panic    wait
+ /dev/block/mmcblk0p6    /cache       ext4    nosuid,nodev,nomblk_io_submit                                                    wait
+ /dev/block/mmcblk0p7    /device      ext4    ro,nosuid,nodev                                                                  wait
+ /dev/block/mmcblk0p1    /boot        emmc    defaults                                                                         defaults
+diff --git a/sabreauto_6q/fstab.freescale b/sabreauto_6q/fstab.freescale
+index f1d95ba..1e88341 100644
+--- a/sabreauto_6q/fstab.freescale
++++ b/sabreauto_6q/fstab.freescale
+@@ -6,7 +6,7 @@
+ /devices/soc0/soc.1/2100000.aips-bus/2190000.usdhc/mmc_host /mnt/media_rw/extsd vfat defaults voldmanaged=extsd:auto
+ /devices/soc0/soc.1/2100000.aips-bus/2184200.usb/ci_hdrc.1  /mnt/media_rw/udisk vfat defaults voldmanaged=udisk:auto
+ /dev/block/mmcblk0p5    /system      ext4    ro                                                                               wait
+-/dev/block/mmcblk0p4    /data        ext4    nosuid,nodev,nodiratime,noatime,nomblk_io_submit,noauto_da_alloc,errors=panic    wait,encryptable=footer
++/dev/block/mmcblk0p4    /data        ext4    nosuid,nodev,nodiratime,noatime,nomblk_io_submit,noauto_da_alloc,errors=panic    wait
+ /dev/block/mmcblk0p6    /cache       ext4    nosuid,nodev,nomblk_io_submit                                                    wait
+ /dev/block/mmcblk0p7    /device      ext4    ro,nosuid,nodev                                                                  wait
+ /dev/block/mmcblk0p1    /boot        emmc    defaults                                                                         defaults
+diff --git a/sabresd_6dq/fstab.freescale b/sabresd_6dq/fstab.freescale
+index 8d8bbeb..e12974e 100644
+--- a/sabresd_6dq/fstab.freescale
++++ b/sabresd_6dq/fstab.freescale
+@@ -6,7 +6,7 @@
+ /devices/soc0/soc.1/2100000.aips-bus/2198000.usdhc/mmc_host /mnt/media_rw/extsd vfat defaults voldmanaged=extsd:auto
+ /devices/soc0/soc.1/2100000.aips-bus/2184000.usb/ci_hdrc.0  /mnt/media_rw/udisk vfat defaults voldmanaged=udisk:auto
+ /dev/block/mmcblk0p5    /system      ext4    ro                                                                               wait
+-/dev/block/mmcblk0p4    /data        ext4    nosuid,nodev,nodiratime,noatime,nomblk_io_submit,noauto_da_alloc,errors=panic    wait,encryptable=footer
++/dev/block/mmcblk0p4    /data        ext4    nosuid,nodev,nodiratime,noatime,nomblk_io_submit,noauto_da_alloc,errors=panic    wait
+ /dev/block/mmcblk0p6    /cache       ext4    nosuid,nodev,nomblk_io_submit                                                    wait
+ /dev/block/mmcblk0p7    /device      ext4    ro,nosuid,nodev                                                                  wait
+ /dev/block/mmcblk0p1    /boot        emmc    defaults                                                                         defaults
+diff --git a/sabresd_6sx/fstab.freescale b/sabresd_6sx/fstab.freescale
+index 11e0272..1a93116 100644
+--- a/sabresd_6sx/fstab.freescale
++++ b/sabresd_6sx/fstab.freescale
+@@ -6,7 +6,7 @@
+ /devices/soc0/soc.1/2100000.aips-bus/2198000.usdhc/mmc_host /mnt/media_rw/extsd vfat defaults voldmanaged=extsd:auto
+ /devices/soc0/soc.1/2100000.aips-bus/2184200.usb/ci_hdrc.1  /mnt/media_rw/udisk vfat defaults voldmanaged=udisk:auto
+ /dev/block/mmcblk0p5    /system      ext4    ro                                                                               wait
+-/dev/block/mmcblk0p4    /data        ext4    nosuid,nodev,nodiratime,noatime,nomblk_io_submit,noauto_da_alloc,errors=panic    wait,encryptable=footer
++/dev/block/mmcblk0p4    /data        ext4    nosuid,nodev,nodiratime,noatime,nomblk_io_submit,noauto_da_alloc,errors=panic    wait
+ /dev/block/mmcblk0p6    /cache       ext4    nosuid,nodev,nomblk_io_submit                                                    wait
+ /dev/block/mmcblk0p7    /device      ext4    ro,nosuid,nodev                                                                  wait
+ /dev/block/mmcblk0p1    /boot        emmc    defaults                                                                         defaults
+-- 
+1.8.0
+

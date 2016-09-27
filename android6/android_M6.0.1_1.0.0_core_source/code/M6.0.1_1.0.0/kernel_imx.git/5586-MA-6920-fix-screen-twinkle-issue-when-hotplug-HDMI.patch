@@ -1,0 +1,79 @@
+From aabf7e1be0fbba3f9d85f42b8b0c8bcc3b1b6840 Mon Sep 17 00:00:00 2001
+From: Liu Xiaowen <xiaowen.liu@freescale.com>
+Date: Tue, 28 Jul 2015 13:09:03 +0800
+Subject: [PATCH] MA-6920 fix screen twinkle issue when hotplug HDMI.
+
+When hotplug HDMI, fb_videomode_to_var will be called to reset
+fbinfo parameters. It set yres_virtual to yres which change the
+value set by user space. Screen will twinkle when yres_virtual
+value is different from that set by user space.
+
+Signed-off-by: Liu Xiaowen <xiaowen.liu@freescale.com>
+---
+ drivers/video/mxc/mxc_hdmi.c      | 5 +++++
+ drivers/video/mxc/mxsfb_sii902x.c | 5 +++++
+ 2 files changed, 10 insertions(+)
+
+diff --git a/drivers/video/mxc/mxc_hdmi.c b/drivers/video/mxc/mxc_hdmi.c
+index db1a918..25a22932d 100644
+--- a/drivers/video/mxc/mxc_hdmi.c
++++ b/drivers/video/mxc/mxc_hdmi.c
+@@ -189,6 +189,7 @@ struct mxc_hdmi {
+ 	struct hdmi_phy_reg_config phy_config;
+ 
+ 	struct pinctrl *pinctrl;
++	u32 yres_virtual;
+ };
+ 
+ static int hdmi_major;
+@@ -1906,6 +1907,8 @@ static void mxc_hdmi_set_mode(struct mxc_hdmi *hdmi)
+ 		/* update fbi mode in case modelist is updated */
+ 		hdmi->fbi->mode = (struct fb_videomode *)mode;
+ 		fb_videomode_to_var(&hdmi->fbi->var, mode);
++		if (hdmi->yres_virtual > 0)
++			hdmi->fbi->var.yres_virtual = hdmi->yres_virtual;
+ 		/* update hdmi setting in case EDID data updated  */
+ 		mxc_hdmi_setup(hdmi, 0);
+ 	} else {
+@@ -2331,6 +2334,8 @@ static int mxc_hdmi_fb_event(struct notifier_block *nb,
+ 	case FB_EVENT_MODE_CHANGE:
+ 		dev_dbg(&hdmi->pdev->dev, "event=FB_EVENT_MODE_CHANGE\n");
+ 		mode = (struct fb_videomode *)event->data;
++		if (hdmi->fbi != NULL)
++			hdmi->yres_virtual = hdmi->fbi->var.yres_virtual;
+ 		if ((hdmi->fb_reg) &&
+ 			(mode != NULL) &&
+ 			!fb_mode_is_equal(&hdmi->previous_non_vga_mode, mode))
+diff --git a/drivers/video/mxc/mxsfb_sii902x.c b/drivers/video/mxc/mxsfb_sii902x.c
+index caca07a..fbc98da 100644
+--- a/drivers/video/mxc/mxsfb_sii902x.c
++++ b/drivers/video/mxc/mxsfb_sii902x.c
+@@ -64,6 +64,7 @@ struct sii902x_data {
+ 	const char *mode_str;
+ 	int bits_per_pixel;
+ 	struct switch_dev sdev_audio;
++	u32 yres_virtual;
+ } sii902x;
+ 
+ static void sii902x_poweron(void);
+@@ -279,6 +280,8 @@ static void sii902x_cable_connected(void)
+ 			sii902x.fbi->mode = (struct fb_videomode *)mode;
+ 
+ 			fb_videomode_to_var(&sii902x.fbi->var, mode);
++			if (sii902x.yres_virtual > 0)
++				sii902x.fbi->var.yres_virtual = sii902x.yres_virtual;
+ 
+ 			sii902x.fbi->var.activate |= FB_ACTIVATE_FORCE;
+ 			console_lock();
+@@ -356,6 +359,8 @@ static int sii902x_fb_event(struct notifier_block *nb, unsigned long val, void *
+ 
+ 		break;
+ 	case FB_EVENT_MODE_CHANGE:
++		if (sii902x.fbi != NULL)
++			sii902x.yres_virtual = sii902x.fbi->var.yres_virtual;
+ 		sii902x_setup(fbi);
+ 		break;
+ 	case FB_EVENT_BLANK:
+-- 
+1.8.0
+

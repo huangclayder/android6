@@ -1,0 +1,30 @@
+From c3f683d2d4dbd0a7c9e984661648c88f59262db1 Mon Sep 17 00:00:00 2001
+From: Xiaowen Liu <xiaowen.liu@freescale.com>
+Date: Mon, 14 Dec 2015 12:46:15 -0500
+Subject: [PATCH 91/95] MA-7353 add KEY_PREFERRED_PREVIEW_SIZE_FOR_VIDEO to
+ parameters.
+
+adb back KEY_PREFERRED_PREVIEW_SIZE_FOR_VIDEO to paramters.
+
+Signed-off-by: Xiaowen Liu <xiaowen.liu@freescale.com>
+---
+ services/camera/libcameraservice/api1/client2/Parameters.cpp | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/services/camera/libcameraservice/api1/client2/Parameters.cpp b/services/camera/libcameraservice/api1/client2/Parameters.cpp
+index 8589685..7bcbc4c 100644
+--- a/services/camera/libcameraservice/api1/client2/Parameters.cpp
++++ b/services/camera/libcameraservice/api1/client2/Parameters.cpp
+@@ -118,6 +118,9 @@ status_t Parameters::initialize(const CameraMetadata *info, int deviceVersion) {
+ 
+     params.setPreviewSize(previewWidth, previewHeight);
+     params.setVideoSize(videoWidth, videoHeight);
++    params.set(CameraParameters::KEY_PREFERRED_PREVIEW_SIZE_FOR_VIDEO,
++            String8::format("%dx%d",
++                    previewWidth, previewHeight));
+     {
+         String8 supportedPreviewSizes;
+         for (size_t i = 0; i < availablePreviewSizes.size(); i++) {
+-- 
+1.8.0
+

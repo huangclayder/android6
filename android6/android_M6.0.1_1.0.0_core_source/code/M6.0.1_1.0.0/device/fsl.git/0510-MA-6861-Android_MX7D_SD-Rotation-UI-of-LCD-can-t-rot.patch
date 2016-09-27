@@ -1,0 +1,31 @@
+From c5f3f2c9cb89518a8ee11248dc18ad58b86fb077 Mon Sep 17 00:00:00 2001
+From: zhang sanshan <b51434@freescale.com>
+Date: Mon, 13 Jul 2015 15:55:19 +0800
+Subject: [PATCH 510/602] MA-6861 [Android_MX7D_SD]Rotation: UI of LCD can't
+ rotate completely after encrypted.100%
+
+The LCD screen can't be rotated after it is encrypted.
+System need restart all main class services when boot up encrypted board.
+The service sensor_fusion is oneshot. So need change to late_start class.
+
+Signed-off-by: zhang sanshan <b51434@freescale.com>
+---
+ sabresd_7d/init.rc | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/sabresd_7d/init.rc b/sabresd_7d/init.rc
+index 3cdc289..2395475 100644
+--- a/sabresd_7d/init.rc
++++ b/sabresd_7d/init.rc
+@@ -169,7 +169,7 @@ service bcm_supplicant /system/bin/bcm_supplicant \
+ 
+ 
+ service sensor_fusion /system/bin/fsl_sensor_fusion
+-    class main
++    class late_start
+     seclabel u:r:sensors:s0
+     user system
+     group input
+-- 
+1.8.0
+

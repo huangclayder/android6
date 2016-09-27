@@ -1,0 +1,29 @@
+From 095c876a12e27220cb91cb9dc376a20b6bf259e4 Mon Sep 17 00:00:00 2001
+From: Anson Huang <b20788@freescale.com>
+Date: Fri, 18 Sep 2015 23:53:03 +0800
+Subject: [PATCH] MLK-11566-3 input: keyboard: add i.mx6ul support for snvs
+ power key
+
+i.MX6UL has SNVS power key, add support for it.
+
+Signed-off-by: Anson Huang <b20788@freescale.com>
+---
+ drivers/input/keyboard/Kconfig | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/input/keyboard/Kconfig b/drivers/input/keyboard/Kconfig
+index 05ee0e0..e620f99 100644
+--- a/drivers/input/keyboard/Kconfig
++++ b/drivers/input/keyboard/Kconfig
+@@ -390,7 +390,7 @@ config KEYBOARD_MPR121
+ 
+ config KEYBOARD_SNVS_PWRKEY
+ 	tristate "IMX6SX SNVS Power Key Driver"
+-	depends on SOC_IMX6SX
++	depends on (SOC_IMX6SX || SOC_IMX6UL || SOC_IMX7)
+ 	help
+ 	  This is the snvs powerkey driver for the Freescale i.MX6SX application
+ 	  processors.
+-- 
+1.8.0
+

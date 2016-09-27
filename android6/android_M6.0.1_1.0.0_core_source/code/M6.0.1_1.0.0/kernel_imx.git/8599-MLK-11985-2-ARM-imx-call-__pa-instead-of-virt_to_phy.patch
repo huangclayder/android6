@@ -1,0 +1,34 @@
+From b5266161ffecc7702d88a4a87fd031376c8329d8 Mon Sep 17 00:00:00 2001
+From: Anson Huang <Anson.Huang@freescale.com>
+Date: Wed, 9 Dec 2015 18:55:10 +0800
+Subject: [PATCH] MLK-11985-2 ARM: imx: call __pa instead of virt_to_phys
+
+Use different API to fix below issue reported by coverity:
+
+Out-of-bounds access (ARRAY_VS_SINGLETON),
+ptr_arith: Using &iram_tlb_phys_addr as an array.
+This might corrupt or misinterpret adjacent memory locations.
+
+Signed-off-by: Anson Huang <Anson.Huang@freescale.com>
+---
+ arch/arm/mach-imx/busfreq_ddr3.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/arch/arm/mach-imx/busfreq_ddr3.c b/arch/arm/mach-imx/busfreq_ddr3.c
+index c204b42..bb75a59 100644
+--- a/arch/arm/mach-imx/busfreq_ddr3.c
++++ b/arch/arm/mach-imx/busfreq_ddr3.c
+@@ -407,8 +407,8 @@ int update_ddr_freq_imx_smp(int ddr_rate)
+ 	/* Ensure iram_tlb_phys_addr is flushed to DDR. */
+ 	__cpuc_flush_dcache_area(&iram_tlb_phys_addr, sizeof(iram_tlb_phys_addr));
+ 	if (cpu_is_imx6())
+-		outer_clean_range(virt_to_phys(&iram_tlb_phys_addr),
+-			virt_to_phys(&iram_tlb_phys_addr + 1));
++		outer_clean_range(__pa(&iram_tlb_phys_addr),
++			__pa(&iram_tlb_phys_addr + 1));
+ 
+ 	ttbr1 = save_ttbr1();
+ 	/* Now we can change the DDR frequency. */
+-- 
+1.8.0
+

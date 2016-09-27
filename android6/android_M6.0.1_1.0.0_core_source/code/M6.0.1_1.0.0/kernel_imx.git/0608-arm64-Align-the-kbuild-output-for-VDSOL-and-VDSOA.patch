@@ -1,0 +1,37 @@
+From 47dea321d906e94b8bda77e208962f11db6436aa Mon Sep 17 00:00:00 2001
+From: Ian Campbell <ijc@hellion.org.uk>
+Date: Tue, 15 Jul 2014 08:38:08 +0100
+Subject: [PATCH] arm64: Align the kbuild output for VDSOL and VDSOA
+
+Signed-off-by: Ian Campbell <ijc@hellion.org.uk>
+Cc: Catalin Marinas <catalin.marinas@arm.com>
+Cc: Will Deacon <will.deacon@arm.com>
+Cc: Michal Marek <mmarek@suse.cz>
+Cc: linux-arm-kernel@lists.infradead.org
+Cc: linux-kbuild@vger.kernel.org
+Signed-off-by: Catalin Marinas <catalin.marinas@arm.com>
+(cherry picked from commit ad789ba5f7086138461420d2156478d33fb61077)
+Signed-off-by: Mark Brown <broonie@linaro.org>
+---
+ arch/arm64/kernel/vdso/Makefile | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/arch/arm64/kernel/vdso/Makefile b/arch/arm64/kernel/vdso/Makefile
+index 6d20b7d..84b9426 100644
+--- a/arch/arm64/kernel/vdso/Makefile
++++ b/arch/arm64/kernel/vdso/Makefile
+@@ -47,9 +47,9 @@ $(obj-vdso): %.o: %.S
+ 	$(call if_changed_dep,vdsoas)
+ 
+ # Actual build commands
+-quiet_cmd_vdsold = VDSOL $@
++quiet_cmd_vdsold = VDSOL   $@
+       cmd_vdsold = $(CC) $(c_flags) -Wl,-n -Wl,-T $^ -o $@
+-quiet_cmd_vdsoas = VDSOA $@
++quiet_cmd_vdsoas = VDSOA   $@
+       cmd_vdsoas = $(CC) $(a_flags) -c -o $@ $<
+ 
+ # Install commands for the unstripped file
+-- 
+1.8.0
+

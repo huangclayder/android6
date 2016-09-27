@@ -1,0 +1,31 @@
+From e7ce0321e2426440458b0e262a4e80176ef169fe Mon Sep 17 00:00:00 2001
+From: B00625 <B00625@freescale.com>
+Date: Thu, 10 Jun 2010 16:54:13 +0800
+Subject: [PATCH 04/43] MA-5839-1 added title for maddev_lp5 upgrade
+
+change the preferred message storage memory from SIM card to ME status report will be sent to TE after this change.
+
+Signed-Off-By: yinhaiting <b00625@freescale.com>
+---
+ reference-ril/reference-ril.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/reference-ril/reference-ril.c b/reference-ril/reference-ril.c
+old mode 100644
+new mode 100755
+index 93ba097..c6546fb
+--- a/reference-ril/reference-ril.c
++++ b/reference-ril/reference-ril.c
+@@ -379,7 +379,8 @@ static void onSIMReady()
+      * ds = 1   // Status reports routed to TE
+      * bfr = 1  // flush buffer
+      */
+-    at_send_command("AT+CNMI=1,2,2,1,1", NULL);
++at_send_command("AT+CNMI=1,2,2,1,1", NULL);
++at_send_command("AT+CPMS=\"ME\",\"ME\",\"ME\"",NULL);
+ }
+ 
+ static void requestRadioPower(void *data, size_t datalen, RIL_Token t)
+-- 
+1.8.0
+

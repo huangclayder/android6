@@ -1,0 +1,30 @@
+From da04ff781fa4e5c3d49273c49640e7678b759099 Mon Sep 17 00:00:00 2001
+From: Han Xu <b45815@freescale.com>
+Date: Wed, 15 Apr 2015 15:19:43 -0500
+Subject: [PATCH] MLK-10664: mtd: nand: change the maxchips for i.MX7D
+
+change the maximum chips for i.MX7D, this part was missed when adding
+i.MX7D NAND support.
+
+Signed-off-by: Han Xu <b45815@freescale.com>
+---
+ drivers/mtd/nand/gpmi-nand/gpmi-nand.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/drivers/mtd/nand/gpmi-nand/gpmi-nand.c b/drivers/mtd/nand/gpmi-nand/gpmi-nand.c
+index ed151f9..ef0c4b4 100644
+--- a/drivers/mtd/nand/gpmi-nand/gpmi-nand.c
++++ b/drivers/mtd/nand/gpmi-nand/gpmi-nand.c
+@@ -1768,7 +1768,8 @@ static int gpmi_nand_init(struct gpmi_nand_data *this)
+ 	if (ret)
+ 		goto err_out;
+ 
+-	ret = nand_scan_ident(mtd, GPMI_IS_MX6(this) ? 2 : 1, NULL);
++	ret = nand_scan_ident(mtd, GPMI_IS_MX6(this) || GPMI_IS_MX7(this)\
++				? 2 : 1, NULL);
+ 	if (ret)
+ 		goto err_out;
+ 
+-- 
+1.8.0
+

@@ -1,0 +1,50 @@
+From 37602e2def0d56085c939d10cee1958a92f71130 Mon Sep 17 00:00:00 2001
+From: Zhang Sanshan <b51434@freescale.com>
+Date: Thu, 28 May 2015 13:19:45 +0800
+Subject: [PATCH 097/115] MA-6696 [Android_MX6QP_ARD] OTA: Can not connect to
+ server when check online OTA updates.100%
+
+support sabreauto 6qp online ota.
+sabreauto 6qp add "Plus" in sys/devices/soc0/machine
+We can distinguish 6q and 6qp through "Plus"
+
+Signed-off-by: Zhang Sanshan <b51434@freescale.com>
+---
+ FSLOta/src/com/fsl/android/ota/OTAServerConfig.java | 21 +++++++++++++++------
+ 1 file changed, 15 insertions(+), 6 deletions(-)
+
+diff --git a/FSLOta/src/com/fsl/android/ota/OTAServerConfig.java b/FSLOta/src/com/fsl/android/ota/OTAServerConfig.java
+index 9ed50a4..da7ee9d 100644
+--- a/FSLOta/src/com/fsl/android/ota/OTAServerConfig.java
++++ b/FSLOta/src/com/fsl/android/ota/OTAServerConfig.java
+@@ -82,12 +82,21 @@ public class OTAServerConfig {
+                               else
+                               fileaddr = fileaddr + ".imx6dl";
+ 			} else if (machineString.indexOf("Quad") != -1) {
+-                               if (boottype.equals("sd"))
+-                                  {fileaddr = fileaddr + ".imx6q_sd";}
+-                              else if (boottype.equals("nand"))
+-                                  {fileaddr = fileaddr + ".imx6q_nand";}
+-                              else
+-                              fileaddr = fileaddr + ".imx6q";
++				if(machineString.indexOf("Plus") != -1){
++                               		if (boottype.equals("sd"))
++                                  		{fileaddr = fileaddr + ".imx6qp_sd";}
++                              		else if (boottype.equals("nand"))
++                                  		{fileaddr = fileaddr + ".imx6qp_nand";}
++                              		else
++                              	  		fileaddr = fileaddr + ".imx6qp";
++				} else {
++					if (boottype.equals("sd"))
++                                  		{fileaddr = fileaddr + ".imx6q_sd";}
++                                	else if (boottype.equals("nand"))
++                                  		{fileaddr = fileaddr + ".imx6q_nand";}
++                                	else
++                                  		fileaddr = fileaddr + ".imx6q";
++				}
+ 			} else if (machineString.indexOf("SoloLite") != -1) {
+ 				fileaddr = fileaddr + ".imx6sl";
+ 			} else if (machineString.indexOf("SoloX") != -1) {
+-- 
+1.8.0
+

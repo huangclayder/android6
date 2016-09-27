@@ -1,0 +1,49 @@
+From 5c8dcbe7aba3980e07a67bb567bfddc5700460a5 Mon Sep 17 00:00:00 2001
+From: Baruch Siach <baruch@tkos.co.il>
+Date: Thu, 9 Jul 2015 18:19:11 +0300
+Subject: [PATCH] tools/imximage: set DCD pointer to NULL when its length is 0
+
+When dcd_len is 0 the Write Data command that the set_dcd_rst_v2() routine
+generates is empty. This causes HAB to complain that the command is invalid.
+
+--------- HAB Event 1 -----------------
+event data:
+	0xdb 0x00 0x0c 0x41 0x33 0x06 0xc0 0x00
+	0xcc 0x00 0x04 0x04
+
+To fix this set the DCD pointer in the IVT to NULL in this case. The DCD header
+itself is still needed for detect_imximage_version() to determine the image
+version.
+
+Conflicts:
+	tools/imximage.c
+cherry-picked from
+http://git.denx.de/?p=u-boot/u-boot-imx.git;a=commitdiff;h=873bf926bfbb0a667158261813115fa6819661b7
+
+Signed-off-by: Baruch Siach <baruch@tkos.co.il>
+Acked-by: Stefano Babic <sbabic@denx.de>
+(cherry picked from commit 873bf926bfbb0a667158261813115fa6819661b7)
+---
+ tools/imximage.c | 6 +++++-
+ 1 file changed, 5 insertions(+), 1 deletion(-)
+
+diff --git a/tools/imximage.c b/tools/imximage.c
+index 32f5bc4..daf50ba 100644
+--- a/tools/imximage.c
++++ b/tools/imximage.c
+@@ -300,7 +300,11 @@ static void set_imx_hdr_v2(struct imx_header *imxhdr, uint32_t dcd_len,
+ 		hdr_base = entry_point - imximage_init_loadsize +
+ 			flash_offset;
+ 		fhdr_v2->self = hdr_base;
+-		fhdr_v2->dcd_ptr = hdr_base + offsetof(imx_header_v2_t, data);
++		if (dcd_len > 0)
++			fhdr_v2->dcd_ptr = hdr_base +
++				offsetof(imx_header_v2_t, data);
++		else
++			fhdr_v2->dcd_ptr = 0;
+ 		fhdr_v2->boot_data_ptr = hdr_base
+ 				+ offsetof(imx_header_v2_t, boot_data);
+ 		hdr_v2->boot_data.start = entry_point - imximage_init_loadsize;
+-- 
+1.8.0
+

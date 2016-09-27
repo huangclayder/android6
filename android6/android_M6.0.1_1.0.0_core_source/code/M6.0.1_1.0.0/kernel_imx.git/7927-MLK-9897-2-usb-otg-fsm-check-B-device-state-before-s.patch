@@ -1,0 +1,48 @@
+From f04de0854d0ae24111dde9294368c1fe9a0939ad Mon Sep 17 00:00:00 2001
+From: Li Jun <jun.li@freescale.com>
+Date: Tue, 25 Nov 2014 12:08:48 +0800
+Subject: [PATCH] MLK-9897-2 usb: otg-fsm: check B-device state before sending
+ polling request
+
+While system resume, the connected udev as B-device may not has been resumed,
+if HNP polling request is sent to it, HNP polling may fail, this patch adds
+check of the udev state to make sure it finished resume and to be configured
+state before sending host request message, otherwise try next HNP polling
+request.
+
+Acked-by: Peter Chen <peter.chen@freescale.com>
+Signed-off-by: Li Jun <jun.li@freescale.com>
+(cherry picked from commit 2cff5eb7bd4feb70cd28ac4655e7433e57a17938)
+---
+ drivers/usb/common/usb-otg-fsm.c | 8 +++++++-
+ 1 file changed, 7 insertions(+), 1 deletion(-)
+
+diff --git a/drivers/usb/common/usb-otg-fsm.c b/drivers/usb/common/usb-otg-fsm.c
+index 0afde68..92e30ac 100644
+--- a/drivers/usb/common/usb-otg-fsm.c
++++ b/drivers/usb/common/usb-otg-fsm.c
+@@ -443,6 +443,12 @@ int otg_hnp_polling(struct otg_fsm *fsm)
+ 		return -ENODEV;
+ 	}
+ 
++	if (udev->state != USB_STATE_CONFIGURED) {
++		dev_dbg(&udev->dev, "the B dev is not resumed!\n");
++		otg_add_timer(fsm, HNP_POLLING);
++		return -EPERM;
++	}
++
+ 	/*
+ 	 * Legacy otg test device does not support HNP polling,
+ 	 * start HNP directly for legacy otg test device.
+@@ -482,7 +488,7 @@ int otg_hnp_polling(struct otg_fsm *fsm)
+ 			retval = -EINVAL;
+ 		}
+ 	} else {
+-		dev_err(&udev->dev, "Get one byte OTG status failed\n");
++		dev_warn(&udev->dev, "Get one byte OTG status failed\n");
+ 		retval = -EIO;
+ 	}
+ 	return retval;
+-- 
+1.8.0
+

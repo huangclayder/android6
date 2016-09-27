@@ -1,0 +1,84 @@
+From 95fa6637cf0509bb71abea74724510faed7e374c Mon Sep 17 00:00:00 2001
+From: Wang Haoran <b50027@freescale.com>
+Date: Wed, 12 Nov 2014 17:13:59 +0800
+Subject: [PATCH 383/602] MA-5839-5 Enable Ethernet feature
+
+As Lollipop will check the whether ethernet is
+enabled in the hardware configuration files we
+copy the files to the permission dir to enable
+ethernet service.
+Currently we support 5 platforms evk, 6dq 6sx auto and
+6dq 6sx sabresd for that.
+
+Signed-off-by: Wang Haoran <b50027@freescale.com>
+---
+ imx6/evk_6sl.mk       | 1 +
+ imx6/sabreauto_6q.mk  | 1 +
+ imx6/sabreauto_6sx.mk | 1 +
+ imx6/sabresd_6dq.mk   | 1 +
+ imx6/sabresd_6sx.mk   | 1 +
+ 5 files changed, 5 insertions(+)
+
+diff --git a/imx6/evk_6sl.mk b/imx6/evk_6sl.mk
+index 392d251..5104437 100644
+--- a/imx6/evk_6sl.mk
++++ b/imx6/evk_6sl.mk
+@@ -43,6 +43,7 @@ PRODUCT_COPY_FILES += \
+ 	frameworks/native/data/etc/android.software.sip.voip.xml:system/etc/permissions/android.software.sip.voip.xml \
+ 	frameworks/native/data/etc/android.hardware.usb.host.xml:system/etc/permissions/android.hardware.usb.host.xml \
+ 	frameworks/native/data/etc/android.hardware.usb.accessory.xml:system/etc/permissions/android.hardware.usb.accessory.xml \
++    frameworks/native/data/etc/android.hardware.ethernet.xml:system/etc/permissions/android.hardware.ethernet.xml \
+ 	frameworks/native/data/etc/android.hardware.bluetooth_le.xml:system/etc/permissions/android.hardware.bluetooth_le.xml
+ 
+ # for PDK build, include only when the dir exists
+diff --git a/imx6/sabreauto_6q.mk b/imx6/sabreauto_6q.mk
+index 6d59582..02c1a77 100644
+--- a/imx6/sabreauto_6q.mk
++++ b/imx6/sabreauto_6q.mk
+@@ -44,6 +44,7 @@ PRODUCT_COPY_FILES += \
+ 	frameworks/native/data/etc/android.software.sip.voip.xml:system/etc/permissions/android.software.sip.voip.xml \
+ 	frameworks/native/data/etc/android.hardware.usb.host.xml:system/etc/permissions/android.hardware.usb.host.xml \
+ 	frameworks/native/data/etc/android.hardware.usb.accessory.xml:system/etc/permissions/android.hardware.usb.accessory.xml \
++    frameworks/native/data/etc/android.hardware.ethernet.xml:system/etc/permissions/android.hardware.ethernet.xml \
+ 	frameworks/native/data/etc/android.hardware.bluetooth_le.xml:system/etc/permissions/android.hardware.bluetooth_le.xml
+ 
+ # for PDK build, include only when the dir exists
+diff --git a/imx6/sabreauto_6sx.mk b/imx6/sabreauto_6sx.mk
+index 40bc51a..eb1a65a 100644
+--- a/imx6/sabreauto_6sx.mk
++++ b/imx6/sabreauto_6sx.mk
+@@ -40,6 +40,7 @@ PRODUCT_COPY_FILES += \
+ 	frameworks/native/data/etc/android.software.sip.voip.xml:system/etc/permissions/android.software.sip.voip.xml \
+ 	frameworks/native/data/etc/android.hardware.usb.host.xml:system/etc/permissions/android.hardware.usb.host.xml \
+ 	frameworks/native/data/etc/android.hardware.usb.accessory.xml:system/etc/permissions/android.hardware.usb.accessory.xml \
++    frameworks/native/data/etc/android.hardware.ethernet.xml:system/etc/permissions/android.hardware.ethernet.xml \
+ 	frameworks/native/data/etc/android.hardware.bluetooth_le.xml:system/etc/permissions/android.hardware.bluetooth_le.xml
+ 
+ # for PDK build, include only when the dir exists
+diff --git a/imx6/sabresd_6dq.mk b/imx6/sabresd_6dq.mk
+index 1087d6f..ab92a09 100644
+--- a/imx6/sabresd_6dq.mk
++++ b/imx6/sabresd_6dq.mk
+@@ -47,6 +47,7 @@ PRODUCT_COPY_FILES += \
+ 	frameworks/native/data/etc/android.hardware.usb.accessory.xml:system/etc/permissions/android.hardware.usb.accessory.xml \
+ 	frameworks/native/data/etc/android.hardware.bluetooth_le.xml:system/etc/permissions/android.hardware.bluetooth_le.xml \
+ 	frameworks/native/data/etc/android.hardware.consumerir.xml:system/etc/permissions/android.hardware.consumerir.xml \
++	frameworks/native/data/etc/android.hardware.ethernet.xml:system/etc/permissions/android.hardware.ethernet.xml \
+ 	device/fsl/sabresd_6dq/required_hardware.xml:system/etc/permissions/required_hardware.xml
+ 
+ # for PDK build, include only when the dir exists
+diff --git a/imx6/sabresd_6sx.mk b/imx6/sabresd_6sx.mk
+index 74a6864..0adaab9 100644
+--- a/imx6/sabresd_6sx.mk
++++ b/imx6/sabresd_6sx.mk
+@@ -42,6 +42,7 @@ PRODUCT_COPY_FILES += \
+ 	frameworks/native/data/etc/android.software.sip.voip.xml:system/etc/permissions/android.software.sip.voip.xml \
+ 	frameworks/native/data/etc/android.hardware.usb.host.xml:system/etc/permissions/android.hardware.usb.host.xml \
+ 	frameworks/native/data/etc/android.hardware.usb.accessory.xml:system/etc/permissions/android.hardware.usb.accessory.xml \
++    frameworks/native/data/etc/android.hardware.ethernet.xml:system/etc/permissions/android.hardware.ethernet.xml \
+ 	frameworks/native/data/etc/android.hardware.bluetooth_le.xml:system/etc/permissions/android.hardware.bluetooth_le.xml \
+ 
+ # for PDK build, include only when the dir exists
+-- 
+1.8.0
+

@@ -1,0 +1,36 @@
+From a68c85b315cd37b183fd9c4311e9098fa0d1be82 Mon Sep 17 00:00:00 2001
+From: Fabio Estevam <fabio.estevam@freescale.com>
+Date: Mon, 23 Feb 2015 14:01:26 -0300
+Subject: [PATCH] MLK-10446: mx7d_12x12_lpddr3_arm2: Enable 1.8V on PHY ctrl
+
+Enable 1.8V on PHY control, so that Gigabit PHY operation
+can be functional.
+
+Signed-off-by: Fabio Estevam <fabio.estevam@freescale.com>
+Signed-off-by: Nitin Garg <nitin.garg@freescale.com>
+(cherry picked from commit a17f1300a1b6d3b46a090baa84ba2fef104a1af6)
+Signed-off-by: Peng Fan <Peng.Fan@freescale.com>
+---
+ board/freescale/mx7d_12x12_lpddr3_arm2/mx7d_12x12_lpddr3_arm2.c | 2 --
+ 1 file changed, 2 deletions(-)
+
+diff --git a/board/freescale/mx7d_12x12_lpddr3_arm2/mx7d_12x12_lpddr3_arm2.c b/board/freescale/mx7d_12x12_lpddr3_arm2/mx7d_12x12_lpddr3_arm2.c
+index 7aa54e9..efef8f7 100644
+--- a/board/freescale/mx7d_12x12_lpddr3_arm2/mx7d_12x12_lpddr3_arm2.c
++++ b/board/freescale/mx7d_12x12_lpddr3_arm2/mx7d_12x12_lpddr3_arm2.c
+@@ -503,12 +503,10 @@ static int setup_fec(void)
+ 
+ int board_phy_config(struct phy_device *phydev)
+ {
+-#ifdef CONFIG_FEC_ENABLE_MAX7322
+ 	/* Enable 1.8V(SEL_1P5_1P8_POS_REG) on
+ 	   Phy control debug reg 0 */
+ 	phy_write(phydev, MDIO_DEVAD_NONE, 0x1d, 0x1f);
+ 	phy_write(phydev, MDIO_DEVAD_NONE, 0x1e, 0x8);
+-#endif
+ 
+ 	/* rgmii tx clock delay enable */
+ 	phy_write(phydev, MDIO_DEVAD_NONE, 0x1d, 0x05);
+-- 
+1.8.0
+

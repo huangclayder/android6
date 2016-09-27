@@ -1,0 +1,113 @@
+From 782fe82aba8a998d40b4ecdd9329a75a78ffee2f Mon Sep 17 00:00:00 2001
+From: Zhang Sanshan <b51434@freescale.com>
+Date: Fri, 24 Apr 2015 15:21:23 +0800
+Subject: [PATCH 11/21] MA-6589 can't show erasing icon when do factory reset
+ in 7d board
+
+The 7d sdb screen's resolution is 480*272. However the erasing.png is 280*425.
+gr_blit can't show earasing png for that 425 is larger than 272.
+This patch add icon_screen_height_ratio and icon_screen_width_ratio.
+It adust png's resolution according the ratio of (png size): (screen size)
+It fits all mx6 and mx7 screen.
+
+          ------
+          |    |
+---------------------------               ---------------------------
+|         |    |          |   ____\       |         |-----|         |
+|         |    |          |   ____ -      |         |_____|         |
+|         |    |          |       /       |          Erasing        |
+---------------------------               ---------------------------
+          |    |
+          -----
+
+Signed-off-by: Zhang Sanshan <b51434@freescale.com>
+---
+ minui/graphics.cpp | 13 ++++++-------
+ screen_ui.cpp      | 20 ++++++++------------
+ 2 files changed, 14 insertions(+), 19 deletions(-)
+
+diff --git a/minui/graphics.cpp b/minui/graphics.cpp
+index d2a1bd4..2967239 100644
+--- a/minui/graphics.cpp
++++ b/minui/graphics.cpp
+@@ -145,7 +145,6 @@ void gr_texticon(int x, int y, GRSurface* icon) {
+ 
+     x += overscan_offset_x;
+     y += overscan_offset_y;
+-
+     if (outside(x, y) || outside(x+icon->width-1, y+icon->height-1)) return;
+ 
+     unsigned char* src_p = icon->data;
+@@ -233,22 +232,22 @@ void gr_blit(GRSurface* source, int sx, int sy, int w, int h, int dx, int dy) {
+     dx += overscan_offset_x;
+     dy += overscan_offset_y;
+ 
+-    if (outside(dx, dy) || outside(dx+w-1, dy+h-1)) return;
+ 
+     unsigned char* src_p = source->data + sy*source->row_bytes + sx*source->pixel_bytes;
+     unsigned char* dst_p = gr_draw->data + dy*gr_draw->row_bytes + dx*gr_draw->pixel_bytes;
+-
++    unsigned int icon_screen_height_ratio = h / (gr_fb_height() - (33 + 40)) + 1; 
++    unsigned int icon_screen_width_ratio = w / (gr_fb_width()) + 1; 
+     int x, y;
+-    for (y = 0; y < h; ++y) {
++    for (y = 0; y < h / icon_screen_height_ratio; ++y) {
+         unsigned int *psx = (unsigned int*)src_p;
+         unsigned short *pdx = (unsigned short*)dst_p;
+-        for (x=0; x < w; ++x) {
++        for (x=0; x < w / icon_screen_width_ratio; ++x) {
+             unsigned int sv = *psx;
+             *pdx = (unsigned short)(((sv << 8)&0xf800) | ((sv>>5)&0x07e0) | ((sv>>19)&0x001f));
+             pdx++;
+-            psx++;
++            psx += icon_screen_width_ratio;
+         }
+-        src_p += source->row_bytes;
++        src_p += icon_screen_height_ratio * source->row_bytes;
+         dst_p += gr_draw->row_bytes;
+     }
+ }
+diff --git a/screen_ui.cpp b/screen_ui.cpp
+index 668f9ee..1bcb509 100644
+--- a/screen_ui.cpp
++++ b/screen_ui.cpp
+@@ -41,6 +41,8 @@
+ 
+ static int char_width;
+ static int char_height;
++static int icon_screen_height_ratio = 1;
++static int icon_screen_width_ratio = 1;
+ 
+ // Return the current time as a double (including fractions of a second).
+ static double now() {
+@@ -102,21 +104,15 @@ void ScreenRecoveryUI::draw_background_locked(Icon icon) {
+         int textWidth = gr_get_width(text_surface);
+         int textHeight = gr_get_height(text_surface);
+         int stageHeight = gr_get_height(stageMarkerEmpty);
+-
+         int sh = (max_stage >= 0) ? stageHeight : 0;
++	icon_screen_height_ratio = iconHeight / (gr_fb_height() - (textHeight + 40)) + 1;
++	icon_screen_width_ratio = iconWidth / (gr_fb_width()) + 1;
+ 
+-        iconX = (gr_fb_width() - iconWidth) / 2;
+-        iconY = (gr_fb_height() - (iconHeight+textHeight+40+sh)) / 2;
+-        if (iconX < 0) {
+-            iconX = 0;
+-        }
+-        if (iconY < 0) {
+-            iconY = 0;
+-        }
+-
+-        int textX = (gr_fb_width() - textWidth) / 2;
+-        int textY = ((gr_fb_height() - (iconHeight+textHeight+40+sh)) / 2) + iconHeight + 40;
++        iconX = (gr_fb_width() - iconWidth / icon_screen_width_ratio) / 2;
++        iconY = (gr_fb_height() - (iconHeight / icon_screen_height_ratio + textHeight + 40)) / 2;
+ 
++        int textX = (gr_fb_width() - textWidth / icon_screen_width_ratio) / 2;
++        int textY = iconY + iconHeight / icon_screen_height_ratio + 40;
+         if (progressBarType != EMPTY) {
+             int progressHeight = gr_get_height(progressBarEmpty);
+             //Be sure to align below with draw_progress_locked();
+-- 
+1.8.0
+

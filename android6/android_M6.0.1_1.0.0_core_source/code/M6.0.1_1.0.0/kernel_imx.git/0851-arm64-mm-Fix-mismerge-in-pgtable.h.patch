@@ -1,0 +1,26 @@
+From 11fd101c2ff91afae2e1d79e33caa9f50430ab14 Mon Sep 17 00:00:00 2001
+From: Mark Brown <broonie@linaro.org>
+Date: Thu, 4 Dec 2014 22:38:19 +0000
+Subject: [PATCH] arm64: mm: Fix mismerge in pgtable.h
+
+Signed-off-by: Mark Brown <broonie@linaro.org>
+---
+ arch/arm64/include/asm/pgtable.h | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/arch/arm64/include/asm/pgtable.h b/arch/arm64/include/asm/pgtable.h
+index 33608f2..e28747e 100644
+--- a/arch/arm64/include/asm/pgtable.h
++++ b/arch/arm64/include/asm/pgtable.h
+@@ -271,7 +271,7 @@ static inline pmd_t pte_pmd(pte_t pte)
+ 
+ #define pmd_page(pmd)           pfn_to_page(__phys_to_pfn(pmd_val(pmd) & PHYS_MASK))
+ 
+-#define set_pmd_at(mm, addr, pmdp, pmd)	set_pmd(pmdp, pmd)
++#define set_pmd_at(mm, addr, pmdp, pmd)	set_pte_at(mm, addr, (pte_t *)pmdp, pmd_pte(pmd))
+ 
+ static inline int has_transparent_hugepage(void)
+ {
+-- 
+1.8.0
+

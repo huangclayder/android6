@@ -1,0 +1,78 @@
+From d5aaf9708b832da56cb5ec8d824a60fc9fda5480 Mon Sep 17 00:00:00 2001
+From: Peng Fan <Peng.Fan@freescale.com>
+Date: Tue, 28 Apr 2015 11:17:51 +0800
+Subject: [PATCH] MLK-10774-48 imx: mx7 update hab_caam_clock_enable
+
+Merge hab_caam_clock_enable and hab_caam_clock_disable into
+one function
+
+Signed-off-by: Peng Fan <Peng.Fan@freescale.com>
+---
+ arch/arm/cpu/armv7/mx7/clock.c        | 12 +++++-------
+ arch/arm/cpu/armv7/mx7/hab.c          |  4 ++--
+ arch/arm/include/asm/arch-mx7/clock.h |  3 +--
+ 3 files changed, 8 insertions(+), 11 deletions(-)
+
+diff --git a/arch/arm/cpu/armv7/mx7/clock.c b/arch/arm/cpu/armv7/mx7/clock.c
+index 6298485..79a8e75 100644
+--- a/arch/arm/cpu/armv7/mx7/clock.c
++++ b/arch/arm/cpu/armv7/mx7/clock.c
+@@ -1073,14 +1073,12 @@ void clock_init(void)
+ }
+ 
+ #ifdef CONFIG_SECURE_BOOT
+-void hab_caam_clock_enable(void)
++void hab_caam_clock_enable(unsigned char enable)
+ {
+-	clock_enable(CCGR_CAAM, 1);
+-}
+-
+-void hab_caam_clock_disable(void)
+-{
+-	clock_enable(CCGR_CAAM, 0);
++	if (enable)
++		clock_enable(CCGR_CAAM, 1);
++	else
++		clock_enable(CCGR_CAAM, 0);
+ }
+ #endif
+ 
+diff --git a/arch/arm/cpu/armv7/mx7/hab.c b/arch/arm/cpu/armv7/mx7/hab.c
+index ae9591b..43b06bd 100644
+--- a/arch/arm/cpu/armv7/mx7/hab.c
++++ b/arch/arm/cpu/armv7/mx7/hab.c
+@@ -186,7 +186,7 @@ uint32_t authenticate_image(uint32_t ddr_start, uint32_t image_size)
+ 		printf("\nAuthenticate uImage from DDR location 0x%x...\n",
+ 			ddr_start);
+ 
+-		hab_caam_clock_enable();
++		hab_caam_clock_enable(1);
+ 
+ 		if (hab_rvt_entry() == HAB_SUCCESS) {
+ 			/* If not already aligned, Align to ALIGN_SIZE */
+@@ -222,7 +222,7 @@ uint32_t authenticate_image(uint32_t ddr_start, uint32_t image_size)
+ 		} else
+ 			printf("hab entry function fail\n");
+ 
+-		hab_caam_clock_disable();
++		hab_caam_clock_enable(0);
+ 
+ 		get_hab_status();
+ 	}
+diff --git a/arch/arm/include/asm/arch-mx7/clock.h b/arch/arm/include/asm/arch-mx7/clock.h
+index 290de9f..09fb66f 100644
+--- a/arch/arm/include/asm/arch-mx7/clock.h
++++ b/arch/arm/include/asm/arch-mx7/clock.h
+@@ -341,8 +341,7 @@ void enable_ocotp_clk(unsigned char enable);
+ #endif
+ void enable_usboh3_clk(unsigned char enable);
+ #ifdef CONFIG_SECURE_BOOT
+-void hab_caam_clock_enable(void);
+-void hab_caam_clock_disable(void);
++void hab_caam_clock_enable(unsigned char enable);
+ #endif
+ void mxs_set_lcdclk(uint32_t base_addr, uint32_t freq);
+ void enable_thermal_clk(void);
+-- 
+1.8.0
+

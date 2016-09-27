@@ -1,0 +1,73 @@
+From e5efcd694c0589fd0ab6d95f733cffc7fe6357b3 Mon Sep 17 00:00:00 2001
+From: Richard Liu <r66033@freescale.com>
+Date: Wed, 19 Nov 2014 09:56:50 +0800
+Subject: [PATCH 28/43] MA-5877 fix screenshot not work issue on mx6sl_evk
+
+Root cause is some API change on Lollipop, NO_FBO_SCREENSHOT should
+do the same kind of change.
+
+Signed-off-by: Richard Liu <r66033@freescale.com>
+---
+ services/surfaceflinger/SurfaceFlinger.cpp | 17 +++++++++--------
+ 1 file changed, 9 insertions(+), 8 deletions(-)
+
+diff --git a/services/surfaceflinger/SurfaceFlinger.cpp b/services/surfaceflinger/SurfaceFlinger.cpp
+index 4f69923..341b510 100644
+--- a/services/surfaceflinger/SurfaceFlinger.cpp
++++ b/services/surfaceflinger/SurfaceFlinger.cpp
+@@ -3380,9 +3380,9 @@ status_t SurfaceFlinger::captureScreen(const sp<IBinder>& display,
+ #include <GLES/glext.h>
+ void SurfaceFlinger::renderScreenImplLocked(
+         const sp<const DisplayDevice>& hw,
+-        uint32_t reqWidth, uint32_t reqHeight,
++        Rect sourceCrop, uint32_t reqWidth, uint32_t reqHeight,
+         uint32_t minLayerZ, uint32_t maxLayerZ,
+-        bool yswap)
++        bool yswap, bool useIdentityTransform, Transform::orientation_flags rotation)
+ {
+     ATRACE_CALL();
+ 
+@@ -3420,7 +3420,7 @@ void SurfaceFlinger::renderScreenImplLocked(
+             if (state.z >= minLayerZ && state.z <= maxLayerZ) {
+                 if (layer->isVisible()) {
+                     if (filtering) layer->setFiltering(true);
+-                    layer->draw(hw);
++                    layer->draw(hw, useIdentityTransform);
+                     if (filtering) layer->setFiltering(false);
+                 }
+             }
+@@ -3435,8 +3435,9 @@ void SurfaceFlinger::renderScreenImplLocked(
+ status_t SurfaceFlinger::captureScreenImplLocked(
+         const sp<const DisplayDevice>& hw,
+         const sp<IGraphicBufferProducer>& producer,
+-        uint32_t reqWidth, uint32_t reqHeight,
+-        uint32_t minLayerZ, uint32_t maxLayerZ)
++        Rect sourceCrop, uint32_t reqWidth, uint32_t reqHeight,
++        uint32_t minLayerZ, uint32_t maxLayerZ,
++        bool useIdentityTransform, Transform::orientation_flags rotation)
+ {
+     ATRACE_CALL();
+ 
+@@ -3468,7 +3469,7 @@ status_t SurfaceFlinger::captureScreenImplLocked(
+ 
+     // and create the corresponding EGLSurface
+     EGLSurface eglSurface = eglCreateWindowSurface(
+-            mEGLDisplay, mEGLConfig, window, NULL);
++            mEGLDisplay, NULL, window, NULL);
+     if (eglSurface == EGL_NO_SURFACE) {
+         ALOGE("captureScreenImplLocked: eglCreateWindowSurface() failed 0x%4x",
+                 eglGetError());
+@@ -3482,8 +3483,8 @@ status_t SurfaceFlinger::captureScreenImplLocked(
+         return BAD_VALUE;
+     }
+ 
+-    renderScreenImplLocked(hw, reqWidth, reqHeight, minLayerZ, maxLayerZ, false);
+-
++    renderScreenImplLocked(hw, sourceCrop, reqWidth, reqHeight, minLayerZ, maxLayerZ, false,
++                            useIdentityTransform, rotation);
+     // and finishing things up...
+     if (eglSwapBuffers(mEGLDisplay, eglSurface) != EGL_TRUE) {
+         ALOGE("captureScreenImplLocked: eglSwapBuffers() failed 0x%4x",
+-- 
+1.8.0
+

@@ -1,0 +1,37 @@
+From cbca80353315d50af1d9fd5a40ef4f56b767e11d Mon Sep 17 00:00:00 2001
+From: Anson Huang <b20788@freescale.com>
+Date: Thu, 4 Dec 2014 09:51:27 +0800
+Subject: [PATCH] MLK-9955-3 arm: imx: add HAVE_IMX_AMP for imx6sx
+
+add HAVE_IMX_AMP and select by default for i.MX6SX.
+
+Signed-off-by: Anson Huang <b20788@freescale.com>
+---
+ arch/arm/mach-imx/Kconfig | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/arch/arm/mach-imx/Kconfig b/arch/arm/mach-imx/Kconfig
+index 2ba45b3..7db7179 100644
+--- a/arch/arm/mach-imx/Kconfig
++++ b/arch/arm/mach-imx/Kconfig
+@@ -69,6 +69,9 @@ config HAVE_IMX_MMDC
+ config HAVE_IMX_SRC
+ 	def_bool y if SMP
+ 
++config HAVE_IMX_AMP
++	bool
++
+ config IMX_HAVE_IOMUX_V1
+ 	bool
+ 
+@@ -829,6 +832,7 @@ config SOC_IMX6SL
+ config SOC_IMX6SX
+ 	bool "i.MX6 SoloX support"
+ 	select PINCTRL_IMX6SX
++	select HAVE_IMX_AMP
+ 	select SOC_IMX6
+ 
+ 	help
+-- 
+1.8.0
+

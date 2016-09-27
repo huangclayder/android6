@@ -1,0 +1,36 @@
+From 5404c30f1d5f5878ecd9dc660bd5428c96464920 Mon Sep 17 00:00:00 2001
+From: Richard Liu <r66033@freescale.com>
+Date: Thu, 20 Nov 2014 13:57:43 +0800
+Subject: [PATCH 29/43] MGS-228 set NUM_FRAMEBUFFER_SURFACE_BUFFERS to 3 by
+ default
+
+NUM_FRAMEBUFFER_SURFACE_BUFFERS default is set to 2 on android framework,
+but our IPU driver need configure frame buffer number to 3 else there is
+tearing issue, so we set NUM_FRAMEBUFFER_SURFACE_BUFFERS to three in each
+board configure file, but customer may missing add such configure and cause
+tearing issue, we should by default set NUM_FRAMEBUFFER_SURFACE_BUFFERS to
+3 and remove such configure request on board configure file.
+
+This patch set NUM_FRAMEBUFFER_SURFACE_BUFFERS to 3 on android framework.
+
+Signed-off-by: Richard Liu <r66033@freescale.com>
+---
+ services/surfaceflinger/DisplayHardware/FramebufferSurface.cpp | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/services/surfaceflinger/DisplayHardware/FramebufferSurface.cpp b/services/surfaceflinger/DisplayHardware/FramebufferSurface.cpp
+index 55f215b..e13c1bb 100644
+--- a/services/surfaceflinger/DisplayHardware/FramebufferSurface.cpp
++++ b/services/surfaceflinger/DisplayHardware/FramebufferSurface.cpp
+@@ -38,7 +38,7 @@
+ #include "HWComposer.h"
+ 
+ #ifndef NUM_FRAMEBUFFER_SURFACE_BUFFERS
+-#define NUM_FRAMEBUFFER_SURFACE_BUFFERS (2)
++#define NUM_FRAMEBUFFER_SURFACE_BUFFERS (3)
+ #endif
+ 
+ // ----------------------------------------------------------------------------
+-- 
+1.8.0
+

@@ -1,0 +1,502 @@
+From 06a426ac04975bae84150f53bf90ae44d5dd00da Mon Sep 17 00:00:00 2001
+From: zhang sanshan <b51434@freescale.com>
+Date: Sun, 28 Dec 2014 19:54:40 +0800
+Subject: [PATCH 2/7] MA-6043 add ubi related tools
+
+change Android.mk for library and binary: libubi ubinfo ubiformat ubimkvol ubiattach ubidetach ubiupdatevol
+This patch fix the compile errors:
+error 1 : can't find major(st.st_rdev) and minor(st.st_rdev)
+That was variable major and minor have the some name with major(st.st_rdev) and minor(st.st_rdev) in the same function
+erros 2 : can't find function legacy_mtd_get_info and so on
+add ./ubi-utils/src/libmtd_legacy.c in LOCAL_SRC_FILES
+
+Signed-off-by: zhang sanshan <b51434@freescale.com>
+---
+ Android.mk             | 227 ++++++++++++++++++++++++++++++++++++++++++-------
+ ubi-utils/src/libmtd.c |  17 ++--
+ ubi-utils/src/libubi.c |  41 ++++-----
+ 3 files changed, 226 insertions(+), 59 deletions(-)
+
+diff --git a/Android.mk b/Android.mk
+index 40be83a..10ab298 100644
+--- a/Android.mk
++++ b/Android.mk
+@@ -1,4 +1,5 @@
+-ifeq ($(strip $(TARGET_USERIMAGES_USE_UBIFS)),true)
++# Copyright 2009 The Android Open Source Project
++#
+ 
+ LOCAL_PATH:= $(call my-dir)
+ include $(CLEAR_VARS)
+@@ -9,50 +10,49 @@ LOCAL_CFLAGS += -O2 -Wall
+ LOCAL_LDLIBS += -lz -lm
+ 
+ LOCAL_SRC_FILES := \
+-	ubi-utils/src/libubi.c \
+-	mkfs.ubifs/mkfs.ubifs.c \
+-	mkfs.ubifs/crc16.c \
+-	mkfs.ubifs/crc32.c \
+-	mkfs.ubifs/lpt.c \
+-	mkfs.ubifs/compr.c \
+-	mkfs.ubifs/devtable.c \
+-	mkfs.ubifs/hashtable/hashtable.c \
+-	mkfs.ubifs/hashtable/hashtable_itr.c \
+-	lzo-2.03/src/lzo1x_9x.c \
+-	uuid/gen_uuid.c \
+-	uuid/unpack.c \
+-	uuid/pack.c \
+-	uuid/unparse.c
++       ubi-utils/src/libubi.c \
++       mkfs.ubifs/mkfs.ubifs.c \
++       mkfs.ubifs/crc16.c \
++       mkfs.ubifs/crc32.c \
++       mkfs.ubifs/lpt.c \
++       mkfs.ubifs/compr.c \
++       mkfs.ubifs/devtable.c \
++       mkfs.ubifs/hashtable/hashtable.c \
++       mkfs.ubifs/hashtable/hashtable_itr.c \
++       lzo-2.03/src/lzo1x_9x.c \
++       uuid/gen_uuid.c \
++       uuid/unpack.c \
++       uuid/pack.c \
++       uuid/unparse.c
+ 
+ 
+ 
+ LOCAL_C_INCLUDES += \
+-	$(LOCAL_PATH)/include \
+-	$(LOCAL_PATH)/ubi-utils/include \
+-	$(LOCAL_PATH)/ubi-utils/src \
+-	$(LOCAL_PATH)/lzo-2.03/include \
+-	$(LOCAL_PATH)/uuid/
++        $(LOCAL_PATH)/include \
++        $(LOCAL_PATH)/ubi-utils/include \
++        $(LOCAL_PATH)/ubi-utils/src \
++        $(LOCAL_PATH)/lzo-2.03/include \
++        $(LOCAL_PATH)/uuid/
+ 
+ LOCAL_MODULE := mkfs_ubifs
+ 
+ include $(BUILD_HOST_EXECUTABLE)
+ 
+-
+ #==================
+ include $(CLEAR_VARS)
+ 
+ LOCAL_SRC_FILES:= \
+-	ubi-utils/src/ubinize.c \
+-	ubi-utils/src/common.c \
+-	ubi-utils/src/crc32.c \
+-	ubi-utils/src/libiniparser.c \
+-	ubi-utils/src/dictionary.c \
+-	ubi-utils/src/libubigen.c 
++        ubi-utils/src/ubinize.c \
++        ubi-utils/src/common.c \
++        ubi-utils/src/crc32.c \
++        ubi-utils/src/libiniparser.c \
++        ubi-utils/src/dictionary.c \
++        ubi-utils/src/libubigen.c
+ 
+ LOCAL_C_INCLUDES+= \
+-	$(LOCAL_PATH)/include \
+-	$(LOCAL_PATH)/ubi-utils/include \
+-	$(LOCAL_PATH)/ubi-utils/src
++        $(LOCAL_PATH)/include \
++        $(LOCAL_PATH)/ubi-utils/include \
++        $(LOCAL_PATH)/ubi-utils/src
+ 
+ LOCAL_MODULE:=ubinize
+ 
+@@ -60,4 +60,169 @@ LOCAL_CFLAGS+=-O3
+ 
+ include $(BUILD_HOST_EXECUTABLE)
+ 
+-endif
++include $(CLEAR_VARS)
++
++LOCAL_SRC_FILES := \
++	ubi-utils/src/libubi.c \
++	ubi-utils/src/libmtd_legacy.c \
++	ubi-utils/src/libmtd.c \
++	ubi-utils/src/libscan.c \
++	ubi-utils/src/libubigen.c \
++	ubi-utils/src/crc32.c \
++	ubi-utils/src/common.c
++
++LOCAL_CFLAGS = -O2 -Wall
++LOCAL_CFLAGS += -Wall -Wextra -Wwrite-strings -Wno-sign-compare -D_FILE_OFFSET_BITS=64
++
++LOCAL_C_INCLUDES += $(LOCAL_PATH)/include
++LOCAL_C_INCLUDES += $(LOCAL_PATH)/ubi-utils/include
++LOCAL_C_INCLUDES += $(LOCAL_PATH)/ubi-utils/src
++
++LOCAL_MODULE := libubi
++LOCAL_MODULE_TAGS := optional
++
++include $(BUILD_SHARED_LIBRARY)
++
++# libubi static lib.
++include $(CLEAR_VARS)
++
++LOCAL_SRC_FILES := \
++	ubi-utils/src/libubi.c \
++	ubi-utils/src/libmtd_legacy.c \
++	ubi-utils/src/libmtd.c \
++	ubi-utils/src/libscan.c \
++	ubi-utils/src/libubigen.c \
++	ubi-utils/src/crc32.c \
++	ubi-utils/src/common.c
++
++LOCAL_CFLAGS = -O2 -Wall
++LOCAL_CFLAGS += -Wall -Wextra -Wwrite-strings -Wno-sign-compare -D_FILE_OFFSET_BITS=64
++
++LOCAL_C_INCLUDES += $(LOCAL_PATH)/ubi-utils/include
++LOCAL_C_INCLUDES += $(LOCAL_PATH)/include
++LOCAL_C_INCLUDES += $(LOCAL_PATH)/ubi-utils/src
++
++LOCAL_MODULE := libubi
++LOCAL_MODULE_TAGS := optional
++include $(BUILD_STATIC_LIBRARY)
++
++# ubinfo util
++#
++include $(CLEAR_VARS)
++
++LOCAL_SRC_FILES := ubi-utils/src/ubinfo.c
++
++LOCAL_CFLAGS = -O2 -Wall
++LOCAL_CFLAGS += -Wall -Wextra -Wwrite-strings -Wno-sign-compare -D_FILE_OFFSET_BITS=64
++
++LOCAL_C_INCLUDES += $(LOCAL_PATH)/ubi-utils/include
++LOCAL_C_INCLUDES += $(LOCAL_PATH)/include
++LOCAL_C_INCLUDES += $(LOCAL_PATH)/ubi-utils/src
++
++LOCAL_SHARED_LIBRARIES := libubi
++
++LOCAL_MODULE := ubinfo
++LOCAL_MODULE_TAGS := optional
++
++include $(BUILD_EXECUTABLE)
++
++# ubiformat util
++#
++include $(CLEAR_VARS)
++
++LOCAL_SRC_FILES := ubi-utils/src/ubiformat.c
++
++LOCAL_CFLAGS = -O2 -Wall
++LOCAL_CFLAGS += -Wall -Wextra -Wwrite-strings -Wno-sign-compare -D_FILE_OFFSET_BITS=64
++
++LOCAL_C_INCLUDES += $(LOCAL_PATH)/ubi-utils/include
++LOCAL_C_INCLUDES += $(LOCAL_PATH)/include
++LOCAL_C_INCLUDES += $(LOCAL_PATH)/ubi-utils/src
++
++LOCAL_SHARED_LIBRARIES := libubi
++
++LOCAL_MODULE := ubiformat
++LOCAL_MODULE_TAGS := optional
++
++include $(BUILD_EXECUTABLE)
++
++# ubimkvol util
++#
++include $(CLEAR_VARS)
++
++LOCAL_SRC_FILES := ubi-utils/src/ubimkvol.c
++
++LOCAL_CFLAGS = -O2 -Wall
++LOCAL_CFLAGS += -Wall -Wextra -Wwrite-strings -Wno-sign-compare -D_FILE_OFFSET_BITS=64
++
++LOCAL_C_INCLUDES += $(LOCAL_PATH)/ubi-utils/include
++LOCAL_C_INCLUDES += $(LOCAL_PATH)/include
++LOCAL_C_INCLUDES += $(LOCAL_PATH)/ubi-utils/src
++
++LOCAL_SHARED_LIBRARIES := libubi
++
++LOCAL_MODULE := ubimkvol
++LOCAL_MODULE_TAGS := optional
++
++include $(BUILD_EXECUTABLE)
++
++# ubiattach util
++#
++include $(CLEAR_VARS)
++
++LOCAL_SRC_FILES := ubi-utils/src/ubiattach.c
++
++LOCAL_CFLAGS = -O2 -Wall
++LOCAL_CFLAGS += -Wall -Wextra -Wwrite-strings -Wno-sign-compare -D_FILE_OFFSET_BITS=64
++
++LOCAL_C_INCLUDES += $(LOCAL_PATH)/ubi-utils/include
++LOCAL_C_INCLUDES += $(LOCAL_PATH)/include
++LOCAL_C_INCLUDES += $(LOCAL_PATH)/ubi-utils/src
++
++LOCAL_SHARED_LIBRARIES := libubi
++
++LOCAL_MODULE := ubiattach
++LOCAL_MODULE_TAGS := optional
++
++include $(BUILD_EXECUTABLE)
++
++# ubidetach util
++#
++include $(CLEAR_VARS)
++
++LOCAL_SRC_FILES := ubi-utils/src/ubidetach.c
++
++LOCAL_CFLAGS = -O2 -Wall
++LOCAL_CFLAGS += -Wall -Wextra -Wwrite-strings -Wno-sign-compare -D_FILE_OFFSET_BITS=64
++
++LOCAL_C_INCLUDES += $(LOCAL_PATH)/ubi-utils/include
++LOCAL_C_INCLUDES += $(LOCAL_PATH)/include
++LOCAL_C_INCLUDES += $(LOCAL_PATH)/ubi-utils/src
++
++LOCAL_SHARED_LIBRARIES := libubi
++
++LOCAL_MODULE := ubidetach
++LOCAL_MODULE_TAGS := optional
++
++include $(BUILD_EXECUTABLE)
++
++# ubiupdatevol util
++#
++include $(CLEAR_VARS)
++
++LOCAL_SRC_FILES := ubi-utils/src/ubiupdatevol.c
++
++LOCAL_CFLAGS = -O2 -Wall
++LOCAL_CFLAGS += -Wall -Wextra -Wwrite-strings -Wno-sign-compare -D_FILE_OFFSET_BITS=64
++
++LOCAL_C_INCLUDES += $(LOCAL_PATH)/ubi-utils/include
++LOCAL_C_INCLUDES += $(LOCAL_PATH)/include
++LOCAL_C_INCLUDES += $(LOCAL_PATH)/ubi-utils/src
++
++LOCAL_SHARED_LIBRARIES := libubi
++
++LOCAL_MODULE := ubiupdatevol
++LOCAL_MODULE_TAGS := optional
++
++include $(BUILD_EXECUTABLE)
++
+diff --git a/ubi-utils/src/libmtd.c b/ubi-utils/src/libmtd.c
+index 4f1ef41..c25b7ce 100644
+--- a/ubi-utils/src/libmtd.c
++++ b/ubi-utils/src/libmtd.c
+@@ -21,6 +21,7 @@
+  * MTD library.
+  */
+ 
++
+ #include <limits.h>
+ #include <stdlib.h>
+ #include <stdio.h>
+@@ -431,7 +432,7 @@ static int type_str2int(const char *str)
+ static int dev_node2num(struct libmtd *lib, const char *node, int *dev_num)
+ {
+ 	struct stat st;
+-	int i, major, minor;
++	int i, i_major, i_minor;
+ 	struct mtd_info info;
+ 
+ 	if (stat(node, &st))
+@@ -443,8 +444,8 @@ static int dev_node2num(struct libmtd *lib, const char *node, int *dev_num)
+ 		return -1;
+ 	}
+ 
+-	major = major(st.st_rdev);
+-	minor = minor(st.st_rdev);
++	i_major = major(st.st_rdev);
++	i_minor = minor(st.st_rdev);
+ 
+ 	if (mtd_get_info((libmtd_t *)lib, &info))
+ 		return -1;
+@@ -461,7 +462,7 @@ static int dev_node2num(struct libmtd *lib, const char *node, int *dev_num)
+ 			return -1;
+ 		}
+ 
+-		if (major1 == major && minor1 == minor) {
++		if (major1 == i_major && minor1 == i_minor) {
+ 			errno = 0;
+ 			*dev_num = i;
+ 			return 0;
+@@ -932,7 +933,7 @@ int mtd_probe_node(libmtd_t desc, const char *node)
+ {
+ 	struct stat st;
+ 	struct mtd_info info;
+-	int i, major, minor;
++	int i, i_major, i_minor;
+ 	struct libmtd *lib = (struct libmtd *)desc;
+ 
+ 	if (stat(node, &st))
+@@ -944,8 +945,8 @@ int mtd_probe_node(libmtd_t desc, const char *node)
+ 		return -1;
+ 	}
+ 
+-	major = major(st.st_rdev);
+-	minor = minor(st.st_rdev);
++	i_major = major(st.st_rdev);
++	i_minor = minor(st.st_rdev);
+ 
+ 	if (mtd_get_info((libmtd_t *)lib, &info))
+ 		return -1;
+@@ -965,7 +966,7 @@ int mtd_probe_node(libmtd_t desc, const char *node)
+ 			return -1;
+ 		}
+ 
+-		if (major1 == major && minor1 == minor)
++		if (major1 == i_major && minor1 == i_minor)
+ 			return 1;
+ 	}
+ 
+diff --git a/ubi-utils/src/libubi.c b/ubi-utils/src/libubi.c
+index fd97774..4418988 100644
+--- a/ubi-utils/src/libubi.c
++++ b/ubi-utils/src/libubi.c
+@@ -30,9 +30,10 @@
+ #include <sys/ioctl.h>
+ #include <sys/stat.h>
+ #include <sys/types.h>
+-#include <libubi.h>
++#include "libubi.h"
+ #include "libubi_int.h"
+ #include "common.h"
++#include <sys/sysmacros.h>
+ 
+ #define PROGRAM_NAME "libubi"
+ 
+@@ -370,7 +371,7 @@ static int vol_node2nums(struct libubi *lib, const char *node, int *dev_num,
+ {
+ 	struct stat st;
+ 	struct ubi_info info;
+-	int i, fd, major, minor;
++	int i, fd, i_major, i_minor;
+ 	char file[strlen(lib->ubi_vol) + 100];
+ 
+ 	if (stat(node, &st))
+@@ -382,10 +383,10 @@ static int vol_node2nums(struct libubi *lib, const char *node, int *dev_num,
+ 		return errmsg("\"%s\" is not a character device", node);
+ 	}
+ 
+-	major = major(st.st_rdev);
+-	minor = minor(st.st_rdev);
++	i_major = major(st.st_rdev);
++	i_minor = minor(st.st_rdev);
+ 
+-	if (minor == 0) {
++	if (i_minor == 0) {
+ 		errno = EINVAL;
+ 		return errmsg("\"%s\" is not a volume character device", node);
+ 	}
+@@ -403,7 +404,7 @@ static int vol_node2nums(struct libubi *lib, const char *node, int *dev_num,
+ 			return -1;
+ 		}
+ 
+-		if (major1 == major)
++		if (major1 == i_major)
+ 			break;
+ 	}
+ 
+@@ -413,7 +414,7 @@ static int vol_node2nums(struct libubi *lib, const char *node, int *dev_num,
+ 	}
+ 
+ 	/* Make sure this UBI volume exists */
+-	sprintf(file, lib->ubi_vol, i, minor - 1);
++	sprintf(file, lib->ubi_vol, i, i_minor - 1);
+ 	fd = open(file, O_RDONLY);
+ 	if (fd == -1) {
+ 		errno = ENODEV;
+@@ -421,7 +422,7 @@ static int vol_node2nums(struct libubi *lib, const char *node, int *dev_num,
+ 	}
+ 
+ 	*dev_num = i;
+-	*vol_id = minor - 1;
++	*vol_id = i_minor - 1;
+ 	errno = 0;
+ 	return 0;
+ }
+@@ -438,7 +439,7 @@ static int dev_node2num(struct libubi *lib, const char *node, int *dev_num)
+ {
+ 	struct stat st;
+ 	struct ubi_info info;
+-	int i, major, minor;
++	int i, i_major, i_minor;
+ 
+ 	if (stat(node, &st))
+ 		return sys_errmsg("cannot get information about \"%s\"", node);
+@@ -448,10 +449,10 @@ static int dev_node2num(struct libubi *lib, const char *node, int *dev_num)
+ 		return errmsg("\"%s\" is not a character device", node);
+ 	}
+ 
+-	major = major(st.st_rdev);
+-	minor = minor(st.st_rdev);
++	i_major = major(st.st_rdev);
++	i_minor = minor(st.st_rdev);
+ 
+-	if (minor != 0) {
++	if (i_minor != 0) {
+ 		errno = EINVAL;
+ 		return errmsg("\"%s\" is not an UBI character device", node);
+ 	}
+@@ -469,7 +470,7 @@ static int dev_node2num(struct libubi *lib, const char *node, int *dev_num)
+ 			return -1;
+ 		}
+ 
+-		if (major1 == major) {
++		if (major1 == i_major) {
+ 			if (minor1 != 0) {
+ 				errmsg("UBI character device minor number is "
+ 				       "%d, but must be 0", minor1);
+@@ -751,7 +752,7 @@ int ubi_probe_node(libubi_t desc, const char *node)
+ {
+ 	struct stat st;
+ 	struct ubi_info info;
+-	int i, fd, major, minor;
++	int i, fd, i_major, i_minor;
+ 	struct libubi *lib = (struct libubi *)desc;
+ 	char file[strlen(lib->ubi_vol) + 100];
+ 
+@@ -764,8 +765,8 @@ int ubi_probe_node(libubi_t desc, const char *node)
+ 		return -1;
+ 	}
+ 
+-	major = major(st.st_rdev);
+-	minor = minor(st.st_rdev);
++	i_major = major(st.st_rdev);
++	i_minor = minor(st.st_rdev);
+ 
+ 	if (ubi_get_info((libubi_t *)lib, &info))
+ 		return -1;
+@@ -782,18 +783,18 @@ int ubi_probe_node(libubi_t desc, const char *node)
+ 			return -1;
+ 		}
+ 
+-		if (major1 == major)
++		if (major1 == i_major)
+ 			break;
+ 	}
+ 
+ 	if (i > info.highest_dev_num)
+ 		goto out_not_ubi;
+ 
+-	if (minor == 0)
++	if (i_minor == 0)
+ 		return 1;
+ 
+ 	/* This is supposdely an UBI volume device node */
+-	sprintf(file, lib->ubi_vol, i, minor - 1);
++	sprintf(file, lib->ubi_vol, i, i_minor - 1);
+ 	fd = open(file, O_RDONLY);
+ 	if (fd == -1)
+ 		goto out_not_ubi;
+@@ -802,7 +803,7 @@ int ubi_probe_node(libubi_t desc, const char *node)
+ 
+ out_not_ubi:
+ 	errmsg("\"%s\" has major:minor %d:%d, but this does not correspond to "
+-	       "any existing UBI device or volume", node, major, minor);
++	       "any existing UBI device or volume", node, i_major, i_minor);
+ 	errno = ENODEV;
+ 	return -1;
+ }
+-- 
+1.8.0
+

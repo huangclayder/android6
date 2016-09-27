@@ -1,0 +1,82 @@
+From 35e9c3f618f92349cdcb1f85d94014d695da6f88 Mon Sep 17 00:00:00 2001
+From: "Ye.Li" <B37916@freescale.com>
+Date: Fri, 29 May 2015 22:50:33 +0800
+Subject: [PATCH] MLK-11033 imx: mx7d: Update the lpddr3 script to 3.0.3 rev
+
+Update the DDR script for i.MX7D 12x12 LPDDR3 ARM2 board and
+i.MX7D 19x19 LPDDR3 ARM2 board to file "7D_lpddr3_0_3.ds5"
+
+Updated items:
+     Changes DRAMTMG2 WR2RD from 7 to 8.
+
+Compass link for this script:
+     http://compass.freescale.net/livelink/livelink?func=ll
+     &objid=233861153&objAction=browse&sort=name
+
+Test results:
+     Passed overnight test on two MX7D 12x12 LPDDR3 ARM2 board
+     Passed overnight test on one MX7D 19x19 LPDDR3 ARM2 board
+
+Signed-off-by: Ye.Li <B37916@freescale.com>
+---
+ board/freescale/mx7d_12x12_lpddr3_arm2/imximage.cfg | 2 +-
+ board/freescale/mx7d_12x12_lpddr3_arm2/plugin.S     | 2 +-
+ board/freescale/mx7d_19x19_lpddr3_arm2/imximage.cfg | 2 +-
+ board/freescale/mx7d_19x19_lpddr3_arm2/plugin.S     | 2 +-
+ 4 files changed, 4 insertions(+), 4 deletions(-)
+
+diff --git a/board/freescale/mx7d_12x12_lpddr3_arm2/imximage.cfg b/board/freescale/mx7d_12x12_lpddr3_arm2/imximage.cfg
+index f04319a..47b2def 100644
+--- a/board/freescale/mx7d_12x12_lpddr3_arm2/imximage.cfg
++++ b/board/freescale/mx7d_12x12_lpddr3_arm2/imximage.cfg
+@@ -63,7 +63,7 @@ DATA 4 0x307a00e4 0x00110006
+ DATA 4 0x307a00f4 0x0000033f
+ DATA 4 0x307a0100 0x0a0e110b
+ DATA 4 0x307a0104 0x00020211
+-DATA 4 0x307a0108 0x03060707
++DATA 4 0x307a0108 0x03060708
+ DATA 4 0x307a010c 0x00a0500c
+ DATA 4 0x307a0110 0x05020307
+ DATA 4 0x307a0114 0x02020404
+diff --git a/board/freescale/mx7d_12x12_lpddr3_arm2/plugin.S b/board/freescale/mx7d_12x12_lpddr3_arm2/plugin.S
+index f301a54..e1af200 100644
+--- a/board/freescale/mx7d_12x12_lpddr3_arm2/plugin.S
++++ b/board/freescale/mx7d_12x12_lpddr3_arm2/plugin.S
+@@ -39,7 +39,7 @@
+ 	str r1, [r0, #0x100]
+ 	ldr r1, =0x00020211
+ 	str r1, [r0, #0x104]
+-	ldr r1, =0x03060707
++	ldr r1, =0x03060708
+ 	str r1, [r0, #0x108]
+ 	ldr r1, =0x00a0500c
+ 	str r1, [r0, #0x10c]
+diff --git a/board/freescale/mx7d_19x19_lpddr3_arm2/imximage.cfg b/board/freescale/mx7d_19x19_lpddr3_arm2/imximage.cfg
+index a242cc7..737bf9a 100644
+--- a/board/freescale/mx7d_19x19_lpddr3_arm2/imximage.cfg
++++ b/board/freescale/mx7d_19x19_lpddr3_arm2/imximage.cfg
+@@ -63,7 +63,7 @@ DATA 4 0x307a00e4 0x00110006
+ DATA 4 0x307a00f4 0x0000033f
+ DATA 4 0x307a0100 0x0a0e110b
+ DATA 4 0x307a0104 0x00020211
+-DATA 4 0x307a0108 0x03060707
++DATA 4 0x307a0108 0x03060708
+ DATA 4 0x307a010c 0x00a0500c
+ DATA 4 0x307a0110 0x05020307
+ DATA 4 0x307a0114 0x02020404
+diff --git a/board/freescale/mx7d_19x19_lpddr3_arm2/plugin.S b/board/freescale/mx7d_19x19_lpddr3_arm2/plugin.S
+index 417215d..406a846 100644
+--- a/board/freescale/mx7d_19x19_lpddr3_arm2/plugin.S
++++ b/board/freescale/mx7d_19x19_lpddr3_arm2/plugin.S
+@@ -39,7 +39,7 @@
+ 	str r1, [r0, #0x100]
+ 	ldr r1, =0x00020211
+ 	str r1, [r0, #0x104]
+-	ldr r1, =0x03060707
++	ldr r1, =0x03060708
+ 	str r1, [r0, #0x108]
+ 	ldr r1, =0x00a0500c
+ 	str r1, [r0, #0x10c]
+-- 
+1.8.0
+

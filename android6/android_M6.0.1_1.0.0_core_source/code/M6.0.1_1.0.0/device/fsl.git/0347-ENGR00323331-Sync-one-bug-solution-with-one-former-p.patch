@@ -1,0 +1,31 @@
+From 5d616682c352cf3c1b1bc6bee473f19fa9dd9478 Mon Sep 17 00:00:00 2001
+From: Jianzheng Zhou <jianzheng.zhou@freescale.com>
+Date: Wed, 23 Jul 2014 16:17:17 +0800
+Subject: [PATCH 347/602] ENGR00323331 Sync one bug solution with one former
+ patch
+
+This similar issue is already fixed by the following commit.
+Only sync it to new board sabresd_6sx.
+dbfd8ef ENGR00293774 Geomagnetic sensor doesn't work after encryption. 100%
+
+Signed-off-by: Jianzheng Zhou <jianzheng.zhou@freescale.com>
+---
+ sabresd_6sx/init.rc | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/sabresd_6sx/init.rc b/sabresd_6sx/init.rc
+index dc65bc2..a9f7237 100755
+--- a/sabresd_6sx/init.rc
++++ b/sabresd_6sx/init.rc
+@@ -162,7 +162,7 @@ service wpa_supplicant /system/bin/wpa_supplicant \
+ 
+ # magd daemon
+ service magd /system/bin/magd
+-    class main
++    class late_start
+     user system
+     group input
+     oneshot
+-- 
+1.8.0
+

@@ -1,0 +1,31 @@
+From 5b55e342af858825267c3ea09a3ddd59d13a64a5 Mon Sep 17 00:00:00 2001
+From: Liu Xiaowen <xiaowen.liu@freescale.com>
+Date: Thu, 16 Apr 2015 13:31:29 +0800
+Subject: [PATCH 6/6] MA-6544 fix framebuffer post will reinitialize FB
+ device.
+
+Android default gralloc use FBIOPUT_VSCREENINFO to post framebuffer.
+But hdmi display driver doesn't support this.
+Change to FBIOPAN_DISPLAY to do this.
+
+Signed-off-by: Liu Xiaowen <xiaowen.liu@freescale.com>
+---
+ modules/gralloc/framebuffer.cpp | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/modules/gralloc/framebuffer.cpp b/modules/gralloc/framebuffer.cpp
+index 7b653ab..2a49101 100644
+--- a/modules/gralloc/framebuffer.cpp
++++ b/modules/gralloc/framebuffer.cpp
+@@ -104,7 +104,7 @@ static int fb_post(struct framebuffer_device_t* dev, buffer_handle_t buffer)
+         const size_t offset = hnd->base - m->framebuffer->base;
+         m->info.activate = FB_ACTIVATE_VBL;
+         m->info.yoffset = offset / m->finfo.line_length;
+-        if (ioctl(m->framebuffer->fd, FBIOPUT_VSCREENINFO, &m->info) == -1) {
++        if (ioctl(m->framebuffer->fd, FBIOPAN_DISPLAY, &m->info) == -1) {
+             ALOGE("FBIOPUT_VSCREENINFO failed");
+             m->base.unlock(&m->base, buffer); 
+             return -errno;
+-- 
+1.8.0
+

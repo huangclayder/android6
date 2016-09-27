@@ -1,0 +1,269 @@
+From f7775862aa7eb6d5e978f9059e981f57f7f76f1a Mon Sep 17 00:00:00 2001
+From: "Ye.Li" <B37916@freescale.com>
+Date: Wed, 20 May 2015 17:19:44 +0800
+Subject: [PATCH] MLK-10936 imx: mx7d: Change to use bootrom_sw_info for
+ getting boot device
+
+On MX7D, boot rom can provide some boot information such as boot device,
+arm freq, axi freq, etc. (see the structure below)
+
+Offset	Byte4	  | Byte3             | Byte2                 | Byte1
+0x0	Reserved  | Boot Device Type  | Boot Device Instance  | Reserved
+0x4	ARM core frequency(in Hz)
+0x8	AXI bus frequency(in Hz)
+0x0C	DDR frequency(in Hz)
+0x10	GPT1 input clock frequency(in Hz)
+0x14	Reserved
+0x18
+0x1C
+
+The boot information can be accessed by get the pointer at 0x1E8. This patch
+changes the u-boot to use the new approach. When manufacture boot, the info
+recorded is the actual SD port, not the failed device.
+
+Signed-off-by: Ye.Li <B37916@freescale.com>
+---
+ arch/arm/cpu/armv7/mx7/soc.c                       | 36 ++++++++++------------
+ arch/arm/include/asm/arch-mx7/imx-regs.h           | 15 ++++++++-
+ .../mx7d_12x12_ddr3_arm2/mx7d_12x12_ddr3_arm2.c    | 13 +++-----
+ .../mx7d_12x12_lpddr3_arm2.c                       | 13 +++-----
+ .../mx7d_19x19_ddr3_arm2/mx7d_19x19_ddr3_arm2.c    | 13 +++-----
+ .../mx7d_19x19_lpddr3_arm2.c                       | 13 +++-----
+ board/freescale/mx7dsabresd/mx7dsabresd.c          | 13 +++-----
+ 7 files changed, 56 insertions(+), 60 deletions(-)
+
+diff --git a/arch/arm/cpu/armv7/mx7/soc.c b/arch/arm/cpu/armv7/mx7/soc.c
+index 0e80d0e..5b8ae2e 100644
+--- a/arch/arm/cpu/armv7/mx7/soc.c
++++ b/arch/arm/cpu/armv7/mx7/soc.c
+@@ -338,32 +338,30 @@ const struct boot_mode soc_boot_modes[] = {
+ 
+ enum boot_device get_boot_device(void)
+ {
+-	enum boot_device boot_dev = UNKNOWN_BOOT;
+-	uint32_t soc_smbr = readl(&src_reg->sbmr1);
+-	uint32_t bt_mem_ctl = (soc_smbr & 0xF000) >> 12;
+-	uint32_t bt_dev_port = (soc_smbr & 0xC00) >> 10;
+-	uint32_t bt_mem_type = (soc_smbr & 0x800) >> 11;
+-
+-	switch (bt_mem_ctl) {
+-	case 0x1:
+-		boot_dev = bt_dev_port + SD1_BOOT;
++	struct bootrom_sw_info **p =
++		(struct bootrom_sw_info **)ROM_SW_INFO_ADDR;
++
++	enum boot_device boot_dev = SD1_BOOT;
++	u8 boot_type = (*p)->boot_dev_type;
++	u8 boot_instance = (*p)->boot_dev_instance;
++
++	switch (boot_type) {
++	case BOOT_TYPE_SD:
++		boot_dev = boot_instance + SD1_BOOT;
+ 		break;
+-	case 0x2:
+-		boot_dev = bt_dev_port + MMC1_BOOT;
++	case BOOT_TYPE_MMC:
++		boot_dev = boot_instance + MMC1_BOOT;
+ 		break;
+-	case 0x3:
++	case BOOT_TYPE_NAND:
+ 		boot_dev = NAND_BOOT;
+ 		break;
+-	case 0x4:
++	case BOOT_TYPE_QSPI:
+ 		boot_dev = QSPI_BOOT;
+ 		break;
+-	case 0x5:
+-		if (bt_mem_type)
+-			boot_dev = ONE_NAND_BOOT;
+-		else
+-			boot_dev = WEIM_NOR_BOOT;
++	case BOOT_TYPE_WEIM:
++		boot_dev = WEIM_NOR_BOOT;
+ 		break;
+-	case 0x6:
++	case BOOT_TYPE_SPINOR:
+ 		boot_dev = SPI_NOR_BOOT;
+ 		break;
+ 	default:
+diff --git a/arch/arm/include/asm/arch-mx7/imx-regs.h b/arch/arm/include/asm/arch-mx7/imx-regs.h
+index 3f82807..9061773 100644
+--- a/arch/arm/include/asm/arch-mx7/imx-regs.h
++++ b/arch/arm/include/asm/arch-mx7/imx-regs.h
+@@ -11,6 +11,7 @@
+ 
+ #define CONFIG_SYS_CACHELINE_SIZE	64
+ 
++#define ROM_SW_INFO_ADDR                0x000001E8
+ #define ROMCP_ARB_BASE_ADDR             0x00000000
+ #define ROMCP_ARB_END_ADDR              0x00017FFF
+ #define BOOT_ROM_BASE_ADDR              ROMCP_ARB_BASE_ADDR
+@@ -1283,7 +1284,19 @@ extern void pcie_power_off(void);
+ #define BOOT_TYPE_NAND		0x3
+ #define BOOT_TYPE_QSPI		0x4
+ #define BOOT_TYPE_WEIM		0x5
+-#define BOOT_TYPE_EEPROM	0x6
++#define BOOT_TYPE_SPINOR	0x6
++
++struct bootrom_sw_info {
++	u8 reserved_1;
++	u8 boot_dev_instance;
++	u8 boot_dev_type;
++	u8 reserved_2;
++	u32 arm_core_freq;
++	u32 axi_freq;
++	u32 ddr_freq;
++	u32 gpt1_freq;
++	u32 reserved_3[3];
++};
+ 
+ #endif /* __ASSEMBLER__*/
+ #endif /* __ASM_ARCH_MX7_IMX_REGS_H__ */
+diff --git a/board/freescale/mx7d_12x12_ddr3_arm2/mx7d_12x12_ddr3_arm2.c b/board/freescale/mx7d_12x12_ddr3_arm2/mx7d_12x12_ddr3_arm2.c
+index 225539a..3f5dcf5 100644
+--- a/board/freescale/mx7d_12x12_ddr3_arm2/mx7d_12x12_ddr3_arm2.c
++++ b/board/freescale/mx7d_12x12_ddr3_arm2/mx7d_12x12_ddr3_arm2.c
+@@ -130,19 +130,16 @@ static struct fsl_esdhc_cfg usdhc_cfg[2] = {
+ 
+ int mmc_get_env_devno(void)
+ {
+-	u32 soc_sbmr = readl(SRC_BASE_ADDR + 0x58);
+-	u32 dev_no;
+-	u32 bootsel;
++	struct bootrom_sw_info **p =
++		(struct bootrom_sw_info **)ROM_SW_INFO_ADDR;
+ 
+-	bootsel = (soc_sbmr & 0x0000F000) >> 12;
++	u8 boot_type = (*p)->boot_dev_type;
++	u8 dev_no = (*p)->boot_dev_instance;
+ 
+ 	/* If not boot from sd/mmc, use default value */
+-	if ((bootsel != BOOT_TYPE_SD) && (bootsel != BOOT_TYPE_MMC))
++	if ((boot_type != BOOT_TYPE_SD) && (boot_type != BOOT_TYPE_MMC))
+ 		return CONFIG_SYS_MMC_ENV_DEV;
+ 
+-	/* BOOT_CFG2[2] and BOOT_CFG2[3] */
+-	dev_no = (soc_sbmr & 0x00000C00) >> 10;
+-
+ 	return dev_no - 1;
+ }
+ 
+diff --git a/board/freescale/mx7d_12x12_lpddr3_arm2/mx7d_12x12_lpddr3_arm2.c b/board/freescale/mx7d_12x12_lpddr3_arm2/mx7d_12x12_lpddr3_arm2.c
+index 0770818..5ecc8e4 100644
+--- a/board/freescale/mx7d_12x12_lpddr3_arm2/mx7d_12x12_lpddr3_arm2.c
++++ b/board/freescale/mx7d_12x12_lpddr3_arm2/mx7d_12x12_lpddr3_arm2.c
+@@ -355,19 +355,16 @@ static struct fsl_esdhc_cfg usdhc_cfg[3] = {
+ 
+ int mmc_get_env_devno(void)
+ {
+-	u32 soc_sbmr = readl(SRC_BASE_ADDR + 0x58);
+-	u32 dev_no;
+-	u32 bootsel;
++	struct bootrom_sw_info **p =
++		(struct bootrom_sw_info **)ROM_SW_INFO_ADDR;
+ 
+-	bootsel = (soc_sbmr & 0x0000F000) >> 12;
++	u8 boot_type = (*p)->boot_dev_type;
++	u8 dev_no = (*p)->boot_dev_instance;
+ 
+ 	/* If not boot from sd/mmc, use default value */
+-	if ((bootsel != BOOT_TYPE_SD) && (bootsel != BOOT_TYPE_MMC))
++	if ((boot_type != BOOT_TYPE_SD) && (boot_type != BOOT_TYPE_MMC))
+ 		return CONFIG_SYS_MMC_ENV_DEV;
+ 
+-	/* BOOT_CFG2[2] and BOOT_CFG2[3] */
+-	dev_no = (soc_sbmr & 0x00000C00) >> 10;
+-
+ 	return dev_no;
+ }
+ 
+diff --git a/board/freescale/mx7d_19x19_ddr3_arm2/mx7d_19x19_ddr3_arm2.c b/board/freescale/mx7d_19x19_ddr3_arm2/mx7d_19x19_ddr3_arm2.c
+index a746cc9..6fbde13 100644
+--- a/board/freescale/mx7d_19x19_ddr3_arm2/mx7d_19x19_ddr3_arm2.c
++++ b/board/freescale/mx7d_19x19_ddr3_arm2/mx7d_19x19_ddr3_arm2.c
+@@ -356,19 +356,16 @@ static struct fsl_esdhc_cfg usdhc_cfg[3] = {
+ 
+ int mmc_get_env_devno(void)
+ {
+-	u32 soc_sbmr = readl(SRC_BASE_ADDR + 0x58);
+-	u32 dev_no;
+-	u32 bootsel;
++	struct bootrom_sw_info **p =
++		(struct bootrom_sw_info **)ROM_SW_INFO_ADDR;
+ 
+-	bootsel = (soc_sbmr & 0x0000F000) >> 12;
++	u8 boot_type = (*p)->boot_dev_type;
++	u8 dev_no = (*p)->boot_dev_instance;
+ 
+ 	/* If not boot from sd/mmc, use default value */
+-	if ((bootsel != BOOT_TYPE_SD) && (bootsel != BOOT_TYPE_MMC))
++	if ((boot_type != BOOT_TYPE_SD) && (boot_type != BOOT_TYPE_MMC))
+ 		return CONFIG_SYS_MMC_ENV_DEV;
+ 
+-	/* BOOT_CFG2[2] and BOOT_CFG2[3] */
+-	dev_no = (soc_sbmr & 0x00000C00) >> 10;
+-
+ 	return dev_no;
+ }
+ 
+diff --git a/board/freescale/mx7d_19x19_lpddr3_arm2/mx7d_19x19_lpddr3_arm2.c b/board/freescale/mx7d_19x19_lpddr3_arm2/mx7d_19x19_lpddr3_arm2.c
+index f0706eb..74a0581 100644
+--- a/board/freescale/mx7d_19x19_lpddr3_arm2/mx7d_19x19_lpddr3_arm2.c
++++ b/board/freescale/mx7d_19x19_lpddr3_arm2/mx7d_19x19_lpddr3_arm2.c
+@@ -318,19 +318,16 @@ static struct fsl_esdhc_cfg usdhc_cfg[1] = {
+ 
+ int mmc_get_env_devno(void)
+ {
+-	u32 soc_sbmr = readl(SRC_BASE_ADDR + 0x58);
+-	u32 dev_no;
+-	u32 bootsel;
++	struct bootrom_sw_info **p =
++		(struct bootrom_sw_info **)ROM_SW_INFO_ADDR;
+ 
+-	bootsel = (soc_sbmr & 0x0000F000) >> 12;
++	u8 boot_type = (*p)->boot_dev_type;
++	u8 dev_no = (*p)->boot_dev_instance;
+ 
+ 	/* If not boot from sd/mmc, use default value */
+-	if ((bootsel != BOOT_TYPE_SD) && (bootsel != BOOT_TYPE_MMC))
++	if ((boot_type != BOOT_TYPE_SD) && (boot_type != BOOT_TYPE_MMC))
+ 		return CONFIG_SYS_MMC_ENV_DEV;
+ 
+-	/* BOOT_CFG2[2] and BOOT_CFG2[3] */
+-	dev_no = (soc_sbmr & 0x00000C00) >> 10;
+-
+ 	return dev_no;
+ }
+ 
+diff --git a/board/freescale/mx7dsabresd/mx7dsabresd.c b/board/freescale/mx7dsabresd/mx7dsabresd.c
+index 4db309f..0f1a0c4 100644
+--- a/board/freescale/mx7dsabresd/mx7dsabresd.c
++++ b/board/freescale/mx7dsabresd/mx7dsabresd.c
+@@ -500,19 +500,16 @@ static struct fsl_esdhc_cfg usdhc_cfg[3] = {
+ 
+ int mmc_get_env_devno(void)
+ {
+-	u32 soc_sbmr = readl(SRC_BASE_ADDR + 0x58);
+-	u32 dev_no;
+-	u32 bootsel;
++	struct bootrom_sw_info **p =
++		(struct bootrom_sw_info **)ROM_SW_INFO_ADDR;
+ 
+-	bootsel = (soc_sbmr & 0x0000F000) >> 12;
++	u8 boot_type = (*p)->boot_dev_type;
++	u8 dev_no = (*p)->boot_dev_instance;
+ 
+ 	/* If not boot from sd/mmc, use default value */
+-	if ((bootsel != BOOT_TYPE_SD) && (bootsel != BOOT_TYPE_MMC))
++	if ((boot_type != BOOT_TYPE_SD) && (boot_type != BOOT_TYPE_MMC))
+ 		return CONFIG_SYS_MMC_ENV_DEV;
+ 
+-	/* BOOT_CFG2[2] and BOOT_CFG2[3] */
+-	dev_no = (soc_sbmr & 0x00000C00) >> 10;
+-
+ 	if (2 == dev_no)
+ 		dev_no--;
+ 
+-- 
+1.8.0
+

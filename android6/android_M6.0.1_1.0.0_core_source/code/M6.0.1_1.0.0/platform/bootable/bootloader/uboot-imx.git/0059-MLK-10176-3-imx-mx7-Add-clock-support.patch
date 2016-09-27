@@ -1,0 +1,2331 @@
+From 93c2123adf6be5294d6c8b2583c499bb50c3cc59 Mon Sep 17 00:00:00 2001
+From: "Ye.Li" <B37916@freescale.com>
+Date: Sun, 1 Feb 2015 21:58:42 +0800
+Subject: [PATCH] MLK-10176-3 imx: mx7: Add clock support
+
+Since a new CCM with clock root slice is introduced in mx7. Provide
+several APIs for configuring root slice in clock_slice.c
+
+Implement clock/PLL relevant functions for modules in mx7d to
+enable/disable/set/get clocks or PLLs.
+
+From mx7d, the clocks are initialized in function "void clock_init(void)",
+such as UART, USDHC, ECSPI, USB, WDOG, WEIM. These module don't have clock
+setting functions in driver and BSP, and assume the clock is setup before
+entering into u-boot. Because default root clock is 24Mhz OSC, we have
+to setup these default clocks.
+
+Signed-off-by: Peng Fan <Peng.Fan@freescale.com>
+Signed-off-by: Ye.Li <B37916@freescale.com>
+(cherry picked from commit 73b511503aef9675e58baadc0639d59c8395bcb4)
+---
+ arch/arm/cpu/armv7/mx7/Makefile             |    8 +
+ arch/arm/cpu/armv7/mx7/clock.c              | 1041 +++++++++++++++++++++++++++
+ arch/arm/cpu/armv7/mx7/clock_slice.c        |  757 +++++++++++++++++++
+ arch/arm/include/asm/arch-mx7/clock.h       |  348 +++++++++
+ arch/arm/include/asm/arch-mx7/clock_slice.h |  116 +++
+ 5 files changed, 2270 insertions(+)
+
+diff --git a/arch/arm/cpu/armv7/mx7/Makefile b/arch/arm/cpu/armv7/mx7/Makefile
+new file mode 100644
+index 0000000..fee1ba5
+--- /dev/null
++++ b/arch/arm/cpu/armv7/mx7/Makefile
+@@ -0,0 +1,8 @@
++#
++# (C) Copyright 2014-2015 Freescale Semiconductor, Inc.
++#
++# SPDX-License-Identifier:	GPL-2.0+
++#
++#
++
++obj-y	:= clock.o clock_slice.o
+diff --git a/arch/arm/cpu/armv7/mx7/clock.c b/arch/arm/cpu/armv7/mx7/clock.c
+new file mode 100644
+index 0000000..00ff806
+--- /dev/null
++++ b/arch/arm/cpu/armv7/mx7/clock.c
+@@ -0,0 +1,1041 @@
++/*
++ * Copyright (C) 2014-2015 Freescale Semiconductor, Inc.
++ *
++ * Author:
++ *	Peng Fan <Peng.Fan@freescale.com>
++ *
++ * SPDX-License-Identifier:	GPL-2.0+
++ */
++
++#include <common.h>
++#include <div64.h>
++#include <asm/io.h>
++#include <asm/errno.h>
++#include <asm/arch/imx-regs.h>
++#include <asm/arch/crm_regs.h>
++#include <asm/arch/clock.h>
++#include <asm/arch/sys_proto.h>
++
++struct mxc_ccm_anatop_reg *ccm_anatop = (struct mxc_ccm_anatop_reg *)
++					 ANATOP_BASE_ADDR;
++struct mxc_ccm_reg *ccm_reg = (struct mxc_ccm_reg *)CCM_BASE_ADDR;
++
++#ifdef CONFIG_FSL_ESDHC
++DECLARE_GLOBAL_DATA_PTR;
++#endif
++
++int get_clocks(void)
++{
++#ifdef CONFIG_FSL_ESDHC
++#if CONFIG_SYS_FSL_ESDHC_ADDR == USDHC2_BASE_ADDR
++	gd->arch.sdhc_clk = mxc_get_clock(MXC_ESDHC2_CLK);
++#elif CONFIG_SYS_FSL_ESDHC_ADDR == USDHC3_BASE_ADDR
++	gd->arch.sdhc_clk = mxc_get_clock(MXC_ESDHC3_CLK);
++#else
++	gd->arch.sdhc_clk = mxc_get_clock(MXC_ESDHC_CLK);
++#endif
++#endif
++	return 0;
++}
++
++u32 get_ahb_clk(void)
++{
++	return get_root_clk(AHB_CLK_ROOT);
++}
++
++static u32 get_ipg_clk(void)
++{
++	/*
++	 * The AHB and IPG are fixed at 2:1 ratio, and synchronized to
++	 * each other.
++	 */
++	return get_ahb_clk() / 2;
++}
++
++u32 imx_get_uartclk(void)
++{
++	return get_root_clk(UART1_CLK_ROOT);
++}
++
++u32 imx_get_fecclk(void)
++{
++	return get_ipg_clk();
++}
++
++#ifdef CONFIG_MXC_OCOTP
++void enable_ocotp_clk(unsigned char enable)
++{
++	clock_enable(CCGR_OCOTP, enable);
++}
++#endif
++
++void enable_usboh3_clk(unsigned char enable)
++{
++	u32 target;
++
++	if (enable) {
++		/* disable the clock gate first */
++		clock_enable(CCGR_USB_HSIC, 0);
++
++		/* 120Mhz */
++		target = CLK_ROOT_ON | USB_HSIC_CLK_ROOT_FROM_PLL_SYS_MAIN_480M_CLK |
++			 CLK_ROOT_PRE_DIV(CLK_ROOT_PRE_DIV1) |
++			 CLK_ROOT_POST_DIV(CLK_ROOT_POST_DIV1);
++		clock_set_target_val(USB_HSIC_CLK_ROOT, target);
++
++		/* enable the clock gate */
++		clock_enable(CCGR_USB_CTRL, 1);
++		clock_enable(CCGR_USB_HSIC, 1);
++		clock_enable(CCGR_USB_PHY1, 1);
++		clock_enable(CCGR_USB_PHY2, 1);
++	} else {
++		clock_enable(CCGR_USB_CTRL, 0);
++		clock_enable(CCGR_USB_HSIC, 0);
++		clock_enable(CCGR_USB_PHY1, 0);
++		clock_enable(CCGR_USB_PHY2, 0);
++	}
++
++}
++
++static u32 decode_pll(enum pll_clocks pll, u32 infreq)
++{
++	u32 reg, div_sel;
++	u32 num, denom;
++
++	/*
++	 * Alought there are four choices for the bypass src,
++	 * we choose OSC_24M which is the default set in ROM.
++	 */
++	switch (pll) {
++	case PLL_CORE:
++		reg = readl(&ccm_anatop->pll_arm);
++
++		if (reg & CCM_ANALOG_PLL_ARM_POWERDOWN_MASK)
++			return 0;
++
++		if (reg & CCM_ANALOG_PLL_ARM_BYPASS_MASK)
++			return MXC_HCLK;
++
++		div_sel = (reg & CCM_ANALOG_PLL_ARM_DIV_SELECT_MASK) >>
++			   CCM_ANALOG_PLL_ARM_DIV_SELECT_SHIFT;
++
++		return (infreq * div_sel) / 2;
++
++	case PLL_SYS:
++		reg = readl(&ccm_anatop->pll_480);
++
++		if (reg & CCM_ANALOG_PLL_480_POWERDOWN_MASK)
++			return 0;
++
++		if (reg & CCM_ANALOG_PLL_480_BYPASS_MASK)
++			return MXC_HCLK;
++
++		if (((reg & CCM_ANALOG_PLL_480_DIV_SELECT_MASK) >>
++			CCM_ANALOG_PLL_480_DIV_SELECT_SHIFT) == 0)
++			return 480000000u;
++		else
++			return 528000000u;
++
++	case PLL_ENET:
++		reg = readl(&ccm_anatop->pll_enet);
++
++		if (reg & CCM_ANALOG_PLL_ENET_POWERDOWN_MASK)
++			return 0;
++
++		if (reg & CCM_ANALOG_PLL_ENET_BYPASS_MASK)
++			return MXC_HCLK;
++
++		return 1000000000u;
++
++	case PLL_DDR:
++		reg = readl(&ccm_anatop->pll_ddr);
++
++		if (reg & CCM_ANALOG_PLL_DDR_POWERDOWN_MASK)
++			return 0;
++
++		num = ccm_anatop->pll_ddr_num;
++		denom = ccm_anatop->pll_ddr_denom;
++
++		if (reg & CCM_ANALOG_PLL_DDR_BYPASS_MASK)
++			return MXC_HCLK;
++
++		div_sel = (reg & CCM_ANALOG_PLL_DDR_DIV_SELECT_MASK) >>
++			   CCM_ANALOG_PLL_DDR_DIV_SELECT_SHIFT;
++
++		return infreq * (div_sel + num / denom);
++
++	case PLL_USB:
++		return 480000000u;
++
++	default:
++		printf("Unsupported pll clocks %d\n", pll);
++		break;
++	}
++
++	return 0;
++}
++
++static u32 mxc_get_pll_sys_derive(int derive)
++{
++	u32 freq, div, frac;
++	u32 reg;
++
++	div = 1;
++	reg = readl(&ccm_anatop->pll_480);
++	freq = decode_pll(PLL_SYS, MXC_HCLK);
++
++	switch (derive) {
++	case PLL_SYS_MAIN_480M_CLK:
++		if (reg & CCM_ANALOG_PLL_480_MAIN_DIV1_CLKGATE_MASK)
++			return 0;
++		else
++			return freq;
++	case PLL_SYS_MAIN_240M_CLK:
++		if (reg & CCM_ANALOG_PLL_480_MAIN_DIV2_CLKGATE_MASK)
++			return 0;
++		else
++			return freq / 2;
++	case PLL_SYS_MAIN_120M_CLK:
++		if (reg & CCM_ANALOG_PLL_480_MAIN_DIV4_CLKGATE_MASK)
++			return 0;
++		else
++			return freq / 4;
++	case PLL_SYS_PFD0_392M_CLK:
++		reg = readl(&ccm_anatop->pfd_480a);
++		if (reg & CCM_ANALOG_PFD_480A_PFD0_DIV1_CLKGATE_MASK)
++			return 0;
++		frac = (reg & CCM_ANALOG_PFD_480A_PFD0_FRAC_MASK) >>
++			CCM_ANALOG_PFD_480A_PFD0_FRAC_SHIFT;
++		break;
++	case PLL_SYS_PFD0_196M_CLK:
++		if (reg & CCM_ANALOG_PLL_480_PFD0_DIV2_CLKGATE_MASK)
++			return 0;
++		reg = readl(&ccm_anatop->pfd_480a);
++		frac = (reg & CCM_ANALOG_PFD_480A_PFD0_FRAC_MASK) >>
++			CCM_ANALOG_PFD_480A_PFD0_FRAC_SHIFT;
++		div = 2;
++		break;
++	case PLL_SYS_PFD1_332M_CLK:
++		reg = readl(&ccm_anatop->pfd_480a);
++		if (reg & CCM_ANALOG_PFD_480A_PFD1_DIV1_CLKGATE_MASK)
++			return 0;
++		frac = (reg & CCM_ANALOG_PFD_480A_PFD1_FRAC_MASK) >>
++			CCM_ANALOG_PFD_480A_PFD1_FRAC_SHIFT;
++		break;
++	case PLL_SYS_PFD1_166M_CLK:
++		if (reg & CCM_ANALOG_PLL_480_PFD1_DIV2_CLKGATE_MASK)
++			return 0;
++		reg = readl(&ccm_anatop->pfd_480a);
++		frac = (reg & CCM_ANALOG_PFD_480A_PFD1_FRAC_MASK) >>
++			CCM_ANALOG_PFD_480A_PFD1_FRAC_SHIFT;
++		div = 2;
++		break;
++	case PLL_SYS_PFD2_270M_CLK:
++		reg = readl(&ccm_anatop->pfd_480a);
++		if (reg & CCM_ANALOG_PFD_480A_PFD2_DIV1_CLKGATE_MASK)
++			return 0;
++		frac = (reg & CCM_ANALOG_PFD_480A_PFD2_FRAC_MASK) >>
++			CCM_ANALOG_PFD_480A_PFD2_FRAC_SHIFT;
++		break;
++	case PLL_SYS_PFD2_135M_CLK:
++		if (reg & CCM_ANALOG_PLL_480_PFD2_DIV2_CLKGATE_MASK)
++			return 0;
++		reg = readl(&ccm_anatop->pfd_480a);
++		frac = (reg & CCM_ANALOG_PFD_480A_PFD2_FRAC_MASK) >>
++			CCM_ANALOG_PFD_480A_PFD2_FRAC_SHIFT;
++		div = 2;
++		break;
++	case PLL_SYS_PFD3_CLK:
++		reg = readl(&ccm_anatop->pfd_480a);
++		if (reg & CCM_ANALOG_PFD_480A_PFD3_DIV1_CLKGATE_MASK)
++			return 0;
++		frac = (reg & CCM_ANALOG_PFD_480A_PFD3_FRAC_MASK) >>
++			CCM_ANALOG_PFD_480A_PFD3_FRAC_SHIFT;
++		break;
++	case PLL_SYS_PFD4_CLK:
++		reg = readl(&ccm_anatop->pfd_480b);
++		if (reg & CCM_ANALOG_PFD_480B_PFD4_DIV1_CLKGATE_MASK)
++			return 0;
++		frac = (reg & CCM_ANALOG_PFD_480B_PFD4_FRAC_MASK) >>
++			CCM_ANALOG_PFD_480B_PFD4_FRAC_SHIFT;
++		break;
++	case PLL_SYS_PFD5_CLK:
++		reg = readl(&ccm_anatop->pfd_480b);
++		if (reg & CCM_ANALOG_PFD_480B_PFD5_DIV1_CLKGATE_MASK)
++			return 0;
++		frac = (reg & CCM_ANALOG_PFD_480B_PFD5_FRAC_MASK) >>
++			CCM_ANALOG_PFD_480B_PFD5_FRAC_SHIFT;
++		break;
++	case PLL_SYS_PFD6_CLK:
++		reg = readl(&ccm_anatop->pfd_480b);
++		if (reg & CCM_ANALOG_PFD_480B_PFD6_DIV1_CLKGATE_MASK)
++			return 0;
++		frac = (reg & CCM_ANALOG_PFD_480B_PFD6_FRAC_MASK) >>
++			CCM_ANALOG_PFD_480B_PFD6_FRAC_SHIFT;
++		break;
++	case PLL_SYS_PFD7_CLK:
++		reg = readl(&ccm_anatop->pfd_480b);
++		if (reg & CCM_ANALOG_PFD_480B_PFD7_DIV1_CLKGATE_MASK)
++			return 0;
++		frac = (reg & CCM_ANALOG_PFD_480B_PFD7_FRAC_MASK) >>
++			CCM_ANALOG_PFD_480B_PFD7_FRAC_SHIFT;
++		break;
++	default:
++		printf("Error derived pll_sys clock %d\n", derive);
++		return 0;
++	}
++
++	return ((freq / frac) * 18) / div;
++}
++
++static u32 mxc_get_pll_enet_derive(int derive)
++{
++	u32 freq, reg;
++
++	freq = decode_pll(PLL_ENET, MXC_HCLK);
++	reg = readl(&ccm_anatop->pll_enet);
++
++	switch (derive) {
++	case PLL_ENET_MAIN_500M_CLK:
++		if (reg & CCM_ANALOG_PLL_ENET_ENABLE_CLK_500MHZ_MASK)
++			return freq / 2;
++		break;
++	case PLL_ENET_MAIN_250M_CLK:
++		if (reg & CCM_ANALOG_PLL_ENET_ENABLE_CLK_250MHZ_MASK)
++			return freq / 4;
++		break;
++	case PLL_ENET_MAIN_125M_CLK:
++		if (reg & CCM_ANALOG_PLL_ENET_ENABLE_CLK_125MHZ_MASK)
++			return freq / 8;
++		break;
++	case PLL_ENET_MAIN_100M_CLK:
++		if (reg & CCM_ANALOG_PLL_ENET_ENABLE_CLK_100MHZ_MASK)
++			return freq / 16;
++		break;
++	case PLL_ENET_MAIN_50M_CLK:
++		if (reg & CCM_ANALOG_PLL_ENET_ENABLE_CLK_50MHZ_MASK)
++			return freq / 20;
++		break;
++	case PLL_ENET_MAIN_40M_CLK:
++		if (reg & CCM_ANALOG_PLL_ENET_ENABLE_CLK_40MHZ_MASK)
++			return freq / 25;
++		break;
++	case PLL_ENET_MAIN_25M_CLK:
++		if (reg & CCM_ANALOG_PLL_ENET_ENABLE_CLK_25MHZ_MASK)
++			return freq / 40;
++		break;
++	default:
++		printf("Error derived pll_enet clock %d\n", derive);
++		break;
++	}
++
++	return 0;
++}
++
++static u32 mxc_get_pll_ddr_derive(int derive)
++{
++	u32 freq, reg;
++
++	freq = decode_pll(PLL_DDR, MXC_HCLK);
++	reg = readl(&ccm_anatop->pll_ddr);
++
++	switch (derive) {
++	case PLL_DRAM_MAIN_1066M_CLK:
++		return freq;
++	case PLL_DRAM_MAIN_533M_CLK:
++		if (reg & CCM_ANALOG_PLL_DDR_DIV2_ENABLE_CLK_MASK)
++			return freq / 2;
++		break;
++	default:
++		printf("Error derived pll_ddr clock %d\n", derive);
++		break;
++	}
++
++	return 0;
++}
++
++static u32 mxc_get_pll_derive(enum pll_clocks pll, int derive)
++{
++	switch (pll) {
++	case PLL_SYS:
++		return mxc_get_pll_sys_derive(derive);
++	case PLL_ENET:
++		return mxc_get_pll_enet_derive(derive);
++	case PLL_DDR:
++		return mxc_get_pll_ddr_derive(derive);
++	default:
++		printf("Error pll.\n");
++		return 0;
++	}
++}
++
++static u32 get_root_src_clk(enum clk_root_src root_src)
++{
++	switch (root_src) {
++	case OSC_24M_CLK:
++		return 24000000u;
++	case PLL_ARM_MAIN_800M_CLK:
++		return decode_pll(PLL_CORE, MXC_HCLK);
++
++	case PLL_SYS_MAIN_480M_CLK:
++	case PLL_SYS_MAIN_240M_CLK:
++	case PLL_SYS_MAIN_120M_CLK:
++	case PLL_SYS_PFD0_392M_CLK:
++	case PLL_SYS_PFD0_196M_CLK:
++	case PLL_SYS_PFD1_332M_CLK:
++	case PLL_SYS_PFD1_166M_CLK:
++	case PLL_SYS_PFD2_270M_CLK:
++	case PLL_SYS_PFD2_135M_CLK:
++	case PLL_SYS_PFD3_CLK:
++	case PLL_SYS_PFD4_CLK:
++	case PLL_SYS_PFD5_CLK:
++	case PLL_SYS_PFD6_CLK:
++	case PLL_SYS_PFD7_CLK:
++		return mxc_get_pll_derive(PLL_SYS, root_src);
++
++	case PLL_ENET_MAIN_500M_CLK:
++	case PLL_ENET_MAIN_250M_CLK:
++	case PLL_ENET_MAIN_125M_CLK:
++	case PLL_ENET_MAIN_100M_CLK:
++	case PLL_ENET_MAIN_50M_CLK:
++	case PLL_ENET_MAIN_40M_CLK:
++	case PLL_ENET_MAIN_25M_CLK:
++		return mxc_get_pll_derive(PLL_ENET, root_src);
++
++	case PLL_DRAM_MAIN_1066M_CLK:
++	case PLL_DRAM_MAIN_533M_CLK:
++		return mxc_get_pll_derive(PLL_DDR, root_src);
++
++	case PLL_AUDIO_MAIN_CLK:
++		return decode_pll(PLL_AUDIO, MXC_HCLK);
++	case PLL_VIDEO_MAIN_CLK:
++		return decode_pll(PLL_VIDEO, MXC_HCLK);
++
++	case PLL_USB_MAIN_480M_CLK:
++		return decode_pll(PLL_USB, MXC_HCLK);
++
++	case REF_1M_CLK:
++		return 1000000;
++	case OSC_32K_CLK:
++		return MXC_CLK32;
++
++	case EXT_CLK_1:
++	case EXT_CLK_2:
++	case EXT_CLK_3:
++	case EXT_CLK_4:
++		printf("No EXT CLK supported??\n");
++		break;
++	};
++
++	return 0;
++}
++
++u32 get_root_clk(enum clk_root_index clock_id)
++{
++	enum clk_root_src root_src;
++	u32 post_podf, pre_podf, auto_podf, root_src_clk;
++	int auto_en;
++
++	if (clock_root_enabled(clock_id) <= 0)
++		return 0;
++
++	if (clock_get_prediv(clock_id, &pre_podf) < 0)
++		return 0;
++
++	if (clock_get_postdiv(clock_id, &post_podf) < 0)
++		return 0;
++
++	if (clock_get_autopostdiv(clock_id, &auto_podf, &auto_en) < 0)
++		return 0;
++
++	if (auto_en == 0)
++		auto_podf = 0;
++
++	if (clock_get_src(clock_id, &root_src) < 0)
++		return 0;
++
++	root_src_clk = get_root_src_clk(root_src);
++
++	/*
++	 * bypass clk is ignored.
++	 */
++
++	return root_src_clk / (post_podf + 1) / (pre_podf + 1) /
++		(auto_podf + 1);
++}
++
++static u32 get_ddrc_clk(void)
++{
++	u32 reg, freq;
++	enum root_post_div post_div;
++
++	reg = readl(&ccm_reg->root[DRAM_CLK_ROOT].target_root);
++	if (reg & CLK_ROOT_MUX_MASK)
++		/* DRAM_ALT_CLK_ROOT */
++		freq = get_root_clk(DRAM_ALT_CLK_ROOT);
++	else
++		/* PLL_DRAM_MAIN_1066M_CLK */
++		freq = mxc_get_pll_derive(PLL_DDR, PLL_DRAM_MAIN_1066M_CLK);
++
++	post_div = reg & DRAM_CLK_ROOT_POST_DIV_MASK;
++
++	return freq / (post_div + 1) / 2;
++}
++
++unsigned int mxc_get_clock(enum mxc_clock clk)
++{
++	switch (clk) {
++	case MXC_ARM_CLK:
++		return get_root_clk(ARM_A7_CLK_ROOT);
++	case MXC_AXI_CLK:
++		return get_root_clk(MAIN_AXI_CLK_ROOT);
++	case MXC_AHB_CLK:
++		return get_root_clk(AHB_CLK_ROOT);
++	case MXC_IPG_CLK:
++		return get_ipg_clk();
++	case MXC_I2C_CLK:
++		return get_root_clk(I2C1_CLK_ROOT);
++	case MXC_UART_CLK:
++		return get_root_clk(UART1_CLK_ROOT);
++	case MXC_CSPI_CLK:
++		return get_root_clk(ECSPI1_CLK_ROOT);
++	case MXC_DDR_CLK:
++		return get_ddrc_clk();
++	case MXC_ESDHC_CLK:
++		return get_root_clk(USDHC1_CLK_ROOT);
++	case MXC_ESDHC2_CLK:
++		return get_root_clk(USDHC2_CLK_ROOT);
++	case MXC_ESDHC3_CLK:
++		return get_root_clk(USDHC3_CLK_ROOT);
++	default:
++		printf("Unsupported mxc_clock %d\n", clk);
++		break;
++	}
++
++	return 0;
++}
++
++#ifdef CONFIG_SYS_I2C_MXC
++/* i2c_num can be 0 - 3 */
++int enable_i2c_clk(bool enable, unsigned int i2c_num)
++{
++	u32 target;
++
++	if (i2c_num >= 4)
++		return -EINVAL;
++
++	if (enable) {
++		clock_enable(CCGR_I2C1 + i2c_num, 0);
++
++		/* Set i2c root clock to PLL_SYS_MAIN_120M_CLK */
++
++		target = CLK_ROOT_ON | I2C1_CLK_ROOT_FROM_PLL_SYS_MAIN_120M_CLK |
++			 CLK_ROOT_PRE_DIV(CLK_ROOT_PRE_DIV1) |
++			 CLK_ROOT_POST_DIV(CLK_ROOT_POST_DIV2);
++		clock_set_target_val(I2C1_CLK_ROOT + i2c_num, target);
++
++		clock_enable(CCGR_I2C1 + i2c_num, 1);
++	} else {
++		clock_enable(CCGR_I2C1 + i2c_num, 0);
++	}
++
++	return 0;
++}
++#endif
++
++static void init_clk_esdhc(void)
++{
++	u32 target;
++
++	/* disable the clock gate first */
++	clock_enable(CCGR_USDHC1, 0);
++	clock_enable(CCGR_USDHC2, 0);
++	clock_enable(CCGR_USDHC3, 0);
++
++	/* 196: 392/2 */
++	target = CLK_ROOT_ON | USDHC1_CLK_ROOT_FROM_PLL_SYS_PFD0_392M_CLK |
++		 CLK_ROOT_PRE_DIV(CLK_ROOT_PRE_DIV1) |
++		 CLK_ROOT_POST_DIV(CLK_ROOT_POST_DIV2);
++	clock_set_target_val(USDHC1_CLK_ROOT, target);
++
++	target = CLK_ROOT_ON | USDHC1_CLK_ROOT_FROM_PLL_SYS_PFD0_392M_CLK |
++		 CLK_ROOT_PRE_DIV(CLK_ROOT_PRE_DIV1) |
++		 CLK_ROOT_POST_DIV(CLK_ROOT_POST_DIV2);
++	clock_set_target_val(USDHC2_CLK_ROOT, target);
++
++	target = CLK_ROOT_ON | USDHC1_CLK_ROOT_FROM_PLL_SYS_PFD0_392M_CLK |
++		 CLK_ROOT_PRE_DIV(CLK_ROOT_PRE_DIV1) |
++		 CLK_ROOT_POST_DIV(CLK_ROOT_POST_DIV2);
++	clock_set_target_val(USDHC3_CLK_ROOT, target);
++
++	/* enable the clock gate */
++	clock_enable(CCGR_USDHC1, 1);
++	clock_enable(CCGR_USDHC2, 1);
++	clock_enable(CCGR_USDHC3, 1);
++
++}
++
++static void init_clk_uart(void)
++{
++	u32 target;
++
++	/* disable the clock gate first */
++	clock_enable(CCGR_UART1, 0);
++	clock_enable(CCGR_UART2, 0);
++	clock_enable(CCGR_UART3, 0);
++	clock_enable(CCGR_UART4, 0);
++	clock_enable(CCGR_UART5, 0);
++	clock_enable(CCGR_UART6, 0);
++	clock_enable(CCGR_UART7, 0);
++
++	/* 24Mhz */
++	target = CLK_ROOT_ON | UART1_CLK_ROOT_FROM_OSC_24M_CLK |
++		 CLK_ROOT_PRE_DIV(CLK_ROOT_PRE_DIV1) |
++		 CLK_ROOT_POST_DIV(CLK_ROOT_POST_DIV1);
++	clock_set_target_val(UART1_CLK_ROOT, target);
++
++	target = CLK_ROOT_ON | UART2_CLK_ROOT_FROM_OSC_24M_CLK |
++		 CLK_ROOT_PRE_DIV(CLK_ROOT_PRE_DIV1) |
++		 CLK_ROOT_POST_DIV(CLK_ROOT_POST_DIV1);
++	clock_set_target_val(UART2_CLK_ROOT, target);
++
++	target = CLK_ROOT_ON | UART3_CLK_ROOT_FROM_OSC_24M_CLK |
++		 CLK_ROOT_PRE_DIV(CLK_ROOT_PRE_DIV1) |
++		 CLK_ROOT_POST_DIV(CLK_ROOT_POST_DIV1);
++	clock_set_target_val(UART3_CLK_ROOT, target);
++
++	target = CLK_ROOT_ON | UART4_CLK_ROOT_FROM_OSC_24M_CLK |
++		 CLK_ROOT_PRE_DIV(CLK_ROOT_PRE_DIV1) |
++		 CLK_ROOT_POST_DIV(CLK_ROOT_POST_DIV1);
++	clock_set_target_val(UART4_CLK_ROOT, target);
++
++	target = CLK_ROOT_ON | UART5_CLK_ROOT_FROM_OSC_24M_CLK |
++		 CLK_ROOT_PRE_DIV(CLK_ROOT_PRE_DIV1) |
++		 CLK_ROOT_POST_DIV(CLK_ROOT_POST_DIV1);
++	clock_set_target_val(UART5_CLK_ROOT, target);
++
++	target = CLK_ROOT_ON | UART6_CLK_ROOT_FROM_OSC_24M_CLK |
++		 CLK_ROOT_PRE_DIV(CLK_ROOT_PRE_DIV1) |
++		 CLK_ROOT_POST_DIV(CLK_ROOT_POST_DIV1);
++	clock_set_target_val(UART6_CLK_ROOT, target);
++
++	target = CLK_ROOT_ON | UART7_CLK_ROOT_FROM_OSC_24M_CLK |
++		 CLK_ROOT_PRE_DIV(CLK_ROOT_PRE_DIV1) |
++		 CLK_ROOT_POST_DIV(CLK_ROOT_POST_DIV1);
++	clock_set_target_val(UART7_CLK_ROOT, target);
++
++	/* enable the clock gate */
++	clock_enable(CCGR_UART1, 1);
++	clock_enable(CCGR_UART2, 1);
++	clock_enable(CCGR_UART3, 1);
++	clock_enable(CCGR_UART4, 1);
++	clock_enable(CCGR_UART5, 1);
++	clock_enable(CCGR_UART6, 1);
++	clock_enable(CCGR_UART7, 1);
++
++}
++
++static void init_clk_weim(void)
++{
++	u32 target;
++
++	/* disable the clock gate first */
++	clock_enable(CCGR_WEIM, 0);
++
++	/* 120Mhz */
++	target = CLK_ROOT_ON | EIM_CLK_ROOT_FROM_PLL_SYS_MAIN_120M_CLK |
++		 CLK_ROOT_PRE_DIV(CLK_ROOT_PRE_DIV1) |
++		 CLK_ROOT_POST_DIV(CLK_ROOT_POST_DIV1);
++	clock_set_target_val(EIM_CLK_ROOT, target);
++
++	/* enable the clock gate */
++	clock_enable(CCGR_WEIM, 1);
++}
++
++static void init_clk_ecspi(void)
++{
++	u32 target;
++
++	/* disable the clock gate first */
++	clock_enable(CCGR_ECSPI1, 0);
++	clock_enable(CCGR_ECSPI2, 0);
++	clock_enable(CCGR_ECSPI3, 0);
++	clock_enable(CCGR_ECSPI4, 0);
++
++	/* 60Mhz: 240/4 */
++	target = CLK_ROOT_ON | ECSPI1_CLK_ROOT_FROM_PLL_SYS_MAIN_240M_CLK |
++		 CLK_ROOT_PRE_DIV(CLK_ROOT_PRE_DIV1) |
++		 CLK_ROOT_POST_DIV(CLK_ROOT_POST_DIV4);
++	clock_set_target_val(ECSPI1_CLK_ROOT, target);
++
++	target = CLK_ROOT_ON | ECSPI2_CLK_ROOT_FROM_PLL_SYS_MAIN_240M_CLK |
++		 CLK_ROOT_PRE_DIV(CLK_ROOT_PRE_DIV1) |
++		 CLK_ROOT_POST_DIV(CLK_ROOT_POST_DIV4);
++	clock_set_target_val(ECSPI2_CLK_ROOT, target);
++
++	target = CLK_ROOT_ON | ECSPI3_CLK_ROOT_FROM_PLL_SYS_MAIN_240M_CLK |
++		 CLK_ROOT_PRE_DIV(CLK_ROOT_PRE_DIV1) |
++		 CLK_ROOT_POST_DIV(CLK_ROOT_POST_DIV4);
++	clock_set_target_val(ECSPI3_CLK_ROOT, target);
++
++	target = CLK_ROOT_ON | ECSPI4_CLK_ROOT_FROM_PLL_SYS_MAIN_240M_CLK |
++		 CLK_ROOT_PRE_DIV(CLK_ROOT_PRE_DIV1) |
++		 CLK_ROOT_POST_DIV(CLK_ROOT_POST_DIV4);
++	clock_set_target_val(ECSPI4_CLK_ROOT, target);
++
++	/* enable the clock gate */
++	clock_enable(CCGR_ECSPI1, 1);
++	clock_enable(CCGR_ECSPI2, 1);
++	clock_enable(CCGR_ECSPI3, 1);
++	clock_enable(CCGR_ECSPI4, 1);
++}
++
++static void init_clk_wdog(void)
++{
++	u32 target;
++
++	/* disable the clock gate first */
++	clock_enable(CCGR_WDOG1, 0);
++	clock_enable(CCGR_WDOG2, 0);
++	clock_enable(CCGR_WDOG3, 0);
++	clock_enable(CCGR_WDOG4, 0);
++
++	/* 24Mhz */
++	target = CLK_ROOT_ON | WDOG_CLK_ROOT_FROM_OSC_24M_CLK |
++		 CLK_ROOT_PRE_DIV(CLK_ROOT_PRE_DIV1) | CLK_ROOT_POST_DIV(CLK_ROOT_POST_DIV1);
++	clock_set_target_val(WDOG_CLK_ROOT, target);
++
++	/* enable the clock gate */
++	clock_enable(CCGR_WDOG1, 1);
++	clock_enable(CCGR_WDOG2, 2);
++	clock_enable(CCGR_WDOG3, 3);
++	clock_enable(CCGR_WDOG4, 4);
++
++}
++
++static int enable_pll_enet(void)
++{
++	u32 reg;
++	s32 timeout = 100000;
++
++	reg = readl(&ccm_anatop->pll_enet);
++	/* If pll_enet powered up, no need to set it again */
++	if (reg & ANADIG_PLL_ENET_PWDN_MASK) {
++		reg &= ~ANADIG_PLL_ENET_PWDN_MASK;
++		writel(reg, &ccm_anatop->pll_enet);
++
++		while (timeout--) {
++			if (readl(&ccm_anatop->pll_enet) & ANADIG_PLL_LOCK)
++				break;
++		}
++
++		if (timeout <= 0) {
++			/* If timeout, we set pwdn for pll_enet. */
++			reg |= ANADIG_PLL_ENET_PWDN_MASK;
++			return -ETIME;
++		}
++	}
++
++	/* Clear bypass */
++	writel(CCM_ANALOG_PLL_ENET_BYPASS_MASK, &ccm_anatop->pll_enet_clr);
++
++	writel((CCM_ANALOG_PLL_ENET_ENABLE_CLK_500MHZ_MASK
++		| CCM_ANALOG_PLL_ENET_ENABLE_CLK_250MHZ_MASK
++		| CCM_ANALOG_PLL_ENET_ENABLE_CLK_125MHZ_MASK
++		| CCM_ANALOG_PLL_ENET_ENABLE_CLK_100MHZ_MASK
++		| CCM_ANALOG_PLL_ENET_ENABLE_CLK_50MHZ_MASK
++		| CCM_ANALOG_PLL_ENET_ENABLE_CLK_40MHZ_MASK
++		| CCM_ANALOG_PLL_ENET_ENABLE_CLK_25MHZ_MASK),
++	       &ccm_anatop->pll_enet_set);
++
++	return 0;
++}
++static int enable_pll_video(u32 pll_div, u32 pll_num, u32 pll_denom)
++{
++	u32 reg = 0;
++	ulong start;
++
++	debug("pll5 div = %d, num = %d, denom = %d\n",
++		pll_div, pll_num, pll_denom);
++
++	/* Power up PLL5 video and disable its output */
++	writel(CCM_ANALOG_PLL_VIDEO_CLR_ENABLE_CLK_MASK |
++		CCM_ANALOG_PLL_VIDEO_CLR_POWERDOWN_MASK |
++		CCM_ANALOG_PLL_VIDEO_CLR_BYPASS_MASK |
++		CCM_ANALOG_PLL_VIDEO_CLR_DIV_SELECT_MASK |
++		CCM_ANALOG_PLL_VIDEO_CLR_POST_DIV_SEL_MASK |
++		CCM_ANALOG_PLL_VIDEO_CLR_TEST_DIV_SELECT_MASK,
++		&ccm_anatop->pll_video_clr);
++
++	/* Set div, num and denom */
++	writel(CCM_ANALOG_PLL_VIDEO_SET_DIV_SELECT(pll_div) |
++		CCM_ANALOG_PLL_VIDEO_SET_TEST_DIV_SELECT(0x2) |
++		CCM_ANALOG_PLL_VIDEO_SET_POST_DIV_SEL(0x0),
++		&ccm_anatop->pll_video_set);
++
++	writel(CCM_ANALOG_PLL_VIDEO_NUM_A(pll_num),
++		&ccm_anatop->pll_video_num);
++
++	writel(CCM_ANALOG_PLL_VIDEO_DENOM_B(pll_denom),
++		&ccm_anatop->pll_video_denom);
++
++	/* Wait PLL5 lock */
++	start = get_timer(0);	/* Get current timestamp */
++
++	do {
++		reg = readl(&ccm_anatop->pll_video);
++		if (reg & CCM_ANALOG_PLL_VIDEO_LOCK_MASK) {
++			/* Enable PLL out */
++			writel(CCM_ANALOG_PLL_VIDEO_CLR_ENABLE_CLK_MASK,
++					&ccm_anatop->pll_video_set);
++			return 0;
++		}
++	} while (get_timer(0) < (start + 10)); /* Wait 10ms */
++
++	printf("Lock PLL5 timeout\n");
++
++	return 1;
++
++}
++
++int set_clk_qspi(void)
++{
++	u32 target;
++
++	/* disable the clock gate first */
++	clock_enable(CCGR_QSPI, 0);
++
++	/* 49M: 392/2/4 */
++	target = CLK_ROOT_ON | QSPI_CLK_ROOT_FROM_PLL_SYS_PFD4_CLK |
++		 CLK_ROOT_PRE_DIV(CLK_ROOT_PRE_DIV1) |
++		 CLK_ROOT_POST_DIV(CLK_ROOT_POST_DIV2);
++	clock_set_target_val(QSPI_CLK_ROOT, target);
++
++	/* enable the clock gate */
++	clock_enable(CCGR_QSPI, 1);
++
++	return 0;
++}
++
++int set_clk_nand(void)
++{
++	u32 target;
++
++	/* disable the clock gate first */
++	clock_enable(CCGR_RAWNAND, 0);
++
++	enable_pll_enet();
++	/* 100: 500/5 */
++	target = CLK_ROOT_ON | NAND_CLK_ROOT_FROM_PLL_ENET_MAIN_500M_CLK |
++		 CLK_ROOT_PRE_DIV(CLK_ROOT_PRE_DIV1) |
++		 CLK_ROOT_POST_DIV(CLK_ROOT_POST_DIV5);
++	clock_set_target_val(NAND_CLK_ROOT, target);
++
++	/* enable the clock gate */
++	clock_enable(CCGR_RAWNAND, 1);
++
++	return 0;
++}
++
++void mxs_set_lcdclk(uint32_t base_addr, uint32_t freq)
++{
++	u32 hck = MXC_HCLK/1000;
++	u32 min = hck * 27;
++	u32 max = hck * 54;
++	u32 temp, best = 0;
++	u32 i, j, pred = 1, postd = 1;
++	u32 pll_div, pll_num, pll_denom;
++	u32 target;
++
++	debug("mxs_set_lcdclk, freq = %d\n", freq);
++
++	clock_enable(CCGR_LCDIF, 0);
++
++	for (i = 1; i <= 8; i++) {
++		for (j = 1; j <= 8; j++) {
++			temp = freq * i * j;
++			if (temp > max || temp < min)
++				continue;
++
++			if (best == 0 || temp < best) {
++				best = temp;
++				pred = i;
++				postd = j;
++			}
++		}
++	}
++
++	if (best == 0) {
++		printf("Fail to set rate to %dkhz", freq);
++		return;
++	}
++
++	debug("best %d, pred = %d, postd = %d\n", best, pred, postd);
++
++	pll_div = best / hck;
++	pll_denom = 1000000;
++	pll_num = (best - hck * pll_div) * pll_denom / hck;
++
++	if (enable_pll_video(pll_div, pll_num, pll_denom))
++		return;
++
++	target = CLK_ROOT_ON | LCDIF_PIXEL_CLK_ROOT_FROM_PLL_VIDEO_MAIN_CLK |
++		 CLK_ROOT_PRE_DIV((pred - 1)) | CLK_ROOT_POST_DIV((postd - 1));
++	clock_set_target_val(LCDIF_PIXEL_CLK_ROOT, target);
++
++	clock_enable(CCGR_LCDIF, 1);
++}
++
++#ifdef CONFIG_FEC_MXC
++int set_clk_enet(enum enet_freq type)
++{
++	u32 target;
++	int ret;
++	u32 enet1_ref, enet2_ref;
++
++	/* disable the clock first */
++	clock_enable(CCGR_ENET1, 0);
++	clock_enable(CCGR_ENET2, 0);
++
++	switch (type) {
++	case ENET_125MHz:
++		enet1_ref = ENET1_REF_CLK_ROOT_FROM_PLL_ENET_MAIN_125M_CLK;
++		enet2_ref = ENET2_REF_CLK_ROOT_FROM_PLL_ENET_MAIN_125M_CLK;
++		break;
++	case ENET_50MHz:
++		enet1_ref = ENET1_REF_CLK_ROOT_FROM_PLL_ENET_MAIN_50M_CLK;
++		enet2_ref = ENET2_REF_CLK_ROOT_FROM_PLL_ENET_MAIN_50M_CLK;
++		break;
++	case ENET_25MHz:
++		enet1_ref = ENET1_REF_CLK_ROOT_FROM_PLL_ENET_MAIN_25M_CLK;
++		enet2_ref = ENET2_REF_CLK_ROOT_FROM_PLL_ENET_MAIN_25M_CLK;
++		break;
++	default:
++		return -EINVAL;
++	}
++
++	ret = enable_pll_enet();
++	if (ret != 0)
++		return ret;
++
++	/* set enet axi clock 196M: 392/2 */
++	target = CLK_ROOT_ON | ENET_AXI_CLK_ROOT_FROM_PLL_SYS_PFD4_CLK |
++		 CLK_ROOT_PRE_DIV(CLK_ROOT_PRE_DIV1) |
++		 CLK_ROOT_POST_DIV(CLK_ROOT_POST_DIV2);
++	clock_set_target_val(ENET_AXI_CLK_ROOT, target);
++
++	target = CLK_ROOT_ON | enet1_ref |
++		 CLK_ROOT_PRE_DIV(CLK_ROOT_PRE_DIV1) |
++		 CLK_ROOT_POST_DIV(CLK_ROOT_POST_DIV1);
++	clock_set_target_val(ENET1_REF_CLK_ROOT, target);
++
++	target = CLK_ROOT_ON | ENET1_TIME_CLK_ROOT_FROM_PLL_ENET_MAIN_100M_CLK |
++		 CLK_ROOT_PRE_DIV(CLK_ROOT_PRE_DIV1) |
++		 CLK_ROOT_POST_DIV(CLK_ROOT_POST_DIV4);
++	clock_set_target_val(ENET1_TIME_CLK_ROOT, target);
++
++	target = CLK_ROOT_ON | enet2_ref |
++		 CLK_ROOT_PRE_DIV(CLK_ROOT_PRE_DIV1) |
++		 CLK_ROOT_POST_DIV(CLK_ROOT_POST_DIV1);
++	clock_set_target_val(ENET2_REF_CLK_ROOT, target);
++
++	target = CLK_ROOT_ON | ENET2_TIME_CLK_ROOT_FROM_PLL_ENET_MAIN_100M_CLK |
++		 CLK_ROOT_PRE_DIV(CLK_ROOT_PRE_DIV1) |
++		 CLK_ROOT_POST_DIV(CLK_ROOT_POST_DIV4);
++	clock_set_target_val(ENET2_TIME_CLK_ROOT, target);
++
++#ifdef CONFIG_FEC_MXC_25M_REF_CLK
++	target = CLK_ROOT_ON | ENET_PHY_REF_CLK_ROOT_FROM_PLL_ENET_MAIN_25M_CLK |
++		 CLK_ROOT_PRE_DIV(CLK_ROOT_PRE_DIV1) |
++		 CLK_ROOT_POST_DIV(CLK_ROOT_POST_DIV1);
++	clock_set_target_val(ENET_PHY_REF_CLK_ROOT, target);
++#endif
++	/* enable clock */
++	clock_enable(CCGR_ENET1, 1);
++	clock_enable(CCGR_ENET2, 1);
++
++	return 0;
++}
++#endif
++
++/* Configure PLL/PFD freq */
++void clock_init(void)
++{
++	/*	Rom has enabled PLL_ARM, PLL_DDR, PLL_SYS, PLL_ENET
++	  *   In u-boot, we have to:
++	  *   1. Configure PFD3- PFD7 for freq we needed in u-boot
++	  *   2. Set clock root for peripherals (ip channel) used in u-boot but without set rate
++	  *       interface.  The clocks for these peripherals are enabled after this intialization.
++	  *   3. Other peripherals with set clock rate interface does not be set in this function.
++	  */
++
++	u32 reg;
++
++	/*
++	 * Configure PFD4 to 392M
++	 * 480M * 18 / 0x16 = 392M
++	 */
++	reg = readl(&ccm_anatop->pfd_480b);
++
++	reg &= ~(ANATOP_PFD480B_PFD4_FRAC_MASK |
++		 CCM_ANALOG_PFD_480B_PFD4_DIV1_CLKGATE_MASK);
++	reg |= ANATOP_PFD480B_PFD4_FRAC_392M_VAL;
++
++	writel(reg, &ccm_anatop->pfd_480b);
++
++	init_clk_esdhc();
++	init_clk_uart();
++	init_clk_weim();
++	init_clk_ecspi();
++	init_clk_wdog();
++
++	enable_usboh3_clk(1);
++}
++
++#ifdef CONFIG_SECURE_BOOT
++void hab_caam_clock_enable(void)
++{
++	clock_enable(CCGR_CAAM, 1);
++}
++
++void hab_caam_clock_disable(void)
++{
++	clock_enable(CCGR_CAAM, 0);
++}
++#endif
++
++/*
++ * Dump some core clockes.
++ */
++int do_mx6_showclocks(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
++{
++	u32 freq;
++	freq = decode_pll(PLL_CORE, MXC_HCLK);
++	printf("PLL_CORE    %8d MHz\n", freq / 1000000);
++	freq = decode_pll(PLL_SYS, MXC_HCLK);
++	printf("PLL_SYS    %8d MHz\n", freq / 1000000);
++	freq = decode_pll(PLL_ENET, MXC_HCLK);
++	printf("PLL_NET    %8d MHz\n", freq / 1000000);
++
++	printf("\n");
++
++	printf("IPG        %8d kHz\n", mxc_get_clock(MXC_IPG_CLK) / 1000);
++	printf("UART       %8d kHz\n", mxc_get_clock(MXC_UART_CLK) / 1000);
++#ifdef CONFIG_MXC_SPI
++	printf("CSPI       %8d kHz\n", mxc_get_clock(MXC_CSPI_CLK) / 1000);
++#endif
++	printf("AHB        %8d kHz\n", mxc_get_clock(MXC_AHB_CLK) / 1000);
++	printf("AXI        %8d kHz\n", mxc_get_clock(MXC_AXI_CLK) / 1000);
++	printf("DDR        %8d kHz\n", mxc_get_clock(MXC_DDR_CLK) / 1000);
++	printf("USDHC1     %8d kHz\n", mxc_get_clock(MXC_ESDHC_CLK) / 1000);
++	printf("USDHC2     %8d kHz\n", mxc_get_clock(MXC_ESDHC2_CLK) / 1000);
++	printf("USDHC3     %8d kHz\n", mxc_get_clock(MXC_ESDHC3_CLK) / 1000);
++
++	return 0;
++}
++
++U_BOOT_CMD(
++	clocks,	CONFIG_SYS_MAXARGS, 1, do_mx6_showclocks,
++	"display clocks",
++	""
++);
+diff --git a/arch/arm/cpu/armv7/mx7/clock_slice.c b/arch/arm/cpu/armv7/mx7/clock_slice.c
+new file mode 100644
+index 0000000..ad5d504
+--- /dev/null
++++ b/arch/arm/cpu/armv7/mx7/clock_slice.c
+@@ -0,0 +1,757 @@
++/*
++ * Copyright (C) 2015 Freescale Semiconductor, Inc.
++ *
++ * Author:
++ *	Peng Fan <Peng.Fan@freescale.com>
++ *
++ * SPDX-License-Identifier:	GPL-2.0+
++ */
++
++#include <common.h>
++#include <div64.h>
++#include <asm/io.h>
++#include <asm/errno.h>
++#include <asm/arch/imx-regs.h>
++#include <asm/arch/crm_regs.h>
++#include <asm/arch/clock.h>
++#include <asm/arch/sys_proto.h>
++
++struct mxc_ccm_reg *imx_ccm = (struct mxc_ccm_reg *)CCM_BASE_ADDR;
++
++static struct clk_root_map root_array[] = {
++	{ARM_A7_CLK_ROOT, CCM_CORE_CHANNEL,
++	 {OSC_24M_CLK, PLL_ARM_MAIN_800M_CLK, PLL_ENET_MAIN_500M_CLK,
++	  PLL_DRAM_MAIN_1066M_CLK, PLL_SYS_MAIN_480M_CLK,
++	  PLL_SYS_PFD0_392M_CLK, PLL_AUDIO_MAIN_CLK, PLL_USB_MAIN_480M_CLK}
++	},
++	{ARM_M4_CLK_ROOT, CCM_BUS_CHANNEL,
++	 {OSC_24M_CLK, PLL_SYS_MAIN_240M_CLK, PLL_ENET_MAIN_250M_CLK,
++	  PLL_SYS_PFD2_270M_CLK, PLL_DRAM_MAIN_533M_CLK, PLL_AUDIO_MAIN_CLK,
++	  PLL_VIDEO_MAIN_CLK, PLL_USB_MAIN_480M_CLK}
++	},
++	{ARM_M0_CLK_ROOT, CCM_BUS_CHANNEL,
++	 {OSC_24M_CLK, PLL_SYS_MAIN_120M_CLK, PLL_ENET_MAIN_125M_CLK,
++	  PLL_SYS_PFD2_135M_CLK, PLL_DRAM_MAIN_533M_CLK, PLL_AUDIO_MAIN_CLK,
++	  PLL_VIDEO_MAIN_CLK, PLL_USB_MAIN_480M_CLK}
++	},
++	{MAIN_AXI_CLK_ROOT, CCM_BUS_CHANNEL,
++	 {OSC_24M_CLK, PLL_SYS_PFD1_332M_CLK, PLL_DRAM_MAIN_533M_CLK,
++	  PLL_ENET_MAIN_250M_CLK, PLL_SYS_PFD5_CLK, PLL_AUDIO_MAIN_CLK,
++	  PLL_VIDEO_MAIN_CLK, PLL_SYS_PFD7_CLK}
++	},
++	{DISP_AXI_CLK_ROOT, CCM_BUS_CHANNEL,
++	 {OSC_24M_CLK, PLL_SYS_PFD1_332M_CLK, PLL_DRAM_MAIN_533M_CLK,
++	  PLL_ENET_MAIN_250M_CLK, PLL_SYS_PFD6_CLK, PLL_SYS_PFD7_CLK,
++	  PLL_AUDIO_MAIN_CLK, PLL_VIDEO_MAIN_CLK}
++	},
++	{ENET_AXI_CLK_ROOT, CCM_IP_CHANNEL,
++	 {OSC_24M_CLK, PLL_SYS_PFD2_270M_CLK, PLL_DRAM_MAIN_533M_CLK,
++	  PLL_ENET_MAIN_250M_CLK, PLL_SYS_MAIN_240M_CLK, PLL_AUDIO_MAIN_CLK,
++	  PLL_VIDEO_MAIN_CLK, PLL_SYS_PFD4_CLK}
++	},
++	{NAND_USDHC_BUS_CLK_ROOT, CCM_IP_CHANNEL,
++	 {OSC_24M_CLK, PLL_SYS_PFD2_270M_CLK, PLL_DRAM_MAIN_533M_CLK,
++	  PLL_SYS_MAIN_240M_CLK, PLL_SYS_PFD2_135M_CLK, PLL_SYS_PFD6_CLK,
++	  PLL_ENET_MAIN_250M_CLK, PLL_AUDIO_MAIN_CLK}
++	},
++	{AHB_CLK_ROOT, CCM_AHB_CHANNEL,
++	 {OSC_24M_CLK, PLL_SYS_PFD2_135M_CLK, PLL_DRAM_MAIN_533M_CLK,
++	  PLL_SYS_PFD0_392M_CLK, PLL_ENET_MAIN_125M_CLK, PLL_USB_MAIN_480M_CLK,
++	  PLL_AUDIO_MAIN_CLK, PLL_VIDEO_MAIN_CLK}
++	},
++	{DRAM_PHYM_CLK_ROOT, CCM_DRAM_PHYM_CHANNEL,
++	 {PLL_DRAM_MAIN_1066M_CLK, DRAM_PHYM_ALT_CLK_ROOT}
++	},
++	{DRAM_CLK_ROOT, CCM_DRAM_CHANNEL,
++	 {PLL_DRAM_MAIN_1066M_CLK, DRAM_ALT_CLK_ROOT}
++	},
++	{DRAM_PHYM_ALT_CLK_ROOT, CCM_IP_CHANNEL,
++	 {OSC_24M_CLK, PLL_DRAM_MAIN_533M_CLK, PLL_SYS_MAIN_480M_CLK,
++	  PLL_ENET_MAIN_500M_CLK, PLL_USB_MAIN_480M_CLK, PLL_SYS_PFD7_CLK,
++	  PLL_AUDIO_MAIN_CLK, PLL_VIDEO_MAIN_CLK}
++	},
++	{DRAM_ALT_CLK_ROOT, CCM_IP_CHANNEL,
++	 {OSC_24M_CLK, PLL_DRAM_MAIN_533M_CLK, PLL_SYS_MAIN_480M_CLK,
++	  PLL_ENET_MAIN_500M_CLK, PLL_ENET_MAIN_250M_CLK,
++	  PLL_SYS_PFD0_392M_CLK, PLL_AUDIO_MAIN_CLK, PLL_SYS_PFD2_270M_CLK}
++	},
++	{USB_HSIC_CLK_ROOT, CCM_IP_CHANNEL,
++	 {OSC_24M_CLK, PLL_SYS_MAIN_480M_CLK, PLL_USB_MAIN_480M_CLK,
++	  PLL_SYS_PFD3_CLK, PLL_SYS_PFD4_CLK, PLL_SYS_PFD5_CLK,
++	  PLL_SYS_PFD6_CLK, PLL_SYS_PFD7_CLK}
++	},
++	{PCIE_CTRL_CLK_ROOT, CCM_IP_CHANNEL,
++	 {OSC_24M_CLK, PLL_ENET_MAIN_250M_CLK, PLL_SYS_MAIN_240M_CLK,
++	  PLL_SYS_PFD2_270M_CLK, PLL_DRAM_MAIN_533M_CLK,
++	  PLL_ENET_MAIN_500M_CLK, PLL_SYS_PFD1_332M_CLK, PLL_SYS_PFD6_CLK}
++	},
++	{PCIE_PHY_CLK_ROOT, CCM_IP_CHANNEL,
++	 {OSC_24M_CLK, PLL_ENET_MAIN_100M_CLK, PLL_ENET_MAIN_500M_CLK,
++	  EXT_CLK_1, EXT_CLK_2, EXT_CLK_3,
++	  EXT_CLK_4, PLL_SYS_PFD0_392M_CLK}
++	},
++	{EPDC_PIXEL_CLK_ROOT, CCM_IP_CHANNEL,
++	 {OSC_24M_CLK, PLL_SYS_PFD1_332M_CLK, PLL_DRAM_MAIN_533M_CLK,
++	  PLL_SYS_MAIN_480M_CLK, PLL_SYS_PFD5_CLK, PLL_SYS_PFD6_CLK,
++	  PLL_SYS_PFD7_CLK, PLL_VIDEO_MAIN_CLK}
++	},
++	{LCDIF_PIXEL_CLK_ROOT, CCM_IP_CHANNEL,
++	 {OSC_24M_CLK, PLL_SYS_PFD5_CLK, PLL_DRAM_MAIN_533M_CLK,
++	  EXT_CLK_3, PLL_SYS_PFD4_CLK, PLL_SYS_PFD2_270M_CLK,
++	  PLL_VIDEO_MAIN_CLK, PLL_USB_MAIN_480M_CLK}
++	},
++	{MIPI_DSI_EXTSER_CLK_ROOT, CCM_IP_CHANNEL,
++	 {OSC_24M_CLK, PLL_SYS_PFD5_CLK, PLL_SYS_PFD3_CLK,
++	  PLL_SYS_MAIN_480M_CLK, PLL_SYS_PFD0_196M_CLK, PLL_DRAM_MAIN_533M_CLK,
++	  PLL_VIDEO_MAIN_CLK, PLL_AUDIO_MAIN_CLK}
++	},
++	{MIPI_CSI_WARP_CLK_ROOT, CCM_IP_CHANNEL,
++	 {OSC_24M_CLK, PLL_SYS_PFD4_CLK, PLL_SYS_PFD3_CLK,
++	  PLL_SYS_MAIN_480M_CLK, PLL_SYS_PFD0_196M_CLK, PLL_DRAM_MAIN_533M_CLK,
++	  PLL_VIDEO_MAIN_CLK, PLL_AUDIO_MAIN_CLK}
++	},
++	{MIPI_DPHY_REF_CLK_ROOT, CCM_IP_CHANNEL,
++	 {OSC_24M_CLK, PLL_SYS_MAIN_120M_CLK, PLL_DRAM_MAIN_533M_CLK,
++	  PLL_SYS_PFD5_CLK, REF_1M_CLK, EXT_CLK_2,
++	  PLL_VIDEO_MAIN_CLK, EXT_CLK_3}
++	},
++	{SAI1_CLK_ROOT, CCM_IP_CHANNEL,
++	 {OSC_24M_CLK, PLL_SYS_PFD2_135M_CLK, PLL_AUDIO_MAIN_CLK,
++	  PLL_DRAM_MAIN_533M_CLK, PLL_VIDEO_MAIN_CLK, PLL_SYS_PFD4_CLK,
++	  PLL_ENET_MAIN_125M_CLK, EXT_CLK_2}
++	},
++	{SAI2_CLK_ROOT, CCM_IP_CHANNEL,
++	 {OSC_24M_CLK, PLL_SYS_PFD2_135M_CLK, PLL_AUDIO_MAIN_CLK,
++	  PLL_DRAM_MAIN_533M_CLK, PLL_VIDEO_MAIN_CLK, PLL_SYS_PFD4_CLK,
++	  PLL_ENET_MAIN_125M_CLK, EXT_CLK_2}
++	},
++	{SAI3_CLK_ROOT, CCM_IP_CHANNEL,
++	 {OSC_24M_CLK, PLL_SYS_PFD2_135M_CLK, PLL_AUDIO_MAIN_CLK,
++	  PLL_DRAM_MAIN_533M_CLK, PLL_VIDEO_MAIN_CLK, PLL_SYS_PFD4_CLK,
++	  PLL_ENET_MAIN_125M_CLK, EXT_CLK_3}
++	},
++	{SPDIF_CLK_ROOT, CCM_IP_CHANNEL,
++	 {OSC_24M_CLK, PLL_SYS_PFD2_135M_CLK, PLL_AUDIO_MAIN_CLK,
++	  PLL_DRAM_MAIN_533M_CLK, PLL_VIDEO_MAIN_CLK, PLL_SYS_PFD4_CLK,
++	  PLL_ENET_MAIN_125M_CLK, EXT_CLK_3}
++	},
++	{ENET1_REF_CLK_ROOT, CCM_IP_CHANNEL,
++	 {OSC_24M_CLK, PLL_ENET_MAIN_125M_CLK, PLL_ENET_MAIN_50M_CLK,
++	  PLL_ENET_MAIN_25M_CLK, PLL_SYS_MAIN_120M_CLK, PLL_AUDIO_MAIN_CLK,
++	  PLL_VIDEO_MAIN_CLK, EXT_CLK_4}
++	},
++	{ENET1_TIME_CLK_ROOT, CCM_IP_CHANNEL,
++	 {OSC_24M_CLK, PLL_ENET_MAIN_100M_CLK, PLL_AUDIO_MAIN_CLK,
++	  EXT_CLK_1, EXT_CLK_2, EXT_CLK_3,
++	  EXT_CLK_4, PLL_VIDEO_MAIN_CLK}
++	},
++	{ENET2_REF_CLK_ROOT, CCM_IP_CHANNEL,
++	 {OSC_24M_CLK, PLL_ENET_MAIN_125M_CLK, PLL_ENET_MAIN_50M_CLK,
++	  PLL_ENET_MAIN_25M_CLK, PLL_SYS_MAIN_120M_CLK, PLL_AUDIO_MAIN_CLK,
++	  PLL_VIDEO_MAIN_CLK, EXT_CLK_4}
++	},
++	{ENET2_TIME_CLK_ROOT, CCM_IP_CHANNEL,
++	 {OSC_24M_CLK, PLL_ENET_MAIN_100M_CLK, PLL_AUDIO_MAIN_CLK,
++	  EXT_CLK_1, EXT_CLK_2, EXT_CLK_3,
++	  EXT_CLK_4, PLL_VIDEO_MAIN_CLK}
++	},
++	{ENET_PHY_REF_CLK_ROOT, CCM_IP_CHANNEL,
++	 {OSC_24M_CLK, PLL_ENET_MAIN_25M_CLK, PLL_ENET_MAIN_50M_CLK,
++	  PLL_ENET_MAIN_125M_CLK, PLL_DRAM_MAIN_533M_CLK, PLL_AUDIO_MAIN_CLK,
++	  PLL_VIDEO_MAIN_CLK, PLL_SYS_PFD3_CLK}
++	},
++	{EIM_CLK_ROOT, CCM_IP_CHANNEL,
++	 {OSC_24M_CLK, PLL_SYS_PFD2_135M_CLK, PLL_SYS_MAIN_120M_CLK,
++	  PLL_DRAM_MAIN_533M_CLK, PLL_SYS_PFD2_270M_CLK, PLL_SYS_PFD3_CLK,
++	  PLL_ENET_MAIN_125M_CLK, PLL_USB_MAIN_480M_CLK}
++	},
++	{NAND_CLK_ROOT, CCM_IP_CHANNEL,
++	 {OSC_24M_CLK, PLL_SYS_MAIN_480M_CLK, PLL_DRAM_MAIN_533M_CLK,
++	  PLL_SYS_PFD0_392M_CLK, PLL_SYS_PFD3_CLK, PLL_ENET_MAIN_500M_CLK,
++	  PLL_ENET_MAIN_250M_CLK, PLL_VIDEO_MAIN_CLK}
++	},
++	{QSPI_CLK_ROOT, CCM_IP_CHANNEL,
++	 {OSC_24M_CLK, PLL_SYS_PFD4_CLK, PLL_DRAM_MAIN_533M_CLK,
++	  PLL_ENET_MAIN_500M_CLK, PLL_SYS_PFD3_CLK, PLL_SYS_PFD2_270M_CLK,
++	  PLL_SYS_PFD6_CLK, PLL_SYS_PFD7_CLK}
++	},
++	{USDHC1_CLK_ROOT, CCM_IP_CHANNEL,
++	 {OSC_24M_CLK, PLL_SYS_PFD0_392M_CLK, PLL_DRAM_MAIN_533M_CLK,
++	  PLL_ENET_MAIN_500M_CLK, PLL_SYS_PFD4_CLK, PLL_SYS_PFD2_270M_CLK,
++	  PLL_SYS_PFD6_CLK, PLL_SYS_PFD7_CLK}
++	},
++	{USDHC2_CLK_ROOT, CCM_IP_CHANNEL,
++	 {OSC_24M_CLK, PLL_SYS_PFD0_392M_CLK, PLL_DRAM_MAIN_533M_CLK,
++	  PLL_ENET_MAIN_500M_CLK, PLL_SYS_PFD4_CLK, PLL_SYS_PFD2_270M_CLK,
++	  PLL_SYS_PFD6_CLK, PLL_SYS_PFD7_CLK}
++	},
++	{USDHC3_CLK_ROOT, CCM_IP_CHANNEL,
++	 {OSC_24M_CLK, PLL_SYS_PFD0_392M_CLK, PLL_DRAM_MAIN_533M_CLK,
++	  PLL_ENET_MAIN_500M_CLK, PLL_SYS_PFD4_CLK, PLL_SYS_PFD2_270M_CLK,
++	  PLL_SYS_PFD6_CLK, PLL_SYS_PFD7_CLK}
++	},
++	{CAN1_CLK_ROOT, CCM_IP_CHANNEL,
++	 {OSC_24M_CLK, PLL_SYS_MAIN_120M_CLK, PLL_DRAM_MAIN_533M_CLK,
++	  PLL_SYS_MAIN_480M_CLK, PLL_ENET_MAIN_40M_CLK, PLL_USB_MAIN_480M_CLK,
++	  EXT_CLK_1, EXT_CLK_4}
++	},
++	{CAN2_CLK_ROOT, CCM_IP_CHANNEL,
++	 {OSC_24M_CLK, PLL_SYS_MAIN_120M_CLK, PLL_DRAM_MAIN_533M_CLK,
++	  PLL_SYS_MAIN_480M_CLK, PLL_ENET_MAIN_40M_CLK, PLL_USB_MAIN_480M_CLK,
++	  EXT_CLK_1, EXT_CLK_3}
++	},
++	{I2C1_CLK_ROOT, CCM_IP_CHANNEL,
++	 {OSC_24M_CLK, PLL_SYS_MAIN_120M_CLK, PLL_ENET_MAIN_50M_CLK,
++	  PLL_DRAM_MAIN_533M_CLK, PLL_AUDIO_MAIN_CLK, PLL_VIDEO_MAIN_CLK,
++	  PLL_USB_MAIN_480M_CLK, PLL_SYS_PFD2_135M_CLK}
++	},
++	{I2C2_CLK_ROOT, CCM_IP_CHANNEL,
++	 {OSC_24M_CLK, PLL_SYS_MAIN_120M_CLK, PLL_ENET_MAIN_50M_CLK,
++	  PLL_DRAM_MAIN_533M_CLK, PLL_AUDIO_MAIN_CLK, PLL_VIDEO_MAIN_CLK,
++	  PLL_USB_MAIN_480M_CLK, PLL_SYS_PFD2_135M_CLK}
++	},
++	{I2C3_CLK_ROOT, CCM_IP_CHANNEL,
++	 {OSC_24M_CLK, PLL_SYS_MAIN_120M_CLK, PLL_ENET_MAIN_50M_CLK,
++	  PLL_DRAM_MAIN_533M_CLK, PLL_AUDIO_MAIN_CLK, PLL_VIDEO_MAIN_CLK,
++	  PLL_USB_MAIN_480M_CLK, PLL_SYS_PFD2_135M_CLK}
++	},
++	{I2C4_CLK_ROOT, CCM_IP_CHANNEL,
++	 {OSC_24M_CLK, PLL_SYS_MAIN_120M_CLK, PLL_ENET_MAIN_50M_CLK,
++	  PLL_DRAM_MAIN_533M_CLK, PLL_AUDIO_MAIN_CLK, PLL_VIDEO_MAIN_CLK,
++	  PLL_USB_MAIN_480M_CLK, PLL_SYS_PFD2_135M_CLK}
++	},
++	{UART1_CLK_ROOT, CCM_IP_CHANNEL,
++	 {OSC_24M_CLK, PLL_SYS_MAIN_240M_CLK, PLL_ENET_MAIN_40M_CLK,
++	  PLL_ENET_MAIN_100M_CLK, PLL_SYS_MAIN_480M_CLK, EXT_CLK_2,
++	  EXT_CLK_4, PLL_USB_MAIN_480M_CLK}
++	},
++	{UART2_CLK_ROOT, CCM_IP_CHANNEL,
++	 {OSC_24M_CLK, PLL_SYS_MAIN_240M_CLK, PLL_ENET_MAIN_40M_CLK,
++	  PLL_ENET_MAIN_100M_CLK, PLL_SYS_MAIN_480M_CLK, EXT_CLK_2,
++	  EXT_CLK_3, PLL_USB_MAIN_480M_CLK}
++	},
++	{UART3_CLK_ROOT, CCM_IP_CHANNEL,
++	 {OSC_24M_CLK, PLL_SYS_MAIN_240M_CLK, PLL_ENET_MAIN_40M_CLK,
++	  PLL_ENET_MAIN_100M_CLK, PLL_SYS_MAIN_480M_CLK, EXT_CLK_2,
++	  EXT_CLK_4, PLL_USB_MAIN_480M_CLK}
++	},
++	{UART4_CLK_ROOT, CCM_IP_CHANNEL,
++	 {OSC_24M_CLK, PLL_SYS_MAIN_240M_CLK, PLL_ENET_MAIN_40M_CLK,
++	  PLL_ENET_MAIN_100M_CLK, PLL_SYS_MAIN_480M_CLK, EXT_CLK_2,
++	  EXT_CLK_3, PLL_USB_MAIN_480M_CLK}
++	},
++	{UART5_CLK_ROOT, CCM_IP_CHANNEL,
++	 {OSC_24M_CLK, PLL_SYS_MAIN_240M_CLK, PLL_ENET_MAIN_40M_CLK,
++	  PLL_ENET_MAIN_100M_CLK, PLL_SYS_MAIN_480M_CLK, EXT_CLK_2,
++	  EXT_CLK_4, PLL_USB_MAIN_480M_CLK}
++	},
++	{UART6_CLK_ROOT, CCM_IP_CHANNEL,
++	 {OSC_24M_CLK, PLL_SYS_MAIN_240M_CLK, PLL_ENET_MAIN_40M_CLK,
++	  PLL_ENET_MAIN_100M_CLK, PLL_SYS_MAIN_480M_CLK, EXT_CLK_2,
++	  EXT_CLK_3, PLL_USB_MAIN_480M_CLK}
++	},
++	{UART7_CLK_ROOT, CCM_IP_CHANNEL,
++	 {OSC_24M_CLK, PLL_SYS_MAIN_240M_CLK, PLL_ENET_MAIN_40M_CLK,
++	  PLL_ENET_MAIN_100M_CLK, PLL_SYS_MAIN_480M_CLK, EXT_CLK_2,
++	  EXT_CLK_4, PLL_USB_MAIN_480M_CLK}
++	},
++	{ECSPI1_CLK_ROOT, CCM_IP_CHANNEL,
++	 {OSC_24M_CLK, PLL_SYS_MAIN_240M_CLK, PLL_ENET_MAIN_40M_CLK,
++	  PLL_SYS_MAIN_120M_CLK, PLL_SYS_MAIN_480M_CLK, PLL_SYS_PFD4_CLK,
++	  PLL_ENET_MAIN_250M_CLK, PLL_USB_MAIN_480M_CLK}
++	},
++	{ECSPI2_CLK_ROOT, CCM_IP_CHANNEL,
++	 {OSC_24M_CLK, PLL_SYS_MAIN_240M_CLK, PLL_ENET_MAIN_40M_CLK,
++	  PLL_SYS_MAIN_120M_CLK, PLL_SYS_MAIN_480M_CLK, PLL_SYS_PFD4_CLK,
++	  PLL_ENET_MAIN_250M_CLK, PLL_USB_MAIN_480M_CLK}
++	},
++	{ECSPI3_CLK_ROOT, CCM_IP_CHANNEL,
++	 {OSC_24M_CLK, PLL_SYS_MAIN_240M_CLK, PLL_ENET_MAIN_40M_CLK,
++	  PLL_SYS_MAIN_120M_CLK, PLL_SYS_MAIN_480M_CLK, PLL_SYS_PFD4_CLK,
++	  PLL_ENET_MAIN_250M_CLK, PLL_USB_MAIN_480M_CLK}
++	},
++	{ECSPI4_CLK_ROOT, CCM_IP_CHANNEL,
++	 {OSC_24M_CLK, PLL_SYS_MAIN_240M_CLK, PLL_ENET_MAIN_40M_CLK,
++	  PLL_SYS_MAIN_120M_CLK, PLL_SYS_MAIN_480M_CLK, PLL_SYS_PFD4_CLK,
++	  PLL_ENET_MAIN_250M_CLK, PLL_USB_MAIN_480M_CLK}
++	},
++	{PWM1_CLK_ROOT, CCM_IP_CHANNEL,
++	 {OSC_24M_CLK, PLL_ENET_MAIN_100M_CLK, PLL_SYS_MAIN_120M_CLK,
++	  PLL_ENET_MAIN_40M_CLK, PLL_AUDIO_MAIN_CLK, EXT_CLK_1,
++	  REF_1M_CLK, PLL_VIDEO_MAIN_CLK}
++	},
++	{PWM2_CLK_ROOT, CCM_IP_CHANNEL,
++	 {OSC_24M_CLK, PLL_ENET_MAIN_100M_CLK, PLL_SYS_MAIN_120M_CLK,
++	  PLL_ENET_MAIN_40M_CLK, PLL_AUDIO_MAIN_CLK, EXT_CLK_1,
++	  REF_1M_CLK, PLL_VIDEO_MAIN_CLK}
++	},
++	{PWM3_CLK_ROOT, CCM_IP_CHANNEL,
++	 {OSC_24M_CLK, PLL_ENET_MAIN_100M_CLK, PLL_SYS_MAIN_120M_CLK,
++	  PLL_ENET_MAIN_40M_CLK, PLL_AUDIO_MAIN_CLK, EXT_CLK_2,
++	  REF_1M_CLK, PLL_VIDEO_MAIN_CLK}
++	},
++	{PWM4_CLK_ROOT, CCM_IP_CHANNEL,
++	 {OSC_24M_CLK, PLL_ENET_MAIN_100M_CLK, PLL_SYS_MAIN_120M_CLK,
++	  PLL_ENET_MAIN_40M_CLK, PLL_AUDIO_MAIN_CLK, EXT_CLK_2,
++	  REF_1M_CLK, PLL_VIDEO_MAIN_CLK}
++	},
++	{FLEXTIMER1_CLK_ROOT, CCM_IP_CHANNEL,
++	 {OSC_24M_CLK, PLL_ENET_MAIN_100M_CLK, PLL_SYS_MAIN_120M_CLK,
++	  PLL_ENET_MAIN_40M_CLK, PLL_AUDIO_MAIN_CLK, EXT_CLK_3,
++	  REF_1M_CLK, PLL_VIDEO_MAIN_CLK}
++	},
++	{FLEXTIMER2_CLK_ROOT, CCM_IP_CHANNEL,
++	 {OSC_24M_CLK, PLL_ENET_MAIN_100M_CLK, PLL_SYS_MAIN_120M_CLK,
++	  PLL_ENET_MAIN_40M_CLK, PLL_AUDIO_MAIN_CLK, EXT_CLK_3,
++	  REF_1M_CLK, PLL_VIDEO_MAIN_CLK}
++	},
++	{SIM1_CLK_ROOT, CCM_IP_CHANNEL,
++	 {OSC_24M_CLK, PLL_SYS_PFD2_135M_CLK, PLL_SYS_MAIN_120M_CLK,
++	  PLL_DRAM_MAIN_533M_CLK, PLL_USB_MAIN_480M_CLK, PLL_AUDIO_MAIN_CLK,
++	  PLL_ENET_MAIN_125M_CLK, PLL_SYS_PFD7_CLK}
++	},
++	{SIM2_CLK_ROOT, CCM_IP_CHANNEL,
++	 {OSC_24M_CLK, PLL_SYS_PFD2_135M_CLK, PLL_SYS_MAIN_120M_CLK,
++	  PLL_DRAM_MAIN_533M_CLK, PLL_USB_MAIN_480M_CLK, PLL_VIDEO_MAIN_CLK,
++	  PLL_ENET_MAIN_125M_CLK, PLL_SYS_PFD7_CLK}
++	},
++	{GPT1_CLK_ROOT, CCM_IP_CHANNEL,
++	 {OSC_24M_CLK, PLL_ENET_MAIN_100M_CLK, PLL_SYS_PFD0_392M_CLK,
++	  PLL_ENET_MAIN_40M_CLK, PLL_VIDEO_MAIN_CLK, REF_1M_CLK,
++	  PLL_AUDIO_MAIN_CLK, EXT_CLK_1}
++	},
++	{GPT2_CLK_ROOT, CCM_IP_CHANNEL,
++	 {OSC_24M_CLK, PLL_ENET_MAIN_100M_CLK, PLL_SYS_PFD0_392M_CLK,
++	  PLL_ENET_MAIN_40M_CLK, PLL_VIDEO_MAIN_CLK, REF_1M_CLK,
++	  PLL_AUDIO_MAIN_CLK, EXT_CLK_2}
++	},
++	{GPT3_CLK_ROOT, CCM_IP_CHANNEL,
++	 {OSC_24M_CLK, PLL_ENET_MAIN_100M_CLK, PLL_SYS_PFD0_392M_CLK,
++	  PLL_ENET_MAIN_40M_CLK, PLL_VIDEO_MAIN_CLK, REF_1M_CLK,
++	  PLL_AUDIO_MAIN_CLK, EXT_CLK_3}
++	},
++	{GPT4_CLK_ROOT, CCM_IP_CHANNEL,
++	 {OSC_24M_CLK, PLL_ENET_MAIN_100M_CLK, PLL_SYS_PFD0_392M_CLK,
++	  PLL_ENET_MAIN_40M_CLK, PLL_VIDEO_MAIN_CLK, REF_1M_CLK,
++	  PLL_AUDIO_MAIN_CLK, EXT_CLK_4}
++	},
++	{TRACE_CLK_ROOT, CCM_IP_CHANNEL,
++	 {OSC_24M_CLK, PLL_SYS_PFD2_135M_CLK, PLL_SYS_MAIN_120M_CLK,
++	  PLL_DRAM_MAIN_533M_CLK, PLL_ENET_MAIN_125M_CLK, PLL_USB_MAIN_480M_CLK,
++	  EXT_CLK_1, EXT_CLK_3}
++	},
++	{WDOG_CLK_ROOT, CCM_IP_CHANNEL,
++	 {OSC_24M_CLK, PLL_SYS_PFD2_135M_CLK, PLL_SYS_MAIN_120M_CLK,
++	  PLL_DRAM_MAIN_533M_CLK, PLL_ENET_MAIN_125M_CLK, PLL_USB_MAIN_480M_CLK,
++	  REF_1M_CLK, PLL_SYS_PFD1_166M_CLK}
++	},
++	{CSI_MCLK_CLK_ROOT, CCM_IP_CHANNEL,
++	 {OSC_24M_CLK, PLL_SYS_PFD2_135M_CLK, PLL_SYS_MAIN_120M_CLK,
++	  PLL_DRAM_MAIN_533M_CLK, PLL_ENET_MAIN_125M_CLK, PLL_AUDIO_MAIN_CLK,
++	  PLL_VIDEO_MAIN_CLK, PLL_USB_MAIN_480M_CLK}
++	},
++	{AUDIO_MCLK_CLK_ROOT, CCM_IP_CHANNEL,
++	 {OSC_24M_CLK, PLL_SYS_PFD2_135M_CLK, PLL_SYS_MAIN_120M_CLK,
++	  PLL_DRAM_MAIN_533M_CLK, PLL_ENET_MAIN_125M_CLK, PLL_AUDIO_MAIN_CLK,
++	  PLL_VIDEO_MAIN_CLK, PLL_USB_MAIN_480M_CLK}
++	},
++	{WRCLK_CLK_ROOT, CCM_IP_CHANNEL,
++	 {OSC_24M_CLK, PLL_ENET_MAIN_40M_CLK, PLL_DRAM_MAIN_533M_CLK,
++	  PLL_USB_MAIN_480M_CLK, PLL_SYS_MAIN_240M_CLK, PLL_SYS_PFD2_270M_CLK,
++	  PLL_ENET_MAIN_500M_CLK, PLL_SYS_PFD7_CLK}
++	},
++	{IPP_DO_CLKO1, CCM_IP_CHANNEL,
++	 {OSC_24M_CLK, PLL_SYS_MAIN_480M_CLK, PLL_SYS_MAIN_240M_CLK,
++	  PLL_SYS_PFD0_196M_CLK, PLL_SYS_PFD3_CLK, PLL_ENET_MAIN_500M_CLK,
++	  PLL_DRAM_MAIN_533M_CLK, REF_1M_CLK}
++	},
++	{IPP_DO_CLKO2, CCM_IP_CHANNEL,
++	 {OSC_24M_CLK, PLL_SYS_MAIN_240M_CLK, PLL_SYS_PFD0_392M_CLK,
++	  PLL_SYS_PFD1_166M_CLK, PLL_SYS_PFD4_CLK, PLL_AUDIO_MAIN_CLK,
++	  PLL_VIDEO_MAIN_CLK, OSC_32K_CLK}
++	},
++};
++
++/* select which entry of root_array */
++static int select(enum clk_root_index clock_id)
++{
++	int i, size;
++	struct clk_root_map *p = root_array;
++
++	size = ARRAY_SIZE(root_array);
++
++	for (i = 0; i < size; i++, p++) {
++		if (clock_id == p->entry)
++			return i;
++	}
++
++	return -EINVAL;
++}
++
++static int src_supported(int entry, enum clk_root_src clock_src)
++{
++	int i, size;
++	struct clk_root_map *p = &root_array[entry];
++
++	if ((p->type == CCM_DRAM_PHYM_CHANNEL) || (p->type == CCM_DRAM_CHANNEL))
++		size = 2;
++	else
++		size = 8;
++
++	for (i = 0; i < size; i++) {
++		if (p->src_mux[i] == clock_src)
++			return i;
++	}
++
++	return -EINVAL;
++}
++
++/* Set src for clock root slice. */
++int clock_set_src(enum clk_root_index clock_id, enum clk_root_src clock_src)
++{
++	int root_entry, src_entry;
++	u32 reg;
++
++	if (clock_id >= CLK_ROOT_MAX)
++		return -EINVAL;
++
++	root_entry = select(clock_id);
++	if (root_entry < 0)
++		return -EINVAL;
++
++	src_entry = src_supported(root_entry, clock_src);
++	if (src_entry < 0)
++		return -EINVAL;
++
++	reg = __raw_readl(&imx_ccm->root[clock_id].target_root);
++	reg &= ~CLK_ROOT_MUX_MASK;
++	reg |= src_entry << CLK_ROOT_MUX_SHIFT;
++	__raw_writel(reg, &imx_ccm->root[clock_id].target_root);
++
++	return 0;
++}
++
++/* Get src of a clock root slice. */
++int clock_get_src(enum clk_root_index clock_id, enum clk_root_src *p_clock_src)
++{
++	u32 val;
++	int root_entry;
++	struct clk_root_map *p;
++
++	if (clock_id >= CLK_ROOT_MAX)
++		return -EINVAL;
++
++	val = __raw_readl(&imx_ccm->root[clock_id].target_root);
++	val &= CLK_ROOT_MUX_MASK;
++	val >>= CLK_ROOT_MUX_SHIFT;
++
++	root_entry = select(clock_id);
++	if (root_entry < 0)
++		return -EINVAL;
++
++	p = &root_array[root_entry];
++	*p_clock_src = p->src_mux[val];
++
++	return 0;
++}
++
++int clock_set_prediv(enum clk_root_index clock_id, enum root_pre_div pre_div)
++{
++	int root_entry;
++	struct clk_root_map *p;
++	u32 reg;
++
++	if (clock_id >= CLK_ROOT_MAX)
++		return -EINVAL;
++
++	root_entry = select(clock_id);
++	if (root_entry < 0)
++		return -EINVAL;
++
++	p = &root_array[root_entry];
++
++	if ((p->type == CCM_CORE_CHANNEL) ||
++	    (p->type == CCM_DRAM_PHYM_CHANNEL) ||
++	    (p->type == CCM_DRAM_CHANNEL)) {
++		if (pre_div != CLK_ROOT_PRE_DIV1) {
++			printf("Error pre div!\n");
++			return -EINVAL;
++		}
++	}
++
++	reg = __raw_readl(&imx_ccm->root[clock_id].target_root);
++	reg &= ~CLK_ROOT_PRE_DIV_MASK;
++	reg |= pre_div << CLK_ROOT_PRE_DIV_SHIFT;
++	__raw_writel(reg, &imx_ccm->root[clock_id].target_root);
++
++	return 0;
++}
++
++int clock_get_prediv(enum clk_root_index clock_id, enum root_pre_div *pre_div)
++{
++	u32 val;
++	int root_entry;
++	struct clk_root_map *p;
++
++	if (clock_id >= CLK_ROOT_MAX)
++		return -EINVAL;
++
++	root_entry = select(clock_id);
++	if (root_entry < 0)
++		return -EINVAL;
++
++	p = &root_array[root_entry];
++
++	if ((p->type == CCM_CORE_CHANNEL) ||
++	    (p->type == CCM_DRAM_PHYM_CHANNEL) ||
++	    (p->type == CCM_DRAM_CHANNEL)) {
++		*pre_div = 0;
++		return 0;
++	}
++
++	val = __raw_readl(&imx_ccm->root[clock_id].target_root);
++	val &= CLK_ROOT_PRE_DIV_MASK;
++	val >>= CLK_ROOT_PRE_DIV_SHIFT;
++
++	*pre_div = val;
++
++	return 0;
++}
++
++int clock_set_postdiv(enum clk_root_index clock_id, enum root_post_div div)
++{
++	u32 reg;
++
++	if (clock_id >= CLK_ROOT_MAX)
++		return -EINVAL;
++
++	if (clock_id == DRAM_PHYM_CLK_ROOT) {
++		if (div != CLK_ROOT_POST_DIV1) {
++			printf("Error post div!\n");
++			return -EINVAL;
++		}
++	}
++
++	/* Only 3 bit post div. */
++	if ((clock_id == DRAM_CLK_ROOT) && (div > CLK_ROOT_POST_DIV7)) {
++		printf("Error post div!\n");
++		return -EINVAL;
++	}
++
++	reg = __raw_readl(&imx_ccm->root[clock_id].target_root);
++	reg &= ~CLK_ROOT_POST_DIV_MASK;
++	reg |= div << CLK_ROOT_POST_DIV_SHIFT;
++	__raw_writel(reg, &imx_ccm->root[clock_id].target_root);
++
++	return 0;
++}
++
++int clock_get_postdiv(enum clk_root_index clock_id, enum root_post_div *div)
++{
++	u32 val;
++
++	if (clock_id >= CLK_ROOT_MAX)
++		return -EINVAL;
++
++	if (clock_id == DRAM_PHYM_CLK_ROOT) {
++		*div = 0;
++		return 0;
++	}
++
++	val = __raw_readl(&imx_ccm->root[clock_id].target_root);
++	if (clock_id == DRAM_CLK_ROOT)
++		val &= DRAM_CLK_ROOT_POST_DIV_MASK;
++	else
++		val &= CLK_ROOT_POST_DIV_MASK;
++	val >>= CLK_ROOT_POST_DIV_SHIFT;
++
++	*div = val;
++
++	return 0;
++}
++
++int clock_set_autopostdiv(enum clk_root_index clock_id, enum root_auto_div div,
++			  int auto_en)
++{
++	u32 val;
++	int root_entry;
++	struct clk_root_map *p;
++
++	if (clock_id >= CLK_ROOT_MAX)
++		return -EINVAL;
++
++	root_entry = select(clock_id);
++	if (root_entry < 0)
++		return -EINVAL;
++
++	p = &root_array[root_entry];
++
++	if ((p->type != CCM_BUS_CHANNEL) && (p->type != CCM_AHB_CHANNEL)) {
++		printf("Auto postdiv not supported.!\n");
++		return -EINVAL;
++	}
++
++	/*
++	 * Each time only one filed can be changed, no use target_root_set.
++	 */
++	val = __raw_readl(&imx_ccm->root[clock_id].target_root);
++	val &= ~CLK_ROOT_AUTO_DIV_MASK;
++	val |= (div << CLK_ROOT_AUTO_DIV_SHIFT);
++
++	if (auto_en)
++		val |= CLK_ROOT_AUTO_EN;
++	else
++		val &= ~CLK_ROOT_AUTO_EN;
++
++	__raw_writel(val, &imx_ccm->root[clock_id].target_root);
++
++	return 0;
++}
++
++int clock_get_autopostdiv(enum clk_root_index clock_id, enum root_auto_div *div,
++			  int *auto_en)
++{
++	u32 val;
++	int root_entry;
++	struct clk_root_map *p;
++
++	if (clock_id >= CLK_ROOT_MAX)
++		return -EINVAL;
++
++	root_entry = select(clock_id);
++	if (root_entry < 0)
++		return -EINVAL;
++
++	p = &root_array[root_entry];
++
++	/*
++	 * Only bus/ahb channel supports auto div.
++	 * If unsupported, just set auto_en and div with 0.
++	 */
++	if ((p->type != CCM_BUS_CHANNEL) && (p->type != CCM_AHB_CHANNEL)) {
++		*auto_en = 0;
++		*div = 0;
++		return 0;
++	}
++
++	val = __raw_readl(&imx_ccm->root[clock_id].target_root);
++	if ((val & CLK_ROOT_AUTO_EN_MASK) == 0)
++		*auto_en = 0;
++	else
++		*auto_en = 1;
++
++	val &= CLK_ROOT_AUTO_DIV_MASK;
++	val >>= CLK_ROOT_AUTO_DIV_SHIFT;
++
++	*div = val;
++
++	return 0;
++}
++
++int clock_get_target_val(enum clk_root_index clock_id, u32 *val)
++{
++	if (clock_id >= CLK_ROOT_MAX)
++		return -EINVAL;
++
++	*val = __raw_readl(&imx_ccm->root[clock_id].target_root);
++
++	return 0;
++}
++
++int clock_set_target_val(enum clk_root_index clock_id, u32 val)
++{
++	if (clock_id >= CLK_ROOT_MAX)
++		return -EINVAL;
++
++	__raw_writel(val, &imx_ccm->root[clock_id].target_root);
++
++	return 0;
++}
++
++/* Auto_div and auto_en is ignored, they are rarely used. */
++int clock_root_cfg(enum clk_root_index clock_id, enum root_pre_div pre_div,
++		   enum root_post_div post_div, enum clk_root_src clock_src)
++{
++	u32 val;
++	int root_entry, src_entry;
++	struct clk_root_map *p;
++
++	if (clock_id >= CLK_ROOT_MAX)
++		return -EINVAL;
++
++	root_entry = select(clock_id);
++	if (root_entry < 0)
++		return -EINVAL;
++
++	p = &root_array[root_entry];
++
++	if ((p->type == CCM_CORE_CHANNEL) ||
++	    (p->type == CCM_DRAM_PHYM_CHANNEL) ||
++	    (p->type == CCM_DRAM_CHANNEL)) {
++		if (pre_div != CLK_ROOT_PRE_DIV1) {
++			printf("Error pre div!\n");
++			return -EINVAL;
++		}
++	}
++
++	/* Only 3 bit post div. */
++	if (p->type == CCM_DRAM_CHANNEL) {
++		if (post_div > CLK_ROOT_POST_DIV7) {
++			printf("Error post div!\n");
++			return -EINVAL;
++		}
++	}
++
++	if (p->type == CCM_DRAM_PHYM_CHANNEL) {
++		if (post_div != CLK_ROOT_POST_DIV1) {
++			printf("Error post div!\n");
++			return -EINVAL;
++		}
++	}
++
++	src_entry = src_supported(root_entry, clock_src);
++	if (src_entry < 0)
++		return -EINVAL;
++
++	val = CLK_ROOT_ON | pre_div << CLK_ROOT_PRE_DIV_SHIFT |
++	      post_div << CLK_ROOT_POST_DIV_SHIFT |
++	      src_entry << CLK_ROOT_MUX_SHIFT;
++
++	__raw_writel(val, &imx_ccm->root[clock_id].target_root);
++
++	return 0;
++}
++
++int clock_root_enabled(enum clk_root_index clock_id)
++{
++	u32 val;
++
++	if (clock_id >= CLK_ROOT_MAX)
++		return -EINVAL;
++
++	/*
++	 * No enable bit for DRAM controller and PHY. Just return enabled.
++	 */
++	if ((clock_id == DRAM_PHYM_CLK_ROOT) || (clock_id == DRAM_CLK_ROOT))
++		return 1;
++
++	val = __raw_readl(&imx_ccm->root[clock_id].target_root);
++
++	return (val & CLK_ROOT_ENABLE_MASK) ? 1 : 0;
++}
++
++/* CCGR gate operation */
++int clock_enable(enum clk_ccgr_index index, bool enable)
++{
++	if (index >= CCGR_MAX)
++		return -EINVAL;
++
++	if (enable)
++		__raw_writel(CCM_CLK_ON_MSK,
++			     &imx_ccm->ccgr_array[index].ccgr_set);
++	else
++		__raw_writel(CCM_CLK_ON_MSK,
++			     &imx_ccm->ccgr_array[index].ccgr_clr);
++
++	return 0;
++}
+diff --git a/arch/arm/include/asm/arch-mx7/clock.h b/arch/arm/include/asm/arch-mx7/clock.h
+new file mode 100644
+index 0000000..292baf4
+--- /dev/null
++++ b/arch/arm/include/asm/arch-mx7/clock.h
+@@ -0,0 +1,348 @@
++/*
++ * Copyright (C) 2015 Freescale Semiconductor, Inc.
++ *
++ * Author:
++ *	Peng Fan <Peng.Fan@freescale.com>
++ *
++ * SPDX-License-Identifier:	GPL-2.0+
++ */
++
++#ifndef _ASM_ARCH_CLOCK_H
++#define _ASM_ARCH_CLOCK_H
++
++#include <common.h>
++#include <asm/arch/crm_regs.h>
++
++#ifdef CONFIG_SYS_MX7_HCLK
++#define MXC_HCLK	CONFIG_SYS_MX7_HCLK
++#else
++#define MXC_HCLK	24000000
++#endif
++
++#ifdef CONFIG_SYS_MX7_CLK32
++#define MXC_CLK32	CONFIG_SYS_MX7_CLK32
++#else
++#define MXC_CLK32	32768
++#endif
++
++/* Mainly for compatible to imx common code. */
++enum mxc_clock {
++	MXC_ARM_CLK = 0,
++	MXC_AHB_CLK,
++	MXC_IPG_CLK,
++	MXC_UART_CLK,
++	MXC_CSPI_CLK,
++	MXC_AXI_CLK,
++	MXC_DDR_CLK,
++	MXC_ESDHC_CLK,
++	MXC_ESDHC2_CLK,
++	MXC_ESDHC3_CLK,
++	MXC_I2C_CLK,
++};
++
++/* PLL supported by i.mx7d */
++enum pll_clocks {
++	PLL_CORE,	/* Core PLL */
++	PLL_SYS,	/* System PLL*/
++	PLL_ENET,	/* Enet PLL */
++	PLL_AUDIO,	/* Audio PLL */
++	PLL_VIDEO,	/* Video PLL*/
++	PLL_DDR,	/* Dram PLL */
++	PLL_USB,	/* USB PLL, fixed at 480MHZ */
++};
++
++/* clk src for clock root gen */
++enum clk_root_src {
++	OSC_24M_CLK,
++
++	PLL_ARM_MAIN_800M_CLK,
++
++	PLL_SYS_MAIN_480M_CLK,
++	PLL_SYS_MAIN_240M_CLK,
++	PLL_SYS_MAIN_120M_CLK,
++	PLL_SYS_PFD0_392M_CLK,
++	PLL_SYS_PFD0_196M_CLK,
++	PLL_SYS_PFD1_332M_CLK,
++	PLL_SYS_PFD1_166M_CLK,
++	PLL_SYS_PFD2_270M_CLK,
++	PLL_SYS_PFD2_135M_CLK,
++	PLL_SYS_PFD3_CLK,
++	PLL_SYS_PFD4_CLK,
++	PLL_SYS_PFD5_CLK,
++	PLL_SYS_PFD6_CLK,
++	PLL_SYS_PFD7_CLK,
++
++	PLL_ENET_MAIN_500M_CLK,
++	PLL_ENET_MAIN_250M_CLK,
++	PLL_ENET_MAIN_125M_CLK,
++	PLL_ENET_MAIN_100M_CLK,
++	PLL_ENET_MAIN_50M_CLK,
++	PLL_ENET_MAIN_40M_CLK,
++	PLL_ENET_MAIN_25M_CLK,
++
++	PLL_DRAM_MAIN_1066M_CLK,
++	PLL_DRAM_MAIN_533M_CLK,
++
++	PLL_AUDIO_MAIN_CLK,
++	PLL_VIDEO_MAIN_CLK,
++
++	PLL_USB_MAIN_480M_CLK,		/* fixed at 480MHZ */
++
++	EXT_CLK_1,
++	EXT_CLK_2,
++	EXT_CLK_3,
++	EXT_CLK_4,
++
++	REF_1M_CLK,
++	OSC_32K_CLK,
++};
++
++/*
++ * Clock root index
++ */
++enum clk_root_index {
++	ARM_A7_CLK_ROOT = 0,
++	ARM_M4_CLK_ROOT = 1,
++	ARM_M0_CLK_ROOT = 2,
++	MAIN_AXI_CLK_ROOT = 16,
++	DISP_AXI_CLK_ROOT = 17,
++	ENET_AXI_CLK_ROOT = 18,
++	NAND_USDHC_BUS_CLK_ROOT = 19,
++	AHB_CLK_ROOT = 32,
++	DRAM_PHYM_CLK_ROOT = 48,
++	DRAM_CLK_ROOT = 49,
++	DRAM_PHYM_ALT_CLK_ROOT = 64,
++	DRAM_ALT_CLK_ROOT = 65,
++	USB_HSIC_CLK_ROOT = 66,
++	PCIE_CTRL_CLK_ROOT = 67,
++	PCIE_PHY_CLK_ROOT = 68,
++	EPDC_PIXEL_CLK_ROOT = 69,
++	LCDIF_PIXEL_CLK_ROOT = 70,
++	MIPI_DSI_EXTSER_CLK_ROOT = 71,
++	MIPI_CSI_WARP_CLK_ROOT = 72,
++	MIPI_DPHY_REF_CLK_ROOT = 73,
++	SAI1_CLK_ROOT = 74,
++	SAI2_CLK_ROOT = 75,
++	SAI3_CLK_ROOT = 76,
++	SPDIF_CLK_ROOT = 77,
++	ENET1_REF_CLK_ROOT = 78,
++	ENET1_TIME_CLK_ROOT = 79,
++	ENET2_REF_CLK_ROOT = 80,
++	ENET2_TIME_CLK_ROOT = 81,
++	ENET_PHY_REF_CLK_ROOT = 82,
++	EIM_CLK_ROOT = 83,
++	NAND_CLK_ROOT = 84,
++	QSPI_CLK_ROOT = 85,
++	USDHC1_CLK_ROOT = 86,
++	USDHC2_CLK_ROOT = 87,
++	USDHC3_CLK_ROOT = 88,
++	CAN1_CLK_ROOT = 89,
++	CAN2_CLK_ROOT = 90,
++	I2C1_CLK_ROOT = 91,
++	I2C2_CLK_ROOT = 92,
++	I2C3_CLK_ROOT = 93,
++	I2C4_CLK_ROOT = 94,
++	UART1_CLK_ROOT = 95,
++	UART2_CLK_ROOT = 96,
++	UART3_CLK_ROOT = 97,
++	UART4_CLK_ROOT = 98,
++	UART5_CLK_ROOT = 99,
++	UART6_CLK_ROOT = 100,
++	UART7_CLK_ROOT = 101,
++	ECSPI1_CLK_ROOT = 102,
++	ECSPI2_CLK_ROOT = 103,
++	ECSPI3_CLK_ROOT = 104,
++	ECSPI4_CLK_ROOT = 105,
++	PWM1_CLK_ROOT = 106,
++	PWM2_CLK_ROOT = 107,
++	PWM3_CLK_ROOT = 108,
++	PWM4_CLK_ROOT = 109,
++	FLEXTIMER1_CLK_ROOT = 110,
++	FLEXTIMER2_CLK_ROOT = 111,
++	SIM1_CLK_ROOT = 112,
++	SIM2_CLK_ROOT = 113,
++	GPT1_CLK_ROOT = 114,
++	GPT2_CLK_ROOT = 115,
++	GPT3_CLK_ROOT = 116,
++	GPT4_CLK_ROOT = 117,
++	TRACE_CLK_ROOT = 118,
++	WDOG_CLK_ROOT = 119,
++	CSI_MCLK_CLK_ROOT = 120,
++	AUDIO_MCLK_CLK_ROOT = 121,
++	WRCLK_CLK_ROOT = 122,
++	IPP_DO_CLKO1 = 123,
++	IPP_DO_CLKO2 = 124,
++
++	CLK_ROOT_MAX,
++};
++
++struct clk_root_setting {
++	enum clk_root_index root;
++	u32 setting;
++};
++
++/*
++ * CCGR mapping
++ */
++enum clk_ccgr_index {
++	CCGR_CPU = 0,
++	CCGR_M4 = 1,
++	CCGR_SIM_MAIN = 4,
++	CCGR_SIM_DISPLAY = 5,
++	CCGR_SIM_ENET = 6,
++	CCGR_SIM_M = 7,
++	CCGR_SIM_S = 8,
++	CCGR_SIM_WAKEUP = 9,
++	CCGR_IPMUX1 = 10,
++	CCGR_IPMUX2 = 11,
++	CCGR_IPMUX3 = 12,
++	CCGR_ROM = 16,
++	CCGR_OCRAM = 17,
++	CCGR_OCRAM_S = 18,
++	CCGR_DRAM = 19,
++	CCGR_RAWNAND = 20,
++	CCGR_QSPI = 21,
++	CCGR_WEIM = 22,
++	CCGR_ADC = 32,
++	CCGR_ANATOP = 33,
++	CCGR_SCTR = 34,
++	CCGR_OCOTP = 35,
++	CCGR_CAAM = 36,
++	CCGR_SNVS = 37,
++	CCGR_RDC = 38,
++	CCGR_MU = 39,
++	CCGR_HS = 40,
++	CCGR_DVFS = 41,
++	CCGR_QOS = 42,
++	CCGR_QOS_DISPMIX = 43,
++	CCGR_QOS_MEGAMIX = 44,
++	CCGR_CSU = 45,
++	CCGR_DBGMON = 46,
++	CCGR_DEBUG = 47,
++	CCGR_TRACE = 48,
++	CCGR_SEC_DEBUG = 49,
++	CCGR_SEMA1 = 64,
++	CCGR_SEMA2 = 65,
++	CCGR_PERFMON1 = 68,
++	CCGR_PERFMON2 = 69,
++	CCGR_SDMA = 72,
++	CCGR_CSI = 73,
++	CCGR_EPDC = 74,
++	CCGR_LCDIF = 75,
++	CCGR_PXP = 76,
++	CCGR_PCIE = 96,
++	CCGR_MIPI_CSI = 100,
++	CCGR_MIPI_DSI = 101,
++	CCGR_MIPI_MEM_PHY = 102,
++	CCGR_USB_CTRL = 104,
++	CCGR_USB_HSIC = 105,
++	CCGR_USB_PHY1 = 106,
++	CCGR_USB_PHY2 = 107,
++	CCGR_USDHC1 = 108,
++	CCGR_USDHC2 = 109,
++	CCGR_USDHC3 = 110,
++	CCGR_ENET1 = 112,
++	CCGR_ENET2 = 113,
++	CCGR_CAN1 = 116,
++	CCGR_CAN2 = 117,
++	CCGR_ECSPI1 = 120,
++	CCGR_ECSPI2 = 121,
++	CCGR_ECSPI3 = 122,
++	CCGR_ECSPI4 = 123,
++	CCGR_GPT1 = 124,
++	CCGR_GPT2 = 125,
++	CCGR_GPT3 = 126,
++	CCGR_GPT4 = 127,
++	CCGR_FTM1 = 128,
++	CCGR_FTM2 = 129,
++	CCGR_PWM1 = 132,
++	CCGR_PWM2 = 133,
++	CCGR_PWM3 = 134,
++	CCGR_PWM4 = 135,
++	CCGR_I2C1 = 136,
++	CCGR_I2C2 = 137,
++	CCGR_I2C3 = 138,
++	CCGR_I2C4 = 139,
++	CCGR_SAI1 = 140,
++	CCGR_SAI2 = 141,
++	CCGR_SAI3 = 142,
++	CCGR_SIM1 = 144,
++	CCGR_SIM2 = 145,
++	CCGR_UART1 = 148,
++	CCGR_UART2 = 149,
++	CCGR_UART3 = 150,
++	CCGR_UART4 = 151,
++	CCGR_UART5 = 152,
++	CCGR_UART6 = 153,
++	CCGR_UART7 = 154,
++	CCGR_WDOG1 = 156,
++	CCGR_WDOG2 = 157,
++	CCGR_WDOG3 = 158,
++	CCGR_WDOG4 = 159,
++	CCGR_GPIO1 = 160,
++	CCGR_GPIO2 = 161,
++	CCGR_GPIO3 = 162,
++	CCGR_GPIO4 = 163,
++	CCGR_GPIO5 = 164,
++	CCGR_GPIO6 = 165,
++	CCGR_GPIO7 = 166,
++	CCGR_IOMUX = 168,
++	CCGR_IOMUX_LPSR = 169,
++	CCGR_KPP = 170,
++
++	CCGR_SKIP,
++	CCGR_MAX,
++};
++
++/* Clock root channel */
++enum clk_root_type {
++	CCM_CORE_CHANNEL,
++	CCM_BUS_CHANNEL,
++	CCM_AHB_CHANNEL,
++	CCM_DRAM_PHYM_CHANNEL,
++	CCM_DRAM_CHANNEL,
++	CCM_IP_CHANNEL,
++};
++
++#include <asm/arch/clock_slice.h>
++
++/*
++ * entry: the clock root index
++ * type: ccm channel
++ * src_mux: each entry corresponding to the clock src, detailed info in CCM RM
++ */
++struct clk_root_map {
++	enum clk_root_index entry;
++	enum clk_root_type type;
++	uint8_t src_mux[8];
++};
++
++enum enet_freq {
++	ENET_25MHz,
++	ENET_50MHz,
++	ENET_125MHz,
++};
++
++u32 get_root_clk(enum clk_root_index clock_id);
++u32 mxc_get_clock(enum mxc_clock clk);
++u32 imx_get_uartclk(void);
++u32 imx_get_fecclk(void);
++void clock_init(void);
++#ifdef CONFIG_SYS_I2C_MXC
++int enable_i2c_clk(bool enable, unsigned int i2c_num);
++#endif
++#ifdef CONFIG_FEC_MXC
++int set_clk_enet(enum enet_freq type);
++#endif
++int set_clk_qspi(void);
++int set_clk_nand(void);
++#ifdef CONFIG_MXC_OCOTP
++void enable_ocotp_clk(unsigned char enable);
++#endif
++void enable_usboh3_clk(unsigned char enable);
++#ifdef CONFIG_SECURE_BOOT
++void hab_caam_clock_enable(void);
++void hab_caam_clock_disable(void);
++#endif
++
++#endif
+diff --git a/arch/arm/include/asm/arch-mx7/clock_slice.h b/arch/arm/include/asm/arch-mx7/clock_slice.h
+new file mode 100644
+index 0000000..6ede0cd
+--- /dev/null
++++ b/arch/arm/include/asm/arch-mx7/clock_slice.h
+@@ -0,0 +1,116 @@
++/*
++ * Copyright (C) 2014-2015 Freescale Semiconductor, Inc.
++ *
++ * Author:
++ *	Peng Fan <Peng.Fan@freescale.com>
++ *
++ * SPDX-License-Identifier:	GPL-2.0+
++ */
++
++#ifndef _ASM_ARCH_CLOCK_SLICE_H
++#define _ASM_ARCH_CLOCK_SLICE_H
++
++enum root_pre_div {
++	CLK_ROOT_PRE_DIV1 = 0,
++	CLK_ROOT_PRE_DIV2,
++	CLK_ROOT_PRE_DIV3,
++	CLK_ROOT_PRE_DIV4,
++	CLK_ROOT_PRE_DIV5,
++	CLK_ROOT_PRE_DIV6,
++	CLK_ROOT_PRE_DIV7,
++	CLK_ROOT_PRE_DIV8,
++};
++
++enum root_post_div {
++	CLK_ROOT_POST_DIV1 = 0,
++	CLK_ROOT_POST_DIV2,
++	CLK_ROOT_POST_DIV3,
++	CLK_ROOT_POST_DIV4,
++	CLK_ROOT_POST_DIV5,
++	CLK_ROOT_POST_DIV6,
++	CLK_ROOT_POST_DIV7,
++	CLK_ROOT_POST_DIV8,
++	CLK_ROOT_POST_DIV9,
++	CLK_ROOT_POST_DIV10,
++	CLK_ROOT_POST_DIV11,
++	CLK_ROOT_POST_DIV12,
++	CLK_ROOT_POST_DIV13,
++	CLK_ROOT_POST_DIV14,
++	CLK_ROOT_POST_DIV15,
++	CLK_ROOT_POST_DIV16,
++	CLK_ROOT_POST_DIV17,
++	CLK_ROOT_POST_DIV18,
++	CLK_ROOT_POST_DIV19,
++	CLK_ROOT_POST_DIV20,
++	CLK_ROOT_POST_DIV21,
++	CLK_ROOT_POST_DIV22,
++	CLK_ROOT_POST_DIV23,
++	CLK_ROOT_POST_DIV24,
++	CLK_ROOT_POST_DIV25,
++	CLK_ROOT_POST_DIV26,
++	CLK_ROOT_POST_DIV27,
++	CLK_ROOT_POST_DIV28,
++	CLK_ROOT_POST_DIV29,
++	CLK_ROOT_POST_DIV30,
++	CLK_ROOT_POST_DIV31,
++	CLK_ROOT_POST_DIV32,
++	CLK_ROOT_POST_DIV33,
++	CLK_ROOT_POST_DIV34,
++	CLK_ROOT_POST_DIV35,
++	CLK_ROOT_POST_DIV36,
++	CLK_ROOT_POST_DIV37,
++	CLK_ROOT_POST_DIV38,
++	CLK_ROOT_POST_DIV39,
++	CLK_ROOT_POST_DIV40,
++	CLK_ROOT_POST_DIV41,
++	CLK_ROOT_POST_DIV42,
++	CLK_ROOT_POST_DIV43,
++	CLK_ROOT_POST_DIV44,
++	CLK_ROOT_POST_DIV45,
++	CLK_ROOT_POST_DIV46,
++	CLK_ROOT_POST_DIV47,
++	CLK_ROOT_POST_DIV48,
++	CLK_ROOT_POST_DIV49,
++	CLK_ROOT_POST_DIV50,
++	CLK_ROOT_POST_DIV51,
++	CLK_ROOT_POST_DIV52,
++	CLK_ROOT_POST_DIV53,
++	CLK_ROOT_POST_DIV54,
++	CLK_ROOT_POST_DIV55,
++	CLK_ROOT_POST_DIV56,
++	CLK_ROOT_POST_DIV57,
++	CLK_ROOT_POST_DIV58,
++	CLK_ROOT_POST_DIV59,
++	CLK_ROOT_POST_DIV60,
++	CLK_ROOT_POST_DIV61,
++	CLK_ROOT_POST_DIV62,
++	CLK_ROOT_POST_DIV63,
++	CLK_ROOT_POST_DIV64,
++};
++
++enum root_auto_div {
++	CLK_ROOT_AUTO_DIV1 = 0,
++	CLK_ROOT_AUTO_DIV2,
++	CLK_ROOT_AUTO_DIV4,
++	CLK_ROOT_AUTO_DIV8,
++	CLK_ROOT_AUTO_DIV16,
++};
++
++int clock_set_src(enum clk_root_index clock_id, enum clk_root_src clock_src);
++int clock_get_src(enum clk_root_index clock_id, enum clk_root_src *p_clock_src);
++int clock_set_prediv(enum clk_root_index clock_id, enum root_pre_div pre_div);
++int clock_get_prediv(enum clk_root_index clock_id, enum root_pre_div *pre_div);
++int clock_set_postdiv(enum clk_root_index clock_id, enum root_post_div div);
++int clock_get_postdiv(enum clk_root_index clock_id, enum root_post_div *div);
++int clock_set_autopostdiv(enum clk_root_index clock_id, enum root_auto_div div,
++			  int auto_en);
++int clock_get_autopostdiv(enum clk_root_index clock_id, enum root_auto_div *div,
++			  int *auto_en);
++int clock_get_target_val(enum clk_root_index clock_id, u32 *val);
++int clock_set_target_val(enum clk_root_index clock_id, u32 val);
++int clock_root_cfg(enum clk_root_index clock_id, enum root_pre_div pre_div,
++		   enum root_post_div post_div, enum clk_root_src clock_src);
++int clock_root_enabled(enum clk_root_index clock_id);
++
++int clock_enable(enum clk_ccgr_index index, bool enable);
++#endif
+-- 
+1.8.0
+

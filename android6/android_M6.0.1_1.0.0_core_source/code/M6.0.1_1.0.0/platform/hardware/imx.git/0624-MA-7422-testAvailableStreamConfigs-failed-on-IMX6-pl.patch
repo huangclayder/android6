@@ -1,0 +1,82 @@
+From 374bc27061faeee970f034cc41eed48f261d32e0 Mon Sep 17 00:00:00 2001
+From: Xiaowen Liu <xiaowen.liu@freescale.com>
+Date: Wed, 30 Dec 2015 10:03:40 -0500
+Subject: [PATCH 624/635] MA-7422 testAvailableStreamConfigs failed on IMX6
+ platform.
+
+fix testAvailableStreamConfigs failed on IMX6 platform.
+1080p and 720p are required by CTS to take picture.
+
+Signed-off-by: Xiaowen Liu <xiaowen.liu@freescale.com>
+---
+ mx6/libcamera3/Ov5640Csi.cpp  | 4 ++--
+ mx6/libcamera3/Ov5640Mipi.cpp | 4 ++--
+ mx6/libcamera3/Ov5642Csi.cpp  | 5 ++---
+ mx6/libcamera3/TVINDevice.cpp | 5 ++---
+ 4 files changed, 8 insertions(+), 10 deletions(-)
+
+diff --git a/mx6/libcamera3/Ov5640Csi.cpp b/mx6/libcamera3/Ov5640Csi.cpp
+index d93e6ba..b8a1c77 100644
+--- a/mx6/libcamera3/Ov5640Csi.cpp
++++ b/mx6/libcamera3/Ov5640Csi.cpp
+@@ -127,8 +127,8 @@ status_t Ov5640Csi::initSensorStaticData()
+         //If w/h ratio is not same with senserW/sensorH, framework assume that
+         //first crop little width or little height, then scale.
+         //But 1920x1080, 176x144 not work in this mode.
+-        if(!((vid_frmsize.discrete.width == 1920 && vid_frmsize.discrete.height == 1080)
+-          || (vid_frmsize.discrete.width == 176 && vid_frmsize.discrete.height == 144))) {
++        // 1920x1080 is required by CTS.
++        if(!(vid_frmsize.discrete.width == 176 && vid_frmsize.discrete.height == 144)) {
+             mPictureResolutions[pictureCnt++] = vid_frmsize.discrete.width;
+             mPictureResolutions[pictureCnt++] = vid_frmsize.discrete.height;
+         }
+diff --git a/mx6/libcamera3/Ov5640Mipi.cpp b/mx6/libcamera3/Ov5640Mipi.cpp
+index c2c0c6f..5915642 100644
+--- a/mx6/libcamera3/Ov5640Mipi.cpp
++++ b/mx6/libcamera3/Ov5640Mipi.cpp
+@@ -121,8 +121,8 @@ status_t Ov5640Mipi::initSensorStaticData()
+         //If w/h ratio is not same with senserW/sensorH, framework assume that
+         //first crop little width or little height, then scale.
+         //But 1920x1080, 176x144 not work in this mode.
+-        if(!((vid_frmsize.discrete.width == 1920 && vid_frmsize.discrete.height == 1080)
+-           || (vid_frmsize.discrete.width == 176 && vid_frmsize.discrete.height == 144))){
++        // 1920x1080 is required by CTS.
++        if(!(vid_frmsize.discrete.width == 176 && vid_frmsize.discrete.height == 144)){
+             mPictureResolutions[pictureCnt++] = vid_frmsize.discrete.width;
+             mPictureResolutions[pictureCnt++] = vid_frmsize.discrete.height;
+         }
+diff --git a/mx6/libcamera3/Ov5642Csi.cpp b/mx6/libcamera3/Ov5642Csi.cpp
+index 2302805..fbb75b2 100644
+--- a/mx6/libcamera3/Ov5642Csi.cpp
++++ b/mx6/libcamera3/Ov5642Csi.cpp
+@@ -122,9 +122,8 @@ status_t Ov5642Csi::initSensorStaticData()
+         //But 1920x1080, 176x144 not work in this mode.
+         //For 1M pixel, 720p sometimes may take green picture(5%), so not report it,
+         //use 1024x768 for 1M pixel
+-        if(!((vid_frmsize.discrete.width == 1920 && vid_frmsize.discrete.height == 1080)
+-         || (vid_frmsize.discrete.width == 176 && vid_frmsize.discrete.height == 144)
+-         || (vid_frmsize.discrete.width == 1280 && vid_frmsize.discrete.height == 720))) {
++        // 1920x1080 1280x720 is required by CTS.
++        if(!(vid_frmsize.discrete.width == 176 && vid_frmsize.discrete.height == 144)) {
+             mPictureResolutions[pictureCnt++] = vid_frmsize.discrete.width;
+             mPictureResolutions[pictureCnt++] = vid_frmsize.discrete.height;
+         }
+diff --git a/mx6/libcamera3/TVINDevice.cpp b/mx6/libcamera3/TVINDevice.cpp
+index ab90857..f7df8e0 100644
+--- a/mx6/libcamera3/TVINDevice.cpp
++++ b/mx6/libcamera3/TVINDevice.cpp
+@@ -131,9 +131,8 @@ status_t TVINDevice::initSensorStaticData()
+         //But 1920x1080, 176x144 not work in this mode.
+         //For 1M pixel, 720p sometimes may take green picture(5%), so not report it,
+         //use 1024x768 for 1M pixel
+-        if(!((vid_frmsize.discrete.width == 1920 && vid_frmsize.discrete.height == 1080)
+-          || (vid_frmsize.discrete.width == 176 && vid_frmsize.discrete.height == 144)
+-          || (vid_frmsize.discrete.width == 1280 && vid_frmsize.discrete.height == 720))){
++        // 1920x1080 1280x720 is required by CTS.
++        if(!(vid_frmsize.discrete.width == 176 && vid_frmsize.discrete.height == 144)){
+             mPictureResolutions[pictureCnt++] = vid_frmsize.discrete.width;
+             mPictureResolutions[pictureCnt++] = vid_frmsize.discrete.height;
+         }
+-- 
+1.8.0
+

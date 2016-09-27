@@ -1,0 +1,39 @@
+From 522128e70e98c3eb3fb0ebd4cc23b594dc8bb5fd Mon Sep 17 00:00:00 2001
+From: "Ye.Li" <B37916@freescale.com>
+Date: Fri, 20 Jun 2014 10:12:36 +0800
+Subject: [PATCH] ENGR00319151-2 HAB: Add the HAB image authentication to
+ bootz
+
+Since the zImage is used at default, add the HAB image authentication
+support in bootz to authenticate zImage.
+
+Signed-off-by: Ye.Li <B37916@freescale.com>
+(cherry picked from commit 591100eec569dd1d54f61e9f49fe995f56a021eb)
+Signed-off-by: Peng Fan <Peng.Fan@freescale.com>
+---
+ common/cmd_bootm.c | 9 +++++++++
+ 1 file changed, 9 insertions(+)
+
+diff --git a/common/cmd_bootm.c b/common/cmd_bootm.c
+index 4f77f22..1825d70 100644
+--- a/common/cmd_bootm.c
++++ b/common/cmd_bootm.c
+@@ -723,6 +723,15 @@ static int booti_start(cmd_tbl_t *cmdtp, int flag, int argc,
+ 	if (bootm_find_ramdisk_fdt(flag, argc, argv))
+ 		return 1;
+ 
++#ifdef CONFIG_SECURE_BOOT
++	extern uint32_t authenticate_image(
++			uint32_t ddr_start, uint32_t image_size);
++	if (authenticate_image(images->ep, zi_end - zi_start) == 0) {
++		printf("Authenticate zImage Fail, Please check\n");
++		return 1;
++	}
++#endif
++
+ 	return 0;
+ }
+ 
+-- 
+1.8.0
+

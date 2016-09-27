@@ -1,0 +1,36 @@
+From ac265eab588bbee8f8280d1d9e0193d878ac5e2b Mon Sep 17 00:00:00 2001
+From: Peter Chen <peter.chen@freescale.com>
+Date: Tue, 19 Aug 2014 09:51:52 +0800
+Subject: [PATCH] usb: hcd: add TPL support flag
+
+The targeted hosts (non-PC hosts) need to have TPL (Targeted Peripheral List)
+for USB OTG & EH certification and other vendor specific requirements.
+
+The platform who needs TPL feature should set this flag at usb host
+controller driver.
+
+Signed-off-by: Peter Chen <peter.chen@freescale.com>
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+
+Conflicts:
+
+	include/linux/usb/hcd.h
+---
+ include/linux/usb/hcd.h | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/include/linux/usb/hcd.h b/include/linux/usb/hcd.h
+index efe8d8a..573af35 100644
+--- a/include/linux/usb/hcd.h
++++ b/include/linux/usb/hcd.h
+@@ -143,6 +143,7 @@ struct usb_hcd {
+ 	unsigned		authorized_default:1;
+ 	unsigned		has_tt:1;	/* Integrated TT in root hub */
+ 	unsigned		amd_resume_bug:1; /* AMD remote wakeup quirk */
++	unsigned		tpl_support:1; /* OTG & EH TPL support */
+ 
+ 	unsigned int		irq;		/* irq allocated */
+ 	void __iomem		*regs;		/* device memory/io */
+-- 
+1.8.0
+

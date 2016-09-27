@@ -1,0 +1,29 @@
+From 1332794aaf6b512e29a7be87d88b44a17b3f4465 Mon Sep 17 00:00:00 2001
+From: Robby Cai <r63905@freescale.com>
+Date: Tue, 29 Sep 2015 18:25:30 +0800
+Subject: [PATCH] MLK-11658 ARM: dts: imx7d-12x12-lpddr3-arm2: enable v4l2
+ output
+
+enable v4l2 output feature on i.MX7D 12x12 LPDDR3 ARM2 board.
+
+Signed-off-by: Robby Cai <r63905@freescale.com>
+---
+ arch/arm/boot/dts/imx7d-12x12-lpddr3-arm2.dts | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/arch/arm/boot/dts/imx7d-12x12-lpddr3-arm2.dts b/arch/arm/boot/dts/imx7d-12x12-lpddr3-arm2.dts
+index 5f3b8d3..3c6c4c4 100644
+--- a/arch/arm/boot/dts/imx7d-12x12-lpddr3-arm2.dts
++++ b/arch/arm/boot/dts/imx7d-12x12-lpddr3-arm2.dts
+@@ -45,7 +45,7 @@
+ 
+ 	pxp_v4l2_out {
+ 		compatible = "fsl,imx7d-pxp-v4l2", "fsl,imx6sx-pxp-v4l2", "fsl,imx6sl-pxp-v4l2";
+-		status = "disabled";
++		status = "okay";
+ 	};
+ 
+ 	regulators {
+-- 
+1.8.0
+

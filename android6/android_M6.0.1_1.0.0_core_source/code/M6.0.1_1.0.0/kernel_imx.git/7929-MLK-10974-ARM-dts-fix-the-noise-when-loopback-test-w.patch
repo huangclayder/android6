@@ -1,0 +1,32 @@
+From 8fa6b528f8f7b00aa32d94160641f111f55bc6c5 Mon Sep 17 00:00:00 2001
+From: Zidan Wang <zidan.wang@freescale.com>
+Date: Mon, 1 Jun 2015 17:20:15 +0800
+Subject: [PATCH] MLK-10974 ARM: dts: fix the noise when loopback test with
+ pause and restore for imx6ul-14x14-evk board
+
+Configure TXD and RXD pin to keeper status to fix the noise when
+loopback test with pause and restore for imx6ul-14x14-evk board.
+
+Signed-off-by: Zidan Wang <zidan.wang@freescale.com>
+---
+ arch/arm/boot/dts/imx6ul-14x14-evk.dts | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/arch/arm/boot/dts/imx6ul-14x14-evk.dts b/arch/arm/boot/dts/imx6ul-14x14-evk.dts
+index 35ec9de..1104118 100644
+--- a/arch/arm/boot/dts/imx6ul-14x14-evk.dts
++++ b/arch/arm/boot/dts/imx6ul-14x14-evk.dts
+@@ -580,8 +580,8 @@
+ 			fsl,pins = <
+ 				MX6UL_PAD_JTAG_TDI__SAI2_TX_BCLK	0x17088
+ 				MX6UL_PAD_JTAG_TDO__SAI2_TX_SYNC	0x17088
+-				MX6UL_PAD_JTAG_TRST_B__SAI2_TX_DATA	0x120b0
+-				MX6UL_PAD_JTAG_TCK__SAI2_RX_DATA	0x130b0
++				MX6UL_PAD_JTAG_TRST_B__SAI2_TX_DATA	0x11088
++				MX6UL_PAD_JTAG_TCK__SAI2_RX_DATA	0x11088
+ 				MX6UL_PAD_JTAG_TMS__SAI2_MCLK		0x17088
+ 				MX6UL_PAD_SNVS_TAMPER4__GPIO5_IO04	0x17059
+ 			>;
+-- 
+1.8.0
+

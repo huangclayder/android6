@@ -1,0 +1,30 @@
+From 155fd5648e0155623c48ef256e6369c5ea93f18d Mon Sep 17 00:00:00 2001
+From: Haoran Wang <b50027@freescale.com>
+Date: Fri, 15 May 2015 14:18:27 +0800
+Subject: [PATCH] MA-6666 Add WEXT config
+
+Added WEXT config for AR6003 wifi.
+
+Signed-off-by: Haoran Wang <b50027@freescale.com>
+---
+ arch/arm/configs/imx_v7_android_defconfig | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/arch/arm/configs/imx_v7_android_defconfig b/arch/arm/configs/imx_v7_android_defconfig
+index 21f7955..a27464c 100644
+--- a/arch/arm/configs/imx_v7_android_defconfig
++++ b/arch/arm/configs/imx_v7_android_defconfig
+@@ -188,6 +188,10 @@ CONFIG_BT_HCIUART_BCSP=y
+ CONFIG_BT_HCIUART_ATH3K=y
+ CONFIG_BT_HCIBCM203X=y
+ CONFIG_BT_ATH3K=y
++CONFIG_WIRELESS=y
++CONFIG_WEXT_CORE=y
++CONFIG_WEXT_PROC=y
++CONFIG_CFG80211_WEXT=y
+ CONFIG_CFG80211=m
+ CONFIG_MAC80211=m
+ CONFIG_RFKILL=y
+-- 
+1.8.0
+

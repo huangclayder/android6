@@ -1,0 +1,61 @@
+From f6b277b909bf007221d670e99b21e612b43a154c Mon Sep 17 00:00:00 2001
+From: Hongzhang Yang <Hongzhang.Yang@freescale.com>
+Date: Mon, 15 Jun 2015 09:27:36 +0800
+Subject: [PATCH 274/280] MLK-10871 VPU is blocked
+
+vpu lib v5.4.31
+
+Bug: VPU is blocked in BWB module in some cases
+
+Solution: Disable BWB
+
+Signed-off-by: Hongzhang Yang <Hongzhang.Yang@freescale.com>
+---
+ vpu/vpu_lib.c | 10 +---------
+ vpu/vpu_lib.h |  2 +-
+ 2 files changed, 2 insertions(+), 10 deletions(-)
+
+diff --git a/vpu/vpu_lib.c b/vpu/vpu_lib.c
+index e906d7f..ba875ee 100644
+--- a/vpu/vpu_lib.c
++++ b/vpu/vpu_lib.c
+@@ -345,10 +345,7 @@ RetCode vpu_Init(void *cb)
+ 		    BUF_PIC_FLUSH << BIT_BUF_PIC_FLUSH | BUF_PIC_RESET <<
+ 		    BIT_BUF_PIC_RESET;
+ 		VpuWriteReg(BIT_BIT_STREAM_CTRL, data);
+-		if (cpu_is_mx6x())
+-			VpuWriteReg(BIT_FRAME_MEM_CTRL, IMAGE_ENDIAN | 1 << 12);
+-		else
+-			VpuWriteReg(BIT_FRAME_MEM_CTRL, IMAGE_ENDIAN);
++		VpuWriteReg(BIT_FRAME_MEM_CTRL, IMAGE_ENDIAN);
+ 		VpuWriteReg(BIT_INT_ENABLE, 1 << INT_BIT_PIC_RUN);
+ 		VpuWriteReg(BIT_AXI_SRAM_USE, 0);	/* init to not use SRAM */
+ 
+@@ -2803,11 +2800,6 @@ RetCode vpu_DecOpen(DecHandle * pHandle, DecOpenParam * pop)
+ 
+ 		if (pDecInfo->mapType)
+ 			val |= (pDecInfo->tiledLinearEnable << 11 | 0x03 << 9);
+-		val |= 1 << 12;
+-
+-		// workaround for BWB blocking issue (ENGR00231107)
+-		if (pDecInfo->openParam.bitstreamFormat == STD_VC1)
+-			val &= ~(1 << 12);
+ 	}
+ 	pCodecInst->ctxRegs[CTX_BIT_FRAME_MEM_CTRL] =
+ 		    val | (pDecInfo->openParam.chromaInterleave << 2);
+diff --git a/vpu/vpu_lib.h b/vpu/vpu_lib.h
+index beee8eb..3471293 100644
+--- a/vpu/vpu_lib.h
++++ b/vpu/vpu_lib.h
+@@ -709,7 +709,7 @@ static const SocInfo soc_info[] = {
+  * v4.2.2 [2008.09.03] support encoder on MX51
+  * v4.0.2 [2008.08.21] add the IOClkGateSet() for power saving.
+  */
+-#define VPU_LIB_VERSION_CODE	VPU_LIB_VERSION(5, 4, 30)
++#define VPU_LIB_VERSION_CODE	VPU_LIB_VERSION(5, 4, 31)
+ 
+ extern unsigned int system_rev;
+ 
+-- 
+1.8.0
+

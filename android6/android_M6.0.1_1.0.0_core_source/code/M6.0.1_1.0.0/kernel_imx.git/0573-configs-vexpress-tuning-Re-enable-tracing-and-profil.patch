@@ -1,0 +1,33 @@
+From df9c41613aa841f28b077eeffc210aba160d66f4 Mon Sep 17 00:00:00 2001
+From: Jon Medhurst <tixy@linaro.org>
+Date: Fri, 15 Mar 2013 13:08:32 +0000
+Subject: [PATCH] configs: vexpress-tuning: Re-enable tracing and profiling
+ options
+
+For now, lets play safe and not disable any tracing and profiling
+options in case these are expected to be present for benchmarking
+purposes.
+
+Signed-off-by: Jon Medhurst <tixy@linaro.org>
+(cherry picked from commit 0e353f8b9153dc002874dc53da1159edd420efc6)
+Signed-off-by: Alex Shi <alex.shi@linaro.org>
+---
+ linaro/configs/vexpress-tuning.conf | 6 ------
+ 1 file changed, 6 deletions(-)
+
+diff --git a/linaro/configs/vexpress-tuning.conf b/linaro/configs/vexpress-tuning.conf
+index 7bdf273..917ba6c 100644
+--- a/linaro/configs/vexpress-tuning.conf
++++ b/linaro/configs/vexpress-tuning.conf
+@@ -1,8 +1,2 @@
+ # CONFIG_THUMB2_KERNEL is not set
+ # CONFIG_PROVE_LOCKING is not set
+-# CONFIG_OPROFILE is not set
+-# CONFIG_SCHEDSTATS is not set
+-# CONFIG_TIMER_STATS is not set
+-# CONFIG_SCHED_DEBUG is not set
+-# CONFIG_FTRACE is not set
+-# CONFIG_FUNCTION_TRACER is not set
+-- 
+1.8.0
+

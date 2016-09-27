@@ -1,0 +1,31 @@
+From cba69a0c81a436ebdaae2aec990cf614230010ff Mon Sep 17 00:00:00 2001
+From: Shawn Guo <shawn.guo@freescale.com>
+Date: Tue, 17 Jun 2014 13:27:16 +0800
+Subject: [PATCH] ENGR00317981: ARM: dts: imx6sx: tempmon is not compatiable
+ with imx6q
+
+The TEMPMON on imx6q has only one alarm value to program, while the one
+on imx6sx support 3, Panic, High and Low.  So let's drop
+fsl,imx6q-tempmon from its compatible.
+
+Signed-off-by: Shawn Guo <shawn.guo@freescale.com>
+---
+ arch/arm/boot/dts/imx6sx.dtsi | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/arch/arm/boot/dts/imx6sx.dtsi b/arch/arm/boot/dts/imx6sx.dtsi
+index ac3866c..17bddc5 100644
+--- a/arch/arm/boot/dts/imx6sx.dtsi
++++ b/arch/arm/boot/dts/imx6sx.dtsi
+@@ -631,7 +631,7 @@
+ 			};
+ 
+ 			tempmon: tempmon {
+-				compatible = "fsl,imx6sx-tempmon", "fsl,imx6q-tempmon";
++				compatible = "fsl,imx6sx-tempmon";
+ 				interrupts = <GIC_SPI 49 IRQ_TYPE_LEVEL_HIGH>;
+ 				fsl,tempmon = <&anatop>;
+ 				fsl,tempmon-data = <&ocotp>;
+-- 
+1.8.0
+

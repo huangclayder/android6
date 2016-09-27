@@ -1,0 +1,80 @@
+From 1a67567cab6351b2a02b3579796048813ab5df4a Mon Sep 17 00:00:00 2001
+From: Fang Hui <b31070@freescale.com>
+Date: Fri, 31 Oct 2014 10:14:45 +0800
+Subject: [PATCH 537/635] MA-5822 [sabresd_6dq]: Add delay in codes, preview
+ freeze after take several pictures
+
+In DeviceAdapter::handleFrameRelease, if mPreviewing is false,
+will not dec mRefCount. This will happen when performance is low.
+So need zero ref count.
+
+Signed-off-by: Fang Hui <b31070@freescale.com>
+---
+ mx6/libcamera2/CameraUtil.cpp    |  5 +++++
+ mx6/libcamera2/CameraUtil.h      |  1 +
+ mx6/libcamera2/PreviewStream.cpp | 14 +++++++++++++-
+ 3 files changed, 19 insertions(+), 1 deletion(-)
+
+diff --git a/mx6/libcamera2/CameraUtil.cpp b/mx6/libcamera2/CameraUtil.cpp
+index a87bd68..a682346 100755
+--- a/mx6/libcamera2/CameraUtil.cpp
++++ b/mx6/libcamera2/CameraUtil.cpp
+@@ -161,6 +161,11 @@ void CameraFrame::removeState(CAMERA_BUFS_STATE state)
+     mBufState &= ~state;
+ }
+ 
++void CameraFrame::ZeroRefCount()
++{
++    mRefCount = 0;
++}
++
+ void CameraFrame::addReference()
+ {
+     __atomic_inc(&mRefCount);
+diff --git a/mx6/libcamera2/CameraUtil.h b/mx6/libcamera2/CameraUtil.h
+index 51f6ebe..5d57e9f 100755
+--- a/mx6/libcamera2/CameraUtil.h
++++ b/mx6/libcamera2/CameraUtil.h
+@@ -218,6 +218,7 @@ public:
+     int getRefCount();
+     void setObserver(CameraFrameObserver *observer);
+     void reset();
++    void ZeroRefCount();
+ 
+ private:
+     CameraFrame(const CameraFrame&);
+diff --git a/mx6/libcamera2/PreviewStream.cpp b/mx6/libcamera2/PreviewStream.cpp
+index 6b6f688..50452b4 100755
+--- a/mx6/libcamera2/PreviewStream.cpp
++++ b/mx6/libcamera2/PreviewStream.cpp
+@@ -59,6 +59,16 @@ int PreviewStream::allocateBuffers(int width, int height,
+     int index = -1;
+     int ret = NO_ERROR;
+ 
++    //In DeviceAdapter::handleFrameRelease, if mPreviewing is false,
++    //will not dec mRefCount. This will happen when performance is low.
++    //So need zero ref count.
++    for (int i = 0; i < mTotalBuffers; i++) {
++       // FLOGI("==== PreviewStream::allocateBuffers, i %d, state %d, ref %d",
++         //   i, mCameraBuffer[i].getState(), mCameraBuffer[i].getRefCount());
++
++        mCameraBuffer[i].ZeroRefCount();
++    }
++
+     for (int i = 0; i < mMaxProducerBuffers; i++) {
+         buffer_handle_t *buf_h = NULL;
+         ret = mNativeWindow->dequeue_buffer(mNativeWindow, &buf_h);
+@@ -86,7 +96,9 @@ int PreviewStream::allocateBuffers(int width, int height,
+ 
+     for (int i = 0; i < mTotalBuffers; i++) {
+         int state = mCameraBuffer[i].getState();
+-        if (state == CameraFrame::BUFS_IN_SERVICE) {
++        if (state != CameraFrame::BUFS_FREE) {
++            mCameraBuffer[i].setState(CameraFrame::BUFS_IN_SERVICE);
++
+             // The frame held in service.
+             // Make sure we dont add one more reference
+             // count for it
+-- 
+1.8.0
+

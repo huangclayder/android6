@@ -1,0 +1,43 @@
+From 26af9318b5bdcde14e88c6d3d12e5a3c37d62143 Mon Sep 17 00:00:00 2001
+From: "Ye.Li" <B37916@freescale.com>
+Date: Fri, 4 Jul 2014 16:05:24 +0800
+Subject: [PATCH] ENGR00321260-1 iMX6: Add support to get CPU serial number
+
+The android boot needs get_board_serial function to get the
+CPU uid as the serial number. Implement this function to read
+the uid from fuse for all iMX6 platforms.
+
+Signed-off-by: Ye.Li <B37916@freescale.com>
+(cherry picked from commit 8d355a9d6f138e1c1cd04dbadb7b5b3e2d692701)
+Signed-off-by: Peng Fan <Peng.Fan@freescale.com>
+---
+ arch/arm/cpu/armv7/mx6/soc.c | 13 +++++++++++++
+ 1 file changed, 13 insertions(+)
+
+diff --git a/arch/arm/cpu/armv7/mx6/soc.c b/arch/arm/cpu/armv7/mx6/soc.c
+index 51631ce..39d1b4e 100644
+--- a/arch/arm/cpu/armv7/mx6/soc.c
++++ b/arch/arm/cpu/armv7/mx6/soc.c
+@@ -453,6 +453,19 @@ int board_postclk_init(void)
+ 	return 0;
+ }
+ 
++#ifdef CONFIG_SERIAL_TAG
++void get_board_serial(struct tag_serialnr *serialnr)
++{
++	struct ocotp_regs *ocotp = (struct ocotp_regs *)OCOTP_BASE_ADDR;
++	struct fuse_bank *bank = &ocotp->bank[0];
++	struct fuse_bank0_regs *fuse =
++		(struct fuse_bank0_regs *)bank->fuse_regs;
++
++	serialnr->low = fuse->uid_low;
++	serialnr->high = fuse->uid_high;
++}
++#endif
++
+ #ifndef CONFIG_SYS_DCACHE_OFF
+ void enable_caches(void)
+ {
+-- 
+1.8.0
+

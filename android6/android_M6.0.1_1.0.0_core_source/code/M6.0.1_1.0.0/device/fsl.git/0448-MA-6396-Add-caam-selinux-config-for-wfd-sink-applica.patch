@@ -1,0 +1,60 @@
+From 23f60fec2105a2d5640a2ce56c0d1e1832c90f38 Mon Sep 17 00:00:00 2001
+From: "guoyin.chen" <guoyin.chen@freescale.com>
+Date: Mon, 16 Mar 2015 13:01:09 +0800
+Subject: [PATCH 448/602] MA-6396 Add caam selinux config for wfd sink
+ application
+
+Add /dev/caam_kb into caam device type
+Add system_app selinux config to access /dev/caam_kb
+
+Signed-off-by: guoyin.chen <guoyin.chen@freescale.com>
+---
+ imx6/sepolicy/device.te     | 1 +
+ imx6/sepolicy/file_contexts | 1 +
+ imx6/sepolicy/system_app.te | 1 +
+ sabresd_6dq/BoardConfig.mk  | 3 ++-
+ 4 files changed, 5 insertions(+), 1 deletion(-)
+ create mode 100644 imx6/sepolicy/device.te
+
+diff --git a/imx6/sepolicy/device.te b/imx6/sepolicy/device.te
+new file mode 100644
+index 0000000..09bbbbf
+--- /dev/null
++++ b/imx6/sepolicy/device.te
+@@ -0,0 +1 @@
++type caam_device, dev_type;
+diff --git a/imx6/sepolicy/file_contexts b/imx6/sepolicy/file_contexts
+index 9786716..f3e5e85 100644
+--- a/imx6/sepolicy/file_contexts
++++ b/imx6/sepolicy/file_contexts
+@@ -16,3 +16,4 @@
+ /dev/ubi0_3                     u:object_r:block_device:s0
+ /dev/galcore                    u:object_r:gpu_device:s0
+ /dev/sda[0-8]*			u:object_r:sdcard_internal:s0
++/dev/caam_kb                    u:object_r:caam_device:s0
+diff --git a/imx6/sepolicy/system_app.te b/imx6/sepolicy/system_app.te
+index 493ce62..dc3f9af 100644
+--- a/imx6/sepolicy/system_app.te
++++ b/imx6/sepolicy/system_app.te
+@@ -1,4 +1,5 @@
+ allow system_app system_app_data_file:notdevfile_class_set rw_file_perms;
+ allow system_app cache_file:dir { rw_file_perms add_name create };
+ allow system_app cache_file:file  { rw_file_perms create };
++allow system_app caam_device:chr_file  rw_file_perms;
+ 
+diff --git a/sabresd_6dq/BoardConfig.mk b/sabresd_6dq/BoardConfig.mk
+index bf7133c..99f9b57 100644
+--- a/sabresd_6dq/BoardConfig.mk
++++ b/sabresd_6dq/BoardConfig.mk
+@@ -147,6 +147,7 @@ BOARD_SEPOLICY_UNION := \
+        netd.te \
+        bootanim.te \
+        dnsmasq.te \
+-       recovery.te
++       recovery.te \
++       device.te
+ 
+ 
+-- 
+1.8.0
+

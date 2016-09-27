@@ -1,0 +1,26 @@
+From efc5a3684ec48cb481fd2a6953b91b0e6354213e Mon Sep 17 00:00:00 2001
+From: Brian Liu <brian.liu@freescale.com>
+Date: Fri, 23 Oct 2009 11:23:23 +0800
+Subject: [PATCH 03/43] ENGR00117593 When SIM failure, RILD will crash
+
++CME ERROR should be checked as return for +CGREG
+---
+ reference-ril/reference-ril.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/reference-ril/reference-ril.c b/reference-ril/reference-ril.c
+index d806560..93ba097 100644
+--- a/reference-ril/reference-ril.c
++++ b/reference-ril/reference-ril.c
+@@ -1367,7 +1367,7 @@ static void requestRegistrationState(int request, void *data __unused,
+ 
+     err = at_send_command_singleline(cmd, prefix, &p_response);
+ 
+-    if (err != 0) goto error;
++    if (err != 0 || p_response->success == 0) goto error;
+ 
+     line = p_response->p_intermediates->line;
+ 
+-- 
+1.8.0
+

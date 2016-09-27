@@ -1,0 +1,46 @@
+From 36938708fb64fa09f0bd412acf4bbd87ffc561c7 Mon Sep 17 00:00:00 2001
+From: Xianzhong <b07117@freescale.com>
+Date: Mon, 15 Jun 2015 12:05:24 +0800
+Subject: [PATCH] MGS-755 [#1779] fix vg context buffer memory leak
+
+gcoVGHARDWARE_FreeVideoMemory user space implementation has some problem,
+
+the asynchronous unlock/free is required by kernel memory managment, by not available in this function.
+because user command buffer & struct cannot be freed through committing new vg command to hardware,
+
+the new workaround is to double unlock the video memory for gcvHAL_RELEASE_VIDEO_MEMORY,
+also removed the database as the asynchronous unlock is not available in vg user space driver.
+
+Date: Jun 15, 2015
+Signed-off-by: Xianzhong <b07117@freescale.com>
+(cherry picked from commit af30773d184e4b370ae577fd624f3ea8aec97a50)
+---
+ drivers/mxc/gpu-viv/hal/kernel/gc_hal_kernel_vg.c | 12 ++++++++++++
+ 1 file changed, 12 insertions(+)
+
+diff --git a/drivers/mxc/gpu-viv/hal/kernel/gc_hal_kernel_vg.c b/drivers/mxc/gpu-viv/hal/kernel/gc_hal_kernel_vg.c
+index 60d8a13..d66205b 100644
+--- a/drivers/mxc/gpu-viv/hal/kernel/gc_hal_kernel_vg.c
++++ b/drivers/mxc/gpu-viv/hal/kernel/gc_hal_kernel_vg.c
+@@ -529,6 +529,18 @@ gceSTATUS gckVGKERNEL_Dispatch(
+             Kernel, processID,
+             (gctUINT32)kernelInterface->u.ReleaseVideoMemory.node
+             ));
++        {
++            gckVIDMEM_NODE nodeObject;
++
++            /* Remove record from process db. */
++            gcmkERR_BREAK(
++                gckKERNEL_RemoveProcessDB(Kernel, processID, gcvDB_VIDEO_MEMORY_LOCKED, (gctPOINTER)kernelInterface->u.ReleaseVideoMemory.node));
++
++            gcmkERR_BREAK(
++                gckVIDMEM_HANDLE_Lookup(Kernel, processID, (gctUINT32)kernelInterface->u.ReleaseVideoMemory.node, &nodeObject));
++
++            gckVIDMEM_NODE_Dereference(Kernel, nodeObject);
++        }
+ 
+         break;
+ 
+-- 
+1.8.0
+

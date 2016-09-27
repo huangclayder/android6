@@ -1,0 +1,37 @@
+From 1dcb2611970c7e1509ac110279ddb80bcc70c7d8 Mon Sep 17 00:00:00 2001
+From: Li Jun <B47624@freescale.com>
+Date: Thu, 16 Oct 2014 22:17:51 +0800
+Subject: [PATCH] MLK-9617-14 usb: core: otg: wait less hub power stable time
+ for b host
+
+This patch changes hub power stable wait time for root hub of b host from
+100ms to 50ms to meet OTG HNP timing requirment.
+
+Signed-off-by: Li Jun <b47624@freescale.com>
+(cherry picked from commit 31889db617b7ecf4cdf9f9e98957ec9b6de49a4e)
+---
+ drivers/usb/core/hub.c | 8 ++++++--
+ 1 file changed, 6 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/usb/core/hub.c b/drivers/usb/core/hub.c
+index 54127d4..e1992be4 100644
+--- a/drivers/usb/core/hub.c
++++ b/drivers/usb/core/hub.c
+@@ -832,8 +832,12 @@ static unsigned hub_power_on(struct usb_hub *hub, bool do_delay)
+ 			usb_clear_port_feature(hub->hdev, port1,
+ 						USB_PORT_FEAT_POWER);
+ 
+-	/* Wait at least 100 msec for power to become stable */
+-	delay = max(pgood_delay, (unsigned) 100);
++	if (hub->hdev->bus->is_b_host)
++		/* Wait 50ms for root hub of b host is enough */
++		delay = max(pgood_delay, (unsigned) 50);
++	else
++		/* Wait at least 100 msec for power to become stable */
++		delay = max(pgood_delay, (unsigned) 100);
+ 	if (do_delay)
+ 		msleep(delay);
+ 	return delay;
+-- 
+1.8.0
+

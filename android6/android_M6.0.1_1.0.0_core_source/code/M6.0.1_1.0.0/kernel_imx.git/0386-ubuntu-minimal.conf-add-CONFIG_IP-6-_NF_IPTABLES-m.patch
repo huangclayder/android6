@@ -1,0 +1,28 @@
+From 95b97c51581300e6d98ecbf433130c362aa0f1f7 Mon Sep 17 00:00:00 2001
+From: Andrey Konovalov <andrey.konovalov@linaro.org>
+Date: Fri, 24 May 2013 01:50:15 +0400
+Subject: [PATCH] ubuntu-minimal.conf: add CONFIG_IP[6]_NF_IPTABLES=m
+
+This is for OpenStack support.
+
+Signed-off-by: Andrey Konovalov <andrey.konovalov@linaro.org>
+---
+ linaro/configs/ubuntu-minimal.conf | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/linaro/configs/ubuntu-minimal.conf b/linaro/configs/ubuntu-minimal.conf
+index 057ad01..e3c0c0c 100644
+--- a/linaro/configs/ubuntu-minimal.conf
++++ b/linaro/configs/ubuntu-minimal.conf
+@@ -7,6 +7,8 @@ CONFIG_CC_STACKPROTECTOR=y
+ CONFIG_SYN_COOKIES=y
+ CONFIG_IPV6=y
+ CONFIG_NETLABEL=y
++CONFIG_IP_NF_IPTABLES=m
++CONFIG_IP6_NF_IPTABLES=m
+ CONFIG_DEVTMPFS=y
+ CONFIG_DEVTMPFS_MOUNT=y
+ CONFIG_BLK_DEV_RAM=y
+-- 
+1.8.0
+

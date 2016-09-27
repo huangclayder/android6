@@ -1,0 +1,51 @@
+From 075afc4d940545e5ffc3f743f62c0fdbf5fb1e4b Mon Sep 17 00:00:00 2001
+From: Xu Mao <B34688@freescale.com>
+Date: Thu, 22 Aug 2013 14:50:09 +0800
+Subject: [PATCH 10/45] ENGR00275869 Audio output speed for FFx2 is same with
+ that for FFx1.5
+
+result speed of setPlaySpeed needs to return to caller, to judge
+whether this call success or failed.
+
+Change-Id: I2ecfc59a5f6fe9a9910bc7d43b4e4b692c2d603a
+Signed-off-by: Xu Mao <B34688@freescale.com>
+
+Conflicts:
+	api/current.txt
+---
+ api/current.txt                           | 2 +-
+ media/java/android/media/MediaPlayer.java | 5 +++--
+ 2 files changed, 4 insertions(+), 3 deletions(-)
+
+diff --git a/api/current.txt b/api/current.txt
+index 99859cf..9057fcf 100644
+--- a/api/current.txt
++++ b/api/current.txt
+@@ -16134,7 +16134,7 @@ package android.media {
+     method public void setOnTimedTextListener(android.media.MediaPlayer.OnTimedTextListener);
+     method public void setOnVideoSizeChangedListener(android.media.MediaPlayer.OnVideoSizeChangedListener);
+     method public void setPlaybackParams(android.media.PlaybackParams);
+-    method public void setPlaySpeed(int);
++    method public void setPlaySpeed(int[]);
+     method public void setScreenOnWhilePlaying(boolean);
+     method public void setSurface(android.view.Surface);
+     method public void setSyncParams(android.media.SyncParams);
+diff --git a/media/java/android/media/MediaPlayer.java b/media/java/android/media/MediaPlayer.java
+index ad121ae..69288a4 100644
+--- a/media/java/android/media/MediaPlayer.java
++++ b/media/java/android/media/MediaPlayer.java
+@@ -1907,8 +1907,9 @@ public class MediaPlayer implements SubtitleController.Listener
+      * When normalized speed is [0.1, 1.9] audio is outputted, otherwise audio
+      * is not outputted.
+      */
+-    public void setPlaySpeed(int Speed) {
+-        setParameter(KEY_PARAMETER_PLAYBACK_RATE_PERMILLE, Speed);
++    public void setPlaySpeed(int[] Speed) {
++        setParameter(KEY_PARAMETER_PLAYBACK_RATE_PERMILLE, Speed[0]);
++        Speed[0] = getIntParameter(KEY_PARAMETER_PLAYBACK_RATE_PERMILLE);
+     }
+ 
+     /*
+-- 
+1.8.0
+

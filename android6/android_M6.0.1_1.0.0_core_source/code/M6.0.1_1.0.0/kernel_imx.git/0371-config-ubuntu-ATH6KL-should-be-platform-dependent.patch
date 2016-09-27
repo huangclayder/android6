@@ -1,0 +1,27 @@
+From 63c605c3b24c0f5ef4d9ea47219cfc1ac569a7d3 Mon Sep 17 00:00:00 2001
+From: Ricardo Salveti de Araujo <ricardo.salveti@linaro.org>
+Date: Mon, 25 Jun 2012 23:22:55 -0300
+Subject: [PATCH] config: ubuntu: ATH6KL should be platform dependent
+
+Signed-off-by: Ricardo Salveti de Araujo <ricardo.salveti@linaro.org>
+---
+ linaro/configs/ubuntu.conf | 3 ---
+ 1 file changed, 3 deletions(-)
+
+diff --git a/linaro/configs/ubuntu.conf b/linaro/configs/ubuntu.conf
+index 5b9d8ad..5d0a372 100644
+--- a/linaro/configs/ubuntu.conf
++++ b/linaro/configs/ubuntu.conf
+@@ -939,9 +939,6 @@ CONFIG_CARL9170=m
+ CONFIG_CARL9170_LEDS=y
+ CONFIG_CARL9170_WPC=y
+ CONFIG_CARL9170_HWRNG=y
+-CONFIG_ATH6KL=m
+-CONFIG_ATH6KL_SDIO=m
+-CONFIG_ATH6KL_USB=m
+ CONFIG_B43=m
+ CONFIG_B43_BCMA=y
+ # CONFIG_B43_BCMA_EXTRA is not set
+-- 
+1.8.0
+

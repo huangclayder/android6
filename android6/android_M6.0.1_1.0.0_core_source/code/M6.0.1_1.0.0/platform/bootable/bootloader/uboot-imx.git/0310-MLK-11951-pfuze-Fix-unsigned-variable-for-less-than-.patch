@@ -1,0 +1,32 @@
+From 7e7cbcb80a20da1e744091a69e52db1b935750a2 Mon Sep 17 00:00:00 2001
+From: "Ye.Li" <B37916@freescale.com>
+Date: Fri, 4 Dec 2015 14:22:59 +0800
+Subject: [PATCH] MLK-11951 pfuze: Fix unsigned variable for less-than-zero
+ comparison
+
+According to the Coverity result, a unsigned int variable is used fo less-
+than-zero comparison, the result is never true. Need to fix the variable
+type to signed int.
+
+Signed-off-by: Ye.Li <B37916@freescale.com>
+---
+ board/freescale/common/pfuze.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/board/freescale/common/pfuze.c b/board/freescale/common/pfuze.c
+index d6a209e..30f6f0a 100644
+--- a/board/freescale/common/pfuze.c
++++ b/board/freescale/common/pfuze.c
+@@ -12,7 +12,8 @@
+ int pfuze_mode_init(struct pmic *p, u32 mode)
+ {
+ 	unsigned char offset, i, switch_num;
+-	u32 id, ret;
++	u32 id;
++	int ret;
+ 
+ 	pmic_reg_read(p, PFUZE100_DEVICEID, &id);
+ 	id = id & 0xf;
+-- 
+1.8.0
+

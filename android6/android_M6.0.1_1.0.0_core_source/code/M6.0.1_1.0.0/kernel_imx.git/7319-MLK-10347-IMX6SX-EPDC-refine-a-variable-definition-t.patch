@@ -1,0 +1,30 @@
+From 185976e26c589aaef6536cb23ed837b5bdeb440d Mon Sep 17 00:00:00 2001
+From: Fancy Fang <chen.fang@freescale.com>
+Date: Sat, 28 Feb 2015 14:24:43 +0800
+Subject: [PATCH] MLK-10347 IMX6SX: EPDC: refine a variable definition to
+ avoid potential risk
+
+Modify the 'hard_lock' variable to be static to avoid
+potential name conflict with other kernel modules.
+
+Signed-off-by: Fancy Fang <chen.fang@freescale.com>
+---
+ drivers/video/mxc/mxc_epdc_fb.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/video/mxc/mxc_epdc_fb.c b/drivers/video/mxc/mxc_epdc_fb.c
+index c817480..545e08b 100644
+--- a/drivers/video/mxc/mxc_epdc_fb.c
++++ b/drivers/video/mxc/mxc_epdc_fb.c
+@@ -90,7 +90,7 @@
+ #define MERGE_BLOCK	2
+ 
+ static unsigned long default_bpp = 16;
+-DEFINE_MUTEX(hard_lock);
++static DEFINE_MUTEX(hard_lock);
+ 
+ struct update_marker_data {
+ 	struct list_head full_list;
+-- 
+1.8.0
+

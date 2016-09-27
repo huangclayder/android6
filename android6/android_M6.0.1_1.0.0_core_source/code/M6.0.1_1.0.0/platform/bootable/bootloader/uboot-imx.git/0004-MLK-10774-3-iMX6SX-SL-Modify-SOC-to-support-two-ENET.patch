@@ -1,0 +1,164 @@
+From c020a931227fe05a2a43a34d5554fd31703b8cd9 Mon Sep 17 00:00:00 2001
+From: Peng Fan <Peng.Fan@freescale.com>
+Date: Sat, 14 Mar 2015 17:37:55 +0800
+Subject: [PATCH] MLK-10774-3 iMX6SX/SL: Modify SOC to support two ENET
+
+iMX6SX has different enet system clocks with iMX6SL, and has two ENET
+controllers. So update clocks and soc APIs accordingly to support this
+features.
+
+1. Enet RGMII TX clock source may come from external or internal PLL.
+   By default, use the external phy CLK_25M output as TX clock source.
+   When using internal PLL as source, the function enable_fec_anatop_clock
+   must be called to enable clock for each enet controller.
+2. Modify the MAC address function "imx_get_mac_from_fuse" to get either
+   ENET MAC address.
+3. Add configuration "CONFIG_FEC_MXC_25M_REF_CLK" to enable ENET 25Mhz
+   reference clock.
+
+Signed-off-by: Fugang Duan  <B38611@freescale.com>
+Signed-off-by: Ye.Li <B37916@freescale.com>
+Signed-off-by: Peng Fan <Peng.Fan@freescale.com>
+---
+ arch/arm/cpu/armv7/mx6/clock.c           | 19 ++++++++++++++++---
+ arch/arm/cpu/armv7/mx6/soc.c             | 24 ++++++++++++++++++++++++
+ arch/arm/include/asm/arch-mx6/clock.h    |  2 +-
+ arch/arm/include/asm/arch-mx6/crm_regs.h |  5 +++++
+ arch/arm/include/asm/arch-mx6/imx-regs.h |  4 ++--
+ 5 files changed, 48 insertions(+), 6 deletions(-)
+
+diff --git a/arch/arm/cpu/armv7/mx6/clock.c b/arch/arm/cpu/armv7/mx6/clock.c
+index 055f44e..74f61ba 100644
+--- a/arch/arm/cpu/armv7/mx6/clock.c
++++ b/arch/arm/cpu/armv7/mx6/clock.c
+@@ -485,7 +485,7 @@ void enable_qspi_clk(int qspi_num)
+ #endif
+ 
+ #ifdef CONFIG_FEC_MXC
+-int enable_fec_anatop_clock(enum enet_freq freq)
++int enable_fec_anatop_clock(int fec_id, enum enet_freq freq)
+ {
+ 	u32 reg = 0;
+ 	s32 timeout = 100000;
+@@ -498,7 +498,14 @@ int enable_fec_anatop_clock(enum enet_freq freq)
+ 
+ 	reg = readl(&anatop->pll_enet);
+ 	reg &= ~BM_ANADIG_PLL_ENET_DIV_SELECT;
+-	reg |= freq;
++
++	if (0 == fec_id) {
++		reg &= ~BM_ANADIG_PLL_ENET_DIV_SELECT;
++		reg |= BF_ANADIG_PLL_ENET_DIV_SELECT(freq);
++	} else {
++		reg &= ~BM_ANADIG_PLL_ENET2_DIV_SELECT;
++		reg |= BF_ANADIG_PLL_ENET2_DIV_SELECT(freq);
++	}
+ 
+ 	if ((reg & BM_ANADIG_PLL_ENET_POWERDOWN) ||
+ 	    (!(reg & BM_ANADIG_PLL_ENET_LOCK))) {
+@@ -513,8 +520,14 @@ int enable_fec_anatop_clock(enum enet_freq freq)
+ 	}
+ 
+ 	/* Enable FEC clock */
+-	reg |= BM_ANADIG_PLL_ENET_ENABLE;
++	if (0 == fec_id)
++		reg |= BM_ANADIG_PLL_ENET_ENABLE;
++	else
++		reg |= BM_ANADIG_PLL_ENET2_ENABLE;
+ 	reg &= ~BM_ANADIG_PLL_ENET_BYPASS;
++#ifdef CONFIG_FEC_MXC_25M_REF_CLK
++	reg |= BM_ANADIG_PLL_ENET_REF_25M_ENABLE;
++#endif
+ 	writel(reg, &anatop->pll_enet);
+ 
+ #ifdef CONFIG_MX6SX
+diff --git a/arch/arm/cpu/armv7/mx6/soc.c b/arch/arm/cpu/armv7/mx6/soc.c
+index ea1143b..f43d7ff 100644
+--- a/arch/arm/cpu/armv7/mx6/soc.c
++++ b/arch/arm/cpu/armv7/mx6/soc.c
+@@ -415,6 +415,29 @@ void imx_get_mac_from_fuse(int dev_id, unsigned char *mac)
+ 	struct fuse_bank4_regs *fuse =
+ 			(struct fuse_bank4_regs *)bank->fuse_regs;
+ 
++#ifdef CONFIG_MX6SX
++	if (0 == dev_id) {
++		u32 value = readl(&fuse->mac_addr1);
++		mac[0] = (value >> 8);
++		mac[1] = value ;
++
++		value = readl(&fuse->mac_addr0);
++		mac[2] = value >> 24 ;
++		mac[3] = value >> 16 ;
++		mac[4] = value >> 8 ;
++		mac[5] = value ;
++	} else {
++		u32 value = readl(&fuse->mac_addr2);
++		mac[0] = value >> 24 ;
++		mac[1] = value >> 16 ;
++		mac[2] = value >> 8 ;
++		mac[3] = value ;
++
++		value = readl(&fuse->mac_addr1);
++		mac[4] = value >> 24 ;
++		mac[5] = value >> 16 ;
++	}
++#else
+ 	u32 value = readl(&fuse->mac_addr_high);
+ 	mac[0] = (value >> 8);
+ 	mac[1] = value ;
+@@ -425,6 +448,7 @@ void imx_get_mac_from_fuse(int dev_id, unsigned char *mac)
+ 	mac[4] = value >> 8 ;
+ 	mac[5] = value ;
+ 
++#endif
+ }
+ #endif
+ 
+diff --git a/arch/arm/include/asm/arch-mx6/clock.h b/arch/arm/include/asm/arch-mx6/clock.h
+index a6de5ee..c10a60d 100644
+--- a/arch/arm/include/asm/arch-mx6/clock.h
++++ b/arch/arm/include/asm/arch-mx6/clock.h
+@@ -65,7 +65,7 @@ int enable_pcie_clock(void);
+ int enable_i2c_clk(unsigned char enable, unsigned i2c_num);
+ int enable_spi_clk(unsigned char enable, unsigned spi_num);
+ void enable_ipu_clock(void);
+-int enable_fec_anatop_clock(enum enet_freq freq);
++int enable_fec_anatop_clock(int fec_id, enum enet_freq freq);
+ void enable_enet_clk(unsigned char enable);
+ void enable_qspi_clk(int qspi_num);
+ void enable_thermal_clk(void);
+diff --git a/arch/arm/include/asm/arch-mx6/crm_regs.h b/arch/arm/include/asm/arch-mx6/crm_regs.h
+index 0592ce0..bc1c454 100644
+--- a/arch/arm/include/asm/arch-mx6/crm_regs.h
++++ b/arch/arm/include/asm/arch-mx6/crm_regs.h
+@@ -1013,6 +1013,11 @@ struct mxc_ccm_reg {
+ #define BF_ANADIG_PLL_ENET_DIV_SELECT(v)  \
+ 	(((v) << 0) & BM_ANADIG_PLL_ENET_DIV_SELECT)
+ 
++#define BM_ANADIG_PLL_ENET2_ENABLE 0x00100000
++#define BM_ANADIG_PLL_ENET2_DIV_SELECT 0x0000000C
++#define BF_ANADIG_PLL_ENET2_DIV_SELECT(v)  \
++	(((v) << 2) & BM_ANADIG_PLL_ENET2_DIV_SELECT)
++
+ #define BM_ANADIG_PFD_480_PFD3_CLKGATE 0x80000000
+ #define BM_ANADIG_PFD_480_PFD3_STABLE 0x40000000
+ #define BP_ANADIG_PFD_480_PFD3_FRAC      24
+diff --git a/arch/arm/include/asm/arch-mx6/imx-regs.h b/arch/arm/include/asm/arch-mx6/imx-regs.h
+index 9a4ad8b..5615c65 100644
+--- a/arch/arm/include/asm/arch-mx6/imx-regs.h
++++ b/arch/arm/include/asm/arch-mx6/imx-regs.h
+@@ -646,9 +646,9 @@ struct fuse_bank4_regs {
+ 	u32 rsvd0[3];
+ 	u32 sjc_resp_high;
+ 	u32 rsvd1[3];
+-	u32 mac_addr_low;
++	u32 mac_addr0;
+ 	u32 rsvd2[3];
+-	u32 mac_addr_high;
++	u32 mac_addr1;
+ 	u32 rsvd3[3];
+ 	u32 mac_addr2;
+ 	u32 rsvd4[7];
+-- 
+1.8.0
+

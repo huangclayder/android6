@@ -1,0 +1,33 @@
+From e0b909fd5c9eb4c6973d3bbb4d81b6894914622b Mon Sep 17 00:00:00 2001
+From: Fugang Duan <b38611@freescale.com>
+Date: Mon, 30 Mar 2015 10:47:23 +0800
+Subject: [PATCH] MLK-10274 tty: serial: clear AWAKE bit after resume back
+
+When uart port (non-console port) in dma mode and use uart as remote wakeup
+source, after resume back, the AWAKE bit is not cleared most of interrupts
+are disabled. And then let system suspend state, system resume back immediately
+without any wake up action. So we need to clear the AWAKE bit after resume
+back in DMA mode.
+
+Signed-off-by: Fugang Duan <B38611@freescale.com>
+---
+ drivers/tty/serial/imx.c | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/drivers/tty/serial/imx.c b/drivers/tty/serial/imx.c
+index 2e1a48c..86222dc 100644
+--- a/drivers/tty/serial/imx.c
++++ b/drivers/tty/serial/imx.c
+@@ -1985,6 +1985,9 @@ static int serial_imx_resume(struct platform_device *dev)
+ 	val = readl(sport->port.membase + UCR3);
+ 	val &= ~(UCR3_AWAKEN | UCR3_AIRINTEN);
+ 	writel(val, sport->port.membase + UCR3);
++	val = readl(sport->port.membase + USR1);
++	if (val & USR1_AWAKE)
++		writel(USR1_AWAKE, sport->port.membase + USR1);
+ 
+ 	uart_resume_port(&imx_reg, &sport->port);
+ 
+-- 
+1.8.0
+

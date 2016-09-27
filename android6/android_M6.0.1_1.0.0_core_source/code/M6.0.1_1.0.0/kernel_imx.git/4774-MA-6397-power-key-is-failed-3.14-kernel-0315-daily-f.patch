@@ -1,0 +1,37 @@
+From 6ebf7b7c762ee73d07bd0080580e471064bbcfca Mon Sep 17 00:00:00 2001
+From: Zhang Sanshan <b51434@freescale.com>
+Date: Mon, 16 Mar 2015 21:50:19 +0800
+Subject: [PATCH] MA-6397 power key is failed(3.14 kernel 0315 daily full
+ image auto dq/dl)
+
+can't use the power key on auto dq/dl board.
+This patch enable Power Button.
+
+Signed-off-by: Zhang Sanshan <b51434@freescale.com>
+---
+ arch/arm/boot/dts/imx6qdl-sabreauto.dtsi | 7 ++++---
+ 1 file changed, 4 insertions(+), 3 deletions(-)
+
+diff --git a/arch/arm/boot/dts/imx6qdl-sabreauto.dtsi b/arch/arm/boot/dts/imx6qdl-sabreauto.dtsi
+index 3bef1a7..1625898 100644
+--- a/arch/arm/boot/dts/imx6qdl-sabreauto.dtsi
++++ b/arch/arm/boot/dts/imx6qdl-sabreauto.dtsi
+@@ -69,11 +69,12 @@
+ 			linux,code = <KEY_BACK>;
+ 		};
+ 
+-		program {
+-			label = "Program";
++		/* Reconfig to power key in Android*/
++		power {
++			label = "Power Button";
+ 			gpios = <&gpio2 12 1>;
++			linux,code = <116>; /* KEY_POWER */
+ 			gpio-key,wakeup;
+-			linux,code = <KEY_PROGRAM>;
+ 		};
+ 
+ 		volume-up {
+-- 
+1.8.0
+

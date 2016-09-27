@@ -1,0 +1,84 @@
+From f6b6f3c7b2bb7d6277801882afdced6f2b10fc17 Mon Sep 17 00:00:00 2001
+From: Nitin Garg <nitin.garg@freescale.com>
+Date: Fri, 27 Mar 2015 14:45:43 -0500
+Subject: [PATCH] MLK-10496: Check the PL310 version for applying errata
+
+Apply errata based on PL310 version instead of compile
+time. Also set Prefetch offset to 15, since it improves
+memcpy performance by 35%. Don't enable Incr double
+Linefill enable since it adversely affects memcpy
+performance by about 32MB/s and reads by 90MB/s. Tested
+with 4K to 16MB sized src and dst aligned buffer.
+
+Signed-off-by: Nitin Garg <nitin.garg@freescale.com>
+(cherry picked from commit 31751fa9cf29ef4056f49fe06a54700a89c9bdc5)
+---
+ arch/arm/cpu/armv7/mx6/soc.c | 21 ++++++++++-----------
+ arch/arm/include/asm/pl310.h |  5 +++++
+ 2 files changed, 15 insertions(+), 11 deletions(-)
+
+diff --git a/arch/arm/cpu/armv7/mx6/soc.c b/arch/arm/cpu/armv7/mx6/soc.c
+index 5773caa..eda7e12 100644
+--- a/arch/arm/cpu/armv7/mx6/soc.c
++++ b/arch/arm/cpu/armv7/mx6/soc.c
+@@ -938,7 +938,7 @@ void imx_setup_hdmi(void)
+ void v7_outer_cache_enable(void)
+ {
+ 	struct pl310_regs *const pl310 = (struct pl310_regs *)L2_PL310_BASE;
+-	unsigned int val;
++	unsigned int val, cache_id;
+ 
+ #if defined CONFIG_MX6SL
+ 	struct iomuxc *iomux = (struct iomuxc *)IOMUXC_BASE_ADDR;
+@@ -958,25 +958,24 @@ void v7_outer_cache_enable(void)
+ 
+ 	val = readl(&pl310->pl310_prefetch_ctrl);
+ 
+-	/* Turn on the L2 I/D prefetch */
+-	val |= 0x30000000;
++	/* Turn on the L2 I/D prefetch, double linefill */
++	/* Set prefetch offset with any value except 23 as per errata 765569 */
++	val |= 0x7000000f;
+ 
+ 	/*
+ 	 * The L2 cache controller(PL310) version on the i.MX6D/Q is r3p1-50rel0
+-	 * The L2 cache controller(PL310) version on the i.MX6DL/SOLO/SL is r3p2
++	 * The L2 cache controller(PL310) version on the i.MX6DL/SOLO/SL/SX/DQP
++	 * is r3p2.
+ 	 * But according to ARM PL310 errata: 752271
+ 	 * ID: 752271: Double linefill feature can cause data corruption
+ 	 * Fault Status: Present in: r3p0, r3p1, r3p1-50rel0. Fixed in r3p2
+ 	 * Workaround: The only workaround to this erratum is to disable the
+ 	 * double linefill feature. This is the default behavior.
+ 	 */
+-
+-#ifndef CONFIG_MX6Q
+-	val |= 0x40800000;
+-#else
+-	if (is_mx6dqp())
+-		val |= 0x40800000;
+-#endif
++	cache_id = readl(&pl310->pl310_cache_id);
++	if (((cache_id & L2X0_CACHE_ID_PART_MASK) == L2X0_CACHE_ID_PART_L310)
++	    && ((cache_id & L2X0_CACHE_ID_RTL_MASK) < L2X0_CACHE_ID_RTL_R3P2))
++		val &= ~(1 << 30);
+ 	writel(val, &pl310->pl310_prefetch_ctrl);
+ 
+ 	val = readl(&pl310->pl310_power_ctrl);
+diff --git a/arch/arm/include/asm/pl310.h b/arch/arm/include/asm/pl310.h
+index ddc245b..d7a7eb2 100644
+--- a/arch/arm/include/asm/pl310.h
++++ b/arch/arm/include/asm/pl310.h
+@@ -75,4 +75,9 @@ void pl310_clean_inval_all(void);
+ void pl310_inval_range(u32 start, u32 end);
+ void pl310_clean_inval_range(u32 start, u32 end);
+ 
++#define L2X0_CACHE_ID_PART_MASK		(0xf << 6)
++#define L2X0_CACHE_ID_PART_L310		(3 << 6)
++#define L2X0_CACHE_ID_RTL_MASK          0x3f
++#define L2X0_CACHE_ID_RTL_R3P2          0x8
++
+ #endif
+-- 
+1.8.0
+

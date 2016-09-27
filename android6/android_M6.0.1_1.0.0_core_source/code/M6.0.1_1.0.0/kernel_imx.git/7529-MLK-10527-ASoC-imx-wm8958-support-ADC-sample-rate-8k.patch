@@ -1,0 +1,34 @@
+From 0862a3220c2351fa800ce0a86c48cf132b1f3716 Mon Sep 17 00:00:00 2001
+From: Zidan Wang <zidan.wang@freescale.com>
+Date: Wed, 1 Apr 2015 14:36:29 +0800
+Subject: [PATCH] MLK-10527 ASoC: imx-wm8958: support ADC sample rate 8k,
+ 11.025k and 12k
+
+Clear R1568 ADC_OSR128 bit to support slower SYSCLK. And it will support
+ADC sample rate 8K, 11.025K and 12K.
+
+Signed-off-by: Zidan Wang <zidan.wang@freescale.com>
+---
+ sound/soc/fsl/imx-wm8958.c | 6 ++++++
+ 1 file changed, 6 insertions(+)
+
+diff --git a/sound/soc/fsl/imx-wm8958.c b/sound/soc/fsl/imx-wm8958.c
+index 0444363..2bfbebb 100644
+--- a/sound/soc/fsl/imx-wm8958.c
++++ b/sound/soc/fsl/imx-wm8958.c
+@@ -193,6 +193,12 @@ static int imx_hifi_hw_params(struct snd_pcm_substream *substream,
+ 	 * LRCLK from DACLRCK1.
+ 	 */
+ 	snd_soc_update_bits(codec, WM8994_GPIO_1, 0x1f, 0x2);
++
++	/*
++	 * Clear ADC_OSR128 bit to support slower SYSCLK, and support ADC sample
++	 * rate 8K, 11.025K and 12K.
++	 */
++	snd_soc_update_bits(codec, WM8994_OVERSAMPLING, 1<<1, 0);
+ 	return 0;
+ }
+ 
+-- 
+1.8.0
+

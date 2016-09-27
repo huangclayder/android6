@@ -1,0 +1,44 @@
+From 22ff8f8513386ccffb0ef0cc7c24f97b0b47a6cb Mon Sep 17 00:00:00 2001
+From: "guoyin.chen" <guoyin.chen@freescale.com>
+Date: Tue, 19 Aug 2014 09:35:06 +0800
+Subject: [PATCH 355/602] ENGR00327579 OpenGlEsVersionTest#testOpenGlEsVersion
+ failed for DQ
+
+update opengl es version to 3.0 to match the actual version we
+support for DL/DQ
+
+Signed-off-by: guoyin.chen <guoyin.chen@freescale.com>
+---
+ sabreauto_6q/init.rc | 2 +-
+ sabresd_6dq/init.rc  | 2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/sabreauto_6q/init.rc b/sabreauto_6q/init.rc
+index d296f40..c38d11a 100644
+--- a/sabreauto_6q/init.rc
++++ b/sabreauto_6q/init.rc
+@@ -53,7 +53,7 @@ on boot
+     setprop front_camera_orient 0
+ 
+     # Set OpenGLES version
+-    setprop ro.opengles.version 131072
++    setprop ro.opengles.version 196608
+ 
+     # Set rotation to 270 to cofigure as portrait mode
+     setprop ro.sf.hwrotation 0
+diff --git a/sabresd_6dq/init.rc b/sabresd_6dq/init.rc
+index bd56190..a4be33a 100755
+--- a/sabresd_6dq/init.rc
++++ b/sabresd_6dq/init.rc
+@@ -58,7 +58,7 @@ on boot
+     setprop front_camera_orient 0
+ 
+     # Set OpenGLES version
+-    setprop ro.opengles.version 131072
++    setprop ro.opengles.version 196608
+ 
+     # Set rotation to 270 to cofigure as portrait mode
+     setprop ro.sf.hwrotation 0
+-- 
+1.8.0
+

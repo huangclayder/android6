@@ -1,0 +1,66 @@
+From da45141efcdf6165bb2ed3960696f0e043951e39 Mon Sep 17 00:00:00 2001
+From: "guoyin.chen" <guoyin.chen@freescale.com>
+Date: Tue, 17 Mar 2015 13:16:49 +0800
+Subject: [PATCH 449/602] MA-6407 Build error as "system_app.te:5:ERROR
+ 'unknown type caam_device' at token"
+
+Add device.te for all imx6 boards
+
+Signed-off-by: guoyin.chen <guoyin.chen@freescale.com>
+---
+ evk_6sl/BoardConfig.mk       | 3 ++-
+ sabreauto_6q/BoardConfig.mk  | 3 ++-
+ sabreauto_6sx/BoardConfig.mk | 4 ++--
+ sabresd_6sx/BoardConfig.mk   | 4 ++--
+ 4 files changed, 8 insertions(+), 6 deletions(-)
+
+diff --git a/evk_6sl/BoardConfig.mk b/evk_6sl/BoardConfig.mk
+index 59abe29..bdea754 100644
+--- a/evk_6sl/BoardConfig.mk
++++ b/evk_6sl/BoardConfig.mk
+@@ -107,4 +107,5 @@ BOARD_SEPOLICY_UNION := \
+        netd.te \
+        bootanim.te \
+        dnsmasq.te \
+-       recovery.te
++       recovery.te \
++       device.te
+diff --git a/sabreauto_6q/BoardConfig.mk b/sabreauto_6q/BoardConfig.mk
+index aa9b09d..9a1e83d 100644
+--- a/sabreauto_6q/BoardConfig.mk
++++ b/sabreauto_6q/BoardConfig.mk
+@@ -140,5 +140,6 @@ BOARD_SEPOLICY_UNION := \
+        bootanim.te \
+        dnsmasq.te \
+        recovery.te \
+-       install_recovery.te
++       install_recovery.te \
++       device.te
+ 
+diff --git a/sabreauto_6sx/BoardConfig.mk b/sabreauto_6sx/BoardConfig.mk
+index 9478091..a1cf8fd 100755
+--- a/sabreauto_6sx/BoardConfig.mk
++++ b/sabreauto_6sx/BoardConfig.mk
+@@ -130,5 +130,5 @@ BOARD_SEPOLICY_UNION := \
+        bootanim.te \
+        dnsmasq.te \
+        recovery.te \
+-       install_recovery.te
+-
++       install_recovery.te \
++       device.te
+diff --git a/sabresd_6sx/BoardConfig.mk b/sabresd_6sx/BoardConfig.mk
+index dddb7c3..6736174 100644
+--- a/sabresd_6sx/BoardConfig.mk
++++ b/sabresd_6sx/BoardConfig.mk
+@@ -134,5 +134,5 @@ BOARD_SEPOLICY_UNION := \
+        netd.te \
+        bootanim.te \
+        dnsmasq.te \
+-       recovery.te
+-
++       recovery.te \
++       device.te
+-- 
+1.8.0
+

@@ -1,0 +1,30 @@
+From ac0ea7d652c52715fecbddb1a5a5474ca97d63af Mon Sep 17 00:00:00 2001
+From: xumao <b34688@freescale.com>
+Date: Fri, 19 Jun 2015 11:03:02 +0800
+Subject: [PATCH 76/95] MA-6813[Android] CTS VideoEncoderTest Surface related
+ cases fail
+
+Surface output RGBX format is not supported by stagefright encoder component.
+
+Add support of this format in same way with RGBA format.
+
+Signed-off-by: xumao <b34688@freescale.com>
+---
+ media/libstagefright/omx/SoftVideoEncoderOMXComponent.cpp | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/media/libstagefright/omx/SoftVideoEncoderOMXComponent.cpp b/media/libstagefright/omx/SoftVideoEncoderOMXComponent.cpp
+index 8ea7a6e..a2e3183 100644
+--- a/media/libstagefright/omx/SoftVideoEncoderOMXComponent.cpp
++++ b/media/libstagefright/omx/SoftVideoEncoderOMXComponent.cpp
+@@ -606,6 +606,7 @@ const uint8_t *SoftVideoEncoderOMXComponent::extractGraphicBuffer(
+             break;
+         case HAL_PIXEL_FORMAT_RGBA_8888:
+         case HAL_PIXEL_FORMAT_BGRA_8888:
++        case HAL_PIXEL_FORMAT_RGBX_8888:
+             ConvertRGB32ToPlanar(
+                     dst, dstStride, dstVStride,
+                     (const uint8_t *)bits, width, height, srcStride,
+-- 
+1.8.0
+

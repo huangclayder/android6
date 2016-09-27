@@ -1,0 +1,36 @@
+From ad03e42fa96b790267758956b6fbbe3990313c56 Mon Sep 17 00:00:00 2001
+From: "guoyin.chen" <guoyin.chen@freescale.com>
+Date: Mon, 27 Oct 2014 13:44:52 +0800
+Subject: [PATCH] MA-5790 Add ramoops in SX AI board's dts
+
+Add ramoops in SX AI board's dts, as user can
+get last boot's kmsg as "cat /sys/fs/pstore/console-ramoops"
+
+Signed-off-by: guoyin.chen <guoyin.chen@freescale.com>
+---
+ arch/arm/boot/dts/imx6sx-sabreauto.dts | 9 +++++++++
+ 1 file changed, 9 insertions(+)
+
+diff --git a/arch/arm/boot/dts/imx6sx-sabreauto.dts b/arch/arm/boot/dts/imx6sx-sabreauto.dts
+index 081bb3a..358a20b 100644
+--- a/arch/arm/boot/dts/imx6sx-sabreauto.dts
++++ b/arch/arm/boot/dts/imx6sx-sabreauto.dts
+@@ -181,6 +181,15 @@
+ 		spdif-controller = <&spdif>;
+ 		spdif-in;
+ 	};
++
++	ramoops_device {
++		compatible = "fsl,mxc_ramoops";
++		record_size = <524288>; /*512K*/
++		console_size= <262144>; /*256K*/
++		ftrace_size= <262144>;  /*256K*/
++		dump_oops = <1>;
++		status = "okay";
++	};
+ };
+ 
+ &iomuxc {
+-- 
+1.8.0
+

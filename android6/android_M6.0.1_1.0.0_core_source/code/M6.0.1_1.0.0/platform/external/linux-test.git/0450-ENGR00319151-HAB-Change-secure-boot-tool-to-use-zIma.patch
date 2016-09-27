@@ -1,0 +1,346 @@
+From 662817dcc09becf472b95456397100d8cecd7e2d Mon Sep 17 00:00:00 2001
+From: "Ye.Li" <B37916@freescale.com>
+Date: Thu, 19 Jun 2014 16:45:05 +0800
+Subject: [PATCH 450/505] ENGR00319151 HAB: Change secure boot tool to use
+ zImage
+
+Since the zImage becomes the default image, change the secure script
+and doc to sign zImage.
+
+Signed-off-by: Ye.Li <B37916@freescale.com>
+---
+ test/mxc_secureboot/V2012/README                   | 24 +++++-----
+ .../V2012/templates/habuimagegen_template          | 19 --------
+ .../V2012/templates/habzimagegen_template          | 19 ++++++++
+ .../V2012/templates/uimagecsf_template             | 31 ------------
+ .../V2012/templates/zimagecsf_template             | 31 ++++++++++++
+ test/mxc_secureboot/V2012/uImage/mk_secure_uimage  | 56 ----------------------
+ test/mxc_secureboot/V2012/zImage/mk_secure_zimage  | 56 ++++++++++++++++++++++
+ 7 files changed, 118 insertions(+), 118 deletions(-)
+ delete mode 100644 test/mxc_secureboot/V2012/templates/habuimagegen_template
+ create mode 100644 test/mxc_secureboot/V2012/templates/habzimagegen_template
+ delete mode 100644 test/mxc_secureboot/V2012/templates/uimagecsf_template
+ create mode 100644 test/mxc_secureboot/V2012/templates/zimagecsf_template
+ delete mode 100755 test/mxc_secureboot/V2012/uImage/mk_secure_uimage
+ create mode 100644 test/mxc_secureboot/V2012/zImage/mk_secure_zimage
+
+diff --git a/test/mxc_secureboot/V2012/README b/test/mxc_secureboot/V2012/README
+index 746613c..74620ff 100644
+--- a/test/mxc_secureboot/V2012/README
++++ b/test/mxc_secureboot/V2012/README
+@@ -9,14 +9,14 @@ File Description
+ 	SRK fuse later
+ 
+ "u-boot/mk_secure_uboot"
+-"uImage/mk_secure_uimage"
++"zImage/mk_secure_zimage"
+ "templates/"
+-	Automatic secure uboot and uImage generation scripts. These files
++	Automatic secure uboot and zImage generation scripts. These files
+ 	are used for dynamic authentication. It is more convinient and
+ 	adaptive comparing to the original static way.
+ 
+ 	Copy "u-boot/mk_secure_uboot" to "BLN_CST_MAIN_01.00.00/u-boot"
+-	Copy "uImage/mk_secure_uimage" to "BLN_CST_MAIN_01.00.00/uImage"
++	Copy "zImage/mk_secure_zimage" to "BLN_CST_MAIN_01.00.00/zImage"
+ 	Copy "templates/" to "BLN_CST_MAIN_01.00.00"
+ 
+ Secure Boot Genreation
+@@ -30,12 +30,12 @@ For generating secure uboot
+     . it is slightly differrent the script for V2009, where we should
+       explicityly specify U-Boot DDR load address as a parameter
+ 
+-For generating secure uImage
+-    . copy "uImage" to "BLN_CST_MAIN_01.00.00/uImage"
+-    . "./mk_secure_uimage 0x10800000"
+-	- where 0x10800000 is the DDR location where uImage is
++For generating secure zImage
++    . copy "zImage" to "BLN_CST_MAIN_01.00.00/zImage"
++    . "./mk_secure_zimage 0x10800000"
++	- where 0x10800000 is the DDR location where zImage is
+ 	  copied to by UBoot, different from platform to platform
+-    . uimage-signed-pad.bin will be generated. It is the uImage
++    . zimage-signed-pad.bin will be generated. It is the zImage
+       with signature
+ 
+ Image Layout
+@@ -53,11 +53,11 @@ U-Boot
+     |    PADDING        | /
+     +-------------------+
+ 
+-uImage
++zImage
+ 
+     +-------------------+      DDR_START
+     |                   |
+-    |     uImage        |
++    |     zImage        |
+     |                   |
+     +-------------------+      DDR_START + UIMAGE_SIZE
+     |     PADDING       |
+@@ -71,12 +71,12 @@ uImage
+ 
+ DDR Location Parameters
+ ------------------------------------
+-The DDR location parameter provided to "mk_secure_uimage" script is the
++The DDR location parameter provided to "mk_secure_zimage" script is the
+ "CONFIG_LOADADDR" defined in include/configs/<plat_name>.h (default). And
+ can be changed in u-boot command line by "setenv loadaddr=..." with valid
+ physical address. The following are the default values
+ 
+-	MX6Q/DL ARM2 Socket Board		MX6SL ARM2 Socket Board
++	MX6Q/DL ARM2 Socket Board		MX6SL/SX ARM2 Socket Board
+ 	-------------------------		-------------------------
+ 	0x10800000				0x80800000
+ 
+diff --git a/test/mxc_secureboot/V2012/templates/habuimagegen_template b/test/mxc_secureboot/V2012/templates/habuimagegen_template
+deleted file mode 100644
+index a1f54c6..0000000
+--- a/test/mxc_secureboot/V2012/templates/habuimagegen_template
++++ /dev/null
+@@ -1,19 +0,0 @@
+-#! /bin/bash
+-
+-echo "extend uImage to %pad_len%..."
+-objcopy -I binary -O binary --pad-to %pad_len% --gap-fill=0x5A uImage uImage-pad.bin
+-
+-echo "generate IVT"
+-./genIVT
+-
+-echo "attach IVT..."
+-cat uImage-pad.bin ivt.bin > uImage-pad-ivt.bin
+-
+-echo "generate csf data..."
+-../linux/cst --o uImage_csf.bin < uImage.csf
+-
+-echo "merge image and csf data..."
+-cat uImage-pad-ivt.bin uImage_csf.bin > uImage-signed.bin
+-
+-echo "extend final image to %sig_len%..."
+-objcopy -I binary -O binary --pad-to %sig_len% --gap-fill=0x5A uImage-signed.bin uImage-signed-pad.bin
+diff --git a/test/mxc_secureboot/V2012/templates/habzimagegen_template b/test/mxc_secureboot/V2012/templates/habzimagegen_template
+new file mode 100644
+index 0000000..676dba1
+--- /dev/null
++++ b/test/mxc_secureboot/V2012/templates/habzimagegen_template
+@@ -0,0 +1,19 @@
++#! /bin/bash
++
++echo "extend zImage to %pad_len%..."
++objcopy -I binary -O binary --pad-to %pad_len% --gap-fill=0x5A zImage zImage-pad.bin
++
++echo "generate IVT"
++./genIVT
++
++echo "attach IVT..."
++cat zImage-pad.bin ivt.bin > zImage-pad-ivt.bin
++
++echo "generate csf data..."
++../linux/cst --o zImage_csf.bin < zImage.csf
++
++echo "merge image and csf data..."
++cat zImage-pad-ivt.bin zImage_csf.bin > zImage-signed.bin
++
++echo "extend final image to %sig_len%..."
++objcopy -I binary -O binary --pad-to %sig_len% --gap-fill=0x5A zImage-signed.bin zImage-signed-pad.bin
+diff --git a/test/mxc_secureboot/V2012/templates/uimagecsf_template b/test/mxc_secureboot/V2012/templates/uimagecsf_template
+deleted file mode 100644
+index a927ef1..0000000
+--- a/test/mxc_secureboot/V2012/templates/uimagecsf_template
++++ /dev/null
+@@ -1,31 +0,0 @@
+-[Header]
+-    Version = 4.0
+-    Security Configuration = Open
+-    Hash Algorithm = sha256
+-    Engine Configuration = 0
+-    Certificate Format = X509
+-    Signature Format = CMS
+-
+-[Install SRK]
+-    File = "../crts/SRK_1_2_3_4_table.bin"
+-    Source index = 0
+-
+-[Install CSFK]
+-    File = "../crts/CSF1_1_sha256_2048_65537_v3_usr_crt.pem"
+-
+-[Authenticate CSF]
+-
+-[Install Key]
+-    Verification index = 0
+-    Target index = 2
+-    File = "../crts/IMG1_1_sha256_2048_65537_v3_usr_crt.pem"
+-
+-# Sign padded uImage start at address %ddr_addr%
+-# length = %auth_len%
+-# This covers the essential parts: original uImage and the attached IVT
+-# Blocks have the following definition:
+-#    Image block start address on i.MX, Offset from start of image file,
+-#    Length of block in bytes, image data file
+-[Authenticate Data]
+-    Verification index = 2
+-    Blocks = %ddr_addr% 0x0 %auth_len% "uImage-pad-ivt.bin"
+diff --git a/test/mxc_secureboot/V2012/templates/zimagecsf_template b/test/mxc_secureboot/V2012/templates/zimagecsf_template
+new file mode 100644
+index 0000000..f0546b3
+--- /dev/null
++++ b/test/mxc_secureboot/V2012/templates/zimagecsf_template
+@@ -0,0 +1,31 @@
++[Header]
++    Version = 4.0
++    Security Configuration = Open
++    Hash Algorithm = sha256
++    Engine Configuration = 0
++    Certificate Format = X509
++    Signature Format = CMS
++
++[Install SRK]
++    File = "../crts/SRK_1_2_3_4_table.bin"
++    Source index = 0
++
++[Install CSFK]
++    File = "../crts/CSF1_1_sha256_2048_65537_v3_usr_crt.pem"
++
++[Authenticate CSF]
++
++[Install Key]
++    Verification index = 0
++    Target index = 2
++    File = "../crts/IMG1_1_sha256_2048_65537_v3_usr_crt.pem"
++
++# Sign padded uImage start at address %ddr_addr%
++# length = %auth_len%
++# This covers the essential parts: original uImage and the attached IVT
++# Blocks have the following definition:
++#    Image block start address on i.MX, Offset from start of image file,
++#    Length of block in bytes, image data file
++[Authenticate Data]
++    Verification index = 2
++    Blocks = %ddr_addr% 0x0 %auth_len% "zImage-pad-ivt.bin"
+diff --git a/test/mxc_secureboot/V2012/uImage/mk_secure_uimage b/test/mxc_secureboot/V2012/uImage/mk_secure_uimage
+deleted file mode 100755
+index 2f0857f..0000000
+--- a/test/mxc_secureboot/V2012/uImage/mk_secure_uimage
++++ /dev/null
+@@ -1,56 +0,0 @@
+-#! /bin/bash
+-if [ $# != 1 ]
+-then
+-	printf "	Command Syntax:\n"
+-	printf "	    mk_secure_uimage <DDR_ADDR>\n"
+-	printf "	        DDR_ADDR : ddr address where uImage is copied to RAM by U-Boot\n"
+-	printf "	Please try again\n"
+-	exit
+-fi
+-
+-let ddr_addr=$1
+-
+-if [ ! -f uImage ]
+-then
+-	printf "File \"uImage\" does not exist. Copy it from u-boot directory and try again\n"
+-	exit 1
+-fi
+-printf "Make Sure Your \"uImage\" is up to date...\n"
+-
+-# Calculate the size
+-let uimage_size=$(ls -lct uImage | awk '{print $5}')
+-let pad_len=$((uimage_size - uimage_size % 0x1000 + 0x1000)) # align to 0x1000
+-let auth_len=$((pad_len + 0x20)) # +0x20 "IVT"
+-let sig_len=$((auth_len + 0x2000))
+-let self_ptr=$((ddr_addr + pad_len))
+-let csf_ptr=$((ddr_addr + auth_len))
+-let jump_addr=$((ddr_addr + 0x1000))
+-
+-# change value to hex string
+-pad_len=`printf "0x%X" ${pad_len}`
+-auth_len=`printf "0x%X" ${auth_len}`
+-sig_len=`printf "0x%X" ${sig_len}`
+-ddr_addr=`printf "0x%X" ${ddr_addr}`
+-self_ptr=`printf "0x%X" ${self_ptr}`
+-csf_ptr=`printf "0x%X" ${csf_ptr}`
+-jump_addr=`printf "0x%X" ${jump_addr}`
+-
+-# Create habUimagegen
+-sed -e s/%pad_len%/${pad_len}/g -e s/%sig_len%/${sig_len}/g ../templates/habuimagegen_template > habUImageGen
+-chmod +x habUImageGen
+-
+-# Create u-boot.csf
+-sed -e s/%ddr_addr%/${ddr_addr}/g -e s/%auth_len%/${auth_len}/g ../templates/uimagecsf_template > uImage.csf
+-
+-# Create genIVT
+-sed -e s/%jump_addr%/${jump_addr}/g -e s/%self_ptr%/${self_ptr}/g -e s/%csf_ptr%/${csf_ptr}/g ../templates/genivt_template > genIVT
+-chmod +x genIVT
+-
+-# Generate secure boot
+-./habUImageGen
+-
+-# Remove temperory files
+-rm -f genIVT habUImageGen uImage.csf uImage-pad.bin ivt.bin uImage-pad-ivt.bin uImage_csf.bin uImage-signed.bin
+-
+-# OK
+-printf "uImage with Signature \"uImage-signed-pad.bin\" is ready to use\n"
+diff --git a/test/mxc_secureboot/V2012/zImage/mk_secure_zimage b/test/mxc_secureboot/V2012/zImage/mk_secure_zimage
+new file mode 100644
+index 0000000..390547d
+--- /dev/null
++++ b/test/mxc_secureboot/V2012/zImage/mk_secure_zimage
+@@ -0,0 +1,56 @@
++#! /bin/bash
++if [ $# != 1 ]
++then
++	printf "	Command Syntax:\n"
++	printf "	    mk_secure_zimage <DDR_ADDR>\n"
++	printf "	        DDR_ADDR : ddr address where zImage is copied to RAM by U-Boot\n"
++	printf "	Please try again\n"
++	exit
++fi
++
++let ddr_addr=$1
++
++if [ ! -f zImage ]
++then
++	printf "File \"zImage\" does not exist. Copy it from u-boot directory and try again\n"
++	exit 1
++fi
++printf "Make Sure Your \"zImage\" is up to date...\n"
++
++# Calculate the size
++let zimage_size=$(ls -lct zImage | awk '{print $5}')
++let pad_len=$((zimage_size - zimage_size % 0x1000 + 0x1000)) # align to 0x1000
++let auth_len=$((pad_len + 0x20)) # +0x20 "IVT"
++let sig_len=$((auth_len + 0x2000))
++let self_ptr=$((ddr_addr + pad_len))
++let csf_ptr=$((ddr_addr + auth_len))
++let jump_addr=$((ddr_addr + 0x1000))
++
++# change value to hex string
++pad_len=`printf "0x%X" ${pad_len}`
++auth_len=`printf "0x%X" ${auth_len}`
++sig_len=`printf "0x%X" ${sig_len}`
++ddr_addr=`printf "0x%X" ${ddr_addr}`
++self_ptr=`printf "0x%X" ${self_ptr}`
++csf_ptr=`printf "0x%X" ${csf_ptr}`
++jump_addr=`printf "0x%X" ${jump_addr}`
++
++# Create habUimagegen
++sed -e s/%pad_len%/${pad_len}/g -e s/%sig_len%/${sig_len}/g ../templates/habzimagegen_template > habZImageGen
++chmod +x habZImageGen
++
++# Create u-boot.csf
++sed -e s/%ddr_addr%/${ddr_addr}/g -e s/%auth_len%/${auth_len}/g ../templates/zimagecsf_template > zImage.csf
++
++# Create genIVT
++sed -e s/%jump_addr%/${jump_addr}/g -e s/%self_ptr%/${self_ptr}/g -e s/%csf_ptr%/${csf_ptr}/g ../templates/genivt_template > genIVT
++chmod +x genIVT
++
++# Generate secure boot
++./habZImageGen
++
++# Remove temperory files
++rm -f genIVT habZImageGen zImage.csf zImage-pad.bin ivt.bin zImage-pad-ivt.bin zImage_csf.bin zImage-signed.bin
++
++# OK
++printf "zImage with Signature \"zImage-signed-pad.bin\" is ready to use\n"
+-- 
+1.8.0
+

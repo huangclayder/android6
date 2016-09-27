@@ -1,0 +1,34 @@
+From 7eab00a1bf8a72c778b8acc165192b38db1aae46 Mon Sep 17 00:00:00 2001
+From: Jianzheng Zhou <Jianzheng.zhou@freescale.com>
+Date: Tue, 1 Jul 2014 17:57:35 +0800
+Subject: [PATCH] MA-6377-2 hwmon:fix fifo not work issue for mma8x5x
+
+According to mma8x5x data sheet, Bit6 in CTRL_REG5 is default 0
+which means routing interrupt to INT2. If set to 1, it will route
+interrupt to INT1. So in fact, if INT2 if configured in dts, no need
+to set Bit6 of CTRL_REG5.
+
+Signed-off-by: Jianzheng Zhou <Jianzheng.zhou@freescale.com>
+---
+ drivers/hwmon/mma8x5x.c | 5 -----
+ 1 file changed, 5 deletions(-)
+
+diff --git a/drivers/hwmon/mma8x5x.c b/drivers/hwmon/mma8x5x.c
+index a711a23..4bae7e2 100644
+--- a/drivers/hwmon/mma8x5x.c
++++ b/drivers/hwmon/mma8x5x.c
+@@ -392,11 +392,6 @@ static int mma8x5x_fifo_setting(struct mma8x5x_data *pdata,
+ 		i2c_smbus_write_byte_data(client,
+ 					MMA8X5X_CTRL_REG5,
+ 					pin_cfg | (0x01 << 6));
+-	/*route to pin 1*/
+-	else
+-		i2c_smbus_write_byte_data(client,
+-					MMA8X5X_CTRL_REG5,
+-					pin_cfg & ~(0x01 << 6));
+ 
+ 	i2c_smbus_write_byte_data(client, MMA8X5X_CTRL_REG1, sys_mode);
+ 
+-- 
+1.8.0
+

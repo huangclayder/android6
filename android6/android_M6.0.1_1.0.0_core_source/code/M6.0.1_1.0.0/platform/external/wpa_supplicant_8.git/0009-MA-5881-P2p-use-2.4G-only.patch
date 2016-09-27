@@ -1,0 +1,35 @@
+From 0e8901fdf94ea102d3e6bf6280bef6725b9e1506 Mon Sep 17 00:00:00 2001
+From: Wang Haoran <b50027@freescale.com>
+Date: Wed, 19 Nov 2014 20:29:16 +0800
+Subject: [PATCH 09/22] MA-5881 P2p use 2.4G only
+
+As the legacy device cannot use 5G as p2p
+channel we filter the non-2.4G channel when
+update the channel list.
+
+Signed-off-by: Wang Haoran <b50027@freescale.com>
+
+Conflicts:
+	wpa_supplicant/p2p_supplicant.c
+---
+ wpa_supplicant/p2p_supplicant.c | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
+
+diff --git a/wpa_supplicant/p2p_supplicant.c b/wpa_supplicant/p2p_supplicant.c
+index 2247cd0..59f24bb 100644
+--- a/wpa_supplicant/p2p_supplicant.c
++++ b/wpa_supplicant/p2p_supplicant.c
+@@ -3272,7 +3272,9 @@ static int wpas_p2p_setup_channels(struct wpa_supplicant *wpa_s,
+ 	cla = cli_cla = 0;
+ 
+ 	for (op = 0; op_class[op].op_class; op++) {
+-		const struct p2p_oper_class_map *o = &op_class[op];
++		struct p2p_oper_class_map *o = &op_class[op];
++        if (o->op_class != 81)
++                continue;
+ 		u8 ch;
+ 		struct p2p_reg_class *reg = NULL, *cli_reg = NULL;
+ 
+-- 
+1.8.0
+

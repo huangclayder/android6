@@ -1,0 +1,35 @@
+From c54bd59f57d73309e0e2aab59ec1049cd4bec01a Mon Sep 17 00:00:00 2001
+From: Ye Li <ye.li@nxp.com>
+Date: Thu, 3 Mar 2016 17:23:26 +0800
+Subject: [PATCH] MLK-12488 mx6sl/ul/sx: Fix incorrect clear mmdc_ch0
+ handshake mask
+
+Since the MX6UL/SL/SX only has one DDR channel, in CCM_CCDR register the bit[17]
+for mmdc_ch0 is reserved and its proper state should be 1. When clear this bit,
+the periph_clk_sel cannot be set and that CDHIPR[periph_clk_sel_busy] handshake
+never clears.
+
+Signed-off-by: Ye Li <ye.li@nxp.com>
+---
+ arch/arm/cpu/armv7/mx6/soc.c | 5 ++++-
+ 1 file changed, 4 insertions(+), 1 deletion(-)
+
+diff --git a/arch/arm/cpu/armv7/mx6/soc.c b/arch/arm/cpu/armv7/mx6/soc.c
+index 4e1ea01..4689924 100644
+--- a/arch/arm/cpu/armv7/mx6/soc.c
++++ b/arch/arm/cpu/armv7/mx6/soc.c
+@@ -269,7 +269,10 @@ static void clear_mmdc_ch_mask(void)
+ 	reg = readl(&mxc_ccm->ccdr);
+ 
+ 	/* Clear MMDC channel mask */
+-	reg &= ~(MXC_CCM_CCDR_MMDC_CH1_HS_MASK | MXC_CCM_CCDR_MMDC_CH0_HS_MASK);
++	if (is_cpu_type(MXC_CPU_MX6SX) || is_cpu_type(MXC_CPU_MX6UL) || is_cpu_type(MXC_CPU_MX6SL))
++		reg &= ~(MXC_CCM_CCDR_MMDC_CH1_HS_MASK);
++	else
++		reg &= ~(MXC_CCM_CCDR_MMDC_CH1_HS_MASK | MXC_CCM_CCDR_MMDC_CH0_HS_MASK);
+ 	writel(reg, &mxc_ccm->ccdr);
+ }
+ 
+-- 
+1.8.0
+

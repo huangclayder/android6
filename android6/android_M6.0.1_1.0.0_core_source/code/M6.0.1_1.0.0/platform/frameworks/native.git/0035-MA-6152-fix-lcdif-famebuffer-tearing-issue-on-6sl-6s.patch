@@ -1,0 +1,87 @@
+From e66a3741df5a4c9bb2431b5b54b8ee35c293a684 Mon Sep 17 00:00:00 2001
+From: Liu Xiaowen <xiaowen.liu@freescale.com>
+Date: Tue, 3 Feb 2015 17:10:36 +0800
+Subject: [PATCH 35/43] MA-6152 fix lcdif famebuffer tearing issue on 6sl&6sx
+
+Vsync mechanism in SurfaceFlinger will trigger composite in 60fps
+even though display vsync event come larger than 16ms.
+So, in one display vsync event there will be two composite.
+And lcdif interface on 6sl&6sx has potential issue to do this.
+In this case, composite should be triggered by display vsync.
+
+Signed-off-by: Liu Xiaowen <xiaowen.liu@freescale.com>
+---
+ services/surfaceflinger/Android.mk         | 4 ++++
+ services/surfaceflinger/EventThread.cpp    | 2 ++
+ services/surfaceflinger/EventThread.h      | 3 +++
+ services/surfaceflinger/SurfaceFlinger.cpp | 5 +++++
+ 4 files changed, 14 insertions(+)
+
+diff --git a/services/surfaceflinger/Android.mk b/services/surfaceflinger/Android.mk
+index 4966dc9..be8c299 100644
+--- a/services/surfaceflinger/Android.mk
++++ b/services/surfaceflinger/Android.mk
+@@ -66,6 +66,10 @@ ifeq ($(TARGET_RUNNING_WITHOUT_SYNC_FRAMEWORK),true)
+     LOCAL_CFLAGS += -DRUNNING_WITHOUT_SYNC_FRAMEWORK
+ endif
+ 
++ifeq ($(TARGET_VSYNC_DIRECT_REFRESH),true)
++    LOCAL_CFLAGS += -DVSYNC_DIRECT_REFRESH
++endif
++
+ # See build/target/board/generic/BoardConfig.mk for a description of this setting.
+ ifneq ($(VSYNC_EVENT_PHASE_OFFSET_NS),)
+     LOCAL_CFLAGS += -DVSYNC_EVENT_PHASE_OFFSET_NS=$(VSYNC_EVENT_PHASE_OFFSET_NS)
+diff --git a/services/surfaceflinger/EventThread.cpp b/services/surfaceflinger/EventThread.cpp
+index f760200..b0c1176 100644
+--- a/services/surfaceflinger/EventThread.cpp
++++ b/services/surfaceflinger/EventThread.cpp
+@@ -340,6 +340,7 @@ Vector< sp<EventThread::Connection> > EventThread::waitForEvent(
+ }
+ 
+ void EventThread::enableVSyncLocked() {
++#ifndef VSYNC_DIRECT_REFRESH
+     if (!mUseSoftwareVSync) {
+         // never enable h/w VSYNC when screen is off
+         if (!mVsyncEnabled) {
+@@ -348,6 +349,7 @@ void EventThread::enableVSyncLocked() {
+             mVSyncSource->setVSyncEnabled(true);
+         }
+     }
++#endif
+     mDebugVsyncEnabled = true;
+     sendVsyncHintOnLocked();
+ }
+diff --git a/services/surfaceflinger/EventThread.h b/services/surfaceflinger/EventThread.h
+index 9ba179a..6c5f3b7 100644
+--- a/services/surfaceflinger/EventThread.h
++++ b/services/surfaceflinger/EventThread.h
+@@ -103,6 +103,9 @@ public:
+     void setPhaseOffset(nsecs_t phaseOffset);
+ 
+ private:
++#ifdef VSYNC_DIRECT_REFRESH
++    friend class SurfaceFlinger;
++#endif
+     virtual bool        threadLoop();
+     virtual void        onFirstRef();
+ 
+diff --git a/services/surfaceflinger/SurfaceFlinger.cpp b/services/surfaceflinger/SurfaceFlinger.cpp
+index b87a9d0..1bdb9d5 100644
+--- a/services/surfaceflinger/SurfaceFlinger.cpp
++++ b/services/surfaceflinger/SurfaceFlinger.cpp
+@@ -868,6 +868,11 @@ void SurfaceFlinger::disableHardwareVsync(bool makeUnavailable) {
+ 
+ void SurfaceFlinger::onVSyncReceived(int type, nsecs_t timestamp) {
+     bool needsHwVsync = false;
++#ifdef VSYNC_DIRECT_REFRESH
++    mEventThread->onVSyncEvent(timestamp);
++    mSFEventThread->onVSyncEvent(timestamp);
++    return;
++#endif
+ 
+     { // Scope for the lock
+         Mutex::Autolock _l(mHWVsyncLock);
+-- 
+1.8.0
+

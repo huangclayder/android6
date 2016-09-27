@@ -1,0 +1,52 @@
+From a47a00a0e48a3f317fb3f9b4bef762ebd558829f Mon Sep 17 00:00:00 2001
+From: Haoran Wang <Haoran.Wang@freescale.com>
+Date: Wed, 8 Oct 2014 19:15:39 +0800
+Subject: [PATCH 05/22] MA-5112 Connected to different WFD sink one by one
+ caused full-zero go_addr
+
+As some issues in wpa_supplicant will cause that no
+go_addr returned when p2p_complete. That parameter
+will make frameworks not accept this result and
+try to close the busy device.
+
+Use the recorded bssid if there is no go_addr returned
+
+Signed-off-by: Haoran Wang <Haoran.Wang@freescale.com>
+---
+ wpa_supplicant/p2p_supplicant.c | 20 +++++++++++++++++++-
+ 1 file changed, 19 insertions(+), 1 deletion(-)
+
+diff --git a/wpa_supplicant/p2p_supplicant.c b/wpa_supplicant/p2p_supplicant.c
+index a92e357..2247cd0 100644
+--- a/wpa_supplicant/p2p_supplicant.c
++++ b/wpa_supplicant/p2p_supplicant.c
+@@ -6292,7 +6292,25 @@ void wpas_p2p_completed(struct wpa_supplicant *wpa_s)
+ 		os_memcpy(go_dev_addr, ssid->bssid, ETH_ALEN);
+ 	persistent = wpas_p2p_persistent_group(wpa_s, go_dev_addr, ssid->ssid,
+ 					       ssid->ssid_len);
+-	os_memcpy(wpa_s->go_dev_addr, go_dev_addr, ETH_ALEN);
++    /*
++     * Sometimes it cannot get persident go_dev_addr when p2p completed
++     * but the full-zero go_dev_addr will be dangerous.
++     * So we can try the bssid in wpa_s.
++     */
++    int go_addr_valid = 0;
++    int cc = 0;
++    for (cc = 0; cc < ETH_ALEN; cc++) {
++        if (go_dev_addr[cc] != 0) {
++            go_addr_valid = 1;
++            break;
++        }
++    }
++    if (!go_addr_valid) {
++        wpa_msg_global(wpa_s->parent, MSG_ERROR, "persistent group addr not valid, will try bssid:" MACSTR,
++                         MAC2STR(wpa_s->bssid));
++        os_memcpy(go_dev_addr, wpa_s->bssid, ETH_ALEN);
++    }
++    os_memcpy(wpa_s->go_dev_addr, go_dev_addr, ETH_ALEN);
+ 
+ 	if (wpa_s->global->p2p_group_formation == wpa_s)
+ 		wpa_s->global->p2p_group_formation = NULL;
+-- 
+1.8.0
+

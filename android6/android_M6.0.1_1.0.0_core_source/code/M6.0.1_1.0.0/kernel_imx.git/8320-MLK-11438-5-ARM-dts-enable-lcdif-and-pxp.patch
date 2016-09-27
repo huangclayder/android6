@@ -1,0 +1,37 @@
+From bcc2cd0e45c4f13547b4814cb4f6fe7086050c1b Mon Sep 17 00:00:00 2001
+From: Robby Cai <r63905@freescale.com>
+Date: Fri, 28 Aug 2015 15:28:31 +0800
+Subject: [PATCH] MLK-11438-5 ARM: dts: enable lcdif and pxp
+
+Enabled lcdif and pxp as lpsr mode is supported.
+
+Signed-off-by: Robby Cai <r63905@freescale.com>
+---
+ arch/arm/boot/dts/imx7d-12x12-lpddr3-arm2.dts | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/arch/arm/boot/dts/imx7d-12x12-lpddr3-arm2.dts b/arch/arm/boot/dts/imx7d-12x12-lpddr3-arm2.dts
+index 90ef5e3..4072485 100644
+--- a/arch/arm/boot/dts/imx7d-12x12-lpddr3-arm2.dts
++++ b/arch/arm/boot/dts/imx7d-12x12-lpddr3-arm2.dts
+@@ -199,7 +199,7 @@
+ };
+ 
+ &epxp {
+-	status = "disabled";
++	status = "okay";
+ };
+ 
+ &fec1 {
+@@ -906,7 +906,7 @@
+ 	pinctrl-1 = <&pinctrl_lcdif_dat
+ 		     &pinctrl_lcdif_ctrl>;
+ 	display = <&display0>;
+-	status = "disabled";
++	status = "okay";
+ 
+ 	display0: display {
+ 		bits-per-pixel = <16>;
+-- 
+1.8.0
+

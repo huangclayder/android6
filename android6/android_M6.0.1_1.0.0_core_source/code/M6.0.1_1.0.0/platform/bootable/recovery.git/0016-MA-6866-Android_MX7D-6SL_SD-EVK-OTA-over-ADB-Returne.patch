@@ -1,0 +1,34 @@
+From a02ba067a405c8b47e4ff28a88b8914875e8606a Mon Sep 17 00:00:00 2001
+From: zhang sanshan <b51434@freescale.com>
+Date: Tue, 21 Jul 2015 13:06:20 +0800
+Subject: [PATCH 16/21] MA-6866 [Android_MX7D/6SL_SD/EVK] OTA over ADB:
+ Returned result was [t] after updating package,
+ better to be replaced with more recognizable string.
+ 100%
+
+The value of result is according the last one command of ota script.
+If the last command is unmount("/system"), The resule will be [/system]
+If the last command is package_extract_bootloader\package_extract_file, The resule will be [t].
+The value of resule do not make sense.
+
+Signed-off-by: zhang sanshan <b51434@freescale.com>
+---
+ updater/updater.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/updater/updater.c b/updater/updater.c
+index 661f695..46948c8 100644
+--- a/updater/updater.c
++++ b/updater/updater.c
+@@ -155,7 +155,7 @@ int main(int argc, char** argv) {
+         free(state.errmsg);
+         return 7;
+     } else {
+-        fprintf(cmd_pipe, "ui_print script succeeded: result was [%s]\n", result);
++        fprintf(cmd_pipe, "ui_print script succeeded\n");
+         free(result);
+     }
+ 
+-- 
+1.8.0
+

@@ -1,0 +1,72 @@
+From d22127a8f395edaf719a5bf4874cf22c5bdc8661 Mon Sep 17 00:00:00 2001
+From: Anson Huang <Anson.Huang@freescale.com>
+Date: Wed, 16 Dec 2015 21:54:50 +0800
+Subject: [PATCH] MLK-12025 ARM: imx: M4 should be in RUN mode when resume
+ from DSM
+
+On i.MX7D, only when M4 enters STOP mode, system is able to enter DSM
+mode where M4 power will be gated off. This is done by checking
+a variable which records M4's power mode. However, when system
+resume from DSM, M4 is re-enabled to RUN mode by A7, but the variable
+is NOT updated accordingly, so next time system suspend, even
+M4 is NOT in STOP mode, system can enter DSM mode, which is
+unexpected and would cause bus-freq use count mismatch.
+
+Fix this issue by reset M4 power mode to RUN mode when resume
+from DSM.
+
+Signed-off-by: Anson Huang <Anson.Huang@freescale.com>
+---
+ arch/arm/mach-imx/common.h  | 1 +
+ arch/arm/mach-imx/mu.c      | 5 +++++
+ arch/arm/mach-imx/pm-imx7.c | 6 ++++--
+ 3 files changed, 10 insertions(+), 2 deletions(-)
+
+diff --git a/arch/arm/mach-imx/common.h b/arch/arm/mach-imx/common.h
+index 92a4f1f..f83ed4c 100644
+--- a/arch/arm/mach-imx/common.h
++++ b/arch/arm/mach-imx/common.h
+@@ -102,6 +102,7 @@ void mcc_receive_from_mu_buffer(unsigned int index, unsigned int *data);
+ void mcc_send_via_mu_buffer(unsigned int index, unsigned int data);
+ bool imx_mu_is_m4_in_low_freq(void);
+ bool imx_mu_is_m4_in_stop(void);
++void imx_mu_set_m4_run_mode(void);
+ int imx_mu_lpm_ready(bool ready);
+ unsigned int imx_gpcv2_is_mf_mix_off(void);
+ void imx_gpcv2_enable_wakeup_for_m4(void);
+diff --git a/arch/arm/mach-imx/mu.c b/arch/arm/mach-imx/mu.c
+index 69ae718..4aa9af7 100644
+--- a/arch/arm/mach-imx/mu.c
++++ b/arch/arm/mach-imx/mu.c
+@@ -76,6 +76,11 @@ static DECLARE_WAIT_QUEUE_HEAD(buffer_freed_wait_queue);
+ /* Used for blocking recv */
+ static DECLARE_WAIT_QUEUE_HEAD(buffer_queued_wait_queue);
+ 
++void imx_mu_set_m4_run_mode(void)
++{
++	m4_in_stop = false;
++}
++
+ bool imx_mu_is_m4_in_stop(void)
+ {
+ 	return m4_in_stop;
+diff --git a/arch/arm/mach-imx/pm-imx7.c b/arch/arm/mach-imx/pm-imx7.c
+index 058f060..fc3770e 100644
+--- a/arch/arm/mach-imx/pm-imx7.c
++++ b/arch/arm/mach-imx/pm-imx7.c
+@@ -759,8 +759,10 @@ static int imx7_pm_enter(suspend_state_t state)
+ 				/* kick m4 to enable */
+ 				writel(M4_RCR_GO,
+ 					pm_info->src_base.vbase + M4RCR);
+-                                /* offset high bus count for m4 image */
+-                                request_bus_freq(BUS_FREQ_HIGH);
++				/* offset high bus count for m4 image */
++				request_bus_freq(BUS_FREQ_HIGH);
++				/* restore M4 to run mode */
++				imx_mu_set_m4_run_mode();
+ 				/* gpc wakeup */
+ 				imx_mu_lpm_ready(true);
+ 			}
+-- 
+1.8.0
+

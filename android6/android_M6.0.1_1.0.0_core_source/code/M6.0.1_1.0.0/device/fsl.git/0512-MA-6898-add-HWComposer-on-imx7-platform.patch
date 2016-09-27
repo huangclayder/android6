@@ -1,0 +1,42 @@
+From 2098f7b0967653d9b7f2884eae9d233205c22519 Mon Sep 17 00:00:00 2001
+From: Liu Xiaowen <xiaowen.liu@freescale.com>
+Date: Thu, 16 Jul 2015 14:28:12 +0800
+Subject: [PATCH 512/602] MA-6898 add HWComposer on imx7 platform.
+
+set TARGET_HAVE_IMX_HWCOMPOSER to true.
+add hwcomposer.imx7 to system image.
+
+Signed-off-by: Liu Xiaowen <xiaowen.liu@freescale.com>
+---
+ imx7/imx7.mk      | 1 +
+ imx7/soc/imx7d.mk | 2 +-
+ 2 files changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/imx7/imx7.mk b/imx7/imx7.mk
+index 4342456..c374ba4 100644
+--- a/imx7/imx7.mk
++++ b/imx7/imx7.mk
+@@ -93,6 +93,7 @@ PRODUCT_PACKAGES += \
+ 	sensors.SABREAUTO			\
+ 	gralloc.imx7				\
+ 	overlay.imx7				\
++	hwcomposer.imx7				\
+ 	lights.imx7				\
+ 	camera.imx7				\
+ 	power.imx7				\
+diff --git a/imx7/soc/imx7d.mk b/imx7/soc/imx7d.mk
+index 242655a..292561b 100644
+--- a/imx7/soc/imx7d.mk
++++ b/imx7/soc/imx7d.mk
+@@ -12,7 +12,7 @@ LOAD_KERNEL_ENTRY := 0x80008000
+ TARGET_KERNEL_DEFCONF := imx_v7_android_defconfig
+ -include external/fsl_imx_omx/codec_env.mk
+ TARGET_HAVE_IMX_GRALLOC := true
+-TARGET_HAVE_IMX_HWCOMPOSER = false
++TARGET_HAVE_IMX_HWCOMPOSER = true
+ USE_OPENGL_RENDERER := true
+ TARGET_CPU_SMP := false
+ 
+-- 
+1.8.0
+

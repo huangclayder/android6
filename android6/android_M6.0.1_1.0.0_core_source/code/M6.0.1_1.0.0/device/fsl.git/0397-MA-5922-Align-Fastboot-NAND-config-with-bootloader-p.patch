@@ -1,0 +1,62 @@
+From 75dd63380abfca330d3a7a61da499c2ba3652cf3 Mon Sep 17 00:00:00 2001
+From: "guoyin.chen" <guoyin.chen@freescale.com>
+Date: Tue, 2 Dec 2014 18:18:14 +0800
+Subject: [PATCH 397/602] MA-5922 Align Fastboot NAND config with bootloader
+ partition 64M
+
+Align mfg tool bootloader config to make bootloader partition to
+be 64M
+Change SX AI board ubifs mtd device number to be 5 as kernel change in
+MLK-9851 to add QSPI as mtd1
+Change SX bootimage load address which 0x80800000 is conflicted with
+loadaddr in nand bootloader
+
+Signed-off-by: guoyin.chen <guoyin.chen@freescale.com>
+---
+ imx6/soc/imx6sx.mk           | 2 +-
+ sabreauto_6q/BoardConfig.mk  | 2 +-
+ sabreauto_6sx/BoardConfig.mk | 2 +-
+ 3 files changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/imx6/soc/imx6sx.mk b/imx6/soc/imx6sx.mk
+index 483e231..a63f751 100644
+--- a/imx6/soc/imx6sx.mk
++++ b/imx6/soc/imx6sx.mk
+@@ -7,7 +7,7 @@ BOARD_HAVE_VPU := false
+ HAVE_FSL_IMX_GPU2D := true
+ HAVE_FSL_IMX_GPU3D := true
+ HAVE_FSL_IMX_IPU := false
+-BOARD_KERNEL_BASE := 0x80800000
++BOARD_KERNEL_BASE := 0x84800000
+ LOAD_KERNEL_ENTRY := 0x80008000
+ TARGET_KERNEL_DEFCONF := imx_v7_android_defconfig
+ -include external/fsl_imx_omx/codec_env.mk
+diff --git a/sabreauto_6q/BoardConfig.mk b/sabreauto_6q/BoardConfig.mk
+index 8353aed..3182ac3 100644
+--- a/sabreauto_6q/BoardConfig.mk
++++ b/sabreauto_6q/BoardConfig.mk
+@@ -91,7 +91,7 @@ TARGET_MKUBIFS_ARGS := -m 4096 -e 253952 -c 4096 -x none
+ TARGET_UBIRAW_ARGS := -m 4096 -p 256KiB $(UBI_ROOT_INI)
+ 
+ # Note: this NAND partition table must align with MFGTool's config.
+-BOARD_KERNEL_CMDLINE +=  mtdparts=gpmi-nand:16m(bootloader),16m(bootimg),16m(recovery),-(root) ubi.mtd=4
++BOARD_KERNEL_CMDLINE +=  mtdparts=gpmi-nand:64m(bootloader),16m(bootimg),16m(recovery),-(root) ubi.mtd=4
+ endif
+ 
+ ifeq ($(TARGET_USERIMAGES_USE_UBIFS),true)
+diff --git a/sabreauto_6sx/BoardConfig.mk b/sabreauto_6sx/BoardConfig.mk
+index fec9485..6d96d26 100755
+--- a/sabreauto_6sx/BoardConfig.mk
++++ b/sabreauto_6sx/BoardConfig.mk
+@@ -75,7 +75,7 @@ TARGET_MKUBIFS_ARGS := -m 4096 -e 253952 -c 4096 -x none
+ TARGET_UBIRAW_ARGS := -m 4096 -p 256KiB $(UBI_ROOT_INI)
+ 
+ # Note: this NAND partition table must align with MFGTool's config.
+-BOARD_KERNEL_CMDLINE +=  mtdparts=gpmi-nand:16m(bootloader),16m(bootimg),16m(recovery),-(root) ubi.mtd=4
++BOARD_KERNEL_CMDLINE +=  mtdparts=gpmi-nand:64m(bootloader),16m(bootimg),16m(recovery),-(root) ubi.mtd=5
+ endif
+ 
+ ifeq ($(TARGET_USERIMAGES_USE_UBIFS),true)
+-- 
+1.8.0
+

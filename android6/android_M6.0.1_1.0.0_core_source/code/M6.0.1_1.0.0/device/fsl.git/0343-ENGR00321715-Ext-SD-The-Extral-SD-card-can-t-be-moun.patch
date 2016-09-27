@@ -1,0 +1,29 @@
+From 4ed9729771f8b0f6d741f0bc330e193b1577de77 Mon Sep 17 00:00:00 2001
+From: Ke Qinghua <qinghua.ke@freescale.com>
+Date: Tue, 15 Jul 2014 15:13:13 +0800
+Subject: [PATCH 343/602] ENGR00321715 Ext SD: The Extral SD card can't be
+ mounted by system. 100%
+
+EMMC boot, external SD is SD3, SD boot, external SD is SD2
+
+Signed-off-by: Ke Qinghua <qinghua.ke@freescale.com>
+---
+ sabresd_6dq/fstab.freescale | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/sabresd_6dq/fstab.freescale b/sabresd_6dq/fstab.freescale
+index 6dd4c5d..3b8cfb2 100644
+--- a/sabresd_6dq/fstab.freescale
++++ b/sabresd_6dq/fstab.freescale
+@@ -3,7 +3,7 @@
+ # The filesystem that contains the filesystem checker binary (typically /system) cannot
+ # specify MF_CHECK, and must come before any filesystems that do specify MF_CHECK
+ 
+-/devices/soc0/soc.1/2100000.aips-bus/2194000.usdhc/mmc_host /mnt/media_rw/extsd vfat defaults voldmanaged=extsd:auto
++/devices/soc0/soc.1/2100000.aips-bus/2198000.usdhc/mmc_host /mnt/media_rw/extsd vfat defaults voldmanaged=extsd:auto
+ /devices/soc0/soc.1/2100000.aips-bus/2184000.usb/ci_hdrc.0  /mnt/media_rw/udisk vfat defaults voldmanaged=udisk:auto
+ /dev/block/mmcblk3p5    /system      ext4    ro                                                                               wait
+ /dev/block/mmcblk3p4    /data        ext4    nosuid,nodev,nodiratime,noatime,nomblk_io_submit,noauto_da_alloc,errors=panic    wait,encryptable=footer
+-- 
+1.8.0
+

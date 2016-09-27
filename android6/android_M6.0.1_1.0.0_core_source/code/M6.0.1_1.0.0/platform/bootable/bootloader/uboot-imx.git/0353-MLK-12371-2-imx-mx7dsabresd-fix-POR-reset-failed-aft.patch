@@ -1,0 +1,63 @@
+From 62248ef80dabbd7601ff4e2969368d7bf54896d9 Mon Sep 17 00:00:00 2001
+From: Robin Gong <yibin.gong@nxp.com>
+Date: Wed, 3 Feb 2016 16:54:38 +0800
+Subject: [PATCH] MLK-12371-2: imx: mx7dsabresd: fix POR reset failed after
+ DDR enter retention
+
+Since DDR enter retention mode after kernel enter DSM mode, we have to exit DDR
+retention mode before uboot boot, so add this in DCD and plugin code.
+Signed-off-by: Robin Gong <yibin.gong@nxp.com>
+---
+ board/freescale/mx7dsabresd/imximage.cfg        | 3 +++
+ board/freescale/mx7dsabresd/imximage_TO_1_0.cfg | 3 +++
+ board/freescale/mx7dsabresd/plugin.S            | 6 ++++++
+ 3 files changed, 12 insertions(+)
+
+diff --git a/board/freescale/mx7dsabresd/imximage.cfg b/board/freescale/mx7dsabresd/imximage.cfg
+index db4c939..106c277 100644
+--- a/board/freescale/mx7dsabresd/imximage.cfg
++++ b/board/freescale/mx7dsabresd/imximage.cfg
+@@ -57,6 +57,9 @@ CHECK_BITS_SET 4 0x30360070 0x80000000
+ DATA 4 0x30389880 0x1
+ 
+ DATA 4 0x30340004 0x4F400005
++/* Clear then set bit30 to ensure exit from DDR retention */
++DATA 4 0x30360388 0x40000000
++DATA 4 0x30360384 0x40000000
+ 
+ DATA 4 0x30391000 0x00000002
+ DATA 4 0x307a0000 0x01040001
+diff --git a/board/freescale/mx7dsabresd/imximage_TO_1_0.cfg b/board/freescale/mx7dsabresd/imximage_TO_1_0.cfg
+index 11f113a..588474f 100644
+--- a/board/freescale/mx7dsabresd/imximage_TO_1_0.cfg
++++ b/board/freescale/mx7dsabresd/imximage_TO_1_0.cfg
+@@ -51,6 +51,9 @@ CSF CONFIG_CSF_SIZE
+  */
+ 
+ DATA 4 0x30340004 0x4F400005
++/* Clear then set bit30 to ensure exit from DDR retention */
++DATA 4 0x30360388 0x40000000
++DATA 4 0x30360384 0x40000000
+ 
+ DATA 4 0x30391000 0x00000002
+ DATA 4 0x307a0000 0x01040001
+diff --git a/board/freescale/mx7dsabresd/plugin.S b/board/freescale/mx7dsabresd/plugin.S
+index 5c4bc86..2dce883 100644
+--- a/board/freescale/mx7dsabresd/plugin.S
++++ b/board/freescale/mx7dsabresd/plugin.S
+@@ -79,6 +79,12 @@ FREQ_DEFAULT_533:
+ 	ldr r1, =0x4f400005
+ 	str r1, [r0, #0x4]
+ 
++	/* clear/set bit30 of SNVS_MISC_CTRL to ensure exit from ddr retention */
++	ldr r0, =ANATOP_BASE_ADDR
++	ldr r1, =(0x1 << 30)
++	str r1, [r0, #0x388]
++	str r1, [r0, #0x384]
++
+ 	ldr r0, =SRC_BASE_ADDR
+ 	ldr r1, =0x2
+ 	ldr r2, =0x1000
+-- 
+1.8.0
+

@@ -1,0 +1,30 @@
+From bf38fa07cc02223d2df44fc1a66e0bc206fb1058 Mon Sep 17 00:00:00 2001
+From: Winter Wang <b55847@freescale.com>
+Date: Wed, 9 Dec 2015 17:03:41 +0800
+Subject: [PATCH] MA-7279 enable systrace for android
+
+systrace depends on ftrace in kernel
+add ftrace support for process context switches and events
+
+Signed-off-by: Winter Wang <b55847@freescale.com>
+---
+ arch/arm/configs/imx_v7_android_defconfig | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/arch/arm/configs/imx_v7_android_defconfig b/arch/arm/configs/imx_v7_android_defconfig
+index 5682e78..afecc5b 100644
+--- a/arch/arm/configs/imx_v7_android_defconfig
++++ b/arch/arm/configs/imx_v7_android_defconfig
+@@ -603,7 +603,8 @@ CONFIG_PANIC_TIMEOUT=5
+ CONFIG_SCHEDSTATS=y
+ CONFIG_TIMER_STATS=y
+ # CONFIG_DEBUG_BUGVERBOSE is not set
+-# CONFIG_FTRACE is not set
++CONFIG_FTRACE=y
++CONFIG_ENABLE_DEFAULT_TRACERS=y
+ CONFIG_CORESIGHT=y
+ CONFIG_CORESIGHT_LINK_AND_SINK_TMC=y
+ CONFIG_CORESIGHT_SINK_TPIU=y
+-- 
+1.8.0
+

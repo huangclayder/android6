@@ -1,0 +1,32 @@
+From 3b9c09f76b6d38d8084b70fbf976c312158d1132 Mon Sep 17 00:00:00 2001
+From: Nicolin Chen <Guangyu.Chen@freescale.com>
+Date: Tue, 6 May 2014 16:41:39 +0800
+Subject: [PATCH] ASoC: fsl_spdif: Fix incorrect usage of regmap_read()
+
+We should not copy the return value into this val since it's supposed to
+get the value of the register not the success result of regmap_read().
+Thus fix it.
+
+Signed-off-by: Nicolin Chen <Guangyu.Chen@freescale.com>
+Signed-off-by: Mark Brown <broonie@linaro.org>
+(cherry picked from commit e9b383dc940f4cba6876887ecb47df3082ec925e)
+---
+ sound/soc/fsl/fsl_spdif.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/sound/soc/fsl/fsl_spdif.c b/sound/soc/fsl/fsl_spdif.c
+index b912d45..9ea2dd4 100644
+--- a/sound/soc/fsl/fsl_spdif.c
++++ b/sound/soc/fsl/fsl_spdif.c
+@@ -762,7 +762,7 @@ static int fsl_spdif_vbit_get(struct snd_kcontrol *kcontrol,
+ 	struct regmap *regmap = spdif_priv->regmap;
+ 	u32 val;
+ 
+-	val = regmap_read(regmap, REG_SPDIF_SIS, &val);
++	regmap_read(regmap, REG_SPDIF_SIS, &val);
+ 	ucontrol->value.integer.value[0] = (val & INT_VAL_NOGOOD) != 0;
+ 	regmap_write(regmap, REG_SPDIF_SIC, INT_VAL_NOGOOD);
+ 
+-- 
+1.8.0
+

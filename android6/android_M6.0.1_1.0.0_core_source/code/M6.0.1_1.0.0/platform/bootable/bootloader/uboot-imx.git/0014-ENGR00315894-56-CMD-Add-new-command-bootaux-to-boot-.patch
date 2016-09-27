@@ -1,0 +1,84 @@
+From 541c536fa416775ea2094f43b3241e12a49720c8 Mon Sep 17 00:00:00 2001
+From: "Ye.Li" <B37916@freescale.com>
+Date: Wed, 11 Jun 2014 15:40:59 +0800
+Subject: [PATCH] ENGR00315894-56 CMD: Add new command "bootaux" to boot
+ auxiliary core
+
+To boot a auxiliary core in asymmetric multicore system, introduce the
+new command "bootaux" to do it.
+
+Example of boot auxliary core from 0x70000000 where stores the boot head
+information that should be parsed by each core.
+"bootaux 0x70000000"
+
+Signed-off-by: Ye.Li <B37916@freescale.com>
+(cherry picked from commit fd00c322d058e02953a336517547174edaf2c573)
+Signed-off-by: Peng Fan <Peng.Fan@freescale.com>
+---
+ common/Makefile      |  1 +
+ common/cmd_bootaux.c | 42 ++++++++++++++++++++++++++++++++++++++++++
+ 2 files changed, 43 insertions(+)
+
+diff --git a/common/Makefile b/common/Makefile
+index 252fbf1..ac7edba 100644
+--- a/common/Makefile
++++ b/common/Makefile
+@@ -209,6 +209,7 @@ obj-$(CONFIG_UPDATE_TFTP) += update.o
+ obj-$(CONFIG_USB_KEYBOARD) += usb_kbd.o
+ obj-$(CONFIG_CMD_DFU) += cmd_dfu.o
+ obj-$(CONFIG_CMD_GPT) += cmd_gpt.o
++obj-$(CONFIG_CMD_BOOTAUX) += cmd_bootaux.o
+ endif
+ 
+ ifdef CONFIG_SPL_BUILD
+diff --git a/common/cmd_bootaux.c b/common/cmd_bootaux.c
+new file mode 100644
+index 0000000..188cb73
+--- /dev/null
++++ b/common/cmd_bootaux.c
+@@ -0,0 +1,42 @@
++/*
++ * Copyright (C) 2014 Freescale Semiconductor, Inc.
++ *
++ * SPDX-License-Identifier:	GPL-2.0+
++ */
++
++#include <common.h>
++#include <command.h>
++
++/* Allow for arch specific config before we boot */
++static int __arch_auxiliary_core_up(u32 core_id, u32 boot_private_data)
++{
++	/* please define platform specific arch_auxiliary_core_up() */
++	return CMD_RET_FAILURE;
++}
++int arch_auxiliary_core_up(u32 core_id, u32 boot_private_data)
++	__attribute__((weak, alias("__arch_auxiliary_core_up")));
++
++int do_bootaux(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
++{
++	ulong addr;
++	int ret;
++
++	if (argc < 2)
++		return CMD_RET_USAGE;
++
++	addr = simple_strtoul(argv[1], NULL, 16);
++
++	printf("## Starting auxiliary core at 0x%08lX ...\n", addr);
++
++	ret = arch_auxiliary_core_up(0, addr);
++	if (ret)
++		return CMD_RET_FAILURE;
++
++	return CMD_RET_SUCCESS;
++}
++
++U_BOOT_CMD(
++	bootaux, CONFIG_SYS_MAXARGS, 1,	do_bootaux,
++	"Start auxiliary core",
++	""
++);
+-- 
+1.8.0
+

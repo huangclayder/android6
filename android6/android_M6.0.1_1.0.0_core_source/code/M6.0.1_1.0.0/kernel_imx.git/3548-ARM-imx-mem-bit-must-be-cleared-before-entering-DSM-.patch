@@ -1,0 +1,37 @@
+From 712cbba385fba458ebe30c8ec44d683dea89705d Mon Sep 17 00:00:00 2001
+From: Anson Huang <b20788@freescale.com>
+Date: Mon, 23 Jun 2014 16:42:43 +0800
+Subject: [PATCH] ARM: imx: mem bit must be cleared before entering DSM mode
+
+According to hardware design, mem bit must be clear before
+entering DSM mode, as ARM core will be power gated in DSM mode.
+
+Signed-off-by: Anson Huang <b20788@freescale.com>
+Signed-off-by: Shawn Guo <shawn.guo@freescale.com>
+---
+ arch/arm/mach-imx/pm-imx6.c | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/arch/arm/mach-imx/pm-imx6.c b/arch/arm/mach-imx/pm-imx6.c
+index e191bc5..2c3347e 100644
+--- a/arch/arm/mach-imx/pm-imx6.c
++++ b/arch/arm/mach-imx/pm-imx6.c
+@@ -387,6 +387,7 @@ static int imx6q_pm_enter(suspend_state_t state)
+ 	switch (state) {
+ 	case PM_SUSPEND_MEM:
+ 		imx6q_set_lpm(STOP_POWER_OFF);
++		imx6q_set_int_mem_clk_lpm(false);
+ 		imx6q_enable_wb(true);
+ 		/*
+ 		 * For suspend into ocram, asm code already take care of
+@@ -405,6 +406,7 @@ static int imx6q_pm_enter(suspend_state_t state)
+ 		imx_gpc_post_resume();
+ 		imx6q_enable_rbc(false);
+ 		imx6q_enable_wb(false);
++		imx6q_set_int_mem_clk_lpm(true);
+ 		imx6q_set_lpm(WAIT_CLOCKED);
+ 		break;
+ 	default:
+-- 
+1.8.0
+

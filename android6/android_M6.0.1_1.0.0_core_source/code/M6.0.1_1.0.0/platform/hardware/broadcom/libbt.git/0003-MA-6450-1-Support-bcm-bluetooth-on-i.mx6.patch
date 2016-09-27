@@ -1,0 +1,29 @@
+From fd97baa2178ea3e63bf7edb294fbe467b3c3b5c0 Mon Sep 17 00:00:00 2001
+From: Haoran Wang <b50027@freescale.com>
+Date: Tue, 20 Oct 2015 11:01:19 +0800
+Subject: [PATCH 3/4] MA-6450-1 Support bcm bluetooth on i.mx6.
+
+Added i.mx6 sabresd_6sx platform support.
+
+Signed-off-by: Haoran Wang <b50027@freescale.com>
+---
+ Android.mk | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/Android.mk b/Android.mk
+index 8a88b07..1fd8b57 100644
+--- a/Android.mk
++++ b/Android.mk
+@@ -30,6 +30,9 @@ LOCAL_PROPRIETARY_MODULE := true
+ include $(LOCAL_PATH)/vnd_buildcfg.mk
+ 
+ include $(BUILD_SHARED_LIBRARY)
++ifeq ($(TARGET_PRODUCT), sabresd_6sx)
++	include $(LOCAL_PATH)/conf/fsl/sabresd_6sx/Android.mk
++endif
+ ifeq ($(TARGET_PRODUCT), sabresd_6dq)
+ 	include $(LOCAL_PATH)/conf/fsl/sabresd_6dq/Android.mk
+ endif
+-- 
+1.8.0
+

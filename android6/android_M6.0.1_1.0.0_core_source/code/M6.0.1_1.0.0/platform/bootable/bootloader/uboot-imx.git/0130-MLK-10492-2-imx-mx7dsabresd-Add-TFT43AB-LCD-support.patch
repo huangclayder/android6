@@ -1,0 +1,60 @@
+From e0dd27a37193c71e11fb09cc542d388a1f28f3f7 Mon Sep 17 00:00:00 2001
+From: "Ye.Li" <B37916@freescale.com>
+Date: Fri, 27 Mar 2015 17:17:57 +0800
+Subject: [PATCH] MLK-10492-2 imx: mx7dsabresd: Add TFT43AB LCD support
+
+The mx7dsabresd uses new LCD TFT43AB which has 480 x 272 pixels.
+Update panel info for this LCD.
+
+Signed-off-by: Ye.Li <B37916@freescale.com>
+(cherry picked from commit e77d667b20956a37de9d367a8914ef2fe79258df)
+---
+ board/freescale/mx7dsabresd/mx7dsabresd.c | 18 +++++++++---------
+ include/configs/mx7dsabresd.h             |  2 +-
+ 2 files changed, 10 insertions(+), 10 deletions(-)
+
+diff --git a/board/freescale/mx7dsabresd/mx7dsabresd.c b/board/freescale/mx7dsabresd/mx7dsabresd.c
+index f8eebb0..4db309f 100644
+--- a/board/freescale/mx7dsabresd/mx7dsabresd.c
++++ b/board/freescale/mx7dsabresd/mx7dsabresd.c
+@@ -385,15 +385,15 @@ static struct lcd_panel_info_t const displays[] = {{
+ 	.depth = 24,
+ 	.enable	= do_enable_parallel_lcd,
+ 	.mode	= {
+-		.name			= "MCIMX28LCD",
+-		.xres           = 800,
+-		.yres           = 480,
+-		.pixclock       = 29850,
+-		.left_margin    = 89,
+-		.right_margin   = 164,
+-		.upper_margin   = 23,
+-		.lower_margin   = 10,
+-		.hsync_len      = 10,
++		.name			= "TFT43AB",
++		.xres           = 480,
++		.yres           = 272,
++		.pixclock       = 108695,
++		.left_margin    = 8,
++		.right_margin   = 4,
++		.upper_margin   = 2,
++		.lower_margin   = 4,
++		.hsync_len      = 41,
+ 		.vsync_len      = 10,
+ 		.sync           = 0,
+ 		.vmode          = FB_VMODE_NONINTERLACED
+diff --git a/include/configs/mx7dsabresd.h b/include/configs/mx7dsabresd.h
+index 3a4b83a..65ace67 100644
+--- a/include/configs/mx7dsabresd.h
++++ b/include/configs/mx7dsabresd.h
+@@ -144,7 +144,7 @@
+ 
+ #ifdef CONFIG_VIDEO
+ #define CONFIG_VIDEO_MODE \
+-	"panel=MCIMX28LCD\0"
++	"panel=TFT43AB\0"
+ #else
+ #define CONFIG_VIDEO_MODE ""
+ #endif
+-- 
+1.8.0
+

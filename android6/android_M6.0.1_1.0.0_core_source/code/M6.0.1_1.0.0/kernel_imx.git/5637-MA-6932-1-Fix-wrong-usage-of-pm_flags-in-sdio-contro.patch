@@ -1,0 +1,52 @@
+From 3368e900d54f8dad33fedc43f2139ffc6bfac077 Mon Sep 17 00:00:00 2001
+From: Haoran Wang <b50027@freescale.com>
+Date: Mon, 17 Aug 2015 16:21:49 +0800
+Subject: [PATCH] MA-6932-1 Fix wrong usage of pm_flags in sdio controllor
+
+Should not set the property into pm_flags when load dts.
+Also modify the use pm_caps instead of pm_flags when
+mmc_add_host and mmc_remove_host.
+
+Signed-off-by: Haoran Wang <b50027@freescale.com>
+---
+ drivers/mmc/core/host.c            | 4 ++--
+ drivers/mmc/host/sdhci-esdhc-imx.c | 1 -
+ 2 files changed, 2 insertions(+), 3 deletions(-)
+
+diff --git a/drivers/mmc/core/host.c b/drivers/mmc/core/host.c
+index 54535e8..e33d731 100644
+--- a/drivers/mmc/core/host.c
++++ b/drivers/mmc/core/host.c
+@@ -546,7 +546,7 @@ int mmc_add_host(struct mmc_host *host)
+ 	mmc_host_clk_sysfs_init(host);
+ 
+ 	mmc_start_host(host);
+-	if (!(host->pm_flags & MMC_PM_IGNORE_PM_NOTIFY))
++	if (!(host->pm_caps & MMC_PM_IGNORE_PM_NOTIFY))
+ 		register_pm_notifier(&host->pm_notify);
+ 
+ 	return 0;
+@@ -564,7 +564,7 @@ EXPORT_SYMBOL(mmc_add_host);
+  */
+ void mmc_remove_host(struct mmc_host *host)
+ {
+-	if (!(host->pm_flags & MMC_PM_IGNORE_PM_NOTIFY))
++	if (!(host->pm_caps & MMC_PM_IGNORE_PM_NOTIFY))
+ 		unregister_pm_notifier(&host->pm_notify);
+ 
+ 	mmc_stop_host(host);
+diff --git a/drivers/mmc/host/sdhci-esdhc-imx.c b/drivers/mmc/host/sdhci-esdhc-imx.c
+index 5a8804e..ac22ce5 100644
+--- a/drivers/mmc/host/sdhci-esdhc-imx.c
++++ b/drivers/mmc/host/sdhci-esdhc-imx.c
+@@ -1059,7 +1059,6 @@ sdhci_esdhc_imx_probe_dt(struct platform_device *pdev,
+ 
+ 	if (of_get_property(np, "pm-ignore-notify", NULL)) {
+ 		host->mmc->pm_caps |= MMC_PM_IGNORE_PM_NOTIFY;
+-		host->mmc->pm_flags = host->mmc->pm_caps;
+ 	}
+ 
+ 	return 0;
+-- 
+1.8.0
+

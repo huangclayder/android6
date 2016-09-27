@@ -1,0 +1,35 @@
+From 143bf65c5f01b5bb9c1d16222ea83f5977ba17a8 Mon Sep 17 00:00:00 2001
+From: Andi Kleen <ak@linux.intel.com>
+Date: Sat, 8 Feb 2014 08:51:57 +0100
+Subject: [PATCH] asmlinkage, kvm: Make kvm_rebooting visible
+
+kvm_rebooting is referenced from assembler code, thus
+needs to be visible.
+
+Cc: Gleb Natapov <gleb@redhat.com>
+Cc: Paolo Bonzini <pbonzini@redhat.com>
+Signed-off-by: Andi Kleen <ak@linux.intel.com>
+Link: http://lkml.kernel.org/r/1391845930-28580-1-git-send-email-ak@linux.intel.com
+Signed-off-by: H. Peter Anvin <hpa@linux.intel.com>
+(cherry picked from commit 52480137d82062bb8d0fb778cb9934667958e367)
+Signed-off-by: Christoffer Dall <christoffer.dall@linaro.org>
+---
+ virt/kvm/kvm_main.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/virt/kvm/kvm_main.c b/virt/kvm/kvm_main.c
+index 03a0381..b5ec7fb 100644
+--- a/virt/kvm/kvm_main.c
++++ b/virt/kvm/kvm_main.c
+@@ -102,7 +102,7 @@ static void kvm_release_pfn_dirty(pfn_t pfn);
+ static void mark_page_dirty_in_slot(struct kvm *kvm,
+ 				    struct kvm_memory_slot *memslot, gfn_t gfn);
+ 
+-bool kvm_rebooting;
++__visible bool kvm_rebooting;
+ EXPORT_SYMBOL_GPL(kvm_rebooting);
+ 
+ static bool largepages_enabled = true;
+-- 
+1.8.0
+

@@ -1,0 +1,30 @@
+From 277d14cb69fc776826f565e04d08733ddba45050 Mon Sep 17 00:00:00 2001
+From: "guoyin.chen" <guoyin.chen@freescale.com>
+Date: Wed, 25 Jun 2014 15:00:06 +0800
+Subject: [PATCH 326/602] ENGR00309843 Boot: No logo displayed during booting
+ up
+
+Disable cursor blink to avoid cursor blinking after bootup
+
+Signed-off-by: guoyin.chen <guoyin.chen@freescale.com>
+---
+ imx6/etc/init.rc | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/imx6/etc/init.rc b/imx6/etc/init.rc
+index 5159729..ce5002c 100755
+--- a/imx6/etc/init.rc
++++ b/imx6/etc/init.rc
+@@ -156,6 +156,9 @@ loglevel 3
+ # checker programs.
+     mkdir /dev/fscklogs 0770 root system
+ 
++# disable cursor blink for fbcon, if no splash screen support
++    write /sys/class/graphics/fbcon/cursor_blink 0
++
+ on post-fs
+     # once everything is setup, no need to modify /
+     mount rootfs rootfs / ro remount
+-- 
+1.8.0
+

@@ -1,0 +1,62 @@
+From 3e2b51120260cedb98f19dfda4bc812a1ea3bc8b Mon Sep 17 00:00:00 2001
+From: Zhang Sanshan <b51434@freescale.com>
+Date: Thu, 16 Apr 2015 14:13:57 +0800
+Subject: [PATCH 475/602] MA-6497 [Android_MX6Q_ARD] NAND OTA: Error appears
+ during upgrading, meet 2/3 times. 2/3
+
+enlarge max size of bootimage and recoveryimage to 16M.
+change selinux policy to do ota update.
+
+Signed-off-by: Zhang Sanshan <b51434@freescale.com>
+---
+ imx6/BoardConfigCommon.mk | 4 ++--
+ imx6/sepolicy/recovery.te | 3 ++-
+ imx7/BoardConfigCommon.mk | 4 ++--
+ 3 files changed, 6 insertions(+), 5 deletions(-)
+
+diff --git a/imx6/BoardConfigCommon.mk b/imx6/BoardConfigCommon.mk
+index 3d73b86..a50a789 100644
+--- a/imx6/BoardConfigCommon.mk
++++ b/imx6/BoardConfigCommon.mk
+@@ -57,8 +57,8 @@ ARCH_ARM_USE_NON_NEON_MEMCPY := true
+ # comment out for 1g/3g space split
+ # TARGET_KERNEL_2G := true
+ 
+-BOARD_BOOTIMAGE_PARTITION_SIZE := 8388608
+-BOARD_RECOVERYIMAGE_PARTITION_SIZE := 8388608
++BOARD_BOOTIMAGE_PARTITION_SIZE := 16777216
++BOARD_RECOVERYIMAGE_PARTITION_SIZE := 16777216
+ 
+ BOARD_SYSTEMIMAGE_PARTITION_SIZE := 377487360
+ BOARD_FLASH_BLOCK_SIZE := 4096
+diff --git a/imx6/sepolicy/recovery.te b/imx6/sepolicy/recovery.te
+index 345dcfa..a57519b 100644
+--- a/imx6/sepolicy/recovery.te
++++ b/imx6/sepolicy/recovery.te
+@@ -4,6 +4,7 @@ recovery_only(`
+   allow recovery block_device:file { read write open ioctl create};
+   allow recovery self:capability {sys_resource};
+   allow recovery mtd_device:dir { search }; 
+-  allow recovery mtd_device:chr_file { getattr read write open ioctl}; 
++  allow recovery mtd_device:chr_file { getattr read write open ioctl};
++  allow recovery cache_file:dir { mounton }; 
+ ')
+ 
+diff --git a/imx7/BoardConfigCommon.mk b/imx7/BoardConfigCommon.mk
+index bce400e..14e4881 100644
+--- a/imx7/BoardConfigCommon.mk
++++ b/imx7/BoardConfigCommon.mk
+@@ -57,8 +57,8 @@ ARCH_ARM_USE_NON_NEON_MEMCPY := true
+ # comment out for 1g/3g space split
+ # TARGET_KERNEL_2G := true
+ 
+-BOARD_BOOTIMAGE_PARTITION_SIZE := 8388608
+-BOARD_RECOVERYIMAGE_PARTITION_SIZE := 8388608
++BOARD_BOOTIMAGE_PARTITION_SIZE :=  16777216 
++BOARD_RECOVERYIMAGE_PARTITION_SIZE := 16777216
+ 
+ BOARD_SYSTEMIMAGE_PARTITION_SIZE := 377487360
+ BOARD_FLASH_BLOCK_SIZE := 4096
+-- 
+1.8.0
+

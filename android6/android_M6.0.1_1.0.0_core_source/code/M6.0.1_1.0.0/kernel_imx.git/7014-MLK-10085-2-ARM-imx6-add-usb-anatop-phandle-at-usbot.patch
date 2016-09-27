@@ -1,0 +1,40 @@
+From 6be5daada4f7e64dfc5a40422b42695c63942bce Mon Sep 17 00:00:00 2001
+From: Li Jun <b47624@freescale.com>
+Date: Fri, 9 Jan 2015 14:27:07 +0800
+Subject: [PATCH] MLK-10085-2 ARM: imx6: add usb anatop phandle at usbotg node
+
+Add anatop phandle at usbotg node to access anatop register.
+
+Signed-off-by: Peter Chen <peter.chen@freescale.com>
+---
+ arch/arm/boot/dts/imx6qdl.dtsi | 1 +
+ arch/arm/boot/dts/imx6sl.dtsi  | 1 +
+ 2 files changed, 2 insertions(+)
+
+diff --git a/arch/arm/boot/dts/imx6qdl.dtsi b/arch/arm/boot/dts/imx6qdl.dtsi
+index 9f4b965..83adf84 100644
+--- a/arch/arm/boot/dts/imx6qdl.dtsi
++++ b/arch/arm/boot/dts/imx6qdl.dtsi
+@@ -850,6 +850,7 @@
+ 				clocks = <&clks IMX6QDL_CLK_USBOH3>;
+ 				fsl,usbphy = <&usbphy1>;
+ 				fsl,usbmisc = <&usbmisc 0>;
++				fsl,anatop = <&anatop>;
+ 				status = "disabled";
+ 			};
+ 
+diff --git a/arch/arm/boot/dts/imx6sl.dtsi b/arch/arm/boot/dts/imx6sl.dtsi
+index 023b225..2e4e49d 100644
+--- a/arch/arm/boot/dts/imx6sl.dtsi
++++ b/arch/arm/boot/dts/imx6sl.dtsi
+@@ -750,6 +750,7 @@
+ 				clocks = <&clks IMX6SL_CLK_USBOH3>;
+ 				fsl,usbphy = <&usbphy1>;
+ 				fsl,usbmisc = <&usbmisc 0>;
++				fsl,anatop = <&anatop>;
+ 				status = "disabled";
+ 			};
+ 
+-- 
+1.8.0
+

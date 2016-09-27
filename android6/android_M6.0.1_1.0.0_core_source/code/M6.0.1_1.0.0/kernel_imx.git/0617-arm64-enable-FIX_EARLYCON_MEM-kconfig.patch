@@ -1,0 +1,35 @@
+From eb2a45516673e589bedf52b233b84f177ecb6b0f Mon Sep 17 00:00:00 2001
+From: Rob Herring <robh@kernel.org>
+Date: Fri, 18 Apr 2014 17:19:59 -0500
+Subject: [PATCH] arm64: enable FIX_EARLYCON_MEM kconfig
+
+In order to support earlycon on arm64, we need to enable earlycon fixmap
+support.
+
+Signed-off-by: Rob Herring <robh@kernel.org>
+Cc: Catalin Marinas <catalin.marinas@arm.com>
+Cc: Will Deacon <will.deacon@arm.com>
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+(cherry picked from commit 92cc15fcb543a8ab9af5682a2011944e6f48fd4c)
+Signed-off-by: Mark Brown <broonie@linaro.org>
+---
+ arch/arm64/Kconfig | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/arch/arm64/Kconfig b/arch/arm64/Kconfig
+index 3c7a47c..c3d0994 100644
+--- a/arch/arm64/Kconfig
++++ b/arch/arm64/Kconfig
+@@ -106,6 +106,9 @@ config IOMMU_HELPER
+ config KERNEL_MODE_NEON
+ 	def_bool y
+ 
++config FIX_EARLYCON_MEM
++	def_bool y
++
+ source "init/Kconfig"
+ 
+ source "kernel/Kconfig.freezer"
+-- 
+1.8.0
+

@@ -1,0 +1,127 @@
+From fe65ca177a667a3a52f6cbbdd6855ae2b964a02e Mon Sep 17 00:00:00 2001
+From: Xiaowen Liu <xiaowen.liu@nxp.com>
+Date: Tue, 1 Mar 2016 13:19:06 -0500
+Subject: [PATCH 635/635] MA-7666 CTS-Verifier: Screen mess show in Camera FOV
+ Calibration test.
+
+By dump the Camera resize input output frame, the input frame is right.
+The output frame is resized to wrong width/height.
+The root cause is Camera configure is called to change width/height,
+but Camera frame dequeued from V4L2 is still the old size.
+Put the size change code to message handle thread.
+
+Signed-off-by: Xiaowen Liu <xiaowen.liu@nxp.com>
+---
+ mx6/libcamera3/VideoStream.cpp | 32 ++++++++++++++++++++++++--------
+ mx6/libcamera3/VideoStream.h   | 14 ++++++++++++--
+ 2 files changed, 36 insertions(+), 10 deletions(-)
+
+diff --git a/mx6/libcamera3/VideoStream.cpp b/mx6/libcamera3/VideoStream.cpp
+index 271547c..fd70d00 100644
+--- a/mx6/libcamera3/VideoStream.cpp
++++ b/mx6/libcamera3/VideoStream.cpp
+@@ -93,25 +93,31 @@ int32_t VideoStream::configure(sp<Stream> stream)
+         return 0;
+     }
+ 
+-    mWidth  = stream->width();
+-    mHeight = stream->height();
+-    mFormat = sensorFormat;
+-    mFps = stream->fps();
+-    mNumBuffers = stream->bufferNum();
++    ConfigureParam* params = new ConfigureParam();
++    params->mWidth  = stream->width();
++    params->mHeight = stream->height();
++    params->mFormat = sensorFormat;
++    params->mFps = stream->fps();
++    params->mBuffers = stream->bufferNum();
+     mChanged = true;
+ 
+     ALOGI("%s: w:%d, h:%d, sensor format:0x%x, stream format:0x%x, fps:%d, num:%d",
+            __func__, mWidth, mHeight, mFormat, stream->format(), mFps, mNumBuffers);
+-    mMessageQueue.postMessage(new CMessage(MSG_CONFIG, 0), 0);
++    mMessageQueue.postMessage(new CMessage(MSG_CONFIG, (int32_t)params), 0);
+ 
+     return 0;
+ }
+ 
+-int32_t VideoStream::handleConfigureLocked()
++int32_t VideoStream::handleConfigureLocked(ConfigureParam* params)
+ {
+     int32_t ret   = 0;
+     ALOGV("%s", __func__);
+ 
++    if (params == NULL) {
++        ALOGW("%s invalid params", __func__);
++        return 0;
++    }
++
+     // add start state to go into config state.
+     // so, only call config to do stop automically.
+     if (mState == STATE_START) {
+@@ -129,6 +135,12 @@ int32_t VideoStream::handleConfigureLocked()
+         return 0;
+     }
+ 
++    mWidth = params->mWidth;
++    mHeight = params->mHeight;
++    mFormat = params->mFormat;
++    mFps = params->mFps;
++    mNumBuffers = params->mBuffers;
++
+     ret = onDeviceConfigureLocked();
+     if (ret != 0) {
+         ALOGE("%s onDeviceConfigure failed", __func__);
+@@ -392,7 +404,11 @@ int32_t VideoStream::handleMessage()
+     switch (msg->what) {
+         case MSG_CONFIG: {
+             Mutex::Autolock lock(mLock);
+-            ret = handleConfigureLocked();
++            ConfigureParam* params = (ConfigureParam*)msg->arg0;
++            ret = handleConfigureLocked(params);
++            if (params != NULL) {
++                delete params;
++            }
+         }
+         break;
+ 
+diff --git a/mx6/libcamera3/VideoStream.h b/mx6/libcamera3/VideoStream.h
+index ddefb1a..bb9378d 100644
+--- a/mx6/libcamera3/VideoStream.h
++++ b/mx6/libcamera3/VideoStream.h
+@@ -1,5 +1,5 @@
+ /*
+- * Copyright (C) 2015 Freescale Semiconductor, Inc.
++ * Copyright (C) 2015-2016 Freescale Semiconductor, Inc.
+  *
+  * Licensed under the Apache License, Version 2.0 (the "License");
+  * you may not use this file except in compliance with the License.
+@@ -27,6 +27,16 @@ using namespace android;
+ 
+ class Camera;
+ 
++class ConfigureParam
++{
++public:
++    int32_t mWidth;
++    int32_t mHeight;
++    int32_t mFormat;
++    int32_t mFps;
++    int32_t mBuffers;
++};
++
+ class VideoStream : public Stream
+ {
+ public:
+@@ -61,7 +71,7 @@ private:
+ 
+ protected:
+     // handle configure message internally.
+-    int32_t handleConfigureLocked();
++    int32_t handleConfigureLocked(ConfigureParam* params);
+     virtual int32_t onDeviceConfigureLocked() = 0;
+     // handle start message internally.
+     int32_t handleStartLocked(bool force);
+-- 
+1.8.0
+

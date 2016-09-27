@@ -1,0 +1,47 @@
+From f0b7b218bc1e46213c412e172eeb87c63f1537ab Mon Sep 17 00:00:00 2001
+From: Catalin Marinas <catalin.marinas@arm.com>
+Date: Thu, 3 Apr 2014 15:57:15 +0100
+Subject: [PATCH] arm64: Clean up the default pgprot setting
+
+The primary aim of this patchset is to remove the pgprot_default and
+prot_sect_default global variables and rely strictly on predefined
+values. The original goal was to be able to run SMP kernels on UP
+hardware by not setting the Shareability bit. However, it is unlikely to
+see UP ARMv8 hardware and even if we do, the Shareability bit is no
+longer assumed to disable cacheable accesses.
+
+A side effect is that the device mappings now have the Shareability
+attribute set. The hardware, however, should ignore it since Device
+accesses are always Outer Shareable.
+
+Following the removal of the two global variables, there is some PROT_*
+macro reshuffling and cleanup, including the __PAGE_* macros (replaced
+by PAGE_*).
+
+Signed-off-by: Catalin Marinas <catalin.marinas@arm.com>
+Acked-by: Will Deacon <will.deacon@arm.com>
+(cherry picked from commit a501e32430d4232012ab708b8f0ce841f29e0f02)
+Signed-off-by: Mark Brown <broonie@linaro.org>
+
+Conflicts:
+	arch/arm64/include/asm/pgtable.h
+	arch/arm64/mm/mmu.c
+---
+ arch/arm64/include/asm/pgtable.h | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/arch/arm64/include/asm/pgtable.h b/arch/arm64/include/asm/pgtable.h
+index 7cf4ba5..1fe7654 100644
+--- a/arch/arm64/include/asm/pgtable.h
++++ b/arch/arm64/include/asm/pgtable.h
+@@ -86,6 +86,7 @@ extern void __pgd_error(const char *file, int line, unsigned long val);
+ #define PAGE_COPY_EXEC		__pgprot(_PAGE_DEFAULT | PTE_USER | PTE_NG | PTE_PXN)
+ #define PAGE_READONLY		__pgprot(_PAGE_DEFAULT | PTE_USER | PTE_NG | PTE_PXN | PTE_UXN)
+ #define PAGE_READONLY_EXEC	__pgprot(_PAGE_DEFAULT | PTE_USER | PTE_NG | PTE_PXN)
++#define PAGE_EXECONLY		__pgprot(_PAGE_DEFAULT | PTE_NG | PTE_PXN)
+ 
+ #define __P000  PAGE_NONE
+ #define __P001  PAGE_READONLY
+-- 
+1.8.0
+

@@ -1,0 +1,30 @@
+From 9b3e297ff2225a1f892ddd7b6af853d28aa1f9d8 Mon Sep 17 00:00:00 2001
+From: "guoyin.chen" <guoyin.chen@freescale.com>
+Date: Wed, 4 Feb 2015 16:13:25 +0800
+Subject: [PATCH] MA-6197 Boot failed after rebooting several times
+
+Android framework may still call the WAIT_FOR_VSYNC, when fb driver's
+shutdown been called. axi clock will be closed in shutdown function.
+But fb driver still access the register in WAIT_FOR_VSYNC
+
+Signed-off-by: guoyin.chen <guoyin.chen@freescale.com>
+---
+ drivers/video/mxsfb.c | 2 --
+ 1 file changed, 2 deletions(-)
+
+diff --git a/drivers/video/mxsfb.c b/drivers/video/mxsfb.c
+index 8c5bd41..0b17ad9 100644
+--- a/drivers/video/mxsfb.c
++++ b/drivers/video/mxsfb.c
+@@ -1491,8 +1491,6 @@ static void mxsfb_shutdown(struct platform_device *pdev)
+ 	 */
+ 	writel(CTRL_RUN, host->base + LCDC_CTRL + REG_CLR);
+ 	writel(CTRL_MASTER, host->base + LCDC_CTRL + REG_CLR);
+-	clk_disable_disp_axi(host);
+-	clk_disable_axi(host);
+ }
+ 
+ #ifdef CONFIG_PM_RUNTIME
+-- 
+1.8.0
+

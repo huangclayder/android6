@@ -1,0 +1,34 @@
+From 4469d0265865670a345b45dc915ed33651c3ba49 Mon Sep 17 00:00:00 2001
+From: Han Xu <han.xu@nxp.com>
+Date: Tue, 12 Jan 2016 10:41:33 -0600
+Subject: [PATCH] MLK-12246: mtd: nand: fix the read from pointer after free
+ issue
+
+Fix a read from pointer after free issue in nand error handling path,
+which was found by coverity.
+
+Signed-off-by: Han Xu <han.xu@nxp.com>
+---
+ drivers/mtd/nand/mxs_nand.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/mtd/nand/mxs_nand.c b/drivers/mtd/nand/mxs_nand.c
+index 7f6351f..3b55ac2 100644
+--- a/drivers/mtd/nand/mxs_nand.c
++++ b/drivers/mtd/nand/mxs_nand.c
+@@ -1210,10 +1210,10 @@ err3:
+ 	for (--j; j >= 0; j--)
+ 		mxs_dma_release(j);
+ err2:
+-	free(info->desc);
+-err1:
+ 	for (--i; i >= 0; i--)
+ 		mxs_dma_desc_free(info->desc[i]);
++	free(info->desc);
++err1:
+ 	printf("MXS NAND: Unable to allocate DMA descriptors\n");
+ 	return -ENOMEM;
+ }
+-- 
+1.8.0
+

@@ -1,0 +1,46 @@
+From b18bbfecce1039e2999538ca6954e85e0ffb3278 Mon Sep 17 00:00:00 2001
+From: Haoran Wang <b50027@freescale.com>
+Date: Fri, 30 Oct 2015 14:27:58 +0800
+Subject: [PATCH] MA-7183	Fix BCM4339 cannot establish p2p twice
+
+Import patch from Broadcom to fix the BCM4339
+p2p issue.
+
+Signed-off-by: Haoran Wang <b50027@freescale.com>
+---
+ drivers/net/wireless/bcmdhd/wl_cfg80211.c | 11 ++++++++---
+ 1 file changed, 8 insertions(+), 3 deletions(-)
+
+diff --git a/drivers/net/wireless/bcmdhd/wl_cfg80211.c b/drivers/net/wireless/bcmdhd/wl_cfg80211.c
+index 9d7533c..4148d1d 100644
+--- a/drivers/net/wireless/bcmdhd/wl_cfg80211.c
++++ b/drivers/net/wireless/bcmdhd/wl_cfg80211.c
+@@ -9160,9 +9160,14 @@ static void wl_scan_timeout(unsigned long data)
+ static s32
+ wl_cfg80211_netdev_notifier_call(struct notifier_block * nb,
+ 	unsigned long state,
+-	void *ndev)
++	void *ptr)
+ {
+-	struct net_device *dev = ndev;
++#if (LINUX_VERSION_CODE < KERNEL_VERSION(3, 11, 0))
++	struct net_device *dev = ptr;
++#else
++	struct net_device *dev = netdev_notifier_info_to_dev(ptr);
++#endif
++
+ 	struct wireless_dev *wdev = dev->ieee80211_ptr;
+ 	struct bcm_cfg80211 *cfg = g_bcm_cfg;
+ 
+@@ -9210,7 +9215,7 @@ wl_cfg80211_netdev_notifier_call(struct notifier_block * nb,
+ 
+ 		case NETDEV_UNREGISTER:
+ 			/* after calling list_del_rcu(&wdev->list) */
+-			wl_dealloc_netinfo(cfg, ndev);
++			wl_dealloc_netinfo(cfg, dev);
+ 			break;
+ 		case NETDEV_GOING_DOWN:
+ 			/* At NETDEV_DOWN state, wdev_cleanup_work work will be called.
+-- 
+1.8.0
+

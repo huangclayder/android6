@@ -1,0 +1,92 @@
+From 88ae4c453ba53c5920a381a5d9c23d3815413271 Mon Sep 17 00:00:00 2001
+From: Peng Fan <Peng.Fan@freescale.com>
+Date: Tue, 5 May 2015 14:34:11 +0800
+Subject: [PATCH] MLK-10812-1 imx:mx6 add i2c4 support
+
+I2C4 support for i.MX
+
+Signed-off-by: Peng Fan <Peng.Fan@freescale.com>
+---
+ arch/arm/cpu/armv7/mx6/clock.c | 29 +++++++++++++++++++++++------
+ drivers/i2c/mxc_i2c.c          |  7 +++++--
+ 2 files changed, 28 insertions(+), 8 deletions(-)
+
+diff --git a/arch/arm/cpu/armv7/mx6/clock.c b/arch/arm/cpu/armv7/mx6/clock.c
+index abac65d..e6a2115 100644
+--- a/arch/arm/cpu/armv7/mx6/clock.c
++++ b/arch/arm/cpu/armv7/mx6/clock.c
+@@ -1,5 +1,5 @@
+ /*
+- * Copyright (C) 2010-2011 Freescale Semiconductor, Inc.
++ * Copyright (C) 2010-2015 Freescale Semiconductor, Inc.
+  *
+  * SPDX-License-Identifier:	GPL-2.0+
+  */
+@@ -159,17 +159,34 @@ int enable_i2c_clk(unsigned char enable, unsigned i2c_num)
+ 	u32 reg;
+ 	u32 mask;
+ 
+-	if (i2c_num > 2)
++#if defined(CONFIG_MX6SX) || defined(CONFIG_MX6UL)
++	if (i2c_num > 3)
+ 		return -EINVAL;
++	if (i2c_num == 3) {
++		mask = MXC_CCM_CCGR6_I2C4_SERIAL_MASK;
++		reg = __raw_readl(&imx_ccm->CCGR6);
++	} else
++#endif
++	{
++		if (i2c_num > 2)
++			return -EINVAL;
+ 
+-	mask = MXC_CCM_CCGR_CG_MASK
+-		<< (MXC_CCM_CCGR2_I2C1_SERIAL_OFFSET + (i2c_num << 1));
+-	reg = __raw_readl(&imx_ccm->CCGR2);
++		mask = MXC_CCM_CCGR_CG_MASK
++			<< (MXC_CCM_CCGR2_I2C1_SERIAL_OFFSET + (i2c_num << 1));
++		reg = __raw_readl(&imx_ccm->CCGR2);
++	}
+ 	if (enable)
+ 		reg |= mask;
+ 	else
+ 		reg &= ~mask;
+-	__raw_writel(reg, &imx_ccm->CCGR2);
++
++#if defined(CONFIG_MX6SX) || defined(CONFIG_MX6UL)
++	if (i2c_num == 3)
++		__raw_writel(reg, &imx_ccm->CCGR6);
++	else
++#endif
++		__raw_writel(reg, &imx_ccm->CCGR2);
++
+ 	return 0;
+ }
+ #endif
+diff --git a/drivers/i2c/mxc_i2c.c b/drivers/i2c/mxc_i2c.c
+index 2bf4e01..7bc6d07 100644
+--- a/drivers/i2c/mxc_i2c.c
++++ b/drivers/i2c/mxc_i2c.c
+@@ -435,7 +435,10 @@ static void * const i2c_bases[] = {
+ 	defined(CONFIG_MX6) || defined(CONFIG_LS102XA)
+ 	(void *)I2C1_BASE_ADDR,
+ 	(void *)I2C2_BASE_ADDR,
+-	(void *)I2C3_BASE_ADDR
++	(void *)I2C3_BASE_ADDR,
++#if defined(CONFIG_MX6SX) || defined(CONFIG_MX6UL)
++	(void *)I2C4_BASE_ADDR
++#endif
+ #elif defined(CONFIG_MX7)
+ 	(void *)I2C1_BASE_ADDR,
+ 	(void *)I2C2_BASE_ADDR,
+@@ -579,7 +582,7 @@ U_BOOT_I2C_ADAP_COMPLETE(mxc2, mxc_i2c_init, mxc_i2c_probe,
+ 			 CONFIG_SYS_MXC_I2C3_SLAVE, 2)
+ #endif
+ 
+-#if defined(CONFIG_MX7)
++#if defined(CONFIG_MX7) || defined(CONFIG_MX6SX) || defined(CONFIG_MX6UL)
+ U_BOOT_I2C_ADAP_COMPLETE(mxc3, mxc_i2c_init, mxc_i2c_probe,
+ 			 mxc_i2c_read, mxc_i2c_write,
+ 			 mxc_i2c_set_bus_speed,
+-- 
+1.8.0
+

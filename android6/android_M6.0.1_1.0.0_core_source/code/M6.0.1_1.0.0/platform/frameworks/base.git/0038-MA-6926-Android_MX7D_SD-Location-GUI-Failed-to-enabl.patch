@@ -1,0 +1,29 @@
+From 53a098866e8d99d6665fc35535a39944ba5f7692 Mon Sep 17 00:00:00 2001
+From: Wenbo Zhu <b52619@freescale.com>
+Date: Thu, 27 Aug 2015 12:44:32 +0800
+Subject: [PATCH 38/45] MA-6926 [Android_MX7D_SD] Location/GUI: Failed to
+ enable or disable Location from Notification Drawer.
+ 100%
+
+add "refreshState()" to refresh UI when we make location mode enable or disable.
+
+Signed-off-by: Wenbo Zhu <b52619@freescale.com>
+---
+ packages/SystemUI/src/com/android/systemui/qs/tiles/LocationTile.java | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/packages/SystemUI/src/com/android/systemui/qs/tiles/LocationTile.java b/packages/SystemUI/src/com/android/systemui/qs/tiles/LocationTile.java
+index e6fade4..d0d753d 100644
+--- a/packages/SystemUI/src/com/android/systemui/qs/tiles/LocationTile.java
++++ b/packages/SystemUI/src/com/android/systemui/qs/tiles/LocationTile.java
+@@ -64,6 +64,7 @@ public class LocationTile extends QSTile<QSTile.BooleanState> {
+         mController.setLocationEnabled(!wasEnabled);
+         mEnable.setAllowAnimation(true);
+         mDisable.setAllowAnimation(true);
++        refreshState();
+     }
+ 
+     @Override
+-- 
+1.8.0
+

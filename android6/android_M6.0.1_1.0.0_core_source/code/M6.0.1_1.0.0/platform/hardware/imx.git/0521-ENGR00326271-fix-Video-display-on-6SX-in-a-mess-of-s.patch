@@ -1,0 +1,32 @@
+From 6cfc97fd59baba370e43c39c0c8a821ba8e6104e Mon Sep 17 00:00:00 2001
+From: b37945 <b37945@freescale.com>
+Date: Fri, 8 Aug 2014 11:22:46 +0800
+Subject: [PATCH 521/635] ENGR00326271 fix Video display on 6SX in a mess of
+ some stream files.
+
+The root cause is YV12/I420 format alignment is different between
+CTS-Verifier and GPU.
+So restore YV12/I420 alignment to 32 alignment.
+And correct YV12/I420 alignment in camera CallbackProcessor.
+
+Signed-off-by: b37945 <b37945@freescale.com>
+---
+ mx6/libgralloc_wrapper/BufferManager.cpp | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/mx6/libgralloc_wrapper/BufferManager.cpp b/mx6/libgralloc_wrapper/BufferManager.cpp
+index dc07569..c2ab553 100755
+--- a/mx6/libgralloc_wrapper/BufferManager.cpp
++++ b/mx6/libgralloc_wrapper/BufferManager.cpp
+@@ -126,7 +126,7 @@ int BufferManager::alloc(int w, int h, int format, int usage,
+ 
+         case HAL_PIXEL_FORMAT_YCbCr_420_P:
+         case HAL_PIXEL_FORMAT_YV12: {
+-            alignedw = ALIGN_PIXEL_16(w);
++            alignedw = ALIGN_PIXEL_32(w);
+             alignedh = ALIGN_PIXEL_4(h);
+             int c_stride = (alignedw/2+15)/16*16;
+             size = alignedw * alignedh + c_stride * h;
+-- 
+1.8.0
+

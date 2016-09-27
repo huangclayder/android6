@@ -1,0 +1,35 @@
+From 37290443354ae287cf2a9105cf24643674e62573 Mon Sep 17 00:00:00 2001
+From: Haoran Wang <b50027@freescale.com>
+Date: Thu, 21 May 2015 17:32:55 +0800
+Subject: [PATCH] MA-6710 Add iptables MASQUERADE mode support
+
+Added MASQUERADE mode for ipv4 and ipv6.
+
+Signed-off-by: Haoran Wang <b50027@freescale.com>
+---
+ arch/arm/configs/imx_v7_android_defconfig | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/arch/arm/configs/imx_v7_android_defconfig b/arch/arm/configs/imx_v7_android_defconfig
+index 2c3ce18..d7d4332 100644
+--- a/arch/arm/configs/imx_v7_android_defconfig
++++ b/arch/arm/configs/imx_v7_android_defconfig
+@@ -147,6 +147,7 @@ CONFIG_IP_NF_MATCH_TTL=y
+ CONFIG_IP_NF_FILTER=y
+ CONFIG_IP_NF_TARGET_REJECT=y
+ CONFIG_NF_NAT_IPV4=y
++CONFIG_IP_NF_TARGET_MASQUERADE=y
+ CONFIG_IP_NF_MANGLE=y
+ CONFIG_IP_NF_RAW=y
+ CONFIG_IP_NF_ARPTABLES=y
+@@ -159,6 +160,7 @@ CONFIG_IP6_NF_TARGET_REJECT=y
+ CONFIG_IP6_NF_MANGLE=y
+ CONFIG_IP6_NF_RAW=y
+ CONFIG_NF_NAT_IPV6=y
++CONFIG_IP6_NF_TARGET_MASQUERADE=y
+ CONFIG_VLAN_8021Q=y
+ CONFIG_LLC2=y
+ CONFIG_NET_SCHED=y
+-- 
+1.8.0
+

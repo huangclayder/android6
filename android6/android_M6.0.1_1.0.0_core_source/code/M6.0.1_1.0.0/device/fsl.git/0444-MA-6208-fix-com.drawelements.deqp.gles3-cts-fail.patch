@@ -1,0 +1,45 @@
+From 227798831eb7fb91bdd75db0fbcd4739fdb6a965 Mon Sep 17 00:00:00 2001
+From: Richard Liu <r66033@freescale.com>
+Date: Fri, 27 Feb 2015 10:42:36 +0800
+Subject: [PATCH 444/602] MA-6208 fix com.drawelements.deqp.gles3 cts fail
+
+com.drawelements.deqp.gles3 cts test packages is added into Lollipop,
+1842 cases can't pass and 9956 cases can't executed on fsl platform
+due to some GPU limitation, the issue can't be solved in short time,
+apply a temporary fix: export opengles version as 2.0 instead of 3.0.
+
+Signed-off-by: Richard Liu <r66033@freescale.com>
+---
+ sabreauto_6q/init.rc | 2 +-
+ sabresd_6dq/init.rc  | 2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/sabreauto_6q/init.rc b/sabreauto_6q/init.rc
+index eec908f..2b158e2 100644
+--- a/sabreauto_6q/init.rc
++++ b/sabreauto_6q/init.rc
+@@ -53,7 +53,7 @@ on boot
+     setprop front_camera_orient 0
+ 
+     # Set OpenGLES version
+-    setprop ro.opengles.version 196608
++    setprop ro.opengles.version 131072
+ 
+     # Set rotation to 270 to cofigure as portrait mode
+     setprop ro.sf.hwrotation 0
+diff --git a/sabresd_6dq/init.rc b/sabresd_6dq/init.rc
+index 4d3c66a..bbf5301 100755
+--- a/sabresd_6dq/init.rc
++++ b/sabresd_6dq/init.rc
+@@ -66,7 +66,7 @@ on boot
+     setprop front_camera_orient 0
+ 
+     # Set OpenGLES version
+-    setprop ro.opengles.version 196608
++    setprop ro.opengles.version 131072
+ 
+     # Set rotation to 270 to cofigure as portrait mode
+     setprop ro.sf.hwrotation 0
+-- 
+1.8.0
+

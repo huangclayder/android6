@@ -1,0 +1,35 @@
+From 723c861465d2adc4ca6972f08b702ddef5f899d1 Mon Sep 17 00:00:00 2001
+From: Bartlomiej Zolnierkiewicz <b.zolnierkie@samsung.com>
+Date: Wed, 26 Mar 2014 16:39:50 +0100
+Subject: [PATCH] ata: fix Calxeda Highbank SATA driver dependencies
+
+Make sata_highbank host driver depend on ARCH_HIGHBANK config option
+as Calxeda Highbank SATA support is specific to Calxeda Highbank
+SoCs and the driver to work requires suitable device tree node to
+be defined.  Additionally allow the driver build if COMPILE_TEST
+config option is set.
+
+Cc: Mark Langsdorf <mark.langsdorf@calxeda.com>
+Cc: Rob Herring <robh@kernel.org>
+Signed-off-by: Bartlomiej Zolnierkiewicz <b.zolnierkie@samsung.com>
+Signed-off-by: Tejun Heo <tj@kernel.org>
+(cherry picked from commit 0b99f8648eb1814d787db3981ad93e6bc343b3f6)
+---
+ drivers/ata/Kconfig | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/drivers/ata/Kconfig b/drivers/ata/Kconfig
+index d111764..f7cb597 100644
+--- a/drivers/ata/Kconfig
++++ b/drivers/ata/Kconfig
+@@ -272,6 +272,7 @@ config SATA_DWC_VDEBUG
+ 
+ config SATA_HIGHBANK
+ 	tristate "Calxeda Highbank SATA support"
++	depends on ARCH_HIGHBANK || COMPILE_TEST
+ 	help
+ 	  This option enables support for the Calxeda Highbank SoC's
+ 	  onboard SATA.
+-- 
+1.8.0
+

@@ -1,0 +1,1860 @@
+From 9b9d2927baa1c6ac6dbc87d9de7af7cce4c8e4eb Mon Sep 17 00:00:00 2001
+From: WenboZhu <WenboZhu@freescale.com>
+Date: Tue, 26 May 2015 10:26:39 +0800
+Subject: [PATCH 096/115] MA-6701 [Android_MX7D_SD]LCD: Ethernet/Audio
+ Timestamp app is out of screen display, app
+ resolution is too big. 100%
+
+add the some layout files to support different resolution.
+
+Signed-off-by: WenboZhu <WenboZhu@freescale.com>
+---
+ AudioTimeStampTest/res/layout-hdpi/main.xml     |  72 +++++++++++
+ AudioTimeStampTest/res/layout-ldpi/main.xml     |  72 +++++++++++
+ AudioTimeStampTest/res/layout-mdpi/main.xml     |  72 +++++++++++
+ AudioTimeStampTest/res/layout/main.xml          |  79 -------------
+ Ethernet/res/layout-hdpi/activity_main.xml      |  16 +++
+ Ethernet/res/layout-hdpi/advanced_setting.xml   | 100 ++++++++++++++++
+ Ethernet/res/layout-hdpi/eth_configure.xml      | 150 +++++++++++++++++++++++
+ Ethernet/res/layout-hdpi/ethernet_configure.xml |  81 +++++++++++++
+ Ethernet/res/layout-ldpi/activity_main.xml      |  16 +++
+ Ethernet/res/layout-ldpi/advanced_setting.xml   | 100 ++++++++++++++++
+ Ethernet/res/layout-ldpi/eth_configure.xml      | 150 +++++++++++++++++++++++
+ Ethernet/res/layout-ldpi/ethernet_configure.xml |  81 +++++++++++++
+ Ethernet/res/layout-mdpi/activity_main.xml      |  16 +++
+ Ethernet/res/layout-mdpi/advanced_setting.xml   | 100 ++++++++++++++++
+ Ethernet/res/layout-mdpi/eth_configure.xml      | 150 +++++++++++++++++++++++
+ Ethernet/res/layout-mdpi/ethernet_configure.xml |  81 +++++++++++++
+ Ethernet/res/layout/activity_main.xml           |  16 ---
+ Ethernet/res/layout/advanced_setting.xml        | 100 ----------------
+ Ethernet/res/layout/eth_configure.xml           | 151 ------------------------
+ Ethernet/res/layout/ethernet_configure.xml      |  81 -------------
+ 20 files changed, 1257 insertions(+), 427 deletions(-)
+ create mode 100755 AudioTimeStampTest/res/layout-hdpi/main.xml
+ create mode 100755 AudioTimeStampTest/res/layout-ldpi/main.xml
+ create mode 100755 AudioTimeStampTest/res/layout-mdpi/main.xml
+ delete mode 100755 AudioTimeStampTest/res/layout/main.xml
+ create mode 100644 Ethernet/res/layout-hdpi/activity_main.xml
+ create mode 100644 Ethernet/res/layout-hdpi/advanced_setting.xml
+ create mode 100644 Ethernet/res/layout-hdpi/eth_configure.xml
+ create mode 100644 Ethernet/res/layout-hdpi/ethernet_configure.xml
+ create mode 100755 Ethernet/res/layout-ldpi/activity_main.xml
+ create mode 100755 Ethernet/res/layout-ldpi/advanced_setting.xml
+ create mode 100755 Ethernet/res/layout-ldpi/eth_configure.xml
+ create mode 100755 Ethernet/res/layout-ldpi/ethernet_configure.xml
+ create mode 100755 Ethernet/res/layout-mdpi/activity_main.xml
+ create mode 100755 Ethernet/res/layout-mdpi/advanced_setting.xml
+ create mode 100755 Ethernet/res/layout-mdpi/eth_configure.xml
+ create mode 100755 Ethernet/res/layout-mdpi/ethernet_configure.xml
+ delete mode 100644 Ethernet/res/layout/activity_main.xml
+ delete mode 100644 Ethernet/res/layout/advanced_setting.xml
+ delete mode 100644 Ethernet/res/layout/eth_configure.xml
+ delete mode 100644 Ethernet/res/layout/ethernet_configure.xml
+
+diff --git a/AudioTimeStampTest/res/layout-hdpi/main.xml b/AudioTimeStampTest/res/layout-hdpi/main.xml
+new file mode 100755
+index 0000000..deca57f
+--- /dev/null
++++ b/AudioTimeStampTest/res/layout-hdpi/main.xml
+@@ -0,0 +1,72 @@
++<?xml version="1.0" encoding="utf-8"?>
++<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
++        android:layout_width="fill_parent"
++        android:layout_height="fill_parent"
++    >
++	  <Spinner
++	    android:id="@+id/Spinner"
++		android:layout_width="fill_parent"
++		android:layout_height="100dp"
++		android:textSize="55dp"
++                android:background="#ffffff"/>
++      <TextView
++          android:id="@+id/textview01"
++          android:layout_width="106dp"
++          android:layout_height="55dp"
++          android:layout_below="@+id/Spinner"
++          android:layout_marginLeft="10dp"
++          android:layout_marginTop="30dp"
++          android:text="@string/ready"
++          android:textSize="32dp"/>
++      <Button
++          android:id="@+id/buttonPlay"
++          android:layout_width="160dp"
++          android:layout_height="70dp"
++          android:layout_below="@+id/textview01"
++          android:layout_marginTop="15dp"
++          android:text="@string/play"
++          android:textSize="27dp" />
++      <Button
++          android:id="@+id/buttonStop"
++          android:layout_width="160dp"
++          android:layout_height="70dp"
++          android:layout_below="@+id/buttonPlay"
++          android:layout_marginTop="15dp"
++          android:text="@string/stop"
++          android:textSize="27dp"/>
++      <TextView
++          android:id="@+id/textview02"
++          android:layout_width="500dp"
++          android:layout_height="80dp"
++          android:layout_below="@+id/Spinner"
++          android:layout_marginLeft="260dp"
++          android:layout_marginTop="18dp"
++          android:layout_toRightOf="@+id/textview01"
++          android:text="@string/result"
++          android:textSize="50dp"/>
++      <TextView
++          android:id="@+id/textview03"
++          android:layout_width="500dp"
++          android:layout_height="wrap_content"
++          android:layout_below="@+id/textview02"
++          android:layout_marginTop="20dp"
++          android:layout_alignLeft="@+id/textview02"
++          android:textSize="32dp" />
++
++     <TextView
++          android:id="@+id/textview04"
++          android:layout_width="500dp"
++          android:layout_height="wrap_content"
++          android:layout_below="@+id/textview03"
++          android:layout_marginTop="15dp"
++          android:layout_alignLeft="@+id/textview03"
++          android:textSize="32dp"/>
++      <TextView
++          android:id="@+id/textview05"
++          android:layout_width="500dp"
++          android:layout_height="wrap_content"
++          android:layout_below="@+id/textview04"
++          android:layout_marginTop="15dp"
++          android:layout_alignLeft="@+id/textview04"
++          android:textSize="32dp"/>
++</RelativeLayout>
+diff --git a/AudioTimeStampTest/res/layout-ldpi/main.xml b/AudioTimeStampTest/res/layout-ldpi/main.xml
+new file mode 100755
+index 0000000..565390b
+--- /dev/null
++++ b/AudioTimeStampTest/res/layout-ldpi/main.xml
+@@ -0,0 +1,72 @@
++<?xml version="1.0" encoding="utf-8"?>
++<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
++        android:layout_width="fill_parent"
++        android:layout_height="fill_parent"
++    >
++	  <Spinner
++	    android:id="@+id/Spinner"
++		android:layout_width="fill_parent"
++		android:layout_height="50dp"
++		android:textSize="25dp"
++                android:background="#ffffff"/>
++      <TextView
++          android:id="@+id/textview01"
++          android:layout_width="53dp"
++          android:layout_height="25dp"
++          android:layout_below="@+id/Spinner"
++          android:layout_marginLeft="2dp"
++          android:layout_marginTop="15dp"
++          android:text="@string/ready"
++          android:textSize="16dp"/>
++      <Button
++          android:id="@+id/buttonPlay"
++          android:layout_width="80dp"
++          android:layout_height="40dp"
++          android:layout_below="@+id/textview01"
++          android:layout_marginTop="5dp"
++          android:text="@string/play"
++          android:textSize="15dp" />
++      <Button
++          android:id="@+id/buttonStop"
++          android:layout_width="80dp"
++          android:layout_height="40dp"
++          android:layout_below="@+id/buttonPlay"
++          android:layout_marginTop="5dp"
++          android:text="@string/stop"
++          android:textSize="15dp"/>
++      <TextView
++          android:id="@+id/textview02"
++          android:layout_width="250dp"
++          android:layout_height="40dp"
++          android:layout_below="@+id/Spinner"
++          android:layout_marginLeft="130dp"
++          android:layout_marginTop="9dp"
++          android:layout_toRightOf="@+id/textview01"
++          android:text="@string/result"
++          android:textSize="25dp"/>
++      <TextView
++          android:id="@+id/textview03"
++          android:layout_width="250dp"
++          android:layout_height="wrap_content"
++          android:layout_below="@+id/textview02"
++          android:layout_marginTop="10dp"
++          android:layout_alignLeft="@+id/textview02"
++          android:textSize="16dp" />
++
++     <TextView
++          android:id="@+id/textview04"
++          android:layout_width="250dp"
++          android:layout_height="wrap_content"
++          android:layout_below="@+id/textview03"
++          android:layout_marginTop="8dp"
++          android:layout_alignLeft="@+id/textview03"
++          android:textSize="16dp"/>
++      <TextView
++          android:id="@+id/textview05"
++          android:layout_width="250dp"
++          android:layout_height="wrap_content"
++          android:layout_below="@+id/textview04"
++          android:layout_marginTop="8dp"
++          android:layout_alignLeft="@+id/textview04"
++          android:textSize="16dp"/>
++</RelativeLayout>
+diff --git a/AudioTimeStampTest/res/layout-mdpi/main.xml b/AudioTimeStampTest/res/layout-mdpi/main.xml
+new file mode 100755
+index 0000000..deca57f
+--- /dev/null
++++ b/AudioTimeStampTest/res/layout-mdpi/main.xml
+@@ -0,0 +1,72 @@
++<?xml version="1.0" encoding="utf-8"?>
++<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
++        android:layout_width="fill_parent"
++        android:layout_height="fill_parent"
++    >
++	  <Spinner
++	    android:id="@+id/Spinner"
++		android:layout_width="fill_parent"
++		android:layout_height="100dp"
++		android:textSize="55dp"
++                android:background="#ffffff"/>
++      <TextView
++          android:id="@+id/textview01"
++          android:layout_width="106dp"
++          android:layout_height="55dp"
++          android:layout_below="@+id/Spinner"
++          android:layout_marginLeft="10dp"
++          android:layout_marginTop="30dp"
++          android:text="@string/ready"
++          android:textSize="32dp"/>
++      <Button
++          android:id="@+id/buttonPlay"
++          android:layout_width="160dp"
++          android:layout_height="70dp"
++          android:layout_below="@+id/textview01"
++          android:layout_marginTop="15dp"
++          android:text="@string/play"
++          android:textSize="27dp" />
++      <Button
++          android:id="@+id/buttonStop"
++          android:layout_width="160dp"
++          android:layout_height="70dp"
++          android:layout_below="@+id/buttonPlay"
++          android:layout_marginTop="15dp"
++          android:text="@string/stop"
++          android:textSize="27dp"/>
++      <TextView
++          android:id="@+id/textview02"
++          android:layout_width="500dp"
++          android:layout_height="80dp"
++          android:layout_below="@+id/Spinner"
++          android:layout_marginLeft="260dp"
++          android:layout_marginTop="18dp"
++          android:layout_toRightOf="@+id/textview01"
++          android:text="@string/result"
++          android:textSize="50dp"/>
++      <TextView
++          android:id="@+id/textview03"
++          android:layout_width="500dp"
++          android:layout_height="wrap_content"
++          android:layout_below="@+id/textview02"
++          android:layout_marginTop="20dp"
++          android:layout_alignLeft="@+id/textview02"
++          android:textSize="32dp" />
++
++     <TextView
++          android:id="@+id/textview04"
++          android:layout_width="500dp"
++          android:layout_height="wrap_content"
++          android:layout_below="@+id/textview03"
++          android:layout_marginTop="15dp"
++          android:layout_alignLeft="@+id/textview03"
++          android:textSize="32dp"/>
++      <TextView
++          android:id="@+id/textview05"
++          android:layout_width="500dp"
++          android:layout_height="wrap_content"
++          android:layout_below="@+id/textview04"
++          android:layout_marginTop="15dp"
++          android:layout_alignLeft="@+id/textview04"
++          android:textSize="32dp"/>
++</RelativeLayout>
+diff --git a/AudioTimeStampTest/res/layout/main.xml b/AudioTimeStampTest/res/layout/main.xml
+deleted file mode 100755
+index fb0e2d2..0000000
+--- a/AudioTimeStampTest/res/layout/main.xml
++++ /dev/null
+@@ -1,79 +0,0 @@
+-<?xml version="1.0" encoding="utf-8"?>
+-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+-        android:layout_width="fill_parent"
+-        android:layout_height="fill_parent"
+-    >
+-    
+-	  <Spinner
+-	    android:id="@+id/Spinner"
+-		android:layout_width="fill_parent" 
+-		android:layout_height="100dp"
+-		android:textSize="55dp"
+-                android:background="#ffffff"/>
+-	  
+-      <TextView
+-          android:id="@+id/textview01"
+-          android:layout_width="106dp"
+-          android:layout_height="55dp"
+-          android:layout_below="@+id/Spinner"
+-          android:layout_marginTop="30dp"
+-          android:text="@string/ready" 
+-          android:textSize="32dp"/>
+-      
+-      <Button
+-          android:id="@+id/buttonPlay"
+-          android:layout_width="160dp"
+-          android:layout_height="70dp"
+-          android:layout_below="@+id/textview01"
+-          android:layout_marginTop="15dp"
+-          android:text="@string/play"
+-          android:textSize="45dp" />
+-      
+-      <Button
+-          android:id="@+id/buttonStop"
+-          android:layout_width="160dp"
+-          android:layout_height="70dp"
+-          android:layout_below="@+id/buttonPlay"
+-          android:layout_marginTop="38dp"
+-          android:text="@string/stop" 
+-          android:textSize="45dp"/>
+-      
+-      <TextView
+-          android:id="@+id/textview02"
+-          android:layout_width="500dp"
+-          android:layout_height="80dp"
+-          android:layout_below="@+id/Spinner"
+-          android:layout_marginLeft="260dp"
+-           android:layout_marginTop="18dp"
+-          android:layout_toRightOf="@+id/textview01"
+-          android:text="@string/result" 
+-          android:textSize="50dp"/>
+-      
+-      <TextView
+-          android:id="@+id/textview03"
+-          android:layout_width="500dp"
+-          android:layout_height="wrap_content"
+-          android:layout_below="@+id/textview02"
+-          android:layout_marginTop="20dp"
+-          android:layout_alignLeft="@+id/textview02"
+-          android:textSize="32dp" />
+-
+-     <TextView
+-          android:id="@+id/textview04"
+-          android:layout_width="500dp"
+-          android:layout_height="wrap_content"
+-          android:layout_below="@+id/textview03" 
+-          android:layout_marginTop="15dp"
+-          android:layout_alignLeft="@+id/textview03" 
+-          android:textSize="32dp"/>
+-     
+-      <TextView
+-          android:id="@+id/textview05"
+-          android:layout_width="500dp"
+-          android:layout_height="wrap_content"
+-          android:layout_below="@+id/textview04"
+-          android:layout_marginTop="15dp"
+-          android:layout_alignLeft="@+id/textview04" 
+-          android:textSize="32dp"/>
+-  
+-</RelativeLayout>
+diff --git a/Ethernet/res/layout-hdpi/activity_main.xml b/Ethernet/res/layout-hdpi/activity_main.xml
+new file mode 100644
+index 0000000..efcbf18
+--- /dev/null
++++ b/Ethernet/res/layout-hdpi/activity_main.xml
+@@ -0,0 +1,16 @@
++<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
++    xmlns:tools="http://schemas.android.com/tools"
++    android:layout_width="match_parent"
++    android:layout_height="match_parent"
++    android:paddingLeft="@dimen/activity_horizontal_margin"
++    android:paddingRight="@dimen/activity_horizontal_margin"
++    android:paddingTop="@dimen/activity_vertical_margin"
++    android:paddingBottom="@dimen/activity_vertical_margin"
++    tools:context=".MainActivity">
++
++    <TextView
++        android:layout_width="wrap_content"
++        android:layout_height="wrap_content"
++        android:text="@string/hello_world" />
++
++</RelativeLayout>
+diff --git a/Ethernet/res/layout-hdpi/advanced_setting.xml b/Ethernet/res/layout-hdpi/advanced_setting.xml
+new file mode 100644
+index 0000000..951e049
+--- /dev/null
++++ b/Ethernet/res/layout-hdpi/advanced_setting.xml
+@@ -0,0 +1,100 @@
++<?xml version="1.0" encoding="utf-8"?>
++
++<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
++            android:layout_width="wrap_content"
++            android:layout_height="wrap_content">
++    <LinearLayout
++            android:layout_width="match_parent"
++            android:layout_height="wrap_content"
++            android:orientation="vertical"
++            android:paddingBottom="8dip">
++
++        <TextView android:id="@+id/eth_proxy_text"
++                  android:layout_width="match_parent"
++                  android:layout_height="wrap_content"
++                  android:layout_marginTop="8dip"
++                  android:layout_marginStart="16dip"
++                  android:layout_marginEnd="16dip"
++                  android:orientation="vertical"
++                  android:gravity="start"
++                  android:textAppearance="?android:attr/textAppearanceMedium"
++                  android:text="@string/proxy_setting" />
++
++        <!-- IP address -->
++        <LinearLayout android:id="@+id/enterprise_wrapper"
++                      android:layout_width="match_parent"
++                      android:layout_height="wrap_content"
++                      android:padding="0dip"
++                      android:orientation="vertical">
++            <LinearLayout
++                android:id="@+id/ip_dns_setting"
++                android:layout_width="match_parent"
++                android:layout_height="wrap_content"
++                android:orientation="vertical" >
++            </LinearLayout>
++
++            <LinearLayout
++                android:id="@+id/address_port_setting"
++                android:layout_width="match_parent"
++                android:layout_height="wrap_content"
++                android:orientation="vertical" >
++
++            <TextView android:id="@+id/eth_proxy_address"
++                      android:layout_width="match_parent"
++                      android:layout_height="wrap_content"
++                      android:layout_marginTop="8dip"
++                      android:layout_marginStart="16dip"
++                      android:layout_marginEnd="16dip"
++                      android:orientation="vertical"
++                      android:gravity="start"
++                      android:text="@string/proxy_address" />
++            <EditText android:id="@+id/proxy_address_edit"
++                      android:layout_width="match_parent"
++                      android:layout_height="wrap_content"
++                      android:textSize="18sp"
++                      android:paddingLeft="10dip"
++                      android:textAlignment="viewStart"
++                      android:singleLine="true" />
++
++            <TextView android:id="@+id/eth_proxy_port"
++                      android:layout_width="match_parent"
++                      android:layout_height="wrap_content"
++                      android:layout_marginTop="8dip"
++                      android:layout_marginStart="16dip"
++                      android:layout_marginEnd="16dip"
++                      android:orientation="vertical"
++                      android:gravity="start"
++                      android:text="@string/proxy_port" />
++            <EditText android:id="@+id/proxy_port_edit"
++                      android:layout_width="match_parent"
++                      android:layout_height="wrap_content"
++                      android:textSize="18sp"
++                      android:paddingLeft="10dip"
++                      android:textAlignment="viewStart"
++                      android:singleLine="true"
++                      android:inputType="number" />
++
++           <TextView android:id="@+id/eth_proxy_exclusionlist"
++                      android:layout_width="match_parent"
++                      android:layout_height="wrap_content"
++                      android:layout_marginTop="8dip"
++                      android:layout_marginStart="16dip"
++                      android:layout_marginEnd="16dip"
++                      android:orientation="vertical"
++                      android:gravity="start"
++                      android:text="@string/proxy_exclusionlist" />
++            <EditText android:id="@+id/proxy_exclusionlist"
++                      android:layout_width="match_parent"
++                      android:layout_height="wrap_content"
++                      android:textSize="18sp"
++                      android:paddingLeft="10dip"
++                      android:textAlignment="viewStart"
++                      android:hint="@string/bypass_hint"
++                      android:singleLine="true"/>
++            </LinearLayout>
++
++        </LinearLayout>
++
++    </LinearLayout>
++</ScrollView>
++
+diff --git a/Ethernet/res/layout-hdpi/eth_configure.xml b/Ethernet/res/layout-hdpi/eth_configure.xml
+new file mode 100644
+index 0000000..8933cd4
+--- /dev/null
++++ b/Ethernet/res/layout-hdpi/eth_configure.xml
+@@ -0,0 +1,150 @@
++<?xml version="1.0" encoding="utf-8"?>
++
++<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
++            android:layout_width="wrap_content"
++            android:layout_height="wrap_content">
++    <LinearLayout
++            android:layout_width="match_parent"
++            android:layout_height="wrap_content"
++            android:orientation="vertical"
++            android:paddingBottom="8dip">
++        <LinearLayout
++                android:id="@+id/table"
++                android:layout_width="match_parent"
++                android:layout_height="wrap_content"
++                android:orientation="vertical">
++        </LinearLayout>
++
++        <!-- Device list -->
++
++        <TextView android:id="@+id/eth_dev_list_text"
++                  android:layout_width="match_parent"
++                  android:layout_height="wrap_content"
++                  android:layout_marginTop="8dip"
++                  android:layout_marginStart="16dip"
++                  android:layout_marginEnd="16dip"
++                  android:orientation="vertical"
++                  android:gravity="start"
++                  android:text="@string/eth_dev_list"
++                  android:textAppearance="?android:attr/textAppearanceMedium" />
++
++        <!-- The entries will be set programmatically -->
++        <Spinner android:id="@+id/eth_dev_spinner"
++                 android:layout_width="match_parent"
++                 android:layout_height="wrap_content" />
++
++        <!-- Connection type -->
++        <TextView android:id="@+id/eth_con_type"
++                  android:layout_width="match_parent"
++                  android:layout_height="wrap_content"
++                  android:layout_marginTop="8dip"
++                  android:layout_marginStart="16dip"
++                  android:layout_marginEnd="16dip"
++                  android:orientation="vertical"
++                  android:gravity="start"
++                  android:textAppearance="?android:attr/textAppearanceMedium"
++                  android:text="@string/eth_con_type" />
++        <RadioGroup android:id="@+id/con_type"
++                    android:layout_width="match_parent"
++                    android:layout_height="wrap_content">
++            <RadioButton android:id="@+id/dhcp_radio"
++                         android:layout_width="wrap_content"
++                         android:layout_height="wrap_content"
++                         android:textSize="14sp"
++                         android:textAlignment="viewStart"
++                         android:text="@string/eth_con_type_dhcp">
++            </RadioButton>
++            <RadioButton android:id="@+id/manual_radio"
++                         android:layout_width="wrap_content"
++                         android:layout_height="wrap_content"
++                         android:textSize="14sp"
++                         android:textAlignment="viewStart"
++                         android:text="@string/eth_con_type_manual">
++            </RadioButton>
++        </RadioGroup>
++
++        <!-- IP address -->
++        <LinearLayout android:id="@+id/enterprise_wrapper"
++                      android:layout_width="match_parent"
++                      android:layout_height="wrap_content"
++                      android:padding="0dip"
++                      android:orientation="vertical">
++            <LinearLayout
++                android:id="@+id/ip_dns_setting"
++                android:layout_width="match_parent"
++                android:layout_height="wrap_content"
++                android:orientation="vertical">
++            <TextView android:id="@+id/ipaddr_text"
++                      android:layout_width="match_parent"
++                      android:layout_height="wrap_content"
++                      android:layout_marginTop="8dip"
++                      android:layout_marginStart="16dip"
++                      android:layout_marginEnd="16dip"
++                      android:orientation="vertical"
++                      android:gravity="start"
++                      android:text="@string/eth_ipaddr" />
++            <EditText android:id="@+id/ipaddr_edit"
++                      android:layout_width="match_parent"
++                      android:layout_height="wrap_content"
++                      android:textSize="18sp"
++                      android:paddingLeft="10dip"
++                      android:textAlignment="viewStart"
++                      android:singleLine="true"
++                      android:inputType="phone" />
++            <TextView android:id="@+id/dns_text"
++                      android:layout_width="match_parent"
++                      android:layout_height="wrap_content"
++                      android:layout_marginTop="8dip"
++                      android:layout_marginStart="16dip"
++                      android:layout_marginEnd="16dip"
++                      android:orientation="vertical"
++                      android:gravity="start"
++                      android:text="@string/eth_dns" />
++            <EditText android:id="@+id/eth_dns_edit"
++                      android:layout_width="match_parent"
++                      android:layout_height="wrap_content"
++                      android:textSize="18sp"
++                      android:paddingLeft="10dip"
++                      android:textAlignment="viewStart"
++                      android:singleLine="true"
++                      android:inputType="none" />
++            <TextView android:id="@+id/netmask_text"
++                      android:layout_width="match_parent"
++                      android:layout_height="wrap_content"
++                      android:layout_marginTop="8dip"
++                      android:layout_marginStart="16dip"
++                      android:layout_marginEnd="16dip"
++                      android:orientation="vertical"
++                      android:gravity="start"
++                      android:text="@string/eth_mask" />
++            <EditText android:id="@+id/eth_netmask_edit"
++                      android:layout_width="match_parent"
++                      android:layout_height="wrap_content"
++                      android:textSize="18sp"
++                      android:paddingLeft="10dip"
++                      android:textAlignment="viewStart"
++                      android:singleLine="true"
++                      android:text="@string/eth_mask_pre"
++                      android:inputType="phone" />
++            <TextView android:id="@+id/gateway_text"
++                      android:layout_width="match_parent"
++                      android:layout_height="wrap_content"
++                      android:layout_marginTop="8dip"
++                      android:layout_marginStart="16dip"
++                      android:layout_marginEnd="16dip"
++                      android:orientation="vertical"
++                      android:gravity="start"
++                      android:text="@string/eth_gw" />
++            <EditText android:id="@+id/eth_gateway_edit"
++                      android:layout_width="match_parent"
++                      android:layout_height="wrap_content"
++                      android:textSize="18sp"
++                      android:paddingLeft="10dip"
++                      android:textAlignment="viewStart"
++                      android:singleLine="true"
++                      android:inputType="phone" />
++            </LinearLayout>
++        </LinearLayout>
++    </LinearLayout>
++</ScrollView>
++
+diff --git a/Ethernet/res/layout-hdpi/ethernet_configure.xml b/Ethernet/res/layout-hdpi/ethernet_configure.xml
+new file mode 100644
+index 0000000..7dbfa10
+--- /dev/null
++++ b/Ethernet/res/layout-hdpi/ethernet_configure.xml
+@@ -0,0 +1,81 @@
++<?xml version="1.0" encoding="utf-8"?>
++<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
++    android:layout_width="match_parent"
++    android:layout_height="match_parent">
++
++    <LinearLayout
++        android:layout_width="900dp"
++        android:layout_height="300dp"
++        android:orientation="vertical"
++        android:layout_centerVertical="true"
++        android:layout_centerHorizontal="true" >
++
++        <GridLayout
++            android:id="@+id/grid"
++            android:layout_width="match_parent"
++            android:layout_height="match_parent"
++            android:columnCount="2"
++            android:rowCount="1" >
++
++            <Button
++                android:id="@+id/btnCheck"
++                android:layout_width="300dp"
++                android:layout_height="300dp"
++                android:layout_column="0"
++                android:layout_gravity="left|top"
++                android:layout_row="0"
++                android:clickable="true"
++                android:background="@drawable/btncheck_background" />
++
++            <Button
++                android:id="@+id/btnAdvanced"
++                android:layout_width="300dp"
++                android:layout_height="300dp"
++                android:layout_column="1"
++                android:layout_gravity="right|center_vertical"
++                android:layout_row="0"
++                android:background="@drawable/btnadvanced_background"
++                android:clickable="true"
++                android:focusable="true" />
++
++            <Button
++                android:id="@+id/btnConfig"
++                android:layout_width="300dp"
++                android:layout_height="300dp"
++                android:layout_column="1"
++                android:layout_gravity="left|top"
++                android:layout_row="0"
++                android:background="@drawable/btnconfig_background"
++                android:clickable="true"
++                android:focusable="true" />
++
++        </GridLayout>
++
++    </LinearLayout>
++
++    <LinearLayout
++        android:layout_width="match_parent"
++        android:layout_height="180dp"
++        android:orientation="vertical"
++        android:layout_alignParentLeft="true"
++        android:layout_alignParentTop="true">
++
++        <ImageView
++            android:id="@+id/ic_log"
++            android:layout_width="wrap_content"
++            android:layout_height="50dp"
++            android:src="@drawable/ic_log" />
++
++        <TextView
++            android:id="@+id/tvConfig"
++            android:layout_width="wrap_content"
++            android:layout_height="wrap_content"
++            android:singleLine="false"
++            android:layout_gravity="right|top"
++            android:scrollbars="vertical"
++            android:textSize="16sp" />
++
++    </LinearLayout>
++
++</RelativeLayout>
++
+diff --git a/Ethernet/res/layout-ldpi/activity_main.xml b/Ethernet/res/layout-ldpi/activity_main.xml
+new file mode 100755
+index 0000000..efcbf18
+--- /dev/null
++++ b/Ethernet/res/layout-ldpi/activity_main.xml
+@@ -0,0 +1,16 @@
++<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
++    xmlns:tools="http://schemas.android.com/tools"
++    android:layout_width="match_parent"
++    android:layout_height="match_parent"
++    android:paddingLeft="@dimen/activity_horizontal_margin"
++    android:paddingRight="@dimen/activity_horizontal_margin"
++    android:paddingTop="@dimen/activity_vertical_margin"
++    android:paddingBottom="@dimen/activity_vertical_margin"
++    tools:context=".MainActivity">
++
++    <TextView
++        android:layout_width="wrap_content"
++        android:layout_height="wrap_content"
++        android:text="@string/hello_world" />
++
++</RelativeLayout>
+diff --git a/Ethernet/res/layout-ldpi/advanced_setting.xml b/Ethernet/res/layout-ldpi/advanced_setting.xml
+new file mode 100755
+index 0000000..951e049
+--- /dev/null
++++ b/Ethernet/res/layout-ldpi/advanced_setting.xml
+@@ -0,0 +1,100 @@
++<?xml version="1.0" encoding="utf-8"?>
++
++<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
++            android:layout_width="wrap_content"
++            android:layout_height="wrap_content">
++    <LinearLayout
++            android:layout_width="match_parent"
++            android:layout_height="wrap_content"
++            android:orientation="vertical"
++            android:paddingBottom="8dip">
++
++        <TextView android:id="@+id/eth_proxy_text"
++                  android:layout_width="match_parent"
++                  android:layout_height="wrap_content"
++                  android:layout_marginTop="8dip"
++                  android:layout_marginStart="16dip"
++                  android:layout_marginEnd="16dip"
++                  android:orientation="vertical"
++                  android:gravity="start"
++                  android:textAppearance="?android:attr/textAppearanceMedium"
++                  android:text="@string/proxy_setting" />
++
++        <!-- IP address -->
++        <LinearLayout android:id="@+id/enterprise_wrapper"
++                      android:layout_width="match_parent"
++                      android:layout_height="wrap_content"
++                      android:padding="0dip"
++                      android:orientation="vertical">
++            <LinearLayout
++                android:id="@+id/ip_dns_setting"
++                android:layout_width="match_parent"
++                android:layout_height="wrap_content"
++                android:orientation="vertical" >
++            </LinearLayout>
++
++            <LinearLayout
++                android:id="@+id/address_port_setting"
++                android:layout_width="match_parent"
++                android:layout_height="wrap_content"
++                android:orientation="vertical" >
++
++            <TextView android:id="@+id/eth_proxy_address"
++                      android:layout_width="match_parent"
++                      android:layout_height="wrap_content"
++                      android:layout_marginTop="8dip"
++                      android:layout_marginStart="16dip"
++                      android:layout_marginEnd="16dip"
++                      android:orientation="vertical"
++                      android:gravity="start"
++                      android:text="@string/proxy_address" />
++            <EditText android:id="@+id/proxy_address_edit"
++                      android:layout_width="match_parent"
++                      android:layout_height="wrap_content"
++                      android:textSize="18sp"
++                      android:paddingLeft="10dip"
++                      android:textAlignment="viewStart"
++                      android:singleLine="true" />
++
++            <TextView android:id="@+id/eth_proxy_port"
++                      android:layout_width="match_parent"
++                      android:layout_height="wrap_content"
++                      android:layout_marginTop="8dip"
++                      android:layout_marginStart="16dip"
++                      android:layout_marginEnd="16dip"
++                      android:orientation="vertical"
++                      android:gravity="start"
++                      android:text="@string/proxy_port" />
++            <EditText android:id="@+id/proxy_port_edit"
++                      android:layout_width="match_parent"
++                      android:layout_height="wrap_content"
++                      android:textSize="18sp"
++                      android:paddingLeft="10dip"
++                      android:textAlignment="viewStart"
++                      android:singleLine="true"
++                      android:inputType="number" />
++
++           <TextView android:id="@+id/eth_proxy_exclusionlist"
++                      android:layout_width="match_parent"
++                      android:layout_height="wrap_content"
++                      android:layout_marginTop="8dip"
++                      android:layout_marginStart="16dip"
++                      android:layout_marginEnd="16dip"
++                      android:orientation="vertical"
++                      android:gravity="start"
++                      android:text="@string/proxy_exclusionlist" />
++            <EditText android:id="@+id/proxy_exclusionlist"
++                      android:layout_width="match_parent"
++                      android:layout_height="wrap_content"
++                      android:textSize="18sp"
++                      android:paddingLeft="10dip"
++                      android:textAlignment="viewStart"
++                      android:hint="@string/bypass_hint"
++                      android:singleLine="true"/>
++            </LinearLayout>
++
++        </LinearLayout>
++
++    </LinearLayout>
++</ScrollView>
++
+diff --git a/Ethernet/res/layout-ldpi/eth_configure.xml b/Ethernet/res/layout-ldpi/eth_configure.xml
+new file mode 100755
+index 0000000..8933cd4
+--- /dev/null
++++ b/Ethernet/res/layout-ldpi/eth_configure.xml
+@@ -0,0 +1,150 @@
++<?xml version="1.0" encoding="utf-8"?>
++
++<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
++            android:layout_width="wrap_content"
++            android:layout_height="wrap_content">
++    <LinearLayout
++            android:layout_width="match_parent"
++            android:layout_height="wrap_content"
++            android:orientation="vertical"
++            android:paddingBottom="8dip">
++        <LinearLayout
++                android:id="@+id/table"
++                android:layout_width="match_parent"
++                android:layout_height="wrap_content"
++                android:orientation="vertical">
++        </LinearLayout>
++
++        <!-- Device list -->
++
++        <TextView android:id="@+id/eth_dev_list_text"
++                  android:layout_width="match_parent"
++                  android:layout_height="wrap_content"
++                  android:layout_marginTop="8dip"
++                  android:layout_marginStart="16dip"
++                  android:layout_marginEnd="16dip"
++                  android:orientation="vertical"
++                  android:gravity="start"
++                  android:text="@string/eth_dev_list"
++                  android:textAppearance="?android:attr/textAppearanceMedium" />
++
++        <!-- The entries will be set programmatically -->
++        <Spinner android:id="@+id/eth_dev_spinner"
++                 android:layout_width="match_parent"
++                 android:layout_height="wrap_content" />
++
++        <!-- Connection type -->
++        <TextView android:id="@+id/eth_con_type"
++                  android:layout_width="match_parent"
++                  android:layout_height="wrap_content"
++                  android:layout_marginTop="8dip"
++                  android:layout_marginStart="16dip"
++                  android:layout_marginEnd="16dip"
++                  android:orientation="vertical"
++                  android:gravity="start"
++                  android:textAppearance="?android:attr/textAppearanceMedium"
++                  android:text="@string/eth_con_type" />
++        <RadioGroup android:id="@+id/con_type"
++                    android:layout_width="match_parent"
++                    android:layout_height="wrap_content">
++            <RadioButton android:id="@+id/dhcp_radio"
++                         android:layout_width="wrap_content"
++                         android:layout_height="wrap_content"
++                         android:textSize="14sp"
++                         android:textAlignment="viewStart"
++                         android:text="@string/eth_con_type_dhcp">
++            </RadioButton>
++            <RadioButton android:id="@+id/manual_radio"
++                         android:layout_width="wrap_content"
++                         android:layout_height="wrap_content"
++                         android:textSize="14sp"
++                         android:textAlignment="viewStart"
++                         android:text="@string/eth_con_type_manual">
++            </RadioButton>
++        </RadioGroup>
++
++        <!-- IP address -->
++        <LinearLayout android:id="@+id/enterprise_wrapper"
++                      android:layout_width="match_parent"
++                      android:layout_height="wrap_content"
++                      android:padding="0dip"
++                      android:orientation="vertical">
++            <LinearLayout
++                android:id="@+id/ip_dns_setting"
++                android:layout_width="match_parent"
++                android:layout_height="wrap_content"
++                android:orientation="vertical">
++            <TextView android:id="@+id/ipaddr_text"
++                      android:layout_width="match_parent"
++                      android:layout_height="wrap_content"
++                      android:layout_marginTop="8dip"
++                      android:layout_marginStart="16dip"
++                      android:layout_marginEnd="16dip"
++                      android:orientation="vertical"
++                      android:gravity="start"
++                      android:text="@string/eth_ipaddr" />
++            <EditText android:id="@+id/ipaddr_edit"
++                      android:layout_width="match_parent"
++                      android:layout_height="wrap_content"
++                      android:textSize="18sp"
++                      android:paddingLeft="10dip"
++                      android:textAlignment="viewStart"
++                      android:singleLine="true"
++                      android:inputType="phone" />
++            <TextView android:id="@+id/dns_text"
++                      android:layout_width="match_parent"
++                      android:layout_height="wrap_content"
++                      android:layout_marginTop="8dip"
++                      android:layout_marginStart="16dip"
++                      android:layout_marginEnd="16dip"
++                      android:orientation="vertical"
++                      android:gravity="start"
++                      android:text="@string/eth_dns" />
++            <EditText android:id="@+id/eth_dns_edit"
++                      android:layout_width="match_parent"
++                      android:layout_height="wrap_content"
++                      android:textSize="18sp"
++                      android:paddingLeft="10dip"
++                      android:textAlignment="viewStart"
++                      android:singleLine="true"
++                      android:inputType="none" />
++            <TextView android:id="@+id/netmask_text"
++                      android:layout_width="match_parent"
++                      android:layout_height="wrap_content"
++                      android:layout_marginTop="8dip"
++                      android:layout_marginStart="16dip"
++                      android:layout_marginEnd="16dip"
++                      android:orientation="vertical"
++                      android:gravity="start"
++                      android:text="@string/eth_mask" />
++            <EditText android:id="@+id/eth_netmask_edit"
++                      android:layout_width="match_parent"
++                      android:layout_height="wrap_content"
++                      android:textSize="18sp"
++                      android:paddingLeft="10dip"
++                      android:textAlignment="viewStart"
++                      android:singleLine="true"
++                      android:text="@string/eth_mask_pre"
++                      android:inputType="phone" />
++            <TextView android:id="@+id/gateway_text"
++                      android:layout_width="match_parent"
++                      android:layout_height="wrap_content"
++                      android:layout_marginTop="8dip"
++                      android:layout_marginStart="16dip"
++                      android:layout_marginEnd="16dip"
++                      android:orientation="vertical"
++                      android:gravity="start"
++                      android:text="@string/eth_gw" />
++            <EditText android:id="@+id/eth_gateway_edit"
++                      android:layout_width="match_parent"
++                      android:layout_height="wrap_content"
++                      android:textSize="18sp"
++                      android:paddingLeft="10dip"
++                      android:textAlignment="viewStart"
++                      android:singleLine="true"
++                      android:inputType="phone" />
++            </LinearLayout>
++        </LinearLayout>
++    </LinearLayout>
++</ScrollView>
++
+diff --git a/Ethernet/res/layout-ldpi/ethernet_configure.xml b/Ethernet/res/layout-ldpi/ethernet_configure.xml
+new file mode 100755
+index 0000000..dbd83d2
+--- /dev/null
++++ b/Ethernet/res/layout-ldpi/ethernet_configure.xml
+@@ -0,0 +1,81 @@
++<?xml version="1.0" encoding="utf-8"?>
++<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
++    android:layout_width="match_parent"
++    android:layout_height="match_parent">
++
++    <LinearLayout
++        android:layout_width="450dp"
++        android:layout_height="150dp"
++        android:orientation="vertical"
++        android:layout_centerVertical="true"
++        android:layout_centerHorizontal="true" >
++
++        <GridLayout
++            android:id="@+id/grid"
++            android:layout_width="match_parent"
++            android:layout_height="match_parent"
++            android:columnCount="2"
++            android:rowCount="1" >
++
++            <Button
++                android:id="@+id/btnCheck"
++                android:layout_width="150dp"
++                android:layout_height="150dp"
++                android:layout_column="0"
++                android:layout_gravity="left|top"
++                android:layout_row="0"
++                android:clickable="true"
++                android:background="@drawable/btncheck_background" />
++
++            <Button
++                android:id="@+id/btnAdvanced"
++                android:layout_width="150dp"
++                android:layout_height="150dp"
++                android:layout_column="1"
++                android:layout_gravity="right|center_vertical"
++                android:layout_row="0"
++                android:background="@drawable/btnadvanced_background"
++                android:clickable="true"
++                android:focusable="true" />
++
++            <Button
++                android:id="@+id/btnConfig"
++                android:layout_width="150dp"
++                android:layout_height="150dp"
++                android:layout_column="1"
++                android:layout_gravity="left|top"
++                android:layout_row="0"
++                android:background="@drawable/btnconfig_background"
++                android:clickable="true"
++                android:focusable="true" />
++
++        </GridLayout>
++
++    </LinearLayout>
++
++    <LinearLayout
++        android:layout_width="match_parent"
++        android:layout_height="180dp"
++        android:orientation="vertical"
++        android:layout_alignParentLeft="true"
++        android:layout_alignParentTop="true">
++
++        <ImageView
++            android:id="@+id/ic_log"
++            android:layout_width="wrap_content"
++            android:layout_height="25dp"
++            android:src="@drawable/ic_log" />
++
++        <TextView
++            android:id="@+id/tvConfig"
++            android:layout_width="wrap_content"
++            android:layout_height="wrap_content"
++            android:singleLine="false"
++            android:layout_gravity="right|top"
++            android:scrollbars="vertical"
++            android:textSize="16sp" />
++
++    </LinearLayout>
++
++</RelativeLayout>
++
+diff --git a/Ethernet/res/layout-mdpi/activity_main.xml b/Ethernet/res/layout-mdpi/activity_main.xml
+new file mode 100755
+index 0000000..efcbf18
+--- /dev/null
++++ b/Ethernet/res/layout-mdpi/activity_main.xml
+@@ -0,0 +1,16 @@
++<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
++    xmlns:tools="http://schemas.android.com/tools"
++    android:layout_width="match_parent"
++    android:layout_height="match_parent"
++    android:paddingLeft="@dimen/activity_horizontal_margin"
++    android:paddingRight="@dimen/activity_horizontal_margin"
++    android:paddingTop="@dimen/activity_vertical_margin"
++    android:paddingBottom="@dimen/activity_vertical_margin"
++    tools:context=".MainActivity">
++
++    <TextView
++        android:layout_width="wrap_content"
++        android:layout_height="wrap_content"
++        android:text="@string/hello_world" />
++
++</RelativeLayout>
+diff --git a/Ethernet/res/layout-mdpi/advanced_setting.xml b/Ethernet/res/layout-mdpi/advanced_setting.xml
+new file mode 100755
+index 0000000..951e049
+--- /dev/null
++++ b/Ethernet/res/layout-mdpi/advanced_setting.xml
+@@ -0,0 +1,100 @@
++<?xml version="1.0" encoding="utf-8"?>
++
++<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
++            android:layout_width="wrap_content"
++            android:layout_height="wrap_content">
++    <LinearLayout
++            android:layout_width="match_parent"
++            android:layout_height="wrap_content"
++            android:orientation="vertical"
++            android:paddingBottom="8dip">
++
++        <TextView android:id="@+id/eth_proxy_text"
++                  android:layout_width="match_parent"
++                  android:layout_height="wrap_content"
++                  android:layout_marginTop="8dip"
++                  android:layout_marginStart="16dip"
++                  android:layout_marginEnd="16dip"
++                  android:orientation="vertical"
++                  android:gravity="start"
++                  android:textAppearance="?android:attr/textAppearanceMedium"
++                  android:text="@string/proxy_setting" />
++
++        <!-- IP address -->
++        <LinearLayout android:id="@+id/enterprise_wrapper"
++                      android:layout_width="match_parent"
++                      android:layout_height="wrap_content"
++                      android:padding="0dip"
++                      android:orientation="vertical">
++            <LinearLayout
++                android:id="@+id/ip_dns_setting"
++                android:layout_width="match_parent"
++                android:layout_height="wrap_content"
++                android:orientation="vertical" >
++            </LinearLayout>
++
++            <LinearLayout
++                android:id="@+id/address_port_setting"
++                android:layout_width="match_parent"
++                android:layout_height="wrap_content"
++                android:orientation="vertical" >
++
++            <TextView android:id="@+id/eth_proxy_address"
++                      android:layout_width="match_parent"
++                      android:layout_height="wrap_content"
++                      android:layout_marginTop="8dip"
++                      android:layout_marginStart="16dip"
++                      android:layout_marginEnd="16dip"
++                      android:orientation="vertical"
++                      android:gravity="start"
++                      android:text="@string/proxy_address" />
++            <EditText android:id="@+id/proxy_address_edit"
++                      android:layout_width="match_parent"
++                      android:layout_height="wrap_content"
++                      android:textSize="18sp"
++                      android:paddingLeft="10dip"
++                      android:textAlignment="viewStart"
++                      android:singleLine="true" />
++
++            <TextView android:id="@+id/eth_proxy_port"
++                      android:layout_width="match_parent"
++                      android:layout_height="wrap_content"
++                      android:layout_marginTop="8dip"
++                      android:layout_marginStart="16dip"
++                      android:layout_marginEnd="16dip"
++                      android:orientation="vertical"
++                      android:gravity="start"
++                      android:text="@string/proxy_port" />
++            <EditText android:id="@+id/proxy_port_edit"
++                      android:layout_width="match_parent"
++                      android:layout_height="wrap_content"
++                      android:textSize="18sp"
++                      android:paddingLeft="10dip"
++                      android:textAlignment="viewStart"
++                      android:singleLine="true"
++                      android:inputType="number" />
++
++           <TextView android:id="@+id/eth_proxy_exclusionlist"
++                      android:layout_width="match_parent"
++                      android:layout_height="wrap_content"
++                      android:layout_marginTop="8dip"
++                      android:layout_marginStart="16dip"
++                      android:layout_marginEnd="16dip"
++                      android:orientation="vertical"
++                      android:gravity="start"
++                      android:text="@string/proxy_exclusionlist" />
++            <EditText android:id="@+id/proxy_exclusionlist"
++                      android:layout_width="match_parent"
++                      android:layout_height="wrap_content"
++                      android:textSize="18sp"
++                      android:paddingLeft="10dip"
++                      android:textAlignment="viewStart"
++                      android:hint="@string/bypass_hint"
++                      android:singleLine="true"/>
++            </LinearLayout>
++
++        </LinearLayout>
++
++    </LinearLayout>
++</ScrollView>
++
+diff --git a/Ethernet/res/layout-mdpi/eth_configure.xml b/Ethernet/res/layout-mdpi/eth_configure.xml
+new file mode 100755
+index 0000000..c9d0123
+--- /dev/null
++++ b/Ethernet/res/layout-mdpi/eth_configure.xml
+@@ -0,0 +1,150 @@
++<?xml version="1.0" encoding="utf-8"?>
++
++<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
++            android:layout_width="wrap_content"
++            android:layout_height="wrap_content">
++    <LinearLayout
++            android:layout_width="match_parent"
++            android:layout_height="wrap_content"
++            android:orientation="vertical"
++            android:paddingBottom="8dip">
++        <LinearLayout
++                android:id="@+id/table"
++                android:layout_width="match_parent"
++                android:layout_height="wrap_content"
++                android:orientation="vertical">
++        </LinearLayout>
++
++        <!-- Device list -->
++
++        <TextView android:id="@+id/eth_dev_list_text"
++                  android:layout_width="match_parent"
++                  android:layout_height="wrap_content"
++                  android:layout_marginTop="8dip"
++                  android:layout_marginStart="16dip"
++                  android:layout_marginEnd="16dip"
++                  android:orientation="vertical"
++                  android:gravity="start"
++                  android:text="@string/eth_dev_list"
++                  android:textAppearance="?android:attr/textAppearanceMedium" />
++
++        <!-- The entries will be set programmatically -->
++        <Spinner android:id="@+id/eth_dev_spinner"
++                 android:layout_width="match_parent"
++                 android:layout_height="wrap_content" />
++
++        <!-- Connection type -->
++        <TextView android:id="@+id/eth_con_type"
++                  android:layout_width="match_parent"
++                  android:layout_height="wrap_content"
++                  android:layout_marginTop="8dip"
++                  android:layout_marginStart="16dip"
++                  android:layout_marginEnd="16dip"
++                  android:orientation="vertical"
++                  android:gravity="start"
++                  android:textAppearance="?android:attr/textAppearanceMedium"
++                  android:text="@string/eth_con_type" />
++        <RadioGroup android:id="@+id/con_type"
++                    android:layout_width="match_parent"
++                    android:layout_height="wrap_content">
++            <RadioButton android:id="@+id/dhcp_radio"
++                         android:layout_width="wrap_content"
++                         android:layout_height="wrap_content"
++                         android:textSize="14sp"
++                         android:textAlignment="viewStart"
++                         android:text="@string/eth_con_type_dhcp">
++            </RadioButton>
++            <RadioButton android:id="@+id/manual_radio"
++                         android:layout_width="wrap_content"
++                         android:layout_height="wrap_content"
++                         android:textSize="14sp"
++                         android:textAlignment="viewStart"
++                         android:text="@string/eth_con_type_manual">
++            </RadioButton>
++        </RadioGroup>
++
++        <!-- IP address -->
++        <LinearLayout android:id="@+id/enterprise_wrapper"
++                      android:layout_width="match_parent"
++                      android:layout_height="wrap_content"
++                      android:padding="0dip"
++                      android:orientation="vertical">
++            <LinearLayout
++                android:id="@+id/ip_dns_setting"
++                android:layout_width="match_parent"
++                android:layout_height="wrap_content"
++                android:orientation="vertical" >
++            <TextView android:id="@+id/ipaddr_text"
++                      android:layout_width="match_parent"
++                      android:layout_height="wrap_content"
++                      android:layout_marginTop="8dip"
++                      android:layout_marginStart="16dip"
++                      android:layout_marginEnd="16dip"
++                      android:orientation="vertical"
++                      android:gravity="start"
++                      android:text="@string/eth_ipaddr" />
++            <EditText android:id="@+id/ipaddr_edit"
++                      android:layout_width="match_parent"
++                      android:layout_height="wrap_content"
++                      android:textSize="18sp"
++                      android:paddingLeft="10dip"
++                      android:textAlignment="viewStart"
++                      android:singleLine="true"
++                      android:inputType="phone" />
++            <TextView android:id="@+id/dns_text"
++                      android:layout_width="match_parent"
++                      android:layout_height="wrap_content"
++                      android:layout_marginTop="8dip"
++                      android:layout_marginStart="16dip"
++                      android:layout_marginEnd="16dip"
++                      android:orientation="vertical"
++                      android:gravity="start"
++                      android:text="@string/eth_dns" />
++            <EditText android:id="@+id/eth_dns_edit"
++                      android:layout_width="match_parent"
++                      android:layout_height="wrap_content"
++                      android:textSize="18sp"
++                      android:paddingLeft="10dip"
++                      android:textAlignment="viewStart"
++                      android:singleLine="true"
++                      android:inputType="none" />
++            <TextView android:id="@+id/netmask_text"
++                      android:layout_width="match_parent"
++                      android:layout_height="wrap_content"
++                      android:layout_marginTop="8dip"
++                      android:layout_marginStart="16dip"
++                      android:layout_marginEnd="16dip"
++                      android:orientation="vertical"
++                      android:gravity="start"
++                      android:text="@string/eth_mask" />
++            <EditText android:id="@+id/eth_netmask_edit"
++                      android:layout_width="match_parent"
++                      android:layout_height="wrap_content"
++                      android:textSize="18sp"
++                      android:paddingLeft="10dip"
++                      android:textAlignment="viewStart"
++                      android:singleLine="true"
++                      android:text="@string/eth_mask_pre"
++                      android:inputType="phone" />
++            <TextView android:id="@+id/gateway_text"
++                      android:layout_width="match_parent"
++                      android:layout_height="wrap_content"
++                      android:layout_marginTop="8dip"
++                      android:layout_marginStart="16dip"
++                      android:layout_marginEnd="16dip"
++                      android:orientation="vertical"
++                      android:gravity="start"
++                      android:text="@string/eth_gw" />
++            <EditText android:id="@+id/eth_gateway_edit"
++                      android:layout_width="match_parent"
++                      android:layout_height="wrap_content"
++                      android:textSize="18sp"
++                      android:paddingLeft="10dip"
++                      android:textAlignment="viewStart"
++                      android:singleLine="true"
++                      android:inputType="phone" />
++            </LinearLayout>
++        </LinearLayout>
++    </LinearLayout>
++</ScrollView>
++
+diff --git a/Ethernet/res/layout-mdpi/ethernet_configure.xml b/Ethernet/res/layout-mdpi/ethernet_configure.xml
+new file mode 100755
+index 0000000..7dbfa10
+--- /dev/null
++++ b/Ethernet/res/layout-mdpi/ethernet_configure.xml
+@@ -0,0 +1,81 @@
++<?xml version="1.0" encoding="utf-8"?>
++<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
++    android:layout_width="match_parent"
++    android:layout_height="match_parent">
++
++    <LinearLayout
++        android:layout_width="900dp"
++        android:layout_height="300dp"
++        android:orientation="vertical"
++        android:layout_centerVertical="true"
++        android:layout_centerHorizontal="true" >
++
++        <GridLayout
++            android:id="@+id/grid"
++            android:layout_width="match_parent"
++            android:layout_height="match_parent"
++            android:columnCount="2"
++            android:rowCount="1" >
++
++            <Button
++                android:id="@+id/btnCheck"
++                android:layout_width="300dp"
++                android:layout_height="300dp"
++                android:layout_column="0"
++                android:layout_gravity="left|top"
++                android:layout_row="0"
++                android:clickable="true"
++                android:background="@drawable/btncheck_background" />
++
++            <Button
++                android:id="@+id/btnAdvanced"
++                android:layout_width="300dp"
++                android:layout_height="300dp"
++                android:layout_column="1"
++                android:layout_gravity="right|center_vertical"
++                android:layout_row="0"
++                android:background="@drawable/btnadvanced_background"
++                android:clickable="true"
++                android:focusable="true" />
++
++            <Button
++                android:id="@+id/btnConfig"
++                android:layout_width="300dp"
++                android:layout_height="300dp"
++                android:layout_column="1"
++                android:layout_gravity="left|top"
++                android:layout_row="0"
++                android:background="@drawable/btnconfig_background"
++                android:clickable="true"
++                android:focusable="true" />
++
++        </GridLayout>
++
++    </LinearLayout>
++
++    <LinearLayout
++        android:layout_width="match_parent"
++        android:layout_height="180dp"
++        android:orientation="vertical"
++        android:layout_alignParentLeft="true"
++        android:layout_alignParentTop="true">
++
++        <ImageView
++            android:id="@+id/ic_log"
++            android:layout_width="wrap_content"
++            android:layout_height="50dp"
++            android:src="@drawable/ic_log" />
++
++        <TextView
++            android:id="@+id/tvConfig"
++            android:layout_width="wrap_content"
++            android:layout_height="wrap_content"
++            android:singleLine="false"
++            android:layout_gravity="right|top"
++            android:scrollbars="vertical"
++            android:textSize="16sp" />
++
++    </LinearLayout>
++
++</RelativeLayout>
++
+diff --git a/Ethernet/res/layout/activity_main.xml b/Ethernet/res/layout/activity_main.xml
+deleted file mode 100644
+index efcbf18..0000000
+--- a/Ethernet/res/layout/activity_main.xml
++++ /dev/null
+@@ -1,16 +0,0 @@
+-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+-    xmlns:tools="http://schemas.android.com/tools"
+-    android:layout_width="match_parent"
+-    android:layout_height="match_parent"
+-    android:paddingLeft="@dimen/activity_horizontal_margin"
+-    android:paddingRight="@dimen/activity_horizontal_margin"
+-    android:paddingTop="@dimen/activity_vertical_margin"
+-    android:paddingBottom="@dimen/activity_vertical_margin"
+-    tools:context=".MainActivity">
+-
+-    <TextView
+-        android:layout_width="wrap_content"
+-        android:layout_height="wrap_content"
+-        android:text="@string/hello_world" />
+-
+-</RelativeLayout>
+diff --git a/Ethernet/res/layout/advanced_setting.xml b/Ethernet/res/layout/advanced_setting.xml
+deleted file mode 100644
+index 951e049..0000000
+--- a/Ethernet/res/layout/advanced_setting.xml
++++ /dev/null
+@@ -1,100 +0,0 @@
+-<?xml version="1.0" encoding="utf-8"?>
+-
+-<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+-            android:layout_width="wrap_content"
+-            android:layout_height="wrap_content">
+-    <LinearLayout
+-            android:layout_width="match_parent"
+-            android:layout_height="wrap_content"
+-            android:orientation="vertical"
+-            android:paddingBottom="8dip">
+-
+-        <TextView android:id="@+id/eth_proxy_text"
+-                  android:layout_width="match_parent"
+-                  android:layout_height="wrap_content"
+-                  android:layout_marginTop="8dip"
+-                  android:layout_marginStart="16dip"
+-                  android:layout_marginEnd="16dip"
+-                  android:orientation="vertical"
+-                  android:gravity="start"
+-                  android:textAppearance="?android:attr/textAppearanceMedium"
+-                  android:text="@string/proxy_setting" />
+-
+-        <!-- IP address -->
+-        <LinearLayout android:id="@+id/enterprise_wrapper"
+-                      android:layout_width="match_parent"
+-                      android:layout_height="wrap_content"
+-                      android:padding="0dip"
+-                      android:orientation="vertical">
+-            <LinearLayout
+-                android:id="@+id/ip_dns_setting"
+-                android:layout_width="match_parent"
+-                android:layout_height="wrap_content"
+-                android:orientation="vertical" >
+-            </LinearLayout>
+-
+-            <LinearLayout
+-                android:id="@+id/address_port_setting"
+-                android:layout_width="match_parent"
+-                android:layout_height="wrap_content"
+-                android:orientation="vertical" >
+-
+-            <TextView android:id="@+id/eth_proxy_address"
+-                      android:layout_width="match_parent"
+-                      android:layout_height="wrap_content"
+-                      android:layout_marginTop="8dip"
+-                      android:layout_marginStart="16dip"
+-                      android:layout_marginEnd="16dip"
+-                      android:orientation="vertical"
+-                      android:gravity="start"
+-                      android:text="@string/proxy_address" />
+-            <EditText android:id="@+id/proxy_address_edit"
+-                      android:layout_width="match_parent"
+-                      android:layout_height="wrap_content"
+-                      android:textSize="18sp"
+-                      android:paddingLeft="10dip"
+-                      android:textAlignment="viewStart"
+-                      android:singleLine="true" />
+-
+-            <TextView android:id="@+id/eth_proxy_port"
+-                      android:layout_width="match_parent"
+-                      android:layout_height="wrap_content"
+-                      android:layout_marginTop="8dip"
+-                      android:layout_marginStart="16dip"
+-                      android:layout_marginEnd="16dip"
+-                      android:orientation="vertical"
+-                      android:gravity="start"
+-                      android:text="@string/proxy_port" />
+-            <EditText android:id="@+id/proxy_port_edit"
+-                      android:layout_width="match_parent"
+-                      android:layout_height="wrap_content"
+-                      android:textSize="18sp"
+-                      android:paddingLeft="10dip"
+-                      android:textAlignment="viewStart"
+-                      android:singleLine="true"
+-                      android:inputType="number" />
+-
+-           <TextView android:id="@+id/eth_proxy_exclusionlist"
+-                      android:layout_width="match_parent"
+-                      android:layout_height="wrap_content"
+-                      android:layout_marginTop="8dip"
+-                      android:layout_marginStart="16dip"
+-                      android:layout_marginEnd="16dip"
+-                      android:orientation="vertical"
+-                      android:gravity="start"
+-                      android:text="@string/proxy_exclusionlist" />
+-            <EditText android:id="@+id/proxy_exclusionlist"
+-                      android:layout_width="match_parent"
+-                      android:layout_height="wrap_content"
+-                      android:textSize="18sp"
+-                      android:paddingLeft="10dip"
+-                      android:textAlignment="viewStart"
+-                      android:hint="@string/bypass_hint"
+-                      android:singleLine="true"/>
+-            </LinearLayout>
+-
+-        </LinearLayout>
+-
+-    </LinearLayout>
+-</ScrollView>
+-
+diff --git a/Ethernet/res/layout/eth_configure.xml b/Ethernet/res/layout/eth_configure.xml
+deleted file mode 100644
+index c5478a0..0000000
+--- a/Ethernet/res/layout/eth_configure.xml
++++ /dev/null
+@@ -1,151 +0,0 @@
+-<?xml version="1.0" encoding="utf-8"?>
+-
+-<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+-            android:layout_width="wrap_content"
+-            android:layout_height="wrap_content">
+-    <LinearLayout
+-            android:layout_width="match_parent"
+-            android:layout_height="wrap_content"
+-            android:orientation="vertical"
+-            android:paddingBottom="8dip">
+-        <LinearLayout
+-                android:id="@+id/table"
+-                android:layout_width="match_parent"
+-                android:layout_height="wrap_content"
+-                android:orientation="vertical">
+-        </LinearLayout>
+-
+-        <!-- Device list -->
+-
+-        <TextView android:id="@+id/eth_dev_list_text"
+-                  android:layout_width="match_parent"
+-                  android:layout_height="wrap_content"
+-                  android:layout_marginTop="8dip"
+-                  android:layout_marginStart="16dip"
+-                  android:layout_marginEnd="16dip"
+-                  android:orientation="vertical"
+-                  android:gravity="start"
+-                  android:text="@string/eth_dev_list"
+-                  android:textAppearance="?android:attr/textAppearanceMedium" />
+-
+-        <!-- The entries will be set programmatically -->
+-        <Spinner android:id="@+id/eth_dev_spinner"
+-                 android:layout_width="match_parent"
+-                 android:layout_height="wrap_content" />
+-
+-        <!-- Connection type -->
+-        <TextView android:id="@+id/eth_con_type"
+-                  android:layout_width="match_parent"
+-                  android:layout_height="wrap_content"
+-                  android:layout_marginTop="8dip"
+-                  android:layout_marginStart="16dip"
+-                  android:layout_marginEnd="16dip"
+-                  android:orientation="vertical"
+-                  android:gravity="start"
+-                  android:textAppearance="?android:attr/textAppearanceMedium"
+-                  android:text="@string/eth_con_type" />
+-        <RadioGroup android:id="@+id/con_type"
+-                    android:layout_width="match_parent"
+-                    android:layout_height="wrap_content">
+-            <RadioButton android:id="@+id/dhcp_radio"
+-                         android:layout_width="wrap_content"
+-                         android:layout_height="wrap_content"
+-                         android:textSize="14sp"
+-                         android:textAlignment="viewStart"
+-                         android:text="@string/eth_con_type_dhcp">
+-            </RadioButton>
+-            <RadioButton android:id="@+id/manual_radio"
+-                         android:layout_width="wrap_content"
+-                         android:layout_height="wrap_content"
+-                         android:textSize="14sp"
+-                         android:textAlignment="viewStart"
+-                         android:text="@string/eth_con_type_manual">
+-            </RadioButton>
+-        </RadioGroup>
+-
+-        <!-- IP address -->
+-        <LinearLayout android:id="@+id/enterprise_wrapper"
+-                      android:layout_width="match_parent"
+-                      android:layout_height="wrap_content"
+-                      android:padding="0dip"
+-                      android:orientation="vertical">
+-            <LinearLayout
+-                android:id="@+id/ip_dns_setting"
+-                android:layout_width="match_parent"
+-                android:layout_height="wrap_content"
+-                android:orientation="vertical" >
+-                
+-            <TextView android:id="@+id/ipaddr_text"
+-                      android:layout_width="match_parent"
+-                      android:layout_height="wrap_content"
+-                      android:layout_marginTop="8dip"
+-                      android:layout_marginStart="16dip"
+-                      android:layout_marginEnd="16dip"
+-                      android:orientation="vertical"
+-                      android:gravity="start"
+-                      android:text="@string/eth_ipaddr" />
+-            <EditText android:id="@+id/ipaddr_edit"
+-                      android:layout_width="match_parent"
+-                      android:layout_height="wrap_content"
+-                      android:textSize="18sp"
+-                      android:paddingLeft="10dip"
+-                      android:textAlignment="viewStart"
+-                      android:singleLine="true"
+-                      android:inputType="phone" />
+-            <TextView android:id="@+id/dns_text"
+-                      android:layout_width="match_parent"
+-                      android:layout_height="wrap_content"
+-                      android:layout_marginTop="8dip"
+-                      android:layout_marginStart="16dip"
+-                      android:layout_marginEnd="16dip"
+-                      android:orientation="vertical"
+-                      android:gravity="start"
+-                      android:text="@string/eth_dns" />
+-            <EditText android:id="@+id/eth_dns_edit"
+-                      android:layout_width="match_parent"
+-                      android:layout_height="wrap_content"
+-                      android:textSize="18sp"
+-                      android:paddingLeft="10dip"
+-                      android:textAlignment="viewStart"
+-                      android:singleLine="true"
+-                      android:inputType="none" />
+-            <TextView android:id="@+id/netmask_text"
+-                      android:layout_width="match_parent"
+-                      android:layout_height="wrap_content"
+-                      android:layout_marginTop="8dip"
+-                      android:layout_marginStart="16dip"
+-                      android:layout_marginEnd="16dip"
+-                      android:orientation="vertical"
+-                      android:gravity="start"
+-                      android:text="@string/eth_mask" />
+-            <EditText android:id="@+id/eth_netmask_edit"
+-                      android:layout_width="match_parent"
+-                      android:layout_height="wrap_content"
+-                      android:textSize="18sp"
+-                      android:paddingLeft="10dip"
+-                      android:textAlignment="viewStart"
+-                      android:singleLine="true"
+-                      android:text="@string/eth_mask_pre"
+-                      android:inputType="phone" />
+-            <TextView android:id="@+id/gateway_text"
+-                      android:layout_width="match_parent"
+-                      android:layout_height="wrap_content"
+-                      android:layout_marginTop="8dip"
+-                      android:layout_marginStart="16dip"
+-                      android:layout_marginEnd="16dip"
+-                      android:orientation="vertical"
+-                      android:gravity="start"
+-                      android:text="@string/eth_gw" />
+-            <EditText android:id="@+id/eth_gateway_edit"
+-                      android:layout_width="match_parent"
+-                      android:layout_height="wrap_content"
+-                      android:textSize="18sp"
+-                      android:paddingLeft="10dip"
+-                      android:textAlignment="viewStart"
+-                      android:singleLine="true"
+-                      android:inputType="phone" />
+-            </LinearLayout>
+-        </LinearLayout>
+-    </LinearLayout>
+-</ScrollView>
+-
+diff --git a/Ethernet/res/layout/ethernet_configure.xml b/Ethernet/res/layout/ethernet_configure.xml
+deleted file mode 100644
+index 7dbfa10..0000000
+--- a/Ethernet/res/layout/ethernet_configure.xml
++++ /dev/null
+@@ -1,81 +0,0 @@
+-<?xml version="1.0" encoding="utf-8"?>
+-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+-    android:layout_width="match_parent"
+-    android:layout_height="match_parent">
+-
+-    <LinearLayout
+-        android:layout_width="900dp"
+-        android:layout_height="300dp"
+-        android:orientation="vertical"
+-        android:layout_centerVertical="true"
+-        android:layout_centerHorizontal="true" >
+-
+-        <GridLayout
+-            android:id="@+id/grid"
+-            android:layout_width="match_parent"
+-            android:layout_height="match_parent"
+-            android:columnCount="2"
+-            android:rowCount="1" >
+-
+-            <Button
+-                android:id="@+id/btnCheck"
+-                android:layout_width="300dp"
+-                android:layout_height="300dp"
+-                android:layout_column="0"
+-                android:layout_gravity="left|top"
+-                android:layout_row="0"
+-                android:clickable="true"
+-                android:background="@drawable/btncheck_background" />
+-
+-            <Button
+-                android:id="@+id/btnAdvanced"
+-                android:layout_width="300dp"
+-                android:layout_height="300dp"
+-                android:layout_column="1"
+-                android:layout_gravity="right|center_vertical"
+-                android:layout_row="0"
+-                android:background="@drawable/btnadvanced_background"
+-                android:clickable="true"
+-                android:focusable="true" />
+-
+-            <Button
+-                android:id="@+id/btnConfig"
+-                android:layout_width="300dp"
+-                android:layout_height="300dp"
+-                android:layout_column="1"
+-                android:layout_gravity="left|top"
+-                android:layout_row="0"
+-                android:background="@drawable/btnconfig_background"
+-                android:clickable="true"
+-                android:focusable="true" />
+-
+-        </GridLayout>
+-
+-    </LinearLayout>
+-
+-    <LinearLayout
+-        android:layout_width="match_parent"
+-        android:layout_height="180dp"
+-        android:orientation="vertical"
+-        android:layout_alignParentLeft="true"
+-        android:layout_alignParentTop="true">
+-
+-        <ImageView
+-            android:id="@+id/ic_log"
+-            android:layout_width="wrap_content"
+-            android:layout_height="50dp"
+-            android:src="@drawable/ic_log" />
+-
+-        <TextView
+-            android:id="@+id/tvConfig"
+-            android:layout_width="wrap_content"
+-            android:layout_height="wrap_content"
+-            android:singleLine="false"
+-            android:layout_gravity="right|top"
+-            android:scrollbars="vertical"
+-            android:textSize="16sp" />
+-
+-    </LinearLayout>
+-
+-</RelativeLayout>
+-
+-- 
+1.8.0
+

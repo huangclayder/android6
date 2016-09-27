@@ -1,0 +1,30 @@
+From 568e0f4b622c0721ec627cac1e953ea8935ec898 Mon Sep 17 00:00:00 2001
+From: "guoyin.chen" <guoyin.chen@freescale.com>
+Date: Wed, 19 Nov 2014 15:22:09 +0800
+Subject: [PATCH] MA-5878 Change GPU device class to gpu_class
+
+graphics_class will be taken as graphics device in android
+Only framebuffer device can be taken as graphics device due to
+untrusted app cannot have read/write permission on graphics
+
+Signed-off-by: guoyin.chen <guoyin.chen@freescale.com>
+---
+ drivers/mxc/gpu-viv/hal/os/linux/kernel/gc_hal_kernel_probe.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/mxc/gpu-viv/hal/os/linux/kernel/gc_hal_kernel_probe.c b/drivers/mxc/gpu-viv/hal/os/linux/kernel/gc_hal_kernel_probe.c
+index 054e32e..2ada78b 100644
+--- a/drivers/mxc/gpu-viv/hal/os/linux/kernel/gc_hal_kernel_probe.c
++++ b/drivers/mxc/gpu-viv/hal/os/linux/kernel/gc_hal_kernel_probe.c
+@@ -904,7 +904,7 @@ static int drv_init(void)
+     }
+ 
+     /* Create the device class. */
+-    device_class = class_create(THIS_MODULE, "graphics_class");
++    device_class = class_create(THIS_MODULE, "gpu_class");
+ 
+     if (IS_ERR(device_class))
+     {
+-- 
+1.8.0
+

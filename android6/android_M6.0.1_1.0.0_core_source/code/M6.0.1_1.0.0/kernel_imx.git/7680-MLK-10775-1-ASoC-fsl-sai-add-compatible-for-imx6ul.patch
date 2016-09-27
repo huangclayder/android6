@@ -1,0 +1,27 @@
+From f433774891b7e452bef534db0e694610d187eb0a Mon Sep 17 00:00:00 2001
+From: Shengjiu Wang <shengjiu.wang@freescale.com>
+Date: Wed, 29 Apr 2015 13:17:57 +0800
+Subject: [PATCH] MLK-10775-1: ASoC: fsl-sai: add compatible for imx6ul
+
+support sai in imx6ul.
+
+Signed-off-by: Shengjiu Wang <shengjiu.wang@freescale.com>
+---
+ sound/soc/fsl/fsl_sai.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/sound/soc/fsl/fsl_sai.c b/sound/soc/fsl/fsl_sai.c
+index 0157810..a34bef9 100644
+--- a/sound/soc/fsl/fsl_sai.c
++++ b/sound/soc/fsl/fsl_sai.c
+@@ -844,6 +844,7 @@ static int fsl_sai_probe(struct platform_device *pdev)
+ static const struct of_device_id fsl_sai_ids[] = {
+ 	{ .compatible = "fsl,vf610-sai", },
+ 	{ .compatible = "fsl,imx6sx-sai", },
++	{ .compatible = "fsl,imx6ul-sai", },
+ 	{ .compatible = "fsl,imx7d-sai", },
+ 	{ /* sentinel */ }
+ };
+-- 
+1.8.0
+

@@ -1,0 +1,30 @@
+From 654cd8806e7c615da0ceb51aadd55ae02f529e70 Mon Sep 17 00:00:00 2001
+From: Wang Haoran <b50027@freescale.com>
+Date: Tue, 25 Nov 2014 21:00:05 +0800
+Subject: [PATCH 399/602] MA-5824-1 Force GPS power on when Android startup
+
+Sometime the GPS service cannot work well to initialize
+the GPS. So we have to force GPS power on when Android
+boot up.
+
+Signed-off-by: Wang Haoran <b50027@freescale.com>
+---
+ sabresd_6dq/init.rc | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/sabresd_6dq/init.rc b/sabresd_6dq/init.rc
+index 9f701bd..4d3c66a 100755
+--- a/sabresd_6dq/init.rc
++++ b/sabresd_6dq/init.rc
+@@ -30,7 +30,7 @@ on boot
+     write /sys/class/gpio/gpio64/direction "out"
+     chown gps gps /sys/class/gpio/gpio64/value
+     chmod 0660 /sys/class/gpio/gpio64/value
+-    write /sys/class/gpio/gpio64/value 0
++    write /sys/class/gpio/gpio64/value 1
+ 
+     write /sys/class/gpio/export 60
+     write /sys/class/gpio/gpio60/direction "out"
+-- 
+1.8.0
+

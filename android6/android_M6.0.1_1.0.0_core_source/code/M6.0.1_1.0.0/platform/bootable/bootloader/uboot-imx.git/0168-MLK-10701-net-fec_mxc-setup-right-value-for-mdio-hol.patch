@@ -1,0 +1,45 @@
+From 30e34a6b8037b687ec1754c93a719be500db9c4a Mon Sep 17 00:00:00 2001
+From: Fugang Duan <b38611@freescale.com>
+Date: Mon, 20 Apr 2015 18:28:48 +0800
+Subject: [PATCH] MLK-10701 net: fec_mxc: setup right value for mdio hold time
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+The minimal hold time according to IEE802.3 (clause 22) is 10 ns.
+HOLDTIME + 1 is the number of clk cycles the fec is holding the output.
+Set the right hold time value when the MDC root clock is greater than
+100Mhz.
+
+The issue was reported on i.MX28 and is fixed by Uwe Kleine-König in kernel:
+https://git.kernel.org/cgit/linux/kernel/git/next/linux-next.git/commit/
+drivers/net/ethernet/freescale/fec_main.c?id=63c607321492c5efc7a31bc4ea734b877f8e7f87
+
+Signed-off-by: Fugang Duan <B38611@freescale.com>
+(cherry picked from commit 0373a160e7f698064a6625e85f9120b6c81c1b61)
+---
+ drivers/net/fec_mxc.c | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
+
+diff --git a/drivers/net/fec_mxc.c b/drivers/net/fec_mxc.c
+index 1c65bd7..1771fd4 100644
+--- a/drivers/net/fec_mxc.c
++++ b/drivers/net/fec_mxc.c
+@@ -138,11 +138,13 @@ static void fec_mii_setspeed(struct ethernet_regs *eth)
+ 	 * and do not drop the Preamble.
+ 	 */
+ 	register u32 speed = DIV_ROUND_UP(imx_get_fecclk(), 5000000);
++	register u32 holdtime = DIV_ROUND_UP(imx_get_fecclk(), 100000000) - 1;
+ #ifdef FEC_QUIRK_ENET_MAC
+ 	speed--;
+ #endif
+ 	speed <<= 1;
+-	writel(speed, &eth->mii_speed);
++	holdtime <<= 8;
++	writel(speed | holdtime, &eth->mii_speed);
+ 	debug("%s: mii_speed %08x\n", __func__, readl(&eth->mii_speed));
+ }
+ 
+-- 
+1.8.0
+

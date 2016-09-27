@@ -1,0 +1,29 @@
+From 23814c535f20807132ec9e071d7ef24c3cc6439a Mon Sep 17 00:00:00 2001
+From: Pankaj Dubey <pankaj.dubey@samsung.com>
+Date: Thu, 13 Nov 2014 14:12:49 +0530
+Subject: [PATCH] coresight-replicator: remove .owner field for driver
+
+There is no need of .owner field for driver using
+module_platform_driver.
+
+Signed-off-by: Pankaj Dubey <pankaj.dubey@samsung.com>
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+---
+ drivers/coresight/coresight-replicator.c | 1 -
+ 1 file changed, 1 deletion(-)
+
+diff --git a/drivers/coresight/coresight-replicator.c b/drivers/coresight/coresight-replicator.c
+index c879039..a2dfcf9 100644
+--- a/drivers/coresight/coresight-replicator.c
++++ b/drivers/coresight/coresight-replicator.c
+@@ -117,7 +117,6 @@ static struct platform_driver replicator_driver = {
+ 	.remove         = replicator_remove,
+ 	.driver         = {
+ 		.name   = "coresight-replicator",
+-		.owner	= THIS_MODULE,
+ 		.of_match_table = replicator_match,
+ 	},
+ };
+-- 
+1.8.0
+

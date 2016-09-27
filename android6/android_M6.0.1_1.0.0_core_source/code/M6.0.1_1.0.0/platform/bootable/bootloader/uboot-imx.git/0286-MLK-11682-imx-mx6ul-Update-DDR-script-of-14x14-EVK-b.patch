@@ -1,0 +1,162 @@
+From ddeb7aee6f182ec9bc5593b4a5c1210999fab349 Mon Sep 17 00:00:00 2001
+From: "Ye.Li" <B37916@freescale.com>
+Date: Fri, 9 Oct 2015 14:34:30 +0800
+Subject: [PATCH] MLK-11682 imx: mx6ul: Update DDR script of 14x14 EVK board
+ to 1.2 rev
+
+IC team releases new DDR script "EVK_IMX6UL_DDR3L_400MHz_16bit_V1.2.inc",
+update it to DCD and plugin for i.MX6UL 14x14 EVK board.
+
+Updated items:
+        Removed:
+          0x020c4084
+          0x021B0858
+        Value changed:
+          0x020E027C
+          0x020E0280
+          0x021B0008
+          0x021B000C
+          0x021B0010
+          0x021B0018
+          0x021B08C0
+
+The script versions of EVK board and Validation Board from the following link:
+    http://compass.freescale.net/livelink/livelink?func=ll&objId=234191407&obj
+    Action=browse&viewType=1
+
+Test Results:
+    Two boards passed overnight memtester stress test.
+
+Signed-off-by: Ye.Li <B37916@freescale.com>
+---
+ board/freescale/mx6ul_14x14_evk/imximage.cfg | 18 ++++++++----------
+ board/freescale/mx6ul_14x14_evk/plugin.S     | 19 ++++++++-----------
+ 2 files changed, 16 insertions(+), 21 deletions(-)
+
+diff --git a/board/freescale/mx6ul_14x14_evk/imximage.cfg b/board/freescale/mx6ul_14x14_evk/imximage.cfg
+index 1164fdd..8283673 100644
+--- a/board/freescale/mx6ul_14x14_evk/imximage.cfg
++++ b/board/freescale/mx6ul_14x14_evk/imximage.cfg
+@@ -58,11 +58,10 @@ DATA 4 0x020c4074 0xffffffff
+ DATA 4 0x020c4078 0xffffffff
+ DATA 4 0x020c407c 0xffffffff
+ DATA 4 0x020c4080 0xffffffff
+-DATA 4 0x020c4084 0xffffffff
+ 
+ DATA 4 0x020E04B4 0x000C0000
+ DATA 4 0x020E04AC 0x00000000
+-DATA 4 0x020E027C 0x00000008
++DATA 4 0x020E027C 0x00000030
+ DATA 4 0x020E0250 0x00000030
+ DATA 4 0x020E024C 0x00000030
+ DATA 4 0x020E0490 0x00000030
+@@ -72,7 +71,7 @@ DATA 4 0x020E0260 0x00000030
+ DATA 4 0x020E0264 0x00000030
+ DATA 4 0x020E04A0 0x00000030
+ DATA 4 0x020E0494 0x00020000
+-DATA 4 0x020E0280 0x00000038
++DATA 4 0x020E0280 0x00000030
+ DATA 4 0x020E0284 0x00000030
+ DATA 4 0x020E04B0 0x00020000
+ DATA 4 0x020E0498 0x00000030
+@@ -81,7 +80,7 @@ DATA 4 0x020E0244 0x00000030
+ DATA 4 0x020E0248 0x00000030
+ DATA 4 0x021B001C 0x00008000
+ DATA 4 0x021B0800 0xA1390003
+-DATA 4 0x021B080C 0x00070007
++DATA 4 0x021B080C 0x00000000
+ DATA 4 0x021B083C 0x41490145
+ DATA 4 0x021B0848 0x40404546
+ DATA 4 0x021B0850 0x4040524D
+@@ -89,15 +88,14 @@ DATA 4 0x021B081C 0x33333333
+ DATA 4 0x021B0820 0x33333333
+ DATA 4 0x021B082C 0xf3333333
+ DATA 4 0x021B0830 0xf3333333
+-DATA 4 0x021B08C0 0x00922012
+-DATA 4 0x021B0858 0x00000F00
++DATA 4 0x021B08C0 0x00921012
+ DATA 4 0x021B08b8 0x00000800
+ DATA 4 0x021B0004 0x0002002D
+-DATA 4 0x021B0008 0x1B333000
+-DATA 4 0x021B000C 0x676B54F3
+-DATA 4 0x021B0010 0xB68E0A83
++DATA 4 0x021B0008 0x00333030
++DATA 4 0x021B000C 0x676B52F3
++DATA 4 0x021B0010 0xB66D8B63
+ DATA 4 0x021B0014 0x01FF00DB
+-DATA 4 0x021B0018 0x00211740
++DATA 4 0x021B0018 0x00201740
+ DATA 4 0x021B001C 0x00008000
+ DATA 4 0x021B002C 0x000026D2
+ DATA 4 0x021B0030 0x006B1023
+diff --git a/board/freescale/mx6ul_14x14_evk/plugin.S b/board/freescale/mx6ul_14x14_evk/plugin.S
+index c1fe17b..2c9df7e 100644
+--- a/board/freescale/mx6ul_14x14_evk/plugin.S
++++ b/board/freescale/mx6ul_14x14_evk/plugin.S
+@@ -13,7 +13,7 @@
+ 	str r1, [r0, #0x4B4]
+ 	ldr r1, =0x00000000
+ 	str r1, [r0, #0x4AC]
+-	ldr r1, =0x00000008
++	ldr r1, =0x00000030
+ 	str r1, [r0, #0x27C]
+ 	ldr r1, =0x00000030
+ 	str r1, [r0, #0x250]
+@@ -32,7 +32,7 @@
+ 	ldr r1, =0x00020000
+ 	str r1, [r0, #0x494]
+ 
+-	ldr r1, =0x00000038
++	ldr r1, =0x00000030
+ 	str r1, [r0, #0x280]
+ 	ldr r1, =0x00000030
+ 	str r1, [r0, #0x284]
+@@ -51,7 +51,7 @@
+ 	str r1, [r0, #0x1C]
+ 	ldr r1, =0xA1390003
+ 	str r1, [r0, #0x800]
+-	ldr r1, =0x00070007
++	ldr r1, =0x00000000
+ 	str r1, [r0, #0x80C]
+ 	ldr r1, =0x41490145
+ 	str r1, [r0, #0x83C]
+@@ -65,23 +65,21 @@
+ 	ldr r1, =0xF3333333
+ 	str r1, [r0, #0x82C]
+ 	str r1, [r0, #0x830]
+-	ldr r1, =0x00922012
++	ldr r1, =0x00921012
+ 	str r1, [r0, #0x8C0]
+-	ldr r1, =0x00000F00
+-	str r1, [r0, #0x858]
+ 	ldr r1, =0x00000800
+ 	str r1, [r0, #0x8B8]
+ 	ldr r1, =0x0002002D
+ 	str r1, [r0, #0x004]
+-	ldr r1, =0x1B333000
++	ldr r1, =0x00333030
+ 	str r1, [r0, #0x008]
+-	ldr r1, =0x676B54F3
++	ldr r1, =0x676B52F3
+ 	str r1, [r0, #0x00C]
+-	ldr r1, =0xB68E0A83
++	ldr r1, =0xB66D8B63
+ 	str r1, [r0, #0x010]
+ 	ldr r1, =0x01FF00DB
+ 	str r1, [r0, #0x014]
+-	ldr r1, =0x00211740
++	ldr r1, =0x00201740
+ 	str r1, [r0, #0x018]
+ 	ldr r1, =0x00008000
+ 	str r1, [r0, #0x01C]
+@@ -239,7 +237,6 @@
+ 	str r1, [r0, #0x78]
+ 	str r1, [r0, #0x7C]
+ 	str r1, [r0, #0x80]
+-	str r1, [r0, #0x84]
+ .endm
+ 
+ .macro imx6_qos_setting
+-- 
+1.8.0
+

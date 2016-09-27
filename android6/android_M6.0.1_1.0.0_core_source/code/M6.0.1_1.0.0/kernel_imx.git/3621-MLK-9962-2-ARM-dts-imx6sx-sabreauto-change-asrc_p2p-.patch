@@ -1,0 +1,30 @@
+From e9d1cf7bc3ea3dc2c6ee5d7d27ff752ad0b7bd49 Mon Sep 17 00:00:00 2001
+From: Shengjiu Wang <shengjiu.wang@freescale.com>
+Date: Fri, 5 Dec 2014 13:56:54 +0800
+Subject: [PATCH] MLK-9962-2: ARM: dts: imx6sx-sabreauto: change asrc_p2p to
+ asrc
+
+In 3.14, the asrc_p2p and asrc node has been merged together. So
+the asrc_p2p need to be changed to asrc.
+
+Signed-off-by: Shengjiu Wang <shengjiu.wang@freescale.com>
+---
+ arch/arm/boot/dts/imx6sx-sabreauto.dts | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/arch/arm/boot/dts/imx6sx-sabreauto.dts b/arch/arm/boot/dts/imx6sx-sabreauto.dts
+index aef8381..3477d25 100644
+--- a/arch/arm/boot/dts/imx6sx-sabreauto.dts
++++ b/arch/arm/boot/dts/imx6sx-sabreauto.dts
+@@ -172,7 +172,7 @@
+ 				"fsl,imx-audio-cs42888";
+ 		model = "imx-cs42888";
+ 		esai-controller = <&esai>;
+-		asrc-controller = <&asrc_p2p>;
++		asrc-controller = <&asrc>;
+ 		audio-codec = <&codec>;
+ 	};
+ 
+-- 
+1.8.0
+

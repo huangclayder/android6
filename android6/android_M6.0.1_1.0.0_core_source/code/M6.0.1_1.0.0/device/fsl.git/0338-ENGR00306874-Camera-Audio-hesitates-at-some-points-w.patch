@@ -1,0 +1,42 @@
+From 293f4b8972ba35bc98f20fc5f02ad3a15e02b294 Mon Sep 17 00:00:00 2001
+From: Xu Mao <B34688@freescale.com>
+Date: Thu, 3 Jul 2014 12:45:05 +0800
+Subject: [PATCH 338/602] ENGR00306874 Camera: Audio hesitates at some points
+ when play the
+
+recorded 1080p videos
+add async_write pipe to do file writing in another thread.
+
+Signed-off-by: Xu Mao <B34688@freescale.com>
+---
+ imx5x/imx5x.mk | 1 +
+ imx6/imx6.mk   | 1 +
+ 2 files changed, 2 insertions(+)
+
+diff --git a/imx5x/imx5x.mk b/imx5x/imx5x.mk
+index bb8fcd5..75df4c0 100644
+--- a/imx5x/imx5x.mk
++++ b/imx5x/imx5x.mk
+@@ -168,6 +168,7 @@ omx_libs := \
+ 	lib_omx_clock_v2_arm11_elinux			\
+ 	lib_omx_local_file_pipe_v2_arm11_elinux		\
+ 	lib_omx_shared_fd_pipe_arm11_elinux		\
++	lib_omx_async_write_pipe_arm11_elinux           \
+ 	lib_omx_https_pipe_arm11_elinux			\
+ 	lib_omx_fsl_parser_v2_arm11_elinux		\
+ 	lib_omx_wav_parser_v2_arm11_elinux		\
+diff --git a/imx6/imx6.mk b/imx6/imx6.mk
+index 18af659..6aace9b 100644
+--- a/imx6/imx6.mk
++++ b/imx6/imx6.mk
+@@ -187,6 +187,7 @@ omx_libs := \
+ 	lib_omx_clock_v2_arm11_elinux			\
+ 	lib_omx_local_file_pipe_v2_arm11_elinux		\
+ 	lib_omx_shared_fd_pipe_arm11_elinux		\
++	lib_omx_async_write_pipe_arm11_elinux		\
+ 	lib_omx_https_pipe_arm11_elinux			\
+ 	lib_omx_fsl_parser_v2_arm11_elinux		\
+ 	lib_omx_wav_parser_v2_arm11_elinux		\
+-- 
+1.8.0
+

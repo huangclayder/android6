@@ -1,0 +1,31 @@
+From eb0e9156be204fa54a52a98c06b7cbc3227691db Mon Sep 17 00:00:00 2001
+From: Hubert Feurstein <h.feurstein@gmail.com>
+Date: Wed, 7 Jan 2015 14:48:17 +0100
+Subject: [PATCH] net: fec: fix NULL pointer dereference in
+ fec_enet_timeout_work
+
+This patch initialises the fep->netdev pointer. This pointer was not
+initialised at all, but is used in fec_enet_timeout_work and in some
+error paths.
+
+Signed-off-by: Hubert Feurstein <h.feurstein@gmail.com>
+Signed-off-by: David S. Miller <davem@davemloft.net>
+---
+ drivers/net/ethernet/freescale/fec_main.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/drivers/net/ethernet/freescale/fec_main.c b/drivers/net/ethernet/freescale/fec_main.c
+index 96fc418..f92a337 100644
+--- a/drivers/net/ethernet/freescale/fec_main.c
++++ b/drivers/net/ethernet/freescale/fec_main.c
+@@ -3283,6 +3283,7 @@ fec_probe(struct platform_device *pdev)
+ 		pdev->id_entry = of_id->data;
+ 	fep->quirks = pdev->id_entry->driver_data;
+ 
++	fep->netdev = ndev;
+ 	fep->num_rx_queues = num_rx_qs;
+ 	fep->num_tx_queues = num_tx_qs;
+ 
+-- 
+1.8.0
+

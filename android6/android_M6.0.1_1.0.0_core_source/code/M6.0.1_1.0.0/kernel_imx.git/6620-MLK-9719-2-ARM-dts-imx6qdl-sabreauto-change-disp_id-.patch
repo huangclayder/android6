@@ -1,0 +1,30 @@
+From 31658ca3b0e665ec94cab048fbdc5a3009f6c555 Mon Sep 17 00:00:00 2001
+From: Robby Cai <r63905@freescale.com>
+Date: Thu, 23 Oct 2014 20:18:46 +0800
+Subject: [PATCH] MLK-9719-2 ARM: dts: imx6qdl-sabreauto: change disp_id to 1
+ for HDMI
+
+disp_id 0 is already used for LDB.
+The patch fixed the conflict and supported both in one dts file.
+
+Signed-off-by: Robby Cai <r63905@freescale.com>
+---
+ arch/arm/boot/dts/imx6qdl-sabreauto.dtsi | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/arch/arm/boot/dts/imx6qdl-sabreauto.dtsi b/arch/arm/boot/dts/imx6qdl-sabreauto.dtsi
+index 35f70ee..e992cd3 100644
+--- a/arch/arm/boot/dts/imx6qdl-sabreauto.dtsi
++++ b/arch/arm/boot/dts/imx6qdl-sabreauto.dtsi
+@@ -921,7 +921,7 @@
+ 
+ &hdmi_core {
+ 	ipu_id = <0>;
+-	disp_id = <0>;
++	disp_id = <1>;
+ 	status = "okay";
+ };
+ 
+-- 
+1.8.0
+

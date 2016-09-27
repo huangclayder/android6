@@ -1,0 +1,32 @@
+From 6ea034346a58c9dc64638f9e90d3965636682367 Mon Sep 17 00:00:00 2001
+From: Gao Pan <b54642@freescale.com>
+Date: Tue, 1 Sep 2015 11:45:20 +0800
+Subject: [PATCH] MLK-11473 ARM: dts: add sim1 IOMUX sleep state for
+ imx7d-12x12-lpddr3-arm2
+
+SIM1 IOMUX is changed into reset state in LPSR mode. This patch
+adds sim1 IOMUX sleep state in dts for IOMUX restoring.
+
+Signed-off-by: Gao Pan <b54642@freescale.com>
+---
+ arch/arm/boot/dts/imx7d-12x12-lpddr3-arm2.dts | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/arch/arm/boot/dts/imx7d-12x12-lpddr3-arm2.dts b/arch/arm/boot/dts/imx7d-12x12-lpddr3-arm2.dts
+index da3ebc0..3f8c9e7 100644
+--- a/arch/arm/boot/dts/imx7d-12x12-lpddr3-arm2.dts
++++ b/arch/arm/boot/dts/imx7d-12x12-lpddr3-arm2.dts
+@@ -948,8 +948,9 @@
+ };
+ 
+ &sim1 {
+-	pinctrl-names = "default";
++	pinctrl-names = "default", "sleep";
+ 	pinctrl-0 = <&pinctrl_sim1_1>;
++	pinctrl-1 = <&pinctrl_sim1_1>;
+ 	status = "disabled";
+ };
+ 
+-- 
+1.8.0
+

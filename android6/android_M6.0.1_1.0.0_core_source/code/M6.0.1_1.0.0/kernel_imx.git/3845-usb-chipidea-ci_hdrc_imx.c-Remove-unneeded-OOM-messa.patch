@@ -1,0 +1,35 @@
+From 62f3fbf39337a59bf638cb9ef211961bd6205a66 Mon Sep 17 00:00:00 2001
+From: Fabio Estevam <fabio.estevam@freescale.com>
+Date: Wed, 26 Nov 2014 13:44:24 +0800
+Subject: [PATCH] usb: chipidea: ci_hdrc_imx.c: Remove unneeded OOM message
+
+MM core code already complains when devm_kzalloc() fails, so no need to print
+the error locally.
+
+Signed-off-by: Fabio Estevam <fabio.estevam@freescale.com>
+Signed-off-by: Peter Chen <peter.chen@freescale.com>
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+(cherry picked from commit 73529828cf896df5017255136b4dc2386dff0850)
+---
+ drivers/usb/chipidea/ci_hdrc_imx.c | 4 +---
+ 1 file changed, 1 insertion(+), 3 deletions(-)
+
+diff --git a/drivers/usb/chipidea/ci_hdrc_imx.c b/drivers/usb/chipidea/ci_hdrc_imx.c
+index 6f8b1b1..8b1482a 100644
+--- a/drivers/usb/chipidea/ci_hdrc_imx.c
++++ b/drivers/usb/chipidea/ci_hdrc_imx.c
+@@ -115,10 +115,8 @@ static int ci_hdrc_imx_probe(struct platform_device *pdev)
+ 	const struct ci_hdrc_imx_platform_flag *imx_platform_flag = of_id->data;
+ 
+ 	data = devm_kzalloc(&pdev->dev, sizeof(*data), GFP_KERNEL);
+-	if (!data) {
+-		dev_err(&pdev->dev, "Failed to allocate ci_hdrc-imx data!\n");
++	if (!data)
+ 		return -ENOMEM;
+-	}
+ 
+ 	data->usbmisc_data = usbmisc_get_init_data(&pdev->dev);
+ 	if (IS_ERR(data->usbmisc_data))
+-- 
+1.8.0
+

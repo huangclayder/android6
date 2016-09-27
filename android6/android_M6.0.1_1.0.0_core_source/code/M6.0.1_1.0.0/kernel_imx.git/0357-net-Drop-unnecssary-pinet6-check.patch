@@ -1,0 +1,29 @@
+From 7e51fc62078a13445b35d5389f29c2f615eea49d Mon Sep 17 00:00:00 2001
+From: John Stultz <john.stultz@linaro.org>
+Date: Mon, 31 Mar 2014 11:19:52 -0700
+Subject: [PATCH] net: Drop unnecssary pinet6 check
+
+Since the line below was changed to access the sk_v6_rcv_saddr
+directly, we don't need to check the pinet6 value for null.
+
+Signed-off-by: John Stultz <john.stultz@linaro.org>
+---
+ net/ipv4/tcp.c | 2 --
+ 1 file changed, 2 deletions(-)
+
+diff --git a/net/ipv4/tcp.c b/net/ipv4/tcp.c
+index 32c714a..ad80ad2 100644
+--- a/net/ipv4/tcp.c
++++ b/net/ipv4/tcp.c
+@@ -3316,8 +3316,6 @@ restart:
+ #if defined(CONFIG_IPV6)
+ 			if (family == AF_INET6) {
+ 				struct in6_addr *s6;
+-				if (!inet->pinet6)
+-					continue;
+ 
+ 				s6 = &sk->sk_v6_rcv_saddr;
+ 				if (ipv6_addr_type(s6) == IPV6_ADDR_MAPPED)
+-- 
+1.8.0
+

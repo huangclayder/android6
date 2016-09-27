@@ -1,0 +1,51 @@
+From 75456d8e8c9e5e96a39e3901b7bf92ed132c7791 Mon Sep 17 00:00:00 2001
+From: zhang sanshan <b51434@freescale.com>
+Date: Thu, 9 Jul 2015 09:17:20 +0800
+Subject: [PATCH 15/21] MA-6856 [Android_MX7D_SD]recovery robot: the robot
+ image comes out of shape after factory reset.100%
+
+The icon in recovery is out of shape.
+The length-width ratio should keep aligh with before.
+Set the height\width ratio to the bigger one.
+
+Signed-off-by: zhang sanshan <b51434@freescale.com>
+---
+ minui/graphics.cpp | 2 ++
+ screen_ui.cpp      | 5 +++--
+ 2 files changed, 5 insertions(+), 2 deletions(-)
+
+diff --git a/minui/graphics.cpp b/minui/graphics.cpp
+index 2967239..84dad3c 100644
+--- a/minui/graphics.cpp
++++ b/minui/graphics.cpp
+@@ -238,6 +238,8 @@ void gr_blit(GRSurface* source, int sx, int sy, int w, int h, int dx, int dy) {
+     unsigned int icon_screen_height_ratio = h / (gr_fb_height() - (33 + 40)) + 1; 
+     unsigned int icon_screen_width_ratio = w / (gr_fb_width()) + 1; 
+     int x, y;
++    icon_screen_height_ratio = icon_screen_height_ratio > icon_screen_width_ratio ? icon_screen_height_ratio:icon_screen_width_ratio;
++    icon_screen_width_ratio = icon_screen_height_ratio;
+     for (y = 0; y < h / icon_screen_height_ratio; ++y) {
+         unsigned int *psx = (unsigned int*)src_p;
+         unsigned short *pdx = (unsigned short*)dst_p;
+diff --git a/screen_ui.cpp b/screen_ui.cpp
+index 3aa0177..43d150e 100644
+--- a/screen_ui.cpp
++++ b/screen_ui.cpp
+@@ -109,11 +109,12 @@ void ScreenRecoveryUI::draw_background_locked(Icon icon) {
+         int sh = (max_stage >= 0) ? stageHeight : 0;
+ 	icon_screen_height_ratio = iconHeight / (gr_fb_height() - (textHeight + 40)) + 1;
+ 	icon_screen_width_ratio = iconWidth / (gr_fb_width()) + 1;
+-
++	icon_screen_height_ratio = icon_screen_height_ratio > icon_screen_width_ratio ? icon_screen_height_ratio:icon_screen_width_ratio;
++	icon_screen_width_ratio = icon_screen_height_ratio;
+         iconX = (gr_fb_width() - iconWidth / icon_screen_width_ratio) / 2;
+         iconY = (gr_fb_height() - (iconHeight / icon_screen_height_ratio + textHeight + 40)) / 2;
+ 
+-        int textX = (gr_fb_width() - textWidth / icon_screen_width_ratio) / 2;
++        int textX = (gr_fb_width() - textWidth) / 2;
+         int textY = iconY + iconHeight / icon_screen_height_ratio + ICON_TEXT_HEIGHT;
+         if (progressBarType != EMPTY) {
+             int progressHeight = gr_get_height(progressBarEmpty);
+-- 
+1.8.0
+

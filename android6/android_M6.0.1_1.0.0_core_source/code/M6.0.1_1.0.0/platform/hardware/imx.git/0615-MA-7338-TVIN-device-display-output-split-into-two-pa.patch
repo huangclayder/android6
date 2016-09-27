@@ -1,0 +1,35 @@
+From c34c78a402dc4a6fe0f60219cdfe7cee1d94ad32 Mon Sep 17 00:00:00 2001
+From: Xiaowen Liu <xiaowen.liu@freescale.com>
+Date: Tue, 8 Dec 2015 09:48:28 -0500
+Subject: [PATCH 615/635] MA-7338 TVIN device display output split into two
+ parts.
+
+When rename Stream, the VIDIOC_S_INPUT ioctl is lost for TVIN device.
+Add back the TVIN device specified ioctl.
+
+Signed-off-by: Xiaowen Liu <xiaowen.liu@freescale.com>
+---
+ mx6/libcamera3/TVINDevice.cpp | 7 +++++++
+ 1 file changed, 7 insertions(+)
+
+diff --git a/mx6/libcamera3/TVINDevice.cpp b/mx6/libcamera3/TVINDevice.cpp
+index 07dfa93..ca9f3d7 100644
+--- a/mx6/libcamera3/TVINDevice.cpp
++++ b/mx6/libcamera3/TVINDevice.cpp
+@@ -216,6 +216,13 @@ int32_t TVINDevice::TVinStream::onDeviceConfigureLocked()
+         return BAD_VALUE;
+     }
+ 
++    int32_t input = 1;
++    ret = ioctl(mDev, VIDIOC_S_INPUT, &input);
++    if (ret < 0) {
++        ALOGE("%s VIDIOC_S_INPUT Failed: %s", __func__, strerror(errno));
++        return ret;
++    }
++
+     return USPStream::onDeviceConfigureLocked();
+ }
+ 
+-- 
+1.8.0
+

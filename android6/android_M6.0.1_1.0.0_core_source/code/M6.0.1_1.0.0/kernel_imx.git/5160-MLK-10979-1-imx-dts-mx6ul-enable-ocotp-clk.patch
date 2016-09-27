@@ -1,0 +1,35 @@
+From e800dd533a81a7e7a04d8e86765fd45725a1dfc9 Mon Sep 17 00:00:00 2001
+From: Peng Fan <Peng.Fan@freescale.com>
+Date: Fri, 29 May 2015 13:55:37 +0800
+Subject: [PATCH] MLK-10979-1 imx: dts: mx6ul enable ocotp clk
+
+Change ocotp clock from dummy to IMX6UL_CLK_OCOTP
+
+Signed-off-by: Peng Fan <Peng.Fan@freescale.com>
+---
+ arch/arm/boot/dts/imx6ul.dtsi | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/arch/arm/boot/dts/imx6ul.dtsi b/arch/arm/boot/dts/imx6ul.dtsi
+index d971f25..6928351 100644
+--- a/arch/arm/boot/dts/imx6ul.dtsi
++++ b/arch/arm/boot/dts/imx6ul.dtsi
+@@ -940,13 +940,13 @@
+ 			ocotp: ocotp-ctrl@021bc000 {
+ 				compatible = "syscon";
+ 				reg = <0x021bc000 0x4000>;
+-				clocks = <&clks IMX6UL_CLK_DUMMY>;
++				clocks = <&clks IMX6UL_CLK_OCOTP>;
+ 			};
+ 
+ 			ocotp-fuse@021bc000 {
+ 				compatible = "fsl,imx6ul-ocotp", "fsl,imx6q-ocotp";
+ 				reg = <0x021bc000 0x4000>;
+-				clocks = <&clks IMX6UL_CLK_DUMMY>;
++				clocks = <&clks IMX6UL_CLK_OCOTP>;
+ 			};
+ 
+ 			csu: csu@021c0000 {
+-- 
+1.8.0
+

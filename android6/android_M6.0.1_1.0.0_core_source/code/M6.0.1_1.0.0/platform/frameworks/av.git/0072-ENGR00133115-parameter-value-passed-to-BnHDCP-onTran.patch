@@ -1,0 +1,37 @@
+From 4015afc5ce3a90dabf946036d90cd9fd42c43de2 Mon Sep 17 00:00:00 2001
+From: Ming Zhou <b42586@freescale.com>
+Date: Mon, 19 Jan 2015 17:20:44 +0800
+Subject: [PATCH 72/95] ENGR00133115: parameter value passed to
+ BnHDCP::onTransact() is not correct
+
+ when calling decrypt function.
+
+Signed-off-by: Ming Zhou <b42586@freescale.com>
+---
+ media/libmedia/IHDCP.cpp | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/media/libmedia/IHDCP.cpp b/media/libmedia/IHDCP.cpp
+index f3a8902..86955c1 100644
+--- a/media/libmedia/IHDCP.cpp
++++ b/media/libmedia/IHDCP.cpp
+@@ -240,6 +240,7 @@ status_t BnHDCP::onTransact(
+ 
+         case HDCP_ENCRYPT:
+         {
++            CHECK_INTERFACE(IHDCP, data, reply);
+             size_t size = data.readInt32();
+             size_t bufSize = 2 * size;
+ 
+@@ -311,6 +312,8 @@ status_t BnHDCP::onTransact(
+ 
+         case HDCP_DECRYPT:
+         {
++            CHECK_INTERFACE(IHDCP, data, reply);
++
+             size_t size = data.readInt32();
+             size_t bufSize = 2 * size;
+ 
+-- 
+1.8.0
+

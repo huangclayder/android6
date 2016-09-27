@@ -1,0 +1,39 @@
+From f95533cf03114139fb9b10500a51a077630212d8 Mon Sep 17 00:00:00 2001
+From: Li Jun <jun.li@freescale.com>
+Date: Tue, 9 Jun 2015 23:45:44 +0800
+Subject: [PATCH] MA-6700 [Android_MX6QP_ARD]Nand ADB: ADB connection lost
+ after reboot the board with Nand image. 100%
+
+usb: chipidea: udc: Do not pull up DP when ci_udc_start for android
+In non-otg mode, also do not pull up DP when bind gadget dirver with udc
+if vbus is on, android will do this through usb_gadget_connect().
+
+Signed-off-by: Li Jun <jun.li@freescale.com>
+---
+ drivers/usb/chipidea/udc.c | 10 ++++++++--
+ 1 file changed, 8 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/usb/chipidea/udc.c b/drivers/usb/chipidea/udc.c
+index fb8f0f3..c526c53 100644
+--- a/drivers/usb/chipidea/udc.c
++++ b/drivers/usb/chipidea/udc.c
+@@ -1734,8 +1734,14 @@ static int ci_udc_start(struct usb_gadget *gadget,
+ 		return retval;
+ 	}
+ 
+-	if (ci->vbus_active)
+-		ci_hdrc_gadget_connect(&ci->gadget, 1);
++	if (ci->vbus_active) {
++		pm_runtime_get_sync(&gadget->dev);
++		hw_device_reset(ci);
++		hw_write(ci, OP_ENDPTLISTADDR, ~0, ci->ep0out->qh.dma);
++		/* interrupt, error, port change, reset, sleep/suspend */
++		hw_write(ci, OP_USBINTR, ~0,
++			USBi_UI|USBi_UEI|USBi_PCI|USBi_URI|USBi_SLI);
++	}
+ 
+ 	return retval;
+ }
+-- 
+1.8.0
+

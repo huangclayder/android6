@@ -1,0 +1,35 @@
+From 8d52e8e8cb3009dcb801fe5dd8cff475d6cdd293 Mon Sep 17 00:00:00 2001
+From: Philipp Zabel <p.zabel@pengutronix.de>
+Date: Thu, 6 Mar 2014 10:58:48 +0100
+Subject: [PATCH] ARM: dts: imx6qdl: Allow disabling the PU regulator, add a
+ enable ramp delay
+
+The PU regulator is enabled during boot, but not necessarily always-on.
+It can be disabled by the generic pm domain framework when the PU power
+domain is shut down. The ramp delay of 150 us might be a bit conservative,
+the value is taken from the Freescale kernel.
+
+Signed-off-by: Philipp Zabel <p.zabel@pengutronix.de>
+[shawn.guo: http://thread.gmane.org/gmane.linux.drivers.devicetree/64973]
+Signed-off-by: Shawn Guo <shawn.guo@freescale.com>
+---
+ arch/arm/boot/dts/imx6qdl.dtsi | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/arch/arm/boot/dts/imx6qdl.dtsi b/arch/arm/boot/dts/imx6qdl.dtsi
+index 6a0ab9e..542cd90 100644
+--- a/arch/arm/boot/dts/imx6qdl.dtsi
++++ b/arch/arm/boot/dts/imx6qdl.dtsi
+@@ -552,7 +552,8 @@
+ 					regulator-name = "vddpu";
+ 					regulator-min-microvolt = <725000>;
+ 					regulator-max-microvolt = <1450000>;
+-					regulator-always-on;
++					regulator-enable-ramp-delay = <150>;
++					regulator-boot-on;
+ 					anatop-reg-offset = <0x140>;
+ 					anatop-vol-bit-shift = <9>;
+ 					anatop-vol-bit-width = <5>;
+-- 
+1.8.0
+

@@ -1,0 +1,35 @@
+From ec934d7bf7bfb213f90be5b301f16d8a31ec54b1 Mon Sep 17 00:00:00 2001
+From: Fabio Estevam <fabio.estevam@freescale.com>
+Date: Fri, 17 Oct 2014 15:31:08 -0300
+Subject: [PATCH] MLK-9842 mtd: fsl-quadspi: Propagate the error from
+ of_modalias_node()
+
+The 'map_failed' label will return 'ret', so we need to assign the error
+code to 'ret', otherwise the probe function will return success.
+
+Signed-off-by: Fabio Estevam <fabio.estevam@freescale.com>
+Acked-by: Huang Shijie <shijie8@gmail.com>
+Signed-off-by: Brian Norris <computersforpeace@gmail.com>
+(cherry picked from commit b26171e392c7d3952b6eeb6da62a861c5317e438)
+(cherry picked from commit 9e4a091d30e27dd40a04b892bf5f6bf372271380)
+---
+ drivers/mtd/spi-nor/fsl-quadspi.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/drivers/mtd/spi-nor/fsl-quadspi.c b/drivers/mtd/spi-nor/fsl-quadspi.c
+index c01b18d..c5aa85a 100644
+--- a/drivers/mtd/spi-nor/fsl-quadspi.c
++++ b/drivers/mtd/spi-nor/fsl-quadspi.c
+@@ -1016,7 +1016,8 @@ static int fsl_qspi_probe(struct platform_device *pdev)
+ 		nor->prepare = fsl_qspi_prep;
+ 		nor->unprepare = fsl_qspi_unprep;
+ 
+-		if (of_modalias_node(np, modalias, sizeof(modalias)) < 0)
++		ret = of_modalias_node(np, modalias, sizeof(modalias));
++		if (ret < 0)
+ 			goto map_failed;
+ 
+ 		id = spi_nor_match_id(modalias);
+-- 
+1.8.0
+

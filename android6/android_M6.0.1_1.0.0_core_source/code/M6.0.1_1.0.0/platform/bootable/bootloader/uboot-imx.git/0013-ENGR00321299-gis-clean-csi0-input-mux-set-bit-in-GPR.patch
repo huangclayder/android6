@@ -1,0 +1,43 @@
+From d6e803ed5f51d31ebe7e9d178aa11f16401b7fc8 Mon Sep 17 00:00:00 2001
+From: Sandor Yu <R01008@freescale.com>
+Date: Fri, 4 Jul 2014 17:13:58 +0800
+Subject: [PATCH] ENGR00321299 gis: clean csi0 input mux set bit in GPR
+
+When gis enable in uboot, the CSI0 input mux select setting
+to vadc module, clean the bit when gis disabled.
+
+Signed-off-by: Sandor Yu <R01008@freescale.com>
+(cherry picked from commit ae66b17b7da3be50dc81ca636b67e8e879f52e26)
+(cherry picked from commit c83fd326e810c2fff44b8b02e78406d5d04c977c)
+Signed-off-by: Peng Fan <Peng.Fan@freescale.com>
+---
+ arch/arm/cpu/armv7/mx6/soc.c | 6 ++++++
+ 1 file changed, 6 insertions(+)
+
+diff --git a/arch/arm/cpu/armv7/mx6/soc.c b/arch/arm/cpu/armv7/mx6/soc.c
+index 39d1b4e..c809711 100644
+--- a/arch/arm/cpu/armv7/mx6/soc.c
++++ b/arch/arm/cpu/armv7/mx6/soc.c
+@@ -340,6 +340,7 @@ void vadc_power_up(void)
+ 
+ void vadc_power_down(void)
+ {
++	struct iomuxc *iomux = (struct iomuxc *)IOMUXC_GPR_BASE_ADDR;
+ 	u32 val;
+ 
+ 	/* Power down vadc ext power
+@@ -348,6 +349,11 @@ void vadc_power_down(void)
+ 	val &= ~0x40000;
+ 	val |= 0x20000;
+ 	writel(val, GPC_BASE_ADDR + 0);
++
++	/* clean csi0 connect to vadc  */
++	val = readl(&iomux->gpr[5]);
++	val &= ~IMX6SX_GPR5_CSI1_MUX_CTRL_MASK,
++	writel(val, &iomux->gpr[5]);
+ }
+ #endif
+ 
+-- 
+1.8.0
+

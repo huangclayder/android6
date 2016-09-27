@@ -1,0 +1,35 @@
+From 779e3fad6a3f5e2f774b0bfdc07f1f8a208989ec Mon Sep 17 00:00:00 2001
+From: Jassi Brar <jaswinder.singh@linaro.org>
+Date: Thu, 12 Jun 2014 22:32:54 +0530
+Subject: [PATCH] MAINTAINERS: Add maintainer entry for Mailbox API
+
+Add myself as the maintainer of mailbox api
+
+Signed-off-by: Jassi Brar <jaswinder.singh@linaro.org>
+Signed-off-by: Mark Brown <broonie@linaro.org>
+---
+ MAINTAINERS | 8 ++++++++
+ 1 file changed, 8 insertions(+)
+
+diff --git a/MAINTAINERS b/MAINTAINERS
+index 900d98e..4a4296e 100644
+--- a/MAINTAINERS
++++ b/MAINTAINERS
+@@ -5511,6 +5511,14 @@ S:	Maintained
+ F:	drivers/net/macvlan.c
+ F:	include/linux/if_macvlan.h
+ 
++MAILBOX API
++M:	Jassi Brar <jassisinghbrar@gmail.com>
++L:	linux-kernel@vger.kernel.org
++S:	Maintained
++F:	drivers/mailbox/
++F:	include/linux/mailbox_client.h
++F:	include/linux/mailbox_controller.h
++
+ MAN-PAGES: MANUAL PAGES FOR LINUX -- Sections 2, 3, 4, 5, and 7
+ M:	Michael Kerrisk <mtk.manpages@gmail.com>
+ W:	http://www.kernel.org/doc/man-pages
+-- 
+1.8.0
+

@@ -1,0 +1,32 @@
+From 541b2a66174c2f6aafb33c61f56f6dadded02d71 Mon Sep 17 00:00:00 2001
+From: "Ye.Li" <B37916@freescale.com>
+Date: Fri, 4 Dec 2015 15:17:07 +0800
+Subject: [PATCH] MLK-11952 Video: IPU: Fix dereferencing NULL pointer problem
+
+By Coverity check,  the clk_set_rate function dereferences the clk pointer
+without checking whether it is NULL. This may cause problem when clk is NULL.
+Fix the problem by adding NULL check.
+
+Signed-off-by: Ye.Li <B37916@freescale.com>
+---
+ drivers/video/ipu_common.c | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/drivers/video/ipu_common.c b/drivers/video/ipu_common.c
+index 0efb3db..83ac846 100644
+--- a/drivers/video/ipu_common.c
++++ b/drivers/video/ipu_common.c
+@@ -128,6 +128,10 @@ int clk_set_rate(struct clk *clk, unsigned long rate)
+ {
+ 	if (clk && clk->set_rate)
+ 		clk->set_rate(clk, rate);
++
++	if (!clk)
++		return 0;
++	
+ 	return clk->rate;
+ }
+ 
+-- 
+1.8.0
+

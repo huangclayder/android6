@@ -1,0 +1,55 @@
+From 29d81fc494a308d0503abc1431b7fac9a40ad0e5 Mon Sep 17 00:00:00 2001
+From: Gao Pan <b54642@freescale.com>
+Date: Tue, 25 Aug 2015 14:00:32 +0800
+Subject: [PATCH] MLK-11403: I2C: imx: restore pin setting for i2c
+
+restore pin setting for i2c in suspend/resume
+
+Signed-off-by: Gao Pan <gaopan@freescale.com>
+---
+ drivers/i2c/busses/i2c-imx.c | 24 ++++++++++++++++++++++--
+ 1 file changed, 22 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/i2c/busses/i2c-imx.c b/drivers/i2c/busses/i2c-imx.c
+index f4f023d..3ed8e47 100644
+--- a/drivers/i2c/busses/i2c-imx.c
++++ b/drivers/i2c/busses/i2c-imx.c
+@@ -735,13 +735,33 @@ static int i2c_imx_remove(struct platform_device *pdev)
+ 	return 0;
+ }
+ 
++#ifdef CONFIG_PM_SLEEP
++static int i2c_imx_suspend(struct device *dev)
++{
++	pinctrl_pm_select_sleep_state(dev);
++	return 0;
++}
++
++static int i2c_imx_resume(struct device *dev)
++{
++	pinctrl_pm_select_default_state(dev);
++	return 0;
++}
++
++static SIMPLE_DEV_PM_OPS(imx_i2c_pm, i2c_imx_suspend, i2c_imx_resume);
++#define IMX_I2C_PM	(&imx_i2c_pm)
++#else
++#define IMX_I2C_PM	NULL
++#endif
++
+ static struct platform_driver i2c_imx_driver = {
+ 	.probe = i2c_imx_probe,
+ 	.remove = i2c_imx_remove,
+ 	.driver	= {
+-		.name	= DRIVER_NAME,
+-		.owner	= THIS_MODULE,
++		.name = DRIVER_NAME,
++		.owner = THIS_MODULE,
+ 		.of_match_table = i2c_imx_dt_ids,
++		.pm = IMX_I2C_PM,
+ 	},
+ 	.id_table	= imx_i2c_devtype,
+ };
+-- 
+1.8.0
+

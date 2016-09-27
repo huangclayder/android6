@@ -1,0 +1,31 @@
+From f12fd9708e2841bc5a01f8e41da009d1baa41f37 Mon Sep 17 00:00:00 2001
+From: "guoyin.chen" <guoyin.chen@freescale.com>
+Date: Wed, 28 Jan 2015 16:01:58 +0800
+Subject: [PATCH 450/602] MA-5963 Upgrade kernel version from 3.10.y to 3.14.y
+
+Remove realtek's wifi ko by temporary to fix the build error
+Need to add them back after Realtek driver's porting to 3.14.y kernel
+
+Signed-off-by: guoyin.chen <guoyin.chen@freescale.com>
+---
+ sabresd_6sx/BoardConfig.mk | 4 ----
+ 1 file changed, 4 deletions(-)
+
+diff --git a/sabresd_6sx/BoardConfig.mk b/sabresd_6sx/BoardConfig.mk
+index 6736174..41d80e4 100644
+--- a/sabresd_6sx/BoardConfig.mk
++++ b/sabresd_6sx/BoardConfig.mk
+@@ -36,10 +36,6 @@ PRODUCT_MODEL := SABRESD-MX6SX
+ # UNITE is a virtual device support both atheros and realtek wifi(ar6103 and rtl8723as)
+ BOARD_WLAN_DEVICE            := UNITE
+ WPA_SUPPLICANT_VERSION       := VER_0_8_UNITE
+-TARGET_KERNEL_MODULES        := \
+-                                kernel_imx/drivers/net/wireless/rtlwifi/rtl8723as/8723as.ko:system/lib/modules/8723as.ko \
+-                                kernel_imx/net/wireless/cfg80211.ko:system/lib/modules/cfg80211_realtek.ko \
+-                                kernel_imx/drivers/net/wireless/rtlwifi/rtl8821as/8821as.ko:system/lib/modules/8821as.ko
+ BOARD_WPA_SUPPLICANT_DRIVER  := NL80211
+ BOARD_HOSTAPD_DRIVER         := NL80211
+ 
+-- 
+1.8.0
+

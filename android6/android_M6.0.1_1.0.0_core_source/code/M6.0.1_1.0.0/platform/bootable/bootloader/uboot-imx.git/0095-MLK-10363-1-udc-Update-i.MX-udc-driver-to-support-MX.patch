@@ -1,0 +1,139 @@
+From bac2fceb67056eca6a6a3e85cac5aa90a73624b8 Mon Sep 17 00:00:00 2001
+From: "Ye.Li" <B37916@freescale.com>
+Date: Mon, 2 Mar 2015 21:06:23 +0800
+Subject: [PATCH] MLK-10363-1 udc: Update i.MX udc driver to support MX7
+
+Update driver codes and registers define for MX7. Implement udc callback
+function in MX7 arch.
+
+Signed-off-by: Ye.Li <B37916@freescale.com>
+(cherry picked from commit e55c4f7bf5a66b34c2d01c42bac667cb3789b0c1)
+Signed-off-by: Peng Fan <Peng.Fan@freescale.com>
+---
+ arch/arm/cpu/armv7/mx7/soc.c | 26 ++------------------------
+ drivers/usb/gadget/imx_udc.c | 13 +++++++------
+ include/usb/imx_udc.h        |  2 ++
+ 3 files changed, 11 insertions(+), 30 deletions(-)
+
+diff --git a/arch/arm/cpu/armv7/mx7/soc.c b/arch/arm/cpu/armv7/mx7/soc.c
+index a9e351f..d737f96 100644
+--- a/arch/arm/cpu/armv7/mx7/soc.c
++++ b/arch/arm/cpu/armv7/mx7/soc.c
+@@ -22,10 +22,6 @@
+ #include <recovery.h>
+ #endif
+ #endif
+-#ifdef CONFIG_IMX_UDC
+-#include <asm/arch/mx7_usbphy.h>
+-#include <usb/imx_udc.h>
+-#endif
+ 
+ struct src *src_reg = (struct src *)SRC_BASE_ADDR;
+ 
+@@ -412,30 +408,12 @@ void set_usb_phy1_clk(void)
+ }
+ void enable_usb_phy1_clk(unsigned char enable)
+ {
+-	if (enable)
+-		writel(BM_USBPHY_CTRL_CLKGATE,
+-		       USB_PHY0_BASE_ADDR + HW_USBPHY_CTRL_CLR);
+-	else
+-		writel(BM_USBPHY_CTRL_CLKGATE,
+-		       USB_PHY0_BASE_ADDR + HW_USBPHY_CTRL_SET);
+ }
+ 
+ void reset_usb_phy1(void)
+ {
+ 	/* Reset USBPHY module */
+-	u32 temp;
+-	temp = readl(USB_PHY0_BASE_ADDR + HW_USBPHY_CTRL);
+-	temp |= BM_USBPHY_CTRL_SFTRST;
+-	writel(temp, USB_PHY0_BASE_ADDR + HW_USBPHY_CTRL);
+-	udelay(10);
+-
+-	/* Remove CLKGATE and SFTRST */
+-	temp = readl(USB_PHY0_BASE_ADDR + HW_USBPHY_CTRL);
+-	temp &= ~(BM_USBPHY_CTRL_CLKGATE | BM_USBPHY_CTRL_SFTRST);
+-	writel(temp, USB_PHY0_BASE_ADDR + HW_USBPHY_CTRL);
+-	udelay(10);
+-
+-	/* Power up the PHY */
+-	writel(0, USB_PHY0_BASE_ADDR + HW_USBPHY_PWD);
++	setbits_le32(&src_reg->usbophy1_rcr, 0x00000001);
+ }
++
+ #endif
+diff --git a/drivers/usb/gadget/imx_udc.c b/drivers/usb/gadget/imx_udc.c
+index 9371ef5..9c2ef84 100644
+--- a/drivers/usb/gadget/imx_udc.c
++++ b/drivers/usb/gadget/imx_udc.c
+@@ -1,5 +1,5 @@
+ /*
+- * Copyright (C) 2010-2014 Freescale Semiconductor, Inc. All Rights Reserved.
++ * Copyright (C) 2010-2015 Freescale Semiconductor, Inc. All Rights Reserved.
+  *
+  * SPDX-License-Identifier:	GPL-2.0+
+  */
+@@ -458,10 +458,9 @@ static void mxc_udc_queue_update(u8 epnum,
+ 		if (data) {
+ 			memcpy((void *)tqi->page_vir, (void *)data, send);
+ 			_dump_buf((u8 *)(tqi->page_vir), send);
+-
+-			flush_dcache_range((unsigned long)(tqi->page_vir),
+-				CACHE_ALIGNED_END(tqi->page_vir, send));
+ 		}
++		flush_dcache_range((unsigned long)(tqi->page_vir),
++				CACHE_ALIGNED_END(tqi->page_vir, ep->max_pkt_size));
+ 		if (!head)
+ 			last = head = tqi;
+ 		else {
+@@ -551,6 +550,7 @@ static void mxc_usb_stop(void)
+ 
+ static void usb_phy_init(void)
+ {
++#ifndef CONFIG_MX7
+ 	u32 temp;
+ 	/* select 24M clk */
+ 	temp = readl(USB_PHY1_CTRL);
+@@ -563,6 +563,7 @@ static void usb_phy_init(void)
+ 	temp |= PORTSCX_PTW_16BIT;
+ 	writel(temp, USB_PORTSC1);
+ 	DBG("Config PHY  END\n");
++#endif
+ }
+ 
+ static void usb_set_mode_device(void)
+@@ -584,7 +585,7 @@ static void usb_set_mode_device(void)
+ 		;
+ 	DBG("DOORE RESET END\n");
+ 
+-#if defined(CONFIG_MX6)
++#if (defined(CONFIG_MX6) || defined(CONFIG_MX7))
+ 	reset_usb_phy1();
+ #endif
+ 	DBG("init core to device mode\n");
+@@ -984,7 +985,7 @@ int mxc_udc_init(void)
+     udc_pins_setting();
+ 	set_usb_phy1_clk();
+ 	enable_usboh3_clk(1);
+-#if defined(CONFIG_MX6)
++#if (defined(CONFIG_MX6) || defined(CONFIG_MX7))
+ 	udc_disable_over_current();
+ #endif
+ 	enable_usb_phy1_clk(1);
+diff --git a/include/usb/imx_udc.h b/include/usb/imx_udc.h
+index 51e33d7..1269497 100644
+--- a/include/usb/imx_udc.h
++++ b/include/usb/imx_udc.h
+@@ -16,6 +16,8 @@
+      || defined CONFIG_MX53 || defined CONFIG_MX6DL || defined CONFIG_MX6SL)
+ #define USB_H3REGS_BASE		(OTG_BASE_ADDR + 0x600)
+ #define USB_OTHERREGS_BASE	(OTG_BASE_ADDR + 0x800)
++#elif (defined CONFIG_MX7)
++#define USB_OTHERREGS_BASE	(OTG_BASE_ADDR + 0x200)
+ #else
+ #define USB_OTHERREGS_BASE	(OTG_BASE_ADDR + 0x600)
+ #endif
+-- 
+1.8.0
+

@@ -1,0 +1,141 @@
+From 9996a9efed0a0860b190d5ab27eae0bc1dc4d23b Mon Sep 17 00:00:00 2001
+From: Xiaowen Liu <xiaowen.liu@freescale.com>
+Date: Thu, 14 Jan 2016 12:12:16 -0500
+Subject: [PATCH 21/21] MA-7435 Black screen or light show when going to the
+ recovery text menu.
+
+It is introduced by RGB565 format support.
+The RGB888 to RGB565 color conversion drop some color information.
+Refactor this color conversion to fix this issue.
+
+Signed-off-by: Xiaowen Liu <xiaowen.liu@freescale.com>
+---
+ minui/graphics.cpp | 62 +++++++++++++++++++++++++++++++-----------------------
+ 1 file changed, 36 insertions(+), 26 deletions(-)
+
+diff --git a/minui/graphics.cpp b/minui/graphics.cpp
+index 84dad3c..1dfb1f6 100644
+--- a/minui/graphics.cpp
++++ b/minui/graphics.cpp
+@@ -1,6 +1,6 @@
+ /*
+  * Copyright (C) 2007 The Android Open Source Project
+- * Copyright (C) 2015 Freescale Semiconductor, Inc.
++ * Copyright (C) 2015-2016 Freescale Semiconductor, Inc.
+  *
+  * Licensed under the Apache License, Version 2.0 (the "License");
+  * you may not use this file except in compliance with the License.
+@@ -51,9 +51,9 @@ static int overscan_offset_y = 0;
+ 
+ static int gr_vt_fd = -1;
+ 
+-static unsigned char gr_current_r = 31;
+-static unsigned char gr_current_g = 63;
+-static unsigned char gr_current_b = 31;
++static unsigned char gr_current_r = 255;
++static unsigned char gr_current_g = 255;
++static unsigned char gr_current_b = 255;
+ static unsigned char gr_current_a = 255;
+ 
+ static GRSurface* gr_draw = NULL;
+@@ -87,15 +87,19 @@ static void text_blend(unsigned char* src_p, int src_row_bytes,
+             unsigned short xv = *px;
+             if (gr_current_a < 255) a = ((int)a * gr_current_a) / 255;
+             if (a == 255) {
+-                *px = (unsigned short)(((unsigned short)((gr_current_r&0x1f) << 11)) |
+-                      ((unsigned short)((gr_current_g&0x3f) << 5)) |
+-                      ((unsigned short)(gr_current_b&0x1f)));
++                *px = (unsigned short)(((((unsigned short)gr_current_r) << 8)&0xf800) |
++                      ((((unsigned short)gr_current_g) << 3)&0x07e0) |
++                      ((((unsigned short)gr_current_b) >> 3)&0x001f));
+             } else if (a > 0) {
+-                vr = (((unsigned short)((xv&0xf800) >> 11)) * (255-a) + (int)(gr_current_r&0x1f) * a) / 255;
+-                vg = (((unsigned short)((xv&0x07e0) >> 5)) * (255-a) + (int)(gr_current_g&0x3f) * a) / 255;
+-                vb = (((unsigned short)(xv&0x001f)) * (255-a) + (int)(gr_current_b&0x1f) * a) / 255;
+-                *px = (unsigned short)(((unsigned short)((vr&0x1f) << 11)) |
+-                      ((unsigned short)((vg&0x3f) << 5)) | (vb&0x1f));
++                vr = (((unsigned short)((xv&0xf800) >> 8)) * (255-a) +
++                     ((int)gr_current_r) * a) / 255;
++                vg = (((unsigned short)((xv&0x07e0) >> 3)) * (255-a) +
++                     ((int)gr_current_g) * a) / 255;
++                vb = (((unsigned short)(xv&0x001f) << 3) * (255-a) +
++                     ((int)gr_current_b) * a) / 255;
++                *px = (unsigned short)(((((unsigned short)vr) << 8)&0xf800) |
++                      ((((unsigned short)vg) << 3)&0x07e0) |
++                      (((unsigned short)vb >> 3)&0x001f));
+             }
+             px+=1;
+         }
+@@ -177,8 +181,9 @@ void gr_clear()
+     for (y = 0; y < gr_draw->height; ++y) {
+         unsigned short* sx = (unsigned short*)px;
+         for (x = 0; x < gr_draw->width; ++x) {
+-            *sx = (unsigned short)(((unsigned short)((gr_current_r&0x1f) << 11)) |
+-                  ((unsigned short)((gr_current_g&0x3f) << 5)) | (gr_current_b&0x1f));
++            *sx = (unsigned short)(((((unsigned short)gr_current_r) << 8)&0xf800) |
++                      ((((unsigned short)gr_current_g) << 3)&0x07e0) |
++                      ((((unsigned short)gr_current_b) >> 3)&0x001f));
+             sx++;
+         }
+         px += gr_draw->row_bytes;
+@@ -201,8 +206,9 @@ void gr_fill(int x1, int y1, int x2, int y2)
+         for (y = y1; y < y2; ++y) {
+             unsigned short* px = (unsigned short*)p;
+             for (x = x1; x < x2; ++x) {
+-                *px = (unsigned short)(((unsigned short)((gr_current_r&0x1f) << 11)) |
+-                      ((unsigned short)((gr_current_g&0x3f) << 5)) | (gr_current_b&0x1f));
++                *px = (unsigned short)(((((unsigned short)gr_current_r) << 8)&0xf800) |
++                      ((((unsigned short)gr_current_g) << 3)&0x07e0) |
++                      ((((unsigned short)gr_current_b) >> 3)&0x001f));
+                 px++;
+             }
+             p += gr_draw->row_bytes;
+@@ -211,15 +217,18 @@ void gr_fill(int x1, int y1, int x2, int y2)
+         int x, y;
+         for (y = y1; y < y2; ++y) {
+             unsigned short* px = (unsigned short*)p;
+-            unsigned char vr, vg, vb;
+-            unsigned short vx = *px;
++            unsigned char vr, vg, vb, a = gr_current_a;
++            unsigned short xv = *px;
+             for (x = x1; x < x2; ++x) {
+-                vr = (((unsigned short)((vx&0xf800) >> 11)) * (255-gr_current_a) + (gr_current_r&0x1f) * gr_current_a) / 255;
+-                vg = (((unsigned short)((vx&0x07e0) >> 5)) * (255-gr_current_a) + (gr_current_g&0x3f) * gr_current_a) / 255;
+-                vb = (((unsigned short)(vx&0x001f)) * (255-gr_current_a) + (gr_current_b&0x1f) * gr_current_a) / 255;
+-                *px = (unsigned short)(((unsigned short)((vr&0x1f) << 11)) |
+-                      ((unsigned short)((vg&0x3f) << 5)) | (vb&0x1f));
+-
++                vr = (((unsigned short)((xv&0xf800) >> 8)) * (255-a) +
++                     ((int)gr_current_r) * a) / 255;
++                vg = (((unsigned short)((xv&0x07e0) >> 3)) * (255-a) +
++                     ((int)gr_current_g) * a) / 255;
++                vb = (((unsigned short)(xv&0x001f) << 3) * (255-a) +
++                     ((int)gr_current_b) * a) / 255;
++                *px = (unsigned short)(((((unsigned short)vr) << 8)&0xf800) |
++                      ((((unsigned short)vg) << 3)&0x07e0) |
++                      (((unsigned short)vb >> 3)&0x001f));
+                 px++;
+             }
+             p += gr_draw->row_bytes;
+@@ -237,7 +246,7 @@ void gr_blit(GRSurface* source, int sx, int sy, int w, int h, int dx, int dy) {
+     unsigned char* dst_p = gr_draw->data + dy*gr_draw->row_bytes + dx*gr_draw->pixel_bytes;
+     unsigned int icon_screen_height_ratio = h / (gr_fb_height() - (33 + 40)) + 1; 
+     unsigned int icon_screen_width_ratio = w / (gr_fb_width()) + 1; 
+-    int x, y;
++    unsigned int x, y;
+     icon_screen_height_ratio = icon_screen_height_ratio > icon_screen_width_ratio ? icon_screen_height_ratio:icon_screen_width_ratio;
+     icon_screen_width_ratio = icon_screen_height_ratio;
+     for (y = 0; y < h / icon_screen_height_ratio; ++y) {
+@@ -245,7 +254,8 @@ void gr_blit(GRSurface* source, int sx, int sy, int w, int h, int dx, int dy) {
+         unsigned short *pdx = (unsigned short*)dst_p;
+         for (x=0; x < w / icon_screen_width_ratio; ++x) {
+             unsigned int sv = *psx;
+-            *pdx = (unsigned short)(((sv << 8)&0xf800) | ((sv>>5)&0x07e0) | ((sv>>19)&0x001f));
++            *pdx = (unsigned short)((((sv&0x0000ff) << 8)&0xf800) |
++                   (((sv&0x00ff00)>>5)&0x07e0) | (((sv&0xff0000)>>19)&0x001f));
+             pdx++;
+             psx += icon_screen_width_ratio;
+         }
+-- 
+1.8.0
+

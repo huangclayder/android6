@@ -1,0 +1,201 @@
+From 78a796c87c88836644b6edaa212b4db0bdab2f7c Mon Sep 17 00:00:00 2001
+From: Wang Haoran <b50027@freescale.com>
+Date: Tue, 6 Jan 2015 09:28:53 +0800
+Subject: [PATCH 426/602] MA-5945 Enable a2dp sink feature
+
+Modify the bluedroid header file, audio_policy
+and configuration file for Bluetooth Settings.
+Sabresd boards can support A2dp Sink now.
+Removed BT macro for Sabreauto boards.
+
+Signed-off-by: Haoran Wang <b50027@freescale.com>
+---
+ imx6/imx6.mk                                           |  1 +
+ sabreauto_6q/BoardConfig.mk                            |  2 +-
+ sabreauto_6sx/BoardConfig.mk                           |  3 +--
+ sabresd_6dq/audio_policy.conf                          |  7 +++++++
+ sabresd_6dq/bluetooth/bdroid_buildcfg.h                |  7 ++++++-
+ .../packages/apps/Bluetooth/res/values/config.xml      | 18 ++++++++++++++++++
+ sabresd_6sx/audio_policy.conf                          |  8 ++++++++
+ sabresd_6sx/bluetooth/bdroid_buildcfg.h                |  8 +++++++-
+ .../packages/apps/Bluetooth/res/values/config.xml      | 18 ++++++++++++++++++
+ 9 files changed, 67 insertions(+), 5 deletions(-)
+ create mode 100644 sabresd_6dq/overlay/packages/apps/Bluetooth/res/values/config.xml
+ create mode 100644 sabresd_6sx/overlay/packages/apps/Bluetooth/res/values/config.xml
+
+diff --git a/imx6/imx6.mk b/imx6/imx6.mk
+index 2a2ad1c..12641ea 100644
+--- a/imx6/imx6.mk
++++ b/imx6/imx6.mk
+@@ -20,6 +20,7 @@ PRODUCT_PACKAGES += \
+ 	CactusPlayer                            \
+ 	WfdSink                                 \
+ 	wfd                                     \
++    A2dpSinkApp                             \
+ 	ethernet                                \
+ 	libfsl_wfd.so                           \
+ 	fsl.imx.jar                             \
+diff --git a/sabreauto_6q/BoardConfig.mk b/sabreauto_6q/BoardConfig.mk
+index 3529302..6e4d55c 100644
+--- a/sabreauto_6q/BoardConfig.mk
++++ b/sabreauto_6q/BoardConfig.mk
+@@ -79,7 +79,7 @@ TARGET_SELECT_KEY := 28
+ TARGET_USERIMAGES_SPARSE_EXT_DISABLED := true
+ 
+ # atheros 3k BT
+-BOARD_USE_AR3K_BLUETOOTH := true
++BOARD_USE_AR3K_BLUETOOTH := false
+ 
+ # camera hal v2
+ IMX_CAMERA_HAL_V2 := true
+diff --git a/sabreauto_6sx/BoardConfig.mk b/sabreauto_6sx/BoardConfig.mk
+index fc004cc..2a83283 100755
+--- a/sabreauto_6sx/BoardConfig.mk
++++ b/sabreauto_6sx/BoardConfig.mk
+@@ -92,8 +92,7 @@ endif
+ endif
+ 
+ # atheros 3k BT
+-BOARD_USE_AR3K_BLUETOOTH := true
+-BOARD_BLUETOOTH_BDROID_BUILDCFG_INCLUDE_DIR := device/fsl/sabresd_6sx/bluetooth
++BOARD_USE_AR3K_BLUETOOTH := false
+ 
+ USE_ION_ALLOCATOR := false
+ USE_GPU_ALLOCATOR := true
+diff --git a/sabresd_6dq/audio_policy.conf b/sabresd_6dq/audio_policy.conf
+index 29051dc..23fd22e 100644
+--- a/sabresd_6dq/audio_policy.conf
++++ b/sabresd_6dq/audio_policy.conf
+@@ -55,6 +55,13 @@ audio_hw_modules {
+         devices AUDIO_DEVICE_OUT_ALL_A2DP
+       }
+     }
++    inputs {
++     a2dp {
++       sampling_rates 44100
++       channel_masks AUDIO_CHANNEL_IN_STEREO
++       formats AUDIO_FORMAT_PCM_16_BIT
++       devices AUDIO_DEVICE_IN_BLUETOOTH_A2DP
++    }
+   }
+   r_submix {
+     outputs {
+diff --git a/sabresd_6dq/bluetooth/bdroid_buildcfg.h b/sabresd_6dq/bluetooth/bdroid_buildcfg.h
+index d6f4c4b..25c7ebc 100644
+--- a/sabresd_6dq/bluetooth/bdroid_buildcfg.h
++++ b/sabresd_6dq/bluetooth/bdroid_buildcfg.h
+@@ -14,7 +14,7 @@
+  * limitations under the License.
+  */
+ 
+-/* Copyright (C) 2013 Freescale Semiconductor, Inc. */
++/* Copyright (C) 2015 Freescale Semiconductor, Inc. */
+ 
+ #ifndef _BDROID_BUILDCFG_H
+ #define _BDROID_BUILDCFG_H
+@@ -28,5 +28,10 @@
+ 
+ #define BTIF_HF_SERVICES (BTA_HSP_SERVICE_MASK)
+ #define BTIF_HF_SERVICE_NAMES  { BTIF_HSAG_SERVICE_NAME }
++#define BTM_WBS_INCLUDED TRUE
++#define BTIF_HF_WBS_PREFERRED TRUE
++
++/*Enable A2dp Sink */
++#define BTA_AV_SINK_INCLUDED TRUE
+ 
+ #endif
+diff --git a/sabresd_6dq/overlay/packages/apps/Bluetooth/res/values/config.xml b/sabresd_6dq/overlay/packages/apps/Bluetooth/res/values/config.xml
+new file mode 100644
+index 0000000..6033c97
+--- /dev/null
++++ b/sabresd_6dq/overlay/packages/apps/Bluetooth/res/values/config.xml
+@@ -0,0 +1,18 @@
++<?xml version="1.0" encoding="utf-8"?>
++<!-- Copyright (C) 2009-2012 Broadcom Corporation
++   Licensed under the Apache License, Version 2.0 (the "License");
++   you may not use this file except in compliance with the License.
++   You may obtain a copy of the License at
++
++       http://www.apache.org/licenses/LICENSE-2.0
++
++   Unless required by applicable law or agreed to in writing, software
++   distributed under the License is distributed on an "AS IS" BASIS,
++   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++   See the License for the specific language governing permissions and
++   limitations under the License.
++ -->
++ <resources>
++     <bool name="profile_supported_a2dp_sink">true</bool>
++     <bool name="profile_supported_avrcp_controller">true</bool>
++ </resources>
+diff --git a/sabresd_6sx/audio_policy.conf b/sabresd_6sx/audio_policy.conf
+index 29051dc..c45b1bf 100644
+--- a/sabresd_6sx/audio_policy.conf
++++ b/sabresd_6sx/audio_policy.conf
+@@ -55,6 +55,14 @@ audio_hw_modules {
+         devices AUDIO_DEVICE_OUT_ALL_A2DP
+       }
+     }
++    inputs {
++     a2dp {
++           sampling_rates 44100
++           channel_masks AUDIO_CHANNEL_IN_STEREO
++           formats AUDIO_FORMAT_PCM_16_BIT
++           devices AUDIO_DEVICE_IN_BLUETOOTH_A2DP
++        }
++    }
+   }
+   r_submix {
+     outputs {
+diff --git a/sabresd_6sx/bluetooth/bdroid_buildcfg.h b/sabresd_6sx/bluetooth/bdroid_buildcfg.h
+index d6f4c4b..4f85e5c 100644
+--- a/sabresd_6sx/bluetooth/bdroid_buildcfg.h
++++ b/sabresd_6sx/bluetooth/bdroid_buildcfg.h
+@@ -14,7 +14,7 @@
+  * limitations under the License.
+  */
+ 
+-/* Copyright (C) 2013 Freescale Semiconductor, Inc. */
++/* Copyright (C) 2015 Freescale Semiconductor, Inc. */
+ 
+ #ifndef _BDROID_BUILDCFG_H
+ #define _BDROID_BUILDCFG_H
+@@ -28,5 +28,11 @@
+ 
+ #define BTIF_HF_SERVICES (BTA_HSP_SERVICE_MASK)
+ #define BTIF_HF_SERVICE_NAMES  { BTIF_HSAG_SERVICE_NAME }
++#define BTM_WBS_INCLUDED TRUE
++#define BTIF_HF_WBS_PREFERRED TRUE
++
++/*Enable A2dp Sink */
++#define BTA_AV_SINK_INCLUDED TRUE
++
+ 
+ #endif
+diff --git a/sabresd_6sx/overlay/packages/apps/Bluetooth/res/values/config.xml b/sabresd_6sx/overlay/packages/apps/Bluetooth/res/values/config.xml
+new file mode 100644
+index 0000000..6033c97
+--- /dev/null
++++ b/sabresd_6sx/overlay/packages/apps/Bluetooth/res/values/config.xml
+@@ -0,0 +1,18 @@
++<?xml version="1.0" encoding="utf-8"?>
++<!-- Copyright (C) 2009-2012 Broadcom Corporation
++   Licensed under the Apache License, Version 2.0 (the "License");
++   you may not use this file except in compliance with the License.
++   You may obtain a copy of the License at
++
++       http://www.apache.org/licenses/LICENSE-2.0
++
++   Unless required by applicable law or agreed to in writing, software
++   distributed under the License is distributed on an "AS IS" BASIS,
++   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++   See the License for the specific language governing permissions and
++   limitations under the License.
++ -->
++ <resources>
++     <bool name="profile_supported_a2dp_sink">true</bool>
++     <bool name="profile_supported_avrcp_controller">true</bool>
++ </resources>
+-- 
+1.8.0
+

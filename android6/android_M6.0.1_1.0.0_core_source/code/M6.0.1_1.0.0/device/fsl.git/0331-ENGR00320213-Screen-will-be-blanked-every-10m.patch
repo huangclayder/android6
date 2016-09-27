@@ -1,0 +1,94 @@
+From abe2f3c96ccadf240c176db10aa164a1b3e6207b Mon Sep 17 00:00:00 2001
+From: "guoyin.chen" <guoyin.chen@freescale.com>
+Date: Fri, 27 Jun 2014 14:06:35 +0800
+Subject: [PATCH 331/602] ENGR00320213 Screen will be blanked every 10m
+
+Add "consoleblank=0" to disable blanked timer in vt driver
+
+Signed-off-by: guoyin.chen <guoyin.chen@freescale.com>
+---
+ arm2_6dq/BoardConfig.mk     | 2 +-
+ arm2_6sl/BoardConfig.mk     | 2 +-
+ evk_6sl/BoardConfig.mk      | 2 +-
+ sabreauto_6q/BoardConfig.mk | 2 +-
+ sabresd_6dq/BoardConfig.mk  | 2 +-
+ sabresd_6sx/BoardConfig.mk  | 2 +-
+ 6 files changed, 6 insertions(+), 6 deletions(-)
+
+diff --git a/arm2_6dq/BoardConfig.mk b/arm2_6dq/BoardConfig.mk
+index 2597fe8..38f21d6 100755
+--- a/arm2_6dq/BoardConfig.mk
++++ b/arm2_6dq/BoardConfig.mk
+@@ -76,5 +76,5 @@ USE_GPU_ALLOCATOR := true
+ # define frame buffer count
+ NUM_FRAMEBUFFER_SURFACE_BUFFERS := 3
+ 
+-BOARD_KERNEL_CMDLINE := console=ttymxc0,115200 init=/init androidboot.console=ttymxc0 androidboot.hardware=freescale
++BOARD_KERNEL_CMDLINE := console=ttymxc0,115200 init=/init androidboot.console=ttymxc0 consoleblank=0 androidboot.hardware=freescale
+ TARGET_BOOTLOADER_CONFIG := 6q:mx6q_arm2_android_config 6dl:mx6dl_arm2_config
+diff --git a/arm2_6sl/BoardConfig.mk b/arm2_6sl/BoardConfig.mk
+index 7a2b227..ab31209 100755
+--- a/arm2_6sl/BoardConfig.mk
++++ b/arm2_6sl/BoardConfig.mk
+@@ -80,5 +80,5 @@ USE_CAMERA_STUB := true
+ BOARD_HAVE_IMX_CAMERA := false
+ PRODUCT_MODEL := ARM2-MX6SL
+ 
+-BOARD_KERNEL_CMDLINE := console=ttymxc0,115200 init=/init androidboot.console=ttymxc0 androidboot.hardware=freescale
++BOARD_KERNEL_CMDLINE := console=ttymxc0,115200 init=/init androidboot.console=ttymxc0 consoleblank=0 androidboot.hardware=freescale
+ TARGET_BOOTLOADER_CONFIG := mx6sl:mx6sl_arm2_android_config
+diff --git a/evk_6sl/BoardConfig.mk b/evk_6sl/BoardConfig.mk
+index 9694a93..db080d8 100644
+--- a/evk_6sl/BoardConfig.mk
++++ b/evk_6sl/BoardConfig.mk
+@@ -77,7 +77,7 @@ IMX_CAMERA_HAL_V2 := false
+ # define frame buffer count
+ NUM_FRAMEBUFFER_SURFACE_BUFFERS := 3
+ 
+-BOARD_KERNEL_CMDLINE := console=ttymxc0,115200 init=/init androidboot.console=ttymxc0 video=mxc_elcdif_fb:bpp=32 androidboot.hardware=freescale
++BOARD_KERNEL_CMDLINE := console=ttymxc0,115200 init=/init androidboot.console=ttymxc0 consoleblank=0 video=mxc_elcdif_fb:bpp=32 androidboot.hardware=freescale
+ TARGET_BOOTLOADER_CONFIG := imx6sl:mx6slevkandroid_config
+ TARGET_BOARD_DTS_CONFIG := imx6sl:imx6sl-evk-csi.dtb
+ 
+diff --git a/sabreauto_6q/BoardConfig.mk b/sabreauto_6q/BoardConfig.mk
+index 51ffce7..51bb99d 100644
+--- a/sabreauto_6q/BoardConfig.mk
++++ b/sabreauto_6q/BoardConfig.mk
+@@ -84,7 +84,7 @@ NUM_FRAMEBUFFER_SURFACE_BUFFERS := 3
+ USE_ION_ALLOCATOR := false
+ USE_GPU_ALLOCATOR := true
+ 
+-BOARD_KERNEL_CMDLINE := console=ttymxc3,115200 init=/init video=mxcfb0:dev=ldb,bpp=32 video=mxcfb1:off video=mxcfb2:off video=mxcfb3:off vmalloc=400M androidboot.console=ttymxc3 androidboot.hardware=freescale cma=512M
++BOARD_KERNEL_CMDLINE := console=ttymxc3,115200 init=/init video=mxcfb0:dev=ldb,bpp=32 video=mxcfb1:off video=mxcfb2:off video=mxcfb3:off vmalloc=400M androidboot.console=ttymxc3 consoleblank=0 androidboot.hardware=freescale cma=512M
+ 
+ ifeq ($(TARGET_USERIMAGES_USE_UBIFS),true)
+ #UBI boot command line.
+diff --git a/sabresd_6dq/BoardConfig.mk b/sabresd_6dq/BoardConfig.mk
+index 99bfe17..1da65ac 100644
+--- a/sabresd_6dq/BoardConfig.mk
++++ b/sabresd_6dq/BoardConfig.mk
+@@ -82,7 +82,7 @@ $(error "TARGET_USERIMAGES_USE_UBIFS and TARGET_USERIMAGES_USE_EXT4 config open
+ endif
+ endif
+ 
+-BOARD_KERNEL_CMDLINE := console=ttymxc0,115200 init=/init video=mxcfb0:dev=ldb,bpp=32 video=mxcfb1:off video=mxcfb2:off video=mxcfb3:off vmalloc=400M androidboot.console=ttymxc0 androidboot.hardware=freescale cma=512M
++BOARD_KERNEL_CMDLINE := console=ttymxc0,115200 init=/init video=mxcfb0:dev=ldb,bpp=32 video=mxcfb1:off video=mxcfb2:off video=mxcfb3:off vmalloc=400M androidboot.console=ttymxc0 consoleblank=0 androidboot.hardware=freescale cma=512M
+ 
+ ifeq ($(TARGET_USERIMAGES_USE_UBIFS),true)
+ #UBI boot command line.
+diff --git a/sabresd_6sx/BoardConfig.mk b/sabresd_6sx/BoardConfig.mk
+index 2754cc8..1da2f80 100644
+--- a/sabresd_6sx/BoardConfig.mk
++++ b/sabresd_6sx/BoardConfig.mk
+@@ -82,7 +82,7 @@ $(error "TARGET_USERIMAGES_USE_UBIFS and TARGET_USERIMAGES_USE_EXT4 config open
+ endif
+ endif
+ 
+-BOARD_KERNEL_CMDLINE := console=ttymxc0,115200 init=/init androidboot.console=ttymxc0 androidboot.hardware=freescale cma=512M
++BOARD_KERNEL_CMDLINE := console=ttymxc0,115200 init=/init androidboot.console=ttymxc0 consoleblank=0 androidboot.hardware=freescale cma=512M
+ 
+ ifeq ($(TARGET_USERIMAGES_USE_UBIFS),true)
+ #UBI boot command line.
+-- 
+1.8.0
+

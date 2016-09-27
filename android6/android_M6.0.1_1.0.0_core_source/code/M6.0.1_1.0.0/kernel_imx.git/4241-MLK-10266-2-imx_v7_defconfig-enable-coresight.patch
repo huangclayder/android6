@@ -1,0 +1,31 @@
+From ec4851aa02fdb6aba688e7755ce15d190bd187f0 Mon Sep 17 00:00:00 2001
+From: Frank Li <Frank.Li@freescale.com>
+Date: Fri, 13 Feb 2015 11:26:38 +0800
+Subject: [PATCH] MLK-10266-2 imx_v7_defconfig: enable coresight
+
+Enable coresight for etm trace
+
+Signed-off-by: Frank Li <Frank.Li@freescale.com>
+---
+ arch/arm/configs/imx_v7_defconfig | 5 +++++
+ 1 file changed, 5 insertions(+)
+
+diff --git a/arch/arm/configs/imx_v7_defconfig b/arch/arm/configs/imx_v7_defconfig
+index 14775bd..910b2c0 100644
+--- a/arch/arm/configs/imx_v7_defconfig
++++ b/arch/arm/configs/imx_v7_defconfig
+@@ -382,6 +382,11 @@ CONFIG_MAGIC_SYSRQ=y
+ # CONFIG_SCHED_DEBUG is not set
+ # CONFIG_DEBUG_BUGVERBOSE is not set
+ # CONFIG_FTRACE is not set
++CONFIG_CORESIGHT=y
++CONFIG_CORESIGHT_LINK_AND_SINK_TMC=y
++CONFIG_CORESIGHT_SINK_TPIU=y
++CONFIG_CORESIGHT_SINK_ETBV10=y
++CONFIG_CORESIGHT_SOURCE_ETM3X=y
+ CONFIG_SECURITYFS=y
+ CONFIG_CRYPTO_USER=y
+ CONFIG_CRYPTO_TEST=m
+-- 
+1.8.0
+

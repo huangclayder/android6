@@ -1,0 +1,280 @@
+From 07dfa762460e8d14efc39240c27da877767a674a Mon Sep 17 00:00:00 2001
+From: Liu Xiaowen <xiaowen.liu@freescale.com>
+Date: Tue, 15 Sep 2015 15:01:27 +0800
+Subject: [PATCH 533/602] MA-7046 enable ZRAM function for Android to enlarge
+ memory size.
+
+add zram block device mount code to fstab.
+add swapon zram block device to init.rc.
+
+Signed-off-by: Liu Xiaowen <xiaowen.liu@freescale.com>
+---
+ evk_6sl/fstab-f2fs.freescale        | 1 +
+ evk_6sl/fstab.freescale             | 1 +
+ evk_6sl/init.rc                     | 7 +++++++
+ sabreauto_6q/fstab-f2fs.freescale   | 1 +
+ sabreauto_6q/fstab.freescale        | 1 +
+ sabreauto_6q/fstab_nand.freescale   | 1 +
+ sabreauto_6q/init.rc                | 7 +++++++
+ sabreauto_6sx/fstab-f2fs.freescale  | 1 +
+ sabreauto_6sx/fstab.freescale       | 1 +
+ sabreauto_6sx/fstab_nand.freescale  | 1 +
+ sabreauto_6sx/init.rc               | 7 +++++++
+ sabresd_6dq/fstab-f2fs.freescale    | 1 +
+ sabresd_6dq/fstab.freescale         | 1 +
+ sabresd_6dq/fstab_sd-f2fs.freescale | 1 +
+ sabresd_6dq/fstab_sd.freescale      | 1 +
+ sabresd_6dq/init.rc                 | 6 ++++++
+ sabresd_6sx/fstab-f2fs.freescale    | 1 +
+ sabresd_6sx/fstab.freescale         | 1 +
+ sabresd_6sx/init.rc                 | 7 +++++++
+ sabresd_7d/fstab-f2fs.freescale     | 1 +
+ sabresd_7d/fstab.freescale          | 1 +
+ sabresd_7d/init.rc                  | 7 +++++++
+ 22 files changed, 57 insertions(+)
+
+diff --git a/evk_6sl/fstab-f2fs.freescale b/evk_6sl/fstab-f2fs.freescale
+index 26e328e..9f715df 100644
+--- a/evk_6sl/fstab-f2fs.freescale
++++ b/evk_6sl/fstab-f2fs.freescale
+@@ -14,4 +14,5 @@
+ /dev/block/mmcblk1p2    /recovery    emmc    defaults                                                                         defaults
+ /dev/block/mmcblk1p8    /misc        emmc    defaults                                                                         defaults
+ /dev/block/mmcblk1      /bootloader  emmc    defaults                                                                         defaults
++/dev/block/zram0 none swap defaults zramsize=314572800
+ 
+diff --git a/evk_6sl/fstab.freescale b/evk_6sl/fstab.freescale
+index a28d603..43fab52 100644
+--- a/evk_6sl/fstab.freescale
++++ b/evk_6sl/fstab.freescale
+@@ -13,4 +13,5 @@
+ /dev/block/mmcblk1p2    /recovery    emmc    defaults                                                                         defaults
+ /dev/block/mmcblk1p8    /misc        emmc    defaults                                                                         defaults
+ /dev/block/mmcblk1      /bootloader        emmc    defaults                                                                         defaults
++/dev/block/zram0 none swap defaults zramsize=314572800
+ 
+diff --git a/evk_6sl/init.rc b/evk_6sl/init.rc
+index 7d8150e..b66db33 100644
+--- a/evk_6sl/init.rc
++++ b/evk_6sl/init.rc
+@@ -310,3 +310,10 @@ service wifi_mac /system/bin/sh /system/etc/check_wifi_mac.sh
+ on fs
+ # mount ext4 partitions
+     mount_all /fstab.freescale
++
++on post-fs
++    # Turn on swap
++    swapon_all /fstab.freescale
++
++    # Swap in only 1 page at a time
++    write /proc/sys/vm/page-cluster 0
+diff --git a/sabreauto_6q/fstab-f2fs.freescale b/sabreauto_6q/fstab-f2fs.freescale
+index 8b57aed..2eba6c6 100644
+--- a/sabreauto_6q/fstab-f2fs.freescale
++++ b/sabreauto_6q/fstab-f2fs.freescale
+@@ -14,4 +14,5 @@
+ /dev/block/mmcblk2p2    /recovery    emmc    defaults                                                                         defaults
+ /dev/block/mmcblk2p8    /misc        emmc    defaults                                                                         defaults
+ /dev/block/mmcblk2      /bootloader  emmc    defaults                                                                         defaults
++/dev/block/zram0 none swap defaults zramsize=314572800
+ 
+diff --git a/sabreauto_6q/fstab.freescale b/sabreauto_6q/fstab.freescale
+index a6d8905..ffc493c 100644
+--- a/sabreauto_6q/fstab.freescale
++++ b/sabreauto_6q/fstab.freescale
+@@ -13,4 +13,5 @@
+ /dev/block/mmcblk2p2    /recovery    emmc    defaults                                                                         defaults
+ /dev/block/mmcblk2p8    /misc        emmc    defaults                                                                         defaults
+ /dev/block/mmcblk2      /bootloader  emmc    defaults                                                                         defaults
++/dev/block/zram0 none swap defaults zramsize=314572800
+ 
+diff --git a/sabreauto_6q/fstab_nand.freescale b/sabreauto_6q/fstab_nand.freescale
+index 25ff59e..f2748d1 100644
+--- a/sabreauto_6q/fstab_nand.freescale
++++ b/sabreauto_6q/fstab_nand.freescale
+@@ -14,3 +14,4 @@
+ bootimg         /boot           mtd     defaults                                defaults
+ recovery        /recovery       mtd     defaults                                defaults
+ bootloader      /bootloader     mtd     defaults                                defaults
++/dev/block/zram0 none swap defaults zramsize=314572800
+diff --git a/sabreauto_6q/init.rc b/sabreauto_6q/init.rc
+index 244d85d..ebd9911 100644
+--- a/sabreauto_6q/init.rc
++++ b/sabreauto_6q/init.rc
+@@ -320,3 +320,10 @@ service wifi_mac /system/bin/sh /system/etc/check_wifi_mac.sh
+ on fs
+ # mount ext4 partitions
+     mount_all /fstab.freescale
++
++on post-fs
++    # Turn on swap
++    swapon_all /fstab.freescale
++
++    # Swap in only 1 page at a time
++    write /proc/sys/vm/page-cluster 0
+diff --git a/sabreauto_6sx/fstab-f2fs.freescale b/sabreauto_6sx/fstab-f2fs.freescale
+index 8e567d6..f8ad696 100644
+--- a/sabreauto_6sx/fstab-f2fs.freescale
++++ b/sabreauto_6sx/fstab-f2fs.freescale
+@@ -14,4 +14,5 @@
+ /dev/block/mmcblk2p2    /recovery    emmc    defaults                                                                         defaults
+ /dev/block/mmcblk2p8    /misc        emmc    defaults                                                                         defaults
+ /dev/block/mmcblk2      /bootloader  emmc    defaults                                                                         defaults
++/dev/block/zram0 none swap defaults zramsize=314572800
+ 
+diff --git a/sabreauto_6sx/fstab.freescale b/sabreauto_6sx/fstab.freescale
+index 3b39e69..5b57950 100644
+--- a/sabreauto_6sx/fstab.freescale
++++ b/sabreauto_6sx/fstab.freescale
+@@ -13,4 +13,5 @@
+ /dev/block/mmcblk2p2    /recovery    emmc    defaults                                                                         defaults
+ /dev/block/mmcblk2p8    /misc        emmc    defaults                                                                         defaults
+ /dev/block/mmcblk2      /bootloader  emmc    defaults                                                                         defaults
++/dev/block/zram0 none swap defaults zramsize=314572800
+ 
+diff --git a/sabreauto_6sx/fstab_nand.freescale b/sabreauto_6sx/fstab_nand.freescale
+index b9a46f6..b9e3394 100644
+--- a/sabreauto_6sx/fstab_nand.freescale
++++ b/sabreauto_6sx/fstab_nand.freescale
+@@ -14,3 +14,4 @@
+ bootimg         /boot           mtd     defaults                                defaults
+ recovery        /recovery       mtd     defaults                                defaults
+ bootloader      /bootloader     mtd     defaults                                defaults
++/dev/block/zram0 none swap defaults zramsize=314572800
+diff --git a/sabreauto_6sx/init.rc b/sabreauto_6sx/init.rc
+index 174be28..43389dd 100755
+--- a/sabreauto_6sx/init.rc
++++ b/sabreauto_6sx/init.rc
+@@ -326,3 +326,10 @@ service wifi_mac /system/bin/sh /system/etc/check_wifi_mac.sh
+ on fs
+ # mount ext4 partitions
+     mount_all /fstab.freescale
++
++on post-fs
++    # Turn on swap
++    swapon_all /fstab.freescale
++
++    # Swap in only 1 page at a time
++    write /proc/sys/vm/page-cluster 0
+diff --git a/sabresd_6dq/fstab-f2fs.freescale b/sabresd_6dq/fstab-f2fs.freescale
+index 3ce45dd..9047a4e 100644
+--- a/sabresd_6dq/fstab-f2fs.freescale
++++ b/sabresd_6dq/fstab-f2fs.freescale
+@@ -14,3 +14,4 @@
+ /dev/block/mmcblk3p2    /recovery    emmc    defaults                                                                         defaults
+ /dev/block/mmcblk3p8    /misc        emmc    defaults                                                                         defaults
+ /dev/block/mmcblk3boot0 /bootloader  emmc    defaults                                                                         defaults
++/dev/block/zram0 none swap defaults zramsize=314572800
+diff --git a/sabresd_6dq/fstab.freescale b/sabresd_6dq/fstab.freescale
+index 2ff4f34..7f23edb 100644
+--- a/sabresd_6dq/fstab.freescale
++++ b/sabresd_6dq/fstab.freescale
+@@ -13,3 +13,4 @@
+ /dev/block/mmcblk3p2    /recovery    emmc    defaults                                                                         defaults
+ /dev/block/mmcblk3p8    /misc        emmc    defaults                                                                         defaults
+ /dev/block/mmcblk3boot0 /bootloader  emmc    defaults                                                                         defaults
++/dev/block/zram0 none swap defaults zramsize=314572800
+diff --git a/sabresd_6dq/fstab_sd-f2fs.freescale b/sabresd_6dq/fstab_sd-f2fs.freescale
+index fb2fd96..2b0dfd3 100644
+--- a/sabresd_6dq/fstab_sd-f2fs.freescale
++++ b/sabresd_6dq/fstab_sd-f2fs.freescale
+@@ -14,3 +14,4 @@
+ /dev/block/mmcblk2p2    /recovery    emmc    defaults                                                                         defaults
+ /dev/block/mmcblk2p8    /misc        emmc    defaults                                                                         defaults
+ /dev/block/mmcblk2      /bootloader  emmc    defaults                                                                         defaults
++/dev/block/zram0 none swap defaults zramsize=314572800
+diff --git a/sabresd_6dq/fstab_sd.freescale b/sabresd_6dq/fstab_sd.freescale
+index 6ea9cd2..802314e 100644
+--- a/sabresd_6dq/fstab_sd.freescale
++++ b/sabresd_6dq/fstab_sd.freescale
+@@ -13,3 +13,4 @@
+ /dev/block/mmcblk2p2    /recovery    emmc    defaults                                                                         defaults
+ /dev/block/mmcblk2p8    /misc        emmc    defaults                                                                         defaults
+ /dev/block/mmcblk2      /bootloader  emmc    defaults                                                                         defaults
++/dev/block/zram0 none swap defaults zramsize=314572800
+diff --git a/sabresd_6dq/init.rc b/sabresd_6dq/init.rc
+index d1bb602..d2a5aff 100755
+--- a/sabresd_6dq/init.rc
++++ b/sabresd_6dq/init.rc
+@@ -338,4 +338,10 @@ on fs
+ # mount ext4 partitions
+     mount_all /fstab.freescale
+ 
++on post-fs
++    # Turn on swap
++    swapon_all /fstab.freescale
++
++    # Swap in only 1 page at a time
++    write /proc/sys/vm/page-cluster 0
+ 
+diff --git a/sabresd_6sx/fstab-f2fs.freescale b/sabresd_6sx/fstab-f2fs.freescale
+index e706346..4c05671 100644
+--- a/sabresd_6sx/fstab-f2fs.freescale
++++ b/sabresd_6sx/fstab-f2fs.freescale
+@@ -14,3 +14,4 @@
+ /dev/block/mmcblk3p2    /recovery    emmc    defaults                                                                         defaults
+ /dev/block/mmcblk3p8    /misc        emmc    defaults                                                                         defaults
+ /dev/block/mmcblk3      /bootloader  emmc    defaults                                                                         defaults
++/dev/block/zram0 none swap defaults zramsize=314572800
+diff --git a/sabresd_6sx/fstab.freescale b/sabresd_6sx/fstab.freescale
+index 64650df..3da03ec 100644
+--- a/sabresd_6sx/fstab.freescale
++++ b/sabresd_6sx/fstab.freescale
+@@ -13,3 +13,4 @@
+ /dev/block/mmcblk3p2    /recovery    emmc    defaults                                                                         defaults
+ /dev/block/mmcblk3p8    /misc        emmc    defaults                                                                         defaults
+ /dev/block/mmcblk3      /bootloader  emmc    defaults                                                                         defaults
++/dev/block/zram0 none swap defaults zramsize=314572800
+diff --git a/sabresd_6sx/init.rc b/sabresd_6sx/init.rc
+index f044cca..b82a93c 100755
+--- a/sabresd_6sx/init.rc
++++ b/sabresd_6sx/init.rc
+@@ -334,3 +334,10 @@ service wifi_mac /system/bin/sh /system/etc/check_wifi_mac.sh
+ on fs
+ # mount ext4 partitions
+     mount_all /fstab.freescale
++
++on post-fs
++    # Turn on swap
++    swapon_all /fstab.freescale
++
++    # Swap in only 1 page at a time
++    write /proc/sys/vm/page-cluster 0
+diff --git a/sabresd_7d/fstab-f2fs.freescale b/sabresd_7d/fstab-f2fs.freescale
+index bbb577d..ed2c0c9 100644
+--- a/sabresd_7d/fstab-f2fs.freescale
++++ b/sabresd_7d/fstab-f2fs.freescale
+@@ -12,4 +12,5 @@
+ /dev/block/mmcblk0p2    /recovery    emmc    defaults                                                                         defaults
+ /dev/block/mmcblk0p8    /misc        emmc    defaults                                                                         defaults
+ /dev/block/mmcblk0      /bootloader  emmc    defaults                                                                         defaults
++/dev/block/zram0 none swap defaults zramsize=314572800
+ 
+diff --git a/sabresd_7d/fstab.freescale b/sabresd_7d/fstab.freescale
+index d839c41..64239e3 100644
+--- a/sabresd_7d/fstab.freescale
++++ b/sabresd_7d/fstab.freescale
+@@ -12,4 +12,5 @@
+ /dev/block/mmcblk0p2    /recovery    emmc    defaults                                                                         defaults
+ /dev/block/mmcblk0p8    /misc        emmc    defaults                                                                         defaults
+ /dev/block/mmcblk0      /bootloader  emmc    defaults                                                                         defaults
++/dev/block/zram0 none swap defaults zramsize=314572800
+ 
+diff --git a/sabresd_7d/init.rc b/sabresd_7d/init.rc
+index f600050..6417e4d 100644
+--- a/sabresd_7d/init.rc
++++ b/sabresd_7d/init.rc
+@@ -335,3 +335,10 @@ service wifi_mac /system/bin/sh /system/etc/check_wifi_mac.sh
+ on fs
+ # mount ext4 partitions
+     mount_all /fstab.freescale
++
++on post-fs
++    # Turn on swap
++    swapon_all /fstab.freescale
++
++    # Swap in only 1 page at a time
++    write /proc/sys/vm/page-cluster 0
+-- 
+1.8.0
+

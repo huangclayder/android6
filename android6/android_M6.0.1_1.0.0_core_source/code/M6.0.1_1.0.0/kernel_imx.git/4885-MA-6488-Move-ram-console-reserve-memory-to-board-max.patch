@@ -1,0 +1,100 @@
+From 0623acecb42f4fbcf60d3d7f2ae80323b6ecdc70 Mon Sep 17 00:00:00 2001
+From: Ke Qinghua <qinghua.ke@freescale.com>
+Date: Wed, 10 Sep 2014 15:44:33 +0800
+Subject: [PATCH] MA-6488 Move ram console reserve memory to board max memory
+ - 64M position
+
+Cherry-pick below commit:
+commit 4f4047249eabb841f310c45fac66402adee6e616
+Author: Ke Qinghua <qinghua.ke@freescale.com>
+Date:   Wed Sep 10 15:44:33 2014 +0800
+
+ENGR00330979 Move ram console reserve memory to board max memory - 64M position
+
+Move ram console reserve memory to board max memory - 64M
+
+Signed-off-by: guoyin.chen <guoyin.chen@freescale.com>
+---
+ arch/arm/mach-imx/mach-imx6q.c  | 9 +++++----
+ arch/arm/mach-imx/mach-imx6sl.c | 9 +++++----
+ arch/arm/mach-imx/mach-imx6sx.c | 9 +++++----
+ 3 files changed, 15 insertions(+), 12 deletions(-)
+
+diff --git a/arch/arm/mach-imx/mach-imx6q.c b/arch/arm/mach-imx/mach-imx6q.c
+index 28e5ffc..9faff5a 100644
+--- a/arch/arm/mach-imx/mach-imx6q.c
++++ b/arch/arm/mach-imx/mach-imx6q.c
+@@ -659,15 +659,16 @@ static void imx6q_reserve(void)
+ 		pr_err("no memory reserve for ramoops.\n");
+ 		return;
+ 	}
+-	/* use memmory bank 0 for ram console store */
+-	bank = &mi->bank[0];
++
++	/* use memmory last bank for ram console store */
++	bank = &mi->bank[mi->nr_banks - 1];
+ 	if (!bank) {
+ 		pr_err("no memory reserve for ramoops.\n");
+ 		return;
+ 	}
+ 	max_phys = bank->start + bank->size;
+-	/* reserve 256M for uboot avoid ram console data is cleaned by uboot */
+-	phys = memblock_alloc_base(SZ_1M, SZ_4K, max_phys - SZ_256M);
++	/* reserve 64M for uboot avoid ram console data is cleaned by uboot */
++	phys = memblock_alloc_base(SZ_1M, SZ_4K, max_phys - SZ_64M);
+ 	if (phys) {
+ 		memblock_remove(phys, SZ_1M);
+ 		memblock_reserve(phys, SZ_1M);
+diff --git a/arch/arm/mach-imx/mach-imx6sl.c b/arch/arm/mach-imx/mach-imx6sl.c
+index 4dbf244..436d8e6 100644
+--- a/arch/arm/mach-imx/mach-imx6sl.c
++++ b/arch/arm/mach-imx/mach-imx6sl.c
+@@ -105,15 +105,16 @@ static void imx6sl_reserve(void)
+ 		pr_err("no memory reserve for ramoops.\n");
+ 		return;
+ 	}
+-	/* use memmory bank 0 for ram console store */
+-	bank = &mi->bank[0];
++
++	/* use memmory last bank for ram console store */
++	bank = &mi->bank[mi->nr_banks - 1];
+ 	if (!bank) {
+ 		pr_err("no memory reserve for ramoops.\n");
+ 		return;
+ 	}
+ 	max_phys = bank->start + bank->size;
+-	/* reserve 256M for uboot avoid ram console data is cleaned by uboot */
+-	phys = memblock_alloc_base(SZ_1M, SZ_4K, max_phys - SZ_256M);
++	/* reserve 64M for uboot avoid ram console data is cleaned by uboot */
++	phys = memblock_alloc_base(SZ_1M, SZ_4K, max_phys - SZ_64M);
+ 	if (phys) {
+ 		memblock_remove(phys, SZ_1M);
+ 		memblock_reserve(phys, SZ_1M);
+diff --git a/arch/arm/mach-imx/mach-imx6sx.c b/arch/arm/mach-imx/mach-imx6sx.c
+index f59450a..58ba14e 100755
+--- a/arch/arm/mach-imx/mach-imx6sx.c
++++ b/arch/arm/mach-imx/mach-imx6sx.c
+@@ -348,15 +348,16 @@ static void imx6sx_reserve(void)
+ 		pr_err("no memory reserve for ramoops.\n");
+ 		return;
+ 	}
+-	/* use memmory bank 0 for ram console store */
+-	bank = &mi->bank[0];
++
++	/* use memmory last bank for ram console store */
++	bank = &mi->bank[mi->nr_banks - 1];
+ 	if (!bank) {
+ 		pr_err("no memory reserve for ramoops.\n");
+ 		return;
+ 	}
+ 	max_phys = bank->start + bank->size;
+-	/* reserve 256M for uboot avoid ram console data is cleaned by uboot */
+-	phys = memblock_alloc_base(SZ_1M, SZ_4K, max_phys - SZ_256M);
++	/* reserve 64M for uboot avoid ram console data is cleaned by uboot */
++	phys = memblock_alloc_base(SZ_1M, SZ_4K, max_phys - SZ_64M);
+ 	if (phys) {
+ 		memblock_remove(phys, SZ_1M);
+ 		memblock_reserve(phys, SZ_1M);
+-- 
+1.8.0
+

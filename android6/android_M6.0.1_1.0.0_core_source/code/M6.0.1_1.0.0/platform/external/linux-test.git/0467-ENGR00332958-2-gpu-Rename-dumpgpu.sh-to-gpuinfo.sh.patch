@@ -1,0 +1,119 @@
+From 3bde4fee348796bb8908eee28ac37dc195825a88 Mon Sep 17 00:00:00 2001
+From: Loren Huang <b02279@freescale.com>
+Date: Wed, 8 Oct 2014 11:35:35 +0800
+Subject: [PATCH 467/505] ENGR00332958-2 gpu: Rename dumpgpu.sh to gpuinfo.sh
+
+Rename dumpgpu.sh to gpuinfo.sh.
+
+Date: Oct 8th, 2014
+Acked-by: Loren Huang<b02279@freescale.com>
+---
+ test/gpu/Makefile   |  2 +-
+ test/gpu/dumpgpu.sh | 37 -------------------------------------
+ test/gpu/gpuinfo.sh | 37 +++++++++++++++++++++++++++++++++++++
+ 3 files changed, 38 insertions(+), 38 deletions(-)
+ delete mode 100755 test/gpu/dumpgpu.sh
+ create mode 100755 test/gpu/gpuinfo.sh
+
+diff --git a/test/gpu/Makefile b/test/gpu/Makefile
+index d8f50ea..8ae7432 100644
+--- a/test/gpu/Makefile
++++ b/test/gpu/Makefile
+@@ -3,7 +3,7 @@ INCLUDE_LIST:=IMX6Q IMX6SL IMX6SX
+ 
+ ifeq ($(PLATFORM),$(findstring $(PLATFORM),$(INCLUDE_LIST)))
+ OBJS = $(OBJDIR)/gpu.sh \
+-	   $(OBJDIR)/dumpgpu.sh
++	   $(OBJDIR)/gpuinfo.sh
+ else
+ OBJS =
+ endif
+diff --git a/test/gpu/dumpgpu.sh b/test/gpu/dumpgpu.sh
+deleted file mode 100755
+index b99dee2..0000000
+--- a/test/gpu/dumpgpu.sh
++++ /dev/null
+@@ -1,37 +0,0 @@
+-#!/bin/bash
+-
+-input=$1
+-echo "GPU Info"
+-cat /sys/kernel/debug/gc/info
+-cat /sys/kernel/debug/gc/meminfo
+-echo "Paged memory Info"
+-cat /sys/kernel/debug/gc/allocators/default/lowHighUsage
+-echo "CMA memory info"
+-cat /sys/kernel/debug/gc/allocators/cma/cmausage
+-#echo ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"
+-time=`cat /sys/kernel/debug/gc/idle`
+-#echo ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"
+-if [ x$input != x ]
+-then
+-pidlist=`cat /sys/kernel/debug/gc/clients | awk '{if ($1 == '$input') print $1}'`
+-if [ x$pidlist == x ]
+-then
+-pidlist=`cat /sys/kernel/debug/gc/clients | awk '{if ($2~/'$input'/) print $1}'`
+-fi
+-if [ x$pidlist == x ]
+-then
+-echo "Invalid input: $input"
+-fi
+-else
+-pidlist=`cat /sys/kernel/debug/gc/clients | awk '{if ($1~/^[0-9]/) print $1}'`
+-fi
+-for i in $pidlist
+-do
+-    echo $i > /sys/kernel/debug/gc/vidmem
+-    cat /sys/kernel/debug/gc/vidmem
+-done
+-echo ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"
+-sleep 1
+-time=`cat /sys/kernel/debug/gc/idle | awk '{printf "%.2f", $7/10000000.0}'`
+-echo "Idle percentage:"$time"%"
+-echo ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"
+diff --git a/test/gpu/gpuinfo.sh b/test/gpu/gpuinfo.sh
+new file mode 100755
+index 0000000..b99dee2
+--- /dev/null
++++ b/test/gpu/gpuinfo.sh
+@@ -0,0 +1,37 @@
++#!/bin/bash
++
++input=$1
++echo "GPU Info"
++cat /sys/kernel/debug/gc/info
++cat /sys/kernel/debug/gc/meminfo
++echo "Paged memory Info"
++cat /sys/kernel/debug/gc/allocators/default/lowHighUsage
++echo "CMA memory info"
++cat /sys/kernel/debug/gc/allocators/cma/cmausage
++#echo ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"
++time=`cat /sys/kernel/debug/gc/idle`
++#echo ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"
++if [ x$input != x ]
++then
++pidlist=`cat /sys/kernel/debug/gc/clients | awk '{if ($1 == '$input') print $1}'`
++if [ x$pidlist == x ]
++then
++pidlist=`cat /sys/kernel/debug/gc/clients | awk '{if ($2~/'$input'/) print $1}'`
++fi
++if [ x$pidlist == x ]
++then
++echo "Invalid input: $input"
++fi
++else
++pidlist=`cat /sys/kernel/debug/gc/clients | awk '{if ($1~/^[0-9]/) print $1}'`
++fi
++for i in $pidlist
++do
++    echo $i > /sys/kernel/debug/gc/vidmem
++    cat /sys/kernel/debug/gc/vidmem
++done
++echo ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"
++sleep 1
++time=`cat /sys/kernel/debug/gc/idle | awk '{printf "%.2f", $7/10000000.0}'`
++echo "Idle percentage:"$time"%"
++echo ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"
+-- 
+1.8.0
+

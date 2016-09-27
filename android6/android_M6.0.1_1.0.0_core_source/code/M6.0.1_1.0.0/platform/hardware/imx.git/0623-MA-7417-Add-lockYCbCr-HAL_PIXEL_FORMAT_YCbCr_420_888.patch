@@ -1,0 +1,381 @@
+From 40f94a231d82dfe5b39b498a623cdc7315b064b3 Mon Sep 17 00:00:00 2001
+From: Xiaowen Liu <xiaowen.liu@freescale.com>
+Date: Mon, 28 Dec 2015 09:04:17 -0500
+Subject: [PATCH 623/635] MA-7417 Add lockYCbCr&HAL_PIXEL_FORMAT_YCbCr_420_888
+ support.
+
+CTS case: testAllocationFromCameraFlexibleYuv.
+This case requires HAL_PIXEL_FORMAT_YCbCr_420_888 format support.
+And use lockYCbCr function to lock buffer.
+Framework provides HAL_PIXEL_FORMAT_YCbCr_420_888 format to represent
+YCbCr 4:2:0 semi/planar kind format.
+Vendor should maps this format to specific platform efficient format.
+
+Signed-off-by: Xiaowen Liu <xiaowen.liu@freescale.com>
+---
+ mx6/libgralloc_wrapper/BufferManager.cpp    |  5 ++
+ mx6/libgralloc_wrapper/BufferManager.h      | 14 ++++++
+ mx6/libgralloc_wrapper/CPUBufferManager.cpp | 73 ++++++++++++++++++++++++---
+ mx6/libgralloc_wrapper/GPUBufferManager.cpp | 78 +++++++++++++++++++++++++++--
+ mx6/libgralloc_wrapper/framebuffer.cpp      |  2 +-
+ mx6/libgralloc_wrapper/gralloc.cpp          | 29 ++++++++++-
+ 6 files changed, 189 insertions(+), 12 deletions(-)
+
+diff --git a/mx6/libgralloc_wrapper/BufferManager.cpp b/mx6/libgralloc_wrapper/BufferManager.cpp
+index 2878077..8922ccb 100755
+--- a/mx6/libgralloc_wrapper/BufferManager.cpp
++++ b/mx6/libgralloc_wrapper/BufferManager.cpp
+@@ -117,6 +117,11 @@ int BufferManager::alloc(int w, int h, int format, int usage,
+             size = alignedw * alignedh * bpp;
+             break;
+ 
++        case HAL_PIXEL_FORMAT_YCbCr_420_888:
++            // now, take the flex format as NV12.
++            // this format should only be known in framework.
++            // private_handle in hal should not record this format.
++            format = HAL_PIXEL_FORMAT_YCbCr_420_SP;
+         case HAL_PIXEL_FORMAT_YCrCb_420_SP:
+         case HAL_PIXEL_FORMAT_YCbCr_420_SP:
+             alignedw = ALIGN_PIXEL_16(w);
+diff --git a/mx6/libgralloc_wrapper/BufferManager.h b/mx6/libgralloc_wrapper/BufferManager.h
+index dc14383..74bfe99 100755
+--- a/mx6/libgralloc_wrapper/BufferManager.h
++++ b/mx6/libgralloc_wrapper/BufferManager.h
+@@ -110,6 +110,9 @@ public:
+     virtual int lock(buffer_handle_t handle, int usage,
+             int l, int t, int w, int h,
+             void** vaddr) = 0;
++    virtual int lockYCbCr(buffer_handle_t handle, int usage,
++            int l, int t, int w, int h,
++            android_ycbcr* ycbcr) = 0;
+     virtual int unlock(buffer_handle_t handle) = 0;
+ 
+     // to alloc/free private handle.
+@@ -143,6 +146,10 @@ public:
+         buffer_handle_t handle, int usage,
+         int l, int t, int w, int h,
+         void** vaddr);
++    static int gralloc_lockYCbCr(gralloc_module_t const* module,
++        buffer_handle_t handle, int usage,
++        int l, int t, int w, int h,
++        android_ycbcr* ycbcr);
+     static int gralloc_unlock(gralloc_module_t const* module,
+         buffer_handle_t handle);
+     static int gralloc_device_close(struct hw_device_t *dev);
+@@ -169,6 +176,9 @@ public:
+     virtual int lock(buffer_handle_t handle, int usage,
+             int l, int t, int w, int h,
+             void** vaddr);
++    virtual int lockYCbCr(buffer_handle_t handle, int usage,
++            int l, int t, int w, int h,
++            android_ycbcr* ycbcr);
+     virtual int unlock(buffer_handle_t handle);
+ 
+     virtual private_handle_t* createPrivateHandle(int fd,
+@@ -196,6 +206,7 @@ private:
+     int registerHandle(private_handle_t* hnd);
+     int unregisterHandle(private_handle_t* hnd);
+     int lockHandle(private_handle_t* hnd, void** vaddr);
++    int lockYUVHandle(private_handle_t* hnd, android_ycbcr* ycbcr);
+     int unlockHandle(private_handle_t* hnd);
+ 
+ private:
+@@ -214,6 +225,9 @@ public:
+     virtual int lock(buffer_handle_t handle, int usage,
+             int l, int t, int w, int h,
+             void** vaddr);
++    virtual int lockYCbCr(buffer_handle_t handle, int usage,
++            int l, int t, int w, int h,
++            android_ycbcr* ycbcr);
+     virtual int unlock(buffer_handle_t handle);
+ 
+     virtual private_handle_t* createPrivateHandle(int fd,
+diff --git a/mx6/libgralloc_wrapper/CPUBufferManager.cpp b/mx6/libgralloc_wrapper/CPUBufferManager.cpp
+index 8d509c0..b73a239 100755
+--- a/mx6/libgralloc_wrapper/CPUBufferManager.cpp
++++ b/mx6/libgralloc_wrapper/CPUBufferManager.cpp
+@@ -1,5 +1,5 @@
+ /*
+- * Copyright (C) 2013-2014 Freescale Semiconductor, Inc.
++ * Copyright (C) 2013-2015 Freescale Semiconductor, Inc.
+  *
+  * Licensed under the Apache License, Version 2.0 (the "License");
+  * you may not use this file except in compliance with the License.
+@@ -62,7 +62,7 @@ int CPUBufferManager::validateHandle(buffer_handle_t handle)
+ }
+ 
+ int CPUBufferManager::allocBuffer(int w, int h, int format, int usage,
+-                                  int alignW, int alignH, size_t size,
++                                  int alignW, int /*alignH*/, size_t size,
+                                   buffer_handle_t* handle, int* stride)
+ {
+     if (!handle || !stride) {
+@@ -117,7 +117,7 @@ int CPUBufferManager::freeBuffer(buffer_handle_t handle)
+     return 0;
+ }
+ 
+-int CPUBufferManager::allocBuffer(size_t size, int usage,
++int CPUBufferManager::allocBuffer(size_t size, int /*usage*/,
+                  buffer_handle_t* pHandle)
+ {
+     int err = 0;
+@@ -144,7 +144,7 @@ int CPUBufferManager::allocBuffer(size_t size, int usage,
+     return err;
+ }
+ 
+-int CPUBufferManager::allocBufferByIon(size_t size, int usage,
++int CPUBufferManager::allocBufferByIon(size_t size, int /*usage*/,
+                  buffer_handle_t* pHandle)
+ {
+     if (mIonFd <= 0) {
+@@ -277,8 +277,8 @@ int CPUBufferManager::unregisterBuffer(buffer_handle_t handle)
+     return 0;
+ }
+ 
+-int CPUBufferManager::lock(buffer_handle_t handle, int usage,
+-            int l, int t, int w, int h,
++int CPUBufferManager::lock(buffer_handle_t handle, int /*usage*/,
++            int /*l*/, int /*t*/, int /*w*/, int /*h*/,
+             void** vaddr)
+ {
+     if (validateHandle(handle) < 0) {
+@@ -294,6 +294,67 @@ int CPUBufferManager::lock(buffer_handle_t handle, int usage,
+     return 0;
+ }
+ 
++
++int CPUBufferManager::lockYCbCr(buffer_handle_t handle, int /*usage*/,
++            int /*l*/, int /*t*/, int /*w*/, int /*h*/,
++        android_ycbcr* ycbcr)
++{
++    if (ycbcr == NULL) {
++        return 0;
++    }
++
++    if (validateHandle(handle) < 0) {
++        ALOGE("%s invalid handle", __FUNCTION__);
++        return -EINVAL;
++    }
++
++    private_handle_t* hnd = (private_handle_t*)handle;
++
++    switch (hnd->format) {
++        case HAL_PIXEL_FORMAT_YCbCr_420_SP:
++            ycbcr->ystride = hnd->stride;
++            ycbcr->cstride = ycbcr->ystride;
++            ycbcr->y = (void*)hnd->base;
++            ycbcr->cb = (void*)(hnd->base + hnd->stride*hnd->height);
++            ycbcr->cr = (int*)ycbcr->cb + 1;
++            ycbcr->chroma_step = 2;
++            break;
++
++        case HAL_PIXEL_FORMAT_YCrCb_420_SP:
++            ycbcr->ystride = hnd->stride;
++            ycbcr->cstride = ycbcr->ystride;
++            ycbcr->y = (void*)hnd->base;
++            ycbcr->cr = (void*)(hnd->base + hnd->stride*hnd->height);
++            ycbcr->cb = (int*)ycbcr->cr + 1;
++            ycbcr->chroma_step = 2;
++            break;
++
++        case HAL_PIXEL_FORMAT_YCbCr_420_P:
++            ycbcr->ystride = hnd->stride;
++            ycbcr->cstride = ycbcr->ystride / 2;
++            ycbcr->y = (void*)hnd->base;
++            ycbcr->cb = (void*)(hnd->base + hnd->stride*hnd->height);
++            ycbcr->cr = (void*)((int)ycbcr->cb + ycbcr->cstride*hnd->height/2);
++            ycbcr->chroma_step = 1;
++            break;
++
++        case HAL_PIXEL_FORMAT_YV12:
++            ycbcr->ystride = hnd->stride;
++            ycbcr->cstride = ycbcr->ystride / 2;
++            ycbcr->y = (void*)hnd->base;
++            ycbcr->cr = (void*)(hnd->base + hnd->stride*hnd->height);
++            ycbcr->cb = (void*)((int)ycbcr->cr + ycbcr->cstride*hnd->height/2);
++            ycbcr->chroma_step = 1;
++            break;
++
++        default:
++            ALOGE("%s not support format:0x%x", __func__, hnd->format);
++            return -EINVAL;
++    }
++
++    return 0;
++}
++
+ int CPUBufferManager::unlock(buffer_handle_t handle)
+ {
+     if (validateHandle(handle) < 0) {
+diff --git a/mx6/libgralloc_wrapper/GPUBufferManager.cpp b/mx6/libgralloc_wrapper/GPUBufferManager.cpp
+index 21f7e4a..3cb977d 100755
+--- a/mx6/libgralloc_wrapper/GPUBufferManager.cpp
++++ b/mx6/libgralloc_wrapper/GPUBufferManager.cpp
+@@ -67,7 +67,7 @@ int GPUBufferManager::validateHandle(buffer_handle_t handle)
+ }
+ 
+ int GPUBufferManager::allocBuffer(int w, int h, int format, int usage,
+-                                  int alignW, int alignH, size_t size,
++                                  int alignW, int /*alignH*/, size_t size,
+                                   buffer_handle_t* handle, int* stride)
+ {
+     if (!handle || !stride) {
+@@ -224,6 +224,20 @@ int GPUBufferManager::lock(buffer_handle_t handle, int usage,
+                              l, t, w, h, vaddr);
+ }
+ 
++
++int GPUBufferManager::lockYCbCr(buffer_handle_t handle, int /*usage*/,
++        int /*l*/, int /*t*/, int /*w*/, int /*h*/,
++        android_ycbcr* ycbcr)
++{
++    if (validateHandle(handle) < 0) {
++        ALOGE("%s invalid handle", __FUNCTION__);
++        return -EINVAL;
++    }
++
++    private_handle_t* hnd = (private_handle_t*)handle;
++    return lockYUVHandle(hnd, ycbcr);
++}
++
+ int GPUBufferManager::unlock(buffer_handle_t handle)
+ {
+     if (validateHandle(handle) < 0) {
+@@ -286,8 +300,66 @@ int GPUBufferManager::unregisterHandle(private_handle_t* hnd)
+ 
+ int GPUBufferManager::lockHandle(private_handle_t* hnd, void** vaddr)
+ {
+-    *vaddr = (void*)hnd->base;
+-    return graphic_buffer_lock(hnd);
++    int ret = graphic_buffer_lock(hnd);
++
++    if (vaddr != NULL) {
++        *vaddr = (void*)hnd->base;
++    }
++
++    return ret;
++}
++
++int GPUBufferManager::lockYUVHandle(private_handle_t* hnd, android_ycbcr* ycbcr)
++{
++    int ret = graphic_buffer_lock(hnd);
++
++    if (ycbcr == NULL) {
++        return ret;
++    }
++
++    switch (hnd->format) {
++        case HAL_PIXEL_FORMAT_YCbCr_420_SP:
++            ycbcr->ystride = hnd->stride;
++            ycbcr->cstride = ycbcr->ystride;
++            ycbcr->y = (void*)hnd->base;
++            ycbcr->cb = (void*)(hnd->base + hnd->stride*hnd->height);
++            ycbcr->cr = (int*)ycbcr->cb + 1;
++            ycbcr->chroma_step = 2;
++            break;
++
++        case HAL_PIXEL_FORMAT_YCrCb_420_SP:
++            ycbcr->ystride = hnd->stride;
++            ycbcr->cstride = ycbcr->ystride;
++            ycbcr->y = (void*)hnd->base;
++            ycbcr->cr = (void*)(hnd->base + hnd->stride*hnd->height);
++            ycbcr->cb = (int*)ycbcr->cr + 1;
++            ycbcr->chroma_step = 2;
++            break;
++
++        case HAL_PIXEL_FORMAT_YCbCr_420_P:
++            ycbcr->ystride = hnd->stride;
++            ycbcr->cstride = ycbcr->ystride / 2;
++            ycbcr->y = (void*)hnd->base;
++            ycbcr->cb = (void*)(hnd->base + hnd->stride*hnd->height);
++            ycbcr->cr = (void*)((int)ycbcr->cb + ycbcr->cstride*hnd->height/2);
++            ycbcr->chroma_step = 1;
++            break;
++
++        case HAL_PIXEL_FORMAT_YV12:
++            ycbcr->ystride = hnd->stride;
++            ycbcr->cstride = ycbcr->ystride / 2;
++            ycbcr->y = (void*)hnd->base;
++            ycbcr->cr = (void*)(hnd->base + hnd->stride*hnd->height);
++            ycbcr->cb = (void*)((int)ycbcr->cr + ycbcr->cstride*hnd->height/2);
++            ycbcr->chroma_step = 1;
++            break;
++
++        default:
++            ALOGE("%s not support format:0x%x", __func__, hnd->format);
++            return -EINVAL;
++    }
++
++    return ret;
+ }
+ 
+ int GPUBufferManager::unlockHandle(private_handle_t* hnd)
+diff --git a/mx6/libgralloc_wrapper/framebuffer.cpp b/mx6/libgralloc_wrapper/framebuffer.cpp
+index 6cfe95b..dc0514a 100755
+--- a/mx6/libgralloc_wrapper/framebuffer.cpp
++++ b/mx6/libgralloc_wrapper/framebuffer.cpp
+@@ -176,7 +176,7 @@ int Display::postBuffer(struct framebuffer_device_t* dev, buffer_handle_t buffer
+     return 0;
+ }
+ 
+-int Display::compositionComplete(struct framebuffer_device_t* dev)
++int Display::compositionComplete(struct framebuffer_device_t* /*dev*/)
+ {
+   //  glFinish();
+     return 0;
+diff --git a/mx6/libgralloc_wrapper/gralloc.cpp b/mx6/libgralloc_wrapper/gralloc.cpp
+index 9b706c8..51b7341 100755
+--- a/mx6/libgralloc_wrapper/gralloc.cpp
++++ b/mx6/libgralloc_wrapper/gralloc.cpp
+@@ -1,6 +1,6 @@
+ /*
+  * Copyright (C) 2008 The Android Open Source Project
+- * Copyright (C) 2013-2014 Freescale Semiconductor, Inc.
++ * Copyright (C) 2013-2015 Freescale Semiconductor, Inc.
+  *
+  * Licensed under the Apache License, Version 2.0 (the "License");
+  * you may not use this file except in compliance with the License.
+@@ -149,6 +149,31 @@ int BufferManager::gralloc_lock(gralloc_module_t const* module,
+     return m->lock(handle, usage, l, t, w, h, vaddr);
+ }
+ 
++
++int BufferManager::gralloc_lockYCbCr(gralloc_module_t const* module,
++        buffer_handle_t handle, int usage,
++        int l, int t, int w, int h,
++        android_ycbcr* ycbcr)
++{
++    if (module == NULL) {
++        ALOGE("<%s,%d> invalide parameters", __FUNCTION__, __LINE__);
++        return -EINVAL;
++    }
++
++    BufferManager* m = BufferManager::getInstance();
++    if (m == NULL) {
++        ALOGE("%s cat't get buffer manager", __FUNCTION__);
++        return -EINVAL;
++    }
++
++    if (m->validateHandle(handle) < 0) {
++        ALOGE("%s invalid handle", __FUNCTION__);
++        return -EINVAL;
++    }
++
++    return m->lockYCbCr(handle, usage, l, t, w, h, ycbcr);
++}
++
+ int BufferManager::gralloc_unlock(gralloc_module_t const* module,
+         buffer_handle_t handle)
+ {
+@@ -250,7 +275,7 @@ struct private_module_t HAL_MODULE_INFO_SYM = {
+         lock: BufferManager::gralloc_lock,
+         unlock: BufferManager::gralloc_unlock,
+         perform: 0,
+-        lock_ycbcr: 0,
++        lock_ycbcr: BufferManager::gralloc_lockYCbCr,
+         lockAsync: 0,
+         unlockAsync: 0,
+         lockAsync_ycbcr: 0,
+-- 
+1.8.0
+

@@ -1,0 +1,32 @@
+From 471e8c43aca3deaade178e4b6749879752f64916 Mon Sep 17 00:00:00 2001
+From: Fugang Duan <b38611@freescale.com>
+Date: Fri, 8 Jan 2016 13:36:05 +0800
+Subject: [PATCH] MLK-12161 tty: serial: imx: only enable RTSD interrupt for
+ hw flow control
+
+Only enable RTSD interrupt for hw flow control, otherwise RTS_B signal
+has some external signal disturbance without config RTS_B select input.
+
+Signed-off-by: Fugang Duan <B38611@freescale.com>
+---
+ drivers/tty/serial/imx.c | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
+
+diff --git a/drivers/tty/serial/imx.c b/drivers/tty/serial/imx.c
+index 78b4a8e..1dc75be 100644
+--- a/drivers/tty/serial/imx.c
++++ b/drivers/tty/serial/imx.c
+@@ -1228,7 +1228,9 @@ static int imx_startup(struct uart_port *port)
+ 	temp = readl(sport->port.membase + UCR1);
+ 	if (!sport->dma_is_inited)
+ 		temp |= UCR1_RRDYEN;
+-	temp |= UCR1_RTSDEN | UCR1_UARTEN;
++	if (sport->have_rtscts)
++		temp |= UCR1_RTSDEN;
++	temp |= UCR1_UARTEN;
+ 
+ 	if (USE_IRDA(sport)) {
+ 		temp |= UCR1_IREN;
+-- 
+1.8.0
+

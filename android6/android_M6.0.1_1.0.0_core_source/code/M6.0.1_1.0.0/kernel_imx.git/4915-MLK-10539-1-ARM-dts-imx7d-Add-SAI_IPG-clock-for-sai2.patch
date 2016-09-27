@@ -1,0 +1,38 @@
+From 21edd571ee4199a92c7546cea2ebccea6c1d74d5 Mon Sep 17 00:00:00 2001
+From: Shengjiu Wang <shengjiu.wang@freescale.com>
+Date: Wed, 1 Apr 2015 17:22:32 +0800
+Subject: [PATCH] MLK-10539-1: ARM: dts: imx7d: Add SAI_IPG clock for sai2,
+ sai3
+
+Add SAI_IPG clock for sai2, sai3
+
+Signed-off-by: Shengjiu Wang <shengjiu.wang@freescale.com>
+---
+ arch/arm/boot/dts/imx7d.dtsi | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/arch/arm/boot/dts/imx7d.dtsi b/arch/arm/boot/dts/imx7d.dtsi
+index b6dbfec..b475019 100644
+--- a/arch/arm/boot/dts/imx7d.dtsi
++++ b/arch/arm/boot/dts/imx7d.dtsi
+@@ -913,7 +913,7 @@
+ 				compatible = "fsl,imx7d-sai";
+ 				reg = <0x308b0000 0x10000>;
+ 				interrupts = <GIC_SPI 96 IRQ_TYPE_LEVEL_HIGH>;
+-				clocks = <&clks IMX7D_CLK_DUMMY>,
++				clocks = <&clks IMX7D_SAI2_IPG_CLK>,
+ 					<&clks IMX7D_SAI2_ROOT_CLK>,
+ 					<&clks IMX7D_CLK_DUMMY>, <&clks IMX7D_CLK_DUMMY>;
+ 				clock-names = "bus", "mclk1", "mclk2", "mclk3";
+@@ -926,7 +926,7 @@
+ 				compatible = "fsl,imx7d-sai";
+ 				reg = <0x308c0000 0x10000>;
+ 				interrupts = <GIC_SPI 50 IRQ_TYPE_LEVEL_HIGH>;
+-				clocks = <&clks IMX7D_CLK_DUMMY>,
++				clocks = <&clks IMX7D_SAI3_IPG_CLK>,
+ 					<&clks IMX7D_SAI3_ROOT_CLK>,
+ 					<&clks IMX7D_CLK_DUMMY>, <&clks IMX7D_CLK_DUMMY>;
+ 				clock-names = "bus", "mclk1", "mclk2", "mclk3";
+-- 
+1.8.0
+

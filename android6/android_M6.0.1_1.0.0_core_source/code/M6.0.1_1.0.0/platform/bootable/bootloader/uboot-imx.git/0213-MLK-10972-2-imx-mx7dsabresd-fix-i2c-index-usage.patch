@@ -1,0 +1,28 @@
+From 984391573602dc35c34f02da470d89ce0315f1c0 Mon Sep 17 00:00:00 2001
+From: Peng Fan <Peng.Fan@freescale.com>
+Date: Tue, 26 May 2015 12:29:08 +0800
+Subject: [PATCH] MLK-10972-2 imx: mx7dsabresd fix i2c index usage
+
+i2c_pad_info3's i2c index should 2, but not 1. Correct it.
+
+Signed-off-by: Peng Fan <Peng.Fan@freescale.com>
+---
+ board/freescale/mx7dsabresd/mx7dsabresd.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/board/freescale/mx7dsabresd/mx7dsabresd.c b/board/freescale/mx7dsabresd/mx7dsabresd.c
+index 0f1a0c4..351632d 100644
+--- a/board/freescale/mx7dsabresd/mx7dsabresd.c
++++ b/board/freescale/mx7dsabresd/mx7dsabresd.c
+@@ -917,7 +917,7 @@ int board_early_init_f(void)
+ 
+ #ifdef CONFIG_SYS_I2C_MXC
+ 	setup_i2c(0, CONFIG_SYS_I2C_SPEED, 0x7f, &i2c_pad_info1);
+-	setup_i2c(1, CONFIG_SYS_I2C_SPEED, 0x7f, &i2c_pad_info3);
++	setup_i2c(2, CONFIG_SYS_I2C_SPEED, 0x7f, &i2c_pad_info3);
+ #endif
+ 
+ 	return 0;
+-- 
+1.8.0
+

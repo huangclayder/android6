@@ -1,0 +1,155 @@
+From 7dc4e15242ee6bcf27513909d1b6b37b2493a3d4 Mon Sep 17 00:00:00 2001
+From: "Ye.Li" <B37916@freescale.com>
+Date: Thu, 9 Jul 2015 13:55:39 +0800
+Subject: [PATCH] MLK-11228-3 android: Add "data" partition in fastboot
+
+Enable fastboot command "fastboot flash data"
+Custom may need to update data partition in fastboot mode.
+This patch enable flash data partition in emmc\sd.
+
+Signed-off-by: Zhang Sanshan <b51434@freescale.com>
+Signed-off-by: Ye.Li <B37916@freescale.com>
+---
+ drivers/usb/gadget/f_fastboot.c           | 19 +++++++++++++------
+ include/configs/mx6sabreandroid_common.h  |  1 +
+ include/configs/mx6slevkandroid.h         |  1 +
+ include/configs/mx6sxsabreautoandroid.h   |  1 +
+ include/configs/mx6sxsabresdandroid.h     |  1 +
+ include/configs/mx6ul_14x14_evk_android.h |  1 +
+ include/configs/mx7dsabresdandroid.h      |  1 +
+ 7 files changed, 19 insertions(+), 6 deletions(-)
+
+diff --git a/drivers/usb/gadget/f_fastboot.c b/drivers/usb/gadget/f_fastboot.c
+index e59d038..002704f 100644
+--- a/drivers/usb/gadget/f_fastboot.c
++++ b/drivers/usb/gadget/f_fastboot.c
+@@ -160,7 +160,8 @@ enum {
+     PTN_KERNEL_INDEX,
+     PTN_URAMDISK_INDEX,
+     PTN_SYSTEM_INDEX,
+-    PTN_RECOVERY_INDEX
++    PTN_RECOVERY_INDEX,
++    PTN_DATA_INDEX
+ };
+ 
+ static unsigned int download_bytes_unpadded;
+@@ -810,8 +811,10 @@ static void process_flash_sata(const char *cmdbuf, char *response)
+ #if defined(CONFIG_FASTBOOT_STORAGE_MMC)
+ static int is_sparse_partition(struct fastboot_ptentry *ptn)
+ {
+-	 if (ptn && !strncmp(ptn->name,
+-				 FASTBOOT_PARTITION_SYSTEM, strlen(FASTBOOT_PARTITION_SYSTEM))) {
++	 if (ptn && (!strncmp(ptn->name,
++				 FASTBOOT_PARTITION_SYSTEM, strlen(FASTBOOT_PARTITION_SYSTEM))
++				 || !strncmp(ptn->name,
++				 FASTBOOT_PARTITION_DATA, strlen(FASTBOOT_PARTITION_DATA)))) {
+ 		printf("support sparse flash partition for %s\n", ptn->name);
+ 		return 1;
+ 	 } else
+@@ -1128,7 +1131,7 @@ static int _fastboot_parts_load_from_ptable(void)
+ 
+ 	struct mmc *mmc;
+ 	block_dev_desc_t *dev_desc;
+-	struct fastboot_ptentry ptable[PTN_RECOVERY_INDEX + 1];
++	struct fastboot_ptentry ptable[PTN_DATA_INDEX + 1];
+ 
+ 	/* sata case in env */
+ 	if (fastboot_devinfo.type == DEV_SATA) {
+@@ -1175,7 +1178,7 @@ static int _fastboot_parts_load_from_ptable(void)
+ 	}
+ 
+ 	memset((char *)ptable, 0,
+-		    sizeof(struct fastboot_ptentry) * (PTN_RECOVERY_INDEX + 1));
++		    sizeof(struct fastboot_ptentry) * (PTN_DATA_INDEX + 1));
+ 	/* MBR */
+ 	strcpy(ptable[PTN_MBR_INDEX].name, "mbr");
+ 	ptable[PTN_MBR_INDEX].start = ANDROID_MBR_OFFSET / dev_desc->blksz;
+@@ -1201,8 +1204,12 @@ static int _fastboot_parts_load_from_ptable(void)
+ 				   CONFIG_ANDROID_SYSTEM_PARTITION_MMC,
+ 				   user_partition,
+ 				   FASTBOOT_PARTITION_SYSTEM, dev_desc, ptable);
++	_fastboot_parts_add_ptable_entry(PTN_DATA_INDEX,
++				   CONFIG_ANDROID_DATA_PARTITION_MMC,
++				   user_partition,
++				   FASTBOOT_PARTITION_DATA, dev_desc, ptable);
+ 
+-	for (i = 0; i <= PTN_RECOVERY_INDEX; i++)
++	for (i = 0; i <= PTN_DATA_INDEX; i++)
+ 		fastboot_flash_add_ptn(&ptable[i]);
+ 
+ 	return 0;
+diff --git a/include/configs/mx6sabreandroid_common.h b/include/configs/mx6sabreandroid_common.h
+index 633ae30..d2be182 100644
+--- a/include/configs/mx6sabreandroid_common.h
++++ b/include/configs/mx6sabreandroid_common.h
+@@ -41,6 +41,7 @@
+ #define CONFIG_ANDROID_SYSTEM_PARTITION_MMC 5
+ #define CONFIG_ANDROID_RECOVERY_PARTITION_MMC 2
+ #define CONFIG_ANDROID_CACHE_PARTITION_MMC 6
++#define CONFIG_ANDROID_DATA_PARTITION_MMC 4
+ 
+ #if defined(CONFIG_FASTBOOT_STORAGE_NAND)
+ #define ANDROID_FASTBOOT_NAND_PARTS "16m@64m(boot) 16m@80m(recovery) 810m@96m(android_root)ubifs"
+diff --git a/include/configs/mx6slevkandroid.h b/include/configs/mx6slevkandroid.h
+index 0e2e64e..3c3b2ce 100644
+--- a/include/configs/mx6slevkandroid.h
++++ b/include/configs/mx6slevkandroid.h
+@@ -38,6 +38,7 @@
+ #define CONFIG_ANDROID_SYSTEM_PARTITION_MMC 5
+ #define CONFIG_ANDROID_RECOVERY_PARTITION_MMC 2
+ #define CONFIG_ANDROID_CACHE_PARTITION_MMC 6
++#define CONFIG_ANDROID_DATA_PARTITION_MMC 4
+ 
+ #define CONFIG_CMD_BOOTA
+ #define CONFIG_SUPPORT_RAW_INITRD
+diff --git a/include/configs/mx6sxsabreautoandroid.h b/include/configs/mx6sxsabreautoandroid.h
+index 514e383..e21c456 100644
+--- a/include/configs/mx6sxsabreautoandroid.h
++++ b/include/configs/mx6sxsabreautoandroid.h
+@@ -44,6 +44,7 @@
+ #define CONFIG_ANDROID_SYSTEM_PARTITION_MMC 5
+ #define CONFIG_ANDROID_RECOVERY_PARTITION_MMC 2
+ #define CONFIG_ANDROID_CACHE_PARTITION_MMC 6
++#define CONFIG_ANDROID_DATA_PARTITION_MMC 4
+ 
+ #define CONFIG_CMD_BOOTA
+ #define CONFIG_SUPPORT_RAW_INITRD
+diff --git a/include/configs/mx6sxsabresdandroid.h b/include/configs/mx6sxsabresdandroid.h
+index 328b458..68f86df 100644
+--- a/include/configs/mx6sxsabresdandroid.h
++++ b/include/configs/mx6sxsabresdandroid.h
+@@ -36,6 +36,7 @@
+ #define CONFIG_ANDROID_SYSTEM_PARTITION_MMC 5
+ #define CONFIG_ANDROID_RECOVERY_PARTITION_MMC 2
+ #define CONFIG_ANDROID_CACHE_PARTITION_MMC 6
++#define CONFIG_ANDROID_DATA_PARTITION_MMC 4
+ 
+ #define CONFIG_CMD_BOOTA
+ #define CONFIG_SUPPORT_RAW_INITRD
+diff --git a/include/configs/mx6ul_14x14_evk_android.h b/include/configs/mx6ul_14x14_evk_android.h
+index 0a0c476..9d6a267 100644
+--- a/include/configs/mx6ul_14x14_evk_android.h
++++ b/include/configs/mx6ul_14x14_evk_android.h
+@@ -44,6 +44,7 @@
+ #define CONFIG_ANDROID_SYSTEM_PARTITION_MMC 5
+ #define CONFIG_ANDROID_RECOVERY_PARTITION_MMC 2
+ #define CONFIG_ANDROID_CACHE_PARTITION_MMC 6
++#define CONFIG_ANDROID_DATA_PARTITION_MMC 4
+ 
+ #define CONFIG_CMD_BOOTA
+ #define CONFIG_SUPPORT_RAW_INITRD
+diff --git a/include/configs/mx7dsabresdandroid.h b/include/configs/mx7dsabresdandroid.h
+index cbcc173..3ced17f 100644
+--- a/include/configs/mx7dsabresdandroid.h
++++ b/include/configs/mx7dsabresdandroid.h
+@@ -35,6 +35,7 @@
+ #define CONFIG_ANDROID_SYSTEM_PARTITION_MMC 5
+ #define CONFIG_ANDROID_RECOVERY_PARTITION_MMC 2
+ #define CONFIG_ANDROID_CACHE_PARTITION_MMC 6
++#define CONFIG_ANDROID_DATA_PARTITION_MMC 4
+ 
+ #define CONFIG_CMD_BOOTA
+ #define CONFIG_SUPPORT_RAW_INITRD
+-- 
+1.8.0
+

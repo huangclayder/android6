@@ -1,0 +1,28 @@
+From 9e976b196d7a148c6caa7201ada20c162ceef7ce Mon Sep 17 00:00:00 2001
+From: Peter Chen <peter.chen@freescale.com>
+Date: Wed, 3 Jun 2015 19:28:57 +0800
+Subject: [PATCH] MLK-10994-1 ARM: imx6ul-14x14-evk.dts: disable over current
+ for USB HOST
+
+This over current pin is conflict with touch screen.
+
+Signed-off-by: Peter Chen <peter.chen@freescale.com>
+---
+ arch/arm/boot/dts/imx6ul-14x14-evk.dts | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/arch/arm/boot/dts/imx6ul-14x14-evk.dts b/arch/arm/boot/dts/imx6ul-14x14-evk.dts
+index 1104118..8bd14d4 100644
+--- a/arch/arm/boot/dts/imx6ul-14x14-evk.dts
++++ b/arch/arm/boot/dts/imx6ul-14x14-evk.dts
+@@ -285,6 +285,7 @@
+ 
+ &usbotg2 {
+ 	dr_mode = "host";
++	disable-over-current;
+ 	status = "okay";
+ };
+ 
+-- 
+1.8.0
+

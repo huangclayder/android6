@@ -1,0 +1,72 @@
+From f573e4c6b44e65e26780f20c09763cde4681eb28 Mon Sep 17 00:00:00 2001
+From: "guoyin.chen" <guoyin.chen@freescale.com>
+Date: Thu, 23 Apr 2015 18:06:27 +0800
+Subject: [PATCH] MA-6580 recovery.img cannot be authenticated by HAB
+
+Remove the authentication size to be a fixed size, due to
+recovery.img may be much bigger than the boot.img
+Add signature size to boot or recovery image size, which is
+added by boot_signer in android build process
+
+Signed-off-by: guoyin.chen <guoyin.chen@freescale.com>
+(cherry picked from commit d59b24fefcd56d085c4010643ca9f6522a3cc58a)
+---
+ common/cmd_fastboot.c | 22 +++++++++++++---------
+ 1 file changed, 13 insertions(+), 9 deletions(-)
+
+diff --git a/common/cmd_fastboot.c b/common/cmd_fastboot.c
+index 16384e7..b41b8ee 100644
+--- a/common/cmd_fastboot.c
++++ b/common/cmd_fastboot.c
+@@ -1549,7 +1549,10 @@ int do_booti(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
+ #ifdef CONFIG_SECURE_BOOT
+ #define IVT_SIZE 0x20
+ #define CSF_PAD_SIZE 0x2000
+-#define ANDROID_BOOT_AUTH_SIZE 0x740000
++/* Max of bootimage size to be 16MB */
++#define MAX_ANDROID_BOOT_AUTH_SIZE 0x1000000
++/* Size appended to boot.img with boot_signer */
++#define BOOTIMAGE_SIGNATURE_SIZE 0x100
+ #endif
+ 	int i = 0;
+ 	bootm_headers_t images;
+@@ -1627,14 +1630,16 @@ int do_booti(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
+ 		bootimg_addr = hdr->kernel_addr - hdr->page_size;
+ 
+ #ifdef CONFIG_SECURE_BOOT
+-		/* Default boot.img should be padded to ANDROID_BOOT_AUTH_SIZE
+-		   before appended with IVT&CSF data. If the default boot.img exceed the
+-		   size, the IVT&CSF data cannot appended to the end of boot.img */
+-		if (image_size > ANDROID_BOOT_AUTH_SIZE) {
++		/* Default boot.img should be padded to 0x1000
++		   before appended with IVT&CSF data. Set the threshold of
++		   boot image for athendication as 16MB
++		*/
++		image_size += BOOTIMAGE_SIGNATURE_SIZE;
++		image_size = ALIGN_SECTOR(image_size, 0x1000);
++		if (image_size > MAX_ANDROID_BOOT_AUTH_SIZE) {
+ 			printf("The image size is too large for athenticated boot!\n");
+ 			return 1;
+ 		}
+-		image_size = ANDROID_BOOT_AUTH_SIZE;
+ 		/* Make sure all data boot.img + IVT + CSF been read to memory */
+ 		bootimg_sectors = image_size/512 +
+ 			ALIGN_SECTOR(IVT_SIZE + CSF_PAD_SIZE, 512)/512;
+@@ -1720,12 +1725,11 @@ int do_booti(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
+ 		image_size = hdr->page_size +
+ 			ALIGN_SECTOR(hdr->kernel_size, hdr->page_size) +
+ 			ALIGN_SECTOR(hdr->ramdisk_size, hdr->page_size) +
+-			ALIGN_SECTOR(hdr->second_size, hdr->page_size);
+-		if (image_size > ANDROID_BOOT_AUTH_SIZE) {
++			ALIGN_SECTOR(hdr->second_size, hdr->page_size) + BOOTIMAGE_SIGNATURE_SIZE;
++		if (image_size > MAX_ANDROID_BOOT_AUTH_SIZE) {
+ 			printf("The image size is too large for athenticated boot!\n");
+ 			return 1;
+ 		}
+-		image_size = ANDROID_BOOT_AUTH_SIZE;
+ 		bootimg_addr = addr;
+ 		extern uint32_t authenticate_image(uint32_t ddr_start,
+ 				uint32_t image_size);
+-- 
+1.8.0
+

@@ -1,0 +1,70 @@
+From 8131e5b0af66ed2ae326519c7a76622a38575aec Mon Sep 17 00:00:00 2001
+From: Peng Fan <Peng.Fan@freescale.com>
+Date: Tue, 28 Apr 2015 15:38:21 +0800
+Subject: [PATCH] MLK-10774-51 imx: Add epdc default configuration file
+
+Add epdc default configuration file.
+
+Signed-off-by: Peng Fan <Peng.Fan@freescale.com>
+---
+ configs/mx6dlsabresd_epdc_defconfig           | 7 +++++++
+ configs/mx6slevk_epdc_defconfig               | 7 +++++++
+ configs/mx7d_12x12_lpddr3_arm2_epdc_defconfig | 7 +++++++
+ configs/mx7dsabresd_epdc_defconfig            | 7 +++++++
+ 4 files changed, 28 insertions(+)
+
+diff --git a/configs/mx6dlsabresd_epdc_defconfig b/configs/mx6dlsabresd_epdc_defconfig
+new file mode 100644
+index 0000000..ca51c58
+--- /dev/null
++++ b/configs/mx6dlsabresd_epdc_defconfig
+@@ -0,0 +1,7 @@
++CONFIG_SYS_EXTRA_OPTIONS="IMX_CONFIG=board/freescale/mx6sabresd/mx6dlsabresd.cfg,MX6DL,MXC_EPDC"
++CONFIG_ARM=y
++CONFIG_TARGET_MX6SABRESD=y
++CONFIG_SYS_MALLOC_F=y
++CONFIG_SYS_MALLOC_F_LEN=0x400
++CONFIG_DM=y
++CONFIG_DM_THERMAL=y
+diff --git a/configs/mx6slevk_epdc_defconfig b/configs/mx6slevk_epdc_defconfig
+new file mode 100644
+index 0000000..ea1b068
+--- /dev/null
++++ b/configs/mx6slevk_epdc_defconfig
+@@ -0,0 +1,7 @@
++CONFIG_SYS_EXTRA_OPTIONS="IMX_CONFIG=board/freescale/mx6slevk/imximage.cfg,MX6SL,SPLASH_SCREEN"
++CONFIG_ARM=y
++CONFIG_TARGET_MX6SLEVK=y
++CONFIG_SYS_MALLOC_F=y
++CONFIG_SYS_MALLOC_F_LEN=0x400
++CONFIG_DM=y
++CONFIG_DM_THERMAL=y
+diff --git a/configs/mx7d_12x12_lpddr3_arm2_epdc_defconfig b/configs/mx7d_12x12_lpddr3_arm2_epdc_defconfig
+new file mode 100644
+index 0000000..26eb7e0
+--- /dev/null
++++ b/configs/mx7d_12x12_lpddr3_arm2_epdc_defconfig
+@@ -0,0 +1,7 @@
++CONFIG_SYS_EXTRA_OPTIONS="IMX_CONFIG=board/freescale/mx7d_12x12_lpddr3_arm2/imximage.cfg,MX7D,DEFAULT_FDT_FILE=\"imx7d-12x12-lpddr3-arm2.dtb\",MXC_EPDC"
++CONFIG_ARM=y
++CONFIG_TARGET_MX7D_12X12_LPDDR3_ARM2=y
++CONFIG_SYS_MALLOC_F=y
++CONFIG_SYS_MALLOC_F_LEN=0x400
++CONFIG_DM=y
++CONFIG_DM_THERMAL=y
+diff --git a/configs/mx7dsabresd_epdc_defconfig b/configs/mx7dsabresd_epdc_defconfig
+new file mode 100644
+index 0000000..b3b8877
+--- /dev/null
++++ b/configs/mx7dsabresd_epdc_defconfig
+@@ -0,0 +1,7 @@
++CONFIG_SYS_EXTRA_OPTIONS="IMX_CONFIG=board/freescale/mx7dsabresd/imximage.cfg,MX7D,MXC_EPDC"
++CONFIG_ARM=y
++CONFIG_TARGET_MX7DSABRESD=y
++CONFIG_SYS_MALLOC_F=y
++CONFIG_SYS_MALLOC_F_LEN=0x400
++CONFIG_DM=y
++CONFIG_DM_THERMAL=y
+-- 
+1.8.0
+

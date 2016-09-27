@@ -1,0 +1,40 @@
+From c60642592c5f8f65613f2dc75ebc95c1d99082b0 Mon Sep 17 00:00:00 2001
+From: Peng Fan <Peng.Fan@freescale.com>
+Date: Thu, 29 Jan 2015 13:44:24 +0800
+Subject: [PATCH] MLK-10178-1 gpio:mxc_gpio add i.MX7D support
+
+Add CONFIG_MX7 for mxc gpio driver
+
+Signed-off-by: Peng Fan <Peng.Fan@freescale.com>
+(cherry picked from commit 6e3f8dc68f1606cbbcdb4997fc0bdf1ac8a3f3b6)
+---
+ drivers/gpio/mxc_gpio.c | 8 +++++---
+ 1 file changed, 5 insertions(+), 3 deletions(-)
+
+diff --git a/drivers/gpio/mxc_gpio.c b/drivers/gpio/mxc_gpio.c
+index a49d204..12f0e6c 100644
+--- a/drivers/gpio/mxc_gpio.c
++++ b/drivers/gpio/mxc_gpio.c
+@@ -45,14 +45,16 @@ static unsigned long gpio_ports[] = {
+ 	[1] = GPIO2_BASE_ADDR,
+ 	[2] = GPIO3_BASE_ADDR,
+ #if defined(CONFIG_MX25) || defined(CONFIG_MX27) || defined(CONFIG_MX51) || \
+-		defined(CONFIG_MX53) || defined(CONFIG_MX6)
++		defined(CONFIG_MX53) || defined(CONFIG_MX6) || \
++		defined(CONFIG_MX7)
+ 	[3] = GPIO4_BASE_ADDR,
+ #endif
+-#if defined(CONFIG_MX27) || defined(CONFIG_MX53) || defined(CONFIG_MX6)
++#if defined(CONFIG_MX27) || defined(CONFIG_MX53) || defined(CONFIG_MX6) || \
++		defined(CONFIG_MX7)
+ 	[4] = GPIO5_BASE_ADDR,
+ 	[5] = GPIO6_BASE_ADDR,
+ #endif
+-#if defined(CONFIG_MX53) || defined(CONFIG_MX6)
++#if defined(CONFIG_MX53) || defined(CONFIG_MX6) || defined(CONFIG_MX7)
+ 	[6] = GPIO7_BASE_ADDR,
+ #endif
+ };
+-- 
+1.8.0
+

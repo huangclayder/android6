@@ -1,0 +1,45 @@
+From fed47c48b3026fa78523fe4a020d48b1df026503 Mon Sep 17 00:00:00 2001
+From: Liviu Dudau <Liviu.Dudau@arm.com>
+Date: Mon, 10 Mar 2014 10:55:37 +0000
+Subject: [PATCH] usb: Enable support for 64bit EHCI host controllers in
+ arm64.
+
+arm64 architecture handles correctly 64bit DMAs and can enable
+support for 64bit EHCI host controllers.
+
+Signed-off-by: Liviu Dudau <Liviu.Dudau@arm.com>
+Signed-off-by: Ryan Harkin <ryan.harkin@linaro.org>
+Signed-off-by: Mark Brown <broonie@linaro.org>
+(cherry picked from commit 23b353e73ceb505b4479218c44d0b7b4a15ae89b)
+Signed-off-by: Alex Shi <alex.shi@linaro.org>
+---
+ drivers/usb/host/ehci-hcd.c | 11 ++++++++---
+ 1 file changed, 8 insertions(+), 3 deletions(-)
+
+diff --git a/drivers/usb/host/ehci-hcd.c b/drivers/usb/host/ehci-hcd.c
+index 81cda09..d1a48e4 100644
+--- a/drivers/usb/host/ehci-hcd.c
++++ b/drivers/usb/host/ehci-hcd.c
+@@ -590,11 +590,16 @@ static int ehci_run (struct usb_hcd *hcd)
+ 	 */
+ 	hcc_params = ehci_readl(ehci, &ehci->caps->hcc_params);
+ 	if (HCC_64BIT_ADDR(hcc_params)) {
+-		ehci_writel(ehci, 0, &ehci->regs->segment);
+-#if 0
+-// this is deeply broken on almost all architectures
++#if CONFIG_ARM64
++		ehci_writel(ehci, ehci->periodic_dma >> 32, &ehci->regs->segment);
++		/*
++		 * this is deeply broken on almost all architectures
++		 * but arm64 can use it so enable it
++		 */
+ 		if (!dma_set_mask(hcd->self.controller, DMA_BIT_MASK(64)))
+ 			ehci_info(ehci, "enabled 64bit DMA\n");
++#else
++		ehci_writel(ehci, 0, &ehci->regs->segment);
+ #endif
+ 	}
+ 
+-- 
+1.8.0
+

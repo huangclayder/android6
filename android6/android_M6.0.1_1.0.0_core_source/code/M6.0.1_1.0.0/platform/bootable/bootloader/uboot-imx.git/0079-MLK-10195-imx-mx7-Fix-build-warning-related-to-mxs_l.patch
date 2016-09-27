@@ -1,0 +1,34 @@
+From be63430f01bae7d27dde2cb936b569d171c5b038 Mon Sep 17 00:00:00 2001
+From: "Ye.Li" <B37916@freescale.com>
+Date: Mon, 2 Feb 2015 17:07:20 +0800
+Subject: [PATCH] MLK-10195 imx: mx7: Fix build warning related to
+ mxs_lcd_init
+
+Fix the warning below by adding function declare:
+
+drivers/video/mxsfb.c: In function 'mxs_lcd_init':
+drivers/video/mxsfb.c:92:2: warning: implicit declaration of
+function 'mxs_set_lcdclk' [-Wimplicit-function-declaration]
+  mxs_set_lcdclk(panel->isaBase, PS2KHZ(mode->pixclock));
+
+Signed-off-by: Ye.Li <B37916@freescale.com>
+(cherry picked from commit 615af07d960d9ec17708fb1712b2362dbaeab121)
+Signed-off-by: Peng Fan <Peng.Fan@freescale.com>
+---
+ arch/arm/include/asm/arch-mx7/clock.h | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/arch/arm/include/asm/arch-mx7/clock.h b/arch/arm/include/asm/arch-mx7/clock.h
+index 292baf4..cd128ce 100644
+--- a/arch/arm/include/asm/arch-mx7/clock.h
++++ b/arch/arm/include/asm/arch-mx7/clock.h
+@@ -344,5 +344,5 @@ void enable_usboh3_clk(unsigned char enable);
+ void hab_caam_clock_enable(void);
+ void hab_caam_clock_disable(void);
+ #endif
+-
++void mxs_set_lcdclk(uint32_t base_addr, uint32_t freq);
+ #endif
+-- 
+1.8.0
+

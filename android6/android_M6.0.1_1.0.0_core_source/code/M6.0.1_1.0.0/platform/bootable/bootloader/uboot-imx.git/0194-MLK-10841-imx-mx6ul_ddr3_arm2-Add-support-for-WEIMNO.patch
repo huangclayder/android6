@@ -1,0 +1,79 @@
+From cc5a7001a79d88c399545d8c62e57665be7efb83 Mon Sep 17 00:00:00 2001
+From: "Ye.Li" <B37916@freescale.com>
+Date: Thu, 7 May 2015 12:16:19 +0800
+Subject: [PATCH] MLK-10841 imx: mx6ul_ddr3_arm2: Add support for WEIMNOR boot
+
+Correct the EIMNOR settings to non-mux mode and set the environment
+variables configuration to FLASH when using WEIMNOR boot.
+
+New target is added for build WEIMNOR boot u-boot:
+    mx6ul_ddr3_arm2_eimnor_config
+
+Signed-off-by: Ye.Li <B37916@freescale.com>
+---
+ board/freescale/mx6ul_ddr3_arm2/mx6ul_ddr3_arm2.c | 8 ++++----
+ configs/mx6ul_ddr3_arm2_eimnor_defconfig          | 7 +++++++
+ include/configs/mx6ul_ddr3_arm2.h                 | 7 ++++++-
+ 3 files changed, 17 insertions(+), 5 deletions(-)
+
+diff --git a/board/freescale/mx6ul_ddr3_arm2/mx6ul_ddr3_arm2.c b/board/freescale/mx6ul_ddr3_arm2/mx6ul_ddr3_arm2.c
+index bbf5048..644018e 100644
+--- a/board/freescale/mx6ul_ddr3_arm2/mx6ul_ddr3_arm2.c
++++ b/board/freescale/mx6ul_ddr3_arm2/mx6ul_ddr3_arm2.c
+@@ -326,11 +326,11 @@ static iomux_v3_cfg_t const eimnor_pads[] = {
+ static void eimnor_cs_setup(void)
+ {
+ 	writel(0x00000120, WEIM_BASE_ADDR + 0x090);
+-	writel(0x00610089, WEIM_BASE_ADDR + 0x000);
++	writel(0x00010181, WEIM_BASE_ADDR + 0x000);
+ 	writel(0x00000001, WEIM_BASE_ADDR + 0x004);
+-	writel(0x1c022000, WEIM_BASE_ADDR + 0x008);
+-	writel(0x00000000, WEIM_BASE_ADDR + 0x00c);
+-	writel(0x1404a38e, WEIM_BASE_ADDR + 0x010);
++	writel(0x0a020000, WEIM_BASE_ADDR + 0x008);
++	writel(0x0000c000, WEIM_BASE_ADDR + 0x00c);
++	writel(0x0804a240, WEIM_BASE_ADDR + 0x010);
+ }
+ 
+ static void setup_eimnor(void)
+diff --git a/configs/mx6ul_ddr3_arm2_eimnor_defconfig b/configs/mx6ul_ddr3_arm2_eimnor_defconfig
+new file mode 100644
+index 0000000..ba65814
+--- /dev/null
++++ b/configs/mx6ul_ddr3_arm2_eimnor_defconfig
+@@ -0,0 +1,7 @@
++CONFIG_SYS_EXTRA_OPTIONS="IMX_CONFIG=board/freescale/mx6ul_ddr3_arm2/imximage.cfg,MX6UL,SYS_BOOT_EIMNOR"
++CONFIG_ARM=y
++CONFIG_TARGET_MX6UL_DDR3_ARM2=y
++CONFIG_SYS_MALLOC_F=y
++CONFIG_SYS_MALLOC_F_LEN=0x400
++CONFIG_DM=y
++CONFIG_DM_THERMAL=y
+diff --git a/include/configs/mx6ul_ddr3_arm2.h b/include/configs/mx6ul_ddr3_arm2.h
+index aea199d..23be08c 100644
+--- a/include/configs/mx6ul_ddr3_arm2.h
++++ b/include/configs/mx6ul_ddr3_arm2.h
+@@ -345,7 +345,7 @@
+ #define CONFIG_SYS_FLASH_BASE           WEIM_ARB_BASE_ADDR
+ #define CONFIG_SYS_FLASH_SECT_SIZE	(128 * 1024)
+ #define CONFIG_SYS_MAX_FLASH_BANKS 1    /* max number of memory banks */
+-#define CONFIG_SYS_MAX_FLASH_SECT 256   /* max number of sectors on one chip */
++#define CONFIG_SYS_MAX_FLASH_SECT 1024   /* max number of sectors on one chip */
+ #define CONFIG_SYS_FLASH_CFI            /* Flash memory is CFI compliant */
+ #define CONFIG_FLASH_CFI_DRIVER         /* Use drivers/cfi_flash.c */
+ #define CONFIG_SYS_FLASH_USE_BUFFER_WRITE /* Use buffered writes*/
+@@ -376,6 +376,11 @@
+ #define CONFIG_ENV_SPI_CS		CONFIG_SF_DEFAULT_CS
+ #define CONFIG_ENV_SPI_MODE		CONFIG_SF_DEFAULT_MODE
+ #define CONFIG_ENV_SPI_MAX_HZ		CONFIG_SF_DEFAULT_SPEED
++#elif defined(CONFIG_ENV_IS_IN_FLASH)
++#undef CONFIG_ENV_SIZE
++#define CONFIG_ENV_SIZE                        CONFIG_SYS_FLASH_SECT_SIZE
++#define CONFIG_ENV_SECT_SIZE           CONFIG_SYS_FLASH_SECT_SIZE
++#define CONFIG_ENV_OFFSET              (4 * CONFIG_SYS_FLASH_SECT_SIZE)
+ #elif defined(CONFIG_ENV_IS_IN_NAND)
+ #undef CONFIG_ENV_SIZE
+ #define CONFIG_ENV_OFFSET		(8 << 20)
+-- 
+1.8.0
+

@@ -1,0 +1,76 @@
+From af5bf49efada301d8ac176b41dbc47b7a83fd3da Mon Sep 17 00:00:00 2001
+From: Ke Qinghua <qinghua.ke@freescale.com>
+Date: Tue, 17 Jun 2014 17:06:45 +0800
+Subject: [PATCH 321/602] ENGR00317265 Upgrade android kk4.4.2 to kk4.4.3
+
+Update TARGET_BOOTLOADER_CONFIG for new uboot(imx_v2014.04) build
+
+Signed-off-by: Ke Qinghua <qinghua.ke@freescale.com>
+---
+ evk_6sl/BoardConfig.mk      | 2 +-
+ sabreauto_6q/BoardConfig.mk | 2 +-
+ sabresd_6dq/BoardConfig.mk  | 2 +-
+ sabresd_6sx/BoardConfig.mk  | 2 +-
+ 4 files changed, 4 insertions(+), 4 deletions(-)
+ mode change 100755 => 100644 sabresd_6dq/BoardConfig.mk
+ mode change 100755 => 100644 sabresd_6sx/BoardConfig.mk
+
+diff --git a/evk_6sl/BoardConfig.mk b/evk_6sl/BoardConfig.mk
+index a04741b..9694a93 100644
+--- a/evk_6sl/BoardConfig.mk
++++ b/evk_6sl/BoardConfig.mk
+@@ -78,7 +78,7 @@ IMX_CAMERA_HAL_V2 := false
+ NUM_FRAMEBUFFER_SURFACE_BUFFERS := 3
+ 
+ BOARD_KERNEL_CMDLINE := console=ttymxc0,115200 init=/init androidboot.console=ttymxc0 video=mxc_elcdif_fb:bpp=32 androidboot.hardware=freescale
+-TARGET_BOOTLOADER_CONFIG := imx6sl:mx6slevkandroid
++TARGET_BOOTLOADER_CONFIG := imx6sl:mx6slevkandroid_config
+ TARGET_BOARD_DTS_CONFIG := imx6sl:imx6sl-evk-csi.dtb
+ 
+ BOARD_SEPOLICY_DIRS := \
+diff --git a/sabreauto_6q/BoardConfig.mk b/sabreauto_6q/BoardConfig.mk
+index 0954e84..3f68a7a 100644
+--- a/sabreauto_6q/BoardConfig.mk
++++ b/sabreauto_6q/BoardConfig.mk
+@@ -102,7 +102,7 @@ $(error "TARGET_USERIMAGES_USE_UBIFS and TARGET_USERIMAGES_USE_EXT4 config open
+ endif
+ endif
+ 
+-TARGET_BOOTLOADER_CONFIG := imx6q:mx6qsabreautoandroid imx6dl:mx6dlsabreautoandroid imx6solo:mx6solosabresdandroid imx6q-nand:mx6qsabreautoandroid_nand imx6dl-nand:mx6dlsabreautoandroid_nand imx6solo-nand:mx6solosabreauto_nand
++TARGET_BOOTLOADER_CONFIG := imx6q:mx6qsabreautoandroid_config imx6dl:mx6dlsabreautoandroid_config imx6solo:mx6solosabresdandroid_config imx6q-nand:mx6qsabreautoandroid_nand_config imx6dl-nand:mx6dlsabreautoandroid_nand_config imx6solo-nand:mx6solosabreauto_nand_config
+ TARGET_BOARD_DTS_CONFIG := imx6q:imx6q-sabreauto.dtb imx6dl:imx6dl-sabreauto.dtb imx6q-nand:imx6q-sabreauto-gpmi-weim.dtb imx6dl-nand:imx6dl-sabreauto-gpmi-weim.dtb
+ 
+ BOARD_SEPOLICY_DIRS := \
+diff --git a/sabresd_6dq/BoardConfig.mk b/sabresd_6dq/BoardConfig.mk
+old mode 100755
+new mode 100644
+index 7c405cd..baef80f
+--- a/sabresd_6dq/BoardConfig.mk
++++ b/sabresd_6dq/BoardConfig.mk
+@@ -106,7 +106,7 @@ NUM_FRAMEBUFFER_SURFACE_BUFFERS := 3
+ #define consumer IR HAL support
+ IMX6_CONSUMER_IR_HAL := true
+ 
+-TARGET_BOOTLOADER_CONFIG := imx6q:mx6qsabresdandroid imx6dl:mx6dlsabresdandroid
++TARGET_BOOTLOADER_CONFIG := imx6q:mx6qsabresdandroid_config imx6dl:mx6dlsabresdandroid_config
+ TARGET_BOARD_DTS_CONFIG := imx6q:imx6q-sabresd.dtb imx6dl:imx6dl-sabresd.dtb
+ 
+ BOARD_SEPOLICY_DIRS := \
+diff --git a/sabresd_6sx/BoardConfig.mk b/sabresd_6sx/BoardConfig.mk
+old mode 100755
+new mode 100644
+index 5144aaf..2754cc8
+--- a/sabresd_6sx/BoardConfig.mk
++++ b/sabresd_6sx/BoardConfig.mk
+@@ -106,7 +106,7 @@ NUM_FRAMEBUFFER_SURFACE_BUFFERS := 3
+ #define consumer IR HAL support
+ IMX6_CONSUMER_IR_HAL := true
+ 
+-TARGET_BOOTLOADER_CONFIG := imx6sx:mx6sxsabresdandroid
++TARGET_BOOTLOADER_CONFIG := imx6sx:mx6sxsabresdandroid_config
+ TARGET_BOARD_DTS_CONFIG := imx6sx:imx6sx-sdb.dtb
+ 
+ BOARD_SEPOLICY_DIRS := \
+-- 
+1.8.0
+

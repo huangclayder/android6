@@ -1,0 +1,40 @@
+From 44ce1b57c46c84cb3d9aa413701763d7cf72b919 Mon Sep 17 00:00:00 2001
+From: Punit Agrawal <punit.agrawal@arm.com>
+Date: Tue, 3 Jun 2014 10:59:58 +0100
+Subject: [PATCH] thermal: Bind cooling devices with the correct arguments
+
+When binding cooling devices to thermal zones created from the device
+tree the minimum and maximum cooling states are in the wrong order
+leading to failure to bind.
+
+Fix the order of cooling states in the call to
+thermal_zone_bind_cooling_device to fix this.
+
+Cc:Zhang Rui <rui.zhang@intel.com>
+Signed-off-by: Punit Agrawal <punit.agrawal@arm.com>
+Reviewed-by: Stephen Boyd <sboyd@codeaurora.org>
+Signed-off-by: Zhang Rui <rui.zhang@intel.com>
+(cherry picked from commit dd354b84d47ec8ca53686bdb3cc1aecdeb75bef5)
+Signed-off-by: Alex Shi <alex.shi@linaro.org>
+---
+ drivers/thermal/of-thermal.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/thermal/of-thermal.c b/drivers/thermal/of-thermal.c
+index 04b1be7..97d312f 100644
+--- a/drivers/thermal/of-thermal.c
++++ b/drivers/thermal/of-thermal.c
+@@ -156,8 +156,8 @@ static int of_thermal_bind(struct thermal_zone_device *thermal,
+ 
+ 			ret = thermal_zone_bind_cooling_device(thermal,
+ 						tbp->trip_id, cdev,
+-						tbp->min,
+-						tbp->max);
++						tbp->max,
++						tbp->min);
+ 			if (ret)
+ 				return ret;
+ 		}
+-- 
+1.8.0
+

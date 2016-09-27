@@ -1,0 +1,264 @@
+From 4f3076d343e5c7785c9c375887ee124a2bd5f54e Mon Sep 17 00:00:00 2001
+From: zhang sanshan <b51434@freescale.com>
+Date: Fri, 23 Jan 2015 10:07:05 +0800
+Subject: [PATCH 432/602] MA-5948 Support DM-Verity on Lollipop
+
+enable dm-verity in lollipop. set the verity partition and 'verify' in fstab.
+
+Signed-off-by: zhang sanshan <b51434@freescale.com>
+---
+ evk_6sl/BoardConfig.mk         | 2 +-
+ evk_6sl/fstab.freescale        | 2 +-
+ imx6/evk_6sl.mk                | 5 +++++
+ imx6/sabreauto_6q.mk           | 6 +++++-
+ imx6/sabreauto_6sx.mk          | 6 +++++-
+ imx6/sabresd_6dq.mk            | 9 +++++++++
+ imx6/sabresd_6sx.mk            | 3 +++
+ sabreauto_6q/BoardConfig.mk    | 2 +-
+ sabreauto_6q/fstab.freescale   | 2 +-
+ sabreauto_6sx/BoardConfig.mk   | 2 +-
+ sabreauto_6sx/fstab.freescale  | 2 +-
+ sabresd_6dq/BoardConfig.mk     | 2 +-
+ sabresd_6dq/fstab.freescale    | 2 +-
+ sabresd_6dq/fstab_sd.freescale | 2 +-
+ sabresd_6sx/BoardConfig.mk     | 2 +-
+ sabresd_6sx/fstab.freescale    | 2 +-
+ 16 files changed, 38 insertions(+), 13 deletions(-)
+
+diff --git a/evk_6sl/BoardConfig.mk b/evk_6sl/BoardConfig.mk
+index e851d43..b239c6e 100644
+--- a/evk_6sl/BoardConfig.mk
++++ b/evk_6sl/BoardConfig.mk
+@@ -72,7 +72,7 @@ USE_QEMU_GPS_HARDWARE := false
+ TARGET_SELECT_KEY := 28
+ # we don't support sparse image.
+ TARGET_USERIMAGES_SPARSE_EXT_DISABLED := false
+-
++DM_VERITY_RUNTIME_CONFIG := true
+ # atheros 3k BT
+ BOARD_USE_AR3K_BLUETOOTH := false
+ 
+diff --git a/evk_6sl/fstab.freescale b/evk_6sl/fstab.freescale
+index 3f16946..0b25bc4 100644
+--- a/evk_6sl/fstab.freescale
++++ b/evk_6sl/fstab.freescale
+@@ -5,7 +5,7 @@
+ 
+ /devices/soc0/soc.2/2100000.aips-bus/2190000.usdhc/mmc_host /mnt/media_rw/extsd vfat defaults voldmanaged=extsd:auto
+ /devices/soc0/soc.2/2100000.aips-bus/2184200.usb/ci_hdrc.1 /mnt/media_rw/udisk vfat defaults voldmanaged=udisk:auto
+-/dev/block/mmcblk1p5    /system      ext4    ro                                                                               wait
++/dev/block/mmcblk1p5    /system      ext4    ro,barrier=1                                                                               wait,verify
+ /dev/block/mmcblk1p4    /data        ext4    nosuid,nodev,nodiratime,noatime,nomblk_io_submit,noauto_da_alloc,errors=panic    wait,encryptable=/dev/block/mmcblk1p9
+ /dev/block/mmcblk1p6    /cache       ext4    nosuid,nodev,nomblk_io_submit                                                    wait
+ /dev/block/mmcblk1p7    /device      ext4    ro,nosuid,nodev                                                                  wait
+diff --git a/imx6/evk_6sl.mk b/imx6/evk_6sl.mk
+index da04282..a47b613 100644
+--- a/imx6/evk_6sl.mk
++++ b/imx6/evk_6sl.mk
+@@ -12,6 +12,10 @@ ifneq ($(wildcard device/fsl/evk_6dq/fstab.freescale),)
+ $(shell touch device/fsl/evk_6sl/fstab.freescale)
+ endif
+ 
++# setup dm-verity configs.
++ PRODUCT_SYSTEM_VERITY_PARTITION := /dev/block/mmcblk1p5
++ $(call inherit-product, build/target/product/verity.mk)
++
+ # Overrides
+ PRODUCT_NAME := evk_6sl
+ PRODUCT_DEVICE := evk_6sl
+@@ -25,6 +29,7 @@ PRODUCT_COPY_FILES += \
+ 	device/fsl/evk_6sl/audio_policy.conf:system/etc/audio_policy.conf \
+ 	device/fsl/evk_6sl/audio_effects.conf:system/vendor/etc/audio_effects.conf
+ 
++
+ DEVICE_PACKAGE_OVERLAYS := device/fsl/evk_6sl/overlay
+ 
+ PRODUCT_CHARACTERISTICS := tablet
+diff --git a/imx6/sabreauto_6q.mk b/imx6/sabreauto_6q.mk
+index a9faf21..9fdfc2d 100644
+--- a/imx6/sabreauto_6q.mk
++++ b/imx6/sabreauto_6q.mk
+@@ -24,7 +24,11 @@ PRODUCT_COPY_FILES += \
+ PRODUCT_COPY_FILES +=	\
+ 	external/linux-firmware-imx/firmware/vpu/vpu_fw_imx6d.bin:system/lib/firmware/vpu/vpu_fw_imx6d.bin 	\
+ 	external/linux-firmware-imx/firmware/vpu/vpu_fw_imx6q.bin:system/lib/firmware/vpu/vpu_fw_imx6q.bin
+-
++# setup dm-verity configs.
++ifneq ($(BUILD_TARGET_FS),ubifs)
++PRODUCT_SYSTEM_VERITY_PARTITION := /dev/block/mmcblk2p5
++$(call inherit-product, build/target/product/verity.mk)
++endif
+ # GPU files
+ 
+ DEVICE_PACKAGE_OVERLAYS := device/fsl/sabreauto_6q/overlay
+diff --git a/imx6/sabreauto_6sx.mk b/imx6/sabreauto_6sx.mk
+index ec17ee8..b28db2b 100644
+--- a/imx6/sabreauto_6sx.mk
++++ b/imx6/sabreauto_6sx.mk
+@@ -20,7 +20,11 @@ PRODUCT_COPY_FILES += \
+ 	device/fsl/sabreauto_6sx/init.rc:root/init.freescale.rc \
+ 	device/fsl/sabreauto_6sx/audio_policy.conf:system/etc/audio_policy.conf \
+ 	device/fsl/sabreauto_6sx/audio_effects.conf:system/vendor/etc/audio_effects.conf
+-
++# setup dm-verity configs.
++ifneq ($(BUILD_TARGET_FS),ubifs)
++ PRODUCT_SYSTEM_VERITY_PARTITION := /dev/block/mmcblk2p5
++ $(call inherit-product, build/target/product/verity.mk)
++endif
+ # GPU files
+ 
+ DEVICE_PACKAGE_OVERLAYS := device/fsl/sabreauto_6sx/overlay
+diff --git a/imx6/sabresd_6dq.mk b/imx6/sabresd_6dq.mk
+index 541a833..c1a1a28 100644
+--- a/imx6/sabresd_6dq.mk
++++ b/imx6/sabresd_6dq.mk
+@@ -25,6 +25,15 @@ PRODUCT_COPY_FILES += \
+ PRODUCT_COPY_FILES +=	\
+ 	external/linux-firmware-imx/firmware/vpu/vpu_fw_imx6d.bin:system/lib/firmware/vpu/vpu_fw_imx6d.bin 	\
+ 	external/linux-firmware-imx/firmware/vpu/vpu_fw_imx6q.bin:system/lib/firmware/vpu/vpu_fw_imx6q.bin
++# setup dm-verity configs.
++ifneq ($(BUILD_TARGET_DEVICE),sd)
++ PRODUCT_SYSTEM_VERITY_PARTITION := /dev/block/mmcblk3p5
++ $(call inherit-product, build/target/product/verity.mk)
++else 
++ PRODUCT_SYSTEM_VERITY_PARTITION := /dev/block/mmcblk2p5
++ $(call inherit-product, build/target/product/verity.mk)
++
++endif
+ 
+ # GPU files
+ 
+diff --git a/imx6/sabresd_6sx.mk b/imx6/sabresd_6sx.mk
+index 7072a50..854a4ca 100644
+--- a/imx6/sabresd_6sx.mk
++++ b/imx6/sabresd_6sx.mk
+@@ -21,6 +21,9 @@ PRODUCT_COPY_FILES += \
+ 	device/fsl/sabresd_6sx/gpsreset.sh:system/etc/gpsreset.sh \
+ 	device/fsl/sabresd_6sx/audio_policy.conf:system/etc/audio_policy.conf \
+ 	device/fsl/sabresd_6sx/audio_effects.conf:system/vendor/etc/audio_effects.conf
++# setup dm-verity configs.
++ PRODUCT_SYSTEM_VERITY_PARTITION := /dev/block/mmcblk3p5
++ $(call inherit-product, build/target/product/verity.mk)
+ 
+ # GPU files
+ 
+diff --git a/sabreauto_6q/BoardConfig.mk b/sabreauto_6q/BoardConfig.mk
+index 5086404..e6266a2 100644
+--- a/sabreauto_6q/BoardConfig.mk
++++ b/sabreauto_6q/BoardConfig.mk
+@@ -77,7 +77,7 @@ SENSOR_MMA8451 := true
+ TARGET_SELECT_KEY := 28
+ # we don't support sparse image.
+ TARGET_USERIMAGES_SPARSE_EXT_DISABLED := false
+-
++DM_VERITY_RUNTIME_CONFIG := true
+ # atheros 3k BT
+ BOARD_USE_AR3K_BLUETOOTH := false
+ 
+diff --git a/sabreauto_6q/fstab.freescale b/sabreauto_6q/fstab.freescale
+index 039f992..aa0b107 100644
+--- a/sabreauto_6q/fstab.freescale
++++ b/sabreauto_6q/fstab.freescale
+@@ -5,7 +5,7 @@
+ 
+ /devices/soc0/soc.1/2100000.aips-bus/2190000.usdhc/mmc_host /mnt/media_rw/extsd vfat defaults voldmanaged=extsd:auto
+ /devices/soc0/soc.1/2100000.aips-bus/2184000.usb/ci_hdrc.0  /mnt/media_rw/udisk vfat defaults voldmanaged=udisk:auto
+-/dev/block/mmcblk2p5    /system      ext4    ro                                                                               wait
++/dev/block/mmcblk2p5    /system      ext4    ro,barrier=1                                                                               wait,verify
+ /dev/block/mmcblk2p4    /data        ext4    nosuid,nodev,nodiratime,noatime,nomblk_io_submit,noauto_da_alloc,errors=panic    wait,encryptable=/dev/block/mmcblk2p9
+ /dev/block/mmcblk2p6    /cache       ext4    nosuid,nodev,nomblk_io_submit                                                    wait
+ /dev/block/mmcblk2p7    /device      ext4    ro,nosuid,nodev                                                                  wait
+diff --git a/sabreauto_6sx/BoardConfig.mk b/sabreauto_6sx/BoardConfig.mk
+index 0397da5..c27f6d9 100755
+--- a/sabreauto_6sx/BoardConfig.mk
++++ b/sabreauto_6sx/BoardConfig.mk
+@@ -72,7 +72,7 @@ SENSOR_MMA8451 := true
+ TARGET_SELECT_KEY := 28
+ # we don't support sparse image.
+ TARGET_USERIMAGES_SPARSE_EXT_DISABLED := false
+-
++DM_VERITY_RUNTIME_CONFIG := true
+ BOARD_KERNEL_CMDLINE := console=ttymxc0,115200 init=/init androidboot.console=ttymxc0 consoleblank=0 androidboot.hardware=freescale vmalloc=400M cma=512M 
+ 
+ ifeq ($(TARGET_USERIMAGES_USE_UBIFS),true)
+diff --git a/sabreauto_6sx/fstab.freescale b/sabreauto_6sx/fstab.freescale
+index 719f2b8..b65c5e7 100644
+--- a/sabreauto_6sx/fstab.freescale
++++ b/sabreauto_6sx/fstab.freescale
+@@ -5,7 +5,7 @@
+ 
+ /devices/soc0/soc.1/2100000.aips-bus/219c000.usdhc/mmc_host /mnt/media_rw/extsd vfat defaults voldmanaged=extsd:auto
+ /devices/soc0/soc.1/2100000.aips-bus/2184000.usb/ci_hdrc.0  /mnt/media_rw/udisk vfat defaults voldmanaged=udisk:auto
+-/dev/block/mmcblk2p5    /system      ext4    ro                                                                               wait
++/dev/block/mmcblk2p5    /system      ext4    ro,barrier=1                                                                               wait,verify
+ /dev/block/mmcblk2p4    /data        ext4    nosuid,nodev,nodiratime,noatime,nomblk_io_submit,noauto_da_alloc,errors=panic    wait,encryptable=/dev/block/mmcblk2p9
+ /dev/block/mmcblk2p6    /cache       ext4    nosuid,nodev,nomblk_io_submit                                                    wait
+ /dev/block/mmcblk2p7    /device      ext4    ro,nosuid,nodev                                                                  wait
+diff --git a/sabresd_6dq/BoardConfig.mk b/sabresd_6dq/BoardConfig.mk
+index 7a2c3c5..516c8e5 100644
+--- a/sabresd_6dq/BoardConfig.mk
++++ b/sabresd_6dq/BoardConfig.mk
+@@ -80,7 +80,7 @@ TARGET_SELECT_KEY := 28
+ 
+ # we don't support sparse image.
+ TARGET_USERIMAGES_SPARSE_EXT_DISABLED := false
+-
++DM_VERITY_RUNTIME_CONFIG := true
+ # uncomment below lins if use NAND
+ #TARGET_USERIMAGES_USE_UBIFS = true
+ 
+diff --git a/sabresd_6dq/fstab.freescale b/sabresd_6dq/fstab.freescale
+index 12c6456..7bbea80 100644
+--- a/sabresd_6dq/fstab.freescale
++++ b/sabresd_6dq/fstab.freescale
+@@ -5,7 +5,7 @@
+ 
+ /devices/soc0/soc.1/2100000.aips-bus/2198000.usdhc/mmc_host /mnt/media_rw/extsd vfat defaults voldmanaged=extsd:auto
+ /devices/soc0/soc.1/2100000.aips-bus/2184000.usb/ci_hdrc.0  /mnt/media_rw/udisk vfat defaults voldmanaged=udisk:auto
+-/dev/block/mmcblk3p5    /system      ext4    ro                                                                               wait
++/dev/block/mmcblk3p5    /system      ext4    ro,barrier=1                                                                               wait,verify
+ /dev/block/mmcblk3p4    /data        ext4    nosuid,nodev,nodiratime,noatime,nomblk_io_submit,noauto_da_alloc,errors=panic    wait,encryptable=/dev/block/mmcblk3p9
+ /dev/block/mmcblk3p6    /cache       ext4    nosuid,nodev,nomblk_io_submit                                                    wait
+ /dev/block/mmcblk3p7    /device      ext4    ro,nosuid,nodev                                                                  wait
+diff --git a/sabresd_6dq/fstab_sd.freescale b/sabresd_6dq/fstab_sd.freescale
+index 7e91adf..b7566fd 100644
+--- a/sabresd_6dq/fstab_sd.freescale
++++ b/sabresd_6dq/fstab_sd.freescale
+@@ -5,7 +5,7 @@
+ 
+ /devices/soc0/soc.1/2100000.aips-bus/2194000.usdhc/mmc_host /mnt/media_rw/extsd vfat defaults voldmanaged=extsd:auto
+ /devices/soc0/soc.1/2100000.aips-bus/2184000.usb/ci_hdrc.0  /mnt/media_rw/udisk vfat defaults voldmanaged=udisk:auto
+-/dev/block/mmcblk2p5    /system      ext4    ro                                                                               wait
++/dev/block/mmcblk2p5    /system      ext4    ro,barrier=1                                                                               wait,verify
+ /dev/block/mmcblk2p4    /data        ext4    nosuid,nodev,nodiratime,noatime,nomblk_io_submit,noauto_da_alloc,errors=panic    wait,encryptable=/dev/block/mmcblk2p9
+ /dev/block/mmcblk2p6    /cache       ext4    nosuid,nodev,nomblk_io_submit                                                    wait
+ /dev/block/mmcblk2p7    /device      ext4    ro,nosuid,nodev                                                                  wait
+diff --git a/sabresd_6sx/BoardConfig.mk b/sabresd_6sx/BoardConfig.mk
+index 24d1328..0b27ba5 100644
+--- a/sabresd_6sx/BoardConfig.mk
++++ b/sabresd_6sx/BoardConfig.mk
+@@ -73,7 +73,7 @@ TARGET_SELECT_KEY := 28
+ 
+ # we don't support sparse image.
+ TARGET_USERIMAGES_SPARSE_EXT_DISABLED := false
+-
++DM_VERITY_RUNTIME_CONFIG := true
+ # uncomment below lins if use NAND
+ #TARGET_USERIMAGES_USE_UBIFS = true
+ 
+diff --git a/sabresd_6sx/fstab.freescale b/sabresd_6sx/fstab.freescale
+index 03289e8..c8dfb02 100644
+--- a/sabresd_6sx/fstab.freescale
++++ b/sabresd_6sx/fstab.freescale
+@@ -5,7 +5,7 @@
+ 
+ /devices/soc0/soc.1/2100000.aips-bus/2198000.usdhc/mmc_host /mnt/media_rw/extsd vfat defaults voldmanaged=extsd:auto
+ /devices/soc0/soc.1/2100000.aips-bus/2184200.usb/ci_hdrc.1  /mnt/media_rw/udisk vfat defaults voldmanaged=udisk:auto
+-/dev/block/mmcblk3p5    /system      ext4    ro                                                                               wait
++/dev/block/mmcblk3p5    /system      ext4    ro,barrier=1                                                                               wait,verify
+ /dev/block/mmcblk3p4    /data        ext4    nosuid,nodev,nodiratime,noatime,nomblk_io_submit,noauto_da_alloc,errors=panic    wait,encryptable=/dev/block/mmcblk3p9
+ /dev/block/mmcblk3p6    /cache       ext4    nosuid,nodev,nomblk_io_submit                                                    wait
+ /dev/block/mmcblk3p7    /device      ext4    ro,nosuid,nodev                                                                  wait
+-- 
+1.8.0
+

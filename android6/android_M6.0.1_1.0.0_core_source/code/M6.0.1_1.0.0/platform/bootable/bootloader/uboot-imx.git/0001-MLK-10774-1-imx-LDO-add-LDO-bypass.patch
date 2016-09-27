@@ -1,0 +1,243 @@
+From c0a8bf9ce4e747cac85c308658e0dbea0de448e7 Mon Sep 17 00:00:00 2001
+From: Peng Fan <Peng.Fan@freescale.com>
+Date: Thu, 12 Mar 2015 10:08:03 +0800
+Subject: [PATCH] MLK-10774-1 imx: LDO: add LDO bypass
+
+This patch is from two commits:
+1.
+748eac71fde78aa0c2e8cb3a3bab94bd994c06f5
+ENGR00315499-5: Support i.MX6 1.2GHz via LDO bypass
+
+Add check for 1.2GHz core speed. If Speed grading fuse is for 1.2GHz,
+enable LDO bypass and setup PMIC voltages. LDO bypass is dependent
+on the flatten device tree file.
+
+2.
+93d457e4c601ee5266bc30b7dfa5fa1bbfa8500a
+MLK-9891-1: ARM: imx6: split WDOG_B setting from set_anatop_bypass() function
+
+We set WDOG_B in set_anatop_bypass() before, because it is the only case, but now
+on i.mx6sabreauto board, we didn't use ldo-bypass mode, but have to use WDOG_B to
+reboot whole board, so split these code to independent function so that board file
+can call it freely.
+
+Board code is not included, board ldo bypass code will be in bsp update code.
+
+Signed-off-by: Peng Fan <Peng.Fan@freescale.com>
+---
+ arch/arm/cpu/armv7/mx6/soc.c              | 142 ++++++++++++++++++++++++++++++
+ arch/arm/imx-common/cpu.c                 |   3 +
+ arch/arm/include/asm/arch-mx6/sys_proto.h |  10 +++
+ include/configs/mx6_common.h              |   1 +
+ 4 files changed, 156 insertions(+)
+
+diff --git a/arch/arm/cpu/armv7/mx6/soc.c b/arch/arm/cpu/armv7/mx6/soc.c
+index dd34138..0d1801c 100644
+--- a/arch/arm/cpu/armv7/mx6/soc.c
++++ b/arch/arm/cpu/armv7/mx6/soc.c
+@@ -18,6 +18,7 @@
+ #include <asm/arch/sys_proto.h>
+ #include <asm/imx-common/boot_mode.h>
+ #include <asm/imx-common/dma.h>
++#include <libfdt.h>
+ #include <stdbool.h>
+ #include <asm/arch/mxc_hdmi.h>
+ #include <asm/arch/crm_regs.h>
+@@ -475,6 +476,147 @@ void s_init(void)
+ 	writel(mask528, &anatop->pfd_528_clr);
+ }
+ 
++#ifdef CONFIG_LDO_BYPASS_CHECK
++DECLARE_GLOBAL_DATA_PTR;
++static int ldo_bypass;
++
++int check_ldo_bypass(void)
++{
++	const int *ldo_mode;
++	int node;
++
++	/* get the right fdt_blob from the global working_fdt */
++	gd->fdt_blob = working_fdt;
++	/* Get the node from FDT for anatop ldo-bypass */
++	node = fdt_node_offset_by_compatible(gd->fdt_blob, -1,
++		"fsl,imx6q-gpc");
++	if (node < 0) {
++		printf("No gpc device node %d, force to ldo-enable.\n", node);
++		return 0;
++	}
++	ldo_mode = fdt_getprop(gd->fdt_blob, node, "fsl,ldo-bypass", NULL);
++	/*
++	 * return 1 if "fsl,ldo-bypass = <1>", else return 0 if
++	 * "fsl,ldo-bypass = <0>" or no "fsl,ldo-bypass" property
++	 */
++	ldo_bypass = fdt32_to_cpu(*ldo_mode) == 1 ? 1 : 0;
++
++	return ldo_bypass;
++}
++
++int check_1_2G(void)
++{
++	u32 reg;
++	int result = 0;
++	struct ocotp_regs *ocotp = (struct ocotp_regs *)OCOTP_BASE_ADDR;
++	struct fuse_bank *bank = &ocotp->bank[0];
++	struct fuse_bank0_regs *fuse_bank0 =
++			(struct fuse_bank0_regs *)bank->fuse_regs;
++
++	reg = readl(&fuse_bank0->cfg3);
++	if (((reg >> 16) & 0x3) == 0x3) {
++		if (ldo_bypass) {
++			printf("Wrong dtb file used! i.MX6Q@1.2Ghz only "
++				"works with ldo-enable mode!\n");
++			/*
++			 * Currently, only imx6q-sabresd board might be here,
++			 * since only i.MX6Q support 1.2G and only Sabresd board
++			 * support ldo-bypass mode. So hardcode here.
++			 * You can also modify your board(i.MX6Q) dtb name if it
++			 * supports both ldo-bypass and ldo-enable mode.
++			 */
++			printf("Please use imx6q-sabresd-ldo.dtb!\n");
++			hang();
++		}
++		result = 1;
++	}
++
++	return result;
++}
++
++static int arm_orig_podf;
++void set_arm_freq_400M(bool is_400M)
++{
++	struct mxc_ccm_reg *mxc_ccm = (struct mxc_ccm_reg *)CCM_BASE_ADDR;
++
++	if (is_400M)
++		writel(0x1, &mxc_ccm->cacrr);
++	else
++		writel(arm_orig_podf, &mxc_ccm->cacrr);
++}
++
++void prep_anatop_bypass(void)
++{
++	struct mxc_ccm_reg *mxc_ccm = (struct mxc_ccm_reg *)CCM_BASE_ADDR;
++
++	arm_orig_podf = readl(&mxc_ccm->cacrr);
++	/*
++	 * Downgrade ARM speed to 400Mhz as half of boot 800Mhz before ldo
++	 * bypassed, also downgrade internal vddarm ldo to 0.975V.
++	 * VDDARM_IN 0.975V + 125mV = 1.1V < Max(1.3V)
++	 * otherwise at 800Mhz(i.mx6dl):
++	 * VDDARM_IN 1.175V + 125mV = 1.3V = Max(1.3V)
++	 * We need provide enough gap in this case.
++	 * skip if boot from 400M.
++	 */
++	if (!arm_orig_podf)
++		set_arm_freq_400M(true);
++#if !defined(CONFIG_MX6DL) && !defined(CONFIG_MX6SX)
++	set_ldo_voltage(LDO_ARM, 975);
++#else
++	set_ldo_voltage(LDO_ARM, 1150);
++#endif
++}
++
++void set_wdog_reset(struct wdog_regs *wdog)
++{
++	u32 reg = readw(&wdog->wcr);
++	/*
++	 * use WDOG_B mode to reset external pmic because it's risky for the
++	 * following watchdog reboot in case of cpu freq at lowest 400Mhz with
++	 * ldo-bypass mode. Because boot frequency maybe higher 800Mhz i.e. So
++	 * in ldo-bypass mode watchdog reset will only triger POR reset, not
++	 * WDOG reset. But below code depends on hardware design, if HW didn't
++	 * connect WDOG_B pin to external pmic such as i.mx6slevk, we can skip
++	 * these code since it assumed boot from 400Mhz always.
++	 */
++	reg = readw(&wdog->wcr);
++	reg |= 1 << 3;
++	/*
++	 * WDZST bit is write-once only bit. Align this bit in kernel,
++	 * otherwise kernel code will have no chance to set this bit.
++	 */
++	reg |= 1 << 0;
++	writew(reg, &wdog->wcr);
++}
++
++int set_anatop_bypass(int wdog_reset_pin)
++{
++	struct anatop_regs *anatop= (struct anatop_regs*)ANATOP_BASE_ADDR;
++	struct wdog_regs *wdog;
++	u32 reg = readl(&anatop->reg_core);
++
++	/* bypass VDDARM/VDDSOC */
++	reg = reg | (0x1F << 18) | 0x1F;
++	writel(reg, &anatop->reg_core);
++
++	if (wdog_reset_pin == 2)
++		wdog = (struct wdog_regs *) WDOG2_BASE_ADDR;
++	else if (wdog_reset_pin == 1)
++		wdog = (struct wdog_regs *) WDOG1_BASE_ADDR;
++	else
++		return arm_orig_podf;
++	set_wdog_reset(wdog);
++	return arm_orig_podf;
++}
++
++void finish_anatop_bypass(void)
++{
++	if (!arm_orig_podf)
++		set_arm_freq_400M(false);
++}
++#endif
++
+ #ifdef CONFIG_IMX_HDMI
+ void imx_enable_hdmi_phy(void)
+ {
+diff --git a/arch/arm/imx-common/cpu.c b/arch/arm/imx-common/cpu.c
+index 067d08f..67c4197 100644
+--- a/arch/arm/imx-common/cpu.c
++++ b/arch/arm/imx-common/cpu.c
+@@ -218,6 +218,9 @@ void arch_preboot_os(void)
+ 	disable_sata_clock();
+ #endif
+ #endif
++#if defined(CONFIG_LDO_BYPASS_CHECK)
++	ldo_mode_set(check_ldo_bypass());
++#endif
+ #if defined(CONFIG_VIDEO_IPUV3)
+ 	/* disable video before launching O/S */
+ 	ipuv3_fb_shutdown();
+diff --git a/arch/arm/include/asm/arch-mx6/sys_proto.h b/arch/arm/include/asm/arch-mx6/sys_proto.h
+index 28ba844..10bab2b 100644
+--- a/arch/arm/include/asm/arch-mx6/sys_proto.h
++++ b/arch/arm/include/asm/arch-mx6/sys_proto.h
+@@ -27,6 +27,16 @@ u32 get_cpu_rev(void);
+ const char *get_imx_type(u32 imxtype);
+ unsigned imx_ddr_size(void);
+ void set_chipselect_size(int const);
++void set_wdog_reset(struct wdog_regs *wdog);
++
++#ifdef CONFIG_LDO_BYPASS_CHECK
++int check_ldo_bypass(void);
++int check_1_2G(void);
++int set_anatop_bypass(int wdog_reset_pin);
++void ldo_mode_set(int ldo_bypass);
++void prep_anatop_bypass(void);
++void finish_anatop_bypass(void);
++#endif
+ 
+ /*
+  * Initializes on-chip ethernet controllers.
+diff --git a/include/configs/mx6_common.h b/include/configs/mx6_common.h
+index e0528ce..b80a93d 100644
+--- a/include/configs/mx6_common.h
++++ b/include/configs/mx6_common.h
+@@ -22,6 +22,7 @@
+ #define CONFIG_ARM_ERRATA_794072
+ #define CONFIG_ARM_ERRATA_761320
+ #define CONFIG_BOARD_POSTCLK_INIT
++#define CONFIG_LDO_BYPASS_CHECK
+ 
+ #ifndef CONFIG_SYS_L2CACHE_OFF
+ #define CONFIG_SYS_L2_PL310
+-- 
+1.8.0
+

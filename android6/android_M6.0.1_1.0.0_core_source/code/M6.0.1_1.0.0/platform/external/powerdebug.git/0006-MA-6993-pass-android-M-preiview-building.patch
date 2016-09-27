@@ -1,0 +1,27 @@
+From d08a33bc7bb7ab48daf29105198cfe9f7421102d Mon Sep 17 00:00:00 2001
+From: zhang sanshan <b51434@freescale.com>
+Date: Fri, 14 Aug 2015 17:05:49 +0800
+Subject: [PATCH 6/6] MA-6993 pass android M preiview building
+
+pass build error.
+
+Signed-off-by: zhang sanshan <b51434@freescale.com>
+---
+ Android.mk | 1 -
+ 1 file changed, 1 deletion(-)
+
+diff --git a/Android.mk b/Android.mk
+index f990dfd..1a1e2d7 100644
+--- a/Android.mk
++++ b/Android.mk
+@@ -3,7 +3,6 @@ include $(CLEAR_VARS)
+ 
+ 
+ LOCAL_MODULE_TAGS := optional
+-LOCAL_SHARED_LIBRARIES := libstlport
+ ifdef NCURES
+ LOCAL_STATIC_LIBRARIES := libncurses
+ endif
+-- 
+1.8.0
+

@@ -1,0 +1,30 @@
+From e7f420f772602fdda5432d75c516ad9678902b9a Mon Sep 17 00:00:00 2001
+From: Xiaowen Liu <b37945@freescale.com>
+Date: Tue, 11 Dec 2012 10:45:58 +0800
+Subject: [PATCH 1/6] ENGR00215174 add GRALLOC_USAGE_HW_FBX support.
+
+add GRALLOC_USAGE_HW_FBX support.
+
+Signed-off-by: Xiaowen Liu <b37945@freescale.com>
+
+Conflicts:
+	include/hardware/gralloc.h
+---
+ include/hardware/gralloc.h | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/include/hardware/gralloc.h b/include/hardware/gralloc.h
+index ef86f90..2f79795 100644
+--- a/include/hardware/gralloc.h
++++ b/include/hardware/gralloc.h
+@@ -95,6 +95,7 @@ enum {
+     GRALLOC_USAGE_HW_COMPOSER           = 0x00000800,
+     /* buffer will be used with the framebuffer device */
+     GRALLOC_USAGE_HW_FB                 = 0x00001000,
++    GRALLOC_USAGE_HW_FBX                = 0x00002000,
+ 
+     /* buffer should be displayed full-screen on an external display when
+      * possible */
+-- 
+1.8.0
+

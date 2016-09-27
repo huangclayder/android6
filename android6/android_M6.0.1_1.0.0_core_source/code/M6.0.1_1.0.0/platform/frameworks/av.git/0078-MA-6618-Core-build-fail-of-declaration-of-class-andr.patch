@@ -1,0 +1,32 @@
+From 1409da94bd0060f6cab42b2a2ce81798f3362ade Mon Sep 17 00:00:00 2001
+From: xumao <b34688@freescale.com>
+Date: Thu, 30 Apr 2015 11:08:42 +0800
+Subject: [PATCH 78/95] MA-6618 Core build fail of declaration of 'class
+ android::ICamera'
+
+should include ICamera.h when using ICamera in this file.
+It has been included through OMXMediaRecoder.h in full mode, so this
+issue only occurs in core mode.
+Before adding ICamera member to MediaRecorderClient class, it only
+uses reference to ICamera, so it doesn't need including ICamera.h .
+
+Signed-off-by: xumao <b34688@freescale.com>
+---
+ media/libmediaplayerservice/MediaRecorderClient.cpp | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/media/libmediaplayerservice/MediaRecorderClient.cpp b/media/libmediaplayerservice/MediaRecorderClient.cpp
+index 92ccec5..1111d6d 100644
+--- a/media/libmediaplayerservice/MediaRecorderClient.cpp
++++ b/media/libmediaplayerservice/MediaRecorderClient.cpp
+@@ -41,6 +41,7 @@
+ 
+ #include "StagefrightRecorder.h"
+ #include <gui/IGraphicBufferProducer.h>
++#include <camera/ICamera.h>
+ 
+ #ifdef FSL_GM_PLAYER
+ #include "media/OMXMediaRecorder.h"
+-- 
+1.8.0
+

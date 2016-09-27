@@ -1,0 +1,65 @@
+From b4c117970071dbe473c23737eb86a424b5d6c2b4 Mon Sep 17 00:00:00 2001
+From: Peng Fan <Peng.Fan@freescale.com>
+Date: Tue, 28 Apr 2015 14:09:24 +0800
+Subject: [PATCH] MLK-10774-50 imx:mx7dsabresd move VIDEO config before EPDC
+
+Move VIDEO config to the front of EPDC
+
+Signed-off-by: Peng Fan <Peng.Fan@freescale.com>
+---
+ include/configs/mx7dsabresd.h | 32 ++++++++++++++++----------------
+ 1 file changed, 16 insertions(+), 16 deletions(-)
+
+diff --git a/include/configs/mx7dsabresd.h b/include/configs/mx7dsabresd.h
+index de88c8f..f0d421c 100644
+--- a/include/configs/mx7dsabresd.h
++++ b/include/configs/mx7dsabresd.h
+@@ -372,6 +372,22 @@
+ #define CONFIG_CMD_CACHE
+ #endif
+ 
++#define CONFIG_VIDEO
++#ifdef CONFIG_VIDEO
++#define	CONFIG_CFB_CONSOLE
++#define	CONFIG_VIDEO_MXS
++#define	CONFIG_VIDEO_LOGO
++#define	CONFIG_VIDEO_SW_CURSOR
++#define	CONFIG_VGA_AS_SINGLE_DEVICE
++#define	CONFIG_SYS_CONSOLE_IS_IN_ENV
++#define	CONFIG_SPLASH_SCREEN
++#define CONFIG_SPLASH_SCREEN_ALIGN
++#define	CONFIG_CMD_BMP
++#define	CONFIG_BMP_16BPP
++#define	CONFIG_VIDEO_BMP_RLE8
++#define CONFIG_VIDEO_BMP_LOGO
++#endif
++
+ /* #define CONFIG_SPLASH_SCREEN*/
+ /* #define CONFIG_MXC_EPDC*/
+ 
+@@ -395,22 +411,6 @@
+ #define CONFIG_WAVEFORM_BUF_SIZE		0x400000
+ #endif
+ 
+-#define CONFIG_VIDEO
+-#ifdef CONFIG_VIDEO
+-#define	CONFIG_CFB_CONSOLE
+-#define	CONFIG_VIDEO_MXS
+-#define	CONFIG_VIDEO_LOGO
+-#define	CONFIG_VIDEO_SW_CURSOR
+-#define	CONFIG_VGA_AS_SINGLE_DEVICE
+-#define	CONFIG_SYS_CONSOLE_IS_IN_ENV
+-#define	CONFIG_SPLASH_SCREEN
+-#define CONFIG_SPLASH_SCREEN_ALIGN
+-#define	CONFIG_CMD_BMP
+-#define	CONFIG_BMP_16BPP
+-#define	CONFIG_VIDEO_BMP_RLE8
+-#define CONFIG_VIDEO_BMP_LOGO
+-#endif
+-
+ /* USB Configs */
+ #define CONFIG_CMD_USB
+ #define CONFIG_USB_EHCI
+-- 
+1.8.0
+

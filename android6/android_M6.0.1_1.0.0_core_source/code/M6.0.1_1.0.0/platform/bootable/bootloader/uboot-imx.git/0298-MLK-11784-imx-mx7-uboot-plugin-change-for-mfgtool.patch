@@ -1,0 +1,49 @@
+From b16ae36d2ae3fa9f536fec691a3e1bfa6f26a8d0 Mon Sep 17 00:00:00 2001
+From: "Ye.Li" <B37916@freescale.com>
+Date: Mon, 2 Nov 2015 10:01:21 +0800
+Subject: [PATCH] MLK-11784 imx: mx7: uboot plugin change for mfgtool
+
+Fixed the issue that mfgtool failed to download u-boot with plugin enabled.
+The u-boot plugin common codes should not call rom___pu_irom_hwcnfg_setup
+when using serial download mode.
+rom___pu_irom_hwcnfg_setup will load the IVT2 image from boot media, but this
+is invalid for USB serial download mode.
+
+Signed-off-by: Ye.Li <B37916@freescale.com>
+---
+ arch/arm/include/asm/arch-mx7/mx7_plugin.S | 19 +++++++++++++++++++
+ 1 file changed, 19 insertions(+)
+
+diff --git a/arch/arm/include/asm/arch-mx7/mx7_plugin.S b/arch/arm/include/asm/arch-mx7/mx7_plugin.S
+index 86bedf9..1054d4f 100644
+--- a/arch/arm/include/asm/arch-mx7/mx7_plugin.S
++++ b/arch/arm/include/asm/arch-mx7/mx7_plugin.S
+@@ -30,6 +30,25 @@ plugin_start:
+ 	imx7_qos_setting
+ 
+ /*
++ * Check if we are in USB serial download mode and immediately return to ROM
++ * Need to check USB CTRL clock firstly, then check the USBx_nASYNCLISTADDR
++ */
++ 	ldr r0, =0x30384680
++ 	ldr r1, [r0]
++ 	cmp r1, #0
++ 	beq normal_boot
++	
++	ldr r0, =0x30B10158
++	ldr r1, [r0]
++	cmp r1, #0
++	beq normal_boot
++
++	pop {r0-r4, lr}
++	bx lr
++
++normal_boot:
++
++/*
+  * The following is to fill in those arguments for this ROM function
+  * pu_irom_hwcnfg_setup(void **start, size_t *bytes, const void *boot_data)
+  * This function is used to copy data from the storage media into DDR.
+-- 
+1.8.0
+

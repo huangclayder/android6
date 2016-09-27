@@ -1,0 +1,57 @@
+From 08a36ab392cd41cdd5cba3d9895438c3a8cf84d4 Mon Sep 17 00:00:00 2001
+From: "xuegang.liu" <xuegang.liu@freescale.com>
+Date: Mon, 31 Aug 2015 16:52:55 +0800
+Subject: [PATCH 532/602] MA-7026 fix out of vmalloc issue on sabreauto_6qp
+ board
+
+Context buffer size is larger on GPU gc2000+ comparing with gc2000
+and gc880 as some new GPU features are enabled on gc2000+, we meet
+out of vmalloc size issue when run monkey test with vmalloc=256M
+on sabreauto_6qp(gc2000+) board, enlarge vmalloc size to 320M to
+fix the issue.
+
+Monkey test command:
+while true;do monkey -v 100000;done
+
+Kernel stack:
+vmap allocation for size 610304 failed: use vmalloc=<size> to increase size.
+vmalloc: allocation failure: 605184 bytes
+RenderThread: page allocation failure: order:0, mode:0xd2
+CPU: 2 PID: 1317 Comm: RenderThread Not tainted 3.14.38-05787-gd5e5aaa #1
+[<c0015314>] (unwind_backtrace) from [<c0011c1c>] (show_stack+0x10/0x14)
+[<c0011c1c>] (show_stack) from [<c0897e54>] (dump_stack+0x6c/0xc8) [<c0897e54>]
+(dump_stack) from [<c00b7214>] (warn_alloc_failed+0xc8/0x10c) [<c00b7214>]
+(warn_alloc_failed) from [<c00df844>] (__vmalloc_node_range+0x140/0x1ec)
+[<c00df844>] (__vmalloc_node_range) from [<c00df92c>] (__vmalloc_node+0x3c/0x48)
+[<c00df92c>] (__vmalloc_node) from [<c00df960>] (vmalloc+0x28/0x34)
+[<c00df960>] (vmalloc) from [<c06053dc>] (gckOS_AllocateMemory+0x68/0x80)
+:Dropped: keys=[<c06053dc>] (gckOS_AllocateMemory) from [<c0605410>]
+(gckOS_Allocate+0x1c/0x2c) [<c0605410>] (gckOS_Allocate) from [<c061de0c>]
+(gckCONTEXT_Update+0x61c/0x660) 26[<c061de0c>] (gckCONTEXT_Update) from [<c0611884>]
+(gckCOMMAND_Commit+0x2c0/0xea0) [<c0611884>] (gckCOMMAND_Commit) from [<c060fef0>]
+(gckKERNEL_Dispatch+0x8bc/0x11a8)  pointers=[<c060fef0>] (gckKERNEL_Dispatch) from [<c060bf80>]
+(drv_ioctl+0x11c/0x2ac) [<c060bf80>] (drv_ioctl) from [<c010003c>] (do_vfs_ioctl+0x74/0x5c0)
+116[<c010003c>] (do_vfs_ioctl) from [<c01005f0>] (SyS_ioctl+0x68/0x70)
+trackballs=[<c01005f0>] (SyS_ioctl) from [<c000e560>] (ret_fast_syscall+0x0/0x30)
+
+Signed-off-by: Richard Liu <r66033@freescale.com>
+---
+ sabreauto_6q/BoardConfig.mk | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/sabreauto_6q/BoardConfig.mk b/sabreauto_6q/BoardConfig.mk
+index 0061a9d..905eb48 100644
+--- a/sabreauto_6q/BoardConfig.mk
++++ b/sabreauto_6q/BoardConfig.mk
+@@ -93,7 +93,7 @@ BOARD_HAVE_USB_CAMERA := true
+ USE_ION_ALLOCATOR := false
+ USE_GPU_ALLOCATOR := true
+ 
+-BOARD_KERNEL_CMDLINE := console=ttymxc3,115200 init=/init video=mxcfb0:dev=ldb,bpp=32 video=mxcfb1:off video=mxcfb2:off video=mxcfb3:off vmalloc=256M androidboot.console=ttymxc3 consoleblank=0 androidboot.hardware=freescale cma=384M 
++BOARD_KERNEL_CMDLINE := console=ttymxc3,115200 init=/init video=mxcfb0:dev=ldb,bpp=32 video=mxcfb1:off video=mxcfb2:off video=mxcfb3:off vmalloc=320M androidboot.console=ttymxc3 consoleblank=0 androidboot.hardware=freescale cma=384M 
+ 
+ ifeq ($(TARGET_USERIMAGES_USE_UBIFS),true)
+ #UBI boot command line.
+-- 
+1.8.0
+

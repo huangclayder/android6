@@ -1,0 +1,82 @@
+From efa0afac3ef71ef06bf1347ade5f2ddee592b87a Mon Sep 17 00:00:00 2001
+From: WenboZhu <WenboZhu@freescale.com>
+Date: Tue, 17 Mar 2015 11:29:20 +0800
+Subject: [PATCH 458/602] MA-6405 [Android MX6SD_DL] Ethernet APK cannot be
+ opened
+
+Adding boottype, change ":=" to "+="
+
+Signed-off-by: WenboZhu <WenboZhu@freescale.com>
+---
+ sabreauto_6q/BoardConfig.mk  | 4 ++--
+ sabreauto_6sx/BoardConfig.mk | 4 ++--
+ sabresd_6dq/BoardConfig.mk   | 4 ++--
+ 3 files changed, 6 insertions(+), 6 deletions(-)
+
+diff --git a/sabreauto_6q/BoardConfig.mk b/sabreauto_6q/BoardConfig.mk
+index 9e1dbff..4066321 100644
+--- a/sabreauto_6q/BoardConfig.mk
++++ b/sabreauto_6q/BoardConfig.mk
+@@ -11,14 +11,14 @@ BUILD_TARGET_FS ?= ext4
+ include device/fsl/imx6/imx6_target_fs.mk
+ 
+ ifeq ($(BUILD_TARGET_FS),ubifs)
+-ADDITIONAL_BUILD_PROPERTIES := \
++ADDITIONAL_BUILD_PROPERTIES += \
+                         ro.boot.storage_type=nand
+ TARGET_RECOVERY_FSTAB = device/fsl/sabreauto_6q/fstab_nand.freescale
+ # build ubifs for nand devices
+ PRODUCT_COPY_FILES +=	\
+ 	device/fsl/sabreauto_6q/fstab_nand.freescale:root/fstab.freescale
+ else
+-ADDITIONAL_BUILD_PROPERTIES := \
++ADDITIONAL_BUILD_PROPERTIES += \
+                         ro.boot.storage_type=sd
+ ifneq ($(BUILD_TARGET_FS),f2fs)
+ TARGET_RECOVERY_FSTAB = device/fsl/sabreauto_6q/fstab.freescale
+diff --git a/sabreauto_6sx/BoardConfig.mk b/sabreauto_6sx/BoardConfig.mk
+index 96963ab..655bf72 100755
+--- a/sabreauto_6sx/BoardConfig.mk
++++ b/sabreauto_6sx/BoardConfig.mk
+@@ -11,14 +11,14 @@ BUILD_TARGET_FS ?= ext4
+ include device/fsl/imx6/imx6_target_fs.mk
+ 
+ ifeq ($(BUILD_TARGET_FS),ubifs)
+-ADDITIONAL_BUILD_PROPERTIES := \
++ADDITIONAL_BUILD_PROPERTIES += \
+                         ro.boot.storage_type=nand
+ TARGET_RECOVERY_FSTAB = device/fsl/sabreauto_6sx/fstab_nand.freescale
+ # build ubifs for nand devices
+ PRODUCT_COPY_FILES +=	\
+ 	device/fsl/sabreauto_6sx/fstab_nand.freescale:root/fstab.freescale
+ else
+-ADDITIONAL_BUILD_PROPERTIES := \
++ADDITIONAL_BUILD_PROPERTIES += \
+                         ro.boot.storage_type=sd
+ ifneq ($(BUILD_TARGET_FS),f2fs)
+ TARGET_RECOVERY_FSTAB = device/fsl/sabreauto_6sx/fstab.freescale
+diff --git a/sabresd_6dq/BoardConfig.mk b/sabresd_6dq/BoardConfig.mk
+index bb35a3c..9c81c93 100644
+--- a/sabresd_6dq/BoardConfig.mk
++++ b/sabresd_6dq/BoardConfig.mk
+@@ -11,7 +11,7 @@ BUILD_TARGET_FS ?= ext4
+ include device/fsl/imx6/imx6_target_fs.mk
+ 
+ ifeq ($(BUILD_TARGET_DEVICE),sd)
+-ADDITIONAL_BUILD_PROPERTIES := \
++ADDITIONAL_BUILD_PROPERTIES += \
+                         ro.boot.storage_type=sd
+ ifneq ($(BUILD_TARGET_FS),f2fs)
+ TARGET_RECOVERY_FSTAB = device/fsl/sabresd_6dq/fstab_sd.freescale
+@@ -25,7 +25,7 @@ PRODUCT_COPY_FILES +=	\
+ 	device/fsl/sabresd_6dq/fstab_sd-f2fs.freescale:root/fstab.freescale
+ endif # BUILD_TARGET_FS
+ else
+-ADDITIONAL_BUILD_PROPERTIES := \
++ADDITIONAL_BUILD_PROPERTIES += \
+                         ro.boot.storage_type=emmc
+ ifneq ($(BUILD_TARGET_FS),f2fs)
+ TARGET_RECOVERY_FSTAB = device/fsl/sabresd_6dq/fstab.freescale
+-- 
+1.8.0
+

@@ -1,0 +1,29 @@
+From 6c1fcec840e845df7fd3249aa5b6bd9b386e7287 Mon Sep 17 00:00:00 2001
+From: Robin Gong <b38343@freescale.com>
+Date: Wed, 28 Jan 2015 14:31:47 +0800
+Subject: [PATCH] MLK-10244-12 ARM: dts: imx7d-12x12-arm2: keep v33 always on
+
+Keep v33 always on because of many devices on imx7d-12x12-arm2 board use
+it as power of pull up/down.
+
+Signed-off-by: Robin Gong <b38343@freescale.com>
+(cherry picked from commit 2d2fe7c257124d77ab4d0d5ea0c21049d1a59cbc)
+---
+ arch/arm/boot/dts/imx7d-12x12-arm2.dts | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/arch/arm/boot/dts/imx7d-12x12-arm2.dts b/arch/arm/boot/dts/imx7d-12x12-arm2.dts
+index 9659734..16cd7c3 100644
+--- a/arch/arm/boot/dts/imx7d-12x12-arm2.dts
++++ b/arch/arm/boot/dts/imx7d-12x12-arm2.dts
+@@ -503,6 +503,7 @@
+ 			vgen4_reg: v33 {
+ 				regulator-min-microvolt = <2850000>;
+ 				regulator-max-microvolt = <3300000>;
++				regulator-always-on;
+ 			};
+ 
+ 			vgen5_reg: vldo3 {
+-- 
+1.8.0
+

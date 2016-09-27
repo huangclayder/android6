@@ -1,0 +1,61 @@
+From 0925108a4ce4253d39dfc064339e5d38ea67fd8a Mon Sep 17 00:00:00 2001
+From: Liu Xiaowen <xiaowen.liu@freescale.com>
+Date: Wed, 4 Feb 2015 15:37:48 +0800
+Subject: [PATCH 437/602] MA-6152 fix lcdif famebuffer tearing issue on
+ 6sl&6sx
+
+enable TARGET_VSYNC_DIRECT_REFRESH on 6sl&6sx platform.
+
+Vsync mechanism in SurfaceFlinger will trigger composite in 60fps
+even though display vsync event come larger than 16ms.
+So, in one display vsync event there will be two composite.
+And lcdif interface on 6sl&6sx has potential issue to do this.
+In this case, composite should be triggered by display vsync.
+
+Signed-off-by: Liu Xiaowen <xiaowen.liu@freescale.com>
+---
+ evk_6sl/BoardConfig.mk       | 1 +
+ sabreauto_6sx/BoardConfig.mk | 1 +
+ sabresd_6sx/BoardConfig.mk   | 2 +-
+ 3 files changed, 3 insertions(+), 1 deletion(-)
+
+diff --git a/evk_6sl/BoardConfig.mk b/evk_6sl/BoardConfig.mk
+index b239c6e..59abe29 100644
+--- a/evk_6sl/BoardConfig.mk
++++ b/evk_6sl/BoardConfig.mk
+@@ -81,6 +81,7 @@ USE_GPU_ALLOCATOR := true
+ 
+ # camera hal v2
+ IMX_CAMERA_HAL_V2 := false
++TARGET_VSYNC_DIRECT_REFRESH := true
+ 
+ BOARD_KERNEL_CMDLINE := console=ttymxc0,115200 init=/init androidboot.console=ttymxc0 consoleblank=0 androidboot.hardware=freescale 
+ TARGET_BOOTLOADER_CONFIG := imx6sl:mx6slevkandroid_config
+diff --git a/sabreauto_6sx/BoardConfig.mk b/sabreauto_6sx/BoardConfig.mk
+index c27f6d9..a28e190 100755
+--- a/sabreauto_6sx/BoardConfig.mk
++++ b/sabreauto_6sx/BoardConfig.mk
+@@ -99,6 +99,7 @@ USE_GPU_ALLOCATOR := true
+ 
+ # camera hal v2
+ IMX_CAMERA_HAL_V2 := false
++TARGET_VSYNC_DIRECT_REFRESH := true
+ 
+ TARGET_BOOTLOADER_CONFIG := imx6sx:mx6sxsabreautoandroid_config imx6sx-nand:mx6sxsabreautoandroid_nand_config
+ TARGET_BOARD_DTS_CONFIG := imx6sx:imx6sx-sabreauto.dtb
+diff --git a/sabresd_6sx/BoardConfig.mk b/sabresd_6sx/BoardConfig.mk
+index 0b27ba5..dddb7c3 100644
+--- a/sabresd_6sx/BoardConfig.mk
++++ b/sabresd_6sx/BoardConfig.mk
+@@ -107,7 +107,7 @@ USE_GPU_ALLOCATOR := true
+ 
+ # camera hal v2
+ IMX_CAMERA_HAL_V2 := false
+-
++TARGET_VSYNC_DIRECT_REFRESH := true
+ 
+ TARGET_BOOTLOADER_CONFIG := imx6sx:mx6sxsabresdandroid_config
+ TARGET_BOARD_DTS_CONFIG := imx6sx:imx6sx-sdb.dtb
+-- 
+1.8.0
+

@@ -1,0 +1,31 @@
+From fe28d08ebb7922d429f5b24c13b4ea2eccf5b8f6 Mon Sep 17 00:00:00 2001
+From: Robin Gong <b38343@freescale.com>
+Date: Fri, 12 Jun 2015 11:26:52 +0800
+Subject: [PATCH] MLK-11097-2: ARM: gpc: skip power domain touch for i.mx6ul
+
+Skip power domain touch since there are no PU and display misc power domain
+on i.mx6ul.
+
+Signed-off-by: Robin Gong <b38343@freescale.com>
+---
+ arch/arm/mach-imx/gpc.c | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/arch/arm/mach-imx/gpc.c b/arch/arm/mach-imx/gpc.c
+index 18f026b..bd5a7c8 100644
+--- a/arch/arm/mach-imx/gpc.c
++++ b/arch/arm/mach-imx/gpc.c
+@@ -559,6 +559,10 @@ static int imx_gpc_genpd_init(struct device *dev, struct regulator *pu_reg)
+ 	int pu_clks, disp_clks, ipg_clks = 1;
+ 	int i = 0, k = 0;
+ 
++	/* No pu and display misc on i.mx6ul */
++	if (cpu_is_imx6ul())
++		return 0;
++
+ 	imx6q_pu_domain.base.of_node = dev->of_node;
+ 	imx6q_pu_domain.reg = pu_reg;
+ 
+-- 
+1.8.0
+

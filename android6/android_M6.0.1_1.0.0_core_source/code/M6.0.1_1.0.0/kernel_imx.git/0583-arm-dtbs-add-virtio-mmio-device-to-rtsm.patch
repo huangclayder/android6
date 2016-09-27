@@ -1,0 +1,35 @@
+From ab8f4811afb29c4e81169d1632b53a3bccb7322a Mon Sep 17 00:00:00 2001
+From: Ryan Harkin <ryan.harkin@linaro.org>
+Date: Tue, 14 Jan 2014 15:46:57 +0000
+Subject: [PATCH] arm: dtbs: add virtio mmio device to rtsm
+
+Add the virtio MMIO device to the rtsm include file.
+
+Signed-off-by: Ryan Harkin <ryan.harkin@linaro.org>
+(cherry picked from commit 968cf80f9250200d735a13e432eed0b11434e2c0)
+Signed-off-by: Alex Shi <alex.shi@linaro.org>
+---
+ arch/arm/boot/dts/rtsm_ve-motherboard.dtsi | 7 +++++++
+ 1 file changed, 7 insertions(+)
+
+diff --git a/arch/arm/boot/dts/rtsm_ve-motherboard.dtsi b/arch/arm/boot/dts/rtsm_ve-motherboard.dtsi
+index 6d12566..a2d895e 100644
+--- a/arch/arm/boot/dts/rtsm_ve-motherboard.dtsi
++++ b/arch/arm/boot/dts/rtsm_ve-motherboard.dtsi
+@@ -167,6 +167,13 @@
+ 				use_dma = <0>;
+ 				framebuffer = <0x18000000 0x00180000>;
+ 			};
++
++			virtio_block@0130000 {
++				compatible = "virtio,mmio";
++				reg = <0x130000 0x200>;
++				interrupts = <42>;
++			};
++
+ 		};
+ 
+ 		v2m_fixed_3v3: fixedregulator@0 {
+-- 
+1.8.0
+

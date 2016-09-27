@@ -1,0 +1,28 @@
+From ef1c59f93981b15412a0207d5517a26901bb2ecd Mon Sep 17 00:00:00 2001
+From: Zidan Wang <zidan.wang@freescale.com>
+Date: Fri, 27 Nov 2015 13:42:41 +0800
+Subject: [PATCH] MLK-11915-10 ASoC: imx_mqs: fix mqs_priv->name overrun issue
+
+fix mqs_priv->name overrun issue. Reported by Coverity.
+
+Signed-off-by: Zidan Wang <zidan.wang@freescale.com>
+---
+ sound/soc/codecs/fsl_mqs.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/sound/soc/codecs/fsl_mqs.c b/sound/soc/codecs/fsl_mqs.c
+index 22c13c0..2b3cc67 100644
+--- a/sound/soc/codecs/fsl_mqs.c
++++ b/sound/soc/codecs/fsl_mqs.c
+@@ -163,7 +163,7 @@ static int fsl_mqs_probe(struct platform_device *pdev)
+ 		return -ENOMEM;
+ 
+ 	mqs_priv->pdev = pdev;
+-	strcpy(mqs_priv->name, np->name);
++	strncpy(mqs_priv->name, np->name, sizeof(mqs_priv->name) - 1);
+ 
+ 	gpr_np = of_parse_phandle(np, "gpr", 0);
+ 	if (IS_ERR(gpr_np)) {
+-- 
+1.8.0
+

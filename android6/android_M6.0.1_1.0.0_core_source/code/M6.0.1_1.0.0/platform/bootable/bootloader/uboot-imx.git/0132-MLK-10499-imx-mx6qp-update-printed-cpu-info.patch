@@ -1,0 +1,46 @@
+From 6510bb60f64c793230494c9242a8508165fba921 Mon Sep 17 00:00:00 2001
+From: Peng Fan <Peng.Fan@freescale.com>
+Date: Mon, 30 Mar 2015 10:35:40 +0800
+Subject: [PATCH] MLK-10499 imx:mx6qp update printed cpu info
+
+We should print "MX6QP Rev1.0", but not "MX6Q Rev2.0".
+
+Signed-off-by: Peng Fan <Peng.Fan@freescale.com>
+(cherry picked from commit 64b2be69835af80e0dbc151175617942683a3167)
+---
+ arch/arm/imx-common/cpu.c | 19 ++++++++++++++-----
+ 1 file changed, 14 insertions(+), 5 deletions(-)
+
+diff --git a/arch/arm/imx-common/cpu.c b/arch/arm/imx-common/cpu.c
+index da2629a..74c08d7 100644
+--- a/arch/arm/imx-common/cpu.c
++++ b/arch/arm/imx-common/cpu.c
+@@ -175,11 +175,20 @@ int print_cpuinfo(void)
+ 
+ 	cpurev = get_cpu_rev();
+ 
+-	printf("CPU:   Freescale i.MX%s rev%d.%d at %d MHz\n",
+-		get_imx_type((cpurev & 0xFF000) >> 12),
+-		(cpurev & 0x000F0) >> 4,
+-		(cpurev & 0x0000F) >> 0,
+-		mxc_get_clock(MXC_ARM_CLK) / 1000000);
++	if (is_mx6dqp()) {
++		printf("CPU:   Freescale i.MX%sP rev%d.%d at %d MHz\n",
++			get_imx_type((cpurev & 0xFF000) >> 12),
++			((cpurev & 0x000F0) >> 4) - 1,
++			(cpurev & 0x0000F) >> 0,
++			mxc_get_clock(MXC_ARM_CLK) / 1000000);
++
++	} else {
++		printf("CPU:   Freescale i.MX%s rev%d.%d at %d MHz\n",
++			get_imx_type((cpurev & 0xFF000) >> 12),
++			(cpurev & 0x000F0) >> 4,
++			(cpurev & 0x0000F) >> 0,
++			mxc_get_clock(MXC_ARM_CLK) / 1000000);
++	}
+ 
+ #if defined(CONFIG_IMX_THERMAL)
+ 	ret = uclass_get_device(UCLASS_THERMAL, 0, &thermal_dev);
+-- 
+1.8.0
+

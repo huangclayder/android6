@@ -1,0 +1,418 @@
+From a8714a02a958897bad302fffbdee36acef98a003 Mon Sep 17 00:00:00 2001
+From: "Ye.Li" <B37916@freescale.com>
+Date: Fri, 14 Aug 2015 16:39:06 +0800
+Subject: [PATCH] MLK-11364 imx: mx6ul : Add support for i.MX6UL 9x9 EVK board
+
+The i.mx6ul 9x9 EVK shares the same base board with 6ul 14x14 EVK
+with two main changes on CPU board:
+1. Change to use pfuze 3000.
+2. Use 256MB LPDDR2 memory.
+
+This patch uses a macro CONFIG_6UL_9X9_LPDDR2 to distinguish the changes above,
+basing on 14x14 EVK board level codes.
+
+The new build target for the 9x9 EVK:  mx6ul_9x9_evk_config
+
+Signed-off-by: Ye.Li <B37916@freescale.com>
+---
+ .../freescale/mx6ul_14x14_evk/imximage_lpddr2.cfg  | 121 ++++++++++++++++++++
+ board/freescale/mx6ul_14x14_evk/mx6ul_14x14_evk.c  |  47 +++++++-
+ board/freescale/mx6ul_14x14_evk/plugin.S           | 122 ++++++++++++++++++++-
+ configs/mx6ul_9x9_evk_defconfig                    |   5 +
+ include/configs/mx6ul_14x14_evk.h                  |  15 ++-
+ 5 files changed, 306 insertions(+), 4 deletions(-)
+
+diff --git a/board/freescale/mx6ul_14x14_evk/imximage_lpddr2.cfg b/board/freescale/mx6ul_14x14_evk/imximage_lpddr2.cfg
+new file mode 100644
+index 0000000..13b43de
+--- /dev/null
++++ b/board/freescale/mx6ul_14x14_evk/imximage_lpddr2.cfg
+@@ -0,0 +1,121 @@
++/*
++ * Copyright (C) 2015 Freescale Semiconductor, Inc.
++ *
++ * SPDX-License-Identifier:	GPL-2.0+
++ *
++ * Refer docs/README.imxmage for more details about how-to configure
++ * and create imximage boot image
++ *
++ * The syntax is taken as close as possible with the kwbimage
++ */
++
++#define __ASSEMBLY__
++#include <config.h>
++
++/* image version */
++
++IMAGE_VERSION 2
++
++/*
++ * Boot Device : one of
++ * spi/sd/nand/onenand, qspi/nor
++ */
++
++#ifdef CONFIG_SYS_BOOT_QSPI
++BOOT_FROM	qspi
++#elif defined(CONFIG_SYS_BOOT_EIMNOR)
++BOOT_FROM	nor
++#else
++BOOT_FROM	sd
++#endif
++
++#ifdef CONFIG_USE_PLUGIN
++/*PLUGIN    plugin-binary-file    IRAM_FREE_START_ADDR*/
++PLUGIN	board/freescale/mx6ul_14x14_evk/plugin.bin 0x00907000
++#else
++
++#ifdef CONFIG_SECURE_BOOT
++CSF CONFIG_CSF_SIZE
++#endif
++
++/*
++ * Device Configuration Data (DCD)
++ *
++ * Each entry must have the format:
++ * Addr-type           Address        Value
++ *
++ * where:
++ *	Addr-type register length (1,2 or 4 bytes)
++ *	Address	  absolute address of the register
++ *	value	  value to be stored in the register
++ */
++
++DATA 4 0x020c4068 0xffffffff
++DATA 4 0x020c406c 0xffffffff
++DATA 4 0x020c4070 0xffffffff
++DATA 4 0x020c4074 0xffffffff
++DATA 4 0x020c4078 0xffffffff
++DATA 4 0x020c407c 0xffffffff
++DATA 4 0x020c4080 0xffffffff
++DATA 4 0x020c4084 0xffffffff
++
++DATA 4 0x020E04B4 0x00080000
++DATA 4 0x020E04AC 0x00000000
++DATA 4 0x020E027C 0x00000030
++DATA 4 0x020E0250 0x00000030
++DATA 4 0x020E024C 0x00000030
++DATA 4 0x020E0490 0x00000030
++DATA 4 0x020E0288 0x00000030
++DATA 4 0x020E0270 0x00000000
++DATA 4 0x020E0260 0x00000000
++DATA 4 0x020E0264 0x00000000
++DATA 4 0x020E04A0 0x00000030
++DATA 4 0x020E0494 0x00020000
++DATA 4 0x020E0280 0x00003030
++DATA 4 0x020E0284 0x00003030
++DATA 4 0x020E04B0 0x00020000
++DATA 4 0x020E0498 0x00000030
++DATA 4 0x020E04A4 0x00000030
++DATA 4 0x020E0244 0x00000030
++DATA 4 0x020E0248 0x00000030
++
++DATA 4 0x021B001C 0x00008000
++DATA 4 0x021B085C 0x1b4700c7
++DATA 4 0x021B0800 0xA1390003
++DATA 4 0x021B0890 0x00470000
++DATA 4 0x021B08b8 0x00000800
++
++DATA 4 0x021B081C 0x33333333
++DATA 4 0x021B0820 0x33333333
++DATA 4 0x021B082C 0xf3333333
++DATA 4 0x021B0830 0xf3333333
++DATA 4 0x021B083C 0x20000000
++DATA 4 0x021B0848 0x4040484F
++DATA 4 0x021B0850 0x40405247
++DATA 4 0x021B08C0 0x00922012
++DATA 4 0x021B08b8 0x00000800
++
++DATA 4 0x021B0004 0x00020012
++DATA 4 0x021B0008 0x00000000
++DATA 4 0x021B000C 0x33374133
++DATA 4 0x021B0010 0x00100A82
++DATA 4 0x021B0038 0x00170557
++DATA 4 0x021B0014 0x00000093
++DATA 4 0x021B0018 0x00001748
++DATA 4 0x021B001C 0x00008000
++DATA 4 0x021B002C 0x0F9F0682
++DATA 4 0x021B0030 0x009F0010
++DATA 4 0x021B0040 0x0000004F
++DATA 4 0x021B0000 0x83100000
++DATA 4 0x021B001C 0x003F8030
++DATA 4 0x021B001C 0xFF0A8030
++DATA 4 0x021B001C 0x82018030
++DATA 4 0x021B001C 0x04028030
++DATA 4 0x021B001C 0x01038030
++DATA 4 0x021B0020 0x00001800
++DATA 4 0x021B0818 0x00000000
++DATA 4 0x021B0800 0xA1310003
++DATA 4 0x021B0004 0x00025576
++DATA 4 0x021B0404 0x00010106
++DATA 4 0x021B001C 0x00000000
++#endif
+diff --git a/board/freescale/mx6ul_14x14_evk/mx6ul_14x14_evk.c b/board/freescale/mx6ul_14x14_evk/mx6ul_14x14_evk.c
+index 7fd8b3b..4179e14 100644
+--- a/board/freescale/mx6ul_14x14_evk/mx6ul_14x14_evk.c
++++ b/board/freescale/mx6ul_14x14_evk/mx6ul_14x14_evk.c
+@@ -27,6 +27,12 @@
+ #include <usb.h>
+ #include <usb/ehci-fsl.h>
+ 
++#ifdef CONFIG_POWER
++#include <power/pmic.h>
++#include <power/pfuze300_pmic.h>
++#include "../common/pfuze.h"
++#endif
++
+ #ifdef CONFIG_FSL_FASTBOOT
+ #include <fsl_fastboot.h>
+ #ifdef CONFIG_ANDROID_RECOVERY
+@@ -821,6 +827,41 @@ int board_early_init_f(void)
+ 	return 0;
+ }
+ 
++#ifdef CONFIG_POWER
++#define I2C_PMIC	0
++int power_init_board(void)
++{
++	struct pmic *p;
++	int ret;
++	unsigned int reg, rev_id;
++
++	ret = power_pfuze300_init(I2C_PMIC);
++	if (ret)
++		return ret;
++
++	p = pmic_get("PFUZE300");
++	ret = pmic_probe(p);
++	if (ret)
++		return ret;
++
++	pmic_reg_read(p, PFUZE300_DEVICEID, &reg);
++	pmic_reg_read(p, PFUZE300_REVID, &rev_id);
++	printf("PMIC: PFUZE300 DEV_ID=0x%x REV_ID=0x%x\n", reg, rev_id);
++
++	/* SW1A/1B step ramp up time from 2us to 4us/25mV */
++	reg = 0x40;
++	pmic_reg_write(p, PFUZE300_SW1ACONF, reg);
++	pmic_reg_write(p, PFUZE300_SW1BCONF, reg);
++
++	/* SW1A/1B standby voltage set to 0.975V */
++	reg = 0xb;
++	pmic_reg_write(p, PFUZE300_SW1ASTBY, reg);
++	pmic_reg_write(p, PFUZE300_SW1BSTBY, reg);
++
++	return 0;
++}
++#endif
++
+ int board_init(void)
+ {
+ 	/* Address of boot parameters */
+@@ -885,7 +926,11 @@ u32 get_board_rev(void)
+ 
+ int checkboard(void)
+ {
+-	puts("Board: MX6UL 14x14 EVK\n");
++#if defined(CONFIG_MX6UL_9X9_LPDDR2)
++    puts("Board: MX6UL 9x9 EVK\n");
++#else
++    puts("Board: MX6UL 14x14 EVK\n");
++#endif
+ 
+ 	return 0;
+ }
+diff --git a/board/freescale/mx6ul_14x14_evk/plugin.S b/board/freescale/mx6ul_14x14_evk/plugin.S
+index 15f0c29..0fa8633 100644
+--- a/board/freescale/mx6ul_14x14_evk/plugin.S
++++ b/board/freescale/mx6ul_14x14_evk/plugin.S
+@@ -7,7 +7,7 @@
+ #include <config.h>
+ 
+ /* DDR script */
+-.macro imx6ul_ddr3_arm2_setting
++.macro imx6ul_ddr3_evk_setting
+ 	ldr r0, =IOMUXC_BASE_ADDR
+ 	ldr r1, =0x000C0000
+ 	str r1, [r0, #0x4B4]
+@@ -115,6 +115,120 @@
+ 	str r1, [r0, #0x01C]
+ .endm
+ 
++.macro imx6ul_lpddr2_evk_setting
++	ldr r0, =IOMUXC_BASE_ADDR
++	ldr r1, =0x00080000
++	str r1, [r0, #0x4B4]
++	ldr r1, =0x00000000
++	str r1, [r0, #0x4AC]
++	ldr r1, =0x00000030
++	str r1, [r0, #0x27C]
++	str r1, [r0, #0x250]
++	str r1, [r0, #0x24C]
++	str r1, [r0, #0x490]
++	str r1, [r0, #0x288]
++
++	ldr r1, =0x00000000
++	str r1, [r0, #0x270]
++	str r1, [r0, #0x260]
++	str r1, [r0, #0x264]
++
++	ldr r1, =0x00000030
++	str r1, [r0, #0x4A0]
++
++	ldr r1, =0x00020000
++	str r1, [r0, #0x494]
++
++	ldr r1, =0x00003030
++	str r1, [r0, #0x280]
++	ldr r1, =0x00003030
++	str r1, [r0, #0x284]
++
++	ldr r1, =0x00020000
++	str r1, [r0, #0x4B0]
++
++	ldr r1, =0x00000030
++	str r1, [r0, #0x498]
++	str r1, [r0, #0x4A4]
++	str r1, [r0, #0x244]
++	str r1, [r0, #0x248]
++
++	ldr r0, =MMDC_P0_BASE_ADDR
++	ldr r1, =0x00008000
++	str r1, [r0, #0x1C]
++	ldr r1, =0x1b4700c7
++	str r1, [r0, #0x85c]
++	ldr r1, =0xA1390003
++	str r1, [r0, #0x800]
++	ldr r1, =0x00470000
++	str r1, [r0, #0x890]
++	ldr r1, =0x00000800
++	str r1, [r0, #0x8b8]
++	ldr r1, =0x33333333
++	str r1, [r0, #0x81C]
++	str r1, [r0, #0x820]
++	ldr r1, =0xF3333333
++	str r1, [r0, #0x82C]
++	str r1, [r0, #0x830]
++	ldr r1, =0x20000000
++	str r1, [r0, #0x83C]
++	ldr r1, =0x4040484F
++	str r1, [r0, #0x848]
++	ldr r1, =0x40405247
++	str r1, [r0, #0x850]
++	ldr r1, =0x00922012
++	str r1, [r0, #0x8C0]
++	ldr r1, =0x00000800
++	str r1, [r0, #0x8B8]
++	
++	ldr r1, =0x00020012
++	str r1, [r0, #0x004]
++	ldr r1, =0x00000000
++	str r1, [r0, #0x008]
++	ldr r1, =0x33374133
++	str r1, [r0, #0x00C]
++	ldr r1, =0x00100A82
++	str r1, [r0, #0x010]
++	ldr r1, =0x00170557
++	str r1, [r0, #0x038]
++	ldr r1, =0x00000093
++	str r1, [r0, #0x014]
++	ldr r1, =0x00001748
++	str r1, [r0, #0x018]
++	ldr r1, =0x00008000
++	str r1, [r0, #0x01C]
++	ldr r1, =0x0F9F0682
++	str r1, [r0, #0x02C]
++	ldr r1, =0x009F0010
++	str r1, [r0, #0x030]
++	ldr r1, =0x0000004F
++	str r1, [r0, #0x040]
++	ldr r1, =0x83100000
++	str r1, [r0, #0x000]
++	ldr r1, =0x003F8030
++	str r1, [r0, #0x01C]
++	ldr r1, =0xFF0A8030
++	str r1, [r0, #0x01C]
++	ldr r1, =0x82018030
++	str r1, [r0, #0x01C]
++	ldr r1, =0x04028030
++	str r1, [r0, #0x01C]
++	ldr r1, =0x01038030
++	str r1, [r0, #0x01C]
++	ldr r1, =0x00001800
++	str r1, [r0, #0x020]
++	ldr r1, =0x00000000
++	str r1, [r0, #0x818]
++	ldr r1, =0xA1310003
++	str r1, [r0, #0x800]
++	ldr r1, =0x00025576
++	str r1, [r0, #0x004]
++	ldr r1, =0x00010106
++	str r1, [r0, #0x404]
++	ldr r1, =0x00000000
++	str r1, [r0, #0x01C]
++.endm
++
+ .macro imx6_clock_gating
+ 	ldr r0, =CCM_BASE_ADDR
+ 	ldr r1, =0xFFFFFFFF
+@@ -132,7 +246,11 @@
+ .endm
+ 
+ .macro imx6_ddr_setting
+-	imx6ul_ddr3_arm2_setting
++#if defined (CONFIG_MX6UL_9X9_LPDDR2)
++	imx6ul_lpddr2_evk_setting
++#else
++	imx6ul_ddr3_evk_setting
++#endif
+ .endm
+ 
+ /* include the common plugin code here */
+diff --git a/configs/mx6ul_9x9_evk_defconfig b/configs/mx6ul_9x9_evk_defconfig
+new file mode 100644
+index 0000000..3df6580
+--- /dev/null
++++ b/configs/mx6ul_9x9_evk_defconfig
+@@ -0,0 +1,5 @@
++CONFIG_SYS_EXTRA_OPTIONS="IMX_CONFIG=board/freescale/mx6ul_14x14_evk/imximage_lpddr2.cfg,MX6UL,MX6UL_9X9_LPDDR2"
++CONFIG_ARM=y
++CONFIG_TARGET_MX6UL_14X14_EVK=y
++CONFIG_DM=y
++CONFIG_DM_THERMAL=y
+diff --git a/include/configs/mx6ul_14x14_evk.h b/include/configs/mx6ul_14x14_evk.h
+index 98a0346..1d82b04 100644
+--- a/include/configs/mx6ul_14x14_evk.h
++++ b/include/configs/mx6ul_14x14_evk.h
+@@ -124,7 +124,20 @@
+ #define CONFIG_SYS_I2C_SPEED		100000
+ #endif
+ 
++#if defined(CONFIG_MX6UL_9X9_LPDDR2)
++#define CONFIG_DEFAULT_FDT_FILE "imx6ul-9x9-evk.dtb"
++#define PHYS_SDRAM_SIZE			SZ_256M
++
++/* PMIC */
++#define CONFIG_POWER
++#define CONFIG_POWER_I2C
++#define CONFIG_POWER_PFUZE300
++#define CONFIG_POWER_PFUZE300_I2C_ADDR	0x08
++#else
++#define CONFIG_DEFAULT_FDT_FILE "imx6ul-14x14-evk.dtb"
+ #define PHYS_SDRAM_SIZE			SZ_512M
++#endif
++
+ 
+ #define CONFIG_VIDEO
+ 
+@@ -188,7 +201,7 @@
+ 	"console=ttymxc0\0" \
+ 	"fdt_high=0xffffffff\0" \
+ 	"initrd_high=0xffffffff\0" \
+-	"fdt_file=imx6ul-14x14-evk.dtb\0" \
++	"fdt_file=" CONFIG_DEFAULT_FDT_FILE "\0" \
+ 	"fdt_addr=0x83000000\0" \
+ 	"boot_fdt=try\0" \
+ 	"ip_dyn=yes\0" \
+-- 
+1.8.0
+

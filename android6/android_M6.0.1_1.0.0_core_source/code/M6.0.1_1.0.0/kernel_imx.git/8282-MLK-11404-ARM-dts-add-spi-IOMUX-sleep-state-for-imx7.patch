@@ -1,0 +1,33 @@
+From 8d56ac29fa71c3a67ad903eff2688cca76a56fd2 Mon Sep 17 00:00:00 2001
+From: Gao Pan <b54642@freescale.com>
+Date: Mon, 24 Aug 2015 17:47:19 +0800
+Subject: [PATCH] MLK-11404 ARM: dts : add spi IOMUX sleep state for
+ imx7d-12x12-lpddr3-arm2
+
+Add spi IOMUX sleep state for imx7d-12x12-lpddr3-arm2.
+
+Signed-off-by: Gao Pan <b54642@freescale.com>
+---
+ arch/arm/boot/dts/imx7d-12x12-lpddr3-arm2.dts | 5 +++--
+ 1 file changed, 3 insertions(+), 2 deletions(-)
+
+diff --git a/arch/arm/boot/dts/imx7d-12x12-lpddr3-arm2.dts b/arch/arm/boot/dts/imx7d-12x12-lpddr3-arm2.dts
+index 8891fab..056bbb7 100644
+--- a/arch/arm/boot/dts/imx7d-12x12-lpddr3-arm2.dts
++++ b/arch/arm/boot/dts/imx7d-12x12-lpddr3-arm2.dts
+@@ -173,9 +173,10 @@
+ &ecspi3 {
+ 	fsl,spi-num-chipselects = <1>;
+ 	cs-gpios = <&gpio6 22 0>;
+-	pinctrl-names = "default";
++	pinctrl-names = "default", "sleep";
+ 	pinctrl-0 = <&pinctrl_ecspi3_1 &pinctrl_ecspi3_cs_1>;
+-	status = "disabled";
++	pinctrl-1 = <&pinctrl_ecspi3_1 &pinctrl_ecspi3_cs_1>;
++	status = "okay";
+ 
+ 	spi_flash3: m25p80@0 {
+ 		#address-cells = <1>;
+-- 
+1.8.0
+

@@ -1,0 +1,28 @@
+From 53b6970986ee5f6c83e7c9ea808348b9d0a7261c Mon Sep 17 00:00:00 2001
+From: Fugang Duan <b38611@freescale.com>
+Date: Wed, 14 Jan 2015 15:36:47 +0800
+Subject: [PATCH] MLK-10096 ARM: dts: imx6qdl: add enet ENET_REF_CLK pin set
+ for sabreauto board
+
+Add enet RGMII ENET_REF_CLK pin set for sabreauto board.
+
+Signed-off-by: Fugang Duan <B38611@freescale.com>
+---
+ arch/arm/boot/dts/imx6qdl-sabreauto.dtsi | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/arch/arm/boot/dts/imx6qdl-sabreauto.dtsi b/arch/arm/boot/dts/imx6qdl-sabreauto.dtsi
+index d44c6fc..83c427e 100644
+--- a/arch/arm/boot/dts/imx6qdl-sabreauto.dtsi
++++ b/arch/arm/boot/dts/imx6qdl-sabreauto.dtsi
+@@ -618,6 +618,7 @@
+ 				MX6QDL_PAD_RGMII_RD2__RGMII_RD2		0x1b0b0
+ 				MX6QDL_PAD_RGMII_RD3__RGMII_RD3		0x1b0b0
+ 				MX6QDL_PAD_RGMII_RX_CTL__RGMII_RX_CTL	0x1b0b0
++				MX6QDL_PAD_GPIO_16__ENET_REF_CLK	0x4001b0a8
+ 			>;
+ 		};
+ 
+-- 
+1.8.0
+

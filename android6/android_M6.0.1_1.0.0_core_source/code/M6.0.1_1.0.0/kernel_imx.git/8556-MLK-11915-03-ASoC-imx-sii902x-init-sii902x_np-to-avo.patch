@@ -1,0 +1,29 @@
+From 780e27683c38f785ea7f7e07e83b00ffd3c22d78 Mon Sep 17 00:00:00 2001
+From: Zidan Wang <zidan.wang@freescale.com>
+Date: Fri, 27 Nov 2015 11:10:53 +0800
+Subject: [PATCH] MLK-11915-03 ASoC: imx-sii902x: init sii902x_np to avoid
+ wild pointer
+
+init sii902x_np to avoid wild pointer. Reported by Coverity.
+
+Signed-off-by: Zidan Wang <zidan.wang@freescale.com>
+---
+ sound/soc/fsl/imx-sii902x.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/sound/soc/fsl/imx-sii902x.c b/sound/soc/fsl/imx-sii902x.c
+index b4f7061..3ef9dcd 100644
+--- a/sound/soc/fsl/imx-sii902x.c
++++ b/sound/soc/fsl/imx-sii902x.c
+@@ -173,7 +173,7 @@ static struct snd_soc_ops imx_sii902x_ops = {
+ 
+ static int imx_sii902x_probe(struct platform_device *pdev)
+ {
+-	struct device_node *cpu_np, *sii902x_np;
++	struct device_node *cpu_np, *sii902x_np = NULL;
+ 	struct platform_device *cpu_pdev;
+ 	struct imx_sii902x_data *data;
+ 	int ret;
+-- 
+1.8.0
+

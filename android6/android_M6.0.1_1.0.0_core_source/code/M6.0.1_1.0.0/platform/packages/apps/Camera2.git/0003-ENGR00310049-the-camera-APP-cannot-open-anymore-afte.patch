@@ -1,0 +1,45 @@
+From a90383cce3fdd0e47003adfb09e11ac31c916243 Mon Sep 17 00:00:00 2001
+From: Fang Hui <b31070@freescale.com>
+Date: Tue, 29 Apr 2014 17:51:09 +0800
+Subject: [PATCH 3/8] ENGR00310049 - the camera APP cannot open anymore after
+ record video and panorama
+
+by switch back/front camera. 80%
+
+media_profile.xml set to 640x480, but TVIN not support 640x480.
+Modify profile resolution if only one preview resolution and not same.
+
+Signed-off-by: Fang Hui <b31070@freescale.com>
+---
+ src/com/android/camera/VideoModule.java | 15 +++++++++++++++
+ 1 file changed, 15 insertions(+)
+
+diff --git a/src/com/android/camera/VideoModule.java b/src/com/android/camera/VideoModule.java
+index f16fc0a..8ef20bc 100644
+--- a/src/com/android/camera/VideoModule.java
++++ b/src/com/android/camera/VideoModule.java
+@@ -766,6 +766,21 @@ public class VideoModule extends CameraModule
+             quality = CamcorderProfile.QUALITY_HIGH;
+         }
+         mProfile = CamcorderProfile.get(mCameraId, quality);
++
++		//For TVIN, either 720x576 or 720x480, media_profile can't give a suitable resolution,
++		//so change the profile value.
++		List<Size> sizes = mParameters.getSupportedPreviewSizes();
++		if( (sizes.size() == 1 ) &&
++			( (sizes.get(0).width != mProfile.videoFrameWidth) || (sizes.get(0).height != mProfile.videoFrameHeight) ) ) {
++			Log.w(TAG, "Only support one preview resolution diff with profile, change profile frome " +
++				mProfile.videoFrameWidth + "x" + mProfile.videoFrameHeight + " to " +
++				sizes.get(0).width + "x" + sizes.get(0).height);
++
++			mProfile.videoFrameWidth = sizes.get(0).width;
++			mProfile.videoFrameHeight = sizes.get(0).height;
++		}
++
++        getDesiredPreviewSize();
+         mPreferenceRead = true;
+     }
+ 
+-- 
+1.8.0
+

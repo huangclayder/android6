@@ -1,0 +1,533 @@
+From 50198ddbb3f8b34f9d4fc881a34dcd1715b1d61d Mon Sep 17 00:00:00 2001
+From: Ulises Cardenas <Ulises.Cardenas@freescale.com>
+Date: Tue, 16 Jun 2015 12:36:41 -0500
+Subject: [PATCH] MLK-11059 imx: HAB unable to support Encrypted boot for
+ 4096-bit keys
+
+Abstracted the CSF size in imximage from a hardcoded value to a config
+setting CONFIG_CSF_SIZE. This configuration is only enabled for secure
+boot.
+Increased the size of the CSF default allocation to 0x4000. This size
+covers the event the worst case of 4906-bits keys.
+---
+ board/freescale/mx6qarm2/imximage.cfg                        | 2 +-
+ board/freescale/mx6qarm2/imximage_mx6dl.cfg                  | 2 +-
+ board/freescale/mx6qsabreauto/imximage.cfg                   | 2 +-
+ board/freescale/mx6qsabreauto/mx6dl.cfg                      | 2 +-
+ board/freescale/mx6qsabreauto/mx6qp.cfg                      | 2 +-
+ board/freescale/mx6qsabreauto/mx6solo.cfg                    | 2 +-
+ board/freescale/mx6sabresd/mx6dlsabresd.cfg                  | 2 +-
+ board/freescale/mx6sabresd/mx6q_4x_mt41j128.cfg              | 2 +-
+ board/freescale/mx6sabresd/mx6solo_4x_mt41j128.cfg           | 2 +-
+ board/freescale/mx6slevk/imximage.cfg                        | 2 +-
+ board/freescale/mx6sx_17x17_arm2/imximage.cfg                | 2 +-
+ board/freescale/mx6sx_17x17_arm2/imximage_wp.cfg             | 2 +-
+ board/freescale/mx6sx_17x17_arm2/mx6sx_14x14_lpddr2_arm2.cfg | 2 +-
+ board/freescale/mx6sx_19x19_arm2/imximage.cfg                | 2 +-
+ board/freescale/mx6sx_19x19_arm2/imximage_lpddr2.cfg         | 2 +-
+ board/freescale/mx6sxsabreauto/imximage.cfg                  | 2 +-
+ board/freescale/mx6sxsabresd/imximage.cfg                    | 2 +-
+ board/freescale/mx6ul_14x14_ddr3_arm2/imximage.cfg           | 2 +-
+ board/freescale/mx6ul_14x14_evk/imximage.cfg                 | 2 +-
+ board/freescale/mx7d_12x12_ddr3_arm2/imximage.cfg            | 2 +-
+ board/freescale/mx7d_12x12_lpddr3_arm2/imximage.cfg          | 2 +-
+ board/freescale/mx7d_19x19_ddr3_arm2/imximage.cfg            | 2 +-
+ board/freescale/mx7d_19x19_lpddr3_arm2/imximage.cfg          | 2 +-
+ board/freescale/mx7dsabresd/imximage.cfg                     | 2 +-
+ include/configs/mx6qarm2.h                                   | 6 ++++++
+ include/configs/mx6sabre_common.h                            | 6 ++++++
+ include/configs/mx6slevk.h                                   | 6 ++++++
+ include/configs/mx6sx_arm2.h                                 | 6 ++++++
+ include/configs/mx6sxsabreauto.h                             | 6 ++++++
+ include/configs/mx6sxsabresd.h                               | 6 ++++++
+ include/configs/mx6ul_14x14_ddr3_arm2.h                      | 6 ++++++
+ include/configs/mx6ul_14x14_evk.h                            | 6 ++++++
+ include/configs/mx7d_arm2.h                                  | 6 ++++++
+ include/configs/mx7dsabresd.h                                | 6 ++++++
+ 34 files changed, 84 insertions(+), 24 deletions(-)
+
+diff --git a/board/freescale/mx6qarm2/imximage.cfg b/board/freescale/mx6qarm2/imximage.cfg
+index 425f24a..1063f29 100644
+--- a/board/freescale/mx6qarm2/imximage.cfg
++++ b/board/freescale/mx6qarm2/imximage.cfg
+@@ -28,7 +28,7 @@ PLUGIN	board/freescale/mx6qarm2/plugin.bin 0x00907000
+ #else
+ 
+ #ifdef CONFIG_SECURE_BOOT
+-CSF 0x2000
++CSF CONFIG_CSF_SIZE
+ #endif
+ 
+ /*
+diff --git a/board/freescale/mx6qarm2/imximage_mx6dl.cfg b/board/freescale/mx6qarm2/imximage_mx6dl.cfg
+index 8d1b8bd..3f1d6c6 100644
+--- a/board/freescale/mx6qarm2/imximage_mx6dl.cfg
++++ b/board/freescale/mx6qarm2/imximage_mx6dl.cfg
+@@ -28,7 +28,7 @@ PLUGIN	board/freescale/mx6qarm2/plugin.bin 0x00907000
+ #else
+ 
+ #ifdef CONFIG_SECURE_BOOT
+-CSF 0x2000
++CSF CONFIG_CSF_SIZE
+ #endif
+ 
+ /*
+diff --git a/board/freescale/mx6qsabreauto/imximage.cfg b/board/freescale/mx6qsabreauto/imximage.cfg
+index dacbe80..76b35c3 100644
+--- a/board/freescale/mx6qsabreauto/imximage.cfg
++++ b/board/freescale/mx6qsabreauto/imximage.cfg
+@@ -36,7 +36,7 @@ PLUGIN	board/freescale/mx6qsabreauto/plugin.bin 0x00907000
+ #else
+ 
+ #ifdef CONFIG_SECURE_BOOT
+-CSF 0x2000
++CSF CONFIG_CSF_SIZE
+ #endif
+ 
+ /*
+diff --git a/board/freescale/mx6qsabreauto/mx6dl.cfg b/board/freescale/mx6qsabreauto/mx6dl.cfg
+index f7f4062..d6ba5b8 100644
+--- a/board/freescale/mx6qsabreauto/mx6dl.cfg
++++ b/board/freescale/mx6qsabreauto/mx6dl.cfg
+@@ -37,7 +37,7 @@ PLUGIN	board/freescale/mx6qsabreauto/plugin.bin 0x00907000
+ #else
+ 
+ #ifdef CONFIG_SECURE_BOOT
+-CSF 0x2000
++CSF CONFIG_CSF_SIZE
+ #endif
+ 
+ /*
+diff --git a/board/freescale/mx6qsabreauto/mx6qp.cfg b/board/freescale/mx6qsabreauto/mx6qp.cfg
+index 5d55bcc..0fef4b8 100644
+--- a/board/freescale/mx6qsabreauto/mx6qp.cfg
++++ b/board/freescale/mx6qsabreauto/mx6qp.cfg
+@@ -36,7 +36,7 @@ PLUGIN	board/freescale/mx6qsabreauto/plugin.bin 0x00907000
+ #else
+ 
+ #ifdef CONFIG_SECURE_BOOT
+-CSF 0x2000
++CSF CONFIG_CSF_SIZE
+ #endif
+ 
+ /*
+diff --git a/board/freescale/mx6qsabreauto/mx6solo.cfg b/board/freescale/mx6qsabreauto/mx6solo.cfg
+index 011042b..9c5d17f 100644
+--- a/board/freescale/mx6qsabreauto/mx6solo.cfg
++++ b/board/freescale/mx6qsabreauto/mx6solo.cfg
+@@ -34,7 +34,7 @@ PLUGIN	board/freescale/mx6qsabreauto/plugin.bin 0x00907000
+ #else
+ 
+ #ifdef CONFIG_SECURE_BOOT
+-CSF 0x2000
++CSF CONFIG_CSF_SIZE
+ #endif
+ 
+ /*
+diff --git a/board/freescale/mx6sabresd/mx6dlsabresd.cfg b/board/freescale/mx6sabresd/mx6dlsabresd.cfg
+index 0f77f7e..89a4648 100644
+--- a/board/freescale/mx6sabresd/mx6dlsabresd.cfg
++++ b/board/freescale/mx6sabresd/mx6dlsabresd.cfg
+@@ -27,7 +27,7 @@ PLUGIN board/freescale/mx6sabresd/plugin.bin 0x00907000
+ #else
+ 
+ #ifdef CONFIG_SECURE_BOOT
+-CSF 0x2000
++CSF CONFIG_CSF_SIZE
+ #endif
+ 
+ /*
+diff --git a/board/freescale/mx6sabresd/mx6q_4x_mt41j128.cfg b/board/freescale/mx6sabresd/mx6q_4x_mt41j128.cfg
+index aa897e9..8621ddd 100644
+--- a/board/freescale/mx6sabresd/mx6q_4x_mt41j128.cfg
++++ b/board/freescale/mx6sabresd/mx6q_4x_mt41j128.cfg
+@@ -32,7 +32,7 @@ PLUGIN	board/freescale/mx6sabresd/plugin.bin 0x00907000
+ #else
+ 
+ #ifdef CONFIG_SECURE_BOOT
+-CSF 0x2000
++CSF CONFIG_CSF_SIZE
+ #endif
+ 
+ /*
+diff --git a/board/freescale/mx6sabresd/mx6solo_4x_mt41j128.cfg b/board/freescale/mx6sabresd/mx6solo_4x_mt41j128.cfg
+index 6526db4..0b30251 100644
+--- a/board/freescale/mx6sabresd/mx6solo_4x_mt41j128.cfg
++++ b/board/freescale/mx6sabresd/mx6solo_4x_mt41j128.cfg
+@@ -33,7 +33,7 @@ PLUGIN board/freescale/mx6sabresd/plugin.bin 0x00907000
+ #else
+ 
+ #ifdef CONFIG_SECURE_BOOT
+-CSF 0x2000
++CSF CONFIG_CSF_SIZE
+ #endif
+ 
+ /*
+diff --git a/board/freescale/mx6slevk/imximage.cfg b/board/freescale/mx6slevk/imximage.cfg
+index 2dc5976..16576da 100644
+--- a/board/freescale/mx6slevk/imximage.cfg
++++ b/board/freescale/mx6slevk/imximage.cfg
+@@ -29,7 +29,7 @@ PLUGIN	board/freescale/mx6slevk/plugin.bin 0x00907000
+ #else
+ 
+ #ifdef CONFIG_SECURE_BOOT
+-CSF 0x2000
++CSF CONFIG_CSF_SIZE
+ #endif
+ 
+ /*
+diff --git a/board/freescale/mx6sx_17x17_arm2/imximage.cfg b/board/freescale/mx6sx_17x17_arm2/imximage.cfg
+index f98acb0..dbfe254 100644
+--- a/board/freescale/mx6sx_17x17_arm2/imximage.cfg
++++ b/board/freescale/mx6sx_17x17_arm2/imximage.cfg
+@@ -35,7 +35,7 @@ PLUGIN	board/freescale/mx6sx_17x17_arm2/plugin.bin 0x00907000
+ #else
+ 
+ #ifdef CONFIG_SECURE_BOOT
+-CSF 0x2000
++CSF CONFIG_CSF_SIZE
+ #endif
+ 
+ /*
+diff --git a/board/freescale/mx6sx_17x17_arm2/imximage_wp.cfg b/board/freescale/mx6sx_17x17_arm2/imximage_wp.cfg
+index fb7ba4f..1aa8966 100644
+--- a/board/freescale/mx6sx_17x17_arm2/imximage_wp.cfg
++++ b/board/freescale/mx6sx_17x17_arm2/imximage_wp.cfg
+@@ -30,7 +30,7 @@ BOOT_FROM	sd
+ #endif
+ 
+ #ifdef CONFIG_SECURE_BOOT
+-CSF 0x2000
++CSF CONFIG_CSF_SIZE
+ #endif
+ 
+ /*
+diff --git a/board/freescale/mx6sx_17x17_arm2/mx6sx_14x14_lpddr2_arm2.cfg b/board/freescale/mx6sx_17x17_arm2/mx6sx_14x14_lpddr2_arm2.cfg
+index e7379b0..afb780e 100644
+--- a/board/freescale/mx6sx_17x17_arm2/mx6sx_14x14_lpddr2_arm2.cfg
++++ b/board/freescale/mx6sx_17x17_arm2/mx6sx_14x14_lpddr2_arm2.cfg
+@@ -35,7 +35,7 @@ PLUGIN	board/freescale/mx6sx_17x17_arm2/plugin.bin 0x00907000
+ #else
+ 
+ #ifdef CONFIG_SECURE_BOOT
+-CSF 0x2000
++CSF CONFIG_CSF_SIZE
+ #endif
+ 
+ /*
+diff --git a/board/freescale/mx6sx_19x19_arm2/imximage.cfg b/board/freescale/mx6sx_19x19_arm2/imximage.cfg
+index 475127c..6707b73 100644
+--- a/board/freescale/mx6sx_19x19_arm2/imximage.cfg
++++ b/board/freescale/mx6sx_19x19_arm2/imximage.cfg
+@@ -35,7 +35,7 @@ PLUGIN	board/freescale/mx6sx_19x19_arm2/plugin.bin 0x00907000
+ #else
+ 
+ #ifdef CONFIG_SECURE_BOOT
+-CSF 0x2000
++CSF CONFIG_CSF_SIZE
+ #endif
+ 
+ /*
+diff --git a/board/freescale/mx6sx_19x19_arm2/imximage_lpddr2.cfg b/board/freescale/mx6sx_19x19_arm2/imximage_lpddr2.cfg
+index c8ab483..5488d22 100644
+--- a/board/freescale/mx6sx_19x19_arm2/imximage_lpddr2.cfg
++++ b/board/freescale/mx6sx_19x19_arm2/imximage_lpddr2.cfg
+@@ -35,7 +35,7 @@ PLUGIN	board/freescale/mx6sx_19x19_arm2/plugin.bin 0x00907000
+ #else
+ 
+ #ifdef CONFIG_SECURE_BOOT
+-CSF 0x2000
++CSF CONFIG_CSF_SIZE
+ #endif
+ 
+ /*
+diff --git a/board/freescale/mx6sxsabreauto/imximage.cfg b/board/freescale/mx6sxsabreauto/imximage.cfg
+index d431a2d..542cc7a 100644
+--- a/board/freescale/mx6sxsabreauto/imximage.cfg
++++ b/board/freescale/mx6sxsabreauto/imximage.cfg
+@@ -35,7 +35,7 @@ PLUGIN	board/freescale/mx6sxsabreauto/plugin.bin 0x00907000
+ #else
+ 
+ #ifdef CONFIG_SECURE_BOOT
+-CSF 0x2000
++CSF CONFIG_CSF_SIZE
+ #endif
+ 
+ /*
+diff --git a/board/freescale/mx6sxsabresd/imximage.cfg b/board/freescale/mx6sxsabresd/imximage.cfg
+index de48fcf..0b745b7 100644
+--- a/board/freescale/mx6sxsabresd/imximage.cfg
++++ b/board/freescale/mx6sxsabresd/imximage.cfg
+@@ -28,7 +28,7 @@ PLUGIN	board/freescale/mx6sxsabresd/plugin.bin 0x00907000
+ #else
+ 
+ #ifdef CONFIG_SECURE_BOOT
+-CSF 0x2000
++CSF CONFIG_CSF_SIZE
+ #endif
+ 
+ /*
+diff --git a/board/freescale/mx6ul_14x14_ddr3_arm2/imximage.cfg b/board/freescale/mx6ul_14x14_ddr3_arm2/imximage.cfg
+index 2272c86..100ce00 100644
+--- a/board/freescale/mx6ul_14x14_ddr3_arm2/imximage.cfg
++++ b/board/freescale/mx6ul_14x14_ddr3_arm2/imximage.cfg
+@@ -35,7 +35,7 @@ PLUGIN	board/freescale/mx6ul_14x14_ddr3_arm2/plugin.bin 0x00907000
+ #else
+ 
+ #ifdef CONFIG_SECURE_BOOT
+-CSF 0x2000
++CSF CONFIG_CSF_SIZE
+ #endif
+ 
+ /*
+diff --git a/board/freescale/mx6ul_14x14_evk/imximage.cfg b/board/freescale/mx6ul_14x14_evk/imximage.cfg
+index 53088d8..1164fdd 100644
+--- a/board/freescale/mx6ul_14x14_evk/imximage.cfg
++++ b/board/freescale/mx6ul_14x14_evk/imximage.cfg
+@@ -35,7 +35,7 @@ PLUGIN	board/freescale/mx6ul_14x14_evk/plugin.bin 0x00907000
+ #else
+ 
+ #ifdef CONFIG_SECURE_BOOT
+-CSF 0x2000
++CSF CONFIG_CSF_SIZE
+ #endif
+ 
+ /*
+diff --git a/board/freescale/mx7d_12x12_ddr3_arm2/imximage.cfg b/board/freescale/mx7d_12x12_ddr3_arm2/imximage.cfg
+index 619944c..ad7df84 100644
+--- a/board/freescale/mx7d_12x12_ddr3_arm2/imximage.cfg
++++ b/board/freescale/mx7d_12x12_ddr3_arm2/imximage.cfg
+@@ -33,7 +33,7 @@ PLUGIN	board/freescale/mx7d_12x12_ddr3_arm2/plugin.bin 0x00910000
+ #else
+ 
+ #ifdef CONFIG_SECURE_BOOT
+-CSF 0x2000
++CSF CONFIG_CSF_SIZE
+ #endif
+ 
+ /*
+diff --git a/board/freescale/mx7d_12x12_lpddr3_arm2/imximage.cfg b/board/freescale/mx7d_12x12_lpddr3_arm2/imximage.cfg
+index 47b2def..9f8d9eb 100644
+--- a/board/freescale/mx7d_12x12_lpddr3_arm2/imximage.cfg
++++ b/board/freescale/mx7d_12x12_lpddr3_arm2/imximage.cfg
+@@ -35,7 +35,7 @@ PLUGIN	board/freescale/mx7d_12x12_lpddr3_arm2/plugin.bin 0x00910000
+ #else
+ 
+ #ifdef CONFIG_SECURE_BOOT
+-CSF 0x2000
++CSF CONFIG_CSF_SIZE
+ #endif
+ 
+ /*
+diff --git a/board/freescale/mx7d_19x19_ddr3_arm2/imximage.cfg b/board/freescale/mx7d_19x19_ddr3_arm2/imximage.cfg
+index b8970d7..bb5cf95 100644
+--- a/board/freescale/mx7d_19x19_ddr3_arm2/imximage.cfg
++++ b/board/freescale/mx7d_19x19_ddr3_arm2/imximage.cfg
+@@ -35,7 +35,7 @@ PLUGIN	board/freescale/mx7d_19x19_ddr3_arm2/plugin.bin 0x00910000
+ #else
+ 
+ #ifdef CONFIG_SECURE_BOOT
+-CSF 0x2000
++CSF CONFIG_CSF_SIZE
+ #endif
+ 
+ /*
+diff --git a/board/freescale/mx7d_19x19_lpddr3_arm2/imximage.cfg b/board/freescale/mx7d_19x19_lpddr3_arm2/imximage.cfg
+index 737bf9a..ea8b446 100644
+--- a/board/freescale/mx7d_19x19_lpddr3_arm2/imximage.cfg
++++ b/board/freescale/mx7d_19x19_lpddr3_arm2/imximage.cfg
+@@ -35,7 +35,7 @@ PLUGIN	board/freescale/mx7d_19x19_lpddr3_arm2/plugin.bin 0x00910000
+ #else
+ 
+ #ifdef CONFIG_SECURE_BOOT
+-CSF 0x2000
++CSF CONFIG_CSF_SIZE
+ #endif
+ 
+ /*
+diff --git a/board/freescale/mx7dsabresd/imximage.cfg b/board/freescale/mx7dsabresd/imximage.cfg
+index 700e2a0..9b23949 100644
+--- a/board/freescale/mx7dsabresd/imximage.cfg
++++ b/board/freescale/mx7dsabresd/imximage.cfg
+@@ -35,7 +35,7 @@ PLUGIN	board/freescale/mx7dsabresd/plugin.bin 0x00910000
+ #else
+ 
+ #ifdef CONFIG_SECURE_BOOT
+-CSF 0x2000
++CSF CONFIG_CSF_SIZE
+ #endif
+ 
+ /*
+diff --git a/include/configs/mx6qarm2.h b/include/configs/mx6qarm2.h
+index 9d5cc0f..daeca9f 100644
+--- a/include/configs/mx6qarm2.h
++++ b/include/configs/mx6qarm2.h
+@@ -17,6 +17,12 @@
+ /* uncomment for SECURE mode support */
+ /* #define CONFIG_SECURE_BOOT */
+ 
++#ifdef CONFIG_SECURE_BOOT
++#ifndef CONFIG_CSF_SIZE
++#define CONFIG_CSF_SIZE 0x4000
++#endif
++#endif
++
+ #include "mx6_common.h"
+ 
+ #define CONFIG_DISPLAY_CPUINFO
+diff --git a/include/configs/mx6sabre_common.h b/include/configs/mx6sabre_common.h
+index 6812cb4..27b1e85 100644
+--- a/include/configs/mx6sabre_common.h
++++ b/include/configs/mx6sabre_common.h
+@@ -21,6 +21,12 @@
+ /* uncomment for SECURE mode support */
+ /* #define CONFIG_SECURE_BOOT */
+ 
++#ifdef CONFIG_SECURE_BOOT
++#ifndef CONFIG_CSF_SIZE
++#define CONFIG_CSF_SIZE 0x4000
++#endif
++#endif
++
+ #include "mx6_common.h"
+ #include <linux/sizes.h>
+ 
+diff --git a/include/configs/mx6slevk.h b/include/configs/mx6slevk.h
+index 5afcaea..1867162 100644
+--- a/include/configs/mx6slevk.h
++++ b/include/configs/mx6slevk.h
+@@ -24,6 +24,12 @@
+ /* uncomment for SECURE mode support */
+ /* #define CONFIG_SECURE_BOOT */
+ 
++#ifdef CONFIG_SECURE_BOOT
++#ifndef CONFIG_CSF_SIZE
++#define CONFIG_CSF_SIZE 0x4000
++#endif
++#endif
++
+ #define MACH_TYPE_MX6SLEVK		4307
+ #define CONFIG_MACH_TYPE		MACH_TYPE_MX6SLEVK
+ 
+diff --git a/include/configs/mx6sx_arm2.h b/include/configs/mx6sx_arm2.h
+index defa733..8820e35 100644
+--- a/include/configs/mx6sx_arm2.h
++++ b/include/configs/mx6sx_arm2.h
+@@ -27,6 +27,12 @@
+ /* uncomment for SECURE mode support */
+ /* #define CONFIG_SECURE_BOOT */
+ 
++#ifdef CONFIG_SECURE_BOOT
++#ifndef CONFIG_CSF_SIZE
++#define CONFIG_CSF_SIZE 0x4000
++#endif
++#endif
++
+ #define CONFIG_CMDLINE_TAG
+ #define CONFIG_SETUP_MEMORY_TAGS
+ #define CONFIG_INITRD_TAG
+diff --git a/include/configs/mx6sxsabreauto.h b/include/configs/mx6sxsabreauto.h
+index b772485..a41ec14 100644
+--- a/include/configs/mx6sxsabreauto.h
++++ b/include/configs/mx6sxsabreauto.h
+@@ -27,6 +27,12 @@
+ /* uncomment for SECURE mode support */
+ /* #define CONFIG_SECURE_BOOT */
+ 
++#ifdef CONFIG_SECURE_BOOT
++#ifndef CONFIG_CSF_SIZE
++#define CONFIG_CSF_SIZE 0x4000
++#endif
++#endif
++
+ #define CONFIG_CMDLINE_TAG
+ #define CONFIG_SETUP_MEMORY_TAGS
+ #define CONFIG_INITRD_TAG
+diff --git a/include/configs/mx6sxsabresd.h b/include/configs/mx6sxsabresd.h
+index 5ab4573..bc061d9 100644
+--- a/include/configs/mx6sxsabresd.h
++++ b/include/configs/mx6sxsabresd.h
+@@ -27,6 +27,12 @@
+ /* uncomment for SECURE mode support */
+ /* #define CONFIG_SECURE_BOOT */
+ 
++#ifdef CONFIG_SECURE_BOOT
++#ifndef CONFIG_CSF_SIZE
++#define CONFIG_CSF_SIZE 0x4000
++#endif
++#endif
++
+ #ifdef CONFIG_SPL
+ #define CONFIG_SPL_LIBCOMMON_SUPPORT
+ #define CONFIG_SPL_MMC_SUPPORT
+diff --git a/include/configs/mx6ul_14x14_ddr3_arm2.h b/include/configs/mx6ul_14x14_ddr3_arm2.h
+index 0148f6c..643961e 100644
+--- a/include/configs/mx6ul_14x14_ddr3_arm2.h
++++ b/include/configs/mx6ul_14x14_ddr3_arm2.h
+@@ -26,6 +26,12 @@
+ /* uncomment for SECURE mode support */
+ /* #define CONFIG_SECURE_BOOT */
+ 
++#ifdef CONFIG_SECURE_BOOT
++#ifndef CONFIG_CSF_SIZE
++#define CONFIG_CSF_SIZE 0x4000
++#endif
++#endif
++
+ #define CONFIG_CMDLINE_TAG
+ #define CONFIG_SETUP_MEMORY_TAGS
+ #define CONFIG_INITRD_TAG
+diff --git a/include/configs/mx6ul_14x14_evk.h b/include/configs/mx6ul_14x14_evk.h
+index dde1463..98a0346 100644
+--- a/include/configs/mx6ul_14x14_evk.h
++++ b/include/configs/mx6ul_14x14_evk.h
+@@ -29,6 +29,12 @@
+ /* uncomment for SECURE mode support */
+ /* #define CONFIG_SECURE_BOOT */
+ 
++#ifdef CONFIG_SECURE_BOOT
++#ifndef CONFIG_CSF_SIZE
++#define CONFIG_CSF_SIZE 0x4000
++#endif
++#endif
++
+ #define CONFIG_CMDLINE_TAG
+ #define CONFIG_SETUP_MEMORY_TAGS
+ #define CONFIG_INITRD_TAG
+diff --git a/include/configs/mx7d_arm2.h b/include/configs/mx7d_arm2.h
+index 2be10cd..ecc3d22 100644
+--- a/include/configs/mx7d_arm2.h
++++ b/include/configs/mx7d_arm2.h
+@@ -27,6 +27,12 @@
+ /* uncomment for SECURE mode support */
+ /* #define CONFIG_SECURE_BOOT */
+ 
++#ifdef CONFIG_SECURE_BOOT
++#ifndef CONFIG_CSF_SIZE
++#define CONFIG_CSF_SIZE 0x4000
++#endif
++#endif
++
+ #define CONFIG_CMDLINE_TAG
+ #define CONFIG_SETUP_MEMORY_TAGS
+ #define CONFIG_INITRD_TAG
+diff --git a/include/configs/mx7dsabresd.h b/include/configs/mx7dsabresd.h
+index f0d421c..9c38a7e 100644
+--- a/include/configs/mx7dsabresd.h
++++ b/include/configs/mx7dsabresd.h
+@@ -27,6 +27,12 @@
+ /* uncomment for SECURE mode support */
+ /* #define CONFIG_SECURE_BOOT */
+ 
++#ifdef CONFIG_SECURE_BOOT
++#ifndef CONFIG_CSF_SIZE
++#define CONFIG_CSF_SIZE 0x4000
++#endif
++#endif
++
+ #define CONFIG_CMDLINE_TAG
+ #define CONFIG_SETUP_MEMORY_TAGS
+ #define CONFIG_INITRD_TAG
+-- 
+1.8.0
+

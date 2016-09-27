@@ -1,0 +1,43 @@
+From 7b8c670a25355836fb011cfa8d6d8e79284937d3 Mon Sep 17 00:00:00 2001
+From: Haoran Wang <b50027@freescale.com>
+Date: Thu, 12 Nov 2015 13:06:40 +0800
+Subject: [PATCH 18/22] MA-7250 Rename bcmdhd supplicant and hostapd
+
+Rename bcm_supplicant to wpa_supplicant.
+Rename bcm_hostapd to hostapd.
+
+Signed-off-by: Haoran Wang <b50027@freescale.com>
+---
+ hostapd/Android.mk        | 2 +-
+ wpa_supplicant/Android.mk | 2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/hostapd/Android.mk b/hostapd/Android.mk
+index d3cac2e..63c6ba2 100644
+--- a/hostapd/Android.mk
++++ b/hostapd/Android.mk
+@@ -914,7 +914,7 @@ include $(BUILD_EXECUTABLE)
+ 
+ ########################
+ include $(CLEAR_VARS)
+-LOCAL_MODULE := bcm_hostapd
++LOCAL_MODULE := hostapd
+ LOCAL_MODULE_TAGS := optional
+ ifdef CONFIG_DRIVER_CUSTOM
+ LOCAL_STATIC_LIBRARIES := libCustomWifi
+diff --git a/wpa_supplicant/Android.mk b/wpa_supplicant/Android.mk
+index bf17333..8a37d4d 100644
+--- a/wpa_supplicant/Android.mk
++++ b/wpa_supplicant/Android.mk
+@@ -1546,7 +1546,7 @@ include $(BUILD_EXECUTABLE)
+ 
+ ########################
+ include $(CLEAR_VARS)
+-LOCAL_MODULE := bcm_supplicant
++LOCAL_MODULE := wpa_supplicant
+ ifdef CONFIG_DRIVER_CUSTOM
+ LOCAL_STATIC_LIBRARIES := libCustomWifi
+ endif
+-- 
+1.8.0
+

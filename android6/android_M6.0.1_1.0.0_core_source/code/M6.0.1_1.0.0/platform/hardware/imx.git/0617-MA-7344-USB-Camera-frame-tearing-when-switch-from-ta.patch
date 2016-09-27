@@ -1,0 +1,290 @@
+From 6e6ef4874c259644a67d0bb1de39db4cf975c22e Mon Sep 17 00:00:00 2001
+From: Xiaowen Liu <xiaowen.liu@freescale.com>
+Date: Fri, 11 Dec 2015 12:10:06 -0500
+Subject: [PATCH 617/635] MA-7344 USB Camera frame tearing when switch from
+ taking picture to preview.
+
+Fix USB Camera frame tearing when switch from taking picture to preview.
+It is HD Pro Webcam C920 which output damaged frames.
+Add Bypass damaged frames code for UvcDevice.
+
+Signed-off-by: Xiaowen Liu <xiaowen.liu@freescale.com>
+---
+ mx6/libcamera3/Camera.cpp    |   2 +-
+ mx6/libcamera3/CameraHAL.cpp |   9 +++-
+ mx6/libcamera3/UvcDevice.cpp | 113 ++++++++++++++++++++++++++++++++++++++++---
+ mx6/libcamera3/UvcDevice.h   |  47 ++++++++++++++++--
+ 4 files changed, 157 insertions(+), 14 deletions(-)
+
+diff --git a/mx6/libcamera3/Camera.cpp b/mx6/libcamera3/Camera.cpp
+index 08d9a9e..a211c1a 100644
+--- a/mx6/libcamera3/Camera.cpp
++++ b/mx6/libcamera3/Camera.cpp
+@@ -75,7 +75,7 @@ Camera* Camera::createCamera(int32_t id, char* name, int32_t facing,
+     }
+     else if (strstr(name, UVC_SENSOR_NAME)) {
+         ALOGI("create id:%d usb camera device", id);
+-        device = new UvcDevice(id, facing, orientation, path);
++        device = UvcDevice::newInstance(id, name, facing, orientation, path);
+     }
+     else if (strstr(name, ADV7180_TVIN_NAME)) {
+         ALOGI("create id:%d adv7180 tvin device", id);
+diff --git a/mx6/libcamera3/CameraHAL.cpp b/mx6/libcamera3/CameraHAL.cpp
+index 5f373bb..ecca2fa 100644
+--- a/mx6/libcamera3/CameraHAL.cpp
++++ b/mx6/libcamera3/CameraHAL.cpp
+@@ -402,7 +402,7 @@ int32_t CameraHAL::matchNodeName(const char* nodeName, nodeSet* nodes, int32_t i
+             continue;
+         }
+ 
+-        strncpy(mSets[index].mSensorName, nodeName, PROPERTY_VALUE_MAX);
++        strncpy(mSets[index].mSensorName, sensorName, PROPERTY_VALUE_MAX);
+         strncpy(mSets[index].mDevPath, devNode, CAMAERA_FILENAME_LENGTH);
+         ALOGI("Camera ID %d: name %s, Facing %d, orientation %d, dev path %s",
+                 index, mSets[index].mSensorName, mSets[index].mFacing,
+@@ -507,7 +507,12 @@ int32_t CameraHAL::getNodeName(const char* devNode, char name[], size_t length)
+ 
+     ret = ioctl(fd, VIDIOC_DBG_G_CHIP_IDENT, &vidChip);
+     if (ret < 0) {
+-        ALOGW("%s CHIP_IDENT dev path:%s failed", __func__, devNode);
++        ALOGI("%s CHIP_IDENT dev path:%s failed", __func__, devNode);
++        strncat(name, ",", length);
++        strLen = 1;
++        length -= strLen;
++        strncat(name, (const char*)vidCap.card, length);
++        ALOGI("getNodeNames: node name:%s", name);
+         close(fd);
+         fd = -1;
+         return ret;
+diff --git a/mx6/libcamera3/UvcDevice.cpp b/mx6/libcamera3/UvcDevice.cpp
+index c05c9bb..05ad8b9 100644
+--- a/mx6/libcamera3/UvcDevice.cpp
++++ b/mx6/libcamera3/UvcDevice.cpp
+@@ -19,10 +19,31 @@
+ 
+ #define LOGI_C920 "HD Pro Webcam C920"
+ 
+-UvcDevice::UvcDevice(int32_t id, int32_t facing, int32_t orientation, char* path)
++//----------------------UvcDevice--------------------
++Camera* UvcDevice::newInstance(int32_t id, char* name, int32_t facing,
++                               int32_t orientation, char* path)
++{
++    ALOGI("%s usb sensor name:%s", __func__, name);
++    UvcDevice* device = NULL;
++    if (strstr(name, LOGI_C920)) {
++        ALOGI("%s create LogiC920 device", __func__);
++        device = new LogiC920(id, facing, orientation, path);
++    }
++    else {
++        ALOGI("%s usb sensor:%s use standard UVC device", __func__, name);
++        device = new UvcDevice(id, facing, orientation, path);
++    }
++
++    return device;
++}
++
++UvcDevice::UvcDevice(int32_t id, int32_t facing, int32_t orientation,
++                     char* path, bool createStream)
+     : Camera(id, facing, orientation, path)
+ {
+-    mVideoStream = new UvcStream(this, path);
++    if (createStream) {
++        mVideoStream = new UvcStream(this, path);
++    }
+ }
+ 
+ UvcDevice::~UvcDevice()
+@@ -33,7 +54,7 @@ status_t UvcDevice::initSensorStaticData()
+ {
+     int32_t fd = open(mDevPath, O_RDWR);
+     if (fd < 0) {
+-        ALOGE("OvDevice: initParameters sensor has not been opened");
++        ALOGE("%s open path:%s failed", __func__, mDevPath);
+         return BAD_VALUE;
+     }
+ 
+@@ -87,11 +108,6 @@ status_t UvcDevice::initSensorStaticData()
+         if (ret != 0) {
+             continue;
+         }
+-        //uvc need do csc, so omit large resolution.
+-        if (vid_frmsize.discrete.width > 1920 ||
+-                vid_frmsize.discrete.height > 1080) {
+-            continue;
+-        }
+ 
+         ALOGI("enum frame size w:%d, h:%d",
+                 vid_frmsize.discrete.width, vid_frmsize.discrete.height);
+@@ -184,6 +200,24 @@ int32_t UvcDevice::UvcStream::onDeviceStopLocked()
+     return ret;
+ }
+ 
++int32_t UvcDevice::UvcStream::onDeviceStartLocked()
++{
++    ALOGI("%s", __func__);
++    return DMAStream::onDeviceStartLocked();
++}
++
++int32_t UvcDevice::UvcStream::onFrameAcquireLocked()
++{
++    ALOGV("%s", __func__);
++    return DMAStream::onFrameAcquireLocked();
++}
++
++int32_t UvcDevice::UvcStream::onFrameReturnLocked(int32_t index, StreamBuffer& buf)
++{
++    ALOGV("%s", __func__);
++    return DMAStream::onFrameReturnLocked(index, buf);
++}
++
+ // usb camera require the specific buffer size.
+ int32_t UvcDevice::UvcStream::getDeviceBufferSize()
+ {
+@@ -212,3 +246,66 @@ int32_t UvcDevice::UvcStream::getDeviceBufferSize()
+     return size;
+ }
+ 
++//---------------------LogiC920---------------
++LogiC920::LogiC920(int32_t id, int32_t facing, int32_t orientation, char* path)
++    : UvcDevice(id, facing, orientation, path, false)
++{
++    mC920Stream = new C920Stream(this, path);
++    mVideoStream = mC920Stream;
++}
++
++LogiC920::~LogiC920()
++{
++}
++
++status_t LogiC920::initSensorStaticData()
++{
++    int32_t ret = UvcDevice::initSensorStaticData();
++    mC920Stream->setOmitSize(mPreviewResolutions[0], mPreviewResolutions[1]);
++
++    return ret;
++}
++
++// LogiC920 output the first several frames which are damaged.
++// the mOmitFrames count on specific sensor.
++LogiC920::C920Stream::C920Stream(Camera* device, const char* name)
++    : UvcDevice::UvcStream(device, name), mOmitFrames(0), mOmitFrameCnt(1)
++{
++}
++LogiC920::C920Stream::~C920Stream()
++{
++}
++
++void LogiC920::C920Stream::setOmitSize(uint32_t width, uint32_t height)
++{
++    mOmitFrameWidth = width;
++    mOmitFrameHeight = height;
++}
++
++int32_t LogiC920::C920Stream::onDeviceStartLocked()
++{
++    ALOGI("%s", __func__);
++    int32_t ret = UvcDevice::UvcStream::onDeviceStartLocked();
++    mOmitFrames = mOmitFrameCnt;
++    return ret;
++}
++
++int32_t LogiC920::C920Stream::onFrameAcquireLocked()
++{
++    ALOGV("%s", __func__);
++    int32_t index = UvcDevice::UvcStream::onFrameAcquireLocked();
++
++    // large resolution should return immediately because of low frame rate.
++    if (mWidth > mOmitFrameWidth && mHeight > mOmitFrameHeight) {
++        return index;
++    }
++
++    while (mOmitFrames > 0) {
++        mOmitFrames--;
++        UvcDevice::UvcStream::onFrameReturnLocked(index, *mBuffers[index]);
++        index = UvcDevice::UvcStream::onFrameAcquireLocked();
++    }
++
++    return index;
++}
++
+diff --git a/mx6/libcamera3/UvcDevice.h b/mx6/libcamera3/UvcDevice.h
+index bb7c3cb..fcada48 100644
+--- a/mx6/libcamera3/UvcDevice.h
++++ b/mx6/libcamera3/UvcDevice.h
+@@ -23,13 +23,17 @@
+ class UvcDevice : public Camera
+ {
+ public:
+-    UvcDevice(int32_t id, int32_t facing, int32_t orientation, char* path);
++    UvcDevice(int32_t id, int32_t facing, int32_t orientation,
++              char* path, bool createStream = true);
+     virtual ~UvcDevice();
+ 
++    static Camera* newInstance(int32_t id, char* name, int32_t facing,
++                               int32_t orientation, char* path);
++
+     virtual status_t initSensorStaticData();
+     virtual bool isHotplug() {return true;}
+ 
+-private:
++protected:
+     class UvcStream : public DMAStream {
+     public:
+         UvcStream(Camera* device, const char* name)
+@@ -40,15 +44,52 @@ private:
+ 
+         // configure device.
+         virtual int32_t onDeviceConfigureLocked();
++        // start device.
++        virtual int32_t onDeviceStartLocked();
+         // stop device.
+         virtual int32_t onDeviceStopLocked();
++        // get buffer from V4L2.
++        virtual int32_t onFrameAcquireLocked();
++        // put buffer back to V4L2.
++        virtual int32_t onFrameReturnLocked(int32_t index, StreamBuffer& buf);
+ 
+         // get device buffer required size.
+         virtual int32_t getDeviceBufferSize();
+ 
+-    private:
++    protected:
+         char mUvcPath[CAMAERA_FILENAME_LENGTH];
+     };
+ };
+ 
++class LogiC920 : public UvcDevice
++{
++public:
++    LogiC920(int32_t id, int32_t facing, int32_t orientation, char* path);
++    virtual ~LogiC920();
++
++    virtual status_t initSensorStaticData();
++
++private:
++    class C920Stream : public UvcDevice::UvcStream {
++    public:
++        C920Stream(Camera* device, const char* name);
++        virtual ~C920Stream();
++
++        // start device.
++        virtual int32_t onDeviceStartLocked();
++        // get buffer from V4L2.
++        virtual int32_t onFrameAcquireLocked();
++
++        void setOmitSize(uint32_t width, uint32_t height);
++
++    private:
++        uint32_t mOmitFrames;
++        uint32_t mOmitFrameCnt;
++        uint32_t mOmitFrameWidth;
++        uint32_t mOmitFrameHeight;
++    };
++
++    C920Stream* mC920Stream;
++};
++
+ #endif
+-- 
+1.8.0
+

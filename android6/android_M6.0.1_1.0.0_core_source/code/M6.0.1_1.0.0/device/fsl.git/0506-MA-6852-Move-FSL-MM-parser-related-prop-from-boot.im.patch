@@ -1,0 +1,106 @@
+From 06f54eaa3daaa75c7fab3b18c349a0960b36b02b Mon Sep 17 00:00:00 2001
+From: "guoyin.chen" <guoyin.chen@freescale.com>
+Date: Thu, 2 Jul 2015 16:26:52 +0800
+Subject: [PATCH 506/602] MA-6852 Move FSL MM parser related prop from
+ boot.img to system.img
+
+Move all MM parser related config from init.rc to build.prop. It will
+helps to patch fsl extended codec, which limit the change within system.img
+
+Signed-off-by: guoyin.chen <guoyin.chen@freescale.com>
+---
+ imx6/BoardConfigCommon.mk | 12 ++++++++++++
+ imx6/etc/init.rc          | 11 -----------
+ imx7/BoardConfigCommon.mk | 12 ++++++++++++
+ imx7/etc/init.rc          | 11 -----------
+ 4 files changed, 24 insertions(+), 22 deletions(-)
+
+diff --git a/imx6/BoardConfigCommon.mk b/imx6/BoardConfigCommon.mk
+index a50a789..835a4dc 100644
+--- a/imx6/BoardConfigCommon.mk
++++ b/imx6/BoardConfigCommon.mk
+@@ -64,4 +64,16 @@ BOARD_SYSTEMIMAGE_PARTITION_SIZE := 377487360
+ BOARD_FLASH_BLOCK_SIZE := 4096
+ TARGET_RECOVERY_UI_LIB := librecovery_ui_imx
+ 
++# Freescale multimedia parser related prop setting
++# Define fsl avi/aac/asf/mkv/flv/flac format support
++ADDITIONAL_BUILD_PROPERTIES += \
++    ro.FSL_AVI_PARSER=1 \
++    ro.FSL_AAC_PARSER=1 \
++    ro.FSL_ASF_PARSER=0 \
++    ro.FSL_FLV_PARSER=1 \
++    ro.FSL_MKV_PARSER=1 \
++    ro.FSL_FLAC_PARSER=1 \
++    ro.FSL_MPG2_PARSER=1 \
++    ro.FSL_REAL_PARSER=0 \
++
+ -include device/google/gapps/gapps_config.mk
+diff --git a/imx6/etc/init.rc b/imx6/etc/init.rc
+index e8fefa1..d11cbdb 100755
+--- a/imx6/etc/init.rc
++++ b/imx6/etc/init.rc
+@@ -449,17 +449,6 @@ on boot
+     # Define default initial receive window size in segments.
+     setprop net.tcp.default_init_rwnd 60
+ 
+-    # Define fsl avi/aac/asf/mkv/flv/flac format support
+-    setprop ro.FSL_AVI_PARSER 1
+-    setprop ro.FSL_AAC_PARSER 1
+-    setprop ro.FSL_ASF_PARSER 0
+-    setprop ro.FSL_FLV_PARSER 1
+-    setprop ro.FSL_MKV_PARSER 1
+-    setprop ro.FSL_FLAC_PARSER 1
+-    setprop ro.FSL_MPG2_PARSER 1
+-#real parser and decoder support
+-    setprop ro.FSL_REAL_PARSER 0
+-
+     # ALSA mixer naming define
+     setprop alsa.mixer.playback.master Playback
+     setprop alsa.mixer.capture.master Capture
+diff --git a/imx7/BoardConfigCommon.mk b/imx7/BoardConfigCommon.mk
+index 14e4881..3b9037c 100644
+--- a/imx7/BoardConfigCommon.mk
++++ b/imx7/BoardConfigCommon.mk
+@@ -64,4 +64,16 @@ BOARD_SYSTEMIMAGE_PARTITION_SIZE := 377487360
+ BOARD_FLASH_BLOCK_SIZE := 4096
+ TARGET_RECOVERY_UI_LIB := librecovery_ui_imx
+ 
++# Freescale multimedia parser related prop setting
++# Define fsl avi/aac/asf/mkv/flv/flac format support
++ADDITIONAL_BUILD_PROPERTIES += \
++    ro.FSL_AVI_PARSER=1 \
++    ro.FSL_AAC_PARSER=1 \
++    ro.FSL_ASF_PARSER=0 \
++    ro.FSL_FLV_PARSER=1 \
++    ro.FSL_MKV_PARSER=1 \
++    ro.FSL_FLAC_PARSER=1 \
++    ro.FSL_MPG2_PARSER=1 \
++    ro.FSL_REAL_PARSER=0 \
++
+ -include device/google/gapps/gapps_config.mk
+diff --git a/imx7/etc/init.rc b/imx7/etc/init.rc
+index 6c915ac..45d9f01 100755
+--- a/imx7/etc/init.rc
++++ b/imx7/etc/init.rc
+@@ -449,17 +449,6 @@ on boot
+     # Define default initial receive window size in segments.
+     setprop net.tcp.default_init_rwnd 60
+ 
+-    # Define fsl avi/aac/asf/mkv/flv/flac format support
+-    setprop ro.FSL_AVI_PARSER 1
+-    setprop ro.FSL_AAC_PARSER 1
+-    setprop ro.FSL_ASF_PARSER 0
+-    setprop ro.FSL_FLV_PARSER 1
+-    setprop ro.FSL_MKV_PARSER 1
+-    setprop ro.FSL_FLAC_PARSER 1
+-    setprop ro.FSL_MPG2_PARSER 1
+-#real parser and decoder support
+-    setprop ro.FSL_REAL_PARSER 0
+-
+     # ALSA mixer naming define
+     setprop alsa.mixer.playback.master Playback
+     setprop alsa.mixer.capture.master Capture
+-- 
+1.8.0
+

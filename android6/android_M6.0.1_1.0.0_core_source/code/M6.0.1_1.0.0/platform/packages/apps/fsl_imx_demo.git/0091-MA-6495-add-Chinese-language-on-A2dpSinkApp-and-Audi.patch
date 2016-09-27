@@ -1,0 +1,184 @@
+From 68f6a7f3c1584370d7195a35b12fd4295b171550 Mon Sep 17 00:00:00 2001
+From: Yu Zhen <b53395@freescale.com>
+Date: Tue, 31 Mar 2015 16:39:18 +0800
+Subject: [PATCH 091/115] MA-6495 add Chinese language on A2dpSinkApp and
+ AudioRout.
+
+change string definition to resource file values/strings.xml.
+add a resource file values-zh-rCN/stings.xml to support Chinese lauguage.
+
+Signed-off-by: Yu Zhen <b53395@freescale.com>
+---
+ .../java/com/freescale/a2dpsinkapp/MainActivity.java    | 16 ++++++++--------
+ A2dpSinkApp/res/values-zh-rCN/strings.xml               | 17 +++++++++++++++++
+ A2dpSinkApp/res/values/strings.xml                      | 10 +++++++---
+ AudioRoute/res/values-zh-rCN/strings.xml                |  8 ++++++++
+ AudioRoute/res/values/strings.xml                       |  2 ++
+ AudioRoute/src/com/example/audioroute/AudioRoute.java   |  6 +++---
+ 6 files changed, 45 insertions(+), 14 deletions(-)
+ create mode 100644 A2dpSinkApp/res/values-zh-rCN/strings.xml
+ create mode 100644 AudioRoute/res/values-zh-rCN/strings.xml
+
+diff --git a/A2dpSinkApp/java/com/freescale/a2dpsinkapp/MainActivity.java b/A2dpSinkApp/java/com/freescale/a2dpsinkapp/MainActivity.java
+index 607b934..fdae57c 100755
+--- a/A2dpSinkApp/java/com/freescale/a2dpsinkapp/MainActivity.java
++++ b/A2dpSinkApp/java/com/freescale/a2dpsinkapp/MainActivity.java
+@@ -118,7 +118,7 @@ public class MainActivity extends Activity {
+                             if (adapter.getProfileConnectionState(BluetoothProfile.A2DP_SINK) !=
+                                     BluetoothProfile.STATE_CONNECTED) {
+                                 Log.i(TAG, "No a2dp connected");
+-                                ShowToast("No A2dp connected!");
++                                ShowToast(getResources().getString(R.string.No_A2dp_connected));
+                                 btn_enable.setBackgroundResource(R.drawable.power_off);
+                                 return false;
+                             }
+@@ -272,7 +272,7 @@ public class MainActivity extends Activity {
+                     if (adapter.getProfileConnectionState(BluetoothProfile.A2DP_SINK) !=
+                             BluetoothProfile.STATE_CONNECTED) {
+                         Log.i(TAG, "No a2dp connected");
+-                        ShowToast("No A2dp connected!");
++                        ShowToast(getResources().getString(R.string.No_A2dp_connected));
+                         return;
+                     }
+                 } else
+@@ -303,12 +303,12 @@ public class MainActivity extends Activity {
+             if (mBluetoothAdapter.getProfileConnectionState(BluetoothProfile.A2DP_SINK) !=
+                     BluetoothProfile.STATE_CONNECTED) {
+                 Log.i(TAG, "no a2dp");
+-                ShowToast("No A2dp connected!");
++                ShowToast(getResources().getString(R.string.No_A2dp_connected));
+ 
+             }
+             else {
+                 a2dpState = BluetoothA2dpSink.STATE_CONNECTED;
+-                ShowToast("We have A2dp connection");
++                ShowToast(getResources().getString(R.string.A2dp_connection));
+                 Log.i(TAG, "we have a2dp");
+             }
+             if(mBluetoothAdapter.getProfileProxy(getApplicationContext(),
+@@ -524,12 +524,12 @@ public class MainActivity extends Activity {
+                 String info = null;
+                 boolean connected = false;
+                 if (state == BluetoothA2dpSink.STATE_CONNECTED) {
+-                    ShowToast("A2dp source connected!");
++                    ShowToast(getResources().getString(R.string.A2dp_source_connected));
+                     connected = true;
+                     info = device.getAliasName() + " " + device.getAddress();
+                     a2dpRemoteDevice = device;
+                 } else {
+-                    ShowToast("A2dp source disconnected!");
++                    ShowToast(getResources().getString(R.string.A2dp_source_disconnected));
+                     if (isPlaying) {
+                         isPlaying = false;
+                         if (btn_enable !=null)
+@@ -548,9 +548,9 @@ public class MainActivity extends Activity {
+                 int previous_state =
+                         intent.getIntExtra(BluetoothA2dpSink.EXTRA_PREVIOUS_STATE,-1);
+                 if (state == BluetoothA2dpSink.STATE_PLAYING) {
+-                    ShowToast("A2dp Source is playing!");
++                    ShowToast(getResources().getString(R.string.A2dp_is_playing));
+                 } else {
+-                    ShowToast("A2dp Source paused.");
++                    ShowToast(getResources().getString(R.string.A2dp_source_pause));
+                 }
+ 
+             }
+diff --git a/A2dpSinkApp/res/values-zh-rCN/strings.xml b/A2dpSinkApp/res/values-zh-rCN/strings.xml
+new file mode 100644
+index 0000000..2963c86
+--- /dev/null
++++ b/A2dpSinkApp/res/values-zh-rCN/strings.xml
+@@ -0,0 +1,17 @@
++<?xml version="1.0" encoding="utf-8"?>
++<resources>
++    <string name="app_name">蓝牙音频</string>
++    <string name="hello_world">Hello world!</string>
++    <string name="action_settings">设置</string>
++    <string name="stop">停止</string>
++    <string name="start">开始</string>
++    <string name="pause">暂停</string>
++    <string name="play">播放</string>
++    <string name="noConnected">蓝牙音频无连接</string>
++    <string name="No_A2dp_connected">无蓝牙音频连接</string>
++    <string name="A2dp_connection">蓝牙音频已连接</string> 
++    <string name="A2dp_source_connected">蓝牙源端已连接</string>
++    <string name="A2dp_source_disconnected">蓝牙源端已断开</string>
++    <string name="A2dp_is_playing">蓝牙音频正在播放</string>
++    <string name="A2dp_source_pause">蓝牙源端已暂停</string>
++</resources>
+diff --git a/A2dpSinkApp/res/values/strings.xml b/A2dpSinkApp/res/values/strings.xml
+index f7ee9e9..a158cb0 100755
+--- a/A2dpSinkApp/res/values/strings.xml
++++ b/A2dpSinkApp/res/values/strings.xml
+@@ -1,6 +1,5 @@
+ <?xml version="1.0" encoding="utf-8"?>
+ <resources>
+-
+     <string name="app_name">A2dpSinkApp</string>
+     <string name="hello_world">Hello world!</string>
+     <string name="action_settings">Settings</string>
+@@ -9,5 +8,10 @@
+     <string name="pause">Pause</string>
+     <string name="play">Play</string>
+     <string name="noConnected">No A2dp connected</string>
+-
+-</resources>
++    <string name="No_A2dp_connected">No A2dp connected!</string>
++    <string name="A2dp_connection">We have A2dp connection</string>
++    <string name="A2dp_source_connected">A2dp source connected!</string>
++    <string name="A2dp_source_disconnected">A2dp source disconnected!</string>
++    <string name="A2dp_is_playing">A2dp Source is playing!</string>
++    <string name="A2dp_source_pause">A2dp Source paused.</string>
++ </resources>
+diff --git a/AudioRoute/res/values-zh-rCN/strings.xml b/AudioRoute/res/values-zh-rCN/strings.xml
+new file mode 100644
+index 0000000..3c5389d
+--- /dev/null
++++ b/AudioRoute/res/values-zh-rCN/strings.xml
+@@ -0,0 +1,8 @@
++<?xml version="1.0" encoding="utf-8"?>
++<resources>
++
++    <string name="app_name">录音源选择</string>
++    <string name="device_choose">请选择输入设备</string>
++    <string name="Enable_SPDIF_In">开启数字音频接口</string>
++
++</resources>
+diff --git a/AudioRoute/res/values/strings.xml b/AudioRoute/res/values/strings.xml
+index 7d50316..fdd62d9 100644
+--- a/AudioRoute/res/values/strings.xml
++++ b/AudioRoute/res/values/strings.xml
+@@ -1,4 +1,6 @@
+ <?xml version="1.0" encoding="utf-8"?>
+ <resources>
+     <string name="app_name">AudioRoute</string>
++    <string name="device_choose">Please select input device</string>
++    <string name="Enable_SPDIF_In">Enable SPDIF In</string>
+ </resources>
+diff --git a/AudioRoute/src/com/example/audioroute/AudioRoute.java b/AudioRoute/src/com/example/audioroute/AudioRoute.java
+index 8a4faba..52d2883 100644
+--- a/AudioRoute/src/com/example/audioroute/AudioRoute.java
++++ b/AudioRoute/src/com/example/audioroute/AudioRoute.java
+@@ -1,6 +1,6 @@
+ /*
+  * Copyright (C) 2007 The Android Open Source Project
+- * Copyright (C) 2012 Freescale Semiconductor, Inc.
++ * Copyright (C) 2012-2015 Freescale Semiconductor, Inc.
+  *
+  * Licensed under the Apache License, Version 2.0 (the "License");
+  * you may not use this file except in compliance with the License.
+@@ -56,9 +56,9 @@ public class AudioRoute extends Activity {
+         mSpdifIn = (CheckBox)findViewById(R.id.spdif_in);
+ 
+ 
+-        mCommand.setText("Please select input device");
++        mCommand.setText(getResources().getString(R.string.device_choose));
+ 
+-        mSpdifIn.setText("Enable SPDIF In");
++        mSpdifIn.setText(getResources().getString(R.string.Enable_SPDIF_In));
+ 
+         if (AudioSystem.getDeviceConnectionState(AudioSystem.DEVICE_IN_AUX_DIGITAL, "") == AudioSystem.DEVICE_STATE_AVAILABLE)
+             mSpdifIn.setChecked(true);
+-- 
+1.8.0
+

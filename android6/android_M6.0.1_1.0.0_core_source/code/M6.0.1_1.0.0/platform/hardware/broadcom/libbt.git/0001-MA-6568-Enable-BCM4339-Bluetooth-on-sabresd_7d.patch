@@ -1,0 +1,82 @@
+From ec5f38b5f77e9dbb5c1db3633a68df3de68b850f Mon Sep 17 00:00:00 2001
+From: Haoran Wang <b50027@freescale.com>
+Date: Tue, 21 Apr 2015 21:54:44 +0800
+Subject: [PATCH 1/4] MA-6568 Enable BCM4339 Bluetooth on sabresd_7d
+
+Added sabresd_7d specific configuration files.
+
+Signed-off-by: Haoran Wang <b50027@freescale.com>
+---
+ Android.mk                         |  4 +++-
+ conf/fsl/sabresd_7d/Android.mk     | 14 ++++++++++++++
+ conf/fsl/sabresd_7d/bt_vendor.conf |  7 +++++++
+ include/vnd_sabresd_7d.txt         | 10 ++++++++++
+ 4 files changed, 34 insertions(+), 1 deletion(-)
+
+diff --git a/Android.mk b/Android.mk
+index 37e304c..76397b1 100644
+--- a/Android.mk
++++ b/Android.mk
+@@ -30,7 +30,9 @@ LOCAL_PROPRIETARY_MODULE := true
+ include $(LOCAL_PATH)/vnd_buildcfg.mk
+ 
+ include $(BUILD_SHARED_LIBRARY)
+-
++ifeq ($(TARGET_PRODUCT), sabresd_7d)
++    include $(LOCAL_PATH)/conf/fsl/sabresd_7d/Android.mk
++endif
+ ifeq ($(TARGET_PRODUCT), full_maguro)
+     include $(LOCAL_PATH)/conf/samsung/maguro/Android.mk
+ endif
+diff --git a/conf/fsl/sabresd_7d/Android.mk b/conf/fsl/sabresd_7d/Android.mk
+new file mode 100644
+index 0000000..974e213
+--- /dev/null
++++ b/conf/fsl/sabresd_7d/Android.mk
+@@ -0,0 +1,14 @@
++LOCAL_PATH := $(call my-dir)
++
++include $(CLEAR_VARS)
++
++LOCAL_MODULE := bt_vendor.conf
++LOCAL_MODULE_CLASS := ETC
++LOCAL_MODULE_PATH := $(TARGET_OUT)/etc/bluetooth
++
++LOCAL_MODULE_TAGS := eng
++
++LOCAL_SRC_FILES := $(LOCAL_MODULE)
++
++include $(BUILD_PREBUILT)
++
+diff --git a/conf/fsl/sabresd_7d/bt_vendor.conf b/conf/fsl/sabresd_7d/bt_vendor.conf
+new file mode 100644
+index 0000000..f64b34f
+--- /dev/null
++++ b/conf/fsl/sabresd_7d/bt_vendor.conf
+@@ -0,0 +1,7 @@
++# UART device port where Bluetooth controller is attached
++UartPort = /dev/ttymxc5
++
++# Firmware patch file location
++FwPatchFilePath = /etc/firmware/bcm/
++
++FwPatchFileName = Type_ZP.hcd
+diff --git a/include/vnd_sabresd_7d.txt b/include/vnd_sabresd_7d.txt
+new file mode 100755
+index 0000000..c3f7d8a
+--- /dev/null
++++ b/include/vnd_sabresd_7d.txt
+@@ -0,0 +1,10 @@
++BLUETOOTH_UART_DEVICE_PORT = "/dev/ttymxc5"
++FW_PATCHFILE_LOCATION = "/system/etc/firmware/bcm/Type_ZP.hcd"
++LPM_IDLE_TIMEOUT_MULTIPLE = 5
++SCO_USE_I2S_INTERFACE = FALSE
++BTVND_DBG = TRUE
++BTHW_DBG = TRUE
++VNDUSERIAL_DBG = TRUE
++UPIO_DBG = FALSE
++LPM_SLEEP_MODE = 0
++UART_TARGET_BAUD_RATE = 3000000
+-- 
+1.8.0
+

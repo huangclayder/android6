@@ -1,0 +1,69 @@
+From be222a5032f0ac6d8d5614cd4efa5435de2919cc Mon Sep 17 00:00:00 2001
+From: Jon Medhurst <tixy@linaro.org>
+Date: Fri, 14 Jun 2013 18:30:08 +0100
+Subject: [PATCH] ARM HDLCD: Fix clock initialisation sequence
+
+This reworks HDLCD initialisation to mirror how CLCD does this, in
+particular to prepare the clock immediately after it has been got which
+ensures that we don't try and enable clocks before they were prepared,
+e.g. in the former clk_enable after register_framebuffer().
+
+The reason this issue wasn't noticed before is that we have been
+setting CONFIG_FRAMEBUFFER_CONSOLE and this caused
+register_framebuffer() to trigger the creation of a console which calls
+hdlcd_set_par(), which in turn was preparing and enabling the clock.
+
+Signed-off-by: Jon Medhurst <tixy@linaro.org>
+(cherry picked from commit aa2abc95ffbd8a367f2aa077f7d0117fa799532f)
+Signed-off-by: Alex Shi <alex.shi@linaro.org>
+---
+ drivers/video/arm-hdlcd.c | 11 ++++++++---
+ 1 file changed, 8 insertions(+), 3 deletions(-)
+
+diff --git a/drivers/video/arm-hdlcd.c b/drivers/video/arm-hdlcd.c
+index f9c4e74..cfd631e 100644
+--- a/drivers/video/arm-hdlcd.c
++++ b/drivers/video/arm-hdlcd.c
+@@ -289,7 +289,6 @@ static int hdlcd_set_par(struct fb_info *info)
+ 	WRITE_HDLCD_REG(HDLCD_REG_GREEN_SELECT, ((hdlcd->fb.var.green.length & 0xf) << 8) | hdlcd->fb.var.green.offset);
+ 	WRITE_HDLCD_REG(HDLCD_REG_BLUE_SELECT, ((hdlcd->fb.var.blue.length & 0xf) << 8) | hdlcd->fb.var.blue.offset);
+ 
+-	clk_prepare(hdlcd->clk);
+ 	clk_set_rate(hdlcd->clk, (1000000000 / hdlcd->fb.var.pixclock) * 1000);
+ 	clk_enable(hdlcd->clk);
+ 
+@@ -481,6 +480,10 @@ static int hdlcd_setup(struct hdlcd_device *hdlcd)
+ 		return PTR_ERR(hdlcd->clk);
+ 	}
+ 
++	err = clk_prepare(hdlcd->clk);
++	if (err)
++		goto clk_prepare_err;
++
+ 	hdlcd->base = ioremap_nocache(hdlcd->fb.fix.mmio_start, hdlcd->fb.fix.mmio_len);
+ 	if (!hdlcd->base) {
+ 		dev_err(hdlcd->dev, "HDLCD: unable to map registers\n");
+@@ -572,9 +575,9 @@ static int hdlcd_setup(struct hdlcd_device *hdlcd)
+ 	/* Ensure interrupts are disabled */
+ 	WRITE_HDLCD_REG(HDLCD_REG_INT_MASK, 0);
+ #endif	
++	fb_set_var(&hdlcd->fb, &hdlcd->fb.var);
++
+ 	if (!register_framebuffer(&hdlcd->fb)) {
+-		fb_set_var(&hdlcd->fb, &hdlcd->fb.var);
+-		clk_enable(hdlcd->clk);
+ 		return 0;
+ 	}
+ 
+@@ -586,6 +589,8 @@ setup_err:
+ kmalloc_err:
+ 	kfree(hdlcd->fb.pseudo_palette);
+ remap_err:
++	clk_unprepare(hdlcd->clk);
++clk_prepare_err:
+ 	clk_put(hdlcd->clk);
+ 	return err;
+ }
+-- 
+1.8.0
+

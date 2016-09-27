@@ -1,0 +1,75 @@
+From fc7c53adcecc45e4151d2f371e16090caf6cb579 Mon Sep 17 00:00:00 2001
+From: Liu Xiaowen <xiaowen.liu@freescale.com>
+Date: Wed, 18 Mar 2015 10:16:15 +0800
+Subject: [PATCH] MA-6416 change 6sx&6sl display bpp to 32 for kernel 3.14
+ upgrade.
+
+change 6sx&6sl display bpp to 32 for kernel 3.14 upgrade.
+
+Signed-off-by: Liu Xiaowen <xiaowen.liu@freescale.com>
+---
+ arch/arm/boot/dts/imx6sl-evk.dts       | 2 +-
+ arch/arm/boot/dts/imx6sx-sabreauto.dts | 2 +-
+ arch/arm/boot/dts/imx6sx-sdb.dts       | 6 +++---
+ 3 files changed, 5 insertions(+), 5 deletions(-)
+
+diff --git a/arch/arm/boot/dts/imx6sl-evk.dts b/arch/arm/boot/dts/imx6sl-evk.dts
+index 97eeb50..290995c 100644
+--- a/arch/arm/boot/dts/imx6sl-evk.dts
++++ b/arch/arm/boot/dts/imx6sl-evk.dts
+@@ -446,7 +446,7 @@
+ 		interrupt-parent = <&gpio2>;
+ 		interrupts = <10 2>;
+ 		mode_str ="1280x720M@60";
+-		bits-per-pixel = <16>;
++		bits-per-pixel = <32>;
+ 		resets = <&sii902x_reset>;
+ 		reg = <0x39>;
+ 	};
+diff --git a/arch/arm/boot/dts/imx6sx-sabreauto.dts b/arch/arm/boot/dts/imx6sx-sabreauto.dts
+index 70ccb4a..6af3ede 100644
+--- a/arch/arm/boot/dts/imx6sx-sabreauto.dts
++++ b/arch/arm/boot/dts/imx6sx-sabreauto.dts
+@@ -789,7 +789,7 @@
+ 	status = "okay";
+ 
+ 	display1: display {
+-		bits-per-pixel = <16>;
++		bits-per-pixel = <32>;
+ 		bus-width = <18>;
+ 	};
+ };
+diff --git a/arch/arm/boot/dts/imx6sx-sdb.dts b/arch/arm/boot/dts/imx6sx-sdb.dts
+index 1d0def1..7eab7b7 100644
+--- a/arch/arm/boot/dts/imx6sx-sdb.dts
++++ b/arch/arm/boot/dts/imx6sx-sdb.dts
+@@ -266,7 +266,7 @@
+ 	status = "disabled";
+ 
+ 	display0: display {
+-		bits-per-pixel = <16>;
++		bits-per-pixel = <32>;
+ 		bus-width = <24>;
+ 
+ 		display-timings {
+@@ -296,7 +296,7 @@
+ 	status = "okay";
+ 
+ 	display1: display {
+-		bits-per-pixel = <16>;
++		bits-per-pixel = <32>;
+ 		bus-width = <18>;
+ 	};
+ };
+@@ -626,7 +626,7 @@
+ 		interrupt-parent = <&gpio4>;
+ 		interrupts = <21 2>;
+ 		mode_str ="1280x720M@60";
+-		bits-per-pixel = <16>;
++		bits-per-pixel = <32>;
+ 		resets = <&sii902x_reset>;
+ 		reg = <0x39>;
+ 		status = "disabled";
+-- 
+1.8.0
+

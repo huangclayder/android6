@@ -1,0 +1,94 @@
+From e63a080a5735ea1202ee0a2520d83ddcabed194d Mon Sep 17 00:00:00 2001
+From: Richard Liu <r66033@freescale.com>
+Date: Wed, 29 Oct 2014 14:34:40 +0800
+Subject: [PATCH 476/505] ENGR00285547-5 Add more module and support android
+ build
+
+-Add android.mk to support android build
+-Add USB into the mmdc profiling
+
+Signed-off-by: Richard Liu <r66033@freescale.com>
+---
+ test/mmdc/Android.mk | 17 +++++++++++++++++
+ test/mmdc/mmdc.c     | 12 ++++++++++--
+ test/mmdc/mmdc.h     |  3 +++
+ 3 files changed, 30 insertions(+), 2 deletions(-)
+ create mode 100755 test/mmdc/Android.mk
+
+diff --git a/test/mmdc/Android.mk b/test/mmdc/Android.mk
+new file mode 100755
+index 0000000..d49152f
+--- /dev/null
++++ b/test/mmdc/Android.mk
+@@ -0,0 +1,17 @@
++
++LOCAL_PATH:= $(call my-dir)
++include $(CLEAR_VARS)
++
++LOCAL_SRC_FILES = mmdc.c
++LOCAL_MODULE := mmdc
++LOCAL_MODULE_TAGS := 	optional eng
++LOCAL_C_INCLUDES :=	mmdc.h
++
++LOCAL_CFLAGS += \
++        -Wall \
++        -O3 \
++        -fsigned-char \
++        -DANDROID
++
++include $(BUILD_EXECUTABLE)
++
+diff --git a/test/mmdc/mmdc.c b/test/mmdc/mmdc.c
+index c25e54a..165dfea 100644
+--- a/test/mmdc/mmdc.c
++++ b/test/mmdc/mmdc.c
+@@ -241,7 +241,7 @@ void signalhandler(int signal)
+ void help(void)
+ {
+ 	printf("======================MMDC v1.3===========================\n");
+-	printf("Usage: mmdc [ARM:DSP1:DSP2:GPU2D:GPU2D1:GPU2D2:GPU3D:GPUVG:VPU:M4:PXP:SUM] [...]\n");
++	printf("Usage: mmdc [ARM:DSP1:DSP2:GPU2D:GPU2D1:GPU2D2:GPU3D:GPUVG:VPU:M4:PXP:USB:SUM] [...]\n");
+ 	printf("export MMDC_SLEEPTIME can be used to define profiling duration.1 by default means 1s\n");
+ 	printf("export MMDC_LOOPCOUNT can be used to define profiling times. 1 by default. -1 means infinite loop.\n");
+ 	printf("export MMDC_CUST_MADPCR1 can be used to customize madpcr1. Will ignore it if defined master\n");
+@@ -283,7 +283,7 @@ int main(int argc, char **argv)
+ 		printf("Could not open /dev/mem\n");
+ 		return -1;
+ 	}
+-	A = (ulong*) mmap(NULL, 0x4000, PROT_READ | PROT_WRITE, MAP_SHARED, fd, MMDC_P0_IPS_BASE_ADDR);
++	A = (unsigned long*) mmap(NULL, 0x4000, PROT_READ | PROT_WRITE, MAP_SHARED, fd, MMDC_P0_IPS_BASE_ADDR);
+ 		if (A == MAP_FAILED)
+ 	{
+ 		printf("Mapping failed mmdc_p0\n");
+@@ -357,6 +357,14 @@ int main(int argc, char **argv)
+ 				}else if((strcmp(argv[j],"GPUVG")==0)&&(cpu_is_mx6sl()==1)){
+ 				   ((pMMDC_t)A)->madpcr1 = axi_openvg_6sl;
+ 				   printf("MMDC GPUVG \n");
++				}else if(strcmp(argv[j],"USB")==0){
++					if(cpu_is_mx6sx()==1)
++						((pMMDC_t)A)->madpcr1 = axi_usb_6sx;
++					else if(cpu_is_mx6sl()==1)
++						((pMMDC_t)A)->madpcr1 = axi_usb_6sl;
++					else
++						((pMMDC_t)A)->madpcr1 = axi_usb;
++				        printf("MMDC USB \n");
+ 				}else if(strcmp(argv[j],"ARM")==0){
+ 					if((cpu_is_mx6sx()==1))
+ 						((pMMDC_t)A)->madpcr1 = axi_arm_6sx;
+diff --git a/test/mmdc/mmdc.h b/test/mmdc/mmdc.h
+index 7271c03..82e19a3 100644
+--- a/test/mmdc/mmdc.h
++++ b/test/mmdc/mmdc.h
+@@ -165,6 +165,9 @@ extern unsigned int system_rev;
+ #define axi_lcd1_6sl            0x0e870005
+ #define axi_lcd1_6sx            0x043F0013
+ #define axi_lcd2_6sx            0x043F0023
++#define axi_usb                 0x03FF005A
++#define axi_usb_6sl             0x003F0014
++#define axi_usb_6sx             0x007F0046
+ #define axi_default             0x00000000
+ 
+ #endif /*MMDC_H_*/
+-- 
+1.8.0
+

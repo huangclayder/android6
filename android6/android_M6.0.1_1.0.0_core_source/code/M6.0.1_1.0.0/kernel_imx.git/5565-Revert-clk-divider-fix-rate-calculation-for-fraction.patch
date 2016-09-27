@@ -1,0 +1,63 @@
+From 78c9fe0b37cee37d01880441edc18306a8870a78 Mon Sep 17 00:00:00 2001
+From: Liu Xiaowen <xiaowen.liu@freescale.com>
+Date: Tue, 21 Jul 2015 17:26:46 +0800
+Subject: [PATCH] Revert "clk: divider: fix rate calculation for fractional
+ rates"
+
+This reverts commit 866c42bd6bdabbca5befa0b561873bc23a1ae810.
+---
+ drivers/clk/clk-divider.c | 10 +++++-----
+ 1 file changed, 5 insertions(+), 5 deletions(-)
+
+diff --git a/drivers/clk/clk-divider.c b/drivers/clk/clk-divider.c
+index ec22112..5543b7d 100644
+--- a/drivers/clk/clk-divider.c
++++ b/drivers/clk/clk-divider.c
+@@ -24,7 +24,7 @@
+  * Traits of this clock:
+  * prepare - clk_prepare only ensures that parents are prepared
+  * enable - clk_enable only ensures that parents are enabled
+- * rate - rate is adjustable.  clk->rate = DIV_ROUND_UP(parent->rate / divisor)
++ * rate - rate is adjustable.  clk->rate = parent->rate / divisor
+  * parent - fixed parent.  No clk_set_parent support
+  */
+ 
+@@ -115,7 +115,7 @@ static unsigned long clk_divider_recalc_rate(struct clk_hw *hw,
+ 		return parent_rate;
+ 	}
+ 
+-	return DIV_ROUND_UP(parent_rate, div);
++	return parent_rate / div;
+ }
+ 
+ /*
+@@ -185,7 +185,7 @@ static int clk_divider_bestdiv(struct clk_hw *hw, unsigned long rate,
+ 		}
+ 		parent_rate = __clk_round_rate(__clk_get_parent(hw->clk),
+ 				MULT_ROUND_UP(rate, i));
+-		now = DIV_ROUND_UP(parent_rate, i);
++		now = parent_rate / i;
+ 		if (now <= rate && now > best) {
+ 			bestdiv = i;
+ 			best = now;
+@@ -207,7 +207,7 @@ static long clk_divider_round_rate(struct clk_hw *hw, unsigned long rate,
+ 	int div;
+ 	div = clk_divider_bestdiv(hw, rate, prate);
+ 
+-	return DIV_ROUND_UP(*prate, div);
++	return *prate / div;
+ }
+ 
+ static int clk_divider_set_rate(struct clk_hw *hw, unsigned long rate,
+@@ -218,7 +218,7 @@ static int clk_divider_set_rate(struct clk_hw *hw, unsigned long rate,
+ 	unsigned long flags = 0;
+ 	u32 val;
+ 
+-	div = DIV_ROUND_UP(parent_rate, rate);
++	div = parent_rate / rate;
+ 	value = _get_val(divider, div);
+ 
+ 	if (value > div_mask(divider))
+-- 
+1.8.0
+

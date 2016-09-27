@@ -1,0 +1,29 @@
+From 2ca64a0d5de29b172251a1233654b39afd40ac2f Mon Sep 17 00:00:00 2001
+From: Fancy Fang <chen.fang@freescale.com>
+Date: Wed, 15 Apr 2015 16:49:20 +0800
+Subject: [PATCH] MLK-10573-3 dma: pxp-v3: add 'NV21' format support
+
+Add 'NV21' format support in pxp-v3 driver to fix
+some display issue in some test cases.
+
+Signed-off-by: Fancy Fang <chen.fang@freescale.com>
+(cherry picked from commit ff96db37e1a5292eda8f6ad6d56bd625c350686c)
+---
+ drivers/dma/pxp/pxp_dma_v3.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/drivers/dma/pxp/pxp_dma_v3.c b/drivers/dma/pxp/pxp_dma_v3.c
+index 95f6ee3..b5fa834 100644
+--- a/drivers/dma/pxp/pxp_dma_v3.c
++++ b/drivers/dma/pxp/pxp_dma_v3.c
+@@ -364,6 +364,7 @@ static bool is_yuv(u32 pix_fmt)
+ 	    (pix_fmt == PXP_PIX_FMT_Y41P) |
+ 	    (pix_fmt == PXP_PIX_FMT_VUY444) |
+ 	    (pix_fmt == PXP_PIX_FMT_NV12) |
++	    (pix_fmt == PXP_PIX_FMT_NV21) |
+ 	    (pix_fmt == PXP_PIX_FMT_NV16) |
+ 	    (pix_fmt == PXP_PIX_FMT_NV61) |
+ 	    (pix_fmt == PXP_PIX_FMT_GREY) |
+-- 
+1.8.0
+

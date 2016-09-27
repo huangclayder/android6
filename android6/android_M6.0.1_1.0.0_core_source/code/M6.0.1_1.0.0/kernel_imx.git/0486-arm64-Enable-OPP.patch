@@ -1,0 +1,34 @@
+From 75454232b1ee3b2275d529ecb0d1b0d0634fd132 Mon Sep 17 00:00:00 2001
+From: Mark Brown <broonie@linaro.org>
+Date: Tue, 27 May 2014 16:52:23 +0100
+Subject: [PATCH] arm64: Enable OPP
+
+Upstream OPP has been converted into a selectable symbol by commit
+049d595a4db3b (PM / OPP: Make OPP invisible to users in Kconfig) however
+for v3.10 it is less invasive to follow the practice in v3.10.
+
+Signed-off-by: Mark Brown <broonie@linaro.org>
+(cherry picked from LSK commit 4c9563dfc768f176de0c9cdf398ec8a108f374d0)
+Signed-off-by: Alex Shi <alex.shi@linaro.org>
+
+Conflicts:
+	arch/arm64/Kconfig
+---
+ arch/arm64/Kconfig | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/arch/arm64/Kconfig b/arch/arm64/Kconfig
+index 9848e5e..6cc51c1 100644
+--- a/arch/arm64/Kconfig
++++ b/arch/arm64/Kconfig
+@@ -3,6 +3,7 @@ config ARM64
+ 	select ARCH_HAS_ATOMIC64_DEC_IF_POSITIVE
+ 	select ARCH_USE_CMPXCHG_LOCKREF
+ 	select ARCH_HAS_TICK_BROADCAST if GENERIC_CLOCKEVENTS_BROADCAST
++	select ARCH_HAS_OPP
+ 	select ARCH_WANT_OPTIONAL_GPIOLIB
+ 	select ARCH_WANT_COMPAT_IPC_PARSE_VERSION
+ 	select ARCH_WANT_FRAME_POINTERS
+-- 
+1.8.0
+

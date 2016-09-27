@@ -1,0 +1,48 @@
+From b81e9ed4aef0fda1f190e35e50233b156153a193 Mon Sep 17 00:00:00 2001
+From: Haoran Wang <b50027@freescale.com>
+Date: Thu, 13 Aug 2015 16:03:19 +0800
+Subject: [PATCH] MA-6932 Revert "Revert "MLK-11080-1 dts: imx7d-sdb: add OOB
+ GPIO config for wlan node""
+
+This reverts commit ba47e9abbf355509aacaa14d4b904afd6c9e26a5.
+
+Revert the patch in DTS to enable OOB GPIO for bcm4339.
+
+Signed-off-by: Haoran Wang <b50027@freescale.com>
+---
+ arch/arm/boot/dts/imx7d-sdb.dts | 6 +++++-
+ 1 file changed, 5 insertions(+), 1 deletion(-)
+
+diff --git a/arch/arm/boot/dts/imx7d-sdb.dts b/arch/arm/boot/dts/imx7d-sdb.dts
+index cffa499..80986c1 100644
+--- a/arch/arm/boot/dts/imx7d-sdb.dts
++++ b/arch/arm/boot/dts/imx7d-sdb.dts
+@@ -112,12 +112,15 @@
+ 			regulator-max-microvolt = <5000000>;
+ 			regulator-name = "wlreg_on";
+ 			gpio = <&gpio4 21 GPIO_ACTIVE_HIGH>;
++			startup-delay-us = <100>; /* WL_REG_ON needs 61 usec delay */
+ 			enable-active-high;
+ 		};
+ 	};
+ 
+ 	bcmdhd_wlan_0: bcmdhd_wlan@0 {
+ 		compatible = "android,bcmdhd_wlan";
++		/* OOB_IRQ: ECSPI2_SCLK (gpio4 20) */
++		gpios = <&gpio4 20 0>;
+ 		wlreg_on-supply = <&wlreg_on>;
+ 	};
+ 
+@@ -863,7 +866,8 @@
+ 				MX7D_PAD_SD2_DATA1__SD2_DATA1   0x59
+ 				MX7D_PAD_SD2_DATA2__SD2_DATA2   0x59
+ 				MX7D_PAD_SD2_DATA3__SD2_DATA3   0x59
+-				MX7D_PAD_ECSPI2_MOSI__GPIO4_IO21	0x59 /* WL_REG_ON */
++				MX7D_PAD_ECSPI2_MOSI__GPIO4_IO21	0x19 /* WL_REG_ON */
++				MX7D_PAD_ECSPI2_SCLK__GPIO4_IO20	0x19 /* WL OOB */
+ 			>;
+ 		};
+ 
+-- 
+1.8.0
+

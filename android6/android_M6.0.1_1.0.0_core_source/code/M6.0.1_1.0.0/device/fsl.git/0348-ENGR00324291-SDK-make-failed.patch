@@ -1,0 +1,43 @@
+From 41dd9f364faa7f1aadb5b3da48256fdc0d446a50 Mon Sep 17 00:00:00 2001
+From: Wang Haoran <b50027@freescale.com>
+Date: Thu, 24 Jul 2014 18:40:04 +0800
+Subject: [PATCH 348/602] ENGR00324291 SDK make failed
+
+Modify the BOARD_HAVE_MODEM to BOARD_NOT_HAVE_MODEM
+let sdk make libreference-ril.
+
+Signed-off-by: Wang Haoran <b50027@freescale.com>
+---
+ imx5x/BoardConfigCommon.mk | 2 +-
+ imx6/BoardConfigCommon.mk  | 2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/imx5x/BoardConfigCommon.mk b/imx5x/BoardConfigCommon.mk
+index 6b15bd2..f675446 100755
+--- a/imx5x/BoardConfigCommon.mk
++++ b/imx5x/BoardConfigCommon.mk
+@@ -30,7 +30,7 @@ BOARD_CAMERA_LIBRARIES := libcamera
+ 
+ BOARD_HAVE_WIFI := true
+ 
+-BOARD_HAVE_MODEM := true
++BOARD_NOT_HAVE_MODEM := false
+ BOARD_MODEM_VENDOR := HUAWEI
+ BOARD_MODEM_ID := EM750M
+ BOARD_MODEM_HAVE_DATA_DEVICE := true
+diff --git a/imx6/BoardConfigCommon.mk b/imx6/BoardConfigCommon.mk
+index 0982b26..5d558db 100644
+--- a/imx6/BoardConfigCommon.mk
++++ b/imx6/BoardConfigCommon.mk
+@@ -28,7 +28,7 @@ BOARD_CAMERA_LIBRARIES := libcamera
+ 
+ BOARD_HAVE_WIFI := true
+ 
+-BOARD_HAVE_MODEM := true
++BOARD_NOT_HAVE_MODEM := false
+ BOARD_MODEM_VENDOR := HUAWEI
+ BOARD_MODEM_ID := EM750M
+ BOARD_MODEM_HAVE_DATA_DEVICE := true
+-- 
+1.8.0
+

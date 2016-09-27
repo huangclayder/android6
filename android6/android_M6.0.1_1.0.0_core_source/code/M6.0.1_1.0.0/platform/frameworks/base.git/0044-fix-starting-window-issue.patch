@@ -1,0 +1,40 @@
+From d375759a7e98682cbc3e983294769895cf585d47 Mon Sep 17 00:00:00 2001
+From: Ronnie Leng <ronnie.leng@gmail.com>
+Date: Mon, 4 Jan 2016 11:36:08 -0600
+Subject: [PATCH 44/45] fix starting window issue
+
+Symptom:
+1. Acitivity A and B belong to same task.
+2. A is started and start B in its code
+3. B is opened with blank screen
+
+If starting icon has been display, both startingWindow and
+startingView should not be null.
+Current logic only uses judgement on startWindow. In above
+case, it leads startingView set to null as A and B shares
+the same starting window due to same task. Then system will
+not get chance to remove startingView as it is null.
+
+It needs add judgement on startingView.
+
+Change-Id: I6cfa1a3ebce93ce435cc2d9ada239b1e808988de
+---
+ services/core/java/com/android/server/wm/WindowManagerService.java | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/services/core/java/com/android/server/wm/WindowManagerService.java b/services/core/java/com/android/server/wm/WindowManagerService.java
+index 71bbdb6..476d5ad 100644
+--- a/services/core/java/com/android/server/wm/WindowManagerService.java
++++ b/services/core/java/com/android/server/wm/WindowManagerService.java
+@@ -4313,7 +4313,7 @@ public class WindowManagerService extends IWindowManager.Stub
+                 AppWindowToken ttoken = findAppWindowToken(transferFrom);
+                 if (ttoken != null) {
+                     WindowState startingWindow = ttoken.startingWindow;
+-                    if (startingWindow != null) {
++                    if (startingWindow != null && ttoken.startingView != null) {
+                         // In this case, the starting icon has already been displayed, so start
+                         // letting windows get shown immediately without any more transitions.
+                         mSkipAppTransitionAnimation = true;
+-- 
+1.8.0
+

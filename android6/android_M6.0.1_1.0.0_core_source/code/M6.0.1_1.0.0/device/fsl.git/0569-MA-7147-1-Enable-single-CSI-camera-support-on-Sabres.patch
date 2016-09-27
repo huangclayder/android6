@@ -1,0 +1,82 @@
+From 8f47549eebb63583219ba1b6cc91dcc3ed233f62 Mon Sep 17 00:00:00 2001
+From: Liu Xiaowen <xiaowen.liu@freescale.com>
+Date: Mon, 26 Oct 2015 11:05:57 +0800
+Subject: [PATCH 569/602] MA-7147-1 Enable single CSI camera support on
+ Sabresd-6qp board.
+
+export init.i.MX6QP.rc to /root.
+move ov5640_mipi from back camera to front camera on 6qp board.
+move ov5640_camera from front camera on 6qp board.
+others board keep the same.
+
+Signed-off-by: Liu Xiaowen <xiaowen.liu@freescale.com>
+---
+ imx6/sabresd_6dq.mk         | 1 +
+ sabresd_6dq/init.i.MX6DL.rc | 3 +++
+ sabresd_6dq/init.i.MX6Q.rc  | 3 +++
+ sabresd_6dq/init.i.MX6QP.rc | 5 ++++-
+ sabresd_6dq/init.rc         | 1 -
+ 5 files changed, 11 insertions(+), 2 deletions(-)
+
+diff --git a/imx6/sabresd_6dq.mk b/imx6/sabresd_6dq.mk
+index 8aec301..b185962 100644
+--- a/imx6/sabresd_6dq.mk
++++ b/imx6/sabresd_6dq.mk
+@@ -20,6 +20,7 @@ PRODUCT_COPY_FILES += \
+ 	device/fsl/sabresd_6dq/init.rc:root/init.freescale.rc \
+         device/fsl/sabresd_6dq/init.i.MX6Q.rc:root/init.freescale.i.MX6Q.rc \
+         device/fsl/sabresd_6dq/init.i.MX6DL.rc:root/init.freescale.i.MX6DL.rc \
++	device/fsl/sabresd_6dq/init.i.MX6QP.rc:root/init.freescale.i.MX6QP.rc \
+ 	device/fsl/sabresd_6dq/audio_policy.conf:system/etc/audio_policy.conf \
+ 	device/fsl/sabresd_6dq/audio_effects.conf:system/vendor/etc/audio_effects.conf
+ 
+diff --git a/sabresd_6dq/init.i.MX6DL.rc b/sabresd_6dq/init.i.MX6DL.rc
+index d0c5c53..bf86e1f 100755
+--- a/sabresd_6dq/init.i.MX6DL.rc
++++ b/sabresd_6dq/init.i.MX6DL.rc
+@@ -8,3 +8,6 @@ on boot
+ 
+     # set back camera.
+     setprop back_camera_name ov5640_mipi
++
++    # set front camera.
++    setprop front_camera_name uvc,ov5642_camera,ov5640_camera
+diff --git a/sabresd_6dq/init.i.MX6Q.rc b/sabresd_6dq/init.i.MX6Q.rc
+index df897fa..18cd59b 100755
+--- a/sabresd_6dq/init.i.MX6Q.rc
++++ b/sabresd_6dq/init.i.MX6Q.rc
+@@ -8,3 +8,6 @@ on boot
+ 
+     # set back camera.
+     setprop back_camera_name ov5640_mipi
++
++    # set front camera.
++    setprop front_camera_name uvc,ov5642_camera,ov5640_camera
+diff --git a/sabresd_6dq/init.i.MX6QP.rc b/sabresd_6dq/init.i.MX6QP.rc
+index 66a34fb..39e715d 100755
+--- a/sabresd_6dq/init.i.MX6QP.rc
++++ b/sabresd_6dq/init.i.MX6QP.rc
+@@ -10,4 +10,7 @@ on boot
+     setprop media.settings.xml /etc/media_profiles_720p.xml
+ 
+     # set back camera.
+-    setprop back_camera_name ov5640_mipi,ov5640_camera
++    setprop back_camera_name ov5640_camera
++
++    # set front camera.
++    setprop front_camera_name uvc,ov5642_camera,ov5640_mipi
+diff --git a/sabresd_6dq/init.rc b/sabresd_6dq/init.rc
+index 2cad527..3b66327 100755
+--- a/sabresd_6dq/init.rc
++++ b/sabresd_6dq/init.rc
+@@ -55,7 +55,6 @@ on boot
+     #For portrait mode, orient is 90
+     #the android before honycomb are all in portrait mode
+     setprop back_camera_orient 0
+-    setprop front_camera_name uvc,ov5642_camera,ov5640_camera
+     setprop front_camera_orient 0
+ 
+     # Tweak the mmc device read ahead buffer size
+-- 
+1.8.0
+

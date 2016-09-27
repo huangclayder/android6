@@ -1,0 +1,38 @@
+From 3c3065d32416f7ff27f995074c0132448a2b86ec Mon Sep 17 00:00:00 2001
+From: Robby Cai <robby.cai@nxp.com>
+Date: Mon, 11 Jan 2016 20:17:31 +0800
+Subject: [PATCH 505/505] MLK-12192 epdc: fix spurious "unsupported
+ quantization bit number" issue
+
+explicitly initialize upd_data.dither_mode to 0 to avoid the spurious
+"unsupported quantization bit number" error message.
+
+Signed-off-by: Robby Cai <robby.cai@nxp.com>
+(cherry picked from commit 97fc17ee0f14ae0487934d9390084d42a56c5d97)
+---
+ test/mxc_fb_test/mxc_epdc_v2_fb_test.c | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/test/mxc_fb_test/mxc_epdc_v2_fb_test.c b/test/mxc_fb_test/mxc_epdc_v2_fb_test.c
+index 1c01346..a5814ee 100644
+--- a/test/mxc_fb_test/mxc_epdc_v2_fb_test.c
++++ b/test/mxc_fb_test/mxc_epdc_v2_fb_test.c
+@@ -160,6 +160,7 @@ static __u32 update_to_display(int left, int top, int width, int height, int wav
+ 	int wait = wait_for_complete | (flags & EPDC_FLAG_TEST_COLLISION);
+ 	int max_retry = 10;
+ 
++	upd_data.dither_mode = 0;
+ 	upd_data.update_mode = UPDATE_MODE_PARTIAL;
+ 	upd_data.waveform_mode = wave_mode;
+ 	upd_data.update_region.left = left;
+@@ -217,6 +218,7 @@ static __u32 update_to_display_with_dithering(int left, int top, int width, int
+ 	int wait = wait_for_complete | (flags & EPDC_FLAG_TEST_COLLISION);
+ 	int max_retry = 10;
+ 
++	upd_data.dither_mode = 0;
+ 	upd_data.update_mode = UPDATE_MODE_PARTIAL;
+ 	upd_data.waveform_mode = wave_mode;
+ 	if (hw_dithering) {
+-- 
+1.8.0
+

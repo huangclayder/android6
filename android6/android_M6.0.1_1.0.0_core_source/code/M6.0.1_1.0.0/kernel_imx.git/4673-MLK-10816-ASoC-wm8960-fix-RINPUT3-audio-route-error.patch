@@ -1,0 +1,28 @@
+From c08bf6c4b0c4d5151a5308a9039efd606e48dbc0 Mon Sep 17 00:00:00 2001
+From: Zidan Wang <zidan.wang@freescale.com>
+Date: Tue, 5 May 2015 10:51:46 +0800
+Subject: [PATCH] MLK-10816 ASoC: wm8960: fix "RINPUT3" audio route error
+
+It should be "RINPUT3" instead of "LINPUT3" in "RINPUT3" audio route.
+
+Signed-off-by: Zidan Wang <zidan.wang@freescale.com>
+---
+ sound/soc/codecs/wm8960.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/sound/soc/codecs/wm8960.c b/sound/soc/codecs/wm8960.c
+index 8a4f3b0..59311b8 100644
+--- a/sound/soc/codecs/wm8960.c
++++ b/sound/soc/codecs/wm8960.c
+@@ -397,7 +397,7 @@ static const struct snd_soc_dapm_route audio_paths[] = {
+ 	{ "Right Input Mixer", "Boost Switch", "Right Boost Mixer", },
+ 	{ "Right Input Mixer", NULL, "RINPUT1", },  /* Really Boost Switch */
+ 	{ "Right Input Mixer", NULL, "RINPUT2" },
+-	{ "Right Input Mixer", NULL, "LINPUT3" },
++	{ "Right Input Mixer", NULL, "RINPUT3" },
+ 
+ 	{ "Left ADC", NULL, "Left Input Mixer" },
+ 	{ "Right ADC", NULL, "Right Input Mixer" },
+-- 
+1.8.0
+

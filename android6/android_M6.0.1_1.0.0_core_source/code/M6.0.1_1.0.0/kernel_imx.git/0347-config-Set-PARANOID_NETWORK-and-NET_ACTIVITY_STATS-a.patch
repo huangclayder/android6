@@ -1,0 +1,42 @@
+From f380a858191842b6a4ae41c62faf60397139bfc3 Mon Sep 17 00:00:00 2001
+From: John Stultz <john.stultz@linaro.org>
+Date: Tue, 9 Apr 2013 10:41:49 -0700
+Subject: [PATCH] config: Set PARANOID_NETWORK and NET_ACTIVITY_STATS as
+ default ANDROID
+
+While ANDROID_PARNOID_NETWORK and NET_ACTIVITY_STATS should default
+to yes for Android devices, they aren't completely appropriate as
+a default y option in non-android enviornments.
+
+Thus set the default to ANDROID.
+
+Change-Id: Ie8b1f32ef82aaa8ac347f40ea8fff44f0ce79a64
+Reported-by: Jon Medhurst (Tixy) <tixy@linaro.org>
+Signed-off-by: John Stultz <john.stultz@linaro.org>
+---
+ net/Kconfig | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/net/Kconfig b/net/Kconfig
+index 219a8c1..143eb05 100644
+--- a/net/Kconfig
++++ b/net/Kconfig
+@@ -84,13 +84,13 @@ endif # if INET
+ 
+ config ANDROID_PARANOID_NETWORK
+ 	bool "Only allow certain groups to create sockets"
+-	default y
++	default ANDROID
+ 	help
+ 		none
+ 
+ config NET_ACTIVITY_STATS
+ 	bool "Network activity statistics tracking"
+-	default y
++	default ANDROID
+ 	help
+ 	 Network activity statistics are useful for tracking wireless
+ 	 modem activity on 2G, 3G, 4G wireless networks. Counts number of
+-- 
+1.8.0
+

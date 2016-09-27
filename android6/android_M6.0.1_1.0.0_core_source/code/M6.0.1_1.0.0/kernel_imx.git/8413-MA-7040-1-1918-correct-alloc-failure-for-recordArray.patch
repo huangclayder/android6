@@ -1,0 +1,87 @@
+From 3a0a25f268d24697f4e68cbca11cfa29a1d93857 Mon Sep 17 00:00:00 2001
+From: "xuegang.liu" <xuegang.liu@freescale.com>
+Date: Thu, 17 Sep 2015 11:33:30 +0800
+Subject: [PATCH] MA-7040-1 [#1918] correct alloc failure for recordArray to
+ avoid kernel panic
+
+Sometimes allcation failures for recordArray will happen,
+the 'next' field of some 'recordArrayMap' was null value.
+But Context->recordArrayMap was not null. Hence it could
+access null->next which would cause kernel panic.
+
+kernel panic stack:
+Unable to handle kernel NULL pointer dereference at virtual address 00000000
+pgd = cae7c000
+[00000000] *pgd=00000000
+Internal error: Oops: 5 [#1] PREEMPT SMP ARM
+Modules linked in:
+CPU: 3 PID: 11565 Comm: RenderThread Not tainted 3.14.38-05787-gd5e5aaa-dirty #133
+task: d6791cc0 ti: d77fa000 task.ti: d77fa000
+PC is at gckCONTEXT_Update+0x110/0x678
+LR is at 0xd77fba48
+pc : [<c061d91c>]  lr : [<d77fba48>]  psr: a00f0013
+sp : d77fba10 ip : c9570140 fp : 00000000
+r10: 00000000 r9 : 90e36bf4 r8 : f4203000
+r7 : 00000000 r6 : d7304540 r5 : 00000000 r4 : c20fb000
+r3 : 00000000 r2 : 00000000 r1 : 00000000 r0 : 90f13004
+
+Date Sep 17, 2015
+
+Signed-off-by: Richard Liu <r66033@freescale.com>
+---
+ .../hal/kernel/arch/gc_hal_kernel_context.c        | 31 ++++++++++++++++++++--
+ 1 file changed, 29 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/mxc/gpu-viv/hal/kernel/arch/gc_hal_kernel_context.c b/drivers/mxc/gpu-viv/hal/kernel/arch/gc_hal_kernel_context.c
+index 62b3993..c501919 100644
+--- a/drivers/mxc/gpu-viv/hal/kernel/arch/gc_hal_kernel_context.c
++++ b/drivers/mxc/gpu-viv/hal/kernel/arch/gc_hal_kernel_context.c
+@@ -1948,16 +1948,43 @@ gckCONTEXT_Update(
+             recordArrayMap = &Context->recordArrayMap[i];
+ 
+             /* Allocate the buffer. */
+-            gcmkONERROR(gckOS_Allocate(
++            status = gckOS_Allocate(
+                 Context->os,
+                 Context->recordArraySize,
+                 (gctPOINTER *) &recordArrayMap->kData
+-                ));
++                );
++
++            if (gcmIS_ERROR(status))
++            {
++                break;
++            }
+ 
+             /* Initialize fields. */
+             recordArrayMap->key  = 0;
+             recordArrayMap->next = &Context->recordArrayMap[n];
+         }
++
++        if (gcmIS_ERROR(status))
++        {
++            /* Error roll back. */
++            for (i = 0; i < gcdCONTEXT_BUFFER_COUNT; i++)
++            {
++                recordArrayMap = &Context->recordArrayMap[i];
++
++                if (recordArrayMap->kData)
++                {
++                    /* Free allocated recordArray. */
++                    gcmkOS_SAFE_FREE(Context->os, recordArrayMap->kData);
++                    recordArrayMap->kData = gcvNULL;
++                }
++            }
++
++            /* Free recordArray map. */
++            gcmkOS_SAFE_FREE(Context->os, Context->recordArrayMap);
++            Context->recordArrayMap = gcvNULL;
++
++            gcmONERROR(status);
++        }
+     }
+ #else
+     if (needCopy && (Context->recordArray == gcvNULL))
+-- 
+1.8.0
+

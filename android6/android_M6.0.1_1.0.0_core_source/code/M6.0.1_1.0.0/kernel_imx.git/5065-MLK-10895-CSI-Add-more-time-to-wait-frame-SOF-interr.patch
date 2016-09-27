@@ -1,0 +1,29 @@
+From 7a907951305c22ec0f38188180fff16fcb8d5f5e Mon Sep 17 00:00:00 2001
+From: Sandor Yu <R01008@freescale.com>
+Date: Thu, 14 May 2015 18:01:41 +0800
+Subject: [PATCH] MLK-10895: CSI: Add more time to wait frame SOF interrupter
+
+For big frame size video mode, such as 1920x1080.
+CSI driver need more time to wait SOF interrupter.
+
+Signed-off-by: Sandor Yu <R01008@freescale.com>
+---
+ drivers/media/platform/mxc/subdev/mx6s_capture.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/media/platform/mxc/subdev/mx6s_capture.c b/drivers/media/platform/mxc/subdev/mx6s_capture.c
+index c2aab5b..e74fb10 100644
+--- a/drivers/media/platform/mxc/subdev/mx6s_capture.c
++++ b/drivers/media/platform/mxc/subdev/mx6s_capture.c
+@@ -704,7 +704,7 @@ static int mx6s_csi_enable(struct mx6s_csi_dev *csi_dev)
+ 		csi_tvdec_enable(csi_dev, true);
+ 
+ 	local_irq_save(flags);
+-	for (timeout = 1000000; timeout > 0; timeout--) {
++	for (timeout = 10000000; timeout > 0; timeout--) {
+ 		if (csi_read(csi_dev, CSI_CSISR) & BIT_SOF_INT) {
+ 			val = csi_read(csi_dev, CSI_CSICR3);
+ 			csi_write(csi_dev, val | BIT_DMA_REFLASH_RFF,
+-- 
+1.8.0
+

@@ -1,0 +1,59 @@
+From 4c3ec9a69fdfa5eb6d1040edda6240704a65d33e Mon Sep 17 00:00:00 2001
+From: Haoran Wang <Haoran.Wang@freescale.com>
+Date: Tue, 24 Nov 2015 23:00:05 +0800
+Subject: [PATCH] MA-7297 Added gpio-leds to control LED
+
+Configured GPIO1_IO03 to be gpio-leds to
+control the LED.
+This patch disabled the tsc on evk_6ul as
+the GPIO is occupied by it.
+
+Signed-off-by: Haoran Wang <Haoran.Wang@freescale.com>
+---
+ arch/arm/boot/dts/imx6ul-14x14-evk.dts | 17 ++++++++++++++++-
+ 1 file changed, 16 insertions(+), 1 deletion(-)
+
+diff --git a/arch/arm/boot/dts/imx6ul-14x14-evk.dts b/arch/arm/boot/dts/imx6ul-14x14-evk.dts
+index 6c98f61..6c8aa9f 100644
+--- a/arch/arm/boot/dts/imx6ul-14x14-evk.dts
++++ b/arch/arm/boot/dts/imx6ul-14x14-evk.dts
+@@ -87,6 +87,16 @@
+         wlreg_on-supply = <&wlreg_on>;
+     };
+ 
++	led_group_0: led_group@0 {
++		pinctrl-0= <&pinctrl_ledgpio>;
++		compatible = "gpio-leds";
++		led-0 {
++			label = "led0";
++			gpios = <&gpio1 3 GPIO_ACTIVE_LOW>;
++			linux,default-trigger = "timer";
++		};
++	};
++
+ 	sound {
+ 		compatible = "fsl,imx6ul-evk-wm8960",
+ 			   "fsl,imx-audio-wm8960";
+@@ -297,7 +307,7 @@
+ &tsc {
+ 	pinctrl-names = "default";
+ 	pinctrl-0 = <&pinctrl_tsc>;
+-	status = "okay";
++	status = "disabled";
+ 	xnur-gpio = <&gpio1 3 0>;
+ 	measure_delay_time = <0xffff>;
+ 	pre_charge_time = <0xfff>;
+@@ -688,5 +698,10 @@
+ 				MX6UL_PAD_SNVS_TAMPER3__GPIO5_IO03	0x79
+ 			>;
+ 		};
++		pinctrl_ledgpio: ledgpiogrp {
++			fsl,pins = <
++				MX6UL_PAD_GPIO1_IO03__GPIO1_IO03	0x80000000
++			>;
++		};
+ 	};
+ };
+-- 
+1.8.0
+

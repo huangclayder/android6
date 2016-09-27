@@ -1,0 +1,54 @@
+From 8a2eb8d78224512be0f9345fdb3337aee73730b0 Mon Sep 17 00:00:00 2001
+From: Richard Zhu <Richard.Zhu@freescale.com>
+Date: Thu, 25 Dec 2014 14:28:06 +0800
+Subject: [PATCH] MLK-10058-2 regulator: consumer: define pre_xxx event macros
+
+Some gpc operations are mandatory required when
+iMX6SX PCIe PHY is powered on/off.
+use the notify framwork to encapsulate the
+pre-operations in gpc driver
+- add two pre-xxx macros into consumer.h
+- kick off the pre-xxx events in enable/disalbe call back.
+
+Signed-off-by: Richard Zhu <Richard.Zhu@freescale.com>
+---
+ drivers/regulator/core.c           | 2 ++
+ include/linux/regulator/consumer.h | 2 ++
+ 2 files changed, 4 insertions(+)
+
+diff --git a/drivers/regulator/core.c b/drivers/regulator/core.c
+index 427cb62..14241be 100644
+--- a/drivers/regulator/core.c
++++ b/drivers/regulator/core.c
+@@ -1752,6 +1752,7 @@ static int _regulator_do_enable(struct regulator_dev *rdev)
+ {
+ 	int ret, delay;
+ 
++	_notifier_call_chain(rdev, REGULATOR_EVENT_PRE_ENABLE, NULL);
+ 	/* Query before enabling in case configuration dependent.  */
+ 	ret = _regulator_get_enable_time(rdev);
+ 	if (ret >= 0) {
+@@ -1896,6 +1897,7 @@ static int _regulator_do_disable(struct regulator_dev *rdev)
+ {
+ 	int ret;
+ 
++	_notifier_call_chain(rdev, REGULATOR_EVENT_PRE_DISABLE, NULL);
+ 	trace_regulator_disable(rdev_get_name(rdev));
+ 
+ 	if (rdev->ena_pin) {
+diff --git a/include/linux/regulator/consumer.h b/include/linux/regulator/consumer.h
+index e530681..2cd6d99 100644
+--- a/include/linux/regulator/consumer.h
++++ b/include/linux/regulator/consumer.h
+@@ -105,6 +105,8 @@ struct notifier_block;
+ #define REGULATOR_EVENT_FORCE_DISABLE		0x20
+ #define REGULATOR_EVENT_VOLTAGE_CHANGE		0x40
+ #define REGULATOR_EVENT_DISABLE 		0x80
++#define REGULATOR_EVENT_PRE_DISABLE		0x100
++#define REGULATOR_EVENT_PRE_ENABLE		0x200
+ 
+ struct regulator;
+ 
+-- 
+1.8.0
+

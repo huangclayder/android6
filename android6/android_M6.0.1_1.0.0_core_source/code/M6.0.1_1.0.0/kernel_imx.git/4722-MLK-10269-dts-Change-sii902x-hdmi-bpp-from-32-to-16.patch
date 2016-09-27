@@ -1,0 +1,46 @@
+From 764c2a15378afa98ce6bff59010e1f044d186651 Mon Sep 17 00:00:00 2001
+From: Sandor Yu <R01008@freescale.com>
+Date: Thu, 5 Mar 2015 18:38:30 +0800
+Subject: [PATCH] MLK-10269: dts: Change sii902x hdmi bpp from 32 to 16
+
+In imx6sl/sx dts, the lcdif display bpp is setting to 16,
+and sii902x hdmi driver bpp is 32.
+The sii902x driver will overwrite the display bpp when it loading,
+but some module such as v4l2 output driver is misses bpp change event.
+So align sii902x hdmi driver bpp with lcdif display bpp.
+
+Signed-off-by: Sandor Yu <R01008@freescale.com>
+---
+ arch/arm/boot/dts/imx6sl-evk.dts | 2 +-
+ arch/arm/boot/dts/imx6sx-sdb.dts | 2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/arch/arm/boot/dts/imx6sl-evk.dts b/arch/arm/boot/dts/imx6sl-evk.dts
+index 290995c..97eeb50 100644
+--- a/arch/arm/boot/dts/imx6sl-evk.dts
++++ b/arch/arm/boot/dts/imx6sl-evk.dts
+@@ -446,7 +446,7 @@
+ 		interrupt-parent = <&gpio2>;
+ 		interrupts = <10 2>;
+ 		mode_str ="1280x720M@60";
+-		bits-per-pixel = <32>;
++		bits-per-pixel = <16>;
+ 		resets = <&sii902x_reset>;
+ 		reg = <0x39>;
+ 	};
+diff --git a/arch/arm/boot/dts/imx6sx-sdb.dts b/arch/arm/boot/dts/imx6sx-sdb.dts
+index 970fce1..1d0def1 100644
+--- a/arch/arm/boot/dts/imx6sx-sdb.dts
++++ b/arch/arm/boot/dts/imx6sx-sdb.dts
+@@ -626,7 +626,7 @@
+ 		interrupt-parent = <&gpio4>;
+ 		interrupts = <21 2>;
+ 		mode_str ="1280x720M@60";
+-		bits-per-pixel = <32>;
++		bits-per-pixel = <16>;
+ 		resets = <&sii902x_reset>;
+ 		reg = <0x39>;
+ 		status = "disabled";
+-- 
+1.8.0
+

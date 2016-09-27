@@ -1,0 +1,42 @@
+From ef5b5205629d51e7dee1a6112ed4f73de8dbe560 Mon Sep 17 00:00:00 2001
+From: xumao <b34688@freescale.com>
+Date: Mon, 16 Mar 2015 11:03:26 +0800
+Subject: [PATCH 73/95] MA-6395 CTS android.media.cts.Vp8EncoderTest
+ testEncoderQuality fail
+
+cts uses slice height and frame height to crop decoder output before
+computing psnr, while crop info from vpu is not passed out to java
+layer.
+
+Fix: map vpu's crop height to frame height, vpu's frame height to
+slice height in ACodec
+
+Signed-off-by: xumao <b34688@freescale.com>
+---
+ media/libstagefright/ACodec.cpp | 10 ++++++++++
+ 1 file changed, 10 insertions(+)
+
+diff --git a/media/libstagefright/ACodec.cpp b/media/libstagefright/ACodec.cpp
+index 18fb595..6631ab7 100644
+--- a/media/libstagefright/ACodec.cpp
++++ b/media/libstagefright/ACodec.cpp
+@@ -4115,6 +4115,16 @@ status_t ACodec::getPortFormat(OMX_U32 portIndex, sp<AMessage> &notify) {
+                         return BAD_VALUE;
+                     }
+ 
++                    if(rect.nHeight > 0
++                        && rect.nHeight < videoDef->nFrameHeight
++                        && !strncmp(mComponentName.c_str(), "OMX.Freescale.std.video_decoder", 31)
++                        && strstr(mComponentName.c_str(),"hw-based")){
++
++                        ALOGW("ACodec map vpu crop info: output crop: %d, frameH %d", rect.nHeight, videoDef->nFrameHeight);
++                        notify->setInt32("slice-height", videoDef->nFrameHeight);
++                        videoDef->nFrameHeight = rect.nHeight;
++                    }
++
+                     notify->setRect(
+                             "crop",
+                             rect.nLeft,
+-- 
+1.8.0
+

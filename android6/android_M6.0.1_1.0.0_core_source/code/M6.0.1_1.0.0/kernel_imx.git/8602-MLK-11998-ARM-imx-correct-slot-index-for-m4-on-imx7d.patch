@@ -1,0 +1,31 @@
+From 03d9a5e3849b04de15584e05459a108a96504517 Mon Sep 17 00:00:00 2001
+From: Anson Huang <Anson.Huang@freescale.com>
+Date: Sat, 12 Dec 2015 01:20:39 +0800
+Subject: [PATCH] MLK-11998 ARM: imx: correct slot index for m4 on imx7d
+
+On i.MX7D, M4 uses slot 1 & 5 for virtual Mega/Fast mix
+control, NOT 1 & 4, they can NOT be clear after resume,
+otherwise, when resume from DSM, M4 can NOT be waked up
+from WAIT/STOP mode.
+
+Signed-off-by: Anson Huang <Anson.Huang@freescale.com>
+---
+ arch/arm/mach-imx/gpcv2.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/arch/arm/mach-imx/gpcv2.c b/arch/arm/mach-imx/gpcv2.c
+index 56010df..a399b7f 100644
+--- a/arch/arm/mach-imx/gpcv2.c
++++ b/arch/arm/mach-imx/gpcv2.c
+@@ -466,7 +466,7 @@ void imx_gpcv2_post_resume(void)
+ 	imx_gpcv2_set_m_core_pgc(false, GPC_PGC_FM);
+ 	for (i = 0; i < MAX_SLOT_NUMBER; i++)
+ 	{
+-		if (i==1||i==4) /* skip slts m4 uses */
++		if (i == 1 || i == 5) /* skip slots m4 uses */
+ 			continue;
+ 		writel_relaxed(0x0, gpc_base + GPC_SLOT0_CFG + i * 0x4);
+         }
+-- 
+1.8.0
+

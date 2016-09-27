@@ -1,0 +1,44 @@
+From f143c119946235b7c1b8a6d9d207d7f122ce1300 Mon Sep 17 00:00:00 2001
+From: Anson Huang <Anson.Huang@freescale.com>
+Date: Fri, 6 Nov 2015 18:46:35 +0800
+Subject: [PATCH] MLK-11828-2 ARM: dts: reserve OCRAM space for M4
+
+FreeRTOS has use case of running on OCRAM, reserve the
+bottom half of OCRAM spase(0x910000 - 0x91efff) for M4,
+the last 4K is for shared memory power management.
+
+Signed-off-by: Anson Huang <Anson.Huang@freescale.com>
+---
+ arch/arm/boot/dts/imx6sx-sabreauto-m4.dts | 2 +-
+ arch/arm/boot/dts/imx6sx-sdb-m4.dts       | 2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/arch/arm/boot/dts/imx6sx-sabreauto-m4.dts b/arch/arm/boot/dts/imx6sx-sabreauto-m4.dts
+index f76bab1..2ad2b6a 100644
+--- a/arch/arm/boot/dts/imx6sx-sabreauto-m4.dts
++++ b/arch/arm/boot/dts/imx6sx-sabreauto-m4.dts
+@@ -53,7 +53,7 @@
+ };
+ 
+ &ocram {
+-	reg = <0x00901000 0x1E000>;
++	reg = <0x00901000 0xf000>;
+ };
+ 
+ &qspi1 {
+diff --git a/arch/arm/boot/dts/imx6sx-sdb-m4.dts b/arch/arm/boot/dts/imx6sx-sdb-m4.dts
+index c3962a7..f3958be 100644
+--- a/arch/arm/boot/dts/imx6sx-sdb-m4.dts
++++ b/arch/arm/boot/dts/imx6sx-sdb-m4.dts
+@@ -53,7 +53,7 @@
+ };
+ 
+ &ocram {
+-	reg = <0x00901000 0x1E000>;
++	reg = <0x00901000 0xf000>;
+ };
+ 
+ &qspi2 {
+-- 
+1.8.0
+

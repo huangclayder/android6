@@ -1,0 +1,51 @@
+From 4bd33802148ba0df07389944d9bfc9c63e7a16eb Mon Sep 17 00:00:00 2001
+From: Mark Brown <broonie@linaro.org>
+Date: Fri, 13 Jun 2014 21:40:45 +0100
+Subject: [PATCH] mailbox: Remove const from client argument of
+ mbox_request_channel()
+
+The struct mbox_client supplied to mbox_request_channel() is const but
+it is stored in the channel in a non-constant member causing compiler
+warnings.
+
+While the mailbox API should treat the struct mailbox_client as const
+itself the struct is passed back to the channel in callbacks without
+a const so we need to either remove the const, change the callbacks to
+take const or cast the const away when doing callbacks. Take the simplest
+option and just remove the const.
+
+Signed-off-by: Mark Brown <broonie@linaro.org>
+---
+ drivers/mailbox/mailbox.c      | 2 +-
+ include/linux/mailbox_client.h | 2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/mailbox/mailbox.c b/drivers/mailbox/mailbox.c
+index ae4abd9..662f8e5 100644
+--- a/drivers/mailbox/mailbox.c
++++ b/drivers/mailbox/mailbox.c
+@@ -294,7 +294,7 @@ EXPORT_SYMBOL_GPL(mbox_send_message);
+  * Return: Pointer to the channel assigned to the client if successful.
+  *		ERR_PTR for request failure.
+  */
+-struct mbox_chan *mbox_request_channel(const struct mbox_client *cl)
++struct mbox_chan *mbox_request_channel(struct mbox_client *cl)
+ {
+ 	struct device *dev = cl->dev;
+ 	struct mbox_controller *mbox;
+diff --git a/include/linux/mailbox_client.h b/include/linux/mailbox_client.h
+index cbfcf84..955f3d7 100644
+--- a/include/linux/mailbox_client.h
++++ b/include/linux/mailbox_client.h
+@@ -37,7 +37,7 @@ struct mbox_client {
+ 	bool knows_txdone;
+ };
+ 
+-struct mbox_chan *mbox_request_channel(const struct mbox_client *cl);
++struct mbox_chan *mbox_request_channel(struct mbox_client *cl);
+ int mbox_send_message(struct mbox_chan *chan, void *mssg);
+ void mbox_client_txdone(struct mbox_chan *chan, int r);
+ bool mbox_client_peek_data(struct mbox_chan *chan);
+-- 
+1.8.0
+

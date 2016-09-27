@@ -1,0 +1,795 @@
+From 1e35df361613e0b8e5fd3c16eb8dd632f61592a9 Mon Sep 17 00:00:00 2001
+From: Liu Xiaowen <xiaowen.liu@freescale.com>
+Date: Wed, 15 Jul 2015 14:20:03 +0800
+Subject: [PATCH 590/635] MA-6898 add HWComposer on imx7 platform.
+
+To avoid frame tearing issue, hardware vsync should be provided.
+Implement HWComposer 1.0 version to provide vsync and blank function.
+
+Signed-off-by: Liu Xiaowen <xiaowen.liu@freescale.com>
+---
+ Android.mk                     |   2 +-
+ mx7/hwcomposer/Android.mk      |  43 +++++++
+ mx7/hwcomposer/hwc_context.h   |  65 ++++++++++
+ mx7/hwcomposer/hwc_display.cpp | 129 +++++++++++++++++++
+ mx7/hwcomposer/hwc_vsync.cpp   | 136 ++++++++++++++++++++
+ mx7/hwcomposer/hwc_vsync.h     |  71 +++++++++++
+ mx7/hwcomposer/hwcomposer.cpp  | 274 +++++++++++++++++++++++++++++++++++++++++
+ 7 files changed, 719 insertions(+), 1 deletion(-)
+ create mode 100644 mx7/hwcomposer/Android.mk
+ create mode 100644 mx7/hwcomposer/hwc_context.h
+ create mode 100644 mx7/hwcomposer/hwc_display.cpp
+ create mode 100644 mx7/hwcomposer/hwc_vsync.cpp
+ create mode 100644 mx7/hwcomposer/hwc_vsync.h
+ create mode 100644 mx7/hwcomposer/hwcomposer.cpp
+
+diff --git a/Android.mk b/Android.mk
+index 0f06016..62a7a16 100644
+--- a/Android.mk
++++ b/Android.mk
+@@ -1,7 +1,7 @@
+ common_imx_dirs := libsensors libgps lights wlan libbt-ath3k
+ mx5x_dirs := $(common_imx_dirs) mx5x/audio mx5x/libcopybit mx5x/libgralloc  mx5x/hwcomposer mx5x/libcamera mx5x/power
+ mx6_dirs := $(common_imx_dirs) alsa mx6/libgralloc_wrapper mx6/hwcomposer mx6/power mx6/consumerir
+-mx7_dirs := $(common_imx_dirs) alsa mx6/power mx7/gralloc
++mx7_dirs := $(common_imx_dirs) alsa mx6/power mx7/gralloc mx7/hwcomposer
+ 
+ ifeq ($(TARGET_BOARD_PLATFORM),imx6)
+   ifeq ($(IMX_CAMERA_HAL_V2),true)
+diff --git a/mx7/hwcomposer/Android.mk b/mx7/hwcomposer/Android.mk
+new file mode 100644
+index 0000000..43c94fa
+--- /dev/null
++++ b/mx7/hwcomposer/Android.mk
+@@ -0,0 +1,43 @@
++# Copyright (C) 2008 The Android Open Source Project
++#
++# Licensed under the Apache License, Version 2.0 (the "License");
++# you may not use this file except in compliance with the License.
++# You may obtain a copy of the License at
++#
++#      http://www.apache.org/licenses/LICENSE-2.0
++#
++# Unless required by applicable law or agreed to in writing, software
++# distributed under the License is distributed on an "AS IS" BASIS,
++# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++# See the License for the specific language governing permissions and
++# limitations under the License.
++
++
++LOCAL_PATH := $(call my-dir)
++
++# HAL module implemenation, not prelinked and stored in
++# hw/<OVERLAY_HARDWARE_MODULE_ID>.<ro.product.board>.so
++ifeq ($(TARGET_HAVE_IMX_HWCOMPOSER),true)
++include $(CLEAR_VARS)
++LOCAL_PRELINK_MODULE := false
++LOCAL_MODULE_PATH := $(TARGET_OUT_SHARED_LIBRARIES)/hw
++LOCAL_SHARED_LIBRARIES :=	\
++	liblog					\
++	libEGL					\
++	libcutils				\
++	libutils				\
++	libui					\
++	libhardware				\
++	libhardware_legacy		\
++	libbinder
++
++LOCAL_SRC_FILES :=			\
++	hwcomposer.cpp			\
++	hwc_vsync.cpp			\
++    hwc_display.cpp
++
++LOCAL_MODULE := hwcomposer.$(TARGET_BOARD_PLATFORM)
++LOCAL_CFLAGS:= -DLOG_TAG=\"hwcomposer\"
++LOCAL_MODULE_TAGS := optional
++include $(BUILD_SHARED_LIBRARY)
++endif
+diff --git a/mx7/hwcomposer/hwc_context.h b/mx7/hwcomposer/hwc_context.h
+new file mode 100644
+index 0000000..bda1e07
+--- /dev/null
++++ b/mx7/hwcomposer/hwc_context.h
+@@ -0,0 +1,65 @@
++/*
++ * Copyright (C) 2015 Freescale Semiconductor, Inc. All Rights Reserved.
++ *
++ * Licensed under the Apache License, Version 2.0 (the "License");
++ * you may not use this file except in compliance with the License.
++ * You may obtain a copy of the License at
++ *
++ *      http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++#ifndef HWC_CONTEXT_H_
++#define HWC_CONTEXT_H_
++
++#include <hardware/hardware.h>
++
++#include <fcntl.h>
++#include <errno.h>
++
++#include <cutils/log.h>
++#include <cutils/atomic.h>
++#include <cutils/properties.h>
++#include <utils/threads.h>
++#include <hardware/hwcomposer.h>
++#include <utils/StrongPointer.h>
++
++#include <linux/mxcfb.h>
++#include <linux/ioctl.h>
++#include <EGL/egl.h>
++#include "hwc_vsync.h"
++/*****************************************************************************/
++#define HWC_PRIMARY_DISPLAY "/dev/graphics/fb0"
++#define HWC_PRIMARY_PATH "/sys/class/graphics/fb0/"
++#define HWC_STRING_LENGTH 32
++
++enum {
++    HWC_DISPLAY_LDB =  1,
++    HWC_DISPLAY_HDMI = 2,
++    HWC_DISPLAY_DVI =  3,
++    HWC_DISPLAY_LCD =  4,
++    HWC_DISPLAY_EPDC = 5
++};
++
++class VSyncThread;
++
++struct hwc_context_t {
++    hwc_composer_device_1_t device;
++    /* our private state goes below here */
++
++    int mFbFile;
++    int mBlank;
++    int mDisplayType;
++    nsecs_t mVsyncPeriod;
++    hwc_procs_t* mCallback;
++    sp<VSyncThread> mVsyncThread;
++};
++
++void hwc_get_display_type(struct hwc_context_t* ctx);
++void hwc_get_framebuffer_info(struct hwc_context_t* ctx);
++
++#endif
+diff --git a/mx7/hwcomposer/hwc_display.cpp b/mx7/hwcomposer/hwc_display.cpp
+new file mode 100644
+index 0000000..9f1109a
+--- /dev/null
++++ b/mx7/hwcomposer/hwc_display.cpp
+@@ -0,0 +1,129 @@
++/*
++ * Copyright (C) 2015 Freescale Semiconductor, Inc. All Rights Reserved.
++ *
++ * Licensed under the Apache License, Version 2.0 (the "License");
++ * you may not use this file except in compliance with the License.
++ * You may obtain a copy of the License at
++ *
++ *      http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++
++
++#include <hardware/hardware.h>
++
++#include <fcntl.h>
++#include <errno.h>
++
++#include <cutils/log.h>
++#include <cutils/atomic.h>
++#include <cutils/properties.h>
++#include <utils/threads.h>
++#include <hardware/hwcomposer.h>
++#include <utils/StrongPointer.h>
++
++#include <linux/mxcfb.h>
++#include <linux/ioctl.h>
++#include "hwc_context.h"
++
++void hwc_get_display_type(struct hwc_context_t* ctx)
++{
++    if (ctx == NULL) {
++        ALOGI("%s invalid cts", __FUNCTION__);
++        return;
++    }
++
++    FILE *fp = NULL;
++    const char* path = NULL;
++    char value[HWC_STRING_LENGTH];
++
++    path = HWC_PRIMARY_PATH"name";
++    fp = fopen(path, "r");
++    if (fp != NULL) {
++        memset(value, 0, sizeof(value));
++        if (fgets(value, sizeof(value), fp) != NULL) {
++            if (strstr(value, "epdc")) {
++                ALOGI("display is %s", value);
++                ctx->mDisplayType = HWC_DISPLAY_EPDC;
++                fclose(fp);
++                return;
++            }
++        }
++        fclose(fp);
++    }
++
++    path = HWC_PRIMARY_PATH"fsl_disp_dev_property";
++    fp = fopen(path, "r");
++    if (fp == NULL) {
++        ALOGI("open %s failed", path);
++        ctx->mDisplayType = HWC_DISPLAY_LCD;
++        return;
++    }
++    memset(value, 0, sizeof(value));
++    if (!fgets(value, sizeof(value), fp)) {
++        ALOGI("read %s failed", path);
++        ctx->mDisplayType = HWC_DISPLAY_LCD;
++        fclose(fp);
++        return;
++    }
++
++    if (strstr(value, "hdmi")) {
++        ALOGI("display is %s", value);
++        ctx->mDisplayType = HWC_DISPLAY_HDMI;
++    }
++    else if (strstr(value, "dvi")) {
++        ALOGI("display is %s", value);
++        ctx->mDisplayType = HWC_DISPLAY_DVI;
++    }
++    else {
++        ALOGI("display is %s", value);
++        ctx->mDisplayType = HWC_DISPLAY_LCD;
++    }
++    fclose(fp);
++}
++
++void hwc_get_framebuffer_info(struct hwc_context_t* ctx)
++{
++    int refreshRate = 0;
++    struct fb_var_screeninfo info;
++
++    if (ctx == NULL) {
++        ALOGI("%s invalid cts", __FUNCTION__);
++        return;
++    }
++
++    if (ctx->mFbFile < 0) {
++        ALOGE("%s invalid fb handle assume 60 fps");
++        ctx->mVsyncPeriod  = 1000000000 / 60;
++        return;
++    }
++
++    if (ioctl(ctx->mFbFile, FBIOGET_VSCREENINFO, &info) < 0) {
++        ALOGI("FBIOGET_VSCREENINFO ioctl failed: %s, assume 60 fps",
++              strerror(errno));
++        ctx->mVsyncPeriod  = 1000000000 / 60;
++        return;
++    }
++
++    refreshRate = 1000000000000LLU /
++        (
++         uint64_t( info.upper_margin + info.lower_margin + info.yres + info.vsync_len)
++         * ( info.left_margin  + info.right_margin + info.xres + info.hsync_len)
++         * info.pixclock
++        );
++
++    if (refreshRate == 0) {
++        ALOGW("invalid refresh rate, assuming 60 Hz");
++        refreshRate = 60;
++    }
++
++    ctx->mVsyncPeriod  = 1000000000 / refreshRate;
++    ALOGI("<%s,%d> Vsync rate %d fps, frame time %llu ns", __FUNCTION__, __LINE__,
++          refreshRate, ctx->mVsyncPeriod);
++}
++
+diff --git a/mx7/hwcomposer/hwc_vsync.cpp b/mx7/hwcomposer/hwc_vsync.cpp
+new file mode 100644
+index 0000000..59e39f8
+--- /dev/null
++++ b/mx7/hwcomposer/hwc_vsync.cpp
+@@ -0,0 +1,136 @@
++/*
++ * Copyright (C) 2012-2015 Freescale Semiconductor, Inc. All Rights Reserved.
++ *
++ * Licensed under the Apache License, Version 2.0 (the "License");
++ * you may not use this file except in compliance with the License.
++ * You may obtain a copy of the License at
++ *
++ *      http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++#include "hwc_context.h"
++#include "hwc_vsync.h"
++
++/*****************************************************************************/
++
++#undef DEBUG_HWC_VSYNC_TIMING
++
++using namespace android;
++
++VSyncThread::VSyncThread(hwc_context_t *ctx)
++    : Thread(false), mCtx(ctx), mEnabled(false),
++      mFakeVSync(false), mNextFakeVSync(0)
++{
++    mRefreshPeriod = 0;
++}
++
++void VSyncThread::onFirstRef()
++{
++    run("HWC-VSYNC-Thread", PRIORITY_URGENT_DISPLAY);
++}
++
++status_t VSyncThread::readyToRun()
++{
++    return NO_ERROR;
++}
++
++void VSyncThread::setEnabled(bool enabled) {
++    Mutex::Autolock _l(mLock);
++    mEnabled = enabled;
++    mCondition.signal();
++}
++
++void VSyncThread::setFakeVSync(bool enable)
++{
++    mFakeVSync = enable;
++}
++
++bool VSyncThread::threadLoop()
++{
++    { // scope for lock
++        Mutex::Autolock _l(mLock);
++        while (!mEnabled) {
++            mCondition.wait(mLock);
++        }
++    }
++
++    if (mFakeVSync) {
++        performFakeVSync();
++    }
++    else {
++        performVSync();
++    }
++
++    return true;
++}
++
++void VSyncThread::performFakeVSync()
++{
++    mRefreshPeriod = mCtx->mVsyncPeriod;
++    const nsecs_t period = mRefreshPeriod;
++    const nsecs_t now = systemTime(CLOCK_MONOTONIC);
++    nsecs_t next_vsync = mNextFakeVSync;
++    nsecs_t sleep = next_vsync - now;
++    if (sleep < 0) {
++        // we missed, find where the next vsync should be
++        sleep = (period - ((now - next_vsync) % period));
++        next_vsync = now + sleep;
++    }
++    mNextFakeVSync = next_vsync + period;
++
++    struct timespec spec;
++    spec.tv_sec  = next_vsync / 1000000000;
++    spec.tv_nsec = next_vsync % 1000000000;
++
++    int err;
++    do {
++        err = clock_nanosleep(CLOCK_MONOTONIC, TIMER_ABSTIME, &spec, NULL);
++    } while (err<0 && errno == EINTR);
++
++    if (err == 0) {
++        mCtx->mCallback->vsync(mCtx->mCallback, 0, next_vsync);
++    }
++}
++
++void VSyncThread::performVSync()
++{
++    uint64_t timestamp = 0;
++    uint32_t crt = (uint32_t)&timestamp;
++
++    int err = ioctl(mCtx->mFbFile,
++                    MXCFB_WAIT_FOR_VSYNC, crt);
++    if ( err < 0 ) {
++        ALOGE("FBIO_WAITFORVSYNC error: %s\n", strerror(errno));
++        return;
++    }
++
++#ifdef DEBUG_HWC_VSYNC_TIMING
++    static nsecs_t last_time_ns;
++    nsecs_t cur_time_ns;
++
++    cur_time_ns  = systemTime(SYSTEM_TIME_MONOTONIC);
++    mCtx->mCallback->vsync(mCtx->mCallback, 0, timestamp);
++    ALOGE("Vsync %llu, %llu\n", cur_time_ns - last_time_ns,
++          cur_time_ns - timestamp);
++    last_time_ns = cur_time_ns;
++#else
++    mCtx->mCallback->vsync(mCtx->mCallback, 0, timestamp);
++#endif
++
++    struct timespec tm;
++    struct timespec ts;
++    const nsecs_t wake_up = 400000;
++
++    double m_frame_period_ns = mCtx->mVsyncPeriod;
++
++    ts.tv_nsec =  (timestamp + m_frame_period_ns)
++        - (systemTime(SYSTEM_TIME_MONOTONIC) + wake_up );
++    ts.tv_sec = 0;
++    nanosleep( &ts, &tm);
++}
++
+diff --git a/mx7/hwcomposer/hwc_vsync.h b/mx7/hwcomposer/hwc_vsync.h
+new file mode 100644
+index 0000000..de05844
+--- /dev/null
++++ b/mx7/hwcomposer/hwc_vsync.h
+@@ -0,0 +1,71 @@
++/*
++ * Copyright (C) 2012-2015 Freescale Semiconductor, Inc. All Rights Reserved.
++ *
++ * Licensed under the Apache License, Version 2.0 (the "License");
++ * you may not use this file except in compliance with the License.
++ * You may obtain a copy of the License at
++ *
++ *      http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++#ifndef HWC_VSYNC_H_
++#define HWC_VSYNC_H_
++
++#include <hardware/hardware.h>
++
++#include <fcntl.h>
++#include <errno.h>
++
++#include <cutils/log.h>
++#include <cutils/atomic.h>
++#include <cutils/properties.h>
++#include <utils/threads.h>
++#include <hardware/hwcomposer.h>
++#include <hardware_legacy/uevent.h>
++#include <utils/StrongPointer.h>
++
++#include <linux/mxcfb.h>
++#include <linux/ioctl.h>
++#include <EGL/egl.h>
++#include "hwc_context.h"
++/*****************************************************************************/
++#define FB_VSYNC_EVENT "change@/devices/platform/mxc_sdc_fb.0/graphics/fb0"
++#define FB_VSYNC_EVENT_PREFIX "change@/devices/platform/mxc_sdc_fb"
++
++using namespace android;
++
++extern "C" int clock_nanosleep(clockid_t clock_id, int flags,
++                           const struct timespec *request,
++                           struct timespec *remain);
++struct hwc_context_t;
++
++class VSyncThread : public Thread
++{
++public:
++    explicit VSyncThread(hwc_context_t *ctx);
++    void setEnabled(bool enabled);
++    void setFakeVSync(bool enable);
++
++private:
++    virtual void onFirstRef();
++    virtual status_t readyToRun();
++    virtual bool threadLoop();
++    void performFakeVSync();
++    void performVSync();
++
++    hwc_context_t *mCtx;
++    mutable Mutex mLock;
++    Condition mCondition;
++    bool mEnabled;
++
++    bool mFakeVSync;
++    mutable nsecs_t mNextFakeVSync;
++    nsecs_t mRefreshPeriod;
++};
++
++#endif
+diff --git a/mx7/hwcomposer/hwcomposer.cpp b/mx7/hwcomposer/hwcomposer.cpp
+new file mode 100644
+index 0000000..d26cde9
+--- /dev/null
++++ b/mx7/hwcomposer/hwcomposer.cpp
+@@ -0,0 +1,274 @@
++/*
++ * Copyright (C) 2015 Freescale Semiconductor, Inc. All Rights Reserved.
++ *
++ * Licensed under the Apache License, Version 2.0 (the "License");
++ * you may not use this file except in compliance with the License.
++ * You may obtain a copy of the License at
++ *
++ *      http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++
++
++#include <hardware/hardware.h>
++
++#include <fcntl.h>
++#include <errno.h>
++
++#include <cutils/log.h>
++#include <cutils/atomic.h>
++#include <cutils/properties.h>
++#include <utils/threads.h>
++#include <hardware/hwcomposer.h>
++#include <utils/StrongPointer.h>
++
++#include <linux/mxcfb.h>
++#include <linux/ioctl.h>
++#include <EGL/egl.h>
++#include <GLES/gl.h>
++
++#include "hwc_context.h"
++#include "hwc_vsync.h"
++
++/*****************************************************************************/
++static int hwc_device_open(const struct hw_module_t* module, const char* name,
++        struct hw_device_t** device);
++
++static struct hw_module_methods_t hwc_module_methods = {
++    open: hwc_device_open
++};
++
++hwc_module_t HAL_MODULE_INFO_SYM = {
++    common: {
++        tag: HARDWARE_MODULE_TAG,
++        version_major: 1,
++        version_minor: 0,
++        id: HWC_HARDWARE_MODULE_ID,
++        name: "Freescale i.MX hwcomposer module",
++        author: "Freescale Semiconductor, Inc.",
++        methods: &hwc_module_methods,
++        dso: NULL,
++        reserved: {0}
++    }
++};
++
++/*****************************************************************************/
++static void dump_layer(hwc_layer_1_t const* l)
++{
++    ALOGD("\ttype=%d, flags=%08x, handle=%p, tr=%02x, blend=%04x, {%d,%d,%d,%d}, {%d,%d,%d,%d}",
++            l->compositionType, l->flags, l->handle, l->transform, l->blending,
++            l->sourceCrop.left,
++            l->sourceCrop.top,
++            l->sourceCrop.right,
++            l->sourceCrop.bottom,
++            l->displayFrame.left,
++            l->displayFrame.top,
++            l->displayFrame.right,
++            l->displayFrame.bottom);
++}
++
++/***********************************************************************/
++static int hwc_prepare(hwc_composer_device_1_t *dev,
++        size_t numDisplays, hwc_display_contents_1_t** displays)
++{
++    struct hwc_context_t *ctx = (struct hwc_context_t *)dev;
++    if (ctx == NULL || numDisplays == 0 || displays == NULL) {
++        return 0;
++    }
++
++    // don't need to do anything here.
++    return 0;
++}
++
++static int hwc_set(hwc_composer_device_1_t *dev,
++        size_t numDisplays, hwc_display_contents_1_t** displays)
++{
++    struct hwc_context_t *ctx = (struct hwc_context_t *)dev;
++    EGLBoolean success = EGL_TRUE;
++
++    if (ctx == NULL || numDisplays == 0 || displays == NULL) {
++        return 0;
++    }
++
++    // when blanked, return.
++    if (ctx->mBlank != 0) {
++        return 0;
++    }
++
++    // only need to do swap buffers.
++    if (displays[0]->dpy != NULL && displays[0]->sur != NULL) {
++        success = eglSwapBuffers((EGLDisplay)displays[0]->dpy,
++            (EGLSurface)displays[0]->sur);
++    }
++
++    if (!success) {
++        return HWC_EGL_ERROR;
++    }
++
++    return 0;
++}
++
++static void hwc_registerProcs(struct hwc_composer_device_1 *dev,
++                              hwc_procs_t const* procs)
++{
++    struct hwc_context_t* ctx = (struct hwc_context_t*)dev;
++    if(ctx == NULL) {
++        return;
++    }
++
++    // set callback procs.
++    ctx->mCallback = (hwc_procs_t*)procs;
++}
++
++static int hwc_eventControl(struct hwc_composer_device_1* dev,
++                            int/* disp*/, int event, int enabled)
++{
++    int ret = 0;
++    hwc_context_t *ctx = (hwc_context_t *) dev;
++    if (ctx == NULL) {
++        return ret;
++    }
++
++    switch (event) {
++        case HWC_EVENT_VSYNC:
++            // enable/disable vsync thread.
++            ctx->mVsyncThread->setEnabled(enabled);
++            break;
++        default:
++            ret = -EINVAL;
++            break;
++    }
++
++    return ret;
++}
++
++static int hwc_blank(struct hwc_composer_device_1* dev, int disp, int blank)
++{
++    struct hwc_context_t* ctx = (struct hwc_context_t*)dev;
++
++    if (!ctx || disp < 0 || disp >= HWC_NUM_DISPLAY_TYPES) {
++        return 0;
++    }
++
++    ctx->mBlank = blank;
++    // HDMI and EPDC can't blank.
++    if (ctx->mDisplayType == HWC_DISPLAY_HDMI ||
++        ctx->mDisplayType == HWC_DISPLAY_EPDC) {
++        return 0;
++    }
++
++    // HDMI display and audio share the same HDMI module.
++    // So blank HDMI display will impact audio playing.
++    // IMX7D is hard to differentiate between HDMI and LCD.
++    // So comment blank code here now.
++    if (false) {
++        // blank or unblank screen.
++        int fb_blank = blank ? FB_BLANK_POWERDOWN : FB_BLANK_UNBLANK;
++        int err = ioctl(ctx->mFbFile, FBIOBLANK, fb_blank);
++        if (err < 0) {
++            ALOGE("blank ioctl failed");
++            return -errno;
++        }
++    }
++
++    return 0;
++}
++
++static int hwc_query(struct hwc_composer_device_1 *dev,
++                     int what, int* value)
++{
++    struct hwc_context_t* ctx = (struct hwc_context_t*)dev;
++    if (ctx == NULL || value == NULL) {
++        return 0;
++    }
++
++    switch (what) {
++        case HWC_BACKGROUND_LAYER_SUPPORTED:
++            // we don't support the background layer yet
++            value[0] = 0;
++            break;
++        case HWC_VSYNC_PERIOD:
++            // vsync period in nanosecond
++            value[0] = ctx->mVsyncPeriod;
++            break;
++        default:
++            // unsupported query
++            return -EINVAL;
++    }
++
++    return 0;
++}
++
++static int hwc_device_close(struct hw_device_t *dev)
++{
++    struct hwc_context_t* ctx = (struct hwc_context_t*)dev;
++    if (ctx == NULL) {
++        return 0;
++    }
++
++    // exit and destroy vsync thread.
++    if(ctx->mVsyncThread != NULL) {
++        ctx->mVsyncThread->requestExitAndWait();
++        ctx->mVsyncThread = 0;
++    }
++
++    // close file handle.
++    if (ctx->mFbFile > 0) {
++        close(ctx->mFbFile);
++    }
++    free(ctx);
++
++    return 0;
++}
++
++/*****************************************************************************/
++static int hwc_device_open(const struct hw_module_t* module, const char* name,
++                           struct hw_device_t** device)
++{
++    if (strcmp(name, HWC_HARDWARE_COMPOSER) != 0) {
++        return -EINVAL;
++    }
++
++    struct hwc_context_t *dev = NULL;
++    dev = (hwc_context_t*)malloc(sizeof(*dev));
++    if (dev == NULL) {
++        ALOGE("%s malloc failed", __FUNCTION__);
++        return -EINVAL;
++    }
++
++    /* initialize our state here */
++    memset(dev, 0, sizeof(*dev));
++
++    /* initialize the procs */
++    dev->device.common.tag = HARDWARE_DEVICE_TAG;
++    dev->device.common.module = const_cast<hw_module_t*>(module);
++    dev->device.common.close = hwc_device_close;
++
++    dev->device.prepare = hwc_prepare;
++    dev->device.set = hwc_set;
++    dev->device.blank = hwc_blank;
++    dev->device.common.version = HWC_DEVICE_API_VERSION_1_0;
++    dev->device.registerProcs = hwc_registerProcs;
++    dev->device.eventControl = hwc_eventControl;
++    dev->device.query = hwc_query;
++
++    /* our private state goes below here */
++    dev->mFbFile = open(HWC_PRIMARY_DISPLAY, O_RDWR);
++    dev->mVsyncThread = new VSyncThread(dev);
++    if (dev->mFbFile < 0) {
++        dev->mVsyncThread->setFakeVSync(true);
++    }
++
++    hwc_get_framebuffer_info(dev);
++    hwc_get_display_type(dev);
++
++    *device = &dev->device.common;
++    ALOGI("<%s,%d>", __FUNCTION__, __LINE__);
++
++    return 0;
++}
+-- 
+1.8.0
+

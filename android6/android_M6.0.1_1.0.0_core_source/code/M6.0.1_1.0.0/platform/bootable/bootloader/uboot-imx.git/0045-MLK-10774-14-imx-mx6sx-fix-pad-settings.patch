@@ -1,0 +1,40 @@
+From 5c9d2fa6b9f1bac250ef7cdbe272e1e6c6420321 Mon Sep 17 00:00:00 2001
+From: Peng Fan <Peng.Fan@freescale.com>
+Date: Mon, 9 Mar 2015 10:03:57 +0800
+Subject: [PATCH] MLK-10774-14 imx:mx6sx fix pad settings
+
+Fix PAD_CTL_SPEED_LOW pad settings.
+
+Signed-off-by: Peng Fan <Peng.Fan@freescale.com>
+---
+ arch/arm/include/asm/imx-common/iomux-v3.h | 6 +++++-
+ 1 file changed, 5 insertions(+), 1 deletion(-)
+
+diff --git a/arch/arm/include/asm/imx-common/iomux-v3.h b/arch/arm/include/asm/imx-common/iomux-v3.h
+index e0a49be..016fe30 100644
+--- a/arch/arm/include/asm/imx-common/iomux-v3.h
++++ b/arch/arm/include/asm/imx-common/iomux-v3.h
+@@ -3,7 +3,7 @@
+  * Copyright (C) 2009 by Jan Weitzel Phytec Messtechnik GmbH,
+  *			<armlinux@phytec.de>
+  *
+- * Copyright (C) 2011 Freescale Semiconductor, Inc.
++ * Copyright (C) 2011-2015 Freescale Semiconductor, Inc.
+  *
+  * SPDX-License-Identifier:	GPL-2.0+
+  */
+@@ -98,7 +98,11 @@ typedef u64 iomux_v3_cfg_t;
+ 
+ #define PAD_CTL_ODE		(1 << 11)
+ 
++#ifdef CONFIG_MX6SX
++#define PAD_CTL_SPEED_LOW	(0 << 6)
++#else
+ #define PAD_CTL_SPEED_LOW	(1 << 6)
++#endif
+ #define PAD_CTL_SPEED_MED	(2 << 6)
+ #define PAD_CTL_SPEED_HIGH	(3 << 6)
+ 
+-- 
+1.8.0
+

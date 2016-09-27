@@ -1,0 +1,78 @@
+From 703cd9dfcbe52d35eff034fc976cf727248d1d8f Mon Sep 17 00:00:00 2001
+From: Sandor Yu <R01008@freescale.com>
+Date: Wed, 11 Mar 2015 13:52:18 +0800
+Subject: [PATCH 487/505] MLK-10401-2: v4l2 capture: Code restructure for
+ V4L2_MEMORY_USERPTR
+
+-Move function VIDIOC_QUERYBUF call to V4L2_MEMORY_MMAP specific.
+V4L2_MEMORY_USERPTR not need call the function.
+-Add virtual address output in debug information.
+
+Signed-off-by: Sandor Yu <R01008@freescale.com>
+---
+ test/mxc_v4l2_test/mx6s_v4l2_capture.c | 34 +++++++++++++++-------------------
+ 1 file changed, 15 insertions(+), 19 deletions(-)
+
+diff --git a/test/mxc_v4l2_test/mx6s_v4l2_capture.c b/test/mxc_v4l2_test/mx6s_v4l2_capture.c
+index 9edffc8..0a0bb47 100644
+--- a/test/mxc_v4l2_test/mx6s_v4l2_capture.c
++++ b/test/mxc_v4l2_test/mx6s_v4l2_capture.c
+@@ -103,23 +103,18 @@ int start_capturing(int fd_v4l)
+ 		return -1;
+ 	}
+ 
+-	for (i = 0; i < TEST_BUFFER_NUM; i++) {
+-		memset(&buf, 0, sizeof (buf));
+-		buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+-		buf.memory = g_mem_type;
+-		buf.index = i;
+-		if (g_mem_type == V4L2_MEMORY_USERPTR) {
+-			buf.length = buffers[i].length;
+-			buf.m.userptr = (unsigned long) buffers[i].offset;
+-			buf.length = buffers[i].length;
+-		}
+-
+-		if (ioctl(fd_v4l, VIDIOC_QUERYBUF, &buf) < 0) {
+-			printf("VIDIOC_QUERYBUF error\n");
+-			return -1;
+-		}
++	if (g_mem_type == V4L2_MEMORY_MMAP) {
++		for (i = 0; i < TEST_BUFFER_NUM; i++) {
++			memset(&buf, 0, sizeof (buf));
++			buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
++			buf.memory = g_mem_type;
++			buf.index = i;
++
++			if (ioctl(fd_v4l, VIDIOC_QUERYBUF, &buf) < 0) {
++				printf("VIDIOC_QUERYBUF error\n");
++				return -1;
++			}
+ 
+-		if (g_mem_type == V4L2_MEMORY_MMAP) {
+ 			buffers[i].length = buf.length;
+ 			buffers[i].offset = (size_t) buf.m.offset;
+ 			buffers[i].start = mmap(NULL, buffers[i].length,
+@@ -637,7 +632,7 @@ static int signal_thread(void *arg)
+ void memfree(int buf_size, int buf_cnt)
+ {
+ 	int i;
+-        unsigned int page_size;
++	unsigned int page_size;
+ 
+ 	page_size = getpagesize();
+ 	buf_size = (buf_size + page_size - 1) & ~(page_size - 1);
+@@ -679,8 +674,9 @@ int memalloc(int buf_size, int buf_cnt)
+ 			ret = -1;
+ 			goto err;
+ 		}
+-		printf("USRP: alloc bufs offset 0x%x size %d\n",
+-				buffers[i].offset, buf_size);
++		printf("%s, buf_size=0x%x\n", __func__, buf_size);
++		printf("USRP: alloc bufs va=0x%x, pa=0x%x, size %d\n",
++				buffers[i].start, buffers[i].offset, buf_size);
+ 	}
+ 
+ 	return ret;
+-- 
+1.8.0
+

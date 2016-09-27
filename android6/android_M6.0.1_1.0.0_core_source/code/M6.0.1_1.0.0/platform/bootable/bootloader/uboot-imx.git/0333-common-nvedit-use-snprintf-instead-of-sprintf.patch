@@ -1,0 +1,39 @@
+From d533473490c7a88fd9cc353b900c13d1ecc8f9b6 Mon Sep 17 00:00:00 2001
+From: Peng Fan <peng.fan@nxp.com>
+Date: Wed, 23 Dec 2015 12:08:09 +0800
+Subject: [PATCH] common: nvedit: use snprintf instead of sprintf
+
+Use snprintf to replace sprintf.
+
+Coverity log:
+"
+Unbounded source buffer (STRING_SIZE)
+string_size: Passing string init_val of unknown size to sprintf.
+"
+
+Reported-by: Coverity
+Signed-off-by: Peng Fan <peng.fan@nxp.com>
+Cc: Tom Rini <trini@konsulko.com>
+Cc: Simon Glass <sjg@chromium.org>
+Reviewed-by: Joe Hershberger <joe.hershberger@ni.com>
+(cherry picked from commit 5d49b4cdf9417b88476567c8ec78ff185d84b10f)
+---
+ common/cmd_nvedit.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/common/cmd_nvedit.c b/common/cmd_nvedit.c
+index 24cc916..c4194d5 100644
+--- a/common/cmd_nvedit.c
++++ b/common/cmd_nvedit.c
+@@ -589,7 +589,7 @@ static int do_env_edit(cmd_tbl_t *cmdtp, int flag, int argc,
+ 	/* Set read buffer to initial value or empty sting */
+ 	init_val = getenv(argv[1]);
+ 	if (init_val)
+-		sprintf(buffer, "%s", init_val);
++		snprintf(buffer, CONFIG_SYS_CBSIZE, "%s", init_val);
+ 	else
+ 		buffer[0] = '\0';
+ 
+-- 
+1.8.0
+

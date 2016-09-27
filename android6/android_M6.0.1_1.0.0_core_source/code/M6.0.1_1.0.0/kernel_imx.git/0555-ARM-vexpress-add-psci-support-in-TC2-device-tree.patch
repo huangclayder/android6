@@ -1,0 +1,41 @@
+From 82538e40ef2fbec9fdb7d278e305f76514079055 Mon Sep 17 00:00:00 2001
+From: Achin Gupta <achin.gupta@arm.com>
+Date: Sun, 16 Dec 2012 22:41:02 +0000
+Subject: [PATCH] ARM: vexpress: add psci support in TC2 device tree
+
+This patch adds a psci device node to allow the ospm subsystems on the
+TC2 to work with a psci backend implemented in the secure firmware. The
+function offsets start from 1 instead of 0 as thats whats the current
+secure firmware implements.
+
+Signed-off-by: Achin Gupta <achin.gupta@arm.com>
+Signed-off-by: Liviu Dudau <Liviu.Dudau@arm.com>
+(cherry picked from commit 8986774d35f2605df298a4145b8f4ac138732fc7)
+Signed-off-by: Alex Shi <alex.shi@linaro.org>
+---
+ arch/arm/boot/dts/vexpress-v2p-ca15_a7.dts | 9 +++++++++
+ 1 file changed, 9 insertions(+)
+
+diff --git a/arch/arm/boot/dts/vexpress-v2p-ca15_a7.dts b/arch/arm/boot/dts/vexpress-v2p-ca15_a7.dts
+index 15f98cb..9577062 100644
+--- a/arch/arm/boot/dts/vexpress-v2p-ca15_a7.dts
++++ b/arch/arm/boot/dts/vexpress-v2p-ca15_a7.dts
+@@ -178,6 +178,15 @@
+ 		clock-output-names = "oscclk6a";
+ 	};
+ 
++	psci {
++		compatible      = "arm,psci";
++		method          = "smc";
++		cpu_suspend     = <0x80100001>;
++		cpu_off         = <0x80100002>;
++		cpu_on          = <0x80100003>;
++		migrate         = <0x80100004>;
++	};
++
+ 	dcc {
+ 		compatible = "arm,vexpress,config-bus";
+ 		arm,vexpress,config-bridge = <&v2m_sysreg>;
+-- 
+1.8.0
+

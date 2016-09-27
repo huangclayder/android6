@@ -1,0 +1,269 @@
+From f4451f7aeb4530b2b2f84f4164aafb1a08f95b1c Mon Sep 17 00:00:00 2001
+From: Zhang Sanshan <b51434@freescale.com>
+Date: Mon, 7 Dec 2015 19:04:31 +0800
+Subject: [PATCH 574/602] MA-7215 Change default udisk folder to usb to align
+ with aosp example
+
+align with google example's setting about storage.
+Set voldmanaged to usb for usb device storage.
+Set voldmanaged to sdcard for sdcard.
+
+Signed-off-by: Zhang Sanshan <b51434@freescale.com>
+---
+ evk_6sl/fstab-f2fs.freescale        | 4 ++--
+ evk_6sl/fstab.freescale             | 4 ++--
+ sabreauto_6q/fstab-f2fs.freescale   | 4 ++--
+ sabreauto_6q/fstab.freescale        | 4 ++--
+ sabreauto_6q/fstab_nand.freescale   | 4 ++--
+ sabreauto_6sx/fstab-f2fs.freescale  | 4 ++--
+ sabreauto_6sx/fstab.freescale       | 4 ++--
+ sabreauto_6sx/fstab_nand.freescale  | 4 ++--
+ sabresd_6dq/fstab-f2fs.freescale    | 4 ++--
+ sabresd_6dq/fstab.freescale         | 4 ++--
+ sabresd_6dq/fstab_sd-f2fs.freescale | 4 ++--
+ sabresd_6dq/fstab_sd.freescale      | 4 ++--
+ sabresd_6sx/fstab-f2fs.freescale    | 4 ++--
+ sabresd_6sx/fstab.freescale         | 4 ++--
+ sabresd_7d/fstab-f2fs.freescale     | 2 +-
+ sabresd_7d/fstab.freescale          | 2 +-
+ 16 files changed, 30 insertions(+), 30 deletions(-)
+
+diff --git a/evk_6sl/fstab-f2fs.freescale b/evk_6sl/fstab-f2fs.freescale
+index bf768a2..eda6e45 100644
+--- a/evk_6sl/fstab-f2fs.freescale
++++ b/evk_6sl/fstab-f2fs.freescale
+@@ -3,8 +3,8 @@
+ # The filesystem that contains the filesystem checker binary (typically /system) cannot
+ # specify MF_CHECK, and must come before any filesystems that do specify MF_CHECK
+ 
+-/devices/soc0/soc.1/2100000.aips-bus/2190000.usdhc/mmc_host* auto auto defaults voldmanaged=extsd:auto,encryptable=userdata
+-/devices/soc0/soc.1/2100000.aips-bus/2184200.usb/ci_hdrc.1* auto auto defaults voldmanaged=udisk:auto
++/devices/soc0/soc.1/2100000.aips-bus/2190000.usdhc/mmc_host* auto auto defaults voldmanaged=sdcard:auto,encryptable=userdata
++/devices/soc0/soc.1/2100000.aips-bus/2184200.usb/ci_hdrc.1* auto auto defaults voldmanaged=usb:auto
+ /dev/block/mmcblk1p5    /system      ext4    ro                                                                               wait
+ /dev/block/mmcblk1p4    /data        f2fs    nosuid,nodev,noatime    wait,encryptable=/dev/block/mmcblk1p9
+ /dev/block/mmcblk1p4    /data        ext4    nosuid,nodev,nodiratime,noatime,nomblk_io_submit,noauto_da_alloc,errors=panic    wait,encryptable=/dev/block/mmcblk1p9
+diff --git a/evk_6sl/fstab.freescale b/evk_6sl/fstab.freescale
+index ed77700..d4bccb9 100644
+--- a/evk_6sl/fstab.freescale
++++ b/evk_6sl/fstab.freescale
+@@ -3,8 +3,8 @@
+ # The filesystem that contains the filesystem checker binary (typically /system) cannot
+ # specify MF_CHECK, and must come before any filesystems that do specify MF_CHECK
+ 
+-/devices/soc0/soc.1/2100000.aips-bus/2190000.usdhc/mmc_host* auto auto defaults voldmanaged=extsd:auto,encryptable=userdata
+-/devices/soc0/soc.1/2100000.aips-bus/2184200.usb/ci_hdrc.1* auto auto defaults voldmanaged=udisk:auto
++/devices/soc0/soc.1/2100000.aips-bus/2190000.usdhc/mmc_host* auto auto defaults voldmanaged=sdcard:auto,encryptable=userdata
++/devices/soc0/soc.1/2100000.aips-bus/2184200.usb/ci_hdrc.1* auto auto defaults voldmanaged=usb:auto
+ /dev/block/mmcblk1p5    /system      ext4    ro,barrier=1                                                                               wait,verify
+ /dev/block/mmcblk1p4    /data        ext4    nosuid,nodev,nodiratime,noatime,nomblk_io_submit,noauto_da_alloc,errors=panic    wait,encryptable=/dev/block/mmcblk1p9
+ /dev/block/mmcblk1p6    /cache       ext4    nosuid,nodev,nomblk_io_submit                                                    wait
+diff --git a/sabreauto_6q/fstab-f2fs.freescale b/sabreauto_6q/fstab-f2fs.freescale
+index d497089..f6e3656 100644
+--- a/sabreauto_6q/fstab-f2fs.freescale
++++ b/sabreauto_6q/fstab-f2fs.freescale
+@@ -3,8 +3,8 @@
+ # The filesystem that contains the filesystem checker binary (typically /system) cannot
+ # specify MF_CHECK, and must come before any filesystems that do specify MF_CHECK
+ 
+-/devices/soc0/soc.0/2100000.aips-bus/2190000.usdhc/mmc_host* auto auto defaults voldmanaged=extsd:auto,encryptable=userdata
+-/devices/soc0/soc.0/2100000.aips-bus/2184000.usb/ci_hdrc.0*  auto auto defaults voldmanaged=udisk:auto
++/devices/soc0/soc.0/2100000.aips-bus/2190000.usdhc/mmc_host* auto auto defaults voldmanaged=sdcard:auto,encryptable=userdata
++/devices/soc0/soc.0/2100000.aips-bus/2184000.usb/ci_hdrc.0*  auto auto defaults voldmanaged=usb:auto
+ /dev/block/mmcblk2p5    /system      ext4    ro                                                                               wait
+ /dev/block/mmcblk2p4    /data        f2fs    nosuid,nodev,noatime    wait,encryptable=/dev/block/mmcblk2p9
+ /dev/block/mmcblk2p4    /data        ext4    nosuid,nodev,nodiratime,noatime,nomblk_io_submit,noauto_da_alloc,errors=panic    wait,encryptable=/dev/block/mmcblk2p9
+diff --git a/sabreauto_6q/fstab.freescale b/sabreauto_6q/fstab.freescale
+index f0a7470..3f25e44 100644
+--- a/sabreauto_6q/fstab.freescale
++++ b/sabreauto_6q/fstab.freescale
+@@ -3,8 +3,8 @@
+ # The filesystem that contains the filesystem checker binary (typically /system) cannot
+ # specify MF_CHECK, and must come before any filesystems that do specify MF_CHECK
+ 
+-/devices/soc0/soc.0/2100000.aips-bus/2190000.usdhc/mmc_host* auto auto defaults voldmanaged=extsd:auto,encryptable=userdata
+-/devices/soc0/soc.0/2100000.aips-bus/2184000.usb/ci_hdrc.0*  auto auto defaults voldmanaged=udisk:auto
++/devices/soc0/soc.0/2100000.aips-bus/2190000.usdhc/mmc_host* auto auto defaults voldmanaged=sdcard:auto,encryptable=userdata
++/devices/soc0/soc.0/2100000.aips-bus/2184000.usb/ci_hdrc.0*  auto auto defaults voldmanaged=usb:auto
+ /dev/block/mmcblk2p5    /system      ext4    ro,barrier=1                                                                               wait,verify
+ /dev/block/mmcblk2p4    /data        ext4    nosuid,nodev,nodiratime,noatime,nomblk_io_submit,noauto_da_alloc,errors=panic    wait,encryptable=/dev/block/mmcblk2p9
+ /dev/block/mmcblk2p6    /cache       ext4    nosuid,nodev,nomblk_io_submit                                                    wait
+diff --git a/sabreauto_6q/fstab_nand.freescale b/sabreauto_6q/fstab_nand.freescale
+index b62ff1e..6f4a2fd 100644
+--- a/sabreauto_6q/fstab_nand.freescale
++++ b/sabreauto_6q/fstab_nand.freescale
+@@ -5,8 +5,8 @@
+ 
+ # below is for ubi support, uncomment to support ubifs(NAND)
+ 
+-/devices/soc0/soc.0/2100000.aips-bus/2190000.usdhc/mmc_host* auto auto defaults voldmanaged=extsd:auto,encryptable=userdata
+-/devices/soc0/soc.0/2100000.aips-bus/2184200.usb/ci_hdrc.1* auto auto defaults voldmanaged=udisk:auto
++/devices/soc0/soc.0/2100000.aips-bus/2190000.usdhc/mmc_host* auto auto defaults voldmanaged=sdcard:auto,encryptable=userdata
++/devices/soc0/soc.0/2100000.aips-bus/2184200.usb/ci_hdrc.1* auto auto defaults voldmanaged=usb:auto
+ /dev/ubi0_0     /system		    ubifs 	ro                                      wait
+ /dev/ubi0_3     /data           ubifs   nosuid,nodev,nodiratime,noatime         wait
+ /dev/ubi0_1     /cache          ubifs   nosuid,nodev                            wait
+diff --git a/sabreauto_6sx/fstab-f2fs.freescale b/sabreauto_6sx/fstab-f2fs.freescale
+index c5eadf6..00a6ed4 100644
+--- a/sabreauto_6sx/fstab-f2fs.freescale
++++ b/sabreauto_6sx/fstab-f2fs.freescale
+@@ -3,8 +3,8 @@
+ # The filesystem that contains the filesystem checker binary (typically /system) cannot
+ # specify MF_CHECK, and must come before any filesystems that do specify MF_CHECK
+ 
+-/devices/soc0/soc.0/2100000.aips-bus/219c000.usdhc/mmc_host* auto auto defaults voldmanaged=extsd:auto,encryptable=userdata
+-/devices/soc0/soc.0/2100000.aips-bus/2184000.usb/ci_hdrc.0*  auto auto defaults voldmanaged=udisk:auto
++/devices/soc0/soc.0/2100000.aips-bus/219c000.usdhc/mmc_host* auto auto defaults voldmanaged=sdcard:auto,encryptable=userdata
++/devices/soc0/soc.0/2100000.aips-bus/2184000.usb/ci_hdrc.0*  auto auto defaults voldmanaged=usb:auto
+ /dev/block/mmcblk2p5    /system      ext4    ro                                                                               wait
+ /dev/block/mmcblk2p4    /data        f2fs    nosuid,nodev,noatime    wait,encryptable=/dev/block/mmcblk2p9
+ /dev/block/mmcblk2p4    /data        ext4    nosuid,nodev,nodiratime,noatime,nomblk_io_submit,noauto_da_alloc,errors=panic    wait,encryptable=/dev/block/mmcblk2p9
+diff --git a/sabreauto_6sx/fstab.freescale b/sabreauto_6sx/fstab.freescale
+index 6c3a37f..8310a68 100644
+--- a/sabreauto_6sx/fstab.freescale
++++ b/sabreauto_6sx/fstab.freescale
+@@ -3,8 +3,8 @@
+ # The filesystem that contains the filesystem checker binary (typically /system) cannot
+ # specify MF_CHECK, and must come before any filesystems that do specify MF_CHECK
+ 
+-/devices/soc0/soc.0/2100000.aips-bus/219c000.usdhc/mmc_host* auto auto defaults voldmanaged=extsd:auto,encryptable=userdata
+-/devices/soc0/soc.0/2100000.aips-bus/2184000.usb/ci_hdrc.0*  auto auto defaults voldmanaged=udisk:auto
++/devices/soc0/soc.0/2100000.aips-bus/219c000.usdhc/mmc_host* auto auto defaults voldmanaged=sdcard:auto,encryptable=userdata
++/devices/soc0/soc.0/2100000.aips-bus/2184000.usb/ci_hdrc.0*  auto auto defaults voldmanaged=usb:auto
+ /dev/block/mmcblk2p5    /system      ext4    ro,barrier=1                                                                               wait,verify
+ /dev/block/mmcblk2p4    /data        ext4    nosuid,nodev,nodiratime,noatime,nomblk_io_submit,noauto_da_alloc,errors=panic    wait,encryptable=/dev/block/mmcblk2p9
+ /dev/block/mmcblk2p6    /cache       ext4    nosuid,nodev,nomblk_io_submit                                                    wait
+diff --git a/sabreauto_6sx/fstab_nand.freescale b/sabreauto_6sx/fstab_nand.freescale
+index aa1d633..64c01b4 100644
+--- a/sabreauto_6sx/fstab_nand.freescale
++++ b/sabreauto_6sx/fstab_nand.freescale
+@@ -5,8 +5,8 @@
+ 
+ # below is for ubi support, uncomment to support ubifs(NAND)
+ 
+-/devices/soc0/soc.0/2100000.aips-bus/219c000.usdhc/mmc_host* auto auto defaults voldmanaged=extsd:auto,encryptable=userdata
+-/devices/soc0/soc.0/2100000.aips-bus/2184000.usb/ci_hdrc.0*  auto auto defaults voldmanaged=udisk:auto
++/devices/soc0/soc.0/2100000.aips-bus/219c000.usdhc/mmc_host* auto auto defaults voldmanaged=sdcard:auto,encryptable=userdata
++/devices/soc0/soc.0/2100000.aips-bus/2184000.usb/ci_hdrc.0*  auto auto defaults voldmanaged=usb:auto
+ /dev/ubi0_0     /system		    ubifs 	ro                                      wait
+ /dev/ubi0_3     /data           ubifs   nosuid,nodev,nodiratime,noatime         wait
+ /dev/ubi0_1     /cache          ubifs   nosuid,nodev                            wait
+diff --git a/sabresd_6dq/fstab-f2fs.freescale b/sabresd_6dq/fstab-f2fs.freescale
+index ec77a5d..94ce50c 100644
+--- a/sabresd_6dq/fstab-f2fs.freescale
++++ b/sabresd_6dq/fstab-f2fs.freescale
+@@ -3,8 +3,8 @@
+ # The filesystem that contains the filesystem checker binary (typically /system) cannot
+ # specify MF_CHECK, and must come before any filesystems that do specify MF_CHECK
+ 
+-/devices/soc0/soc.0/2100000.aips-bus/2198000.usdhc/mmc_host* auto auto defaults voldmanaged=extsd:auto,encryptable=userdata
+-/devices/soc0/soc.0/2100000.aips-bus/2184000.usb/ci_hdrc.0*  auto auto defaults voldmanaged=udisk:auto
++/devices/soc0/soc.0/2100000.aips-bus/2198000.usdhc/mmc_host* auto auto defaults voldmanaged=sdcard:auto,encryptable=userdata
++/devices/soc0/soc.0/2100000.aips-bus/2184000.usb/ci_hdrc.0*  auto auto defaults voldmanaged=usb:auto
+ /dev/block/mmcblk3p5    /system      ext4    ro                                                                               wait
+ /dev/block/mmcblk3p4    /data        f2fs    nosuid,nodev,noatime    wait,encryptable=/dev/block/mmcblk3p9
+ /dev/block/mmcblk3p4    /data        ext4    nosuid,nodev,nodiratime,noatime,nomblk_io_submit,noauto_da_alloc,errors=panic    wait,encryptable=/dev/block/mmcblk3p9
+diff --git a/sabresd_6dq/fstab.freescale b/sabresd_6dq/fstab.freescale
+index d3e46e5..f37e18a 100644
+--- a/sabresd_6dq/fstab.freescale
++++ b/sabresd_6dq/fstab.freescale
+@@ -3,8 +3,8 @@
+ # The filesystem that contains the filesystem checker binary (typically /system) cannot
+ # specify MF_CHECK, and must come before any filesystems that do specify MF_CHECK
+ 
+-/devices/soc0/soc.0/2100000.aips-bus/2198000.usdhc/mmc_host* auto auto defaults voldmanaged=extsd:auto,encryptable=userdata
+-/devices/soc0/soc.0/2100000.aips-bus/2184000.usb/ci_hdrc.0*  auto auto defaults voldmanaged=udisk:auto
++/devices/soc0/soc.0/2100000.aips-bus/2198000.usdhc/mmc_host* auto auto defaults voldmanaged=sdcard:auto,encryptable=userdata
++/devices/soc0/soc.0/2100000.aips-bus/2184000.usb/ci_hdrc.0*  auto auto defaults voldmanaged=usb:auto
+ /dev/block/mmcblk3p5    /system      ext4    ro,barrier=1                                                                               wait,verify
+ /dev/block/mmcblk3p4    /data        ext4    nosuid,nodev,nodiratime,noatime,nomblk_io_submit,noauto_da_alloc,errors=panic    wait,encryptable=/dev/block/mmcblk3p9
+ /dev/block/mmcblk3p6    /cache       ext4    nosuid,nodev,nomblk_io_submit                                                    wait
+diff --git a/sabresd_6dq/fstab_sd-f2fs.freescale b/sabresd_6dq/fstab_sd-f2fs.freescale
+index c800d93..6a62ec7 100644
+--- a/sabresd_6dq/fstab_sd-f2fs.freescale
++++ b/sabresd_6dq/fstab_sd-f2fs.freescale
+@@ -3,8 +3,8 @@
+ # The filesystem that contains the filesystem checker binary (typically /system) cannot
+ # specify MF_CHECK, and must come before any filesystems that do specify MF_CHECK
+ 
+-/devices/soc0/soc.0/2100000.aips-bus/2194000.usdhc/mmc_host* auto auto defaults voldmanaged=extsd:auto,encryptable=userdata
+-/devices/soc0/soc.0/2100000.aips-bus/2184000.usb/ci_hdrc.0*  auto auto defaults voldmanaged=udisk:auto
++/devices/soc0/soc.0/2100000.aips-bus/2194000.usdhc/mmc_host* auto auto defaults voldmanaged=sdcard:auto,encryptable=userdata
++/devices/soc0/soc.0/2100000.aips-bus/2184000.usb/ci_hdrc.0*  auto auto defaults voldmanaged=usb:auto
+ /dev/block/mmcblk2p5    /system      ext4    ro                                                                               wait
+ /dev/block/mmcblk2p4    /data        f2fs    nosuid,nodev,noatime    wait,encryptable=/dev/block/mmcblk2p9
+ /dev/block/mmcblk2p4    /data        ext4    nosuid,nodev,nodiratime,noatime,nomblk_io_submit,noauto_da_alloc,errors=panic    wait,encryptable=/dev/block/mmcblk2p9
+diff --git a/sabresd_6dq/fstab_sd.freescale b/sabresd_6dq/fstab_sd.freescale
+index 5a9bdc8..0236bd1 100644
+--- a/sabresd_6dq/fstab_sd.freescale
++++ b/sabresd_6dq/fstab_sd.freescale
+@@ -3,8 +3,8 @@
+ # The filesystem that contains the filesystem checker binary (typically /system) cannot
+ # specify MF_CHECK, and must come before any filesystems that do specify MF_CHECK
+ 
+-/devices/soc0/soc.0/2100000.aips-bus/2194000.usdhc/mmc_host* auto auto defaults voldmanaged=extsd:auto,encryptable=userdata
+-/devices/soc0/soc.0/2100000.aips-bus/2184000.usb/ci_hdrc.0*  auto auto defaults voldmanaged=udisk:auto
++/devices/soc0/soc.0/2100000.aips-bus/2194000.usdhc/mmc_host* auto auto defaults voldmanaged=sdcard:auto,encryptable=userdata
++/devices/soc0/soc.0/2100000.aips-bus/2184000.usb/ci_hdrc.0*  auto auto defaults voldmanaged=usb:auto
+ /dev/block/mmcblk2p5    /system      ext4    ro,barrier=1                                                                               wait,verify
+ /dev/block/mmcblk2p4    /data        ext4    nosuid,nodev,nodiratime,noatime,nomblk_io_submit,noauto_da_alloc,errors=panic    wait,encryptable=/dev/block/mmcblk2p9
+ /dev/block/mmcblk2p6    /cache       ext4    nosuid,nodev,nomblk_io_submit                                                    wait
+diff --git a/sabresd_6sx/fstab-f2fs.freescale b/sabresd_6sx/fstab-f2fs.freescale
+index 750655a..16a30d4 100644
+--- a/sabresd_6sx/fstab-f2fs.freescale
++++ b/sabresd_6sx/fstab-f2fs.freescale
+@@ -3,8 +3,8 @@
+ # The filesystem that contains the filesystem checker binary (typically /system) cannot
+ # specify MF_CHECK, and must come before any filesystems that do specify MF_CHECK
+ 
+-/devices/soc0/soc.0/2100000.aips-bus/2198000.usdhc/mmc_host* auto auto defaults voldmanaged=extsd:auto,encryptable=userdata
+-/devices/soc0/soc.0/2100000.aips-bus/2184200.usb/ci_hdrc.1*  auto auto defaults voldmanaged=udisk:auto
++/devices/soc0/soc.0/2100000.aips-bus/2198000.usdhc/mmc_host* auto auto defaults voldmanaged=sdcard:auto,encryptable=userdata
++/devices/soc0/soc.0/2100000.aips-bus/2184200.usb/ci_hdrc.1*  auto auto defaults voldmanaged=usb:auto
+ /dev/block/mmcblk3p5    /system      ext4    ro                                                                               wait
+ /dev/block/mmcblk3p4    /data        f2fs    nosuid,nodev,noatime    wait,encryptable=/dev/block/mmcblk3p9
+ /dev/block/mmcblk3p4    /data        ext4    nosuid,nodev,nodiratime,noatime,nomblk_io_submit,noauto_da_alloc,errors=panic    wait,encryptable=/dev/block/mmcblk3p9
+diff --git a/sabresd_6sx/fstab.freescale b/sabresd_6sx/fstab.freescale
+index 196641e..7b71aef 100644
+--- a/sabresd_6sx/fstab.freescale
++++ b/sabresd_6sx/fstab.freescale
+@@ -3,8 +3,8 @@
+ # The filesystem that contains the filesystem checker binary (typically /system) cannot
+ # specify MF_CHECK, and must come before any filesystems that do specify MF_CHECK
+ 
+-/devices/soc0/soc.0/2100000.aips-bus/2198000.usdhc/mmc_host* auto auto defaults voldmanaged=extsd:auto,encryptable=userdata
+-/devices/soc0/soc.0/2100000.aips-bus/2184200.usb/ci_hdrc.1*  auto auto defaults voldmanaged=udisk:auto
++/devices/soc0/soc.0/2100000.aips-bus/2198000.usdhc/mmc_host* auto auto defaults voldmanaged=sdcard:auto,encryptable=userdata
++/devices/soc0/soc.0/2100000.aips-bus/2184200.usb/ci_hdrc.1*  auto auto defaults voldmanaged=usb:auto
+ /dev/block/mmcblk3p5    /system      ext4    ro,barrier=1                                                                               wait,verify
+ /dev/block/mmcblk3p4    /data        ext4    nosuid,nodev,nodiratime,noatime,nomblk_io_submit,noauto_da_alloc,errors=panic    wait,encryptable=/dev/block/mmcblk3p9
+ /dev/block/mmcblk3p6    /cache       ext4    nosuid,nodev,nomblk_io_submit                                                    wait
+diff --git a/sabresd_7d/fstab-f2fs.freescale b/sabresd_7d/fstab-f2fs.freescale
+index 5e6a260..1c226fe 100644
+--- a/sabresd_7d/fstab-f2fs.freescale
++++ b/sabresd_7d/fstab-f2fs.freescale
+@@ -2,7 +2,7 @@
+ #<src>                                                  <mnt_point>         <type>    <mnt_flags and options>                       <fs_mgr_flags>
+ # The filesystem that contains the filesystem checker binary (typically /system) cannot
+ # specify MF_CHECK, and must come before any filesystems that do specify MF_CHECK
+-/devices/soc.3/30800000.aips-bus/30b20000.usb/ci_hdrc.1* auto auto defaults voldmanaged=udisk:auto
++/devices/soc.3/30800000.aips-bus/30b20000.usb/ci_hdrc.1* auto auto defaults voldmanaged=usb:auto
+ /dev/block/mmcblk0p5    /system      ext4    ro                                                                               wait
+ /dev/block/mmcblk0p4    /data        f2fs    nosuid,nodev,noatime    wait,encryptable=/dev/block/mmcblk0p9
+ /dev/block/mmcblk0p4    /data        ext4    nosuid,nodev,nodiratime,noatime,nomblk_io_submit,noauto_da_alloc,errors=panic    wait,encryptable=/dev/block/mmcblk0p9
+diff --git a/sabresd_7d/fstab.freescale b/sabresd_7d/fstab.freescale
+index 2a97f7e..03e295b 100644
+--- a/sabresd_7d/fstab.freescale
++++ b/sabresd_7d/fstab.freescale
+@@ -3,7 +3,7 @@
+ # The filesystem that contains the filesystem checker binary (typically /system) cannot
+ # specify MF_CHECK, and must come before any filesystems that do specify MF_CHECK
+ 
+-/devices/soc.3/30800000.aips-bus/30b20000.usb/ci_hdrc.1* auto auto defaults voldmanaged=udisk:auto
++/devices/soc.3/30800000.aips-bus/30b20000.usb/ci_hdrc.1* auto auto defaults voldmanaged=usb:auto
+ /dev/block/mmcblk0p5    /system      ext4    ro,barrier=1                                                                     wait,verify
+ /dev/block/mmcblk0p4    /data        ext4    nosuid,nodev,nodiratime,noatime,nomblk_io_submit,noauto_da_alloc,errors=panic    wait,encryptable=/dev/block/mmcblk0p9
+ /dev/block/mmcblk0p6    /cache       ext4    nosuid,nodev,nomblk_io_submit                                                    wait
+-- 
+1.8.0
+

@@ -1,0 +1,37 @@
+From b20d5bbd7e244957071c0674d5e061199602fc43 Mon Sep 17 00:00:00 2001
+From: Haoran Wang <b50027@freescale.com>
+Date: Mon, 31 Aug 2015 14:25:33 +0800
+Subject: [PATCH 592/635] MA-7025 Enhance robustness
+
+Enhance the robustness of the code.
+Removed the uninitialized var from cppcheck.
+
+Signed-off-by: Haoran Wang <b50027@freescale.com>
+---
+ wlan/atheros/compat-wireless/drivers/net/wireless/ath/ath6kl/sdio.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/wlan/atheros/compat-wireless/drivers/net/wireless/ath/ath6kl/sdio.c b/wlan/atheros/compat-wireless/drivers/net/wireless/ath/ath6kl/sdio.c
+index 2d4fa8e..97d91ee 100644
+--- a/wlan/atheros/compat-wireless/drivers/net/wireless/ath/ath6kl/sdio.c
++++ b/wlan/atheros/compat-wireless/drivers/net/wireless/ath/ath6kl/sdio.c
+@@ -1,6 +1,7 @@
+ /*
+  * Copyright (c) 2004-2011 Atheros Communications Inc.
+  * Copyright (c) 2011-2012 Qualcomm Atheros, Inc.
++ * Copyright (C) 2015 Freescale Semiconductor, Inc.
+  *
+  * Permission to use, copy, modify, and/or distribute this software for any
+  * purpose with or without fee is hereby granted, provided that the above
+@@ -704,7 +705,7 @@ static int ath6kl_sdio_enable_scatter(struct ath6kl *ar)
+ {
+ 	struct ath6kl_sdio *ar_sdio = ath6kl_sdio_priv(ar);
+ 	struct htc_target *target = ar->htc_target;
+-	int ret;
++	int ret = 0;
+ 	bool virt_scat = false;
+ 
+ 	if (ar_sdio->scatter_enabled)
+-- 
+1.8.0
+

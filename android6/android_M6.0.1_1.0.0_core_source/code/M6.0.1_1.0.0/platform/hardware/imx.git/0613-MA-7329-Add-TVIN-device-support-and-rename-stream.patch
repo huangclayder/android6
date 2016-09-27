@@ -1,0 +1,4274 @@
+From 1a8e1b76a5c1607eae31b831f1f25cf7c41187e5 Mon Sep 17 00:00:00 2001
+From: Xiaowen Liu <xiaowen.liu@freescale.com>
+Date: Tue, 1 Dec 2015 10:21:43 -0500
+Subject: [PATCH 613/635] MA-7329 Add TVIN device support and rename stream.
+
+Add TVIN device support.
+Rename OvStream to USPStream which support User Space buffer.
+Rename UvcStream to DMAStream which support DMABUF buffer.
+Add MMAPStream to support kernel allocation buffer.
+Fix memory leakage when do USB camera hotplug.
+Refine some code.
+
+Signed-off-by: Xiaowen Liu <xiaowen.liu@freescale.com>
+---
+ mx6/libcamera3/Android.mk       |  10 +-
+ mx6/libcamera3/Camera.cpp       |  43 ++--
+ mx6/libcamera3/Camera.h         |   6 +-
+ mx6/libcamera3/CameraHAL.cpp    |   6 +
+ mx6/libcamera3/CameraUtils.h    |   3 +
+ mx6/libcamera3/DMAStream.cpp    | 171 ++++++++++++++++
+ mx6/libcamera3/DMAStream.h      |  54 +++++
+ mx6/libcamera3/DeviceStream.cpp | 419 -------------------------------------
+ mx6/libcamera3/DeviceStream.h   | 142 -------------
+ mx6/libcamera3/MMAPStream.cpp   | 251 +++++++++++++++++++++++
+ mx6/libcamera3/MMAPStream.h     |  50 +++++
+ mx6/libcamera3/Ov5640Csi.cpp    | 124 ++++++-----
+ mx6/libcamera3/Ov5640Csi.h      |   9 +
+ mx6/libcamera3/Ov5640Mipi.cpp   | 107 ++++++----
+ mx6/libcamera3/Ov5640Mipi.h     |   9 +
+ mx6/libcamera3/Ov5642Csi.cpp    | 124 ++++++-----
+ mx6/libcamera3/Ov5642Csi.h      |  11 +-
+ mx6/libcamera3/OvStream.cpp     | 362 --------------------------------
+ mx6/libcamera3/OvStream.h       |  49 -----
+ mx6/libcamera3/Stream.cpp       |  47 +++--
+ mx6/libcamera3/TVINDevice.cpp   | 221 ++++++++++++++++++++
+ mx6/libcamera3/TVINDevice.h     |  46 +++++
+ mx6/libcamera3/USPStream.cpp    | 297 +++++++++++++++++++++++++++
+ mx6/libcamera3/USPStream.h      |  54 +++++
+ mx6/libcamera3/UvcDevice.cpp    | 123 ++++++++---
+ mx6/libcamera3/UvcDevice.h      |  19 ++
+ mx6/libcamera3/UvcStream.cpp    | 328 -----------------------------
+ mx6/libcamera3/UvcStream.h      |  51 -----
+ mx6/libcamera3/VideoStream.cpp  | 444 ++++++++++++++++++++++++++++++++++++++++
+ mx6/libcamera3/VideoStream.h    | 144 +++++++++++++
+ 30 files changed, 2140 insertions(+), 1584 deletions(-)
+ create mode 100644 mx6/libcamera3/DMAStream.cpp
+ create mode 100644 mx6/libcamera3/DMAStream.h
+ delete mode 100644 mx6/libcamera3/DeviceStream.cpp
+ delete mode 100644 mx6/libcamera3/DeviceStream.h
+ create mode 100644 mx6/libcamera3/MMAPStream.cpp
+ create mode 100644 mx6/libcamera3/MMAPStream.h
+ delete mode 100644 mx6/libcamera3/OvStream.cpp
+ delete mode 100644 mx6/libcamera3/OvStream.h
+ create mode 100644 mx6/libcamera3/TVINDevice.cpp
+ create mode 100644 mx6/libcamera3/TVINDevice.h
+ create mode 100644 mx6/libcamera3/USPStream.cpp
+ create mode 100644 mx6/libcamera3/USPStream.h
+ delete mode 100644 mx6/libcamera3/UvcStream.cpp
+ delete mode 100644 mx6/libcamera3/UvcStream.h
+ create mode 100644 mx6/libcamera3/VideoStream.cpp
+ create mode 100644 mx6/libcamera3/VideoStream.h
+
+diff --git a/mx6/libcamera3/Android.mk b/mx6/libcamera3/Android.mk
+index 3f5028a..1cd1634 100644
+--- a/mx6/libcamera3/Android.mk
++++ b/mx6/libcamera3/Android.mk
+@@ -41,16 +41,18 @@ LOCAL_SRC_FILES := \
+     VendorTags.cpp \
+     CameraUtils.cpp \
+     MessageQueue.cpp \
+-    DeviceStream.cpp \
++    VideoStream.cpp \
+     JpegBuilder.cpp \
+     Ov5640Csi.cpp \
+     Ov5640Mipi.cpp \
+     Ov5642Csi.cpp \
+     YuvToJpegEncoder.cpp \
+     NV12_resize.c \
+-    OvStream.cpp \
+-    UvcStream.cpp \
+-    UvcDevice.cpp
++    USPStream.cpp \
++    DMAStream.cpp \
++    UvcDevice.cpp \
++    TVINDevice.cpp \
++    MMAPStream.cpp
+ 
+ LOCAL_SHARED_LIBRARIES := \
+     libcamera_metadata \
+diff --git a/mx6/libcamera3/Camera.cpp b/mx6/libcamera3/Camera.cpp
+index de25a4d..08d9a9e 100644
+--- a/mx6/libcamera3/Camera.cpp
++++ b/mx6/libcamera3/Camera.cpp
+@@ -36,8 +36,8 @@
+ #include "Ov5640Csi.h"
+ #include "Ov5642Csi.h"
+ #include "UvcDevice.h"
+-#include "OvStream.h"
+-#include "UvcStream.h"
++#include "TVINDevice.h"
++#include "VideoStream.h"
+ 
+ #define CAMERA_SYNC_TIMEOUT 5000 // in msecs
+ 
+@@ -58,38 +58,33 @@ Camera* Camera::createCamera(int32_t id, char* name, int32_t facing,
+                              int32_t orientation, char* path)
+ {
+     Camera* device = NULL;
+-    sp<DeviceStream> devStream = NULL;
+ 
+     android::Mutex::Autolock al(sStaticInfoLock);
+ 
+     if (strstr(name, OV5640MIPI_SENSOR_NAME)) {
+         ALOGI("create id:%d ov5640 mipi device", id);
+         device = new Ov5640Mipi(id, facing, orientation, path);
+-        devStream = new OvStream(device);
+     }
+     else if (strstr(name, OV5642CSI_SENSOR_NAME)) {
+         ALOGI("create id:%d ov5642 csi device", id);
+         device = new Ov5642Csi(id, facing, orientation, path);
+-        devStream = new OvStream(device);
+     }
+     else if (strstr(name, OV5640CSI_SENSOR_NAME)) {
+         ALOGI("create id:%d ov5640 csi device", id);
+         device = new Ov5640Csi(id, facing, orientation, path);
+-        devStream = new OvStream(device);
+     }
+     else if (strstr(name, UVC_SENSOR_NAME)) {
+         ALOGI("create id:%d usb camera device", id);
+         device = new UvcDevice(id, facing, orientation, path);
+-        devStream = new UvcStream(device, path);
++    }
++    else if (strstr(name, ADV7180_TVIN_NAME)) {
++        ALOGI("create id:%d adv7180 tvin device", id);
++        device = new TVINDevice(id, facing, orientation, path);
+     }
+     else {
+         ALOGE("doesn't support camera id:%d %s", id, name);
+     }
+ 
+-    if (device != NULL) {
+-        device->setDeviceStream(devStream);
+-    }
+-
+     return device;
+ }
+ 
+@@ -125,9 +120,10 @@ Camera::~Camera()
+         free_camera_metadata(mStaticInfo);
+     }
+ 
+-    if (mDeviceStream != NULL) {
+-        mDeviceStream.clear();
+-        mDeviceStream = NULL;
++    if (mVideoStream != NULL) {
++        mVideoStream->destroyStream();
++        mVideoStream.clear();
++        mVideoStream = NULL;
+     }
+ }
+ 
+@@ -145,13 +141,6 @@ void Camera::setPicturePixelFormat()
+                             mAvailableFormats, MAX_SENSOR_FORMAT);
+ }
+ 
+-int32_t Camera::setDeviceStream(sp<DeviceStream>& stream)
+-{
+-    android::Mutex::Autolock al(mDeviceLock);
+-    mDeviceStream = stream;
+-    return 0;
+-}
+-
+ int32_t Camera::openDev(const hw_module_t *module, hw_device_t **device)
+ {
+     ALOGI("%s:%d: Opening camera device", __func__, mId);
+@@ -163,7 +152,7 @@ int32_t Camera::openDev(const hw_module_t *module, hw_device_t **device)
+     }
+ 
+     // open camera dev nodes, etc
+-    int32_t ret = mDeviceStream->openDev(mDevPath);
++    int32_t ret = mVideoStream->openDev(mDevPath);
+     if (ret != 0) {
+         ALOGE("can not open camera devpath:%s", mDevPath);
+         return BAD_VALUE;
+@@ -185,7 +174,7 @@ int32_t Camera::getInfo(struct camera_info *info)
+     if (mStaticInfo == NULL) {
+         int32_t ret = initSensorStaticData();
+         if (ret != 0) {
+-            ALOGE("%s initSensorStaticData failed");
++            ALOGE("%s initSensorStaticData failed", __func__);
+             return ret;
+         }
+         setPreviewPixelFormat();
+@@ -207,7 +196,7 @@ int32_t Camera::closeDev()
+     }
+ 
+     // close camera dev nodes, etc
+-    mDeviceStream->closeDev();
++    mVideoStream->closeDev();
+ 
+     mBusy = false;
+     return 0;
+@@ -428,7 +417,7 @@ int32_t Camera::processCaptureRequest(camera3_capture_request_t *request)
+     // set preview/still capture stream.
+     sp<Stream> preview = NULL, stillcap = NULL;
+     sp<Metadata> meta = NULL;
+-    sp<DeviceStream> devStream = NULL;
++    sp<VideoStream> devStream = NULL;
+     camera3_callback_ops* callback = NULL;
+     {
+         android::Mutex::Autolock al(mDeviceLock);
+@@ -443,12 +432,12 @@ int32_t Camera::processCaptureRequest(camera3_capture_request_t *request)
+         }
+ 
+         meta = mSettings;
+-        devStream = mDeviceStream;
++        devStream = mVideoStream;
+         callback = (camera3_callback_ops*)mCallbackOps;
+     }
+     sp<CaptureRequest> capture = new CaptureRequest();
+ 
+-    // configure DeviceStream according to request type.
++    // configure VideoStream according to request type.
+     if (request->settings != NULL) {
+         if (meta->getRequestType() == TYPE_STILLCAP) {
+             if (stillcap == NULL) {
+diff --git a/mx6/libcamera3/Camera.h b/mx6/libcamera3/Camera.h
+index fae4876..08935c5 100644
+--- a/mx6/libcamera3/Camera.h
++++ b/mx6/libcamera3/Camera.h
+@@ -24,7 +24,7 @@
+ #include "Stream.h"
+ #include "CameraUtils.h"
+ 
+-class DeviceStream;
++class VideoStream;
+ // Camera represents a physical camera on a device.
+ // This is constructed when the HAL module is loaded, one per physical camera.
+ // It is opened by the framework, and must be closed before it can be opened
+@@ -41,7 +41,6 @@ public:
+ 
+     static Camera* createCamera(int32_t id, char* name, int32_t facing,
+                                 int32_t orientation, char* path);
+-    int32_t setDeviceStream(sp<DeviceStream>& stream);
+     // do advanced character set.
+     int32_t processSettings(sp<Metadata> settings, uint32_t frame);
+     // Common Camera Device Operations (see <hardware/camera_common.h>)
+@@ -121,7 +120,8 @@ private:
+     // Most recent request settings seen, memoized to be reused
+     sp<Metadata> mSettings;
+ 
+-    sp<DeviceStream> mDeviceStream;
++protected:
++    sp<VideoStream> mVideoStream;
+     autoState m3aState;
+ };
+ 
+diff --git a/mx6/libcamera3/CameraHAL.cpp b/mx6/libcamera3/CameraHAL.cpp
+index f5ad886..b97c211 100644
+--- a/mx6/libcamera3/CameraHAL.cpp
++++ b/mx6/libcamera3/CameraHAL.cpp
+@@ -352,18 +352,23 @@ int32_t CameraHAL::matchDevPath(const char* pName, char* pDevPath, uint32_t path
+         }
+ 
+         sprintf(devNode, "/dev/%s", dirEntry->d_name);
++        ALOGI("%s dev path:%s", __func__, devNode);
+         if ((fd = open(devNode, O_RDWR, O_NONBLOCK)) < 0) {
++            ALOGW("%s open dev path:%s failed:%s", __func__, devNode,
++                         strerror(errno));
+             continue;
+         }
+ 
+         ret = ioctl(fd, VIDIOC_QUERYCAP, &vidCap);
+         if (ret < 0) {
++            ALOGW("%s QUERYCAP dev path:%s failed", __func__, devNode);
+             close(fd);
+             fd = -1;
+             continue;
+         }
+ 
+         if (!(vidCap.capabilities & V4L2_CAP_VIDEO_CAPTURE)) {
++            ALOGW("%s dev path:%s is not capture", __func__, devNode);
+             close(fd);
+             fd = -1;
+             ret = -1;
+@@ -382,6 +387,7 @@ int32_t CameraHAL::matchDevPath(const char* pName, char* pDevPath, uint32_t path
+ 
+         ret = ioctl(fd, VIDIOC_DBG_G_CHIP_IDENT, &vidChip);
+         if (ret < 0) {
++            ALOGW("%s CHIP_IDENT dev path:%s failed", __func__, devNode);
+             close(fd);
+             fd = -1;
+             continue;
+diff --git a/mx6/libcamera3/CameraUtils.h b/mx6/libcamera3/CameraUtils.h
+index 8168178..8bf1003 100644
+--- a/mx6/libcamera3/CameraUtils.h
++++ b/mx6/libcamera3/CameraUtils.h
+@@ -89,6 +89,9 @@
+ #define NUM_CAPTURE_BUFFER      1
+ 
+ #define ARRAY_SIZE(a) (sizeof(a) / sizeof(a[0]))
++#define  ALIGN_PIXEL_4(x)  ((x+ 3) & ~3)
++#define  ALIGN_PIXEL_16(x)  ((x+ 15) & ~15)
++#define  ALIGN_PIXEL_32(x)  ((x+ 31) & ~31)
+ 
+ using namespace android;
+ 
+diff --git a/mx6/libcamera3/DMAStream.cpp b/mx6/libcamera3/DMAStream.cpp
+new file mode 100644
+index 0000000..334eb96
+--- /dev/null
++++ b/mx6/libcamera3/DMAStream.cpp
+@@ -0,0 +1,171 @@
++/*
++ * Copyright (C) 2015 Freescale Semiconductor, Inc.
++ *
++ * Licensed under the Apache License, Version 2.0 (the "License");
++ * you may not use this file except in compliance with the License.
++ * You may obtain a copy of the License at
++ *
++ *      http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++
++#include "DMAStream.h"
++
++DMAStream::DMAStream(Camera* device)
++    : USPStream(device), mStreamSize(0)
++{
++}
++
++DMAStream::~DMAStream()
++{
++}
++
++// configure device.
++int32_t DMAStream::onDeviceConfigureLocked()
++{
++    ALOGI("%s", __func__);
++
++    return USPStream::onDeviceConfigureLocked();
++}
++
++int32_t DMAStream::onDeviceStartLocked()
++{
++    ALOGV("%s", __func__);
++
++    if (mDev <= 0) {
++        ALOGE("----%s invalid fd-----", __func__);
++        return BAD_VALUE;
++    }
++
++    //-------register buffers----------
++    struct v4l2_buffer buf;
++    struct v4l2_requestbuffers req;
++
++    memset(&req, 0, sizeof (req));
++    req.count = mNumBuffers;
++    req.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
++    req.memory = V4L2_MEMORY_DMABUF;
++    if (ioctl(mDev, VIDIOC_REQBUFS, &req) < 0) {
++        ALOGE("%s: VIDIOC_REQBUFS failed", __func__);
++        return BAD_VALUE;
++    }
++
++    int32_t ret = 0;
++    //----------qbuf----------
++    struct v4l2_buffer cfilledbuffer;
++    for (uint32_t i = 0; i < mNumBuffers; i++) {
++        memset(&cfilledbuffer, 0, sizeof (struct v4l2_buffer));
++        cfilledbuffer.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
++        cfilledbuffer.memory = V4L2_MEMORY_DMABUF;
++        cfilledbuffer.m.fd = mBuffers[i]->mFd;
++        cfilledbuffer.index    = i;
++        cfilledbuffer.length = mStreamSize;
++        ALOGI("buf[%d] length:%d", i, cfilledbuffer.length);
++        ret = ioctl(mDev, VIDIOC_QBUF, &cfilledbuffer);
++        if (ret < 0) {
++            ALOGE("%s VIDIOC_QBUF Failed: %s", __func__, strerror(errno));
++            return BAD_VALUE;
++        }
++    }
++
++    //-------stream on-------
++    enum v4l2_buf_type bufType;
++    bufType = V4L2_BUF_TYPE_VIDEO_CAPTURE;
++    ret = ioctl(mDev, VIDIOC_STREAMON, &bufType);
++    if (ret < 0) {
++        ALOGE("%s VIDIOC_STREAMON failed: %s", __func__, strerror(errno));
++        return ret;
++    }
++
++    return 0;
++}
++
++int32_t DMAStream::onDeviceStopLocked()
++{
++    ALOGV("%s", __func__);
++    int32_t ret = 0;
++
++    if (mDev <= 0) {
++        ALOGE("%s invalid fd handle", __func__);
++        return BAD_VALUE;
++    }
++
++    enum v4l2_buf_type bufType;
++    bufType = V4L2_BUF_TYPE_VIDEO_CAPTURE;
++    ret = ioctl(mDev, VIDIOC_STREAMOFF, &bufType);
++    if (ret < 0) {
++        ALOGE("%s VIDIOC_STREAMOFF failed:%s", __func__, strerror(errno));
++        return ret;
++    }
++
++    return 0;
++}
++
++int32_t DMAStream::onFrameAcquireLocked()
++{
++    ALOGV("%s", __func__);
++    int32_t ret = 0;
++    struct v4l2_buffer cfilledbuffer;
++    memset(&cfilledbuffer, 0, sizeof (cfilledbuffer));
++    cfilledbuffer.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
++    cfilledbuffer.memory = V4L2_MEMORY_DMABUF;
++
++    ret = ioctl(mDev, VIDIOC_DQBUF, &cfilledbuffer);
++    if (ret < 0) {
++        ALOGE("%s: VIDIOC_DQBUF Failed: %s", __func__, strerror(errno));
++        return -1;
++    }
++
++    int32_t index = cfilledbuffer.index;
++    ALOGV("acquire index:%d", cfilledbuffer.index);
++    return cfilledbuffer.index;
++}
++
++int32_t DMAStream::onFrameReturnLocked(int32_t index, StreamBuffer& buf)
++{
++    ALOGV("%s: index:%d", __func__, index);
++    int32_t ret = 0;
++    struct v4l2_buffer cfilledbuffer;
++    memset(&cfilledbuffer, 0, sizeof (struct v4l2_buffer));
++    cfilledbuffer.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
++    cfilledbuffer.memory = V4L2_MEMORY_DMABUF;
++    cfilledbuffer.m.fd = buf.mFd;
++    cfilledbuffer.index = index;
++    cfilledbuffer.length = mStreamSize;
++
++    ret = ioctl(mDev, VIDIOC_QBUF, &cfilledbuffer);
++    if (ret < 0) {
++        ALOGE("%s: VIDIOC_QBUF Failed: %s", __func__, strerror(errno));
++        return BAD_VALUE;
++    }
++
++    return 0;
++}
++
++int32_t DMAStream::getDeviceBufferSize()
++{
++    return getFormatSize();
++}
++
++int32_t DMAStream::allocateBuffersLocked()
++{
++    ALOGI("%s", __func__);
++
++    int32_t ret = USPStream::allocateBuffersLocked();
++    mStreamSize = getDeviceBufferSize();
++
++    return ret;
++}
++
++int32_t DMAStream::freeBuffersLocked()
++{
++    ALOGI("%s", __func__);
++
++    return USPStream::freeBuffersLocked();
++}
++
+diff --git a/mx6/libcamera3/DMAStream.h b/mx6/libcamera3/DMAStream.h
+new file mode 100644
+index 0000000..d10aa3c
+--- /dev/null
++++ b/mx6/libcamera3/DMAStream.h
+@@ -0,0 +1,54 @@
++/*
++ * Copyright (C) 2015 Freescale Semiconductor, Inc.
++ *
++ * Licensed under the Apache License, Version 2.0 (the "License");
++ * you may not use this file except in compliance with the License.
++ * You may obtain a copy of the License at
++ *
++ *      http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++
++#ifndef _DMA_STREAM_H
++#define _DMA_STREAM_H
++
++#include "USPStream.h"
++
++// stream uses DMABUF buffers which allcated in user space.
++// that exports DMABUF handle.
++class DMAStream : public USPStream
++{
++public:
++    DMAStream(Camera* device);
++    virtual ~DMAStream();
++
++    // configure device.
++    virtual int32_t onDeviceConfigureLocked();
++    // start device.
++    virtual int32_t onDeviceStartLocked();
++    // stop device.
++    virtual int32_t onDeviceStopLocked();
++
++    // get buffer from V4L2.
++    virtual int32_t onFrameAcquireLocked();
++    // put buffer back to V4L2.
++    virtual int32_t onFrameReturnLocked(int32_t index, StreamBuffer& buf);
++
++    // allocate buffers.
++    virtual int32_t allocateBuffersLocked();
++    // free buffers.
++    virtual int32_t freeBuffersLocked();
++
++    // get device buffer required size.
++    virtual int32_t getDeviceBufferSize();
++
++private:
++    int32_t mStreamSize;
++};
++
++#endif
+diff --git a/mx6/libcamera3/DeviceStream.cpp b/mx6/libcamera3/DeviceStream.cpp
+deleted file mode 100644
+index 2f33ecc..0000000
+--- a/mx6/libcamera3/DeviceStream.cpp
++++ /dev/null
+@@ -1,419 +0,0 @@
+-/*
+- * Copyright (C) 2015 Freescale Semiconductor, Inc.
+- *
+- * Licensed under the Apache License, Version 2.0 (the "License");
+- * you may not use this file except in compliance with the License.
+- * You may obtain a copy of the License at
+- *
+- *      http://www.apache.org/licenses/LICENSE-2.0
+- *
+- * Unless required by applicable law or agreed to in writing, software
+- * distributed under the License is distributed on an "AS IS" BASIS,
+- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+- * See the License for the specific language governing permissions and
+- * limitations under the License.
+- */
+-
+-#include "DeviceStream.h"
+-
+-using namespace android;
+-
+-DeviceStream::DeviceStream(Camera* device)
+-    : Stream(device), mState(STATE_INVALID),
+-      mChanged(false), mDev(-1),
+-      mAllocatedBuffers(0)
+-{
+-    g2dHandle = NULL;
+-    mMessageThread = new MessageThread(this);
+-}
+-
+-DeviceStream::~DeviceStream()
+-{
+-    ALOGI("%s", __func__);
+-    mMessageQueue.postMessage(new CMessage(MSG_EXIT, 1), 1);
+-    mMessageThread->requestExit();
+-    ALOGI("%s finished", __func__);
+-}
+-
+-int32_t DeviceStream::openDev(const char* name)
+-{
+-    ALOGI("%s", __func__);
+-    if (name == NULL) {
+-        ALOGE("invalid dev name");
+-        return BAD_VALUE;
+-    }
+-
+-    Mutex::Autolock lock(mLock);
+-
+-    mDev = open(name, O_RDWR);
+-    if (mDev <= 0) {
+-        ALOGE("%s can not open camera devpath:%s", __func__, name);
+-        return BAD_VALUE;
+-    }
+-
+-    return 0;
+-}
+-
+-int32_t DeviceStream::configure(sp<Stream> stream)
+-{
+-    ALOGV("%s", __func__);
+-    if ((stream->width() == 0) || (stream->height() == 0)
+-         || (stream->format() == 0)) {
+-        ALOGE("%s: invalid stream parameters", __func__);
+-        return BAD_VALUE;
+-    }
+-
+-    int32_t sensorFormat = mCamera->getSensorFormat(stream->format());
+-
+-    Mutex::Autolock lock(mLock);
+-    // when width&height&format are same, keep it to reduce start/stop time.
+-    if ((mWidth == stream->width()) && (mHeight == stream->height())
+-         && (mFormat == sensorFormat)) {
+-        return 0;
+-    }
+-
+-    mWidth  = stream->width();
+-    mHeight = stream->height();
+-    mFormat = sensorFormat;
+-    mNumBuffers = stream->bufferNum();
+-    mChanged = true;
+-
+-    ALOGI("%s: w:%d, h:%d, sensor format:0x%x, stream format:0x%x, num:%d",
+-           __func__, mWidth, mHeight, mFormat, stream->format(), mNumBuffers);
+-    mMessageQueue.clearMessages();
+-    mMessageQueue.postMessage(new CMessage(MSG_CONFIG, 0), 0);
+-
+-    return 0;
+-}
+-
+-int32_t DeviceStream::handleConfigureLocked()
+-{
+-    int32_t ret   = 0;
+-    ALOGV("%s", __func__);
+-
+-    // add start state to go into config state.
+-    // so, only call config to do stop automically.
+-    if (mState == STATE_START) {
+-        ret = handleStopLocked(false);
+-        if (ret < 0) {
+-            ALOGE("please stop firstly before configure");
+-            return ret;
+-        }
+-    }
+-
+-    // only invalid&stop&config state can go into config state.
+-    if ((mState != STATE_INVALID) && (mState != STATE_STOP) &&
+-        (mState != STATE_CONFIG)) {
+-        ALOGE("invalid state:0x%x go into config state", mState);
+-        return 0;
+-    }
+-
+-    ret = onDeviceConfigureLocked();
+-    if (ret != 0) {
+-        ALOGE("%s onDeviceConfigure failed", __func__);
+-        return ret;
+-    }
+-
+-    mState = STATE_CONFIG;
+-
+-    return 0;
+-}
+-
+-int32_t DeviceStream::handleStartLocked(bool force)
+-{
+-    int32_t ret = 0;
+-    ALOGV("%s", __func__);
+-
+-    // only config&stop state can go into start state.
+-    if ((mState != STATE_CONFIG) && (mState != STATE_STOP)) {
+-        ALOGE("invalid state:0x%x go into start state", mState);
+-        return 0;
+-    }
+-
+-    if (mChanged || force) {
+-        mChanged = false;
+-        if (allocateBuffersLocked() != 0) {
+-            ALOGE("%s allocateBuffersLocked failed", __func__);
+-            return -1;
+-        }
+-    }
+-
+-    ret = onDeviceStartLocked();
+-    if (ret != 0) {
+-        ALOGE("%s onDeviceStart failed", __func__);
+-        return ret;
+-    }
+-
+-    mState = STATE_START;
+-
+-    return 0;
+-}
+-
+-int32_t DeviceStream::closeDev()
+-{
+-    ALOGI("%s", __func__);
+-    Mutex::Autolock lock(mLock);
+-
+-    if (mMessageThread->isRunning()) {
+-        mMessageQueue.postMessage(new CMessage(MSG_CLOSE, 0), 1);
+-    }
+-    else {
+-        ALOGI("%s thread is exit", __func__);
+-        if (mDev > 0) {
+-            close(mDev);
+-            mDev = -1;
+-        }
+-    }
+-
+-    return 0;
+-}
+-
+-int32_t DeviceStream::handleStopLocked(bool force)
+-{
+-    int32_t ret = 0;
+-    ALOGV("%s", __func__);
+-
+-    // only start can go into stop state.
+-    if (mState != STATE_START) {
+-        ALOGI("state:0x%x can't go into stop state", mState);
+-        return 0;
+-    }
+-
+-    if (force || mChanged) {
+-        ret = freeBuffersLocked();
+-        if (ret != 0) {
+-            ALOGE("%s freeBuffersLocked failed", __func__);
+-            return -1;
+-        }
+-    }
+-
+-    ret = onDeviceStopLocked();
+-    if (ret < 0) {
+-        ALOGE("StopStreaming: Unable to stop capture: %s", strerror(errno));
+-    }
+-
+-    mState = STATE_STOP;
+-    if (force) {
+-        // clear request messages.
+-        mMessageQueue.clearMessages();
+-        // clear capture request.
+-        mRequests.clear();
+-        // to do configure agian.
+-        mWidth = 0;
+-    }
+-
+-    return ret;
+-}
+-
+-int32_t DeviceStream::requestCapture(sp<CaptureRequest> req)
+-{
+-    Mutex::Autolock lock(mLock);
+-
+-    mRequests.push_back(req);
+-
+-    mMessageQueue.postMessage(new CMessage(MSG_FRAME, 0));
+-
+-    return 0;
+-}
+-
+-StreamBuffer* DeviceStream::acquireFrameLocked()
+-{
+-    int32_t index = onFrameAcquireLocked();
+-    if (index >= MAX_STREAM_BUFFERS || index < 0) {
+-        ALOGE("%s: invalid index %d", __func__, index);
+-        return NULL;
+-    }
+-
+-    return mBuffers[index];
+-}
+-
+-int32_t DeviceStream::getBufferIndexLocked(StreamBuffer& buf)
+-{
+-    for (uint32_t i=0; i<mNumBuffers; i++) {
+-        if (mBuffers[i]->mPhyAddr == buf.mPhyAddr) {
+-            return i;
+-        }
+-    }
+-
+-    return -1;
+-}
+-
+-int32_t DeviceStream::returnFrameLocked(StreamBuffer& buf)
+-{
+-    ALOGV("%s", __func__);
+-    int32_t i = getBufferIndexLocked(buf);
+-    if (i < 0 || i >= MAX_STREAM_BUFFERS) {
+-        return BAD_VALUE;
+-    }
+-
+-    return onFrameReturnLocked(i, buf);
+-}
+-
+-int32_t DeviceStream::handleCaptureFrame()
+-{
+-    int32_t ret = 0;
+-    ALOGV("%s", __func__);
+-
+-    List< sp<CaptureRequest> >::iterator cur;
+-    sp<CaptureRequest> req = NULL;
+-    StreamBuffer *buf = NULL;
+-    {
+-        Mutex::Autolock lock(mLock);
+-        if (mRequests.empty()) {
+-            return 0;
+-        }
+-
+-        cur = mRequests.begin();
+-        req = *cur;
+-    }
+-    //advanced character.
+-    ret = processCaptureSettings(req);
+-    if (ret != 0) {
+-        Mutex::Autolock lock(mLock);
+-        mRequests.erase(cur);
+-        ALOGE("processSettings failed");
+-        return 0;
+-    }
+-
+-    {
+-        Mutex::Autolock lock(mLock);
+-        buf = acquireFrameLocked();
+-    }
+-
+-    if (buf == NULL) {
+-        ALOGE("acquireFrameLocked failed");
+-        req->onCaptureError();
+-        Mutex::Autolock lock(mLock);
+-        mRequests.erase(cur);
+-        return 0;
+-    }
+-
+-    ret = processCaptureRequest(*buf, req);
+-    if (ret != 0) {
+-        Mutex::Autolock lock(mLock);
+-        returnFrameLocked(*buf);
+-        ALOGE("processRequest failed");
+-        return 0;
+-    }
+-
+-    Mutex::Autolock lock(mLock);
+-    mRequests.erase(cur);
+-    returnFrameLocked(*buf);
+-
+-    return 0;
+-}
+-
+-int32_t DeviceStream::processCaptureRequest(StreamBuffer& src,
+-                         sp<CaptureRequest> req)
+-{
+-    int32_t ret = 0;
+-    ALOGV("%s", __func__);
+-    for (uint32_t i=0; i<req->mOutBuffersNumber; i++) {
+-        StreamBuffer* out = req->mOutBuffers[i];
+-        sp<Stream>& stream = out->mStream;
+-        // stream to process buffer.
+-        stream->setCurrentBuffer(out);
+-        stream->processCaptureBuffer(src, req->mSettings);
+-        stream->setCurrentBuffer(NULL);
+-        ret = req->onCaptureDone(out);
+-        if (ret != 0) {
+-            return ret;
+-        }
+-    }
+-
+-    return ret;
+-}
+-
+-// process advanced character.
+-int32_t DeviceStream::processCaptureSettings(sp<CaptureRequest> req)
+-{
+-    ALOGV("%s", __func__);
+-    sp<Metadata> meta = req->mSettings;
+-    if (meta == NULL || meta->get() == NULL) {
+-        ALOGI("invalid meta data");
+-        return 0;
+-    }
+-    // device to do advanced character set.
+-    int32_t ret = mCamera->processSettings(meta, req->mFrameNumber);
+-    if (ret != 0) {
+-        ALOGI("mCamera->processSettings failed");
+-        return ret;
+-    }
+-
+-    ret = req->onSettingsDone(meta);
+-    if (ret != 0) {
+-        ALOGI("onSettingsDone failed");
+-        return ret;
+-    }
+-
+-    if (req->mOutBuffersNumber == 0) {
+-        ALOGI("num_output_buffers less than 0");
+-        ret = 1;
+-    }
+-
+-    return ret;
+-}
+-
+-int32_t DeviceStream::handleMessage()
+-{
+-    int32_t ret = 0;
+-
+-    sp<CMessage> msg = mMessageQueue.waitMessage();
+-    if (msg == 0) {
+-        ALOGE("get invalid message");
+-        return -1;
+-    }
+-
+-    switch (msg->what) {
+-        case MSG_CONFIG: {
+-            Mutex::Autolock lock(mLock);
+-            ret = handleConfigureLocked();
+-        }
+-        break;
+-
+-        case MSG_CLOSE: {
+-            Mutex::Autolock lock(mLock);
+-            ret = handleStopLocked(true);
+-            if (mDev > 0) {
+-                close(mDev);
+-                mDev = -1;
+-            }
+-        }
+-        break;
+-
+-        case MSG_FRAME: {
+-            Mutex::Autolock lock(mLock);
+-            // to start device automically.
+-            if (mState != STATE_START) {
+-                ALOGV("state:0x%x when handle frame message", mState);
+-                ret = handleStartLocked(false);
+-                if (ret != 0) {
+-                    ALOGE("%s handleStartLocked failed", __func__);
+-                    return ret;
+-                }
+-            }
+-
+-        }
+-        ret = handleCaptureFrame();
+-        break;
+-
+-        case MSG_EXIT: {
+-            Mutex::Autolock lock(mLock);
+-            ALOGI("capture thread exit...");
+-            if (mState == STATE_START) {
+-                handleStopLocked(true);
+-            }
+-
+-            ret = -1;
+-        }
+-        break;
+-
+-        default: {
+-            ALOGE("%s invalid message what:%d", __func__, msg->what);
+-        }
+-        break;
+-    }
+-
+-    return ret;
+-}
+-
+diff --git a/mx6/libcamera3/DeviceStream.h b/mx6/libcamera3/DeviceStream.h
+deleted file mode 100644
+index 21f6314..0000000
+--- a/mx6/libcamera3/DeviceStream.h
++++ /dev/null
+@@ -1,142 +0,0 @@
+-/*
+- * Copyright (C) 2015 Freescale Semiconductor, Inc.
+- *
+- * Licensed under the Apache License, Version 2.0 (the "License");
+- * you may not use this file except in compliance with the License.
+- * You may obtain a copy of the License at
+- *
+- *      http://www.apache.org/licenses/LICENSE-2.0
+- *
+- * Unless required by applicable law or agreed to in writing, software
+- * distributed under the License is distributed on an "AS IS" BASIS,
+- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+- * See the License for the specific language governing permissions and
+- * limitations under the License.
+- */
+-
+-#ifndef _DEVICE_STREAM_H
+-#define _DEVICE_STREAM_H
+-
+-#include <utils/threads.h>
+-#include "MessageQueue.h"
+-#include "CameraUtils.h"
+-#include "Stream.h"
+-#include "Camera.h"
+-
+-using namespace android;
+-
+-class Camera;
+-
+-class DeviceStream : public Stream
+-{
+-public:
+-    DeviceStream(Camera* device);
+-    virtual ~DeviceStream();
+-
+-    // configure device stream.
+-    int32_t configure(sp<Stream> stream);
+-    //send capture request for stream.
+-    int32_t requestCapture(sp<CaptureRequest> req);
+-
+-    // open/close device stream.
+-    int32_t openDev(const char* name);
+-    int32_t closeDev();
+-
+-    virtual void* getG2dHandle() {return g2dHandle;}
+-
+-private:
+-    // message type.
+-    static const int32_t MSG_CONFIG = 0x100;
+-    static const int32_t MSG_FRAME = 0x103;
+-    static const int32_t MSG_CLOSE = 0x104;
+-    static const int32_t MSG_EXIT  = 0x105;
+-
+-    // device stream state.
+-    static const int32_t STATE_INVALID = 0x201;
+-    static const int32_t STATE_CONFIG = 0x202;
+-    static const int32_t STATE_START = 0x203;
+-    static const int32_t STATE_STOP  = 0x204;
+-
+-protected:
+-    // handle configure message internally.
+-    int32_t handleConfigureLocked();
+-    virtual int32_t onDeviceConfigureLocked() = 0;
+-    // handle start message internally.
+-    int32_t handleStartLocked(bool force);
+-    virtual int32_t onDeviceStartLocked() = 0;
+-    // handle stop message internally.
+-    int32_t handleStopLocked(bool force);
+-    virtual int32_t onDeviceStopLocked() = 0;
+-    // handle frame message internally.
+-    int32_t handleCaptureFrame();
+-
+-    // process capture request with lock.
+-    int32_t processCaptureRequest(StreamBuffer& src, sp<CaptureRequest> req);
+-    // process capture advanced settings with lock.
+-    int32_t processCaptureSettings(sp<CaptureRequest> req);
+-    // get buffer from V4L2.
+-    StreamBuffer* acquireFrameLocked();
+-    virtual int32_t onFrameAcquireLocked() = 0;
+-    // put buffer back to V4L2.
+-    int32_t returnFrameLocked(StreamBuffer& buf);
+-    virtual int32_t onFrameReturnLocked(int32_t index, StreamBuffer& buf) = 0;
+-    // get buffer index.
+-    int32_t getBufferIndexLocked(StreamBuffer& buf);
+-
+-    // allocate buffers.
+-    virtual int32_t allocateBuffersLocked() = 0;
+-    // free buffers.
+-    virtual int32_t freeBuffersLocked() = 0;
+-
+-    int32_t handleMessage();
+-
+-private:
+-    class MessageThread : public Thread
+-    {
+-    public:
+-        MessageThread(DeviceStream *device)
+-            : Thread(false), mStream(device)
+-            {}
+-
+-        virtual void onFirstRef() {
+-            run("MessageThread", PRIORITY_URGENT_DISPLAY);
+-        }
+-
+-        virtual status_t readyToRun() {
+-            g2d_open(&mStream->g2dHandle);
+-            return 0;
+-        }
+-
+-        virtual bool threadLoop() {
+-            int ret = mStream->handleMessage();
+-            if (ret != 0) {
+-                ALOGI("%s exit...", __func__);
+-                g2d_close(mStream->g2dHandle);
+-                mStream.clear();
+-                mStream = NULL;
+-                return false;
+-            }
+-
+-            // loop until we need to quit
+-            return true;
+-        }
+-
+-    private:
+-        sp<DeviceStream> mStream;
+-    };
+-
+-protected:
+-    CMessageQueue mMessageQueue;
+-    sp<MessageThread> mMessageThread;
+-    int32_t mState;
+-
+-    List< sp<CaptureRequest> > mRequests;
+-    int32_t mChanged;
+-
+-    // camera dev node.
+-    int32_t mDev;
+-    void *g2dHandle;
+-    uint32_t mAllocatedBuffers;
+-};
+-
+-#endif
+diff --git a/mx6/libcamera3/MMAPStream.cpp b/mx6/libcamera3/MMAPStream.cpp
+new file mode 100644
+index 0000000..33674db
+--- /dev/null
++++ b/mx6/libcamera3/MMAPStream.cpp
+@@ -0,0 +1,251 @@
++/*
++ * Copyright (C) 2015 Freescale Semiconductor, Inc.
++ *
++ * Licensed under the Apache License, Version 2.0 (the "License");
++ * you may not use this file except in compliance with the License.
++ * You may obtain a copy of the License at
++ *
++ *      http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++
++#include "MMAPStream.h"
++
++MMAPStream::MMAPStream(Camera* device)
++    : VideoStream(device)
++{
++}
++
++MMAPStream::~MMAPStream()
++{
++}
++
++// configure device.
++int32_t MMAPStream::onDeviceConfigureLocked()
++{
++    ALOGI("%s", __func__);
++    int32_t ret = 0;
++    if (mDev <= 0) {
++        ALOGE("%s invalid fd handle", __func__);
++        return BAD_VALUE;
++    }
++
++    int32_t fps = 30;
++    int32_t vformat;
++    vformat = convertPixelFormatToV4L2Format(mFormat);
++
++    if ((mWidth > 1920) || (mHeight > 1080)) {
++        fps = 15;
++    }
++
++    ALOGI("Width * Height %d x %d format %c%c%c%c, fps: %d",
++          mWidth, mHeight, vformat&0xFF, (vformat>>8)&0xFF,
++          (vformat>>16)&0xFF, (vformat>>24)&0xFF, fps);
++
++    struct v4l2_streamparm param;
++    memset(&param, 0, sizeof(param));
++    param.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
++    param.parm.capture.timeperframe.numerator   = 1;
++    param.parm.capture.timeperframe.denominator = fps;
++    param.parm.capture.capturemode = mCamera->getCaptureMode(mWidth, mHeight);
++    ret = ioctl(mDev, VIDIOC_S_PARM, &param);
++    if (ret < 0) {
++        ALOGE("%s: VIDIOC_S_PARM Failed: %s", __func__, strerror(errno));
++        return ret;
++    }
++
++    struct v4l2_format fmt;
++    memset(&fmt, 0, sizeof(fmt));
++    fmt.type                 = V4L2_BUF_TYPE_VIDEO_CAPTURE;
++    fmt.fmt.pix.width        = mWidth & 0xFFFFFFF8;
++    fmt.fmt.pix.height       = mHeight & 0xFFFFFFF8;
++    fmt.fmt.pix.pixelformat  = vformat;
++    fmt.fmt.pix.priv         = 0;
++    fmt.fmt.pix.sizeimage    = 0;
++    fmt.fmt.pix.bytesperline = 0;
++
++    // Special stride alignment for YU12
++    if (vformat == v4l2_fourcc('Y', 'U', '1', '2')){
++        // Goolge define the the stride and c_stride for YUV420 format
++        // y_size = stride * height
++        // c_stride = ALIGN(stride/2, 16)
++        // c_size = c_stride * height/2
++        // size = y_size + c_size * 2
++        // cr_offset = y_size
++        // cb_offset = y_size + c_size
++        // int stride = (width+15)/16*16;
++        // int c_stride = (stride/2+16)/16*16;
++        // y_size = stride * height
++        // c_stride = ALIGN(stride/2, 16)
++        // c_size = c_stride * height/2
++        // size = y_size + c_size * 2
++        // cr_offset = y_size
++        // cb_offset = y_size + c_size
++
++        // GPU and IPU take below stride calculation
++        // GPU has the Y stride to be 32 alignment, and UV stride to be
++        // 16 alignment.
++        // IPU have the Y stride to be 2x of the UV stride alignment
++        int32_t stride = (mWidth+31)/32*32;
++        int32_t c_stride = (stride/2+15)/16*16;
++        fmt.fmt.pix.bytesperline = stride;
++        fmt.fmt.pix.sizeimage    = stride*mHeight+c_stride * mHeight;
++        ALOGI("Special handling for YV12 on Stride %d, size %d",
++            fmt.fmt.pix.bytesperline,
++            fmt.fmt.pix.sizeimage);
++    }
++
++    ret = ioctl(mDev, VIDIOC_S_FMT, &fmt);
++    if (ret < 0) {
++        ALOGE("%s: VIDIOC_S_FMT Failed: %s", __func__, strerror(errno));
++        return ret;
++    }
++
++    return 0;
++}
++
++int32_t MMAPStream::onDeviceStartLocked()
++{
++    ALOGI("%s", __func__);
++    if (mDev <= 0) {
++        ALOGE("%s invalid dev node", __func__);
++        return BAD_VALUE;
++    }
++
++    //-------register buffers----------
++    struct v4l2_buffer buf;
++    struct v4l2_requestbuffers req;
++
++    memset(&req, 0, sizeof (req));
++    req.count = mNumBuffers;
++    req.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
++    req.memory = V4L2_MEMORY_MMAP;
++    if (ioctl(mDev, VIDIOC_REQBUFS, &req) < 0) {
++        ALOGE("%s VIDIOC_REQBUFS failed", __func__);
++        return BAD_VALUE;
++    }
++
++    for (uint32_t i = 0; i < mNumBuffers; i++) {
++        memset(&buf, 0, sizeof (buf));
++        buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
++        buf.index = i;
++        buf.memory = V4L2_MEMORY_MMAP;
++        if (ioctl(mDev, VIDIOC_QUERYBUF, &buf) < 0) {
++            ALOGE("%s VIDIOC_QUERYBUF error", __func__);
++            return BAD_VALUE;
++        }
++
++        mBuffers[i] = new StreamBuffer();
++        mBuffers[i]->mPhyAddr = buf.m.offset;
++        mBuffers[i]->mSize = buf.length;
++        mBuffers[i]->mVirtAddr = (void *)mmap(NULL, mBuffers[i]->mSize,
++                    PROT_READ | PROT_WRITE, MAP_SHARED, mDev,
++                    mBuffers[i]->mPhyAddr);
++        mBuffers[i]->mStream = this;
++        memset(mBuffers[i]->mVirtAddr, 0xFF, mBuffers[i]->mSize);
++    }
++
++    int32_t ret = 0;
++    //----------qbuf----------
++    struct v4l2_buffer cfilledbuffer;
++    for (uint32_t i = 0; i < mNumBuffers; i++) {
++        memset(&cfilledbuffer, 0, sizeof (struct v4l2_buffer));
++        cfilledbuffer.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
++        cfilledbuffer.memory = V4L2_MEMORY_MMAP;
++        cfilledbuffer.index = i;
++        cfilledbuffer.m.offset = mBuffers[i]->mPhyAddr;
++        cfilledbuffer.length = mBuffers[i]->mSize;
++        ALOGI("%s VIDIOC_QBUF phy:0x%x", __func__, mBuffers[i]->mPhyAddr);
++        ret = ioctl(mDev, VIDIOC_QBUF, &cfilledbuffer);
++        if (ret < 0) {
++            ALOGE("%s VIDIOC_QBUF Failed", __func__);
++            return BAD_VALUE;
++        }
++    }
++
++    //-------stream on-------
++    enum v4l2_buf_type bufType;
++    bufType = V4L2_BUF_TYPE_VIDEO_CAPTURE;
++    ret = ioctl(mDev, VIDIOC_STREAMON, &bufType);
++    if (ret < 0) {
++        ALOGE("%s VIDIOC_STREAMON failed:%s", __func__, strerror(errno));
++        return ret;
++    }
++
++    return 0;
++}
++
++int32_t MMAPStream::onDeviceStopLocked()
++{
++    ALOGI("%s", __func__);
++    int32_t ret = 0;
++
++    if (mDev <= 0) {
++        ALOGE("%s invalid fd handle", __func__);
++        return BAD_VALUE;
++    }
++
++    for (uint32_t i = 0; i < MAX_STREAM_BUFFERS; i++) {
++        if (mBuffers[i] != NULL && mBuffers[i]->mVirtAddr != NULL
++                                && mBuffers[i]->mSize > 0) {
++            munmap(mBuffers[i]->mVirtAddr, mBuffers[i]->mSize);
++            delete mBuffers[i];
++            mBuffers[i] = NULL;
++        }
++    }
++
++    enum v4l2_buf_type bufType;
++    bufType = V4L2_BUF_TYPE_VIDEO_CAPTURE;
++    ret = ioctl(mDev, VIDIOC_STREAMOFF, &bufType);
++    if (ret < 0) {
++        ALOGE("%s VIDIOC_STREAMOFF failed: %s", __func__, strerror(errno));
++        return ret;
++    }
++
++    return 0;
++}
++
++int32_t MMAPStream::onFrameAcquireLocked()
++{
++    ALOGV("%s", __func__);
++    int32_t ret = 0;
++    struct v4l2_buffer cfilledbuffer;
++    memset(&cfilledbuffer, 0, sizeof (cfilledbuffer));
++    cfilledbuffer.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
++    cfilledbuffer.memory = V4L2_MEMORY_MMAP;
++
++    ret = ioctl(mDev, VIDIOC_DQBUF, &cfilledbuffer);
++    if (ret < 0) {
++        ALOGE("%s: VIDIOC_DQBUF Failed", __func__);
++        return -1;
++    }
++
++    return cfilledbuffer.index;
++}
++
++int32_t MMAPStream::onFrameReturnLocked(int32_t index, StreamBuffer& buf)
++{
++    ALOGV("%s", __func__);
++    int32_t ret = 0;
++    struct v4l2_buffer cfilledbuffer;
++    memset(&cfilledbuffer, 0, sizeof (struct v4l2_buffer));
++    cfilledbuffer.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
++    cfilledbuffer.memory = V4L2_MEMORY_MMAP;
++    cfilledbuffer.index    = index;
++    cfilledbuffer.m.offset = buf.mPhyAddr;
++    cfilledbuffer.length = buf.mSize;
++
++    ret = ioctl(mDev, VIDIOC_QBUF, &cfilledbuffer);
++    if (ret < 0) {
++        ALOGE("%s VIDIOC_QBUF Failed", __func__);
++        return BAD_VALUE;
++    }
++
++    return ret;
++}
++
+diff --git a/mx6/libcamera3/MMAPStream.h b/mx6/libcamera3/MMAPStream.h
+new file mode 100644
+index 0000000..ef07238
+--- /dev/null
++++ b/mx6/libcamera3/MMAPStream.h
+@@ -0,0 +1,50 @@
++/*
++ * Copyright (C) 2015 Freescale Semiconductor, Inc.
++ *
++ * Licensed under the Apache License, Version 2.0 (the "License");
++ * you may not use this file except in compliance with the License.
++ * You may obtain a copy of the License at
++ *
++ *      http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++
++#ifndef _MMAP_STREAM_H
++#define _MMAP_STREAM_H
++
++#include "VideoStream.h"
++
++// stream uses memory map buffers which allcated in kernel space.
++class MMAPStream : public VideoStream
++{
++public:
++    MMAPStream(Camera* device);
++    virtual ~MMAPStream();
++
++    // configure device.
++    virtual int32_t onDeviceConfigureLocked();
++    // start device.
++    virtual int32_t onDeviceStartLocked();
++    // stop device.
++    virtual int32_t onDeviceStopLocked();
++
++    // get buffer from V4L2.
++    virtual int32_t onFrameAcquireLocked();
++    // put buffer back to V4L2.
++    virtual int32_t onFrameReturnLocked(int32_t index, StreamBuffer& buf);
++
++    // allocate buffers.
++    virtual int32_t allocateBuffersLocked() {return 0;}
++    // free buffers.
++    virtual int32_t freeBuffersLocked() {return 0;}
++
++private:
++
++};
++
++#endif
+diff --git a/mx6/libcamera3/Ov5640Csi.cpp b/mx6/libcamera3/Ov5640Csi.cpp
+index 20ecd04..3e0c153 100644
+--- a/mx6/libcamera3/Ov5640Csi.cpp
++++ b/mx6/libcamera3/Ov5640Csi.cpp
+@@ -19,6 +19,7 @@
+ Ov5640Csi::Ov5640Csi(int32_t id, int32_t facing, int32_t orientation, char* path)
+     : Camera(id, facing, orientation, path)
+ {
++    mVideoStream = new OvStream(this);
+ }
+ 
+ Ov5640Csi::~Ov5640Csi()
+@@ -84,57 +85,57 @@ status_t Ov5640Csi::initSensorStaticData()
+         memset(&vid_frmsize, 0, sizeof(struct v4l2_frmsizeenum));
+         vid_frmsize.index        = index++;
+         vid_frmsize.pixel_format = convertPixelFormatToV4L2Format(mSensorFormats[0]);
+-        ret = ioctl(fd,
+-                    VIDIOC_ENUM_FRAMESIZES, &vid_frmsize);
+-        if (ret == 0) {
+-            ALOGV("enum frame size w:%d, h:%d",
+-                         vid_frmsize.discrete.width, vid_frmsize.discrete.height);
+-            memset(&vid_frmval, 0, sizeof(struct v4l2_frmivalenum));
+-            vid_frmval.index        = 0;
+-            vid_frmval.pixel_format = vid_frmsize.pixel_format;
+-            vid_frmval.width        = vid_frmsize.discrete.width;
+-            vid_frmval.height       = vid_frmsize.discrete.height;
+-
+-            // ret = ioctl(fd, VIDIOC_ENUM_FRAMEINTERVALS,
+-            // &vid_frmval);
+-            // v4l2 does not support, now hard code here.
+-            if (ret == 0) {
+-                ALOGV("vid_frmval denominator:%d, numeraton:%d",
+-                             vid_frmval.discrete.denominator,
+-                             vid_frmval.discrete.numerator);
+-                if ((vid_frmsize.discrete.width > 1280) ||
+-                    (vid_frmsize.discrete.height > 800)) {
+-                    vid_frmval.discrete.denominator = 15;
+-                    vid_frmval.discrete.numerator   = 1;
+-                }
+-                else if ((vid_frmsize.discrete.width == 1024) ||
+-                    (vid_frmsize.discrete.height == 768)) {
+-                    // Max fps for ov5640 csi xga cannot reach to 30fps
+-                    vid_frmval.discrete.denominator = 15;
+-                    vid_frmval.discrete.numerator   = 1;
+-
+-                }
+-                else {
+-                    vid_frmval.discrete.denominator = 30;
+-                    vid_frmval.discrete.numerator   = 1;
+-                }
+-
+-                //If w/h ratio is not same with senserW/sensorH, framework assume that
+-	        //first crop little width or little height, then scale.
+-		//But 1920x1080, 176x144 not work in this mode.
+-		if( !((vid_frmsize.discrete.width == 1920 && vid_frmsize.discrete.height == 1080) ||
+-		      (vid_frmsize.discrete.width == 176 && vid_frmsize.discrete.height == 144))	){
+-	                mPictureResolutions[pictureCnt++] = vid_frmsize.discrete.width;
+-	                mPictureResolutions[pictureCnt++] = vid_frmsize.discrete.height;
+-		}
+-
+-
+-                if (vid_frmval.discrete.denominator /
+-                    vid_frmval.discrete.numerator > 15) {
+-                    mPreviewResolutions[previewCnt++] = vid_frmsize.discrete.width;
+-                    mPreviewResolutions[previewCnt++] = vid_frmsize.discrete.height;;
+-                }
+-            }
++        ret = ioctl(fd, VIDIOC_ENUM_FRAMESIZES, &vid_frmsize);
++        if (ret != 0) {
++            continue;
++        }
++        ALOGV("enum frame size w:%d, h:%d",
++                vid_frmsize.discrete.width, vid_frmsize.discrete.height);
++#if 0
++        memset(&vid_frmval, 0, sizeof(struct v4l2_frmivalenum));
++        vid_frmval.index        = 0;
++        vid_frmval.pixel_format = vid_frmsize.pixel_format;
++        vid_frmval.width        = vid_frmsize.discrete.width;
++        vid_frmval.height       = vid_frmsize.discrete.height;
++
++        ret = ioctl(fd, VIDIOC_ENUM_FRAMEINTERVALS, &vid_frmval);
++        if (ret != 0) {
++            continue;
++        }
++        ALOGV("vid_frmval denominator:%d, numeraton:%d",
++                vid_frmval.discrete.denominator,
++                vid_frmval.discrete.numerator);
++#endif
++        // v4l2 does not support, now hard code here.
++        if ((vid_frmsize.discrete.width > 1280) ||
++                (vid_frmsize.discrete.height > 800)) {
++            vid_frmval.discrete.denominator = 15;
++            vid_frmval.discrete.numerator   = 1;
++        }
++        else if ((vid_frmsize.discrete.width == 1024) ||
++                (vid_frmsize.discrete.height == 768)) {
++            // Max fps for ov5640 csi xga cannot reach to 30fps
++            vid_frmval.discrete.denominator = 15;
++            vid_frmval.discrete.numerator   = 1;
++
++        }
++        else {
++            vid_frmval.discrete.denominator = 30;
++            vid_frmval.discrete.numerator   = 1;
++        }
++
++        //If w/h ratio is not same with senserW/sensorH, framework assume that
++        //first crop little width or little height, then scale.
++        //But 1920x1080, 176x144 not work in this mode.
++        if(!((vid_frmsize.discrete.width == 1920 && vid_frmsize.discrete.height == 1080)
++          || (vid_frmsize.discrete.width == 176 && vid_frmsize.discrete.height == 144))) {
++            mPictureResolutions[pictureCnt++] = vid_frmsize.discrete.width;
++            mPictureResolutions[pictureCnt++] = vid_frmsize.discrete.height;
++        }
++
++        if (vid_frmval.discrete.denominator / vid_frmval.discrete.numerator > 15) {
++            mPreviewResolutions[previewCnt++] = vid_frmsize.discrete.width;
++            mPreviewResolutions[previewCnt++] = vid_frmsize.discrete.height;;
+         }
+     } // end while
+ 
+@@ -164,7 +165,7 @@ status_t Ov5640Csi::initSensorStaticData()
+     ALOGI("mMaxWidth:%d, mMaxHeight:%d", mMaxWidth, mMaxHeight);
+ 
+     mFocalLength = 3.37f;
+-    mPhysicalWidth = 3.6288f;	//2592 x 1.4u
++    mPhysicalWidth = 3.6288f;   //2592 x 1.4u
+     mPhysicalHeight = 2.7216f;  //1944 x 1.4u
+ 
+     ALOGI("ov5640Csi, mFocalLength:%f, mPhysicalWidth:%f, mPhysicalHeight %f",
+@@ -174,4 +175,23 @@ status_t Ov5640Csi::initSensorStaticData()
+     return NO_ERROR;
+ }
+ 
++// configure device.
++int32_t Ov5640Csi::OvStream::onDeviceConfigureLocked()
++{
++    ALOGI("%s", __func__);
++    int32_t ret = 0;
++    if (mDev <= 0) {
++        ALOGE("%s invalid fd handle", __func__);
++        return BAD_VALUE;
++    }
++
++    int32_t input = 1;
++    ret = ioctl(mDev, VIDIOC_S_INPUT, &input);
++    if (ret < 0) {
++        ALOGE("%s VIDIOC_S_INPUT Failed: %s", __func__, strerror(errno));
++        return ret;
++    }
++
++    return USPStream::onDeviceConfigureLocked();
++}
+ 
+diff --git a/mx6/libcamera3/Ov5640Csi.h b/mx6/libcamera3/Ov5640Csi.h
+index d8d0187..34928ca 100644
+--- a/mx6/libcamera3/Ov5640Csi.h
++++ b/mx6/libcamera3/Ov5640Csi.h
+@@ -18,6 +18,7 @@
+ #define _OV5640_CSI_H
+ 
+ #include "Camera.h"
++#include "USPStream.h"
+ 
+ class Ov5640Csi : public Camera
+ {
+@@ -28,7 +29,15 @@ public:
+     virtual status_t initSensorStaticData();
+ 
+ private:
++    class OvStream : public USPStream {
++    public:
++        OvStream(Camera* device)
++            : USPStream(device) {}
++        virtual ~OvStream() {}
+ 
++        // configure device.
++        virtual int32_t onDeviceConfigureLocked();
++    };
+ };
+ 
+ #endif
+diff --git a/mx6/libcamera3/Ov5640Mipi.cpp b/mx6/libcamera3/Ov5640Mipi.cpp
+index 6de908f..29906eb 100644
+--- a/mx6/libcamera3/Ov5640Mipi.cpp
++++ b/mx6/libcamera3/Ov5640Mipi.cpp
+@@ -19,6 +19,7 @@
+ Ov5640Mipi::Ov5640Mipi(int32_t id, int32_t facing, int32_t orientation, char* path)
+     : Camera(id, facing, orientation, path)
+ {
++    mVideoStream = new OvStream(this);
+ }
+ 
+ Ov5640Mipi::~Ov5640Mipi()
+@@ -85,49 +86,50 @@ status_t Ov5640Mipi::initSensorStaticData()
+         memset(&vid_frmsize, 0, sizeof(struct v4l2_frmsizeenum));
+         vid_frmsize.index        = index++;
+         vid_frmsize.pixel_format = convertPixelFormatToV4L2Format(mSensorFormats[0]);
+-        ret = ioctl(fd,
+-                    VIDIOC_ENUM_FRAMESIZES, &vid_frmsize);
+-        if (ret == 0) {
+-            ALOGV("enum frame size w:%d, h:%d",
+-                         vid_frmsize.discrete.width, vid_frmsize.discrete.height);
+-            memset(&vid_frmval, 0, sizeof(struct v4l2_frmivalenum));
+-            vid_frmval.index        = 0;
+-            vid_frmval.pixel_format = vid_frmsize.pixel_format;
+-            vid_frmval.width        = vid_frmsize.discrete.width;
+-            vid_frmval.height       = vid_frmsize.discrete.height;
+-
+-            // ret = ioctl(fd, VIDIOC_ENUM_FRAMEINTERVALS,
+-            // &vid_frmval);
+-            // v4l2 does not support, now hard code here.
+-            if (ret == 0) {
+-                ALOGV("vid_frmval denominator:%d, numeraton:%d",
+-                             vid_frmval.discrete.denominator,
+-                             vid_frmval.discrete.numerator);
+-                if ((vid_frmsize.discrete.width > 1920) ||
+-                    (vid_frmsize.discrete.height > 1080)) {
+-                    vid_frmval.discrete.denominator = 15;
+-                    vid_frmval.discrete.numerator   = 1;
+-                }
+-                else {
+-                    vid_frmval.discrete.denominator = 30;
+-                    vid_frmval.discrete.numerator   = 1;
+-                }
+-
+-			//If w/h ratio is not same with senserW/sensorH, framework assume that
+-			//first crop little width or little height, then scale.
+-			//But 1920x1080, 176x144 not work in this mode.
+-			if( !((vid_frmsize.discrete.width == 1920 && vid_frmsize.discrete.height == 1080) ||
+-			      (vid_frmsize.discrete.width == 176 && vid_frmsize.discrete.height == 144))	){
+-	                    mPictureResolutions[pictureCnt++] = vid_frmsize.discrete.width;
+-	                    mPictureResolutions[pictureCnt++] = vid_frmsize.discrete.height;
+-			}
+-
+-                if (vid_frmval.discrete.denominator /
+-                    vid_frmval.discrete.numerator > 15) {
+-                    mPreviewResolutions[previewCnt++] = vid_frmsize.discrete.width;
+-                    mPreviewResolutions[previewCnt++] = vid_frmsize.discrete.height;;
+-                }
+-            }
++        ret = ioctl(fd, VIDIOC_ENUM_FRAMESIZES, &vid_frmsize);
++        if (ret != 0) {
++            continue;
++        }
++        ALOGV("enum frame size w:%d, h:%d",
++                vid_frmsize.discrete.width, vid_frmsize.discrete.height);
++#if 0
++        memset(&vid_frmval, 0, sizeof(struct v4l2_frmivalenum));
++        vid_frmval.index        = 0;
++        vid_frmval.pixel_format = vid_frmsize.pixel_format;
++        vid_frmval.width        = vid_frmsize.discrete.width;
++        vid_frmval.height       = vid_frmsize.discrete.height;
++
++        // ret = ioctl(fd, VIDIOC_ENUM_FRAMEINTERVALS, &vid_frmval);
++        if (ret != 0) {
++            continue;
++        }
++        ALOGV("vid_frmval denominator:%d, numeraton:%d",
++                vid_frmval.discrete.denominator,
++                vid_frmval.discrete.numerator);
++#endif
++        // v4l2 does not support, now hard code here.
++        if ((vid_frmsize.discrete.width > 1920) ||
++                (vid_frmsize.discrete.height > 1080)) {
++            vid_frmval.discrete.denominator = 15;
++            vid_frmval.discrete.numerator   = 1;
++        }
++        else {
++            vid_frmval.discrete.denominator = 30;
++            vid_frmval.discrete.numerator   = 1;
++        }
++
++        //If w/h ratio is not same with senserW/sensorH, framework assume that
++        //first crop little width or little height, then scale.
++        //But 1920x1080, 176x144 not work in this mode.
++        if(!((vid_frmsize.discrete.width == 1920 && vid_frmsize.discrete.height == 1080)
++           || (vid_frmsize.discrete.width == 176 && vid_frmsize.discrete.height == 144))){
++            mPictureResolutions[pictureCnt++] = vid_frmsize.discrete.width;
++            mPictureResolutions[pictureCnt++] = vid_frmsize.discrete.height;
++        }
++
++        if (vid_frmval.discrete.denominator / vid_frmval.discrete.numerator > 15) {
++            mPreviewResolutions[previewCnt++] = vid_frmsize.discrete.width;
++            mPreviewResolutions[previewCnt++] = vid_frmsize.discrete.height;;
+         }
+     } // end while
+ 
+@@ -167,4 +169,23 @@ status_t Ov5640Mipi::initSensorStaticData()
+     return NO_ERROR;
+ }
+ 
++// configure device.
++int32_t Ov5640Mipi::OvStream::onDeviceConfigureLocked()
++{
++    ALOGI("%s", __func__);
++    int32_t ret = 0;
++    if (mDev <= 0) {
++        ALOGE("%s invalid fd handle", __func__);
++        return BAD_VALUE;
++    }
++
++    int32_t input = 1;
++    ret = ioctl(mDev, VIDIOC_S_INPUT, &input);
++    if (ret < 0) {
++        ALOGE("%s VIDIOC_S_INPUT Failed: %s", __func__, strerror(errno));
++        return ret;
++    }
++
++    return USPStream::onDeviceConfigureLocked();
++}
+ 
+diff --git a/mx6/libcamera3/Ov5640Mipi.h b/mx6/libcamera3/Ov5640Mipi.h
+index 66b7610..b77a8e6 100644
+--- a/mx6/libcamera3/Ov5640Mipi.h
++++ b/mx6/libcamera3/Ov5640Mipi.h
+@@ -18,6 +18,7 @@
+ #define _OV5640_MIPI_H_
+ 
+ #include "Camera.h"
++#include "USPStream.h"
+ 
+ class Ov5640Mipi : public Camera
+ {
+@@ -28,7 +29,15 @@ public:
+     virtual status_t initSensorStaticData();
+ 
+ private:
++    class OvStream : public USPStream {
++    public:
++        OvStream(Camera* device)
++            : USPStream(device) {}
++        virtual ~OvStream() {}
+ 
++        // configure device.
++        virtual int32_t onDeviceConfigureLocked();
++    };
+ };
+ 
+ #endif
+diff --git a/mx6/libcamera3/Ov5642Csi.cpp b/mx6/libcamera3/Ov5642Csi.cpp
+index 0ee1e6b..e2ab51b 100644
+--- a/mx6/libcamera3/Ov5642Csi.cpp
++++ b/mx6/libcamera3/Ov5642Csi.cpp
+@@ -19,6 +19,7 @@
+ Ov5642Csi::Ov5642Csi(int32_t id, int32_t facing, int32_t orientation, char* path)
+     : Camera(id, facing, orientation, path)
+ {
++    mVideoStream = new OvStream(this);
+ }
+ 
+ Ov5642Csi::~Ov5642Csi()
+@@ -46,10 +47,10 @@ status_t Ov5642Csi::initSensorStaticData()
+         vid_fmtdesc.type  = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+         ret               = ioctl(fd, VIDIOC_ENUM_FMT, &vid_fmtdesc);
+         ALOGV("index:%d,ret:%d, format:%c%c%c%c", index, ret,
+-                     vid_fmtdesc.pixelformat & 0xFF,
+-                     (vid_fmtdesc.pixelformat >> 8) & 0xFF,
+-                     (vid_fmtdesc.pixelformat >> 16) & 0xFF,
+-                     (vid_fmtdesc.pixelformat >> 24) & 0xFF);
++                vid_fmtdesc.pixelformat & 0xFF,
++                (vid_fmtdesc.pixelformat >> 8) & 0xFF,
++                (vid_fmtdesc.pixelformat >> 16) & 0xFF,
++                (vid_fmtdesc.pixelformat >> 24) & 0xFF);
+         if (ret == 0) {
+             sensorFormats[index++] = vid_fmtdesc.pixelformat;
+         }
+@@ -84,53 +85,53 @@ status_t Ov5642Csi::initSensorStaticData()
+         memset(&vid_frmsize, 0, sizeof(struct v4l2_frmsizeenum));
+         vid_frmsize.index        = index++;
+         vid_frmsize.pixel_format = convertPixelFormatToV4L2Format(mSensorFormats[0]);
+-        ret = ioctl(fd,
+-                    VIDIOC_ENUM_FRAMESIZES, &vid_frmsize);
+-        if (ret == 0) {
+-            ALOGV("enum frame size w:%d, h:%d",
+-                         vid_frmsize.discrete.width, vid_frmsize.discrete.height);
+-            memset(&vid_frmval, 0, sizeof(struct v4l2_frmivalenum));
+-            vid_frmval.index        = 0;
+-            vid_frmval.pixel_format = vid_frmsize.pixel_format;
+-            vid_frmval.width        = vid_frmsize.discrete.width;
+-            vid_frmval.height       = vid_frmsize.discrete.height;
+-
+-            // ret = ioctl(fd, VIDIOC_ENUM_FRAMEINTERVALS,
+-            // &vid_frmval);
+-            // v4l2 does not support, now hard code here.
+-            if (ret == 0) {
+-                ALOGV("vid_frmval denominator:%d, numeraton:%d",
+-                             vid_frmval.discrete.denominator,
+-                             vid_frmval.discrete.numerator);
+-                if ((vid_frmsize.discrete.width > 1280) ||
+-                    (vid_frmsize.discrete.height > 800)) {
+-                    vid_frmval.discrete.denominator = 15;
+-                    vid_frmval.discrete.numerator   = 1;
+-                }
+-                else {
+-                    vid_frmval.discrete.denominator = 30;
+-                    vid_frmval.discrete.numerator   = 1;
+-                }
+-
+-                //If w/h ratio is not same with senserW/sensorH, framework assume that
+-		//first crop little width or little height, then scale.
+-		//But 1920x1080, 176x144 not work in this mode.
+-		//For 1M pixel, 720p sometimes may take green picture(5%), so not report it,
+-		//use 1024x768 for 1M pixel
+-		if( !((vid_frmsize.discrete.width == 1920 && vid_frmsize.discrete.height == 1080) ||
+-		      (vid_frmsize.discrete.width == 176 && vid_frmsize.discrete.height == 144) ||
+-		      (vid_frmsize.discrete.width == 1280 && vid_frmsize.discrete.height == 720)) ){
+-	            mPictureResolutions[pictureCnt++] = vid_frmsize.discrete.width;
+-	            mPictureResolutions[pictureCnt++] = vid_frmsize.discrete.height;
+-		}
+-
+-
+-                if (vid_frmval.discrete.denominator /
+-                    vid_frmval.discrete.numerator > 15) {
+-                    mPreviewResolutions[previewCnt++] = vid_frmsize.discrete.width;
+-                    mPreviewResolutions[previewCnt++] = vid_frmsize.discrete.height;;
+-                }
+-            }
++        ret = ioctl(fd, VIDIOC_ENUM_FRAMESIZES, &vid_frmsize);
++        if (ret != 0) {
++            continue;
++        }
++        ALOGV("enum frame size w:%d, h:%d",
++                vid_frmsize.discrete.width, vid_frmsize.discrete.height);
++#if 0
++        memset(&vid_frmval, 0, sizeof(struct v4l2_frmivalenum));
++        vid_frmval.index        = 0;
++        vid_frmval.pixel_format = vid_frmsize.pixel_format;
++        vid_frmval.width        = vid_frmsize.discrete.width;
++        vid_frmval.height       = vid_frmsize.discrete.height;
++
++        ret = ioctl(fd, VIDIOC_ENUM_FRAMEINTERVALS, &vid_frmval);
++        if (ret != 0) {
++            continue;
++        }
++        ALOGV("vid_frmval denominator:%d, numeraton:%d",
++                vid_frmval.discrete.denominator,
++                vid_frmval.discrete.numerator);
++#endif
++        //v4l2 does not support, now hard code here.
++        if ((vid_frmsize.discrete.width > 1280) ||
++                (vid_frmsize.discrete.height > 800)) {
++            vid_frmval.discrete.denominator = 15;
++            vid_frmval.discrete.numerator   = 1;
++        }
++        else {
++            vid_frmval.discrete.denominator = 30;
++            vid_frmval.discrete.numerator   = 1;
++        }
++
++        //If w/h ratio is not same with senserW/sensorH, framework assume that
++        //first crop little width or little height, then scale.
++        //But 1920x1080, 176x144 not work in this mode.
++        //For 1M pixel, 720p sometimes may take green picture(5%), so not report it,
++        //use 1024x768 for 1M pixel
++        if(!((vid_frmsize.discrete.width == 1920 && vid_frmsize.discrete.height == 1080)
++         || (vid_frmsize.discrete.width == 176 && vid_frmsize.discrete.height == 144)
++         || (vid_frmsize.discrete.width == 1280 && vid_frmsize.discrete.height == 720))) {
++            mPictureResolutions[pictureCnt++] = vid_frmsize.discrete.width;
++            mPictureResolutions[pictureCnt++] = vid_frmsize.discrete.height;
++        }
++
++        if (vid_frmval.discrete.denominator / vid_frmval.discrete.numerator > 15) {
++            mPreviewResolutions[previewCnt++] = vid_frmsize.discrete.width;
++            mPreviewResolutions[previewCnt++] = vid_frmsize.discrete.height;;
+         }
+     } // end while
+ 
+@@ -160,7 +161,7 @@ status_t Ov5642Csi::initSensorStaticData()
+     ALOGI("mMaxWidth:%d, mMaxHeight:%d", mMaxWidth, mMaxHeight);
+ 
+     mFocalLength = 3.37f;
+-    mPhysicalWidth = 3.6288f;	//2592 x 1.4u
++    mPhysicalWidth = 3.6288f;   //2592 x 1.4u
+     mPhysicalHeight = 2.7216f;  //1944 x 1.4u
+ 
+     ALOGI("ov5642Csi, mFocalLength:%f, mPhysicalWidth:%f, mPhysicalHeight %f",
+@@ -170,4 +171,23 @@ status_t Ov5642Csi::initSensorStaticData()
+     return NO_ERROR;
+ }
+ 
++// configure device.
++int32_t Ov5642Csi::OvStream::onDeviceConfigureLocked()
++{
++    ALOGI("%s", __func__);
++    int32_t ret = 0;
++    if (mDev <= 0) {
++        ALOGE("%s invalid fd handle", __func__);
++        return BAD_VALUE;
++    }
++
++    int32_t input = 1;
++    ret = ioctl(mDev, VIDIOC_S_INPUT, &input);
++    if (ret < 0) {
++        ALOGE("%s VIDIOC_S_INPUT Failed: %s", __func__, strerror(errno));
++        return ret;
++    }
++
++    return USPStream::onDeviceConfigureLocked();
++}
+ 
+diff --git a/mx6/libcamera3/Ov5642Csi.h b/mx6/libcamera3/Ov5642Csi.h
+index 8c2a676..850e2b8 100644
+--- a/mx6/libcamera3/Ov5642Csi.h
++++ b/mx6/libcamera3/Ov5642Csi.h
+@@ -18,6 +18,7 @@
+ #define _OV5642_CSI_H
+ 
+ #include "Camera.h"
++#include "USPStream.h"
+ 
+ class Ov5642Csi : public Camera
+ {
+@@ -28,7 +29,15 @@ public:
+     virtual status_t initSensorStaticData();
+ 
+ private:
+-
++    class OvStream : public USPStream {
++    public:
++        OvStream(Camera* device)
++            : USPStream(device) {}
++        virtual ~OvStream() {}
++
++        // configure device.
++        virtual int32_t onDeviceConfigureLocked();
++    };
+ };
+ 
+ #endif
+diff --git a/mx6/libcamera3/OvStream.cpp b/mx6/libcamera3/OvStream.cpp
+deleted file mode 100644
+index d125fda..0000000
+--- a/mx6/libcamera3/OvStream.cpp
++++ /dev/null
+@@ -1,362 +0,0 @@
+-/*
+- * Copyright (C) 2015 Freescale Semiconductor, Inc.
+- *
+- * Licensed under the Apache License, Version 2.0 (the "License");
+- * you may not use this file except in compliance with the License.
+- * You may obtain a copy of the License at
+- *
+- *      http://www.apache.org/licenses/LICENSE-2.0
+- *
+- * Unless required by applicable law or agreed to in writing, software
+- * distributed under the License is distributed on an "AS IS" BASIS,
+- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+- * See the License for the specific language governing permissions and
+- * limitations under the License.
+- */
+-
+-#include "OvStream.h"
+-
+-OvStream::OvStream(Camera* device)
+-    : DeviceStream(device), mIonFd(-1)
+-{
+-    mIonFd = ion_open();
+-}
+-
+-OvStream::~OvStream()
+-{
+-    if (mIonFd > 0) {
+-        close(mIonFd);
+-        mIonFd = -1;
+-    }
+-}
+-
+-// configure device.
+-int32_t OvStream::onDeviceConfigureLocked()
+-{
+-    ALOGV("%s", __func__);
+-    int32_t ret = 0;
+-    if (mDev <= 0) {
+-        ALOGE("%s invalid fd handle", __func__);
+-        return BAD_VALUE;
+-    }
+-
+-    int32_t input = 1;
+-    ret = ioctl(mDev, VIDIOC_S_INPUT, &input);
+-    if (ret < 0) {
+-        ALOGE("Open: VIDIOC_S_INPUT Failed: %s", strerror(errno));
+-        return ret;
+-    }
+-
+-    int32_t fps = 30;
+-    int32_t vformat;
+-    vformat = convertPixelFormatToV4L2Format(mFormat);
+-
+-    if ((mWidth > 1920) || (mHeight > 1080)) {
+-        fps = 15;
+-    }
+-
+-    ALOGI("Width * Height %d x %d format %c%c%c%c, fps: %d",
+-          mWidth, mHeight, vformat&0xFF, (vformat>>8)&0xFF,
+-          (vformat>>16)&0xFF, (vformat>>24)&0xFF, fps);
+-
+-    struct v4l2_streamparm param;
+-    memset(&param, 0, sizeof(param));
+-    param.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+-    param.parm.capture.timeperframe.numerator   = 1;
+-    param.parm.capture.timeperframe.denominator = fps;
+-    param.parm.capture.capturemode = mCamera->getCaptureMode(mWidth, mHeight);
+-    ret = ioctl(mDev, VIDIOC_S_PARM, &param);
+-    if (ret < 0) {
+-        ALOGE("%s: VIDIOC_S_PARM Failed: %s", __func__, strerror(errno));
+-        return ret;
+-    }
+-
+-    struct v4l2_format fmt;
+-    memset(&fmt, 0, sizeof(fmt));
+-    fmt.type                 = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+-    fmt.fmt.pix.width        = mWidth & 0xFFFFFFF8;
+-    fmt.fmt.pix.height       = mHeight & 0xFFFFFFF8;
+-    fmt.fmt.pix.pixelformat  = vformat;
+-    fmt.fmt.pix.priv         = 0;
+-    fmt.fmt.pix.sizeimage    = 0;
+-    fmt.fmt.pix.bytesperline = 0;
+-
+-    // Special stride alignment for YU12
+-    if (vformat == v4l2_fourcc('Y', 'U', '1', '2')){
+-        // Goolge define the the stride and c_stride for YUV420 format
+-        // y_size = stride * height
+-        // c_stride = ALIGN(stride/2, 16)
+-        // c_size = c_stride * height/2
+-        // size = y_size + c_size * 2
+-        // cr_offset = y_size
+-        // cb_offset = y_size + c_size
+-        // int stride = (width+15)/16*16;
+-        // int c_stride = (stride/2+16)/16*16;
+-        // y_size = stride * height
+-        // c_stride = ALIGN(stride/2, 16)
+-        // c_size = c_stride * height/2
+-        // size = y_size + c_size * 2
+-        // cr_offset = y_size
+-        // cb_offset = y_size + c_size
+-
+-        // GPU and IPU take below stride calculation
+-        // GPU has the Y stride to be 32 alignment, and UV stride to be
+-        // 16 alignment.
+-        // IPU have the Y stride to be 2x of the UV stride alignment
+-        int32_t stride = (mWidth+31)/32*32;
+-        int32_t c_stride = (stride/2+15)/16*16;
+-        fmt.fmt.pix.bytesperline = stride;
+-        fmt.fmt.pix.sizeimage    = stride*mHeight+c_stride * mHeight;
+-        ALOGI("Special handling for YV12 on Stride %d, size %d",
+-            fmt.fmt.pix.bytesperline,
+-            fmt.fmt.pix.sizeimage);
+-    }
+-
+-    ret = ioctl(mDev, VIDIOC_S_FMT, &fmt);
+-    if (ret < 0) {
+-        ALOGE("%s: VIDIOC_S_FMT Failed: %s", __func__, strerror(errno));
+-        return ret;
+-    }
+-
+-    return 0;
+-}
+-
+-int32_t OvStream::onDeviceStartLocked()
+-{
+-    ALOGV("%s", __func__);
+-    if (mDev <= 0) {
+-        ALOGE("%s invalid dev node", __func__);
+-        return BAD_VALUE;
+-    }
+-
+-    //-------register buffers----------
+-    struct v4l2_buffer buf;
+-    struct v4l2_requestbuffers req;
+-
+-    memset(&req, 0, sizeof (req));
+-    req.count = mNumBuffers;
+-    req.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+-    req.memory = V4L2_MEMORY_USERPTR;
+-    if (ioctl(mDev, VIDIOC_REQBUFS, &req) < 0) {
+-        ALOGE("%s VIDIOC_REQBUFS failed", __func__);
+-        return BAD_VALUE;
+-    }
+-
+-    for (uint32_t i = 0; i < mNumBuffers; i++) {
+-        memset(&buf, 0, sizeof (buf));
+-        buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+-        buf.index = i;
+-        buf.memory = V4L2_MEMORY_USERPTR;
+-        buf.m.offset = mBuffers[i]->mPhyAddr;
+-        buf.length   = mBuffers[i]->mSize;
+-        if (ioctl(mDev, VIDIOC_QUERYBUF, &buf) < 0) {
+-            ALOGE("%s VIDIOC_QUERYBUF error", __func__);
+-            return BAD_VALUE;
+-        }
+-    }
+-
+-    int32_t ret = 0;
+-    //----------qbuf----------
+-    struct v4l2_buffer cfilledbuffer;
+-    for (uint32_t i = 0; i < mNumBuffers; i++) {
+-        memset(&cfilledbuffer, 0, sizeof (struct v4l2_buffer));
+-        cfilledbuffer.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+-        cfilledbuffer.memory = V4L2_MEMORY_USERPTR;
+-        cfilledbuffer.index    = i;
+-        cfilledbuffer.m.offset = mBuffers[i]->mPhyAddr;
+-        ALOGI("%s VIDIOC_QBUF phy:0x%x", __func__, mBuffers[i]->mPhyAddr);
+-        ret = ioctl(mDev, VIDIOC_QBUF, &cfilledbuffer);
+-        if (ret < 0) {
+-            ALOGE("%s VIDIOC_QBUF Failed", __func__);
+-            return BAD_VALUE;
+-        }
+-    }
+-
+-    //-------stream on-------
+-    enum v4l2_buf_type bufType;
+-    bufType = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+-    ret = ioctl(mDev, VIDIOC_STREAMON, &bufType);
+-    if (ret < 0) {
+-        ALOGE("%s VIDIOC_STREAMON failed:%s", __func__, strerror(errno));
+-        return ret;
+-    }
+-
+-    return 0;
+-}
+-
+-int32_t OvStream::onDeviceStopLocked()
+-{
+-    ALOGV("%s", __func__);
+-    int32_t ret = 0;
+-
+-    if (mDev <= 0) {
+-        ALOGE("%s invalid fd handle", __func__);
+-        return BAD_VALUE;
+-    }
+-
+-    enum v4l2_buf_type bufType;
+-    bufType = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+-    ret = ioctl(mDev, VIDIOC_STREAMOFF, &bufType);
+-    if (ret < 0) {
+-        ALOGE("%s VIDIOC_STREAMOFF failed: %s", __func__, strerror(errno));
+-        return ret;
+-    }
+-
+-    return 0;
+-}
+-
+-int32_t OvStream::onFrameAcquireLocked()
+-{
+-    ALOGV("%s", __func__);
+-    int32_t ret = 0;
+-    struct v4l2_buffer cfilledbuffer;
+-    memset(&cfilledbuffer, 0, sizeof (cfilledbuffer));
+-    cfilledbuffer.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+-    cfilledbuffer.memory = V4L2_MEMORY_USERPTR;
+-
+-    ret = ioctl(mDev, VIDIOC_DQBUF, &cfilledbuffer);
+-    if (ret < 0) {
+-        ALOGE("%s: VIDIOC_DQBUF Failed", __func__);
+-        return -1;
+-    }
+-
+-    return cfilledbuffer.index;
+-}
+-
+-int32_t OvStream::onFrameReturnLocked(int32_t index, StreamBuffer& buf)
+-{
+-    ALOGV("%s", __func__);
+-    int32_t ret = 0;
+-    struct v4l2_buffer cfilledbuffer;
+-    memset(&cfilledbuffer, 0, sizeof (struct v4l2_buffer));
+-    cfilledbuffer.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+-    cfilledbuffer.memory = V4L2_MEMORY_USERPTR;
+-    cfilledbuffer.index    = index;
+-    cfilledbuffer.m.offset = buf.mPhyAddr;
+-
+-    ret = ioctl(mDev, VIDIOC_QBUF, &cfilledbuffer);
+-    if (ret < 0) {
+-        ALOGE("%s VIDIOC_QBUF Failed", __func__);
+-        return BAD_VALUE;
+-    }
+-
+-    return ret;
+-}
+-
+-int32_t OvStream::allocateBuffersLocked()
+-{
+-    ALOGV("%s", __func__);
+-    if (mIonFd <= 0) {
+-        ALOGE("%s ion invalid", __func__);
+-        return BAD_VALUE;
+-    }
+-
+-    if (mRegistered) {
+-        ALOGI("%s but buffer is already registered", __func__);
+-        return 0;
+-    }
+-
+-    int32_t size = 0;
+-    if ((mWidth == 0) || (mHeight == 0)) {
+-        ALOGE("%s: width or height = 0", __func__);
+-        return BAD_VALUE;
+-    }
+-
+-    switch (mFormat) {
+-        case HAL_PIXEL_FORMAT_YCbCr_420_SP:
+-            size = ((mWidth + 16) & (~15)) * mHeight * 3 / 2;
+-            break;
+-
+-        case HAL_PIXEL_FORMAT_YCbCr_420_P: {
+-            int32_t stride = (mWidth+31)/32*32;
+-            int32_t c_stride = (stride/2+15)/16*16;
+-            size = (stride + c_stride) * mHeight;
+-            break;
+-        }
+-        case HAL_PIXEL_FORMAT_YCbCr_422_I:
+-            size = mWidth * mHeight * 2;
+-            break;
+-
+-        default:
+-            ALOGE("Error: format not supported int ion alloc");
+-            return BAD_VALUE;
+-    }
+-
+-    unsigned char *ptr = NULL;
+-    int32_t sharedFd;
+-    int32_t phyAddr;
+-    ion_user_handle_t ionHandle;
+-    size = (size + PAGE_SIZE) & (~(PAGE_SIZE - 1));
+-
+-    ALOGI("allocateBufferFromIon buffer num:%d", mNumBuffers);
+-    for (uint32_t i = 0; i < mNumBuffers; i++) {
+-        ionHandle = -1;
+-        int32_t err = ion_alloc(mIonFd, size, 8, 1, 0, &ionHandle);
+-        if (err) {
+-            ALOGE("ion_alloc failed.");
+-            return BAD_VALUE;
+-        }
+-
+-        err = ion_map(mIonFd,
+-                      ionHandle,
+-                      size,
+-                      PROT_READ | PROT_WRITE,
+-                      MAP_SHARED,
+-                      0,
+-                      &ptr,
+-                      &sharedFd);
+-
+-        if (err) {
+-            ALOGE("ion_map failed.");
+-            return BAD_VALUE;
+-        }
+-        phyAddr = ion_phys(mIonFd, ionHandle);
+-        if (phyAddr == 0) {
+-            ALOGE("ion_phys failed.");
+-            return BAD_VALUE;
+-        }
+-        ALOGI("phyalloc ptr:0x%x, phy:0x%x, size:%d", (int32_t)ptr, phyAddr, size);
+-        mBuffers[i] = new StreamBuffer();
+-        mBuffers[i]->mVirtAddr  = ptr;
+-        mBuffers[i]->mPhyAddr   = phyAddr;
+-        mBuffers[i]->mSize      =  size;
+-        mBuffers[i]->mBufHandle = (buffer_handle_t*)ionHandle;
+-        mBuffers[i]->mStream = this;
+-        close(sharedFd);
+-    }
+-
+-    mRegistered = true;
+-    mAllocatedBuffers = mNumBuffers;
+-
+-    return 0;
+-}
+-
+-int32_t OvStream::freeBuffersLocked()
+-{
+-    ALOGV("%s", __func__);
+-    if (mIonFd <= 0) {
+-        ALOGE("%s ion invalid", __func__);
+-        return BAD_VALUE;
+-    }
+-
+-    if (!mRegistered) {
+-        ALOGI("%s but buffer is not registered", __func__);
+-        return 0;
+-    }
+-
+-    ALOGI("freeBufferToIon buffer num:%d", mAllocatedBuffers);
+-    for (uint32_t i = 0; i < mAllocatedBuffers; i++) {
+-        ion_user_handle_t ionHandle =
+-            (ion_user_handle_t)mBuffers[i]->mBufHandle;
+-        ion_free(mIonFd, ionHandle);
+-        munmap(mBuffers[i]->mVirtAddr, mBuffers[i]->mSize);
+-        delete mBuffers[i];
+-        mBuffers[i] = NULL;
+-    }
+-
+-    mRegistered = false;
+-    mAllocatedBuffers = 0;
+-
+-    return 0;
+-}
+-
+diff --git a/mx6/libcamera3/OvStream.h b/mx6/libcamera3/OvStream.h
+deleted file mode 100644
+index ca24d99..0000000
+--- a/mx6/libcamera3/OvStream.h
++++ /dev/null
+@@ -1,49 +0,0 @@
+-/*
+- * Copyright (C) 2015 Freescale Semiconductor, Inc.
+- *
+- * Licensed under the Apache License, Version 2.0 (the "License");
+- * you may not use this file except in compliance with the License.
+- * You may obtain a copy of the License at
+- *
+- *      http://www.apache.org/licenses/LICENSE-2.0
+- *
+- * Unless required by applicable law or agreed to in writing, software
+- * distributed under the License is distributed on an "AS IS" BASIS,
+- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+- * See the License for the specific language governing permissions and
+- * limitations under the License.
+- */
+-
+-#ifndef _OV_STREAM_H
+-#define _OV_STREAM_H
+-
+-#include "DeviceStream.h"
+-
+-class OvStream : public DeviceStream
+-{
+-public:
+-    OvStream(Camera* device);
+-    virtual ~OvStream();
+-
+-    // configure device.
+-    virtual int32_t onDeviceConfigureLocked();
+-    // start device.
+-    virtual int32_t onDeviceStartLocked();
+-    // stop device.
+-    virtual int32_t onDeviceStopLocked();
+-
+-    // get buffer from V4L2.
+-    virtual int32_t onFrameAcquireLocked();
+-    // put buffer back to V4L2.
+-    virtual int32_t onFrameReturnLocked(int32_t index, StreamBuffer& buf);
+-
+-    // allocate buffers.
+-    virtual int32_t allocateBuffersLocked();
+-    // free buffers.
+-    virtual int32_t freeBuffersLocked();
+-
+-private:
+-    int32_t mIonFd;
+-};
+-
+-#endif
+diff --git a/mx6/libcamera3/Stream.cpp b/mx6/libcamera3/Stream.cpp
+index ffdbfa1..371a1ff 100644
+--- a/mx6/libcamera3/Stream.cpp
++++ b/mx6/libcamera3/Stream.cpp
+@@ -172,6 +172,32 @@ int32_t Stream::processJpegBuffer(StreamBuffer& src,
+         thumbQuality = 100;
+     }
+ 
++    int bufSize = 0;
++    int alignedw, alignedh, c_stride;
++    switch (srcStream->format()) {
++        case HAL_PIXEL_FORMAT_YCbCr_420_P:
++            alignedw = ALIGN_PIXEL_32(srcStream->mWidth);
++            alignedh = ALIGN_PIXEL_4(srcStream->mHeight);
++            c_stride = (alignedw/2+15)/16*16;
++            bufSize = alignedw * alignedh + c_stride * alignedh;
++            break;
++        case HAL_PIXEL_FORMAT_YCbCr_420_SP:
++            alignedw = ALIGN_PIXEL_16(srcStream->mWidth);
++            alignedh = ALIGN_PIXEL_16(srcStream->mHeight);
++            bufSize = alignedw * alignedh * 3 / 2;
++            break;
++
++        case HAL_PIXEL_FORMAT_YCbCr_422_I:
++            alignedw = ALIGN_PIXEL_16(srcStream->mWidth);
++            alignedh = ALIGN_PIXEL_16(srcStream->mHeight);
++            bufSize = alignedw * alignedh * 2;
++            break;
++
++        default:
++            ALOGE("Error: %s format not supported", __FUNCTION__);
++            goto err_out;
++    }
++
+     mainJpeg = new JpegParams((uint8_t *)src.mVirtAddr,
+                        (uint8_t *)src.mPhyAddr,
+                        src.mSize, (uint8_t *)rawBuf,
+@@ -187,26 +213,7 @@ int32_t Stream::processJpegBuffer(StreamBuffer& src,
+     }
+ 
+     if ((thumbWidth > 0) && (thumbHeight > 0)) {
+-        int thumbSize   = 0;
+-        int thumbFormat = convertPixelFormatToV4L2Format(srcStream->format());
+-        switch (thumbFormat) {
+-            case v4l2_fourcc('N', 'V', '1', '2'):
+-                thumbSize = thumbWidth * thumbHeight * 3 / 2;
+-                break;
+-
+-            case v4l2_fourcc('Y', 'U', '1', '2'):
+-                thumbSize = thumbWidth * thumbHeight * 3 / 2;
+-                break;
+-
+-            case v4l2_fourcc('Y', 'U', 'Y', 'V'):
+-                thumbSize = thumbWidth * thumbHeight * 2;
+-                break;
+-
+-            default:
+-                ALOGE("Error: %s format not supported", __FUNCTION__);
+-                goto err_out;
+-        }
+-        thumbSize = src.mSize;
++        int thumbSize = bufSize;
+         thumbJpeg = new JpegParams((uint8_t *)src.mVirtAddr,
+                            (uint8_t *)src.mPhyAddr,
+                            src.mSize,
+diff --git a/mx6/libcamera3/TVINDevice.cpp b/mx6/libcamera3/TVINDevice.cpp
+new file mode 100644
+index 0000000..07dfa93
+--- /dev/null
++++ b/mx6/libcamera3/TVINDevice.cpp
+@@ -0,0 +1,221 @@
++/*
++ * Copyright (C) 2012-2015 Freescale Semiconductor, Inc.
++ *
++ * Licensed under the Apache License, Version 2.0 (the "License");
++ * you may not use this file except in compliance with the License.
++ * You may obtain a copy of the License at
++ *
++ *      http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++
++#include "TVINDevice.h"
++#include "USPStream.h"
++
++TVINDevice::TVINDevice(int32_t id, int32_t facing, int32_t orientation, char* path)
++    : Camera(id, facing, orientation, path)
++{
++    mVideoStream = new TVinStream(this);
++}
++
++TVINDevice::~TVINDevice()
++{
++}
++
++status_t TVINDevice::initSensorStaticData()
++{
++    int32_t fd = open(mDevPath, O_RDWR);
++    if (fd < 0) {
++        ALOGE("OvDevice: initParameters sensor has not been opened");
++        return BAD_VALUE;
++    }
++
++    int ret = 0, index = 0;
++    int maxWait = 6;
++    // Get the PAL/NTSC STD
++    do {
++        ret = ioctl(fd, VIDIOC_G_STD, &mSTD);
++        if (ret < 0) {
++            ALOGW("%s VIDIOC_G_STD failed with try %d", __func__, maxWait - 1);
++            sleep(1);
++        }
++        maxWait --;
++    } while ((ret != 0) && (maxWait > 0));
++
++    if (mSTD == V4L2_STD_PAL)
++        ALOGI("%s Get current mode: PAL", __func__);
++    else if (mSTD == V4L2_STD_NTSC)
++        ALOGI("%s Get current mode: NTSC", __func__);
++    else {
++        ALOGE("%s Error!Get invalid mode: %llu", __func__, mSTD);
++        return BAD_VALUE;
++    }
++
++    if (ioctl(fd, VIDIOC_S_STD, &mSTD) < 0) {
++        ALOGE("%s VIDIOC_S_STD failed", __func__);
++        return BAD_VALUE;
++    }
++
++    // read sensor format.
++    int sensorFormats[MAX_SENSOR_FORMAT];
++    int availFormats[MAX_SENSOR_FORMAT];
++    memset(sensorFormats, 0, sizeof(sensorFormats));
++    memset(availFormats, 0, sizeof(availFormats));
++
++    // v4l2 does not support VIDIOC_ENUM_FMT, now hard code here.
++    sensorFormats[index] = v4l2_fourcc('N', 'V', '1', '2');
++    availFormats[index++] = v4l2_fourcc('N', 'V', '1', '2');
++    sensorFormats[index] = v4l2_fourcc('Y', 'V', '1', '2');
++    availFormats[index++] = v4l2_fourcc('Y', 'V', '1', '2');
++    mSensorFormatCount = changeSensorFormats(sensorFormats, mSensorFormats, index);
++    if (mSensorFormatCount == 0) {
++        ALOGE("%s no sensor format enum", __func__);
++        return BAD_VALUE;
++    }
++
++    availFormats[index++] = v4l2_fourcc('B', 'L', 'O', 'B');
++    availFormats[index++] = v4l2_fourcc('R', 'A', 'W', 'S');
++    //availFormats[2] = v4l2_fourcc('Y', 'U', 'Y', 'V');
++    mAvailableFormatCount = changeSensorFormats(availFormats, mAvailableFormats, index);
++
++    ret = 0;
++    index = 0;
++    char TmpStr[20];
++    int  previewCnt = 0, pictureCnt = 0;
++    struct v4l2_frmsizeenum vid_frmsize;
++    struct v4l2_frmivalenum vid_frmval;
++    while (ret == 0) {
++        memset(TmpStr, 0, 20);
++        memset(&vid_frmsize, 0, sizeof(struct v4l2_frmsizeenum));
++        vid_frmsize.index        = index++;
++        vid_frmsize.pixel_format = convertPixelFormatToV4L2Format(mSensorFormats[0]);
++        ret = ioctl(fd, VIDIOC_ENUM_FRAMESIZES, &vid_frmsize);
++        if (ret != 0) {
++            continue;
++        }
++
++        ALOGV("enum frame size w:%d, h:%d",
++                vid_frmsize.discrete.width, vid_frmsize.discrete.height);
++        //memset(&vid_frmval, 0, sizeof(struct v4l2_frmivalenum));
++        //vid_frmval.index        = 0;
++        //vid_frmval.pixel_format = vid_frmsize.pixel_format;
++        //vid_frmval.width        = vid_frmsize.discrete.width;
++        //vid_frmval.height       = vid_frmsize.discrete.height;
++
++        // ret = ioctl(fd, VIDIOC_ENUM_FRAMEINTERVALS, &vid_frmval);
++        //if (ret != 0) {
++        //    continue;
++        //}
++        //ALOGV("vid_frmval denominator:%d, numeraton:%d",
++        //        vid_frmval.discrete.denominator,
++        //        vid_frmval.discrete.numerator);
++
++        // v4l2 does not support VIDIOC_ENUM_FRAMEINTERVALS, now hard code here.
++        if ((vid_frmsize.discrete.width > 1280) ||
++                (vid_frmsize.discrete.height > 800)) {
++            vid_frmval.discrete.denominator = 15;
++            vid_frmval.discrete.numerator   = 1;
++        }
++        else {
++            vid_frmval.discrete.denominator = 30;
++            vid_frmval.discrete.numerator   = 1;
++        }
++
++        //If w/h ratio is not same with senserW/sensorH, framework assume that
++        //first crop little width or little height, then scale.
++        //But 1920x1080, 176x144 not work in this mode.
++        //For 1M pixel, 720p sometimes may take green picture(5%), so not report it,
++        //use 1024x768 for 1M pixel
++        if(!((vid_frmsize.discrete.width == 1920 && vid_frmsize.discrete.height == 1080)
++          || (vid_frmsize.discrete.width == 176 && vid_frmsize.discrete.height == 144)
++          || (vid_frmsize.discrete.width == 1280 && vid_frmsize.discrete.height == 720))){
++            mPictureResolutions[pictureCnt++] = vid_frmsize.discrete.width;
++            mPictureResolutions[pictureCnt++] = vid_frmsize.discrete.height;
++        }
++
++        if (vid_frmval.discrete.denominator / vid_frmval.discrete.numerator > 15) {
++            mPreviewResolutions[previewCnt++] = vid_frmsize.discrete.width;
++            mPreviewResolutions[previewCnt++] = vid_frmsize.discrete.height;;
++        }
++    } // end while
++
++    mPreviewResolutionCount = previewCnt;
++    mPictureResolutionCount = pictureCnt;
++
++    mMinFrameDuration = 33331760L;
++    mMaxFrameDuration = 30000000000L;
++    int i;
++    for (i=0; i<MAX_RESOLUTION_SIZE && i<pictureCnt; i+=2) {
++        ALOGI("SupportedPictureSizes: %d x %d", mPictureResolutions[i], mPictureResolutions[i+1]);
++    }
++
++    adjustPreviewResolutions();
++    for (i=0; i<MAX_RESOLUTION_SIZE && i<previewCnt; i+=2) {
++        ALOGI("SupportedPreviewSizes: %d x %d", mPreviewResolutions[i], mPreviewResolutions[i+1]);
++    }
++    ALOGI("FrameDuration is %lld, %lld", mMinFrameDuration, mMaxFrameDuration);
++
++    i = 0;
++    mTargetFpsRange[i++] = 10;
++    mTargetFpsRange[i++] = 15;
++    mTargetFpsRange[i++] = 23;
++    mTargetFpsRange[i++] = 30;
++
++    setMaxPictureResolutions();
++    ALOGI("mMaxWidth:%d, mMaxHeight:%d", mMaxWidth, mMaxHeight);
++
++    mFocalLength = 3.37f;
++    mPhysicalWidth = 3.6288f;   //2592 x 1.4u
++    mPhysicalHeight = 2.7216f;  //1944 x 1.4u
++
++    ALOGI("tvin device, mFocalLength:%f, mPhysicalWidth:%f, mPhysicalHeight %f",
++        mFocalLength, mPhysicalWidth, mPhysicalHeight);
++
++    close(fd);
++    return NO_ERROR;
++}
++
++// configure device.
++int32_t TVINDevice::TVinStream::onDeviceConfigureLocked()
++{
++    ALOGI("%s", __func__);
++    int32_t ret = 0;
++    if (mDev <= 0) {
++        ALOGE("%s invalid fd handle", __func__);
++        return BAD_VALUE;
++    }
++
++    int maxWait = 6;
++    v4l2_std_id mSTD;
++    // Get the PAL/NTSC STD
++    do {
++        ret = ioctl(mDev, VIDIOC_G_STD, &mSTD);
++        if (ret < 0) {
++            ALOGW("%s VIDIOC_G_STD failed with try %d", __func__, maxWait - 1);
++            sleep(1);
++        }
++        maxWait --;
++    } while ((ret != 0) && (maxWait > 0));
++
++    if (mSTD == V4L2_STD_PAL)
++        ALOGI("%s Get current mode: PAL", __func__);
++    else if (mSTD == V4L2_STD_NTSC)
++        ALOGI("%s Get current mode: NTSC", __func__);
++    else {
++        ALOGE("%s Error!Get invalid mode: %llu", __func__, mSTD);
++        return BAD_VALUE;
++    }
++
++    if (ioctl(mDev, VIDIOC_S_STD, &mSTD) < 0) {
++        ALOGE("%s VIDIOC_S_STD failed", __func__);
++        return BAD_VALUE;
++    }
++
++    return USPStream::onDeviceConfigureLocked();
++}
++
+diff --git a/mx6/libcamera3/TVINDevice.h b/mx6/libcamera3/TVINDevice.h
+new file mode 100644
+index 0000000..037aaf9
+--- /dev/null
++++ b/mx6/libcamera3/TVINDevice.h
+@@ -0,0 +1,46 @@
++/*
++ * Copyright (C) 2012-2015 Freescale Semiconductor, Inc.
++ *
++ * Licensed under the Apache License, Version 2.0 (the "License");
++ * you may not use this file except in compliance with the License.
++ * You may obtain a copy of the License at
++ *
++ *      http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++
++#ifndef _TVIN_DEVICE_H_
++#define _TVIN_DEVICE_H_
++
++#include "Camera.h"
++#include "USPStream.h"
++
++class TVINDevice : public Camera
++{
++public:
++    TVINDevice(int32_t id, int32_t facing, int32_t orientation, char* path);
++    ~TVINDevice();
++
++    virtual status_t initSensorStaticData();
++
++private:
++    class TVinStream : public USPStream {
++    public:
++        TVinStream(Camera* device)
++            : USPStream(device) {}
++        virtual ~TVinStream() {}
++
++        // configure device.
++        virtual int32_t onDeviceConfigureLocked();
++    };
++
++private:
++    v4l2_std_id mSTD;
++};
++
++#endif
+diff --git a/mx6/libcamera3/USPStream.cpp b/mx6/libcamera3/USPStream.cpp
+new file mode 100644
+index 0000000..cb2beb3
+--- /dev/null
++++ b/mx6/libcamera3/USPStream.cpp
+@@ -0,0 +1,297 @@
++/*
++ * Copyright (C) 2015 Freescale Semiconductor, Inc.
++ *
++ * Licensed under the Apache License, Version 2.0 (the "License");
++ * you may not use this file except in compliance with the License.
++ * You may obtain a copy of the License at
++ *
++ *      http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++
++#include "USPStream.h"
++
++USPStream::USPStream(Camera* device)
++    : MMAPStream(device), mIonFd(-1)
++{
++    mIonFd = ion_open();
++}
++
++USPStream::~USPStream()
++{
++    if (mIonFd > 0) {
++        close(mIonFd);
++        mIonFd = -1;
++    }
++}
++
++// configure device.
++int32_t USPStream::onDeviceConfigureLocked()
++{
++    ALOGI("%s", __func__);
++    int32_t ret = 0;
++    if (mDev <= 0) {
++        ALOGE("%s invalid fd handle", __func__);
++        return BAD_VALUE;
++    }
++
++    return MMAPStream::onDeviceConfigureLocked();
++}
++
++int32_t USPStream::onDeviceStartLocked()
++{
++    ALOGV("%s", __func__);
++    if (mDev <= 0) {
++        ALOGE("%s invalid dev node", __func__);
++        return BAD_VALUE;
++    }
++
++    //-------register buffers----------
++    struct v4l2_buffer buf;
++    struct v4l2_requestbuffers req;
++
++    memset(&req, 0, sizeof (req));
++    req.count = mNumBuffers;
++    req.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
++    req.memory = V4L2_MEMORY_USERPTR;
++    if (ioctl(mDev, VIDIOC_REQBUFS, &req) < 0) {
++        ALOGE("%s VIDIOC_REQBUFS failed", __func__);
++        return BAD_VALUE;
++    }
++
++    for (uint32_t i = 0; i < mNumBuffers; i++) {
++        memset(&buf, 0, sizeof (buf));
++        buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
++        buf.index = i;
++        buf.memory = V4L2_MEMORY_USERPTR;
++        buf.m.offset = mBuffers[i]->mPhyAddr;
++        buf.length   = mBuffers[i]->mSize;
++        if (ioctl(mDev, VIDIOC_QUERYBUF, &buf) < 0) {
++            ALOGE("%s VIDIOC_QUERYBUF error", __func__);
++            return BAD_VALUE;
++        }
++    }
++
++    int32_t ret = 0;
++    //----------qbuf----------
++    struct v4l2_buffer cfilledbuffer;
++    for (uint32_t i = 0; i < mNumBuffers; i++) {
++        memset(&cfilledbuffer, 0, sizeof (struct v4l2_buffer));
++        cfilledbuffer.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
++        cfilledbuffer.memory = V4L2_MEMORY_USERPTR;
++        cfilledbuffer.index    = i;
++        cfilledbuffer.m.offset = mBuffers[i]->mPhyAddr;
++        ALOGI("%s VIDIOC_QBUF phy:0x%x", __func__, mBuffers[i]->mPhyAddr);
++        ret = ioctl(mDev, VIDIOC_QBUF, &cfilledbuffer);
++        if (ret < 0) {
++            ALOGE("%s VIDIOC_QBUF Failed", __func__);
++            return BAD_VALUE;
++        }
++    }
++
++    //-------stream on-------
++    enum v4l2_buf_type bufType;
++    bufType = V4L2_BUF_TYPE_VIDEO_CAPTURE;
++    ret = ioctl(mDev, VIDIOC_STREAMON, &bufType);
++    if (ret < 0) {
++        ALOGE("%s VIDIOC_STREAMON failed:%s", __func__, strerror(errno));
++        return ret;
++    }
++
++    return 0;
++}
++
++int32_t USPStream::onDeviceStopLocked()
++{
++    ALOGV("%s", __func__);
++    int32_t ret = 0;
++
++    if (mDev <= 0) {
++        ALOGE("%s invalid fd handle", __func__);
++        return BAD_VALUE;
++    }
++
++    enum v4l2_buf_type bufType;
++    bufType = V4L2_BUF_TYPE_VIDEO_CAPTURE;
++    ret = ioctl(mDev, VIDIOC_STREAMOFF, &bufType);
++    if (ret < 0) {
++        ALOGE("%s VIDIOC_STREAMOFF failed: %s", __func__, strerror(errno));
++        return ret;
++    }
++
++    return 0;
++}
++
++int32_t USPStream::onFrameAcquireLocked()
++{
++    ALOGV("%s", __func__);
++    int32_t ret = 0;
++    struct v4l2_buffer cfilledbuffer;
++    memset(&cfilledbuffer, 0, sizeof (cfilledbuffer));
++    cfilledbuffer.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
++    cfilledbuffer.memory = V4L2_MEMORY_USERPTR;
++
++    ret = ioctl(mDev, VIDIOC_DQBUF, &cfilledbuffer);
++    if (ret < 0) {
++        ALOGE("%s: VIDIOC_DQBUF Failed", __func__);
++        return -1;
++    }
++
++    return cfilledbuffer.index;
++}
++
++int32_t USPStream::onFrameReturnLocked(int32_t index, StreamBuffer& buf)
++{
++    ALOGV("%s", __func__);
++    int32_t ret = 0;
++    struct v4l2_buffer cfilledbuffer;
++    memset(&cfilledbuffer, 0, sizeof (struct v4l2_buffer));
++    cfilledbuffer.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
++    cfilledbuffer.memory = V4L2_MEMORY_USERPTR;
++    cfilledbuffer.index    = index;
++    cfilledbuffer.m.offset = buf.mPhyAddr;
++
++    ret = ioctl(mDev, VIDIOC_QBUF, &cfilledbuffer);
++    if (ret < 0) {
++        ALOGE("%s VIDIOC_QBUF Failed", __func__);
++        return BAD_VALUE;
++    }
++
++    return ret;
++}
++
++int32_t USPStream::getFormatSize()
++{
++    int32_t size = 0;
++    int alignedw, alignedh, c_stride;
++    switch (mFormat) {
++        case HAL_PIXEL_FORMAT_YCbCr_420_SP:
++            alignedw = ALIGN_PIXEL_16(mWidth);
++            alignedh = ALIGN_PIXEL_16(mHeight);
++            size = alignedw * alignedh * 3 / 2;
++            break;
++
++        case HAL_PIXEL_FORMAT_YCbCr_420_P: {
++            alignedw = ALIGN_PIXEL_32(mWidth);
++            alignedh = ALIGN_PIXEL_4(mHeight);
++            c_stride = (alignedw/2+15)/16*16;
++            size = (alignedw + c_stride) * alignedh;
++            break;
++        }
++        case HAL_PIXEL_FORMAT_YCbCr_422_I:
++            alignedw = ALIGN_PIXEL_16(mWidth);
++            alignedh = ALIGN_PIXEL_16(mHeight);
++            size = alignedw * alignedh * 2;
++            break;
++
++        default:
++            ALOGE("Error: %s format not supported", __func__);
++            break;
++    }
++
++    return size;
++}
++
++int32_t USPStream::allocateBuffersLocked()
++{
++    ALOGV("%s", __func__);
++    if (mIonFd <= 0) {
++        ALOGE("%s ion invalid", __func__);
++        return BAD_VALUE;
++    }
++
++    if (mRegistered) {
++        ALOGI("%s but buffer is already registered", __func__);
++        return 0;
++    }
++
++    int32_t size = getFormatSize();
++    if ((mWidth == 0) || (mHeight == 0) || (size == 0)) {
++        ALOGE("%s: width, height or size is 0", __func__);
++        return BAD_VALUE;
++    }
++
++    unsigned char *ptr = NULL;
++    int32_t sharedFd;
++    int32_t phyAddr;
++    ion_user_handle_t ionHandle;
++    int32_t ionSize = (size + PAGE_SIZE) & (~(PAGE_SIZE - 1));
++
++    ALOGI("allocateBufferFromIon buffer num:%d", mNumBuffers);
++    for (uint32_t i = 0; i < mNumBuffers; i++) {
++        ionHandle = -1;
++        int32_t err = ion_alloc(mIonFd, ionSize, 8, 1, 0, &ionHandle);
++        if (err) {
++            ALOGE("ion_alloc failed.");
++            return BAD_VALUE;
++        }
++
++        err = ion_map(mIonFd,
++                      ionHandle,
++                      ionSize,
++                      PROT_READ | PROT_WRITE,
++                      MAP_SHARED,
++                      0,
++                      &ptr,
++                      &sharedFd);
++
++        if (err) {
++            ALOGE("ion_map failed.");
++            return BAD_VALUE;
++        }
++        phyAddr = ion_phys(mIonFd, ionHandle);
++        if (phyAddr == 0) {
++            ALOGE("ion_phys failed.");
++            return BAD_VALUE;
++        }
++        ALOGI("phyalloc ptr:0x%x, phy:0x%x, ionSize:%d", (int32_t)ptr, phyAddr, ionSize);
++        mBuffers[i] = new StreamBuffer();
++        mBuffers[i]->mVirtAddr  = ptr;
++        mBuffers[i]->mPhyAddr   = phyAddr;
++        mBuffers[i]->mSize      =  size;
++        mBuffers[i]->mBufHandle = (buffer_handle_t*)ionHandle;
++        mBuffers[i]->mFd = sharedFd;
++        mBuffers[i]->mStream = this;
++    }
++
++    mRegistered = true;
++    mAllocatedBuffers = mNumBuffers;
++
++    return 0;
++}
++
++int32_t USPStream::freeBuffersLocked()
++{
++    ALOGV("%s", __func__);
++    if (mIonFd <= 0) {
++        ALOGE("%s ion invalid", __func__);
++        return BAD_VALUE;
++    }
++
++    if (!mRegistered) {
++        ALOGI("%s but buffer is not registered", __func__);
++        return 0;
++    }
++
++    ALOGI("freeBufferToIon buffer num:%d", mAllocatedBuffers);
++    for (uint32_t i = 0; i < mAllocatedBuffers; i++) {
++        ion_user_handle_t ionHandle =
++            (ion_user_handle_t)mBuffers[i]->mBufHandle;
++        close(mBuffers[i]->mFd);
++        ion_free(mIonFd, ionHandle);
++        munmap(mBuffers[i]->mVirtAddr, mBuffers[i]->mSize);
++        delete mBuffers[i];
++        mBuffers[i] = NULL;
++    }
++
++    mRegistered = false;
++    mAllocatedBuffers = 0;
++
++    return 0;
++}
++
+diff --git a/mx6/libcamera3/USPStream.h b/mx6/libcamera3/USPStream.h
+new file mode 100644
+index 0000000..ed5b423
+--- /dev/null
++++ b/mx6/libcamera3/USPStream.h
+@@ -0,0 +1,54 @@
++/*
++ * Copyright (C) 2015 Freescale Semiconductor, Inc.
++ *
++ * Licensed under the Apache License, Version 2.0 (the "License");
++ * you may not use this file except in compliance with the License.
++ * You may obtain a copy of the License at
++ *
++ *      http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++
++#ifndef _USP_STREAM_H
++#define _USP_STREAM_H
++
++#include "MMAPStream.h"
++
++// stream uses user pointer buffers which allocated in user space.
++// that exports physical address.
++class USPStream : public MMAPStream
++{
++public:
++    USPStream(Camera* device);
++    virtual ~USPStream();
++
++    // configure device.
++    virtual int32_t onDeviceConfigureLocked();
++    // start device.
++    virtual int32_t onDeviceStartLocked();
++    // stop device.
++    virtual int32_t onDeviceStopLocked();
++
++    // get buffer from V4L2.
++    virtual int32_t onFrameAcquireLocked();
++    // put buffer back to V4L2.
++    virtual int32_t onFrameReturnLocked(int32_t index, StreamBuffer& buf);
++
++    // allocate buffers.
++    virtual int32_t allocateBuffersLocked();
++    // free buffers.
++    virtual int32_t freeBuffersLocked();
++
++protected:
++    int32_t getFormatSize();
++
++private:
++    int32_t mIonFd;
++};
++
++#endif
+diff --git a/mx6/libcamera3/UvcDevice.cpp b/mx6/libcamera3/UvcDevice.cpp
+index 8c3e451..c05c9bb 100644
+--- a/mx6/libcamera3/UvcDevice.cpp
++++ b/mx6/libcamera3/UvcDevice.cpp
+@@ -15,12 +15,14 @@
+  */
+ 
+ #include "UvcDevice.h"
++#include "DMAStream.h"
+ 
+ #define LOGI_C920 "HD Pro Webcam C920"
+ 
+ UvcDevice::UvcDevice(int32_t id, int32_t facing, int32_t orientation, char* path)
+     : Camera(id, facing, orientation, path)
+ {
++    mVideoStream = new UvcStream(this, path);
+ }
+ 
+ UvcDevice::~UvcDevice()
+@@ -81,38 +83,38 @@ status_t UvcDevice::initSensorStaticData()
+         memset(&vid_frmsize, 0, sizeof(struct v4l2_frmsizeenum));
+         vid_frmsize.index        = index++;
+         vid_frmsize.pixel_format = convertPixelFormatToV4L2Format(mSensorFormats[0]);
+-        ret = ioctl(fd,
+-                    VIDIOC_ENUM_FRAMESIZES, &vid_frmsize);
++        ret = ioctl(fd, VIDIOC_ENUM_FRAMESIZES, &vid_frmsize);
++        if (ret != 0) {
++            continue;
++        }
++        //uvc need do csc, so omit large resolution.
++        if (vid_frmsize.discrete.width > 1920 ||
++                vid_frmsize.discrete.height > 1080) {
++            continue;
++        }
+ 
+-        if (ret == 0) {
+-            //uvc need do csc, so omit large resolution.
+-            if (vid_frmsize.discrete.width > 1920 ||
+-                     vid_frmsize.discrete.height > 1080) {
+-                continue;
+-            }
+-
+-            ALOGI("enum frame size w:%d, h:%d",
+-                       vid_frmsize.discrete.width, vid_frmsize.discrete.height);
+-            memset(&vid_frmval, 0, sizeof(struct v4l2_frmivalenum));
+-            vid_frmval.index        = 0;
+-            vid_frmval.pixel_format = vid_frmsize.pixel_format;
+-            vid_frmval.width        = vid_frmsize.discrete.width;
+-            vid_frmval.height       = vid_frmsize.discrete.height;
+-
+-            ret = ioctl(fd, VIDIOC_ENUM_FRAMEINTERVALS, &vid_frmval);
+-            if (ret == 0) {
+-                ALOGI("vid_frmval denominator:%d, numeraton:%d",
+-                             vid_frmval.discrete.denominator,
+-                             vid_frmval.discrete.numerator);
+-                mPictureResolutions[pictureCnt++] = vid_frmsize.discrete.width;
+-                mPictureResolutions[pictureCnt++] = vid_frmsize.discrete.height;
+-
+-                if (vid_frmval.discrete.denominator /
+-                    vid_frmval.discrete.numerator > 15) {
+-                    mPreviewResolutions[previewCnt++] = vid_frmsize.discrete.width;
+-                    mPreviewResolutions[previewCnt++] = vid_frmsize.discrete.height;;
+-                }
+-            }
++        ALOGI("enum frame size w:%d, h:%d",
++                vid_frmsize.discrete.width, vid_frmsize.discrete.height);
++        memset(&vid_frmval, 0, sizeof(struct v4l2_frmivalenum));
++        vid_frmval.index        = 0;
++        vid_frmval.pixel_format = vid_frmsize.pixel_format;
++        vid_frmval.width        = vid_frmsize.discrete.width;
++        vid_frmval.height       = vid_frmsize.discrete.height;
++
++        ret = ioctl(fd, VIDIOC_ENUM_FRAMEINTERVALS, &vid_frmval);
++        if (ret != 0) {
++            continue;
++        }
++        ALOGI("vid_frmval denominator:%d, numeraton:%d",
++                vid_frmval.discrete.denominator,
++                vid_frmval.discrete.numerator);
++        mPictureResolutions[pictureCnt++] = vid_frmsize.discrete.width;
++        mPictureResolutions[pictureCnt++] = vid_frmsize.discrete.height;
++
++        if (vid_frmval.discrete.denominator /
++                vid_frmval.discrete.numerator > 15) {
++            mPreviewResolutions[previewCnt++] = vid_frmsize.discrete.width;
++            mPreviewResolutions[previewCnt++] = vid_frmsize.discrete.height;
+         }
+     } // end while
+ 
+@@ -151,3 +153,62 @@ status_t UvcDevice::initSensorStaticData()
+     return 0;
+ }
+ 
++int32_t UvcDevice::UvcStream::onDeviceConfigureLocked()
++{
++    ALOGI("%s", __func__);
++
++    int32_t ret = 0;
++    if (mDev <= 0) {
++        // usb camera should open dev node again.
++        // because when stream off, the dev node must close.
++        mDev = open(mUvcPath, O_RDWR);
++        if (mDev <= 0) {
++            ALOGE("%s invalid fd handle", __func__);
++            return BAD_VALUE;
++        }
++    }
++
++    return DMAStream::onDeviceConfigureLocked();
++}
++
++int32_t UvcDevice::UvcStream::onDeviceStopLocked()
++{
++    ALOGI("%s", __func__);
++    int32_t ret = DMAStream::onDeviceStopLocked();
++    // usb camera must close device after stream off.
++    if (mDev > 0) {
++        close(mDev);
++        mDev = -1;
++    }
++
++    return ret;
++}
++
++// usb camera require the specific buffer size.
++int32_t UvcDevice::UvcStream::getDeviceBufferSize()
++{
++    int32_t size = 0;
++    switch (mFormat) {
++        case HAL_PIXEL_FORMAT_YCbCr_420_SP:
++            size = ((mWidth + 16) & (~15)) * mHeight * 3 / 2;
++            break;
++
++         case HAL_PIXEL_FORMAT_YCbCr_420_P: {
++            int32_t stride = (mWidth+31)/32*32;
++            int32_t c_stride = (stride/2+15)/16*16;
++            size = (stride + c_stride) * mHeight;
++             break;
++         }
++
++         case HAL_PIXEL_FORMAT_YCbCr_422_I:
++            size = mWidth * mHeight * 2;
++             break;
++
++        default:
++            ALOGE("Error: %s format not supported", __func__);
++            break;
++    }
++
++    return size;
++}
++
+diff --git a/mx6/libcamera3/UvcDevice.h b/mx6/libcamera3/UvcDevice.h
+index 82ff39d..bb7c3cb 100644
+--- a/mx6/libcamera3/UvcDevice.h
++++ b/mx6/libcamera3/UvcDevice.h
+@@ -18,6 +18,7 @@
+ #define _UVC_DEVICE_H
+ 
+ #include "Camera.h"
++#include "DMAStream.h"
+ 
+ class UvcDevice : public Camera
+ {
+@@ -29,7 +30,25 @@ public:
+     virtual bool isHotplug() {return true;}
+ 
+ private:
++    class UvcStream : public DMAStream {
++    public:
++        UvcStream(Camera* device, const char* name)
++              : DMAStream(device) {
++            strncpy(mUvcPath, name, CAMAERA_FILENAME_LENGTH);
++        }
++        virtual ~UvcStream() {}
+ 
++        // configure device.
++        virtual int32_t onDeviceConfigureLocked();
++        // stop device.
++        virtual int32_t onDeviceStopLocked();
++
++        // get device buffer required size.
++        virtual int32_t getDeviceBufferSize();
++
++    private:
++        char mUvcPath[CAMAERA_FILENAME_LENGTH];
++    };
+ };
+ 
+ #endif
+diff --git a/mx6/libcamera3/UvcStream.cpp b/mx6/libcamera3/UvcStream.cpp
+deleted file mode 100644
+index c4202fb..0000000
+--- a/mx6/libcamera3/UvcStream.cpp
++++ /dev/null
+@@ -1,328 +0,0 @@
+-/*
+- * Copyright (C) 2015 Freescale Semiconductor, Inc.
+- *
+- * Licensed under the Apache License, Version 2.0 (the "License");
+- * you may not use this file except in compliance with the License.
+- * You may obtain a copy of the License at
+- *
+- *      http://www.apache.org/licenses/LICENSE-2.0
+- *
+- * Unless required by applicable law or agreed to in writing, software
+- * distributed under the License is distributed on an "AS IS" BASIS,
+- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+- * See the License for the specific language governing permissions and
+- * limitations under the License.
+- */
+-
+-#include "UvcStream.h"
+-
+-UvcStream::UvcStream(Camera* device, const char* name)
+-    : DeviceStream(device), mIonFd(-1), mUvcSize(0)
+-{
+-    mIonFd = ion_open();
+-    strncpy(mUvcPath, name, CAMAERA_FILENAME_LENGTH);
+-}
+-
+-UvcStream::~UvcStream()
+-{
+-    if (mIonFd > 0) {
+-        close(mIonFd);
+-        mIonFd = -1;
+-    }
+-}
+-
+-// configure device.
+-int32_t UvcStream::onDeviceConfigureLocked()
+-{
+-    ALOGV("%s", __func__);
+-
+-    int32_t ret = 0;
+-    if (mDev <= 0) {
+-        // usb camera should open dev node again.
+-        // because when stream off, the dev node must close.
+-        mDev = open(mUvcPath, O_RDWR);
+-        if (mDev <= 0) {
+-            ALOGE("%s invalid fd handle", __func__);
+-            return BAD_VALUE;
+-        }
+-    }
+-
+-    int32_t fps = 30;
+-    int32_t vformat;
+-    vformat = convertPixelFormatToV4L2Format(mFormat);
+-
+-    if ((mWidth > 1920) || (mHeight > 1080)) {
+-        fps = 15;
+-    }
+-    ALOGI("Width * Height %d x %d format %c%c%c%c, fps: %d",
+-          mWidth, mHeight, vformat&0xFF, (vformat>>8)&0xFF,
+-          (vformat>>16)&0xFF, (vformat>>24)&0xFF, fps);
+-
+-    struct v4l2_streamparm param;
+-    memset(&param, 0, sizeof(param));
+-    param.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+-    param.parm.capture.timeperframe.numerator   = 1;
+-    param.parm.capture.timeperframe.denominator = fps;
+-    ret = ioctl(mDev, VIDIOC_S_PARM, &param);
+-    if (ret < 0) {
+-        ALOGE("%s VIDIOC_S_PARM Failed: %s", __func__, strerror(errno));
+-        return ret;
+-    }
+-
+-    struct v4l2_format fmt;
+-    memset(&fmt, 0, sizeof(fmt));
+-    fmt.type                 = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+-    fmt.fmt.pix.width        = mWidth & 0xFFFFFFF8;
+-    fmt.fmt.pix.height       = mHeight & 0xFFFFFFF8;
+-    fmt.fmt.pix.pixelformat  = vformat;
+-    fmt.fmt.pix.priv         = 0;
+-    fmt.fmt.pix.sizeimage    = 0;
+-    fmt.fmt.pix.bytesperline = 0;
+-
+-    ret = ioctl(mDev, VIDIOC_S_FMT, &fmt);
+-    if (ret < 0) {
+-        ALOGE("%s VIDIOC_S_FMT Failed: %s", __func__, strerror(errno));
+-        return ret;
+-    }
+-
+-
+-    return 0;
+-}
+-
+-int32_t UvcStream::onDeviceStartLocked()
+-{
+-    ALOGV("%s", __func__);
+-
+-    if (mDev <= 0) {
+-        ALOGE("----%s invalid fd-----", __func__);
+-        return BAD_VALUE;
+-    }
+-
+-    //-------register buffers----------
+-    struct v4l2_buffer buf;
+-    struct v4l2_requestbuffers req;
+-
+-    memset(&req, 0, sizeof (req));
+-    req.count = mNumBuffers;
+-    req.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+-    req.memory = V4L2_MEMORY_DMABUF;
+-    if (ioctl(mDev, VIDIOC_REQBUFS, &req) < 0) {
+-        ALOGE("%s: VIDIOC_REQBUFS failed", __func__);
+-        return BAD_VALUE;
+-    }
+-
+-    int32_t ret = 0;
+-    //----------qbuf----------
+-    struct v4l2_buffer cfilledbuffer;
+-    for (uint32_t i = 0; i < mNumBuffers; i++) {
+-        memset(&cfilledbuffer, 0, sizeof (struct v4l2_buffer));
+-        cfilledbuffer.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+-        cfilledbuffer.memory = V4L2_MEMORY_DMABUF;
+-        cfilledbuffer.m.fd = mBuffers[i]->mFd;
+-        cfilledbuffer.index    = i;
+-        cfilledbuffer.length = mUvcSize;
+-        ALOGI("buf[%d] length:%d", i, cfilledbuffer.length);
+-        ret = ioctl(mDev, VIDIOC_QBUF, &cfilledbuffer);
+-        if (ret < 0) {
+-            ALOGE("%s VIDIOC_QBUF Failed: %s", __func__, strerror(errno));
+-            return BAD_VALUE;
+-        }
+-    }
+-
+-    //-------stream on-------
+-    enum v4l2_buf_type bufType;
+-    bufType = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+-    ret = ioctl(mDev, VIDIOC_STREAMON, &bufType);
+-    if (ret < 0) {
+-        ALOGE("%s VIDIOC_STREAMON failed: %s", __func__, strerror(errno));
+-        return ret;
+-    }
+-
+-    return 0;
+-}
+-
+-int32_t UvcStream::onDeviceStopLocked()
+-{
+-    ALOGV("%s", __func__);
+-    int32_t ret = 0;
+-
+-    if (mDev <= 0) {
+-        ALOGE("%s invalid fd handle", __func__);
+-        return BAD_VALUE;
+-    }
+-
+-    enum v4l2_buf_type bufType;
+-    bufType = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+-    ret = ioctl(mDev, VIDIOC_STREAMOFF, &bufType);
+-    if (ret < 0) {
+-        ALOGE("%s VIDIOC_STREAMOFF failed:%s", __func__, strerror(errno));
+-        return ret;
+-    }
+-
+-    // usb camera must close device after stream off.
+-    if (mDev > 0) {
+-        close(mDev);
+-        mDev = -1;
+-    }
+-
+-    return 0;
+-}
+-
+-int32_t UvcStream::onFrameAcquireLocked()
+-{
+-    ALOGV("%s", __func__);
+-    int32_t ret = 0;
+-    struct v4l2_buffer cfilledbuffer;
+-    memset(&cfilledbuffer, 0, sizeof (cfilledbuffer));
+-    cfilledbuffer.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+-    cfilledbuffer.memory = V4L2_MEMORY_DMABUF;
+-
+-    ret = ioctl(mDev, VIDIOC_DQBUF, &cfilledbuffer);
+-    if (ret < 0) {
+-        ALOGE("%s: VIDIOC_DQBUF Failed: %s", __func__, strerror(errno));
+-        return -1;
+-    }
+-
+-    int32_t index = cfilledbuffer.index;
+-    ALOGV("acquire index:%d", cfilledbuffer.index);
+-    return cfilledbuffer.index;
+-}
+-
+-int32_t UvcStream::onFrameReturnLocked(int32_t index, StreamBuffer& buf)
+-{
+-    ALOGV("%s: index:%d", __func__, index);
+-    int32_t ret = 0;
+-    struct v4l2_buffer cfilledbuffer;
+-    memset(&cfilledbuffer, 0, sizeof (struct v4l2_buffer));
+-    cfilledbuffer.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+-    cfilledbuffer.memory = V4L2_MEMORY_DMABUF;
+-    cfilledbuffer.m.fd = buf.mFd;
+-    cfilledbuffer.index = index;
+-    cfilledbuffer.length = mUvcSize;
+-
+-    ret = ioctl(mDev, VIDIOC_QBUF, &cfilledbuffer);
+-    if (ret < 0) {
+-        ALOGE("%s: VIDIOC_QBUF Failed: %s", __func__, strerror(errno));
+-        return BAD_VALUE;
+-    }
+-
+-    return 0;
+-}
+-
+-int32_t UvcStream::allocateBuffersLocked()
+-{
+-    ALOGI("%s", __func__);
+-    if (mIonFd <= 0) {
+-        ALOGE("%s ion invalid", __func__);
+-        return BAD_VALUE;
+-    }
+-
+-    if (mRegistered) {
+-        ALOGI("%s but buffer is already registered", __func__);
+-        return 0;
+-    }
+-
+-    int32_t size = 0;
+-    if ((mWidth == 0) || (mHeight == 0)) {
+-        ALOGE("%s: width or height = 0", __func__);
+-        return BAD_VALUE;
+-    }
+-
+-    switch (mFormat) {
+-        case HAL_PIXEL_FORMAT_YCbCr_420_SP:
+-            size = mWidth * ((mHeight + 16) & (~15)) * 3 / 2;
+-            break;
+-
+-        case HAL_PIXEL_FORMAT_YCbCr_420_P:
+-            size = mWidth * mHeight * 3 / 2;
+-            break;
+-
+-        case HAL_PIXEL_FORMAT_YCbCr_422_I:
+-            size = mWidth * mHeight * 2;
+-            break;
+-
+-        default:
+-            ALOGE("Error: format:0x%x not supported int ion alloc", mFormat);
+-            return BAD_VALUE;
+-    }
+-    mUvcSize = size;
+-
+-    unsigned char *ptr = NULL;
+-    int32_t sharedFd;
+-    int32_t phyAddr;
+-    ion_user_handle_t ionHandle;
+-    size = (size + PAGE_SIZE) & (~(PAGE_SIZE - 1));
+-
+-    ALOGI("allocateBufferFromIon buffer num:%d", mNumBuffers);
+-    for (uint32_t i = 0; i < mNumBuffers; i++) {
+-        ionHandle = -1;
+-        int32_t err = ion_alloc(mIonFd, size, 8, 1, 0, &ionHandle);
+-        if (err) {
+-            ALOGE("ion_alloc failed.");
+-            return BAD_VALUE;
+-        }
+-
+-        err = ion_map(mIonFd,
+-                      ionHandle,
+-                      size,
+-                      PROT_READ | PROT_WRITE,
+-                      MAP_SHARED,
+-                      0,
+-                      &ptr,
+-                      &sharedFd);
+-
+-        if (err) {
+-            ALOGE("ion_map failed.");
+-            return BAD_VALUE;
+-        }
+-        phyAddr = ion_phys(mIonFd, ionHandle);
+-        if (phyAddr == 0) {
+-            ALOGE("ion_phys failed.");
+-            return BAD_VALUE;
+-        }
+-        ALOGI("phyalloc ptr:0x%x, phy:0x%x, size:%d", (int32_t)ptr, phyAddr, size);
+-        mBuffers[i] = new StreamBuffer();
+-        mBuffers[i]->mVirtAddr  = ptr;
+-        mBuffers[i]->mPhyAddr   = phyAddr;
+-        mBuffers[i]->mSize      =  size;
+-        mBuffers[i]->mBufHandle = (buffer_handle_t*)ionHandle;
+-        mBuffers[i]->mStream = this;
+-        mBuffers[i]->mFd = sharedFd;
+-    }
+-
+-    mRegistered = true;
+-    mAllocatedBuffers = mNumBuffers;
+-
+-    return 0;
+-}
+-
+-int32_t UvcStream::freeBuffersLocked()
+-{
+-    ALOGI("%s", __func__);
+-    if (mIonFd <= 0) {
+-        ALOGE("%s ion invalid", __func__);
+-        return BAD_VALUE;
+-    }
+-
+-    if (!mRegistered) {
+-        ALOGI("%s but buffer is not registered", __func__);
+-        return 0;
+-    }
+-
+-    ALOGI("freeBufferToIon buffer num:%d", mAllocatedBuffers);
+-    for (uint32_t i = 0; i < mAllocatedBuffers; i++) {
+-        ion_user_handle_t ionHandle =
+-            (ion_user_handle_t)mBuffers[i]->mBufHandle;
+-        close(mBuffers[i]->mFd);
+-        ion_free(mIonFd, ionHandle);
+-        munmap(mBuffers[i]->mVirtAddr, mBuffers[i]->mSize);
+-        delete mBuffers[i];
+-        mBuffers[i] = NULL;
+-    }
+-
+-    mRegistered = false;
+-    mAllocatedBuffers = 0;
+-
+-    return 0;
+-}
+-
+diff --git a/mx6/libcamera3/UvcStream.h b/mx6/libcamera3/UvcStream.h
+deleted file mode 100644
+index 5433d28..0000000
+--- a/mx6/libcamera3/UvcStream.h
++++ /dev/null
+@@ -1,51 +0,0 @@
+-/*
+- * Copyright (C) 2015 Freescale Semiconductor, Inc.
+- *
+- * Licensed under the Apache License, Version 2.0 (the "License");
+- * you may not use this file except in compliance with the License.
+- * You may obtain a copy of the License at
+- *
+- *      http://www.apache.org/licenses/LICENSE-2.0
+- *
+- * Unless required by applicable law or agreed to in writing, software
+- * distributed under the License is distributed on an "AS IS" BASIS,
+- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+- * See the License for the specific language governing permissions and
+- * limitations under the License.
+- */
+-
+-#ifndef _UVC_STREAM_H
+-#define _UVC_STREAM_H
+-
+-#include "DeviceStream.h"
+-
+-class UvcStream : public DeviceStream
+-{
+-public:
+-    UvcStream(Camera* device, const char* name);
+-    virtual ~UvcStream();
+-
+-    // configure device.
+-    virtual int32_t onDeviceConfigureLocked();
+-    // start device.
+-    virtual int32_t onDeviceStartLocked();
+-    // stop device.
+-    virtual int32_t onDeviceStopLocked();
+-
+-    // get buffer from V4L2.
+-    virtual int32_t onFrameAcquireLocked();
+-    // put buffer back to V4L2.
+-    virtual int32_t onFrameReturnLocked(int32_t index, StreamBuffer& buf);
+-
+-    // allocate buffers.
+-    virtual int32_t allocateBuffersLocked();
+-    // free buffers.
+-    virtual int32_t freeBuffersLocked();
+-
+-private:
+-    int32_t mIonFd;
+-    int32_t mUvcSize;
+-    char mUvcPath[CAMAERA_FILENAME_LENGTH];
+-};
+-
+-#endif
+diff --git a/mx6/libcamera3/VideoStream.cpp b/mx6/libcamera3/VideoStream.cpp
+new file mode 100644
+index 0000000..f23671e
+--- /dev/null
++++ b/mx6/libcamera3/VideoStream.cpp
+@@ -0,0 +1,444 @@
++/*
++ * Copyright (C) 2015 Freescale Semiconductor, Inc.
++ *
++ * Licensed under the Apache License, Version 2.0 (the "License");
++ * you may not use this file except in compliance with the License.
++ * You may obtain a copy of the License at
++ *
++ *      http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++
++#include "VideoStream.h"
++
++using namespace android;
++
++VideoStream::VideoStream(Camera* device)
++    : Stream(device), mState(STATE_INVALID),
++      mChanged(false), mDev(-1),
++      mAllocatedBuffers(0)
++{
++    g2dHandle = NULL;
++    mMessageThread = new MessageThread(this);
++}
++
++VideoStream::~VideoStream()
++{
++    ALOGI("%s", __func__);
++    destroyStream();
++    mMessageQueue.clearMessages();
++    mMessageQueue.clearCommands();
++    mMessageThread.clear();
++    mMessageThread = NULL;
++}
++
++void VideoStream::destroyStream()
++{
++    ALOGI("%s", __func__);
++    {
++        Mutex::Autolock lock(mLock);
++        if (mState == STATE_ERROR) {
++            ALOGI("%s finished!", __func__);
++            return;
++        }
++    }
++
++    if (mMessageThread != NULL && mMessageThread->isRunning()) {
++        mMessageQueue.postMessage(new CMessage(MSG_EXIT, 1), 1);
++        mMessageThread->requestExit();
++        mMessageThread->join();
++    }
++    ALOGI("%s finished!!", __func__);
++}
++
++int32_t VideoStream::openDev(const char* name)
++{
++    ALOGI("%s", __func__);
++    if (name == NULL) {
++        ALOGE("invalid dev name");
++        return BAD_VALUE;
++    }
++
++    Mutex::Autolock lock(mLock);
++
++    mDev = open(name, O_RDWR);
++    if (mDev <= 0) {
++        ALOGE("%s can not open camera devpath:%s", __func__, name);
++        return BAD_VALUE;
++    }
++
++    return 0;
++}
++
++int32_t VideoStream::configure(sp<Stream> stream)
++{
++    ALOGV("%s", __func__);
++    if ((stream->width() == 0) || (stream->height() == 0)
++         || (stream->format() == 0)) {
++        ALOGE("%s: invalid stream parameters", __func__);
++        return BAD_VALUE;
++    }
++
++    int32_t sensorFormat = mCamera->getSensorFormat(stream->format());
++
++    Mutex::Autolock lock(mLock);
++    // when width&height&format are same, keep it to reduce start/stop time.
++    if ((mWidth == stream->width()) && (mHeight == stream->height())
++         && (mFormat == sensorFormat)) {
++        return 0;
++    }
++
++    mWidth  = stream->width();
++    mHeight = stream->height();
++    mFormat = sensorFormat;
++    mNumBuffers = stream->bufferNum();
++    mChanged = true;
++
++    ALOGI("%s: w:%d, h:%d, sensor format:0x%x, stream format:0x%x, num:%d",
++           __func__, mWidth, mHeight, mFormat, stream->format(), mNumBuffers);
++    mMessageQueue.clearMessages();
++    mMessageQueue.postMessage(new CMessage(MSG_CONFIG, 0), 0);
++
++    return 0;
++}
++
++int32_t VideoStream::handleConfigureLocked()
++{
++    int32_t ret   = 0;
++    ALOGV("%s", __func__);
++
++    // add start state to go into config state.
++    // so, only call config to do stop automically.
++    if (mState == STATE_START) {
++        ret = handleStopLocked(false);
++        if (ret < 0) {
++            ALOGE("please stop firstly before configure");
++            return ret;
++        }
++    }
++
++    // only invalid&stop&config state can go into config state.
++    if ((mState != STATE_INVALID) && (mState != STATE_STOP) &&
++        (mState != STATE_CONFIG)) {
++        ALOGE("invalid state:0x%x go into config state", mState);
++        return 0;
++    }
++
++    ret = onDeviceConfigureLocked();
++    if (ret != 0) {
++        ALOGE("%s onDeviceConfigure failed", __func__);
++        return ret;
++    }
++
++    mState = STATE_CONFIG;
++
++    return 0;
++}
++
++int32_t VideoStream::handleStartLocked(bool force)
++{
++    int32_t ret = 0;
++    ALOGV("%s", __func__);
++
++    // only config&stop state can go into start state.
++    if ((mState != STATE_CONFIG) && (mState != STATE_STOP)) {
++        ALOGE("invalid state:0x%x go into start state", mState);
++        return 0;
++    }
++
++    if (mChanged || force) {
++        mChanged = false;
++        if (allocateBuffersLocked() != 0) {
++            ALOGE("%s allocateBuffersLocked failed", __func__);
++            return -1;
++        }
++    }
++
++    ret = onDeviceStartLocked();
++    if (ret != 0) {
++        mState = STATE_ERROR;
++        ALOGE("%s onDeviceStart failed", __func__);
++        return ret;
++    }
++
++    mState = STATE_START;
++
++    return 0;
++}
++
++int32_t VideoStream::closeDev()
++{
++    ALOGI("%s", __func__);
++    Mutex::Autolock lock(mLock);
++
++    if (mState != STATE_ERROR && mMessageThread->isRunning()) {
++        mMessageQueue.postMessage(new CMessage(MSG_CLOSE, 0), 1);
++    }
++    else {
++        ALOGI("%s thread is exit", __func__);
++        if (mDev > 0) {
++            close(mDev);
++            mDev = -1;
++        }
++    }
++
++    return 0;
++}
++
++int32_t VideoStream::handleStopLocked(bool force)
++{
++    int32_t ret = 0;
++    ALOGV("%s", __func__);
++
++    // only start can go into stop state.
++    if (mState != STATE_START) {
++        ALOGI("state:0x%x can't go into stop state", mState);
++        return 0;
++    }
++
++    if (force || mChanged) {
++        ret = freeBuffersLocked();
++        if (ret != 0) {
++            ALOGE("%s freeBuffersLocked failed", __func__);
++            return -1;
++        }
++    }
++
++    ret = onDeviceStopLocked();
++    if (ret < 0) {
++        mState = STATE_ERROR;
++        ALOGE("StopStreaming: Unable to stop capture: %s", strerror(errno));
++    }
++    else {
++        mState = STATE_STOP;
++    }
++
++    if (force) {
++        // clear request messages.
++        mMessageQueue.clearMessages();
++        // clear capture request.
++        mRequests.clear();
++        // to do configure agian.
++        mWidth = 0;
++    }
++
++    return ret;
++}
++
++int32_t VideoStream::requestCapture(sp<CaptureRequest> req)
++{
++    Mutex::Autolock lock(mLock);
++
++    mRequests.push_back(req);
++
++    mMessageQueue.postMessage(new CMessage(MSG_FRAME, 0));
++
++    return 0;
++}
++
++StreamBuffer* VideoStream::acquireFrameLocked()
++{
++    int32_t index = onFrameAcquireLocked();
++    if (index >= MAX_STREAM_BUFFERS || index < 0) {
++        ALOGE("%s: invalid index %d", __func__, index);
++        return NULL;
++    }
++
++    return mBuffers[index];
++}
++
++int32_t VideoStream::getBufferIndexLocked(StreamBuffer& buf)
++{
++    for (uint32_t i=0; i<mNumBuffers; i++) {
++        if (mBuffers[i]->mPhyAddr == buf.mPhyAddr) {
++            return i;
++        }
++    }
++
++    return -1;
++}
++
++int32_t VideoStream::returnFrameLocked(StreamBuffer& buf)
++{
++    ALOGV("%s", __func__);
++    int32_t i = getBufferIndexLocked(buf);
++    if (i < 0 || i >= MAX_STREAM_BUFFERS) {
++        return BAD_VALUE;
++    }
++
++    return onFrameReturnLocked(i, buf);
++}
++
++int32_t VideoStream::handleCaptureFrame()
++{
++    int32_t ret = 0;
++    ALOGV("%s", __func__);
++
++    List< sp<CaptureRequest> >::iterator cur;
++    sp<CaptureRequest> req = NULL;
++    StreamBuffer *buf = NULL;
++    {
++        Mutex::Autolock lock(mLock);
++        if (mRequests.empty()) {
++            return 0;
++        }
++
++        cur = mRequests.begin();
++        req = *cur;
++    }
++    //advanced character.
++    ret = processCaptureSettings(req);
++    if (ret != 0) {
++        Mutex::Autolock lock(mLock);
++        mRequests.erase(cur);
++        ALOGE("processSettings failed");
++        return 0;
++    }
++
++    {
++        Mutex::Autolock lock(mLock);
++        buf = acquireFrameLocked();
++    }
++
++    if (buf == NULL) {
++        ALOGE("acquireFrameLocked failed");
++        req->onCaptureError();
++        Mutex::Autolock lock(mLock);
++        mRequests.erase(cur);
++        return 0;
++    }
++
++    ret = processCaptureRequest(*buf, req);
++    if (ret != 0) {
++        Mutex::Autolock lock(mLock);
++        returnFrameLocked(*buf);
++        ALOGE("processRequest failed");
++        return 0;
++    }
++
++    Mutex::Autolock lock(mLock);
++    mRequests.erase(cur);
++    returnFrameLocked(*buf);
++
++    return 0;
++}
++
++int32_t VideoStream::processCaptureRequest(StreamBuffer& src,
++                         sp<CaptureRequest> req)
++{
++    int32_t ret = 0;
++    ALOGV("%s", __func__);
++    for (uint32_t i=0; i<req->mOutBuffersNumber; i++) {
++        StreamBuffer* out = req->mOutBuffers[i];
++        sp<Stream>& stream = out->mStream;
++        // stream to process buffer.
++        stream->setCurrentBuffer(out);
++        stream->processCaptureBuffer(src, req->mSettings);
++        stream->setCurrentBuffer(NULL);
++        ret = req->onCaptureDone(out);
++        if (ret != 0) {
++            return ret;
++        }
++    }
++
++    return ret;
++}
++
++// process advanced character.
++int32_t VideoStream::processCaptureSettings(sp<CaptureRequest> req)
++{
++    ALOGV("%s", __func__);
++    sp<Metadata> meta = req->mSettings;
++    if (meta == NULL || meta->get() == NULL) {
++        ALOGI("invalid meta data");
++        return 0;
++    }
++    // device to do advanced character set.
++    int32_t ret = mCamera->processSettings(meta, req->mFrameNumber);
++    if (ret != 0) {
++        ALOGI("mCamera->processSettings failed");
++        return ret;
++    }
++
++    ret = req->onSettingsDone(meta);
++    if (ret != 0) {
++        ALOGI("onSettingsDone failed");
++        return ret;
++    }
++
++    if (req->mOutBuffersNumber == 0) {
++        ALOGI("num_output_buffers less than 0");
++        ret = 1;
++    }
++
++    return ret;
++}
++
++int32_t VideoStream::handleMessage()
++{
++    int32_t ret = 0;
++
++    sp<CMessage> msg = mMessageQueue.waitMessage();
++    if (msg == 0) {
++        ALOGE("get invalid message");
++        return -1;
++    }
++
++    switch (msg->what) {
++        case MSG_CONFIG: {
++            Mutex::Autolock lock(mLock);
++            ret = handleConfigureLocked();
++        }
++        break;
++
++        case MSG_CLOSE: {
++            Mutex::Autolock lock(mLock);
++            ret = handleStopLocked(true);
++            if (mDev > 0) {
++                close(mDev);
++                mDev = -1;
++            }
++        }
++        break;
++
++        case MSG_FRAME: {
++            Mutex::Autolock lock(mLock);
++            // to start device automically.
++            if (mState != STATE_START) {
++                ALOGV("state:0x%x when handle frame message", mState);
++                ret = handleStartLocked(false);
++                if (ret != 0) {
++                    ALOGE("%s handleStartLocked failed", __func__);
++                    return ret;
++                }
++            }
++
++        }
++        ret = handleCaptureFrame();
++        break;
++
++        case MSG_EXIT: {
++            Mutex::Autolock lock(mLock);
++            ALOGI("capture thread exit...");
++            if (mState == STATE_START) {
++                handleStopLocked(true);
++            }
++
++            ret = -1;
++        }
++        break;
++
++        default: {
++            ALOGE("%s invalid message what:%d", __func__, msg->what);
++        }
++        break;
++    }
++
++    return ret;
++}
++
+diff --git a/mx6/libcamera3/VideoStream.h b/mx6/libcamera3/VideoStream.h
+new file mode 100644
+index 0000000..ddefb1a
+--- /dev/null
++++ b/mx6/libcamera3/VideoStream.h
+@@ -0,0 +1,144 @@
++/*
++ * Copyright (C) 2015 Freescale Semiconductor, Inc.
++ *
++ * Licensed under the Apache License, Version 2.0 (the "License");
++ * you may not use this file except in compliance with the License.
++ * You may obtain a copy of the License at
++ *
++ *      http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++
++#ifndef _VIDEO_STREAM_H
++#define _VIDEO_STREAM_H
++
++#include <utils/threads.h>
++#include "MessageQueue.h"
++#include "CameraUtils.h"
++#include "Stream.h"
++#include "Camera.h"
++
++using namespace android;
++
++class Camera;
++
++class VideoStream : public Stream
++{
++public:
++    VideoStream(Camera* device);
++    virtual ~VideoStream();
++    void destroyStream();
++
++    // configure device stream.
++    int32_t configure(sp<Stream> stream);
++    //send capture request for stream.
++    int32_t requestCapture(sp<CaptureRequest> req);
++
++    // open/close device stream.
++    int32_t openDev(const char* name);
++    int32_t closeDev();
++
++    virtual void* getG2dHandle() {return g2dHandle;}
++
++private:
++    // message type.
++    static const int32_t MSG_CONFIG = 0x100;
++    static const int32_t MSG_FRAME = 0x103;
++    static const int32_t MSG_CLOSE = 0x104;
++    static const int32_t MSG_EXIT  = 0x105;
++
++    // device stream state.
++    static const int32_t STATE_INVALID = 0x201;
++    static const int32_t STATE_CONFIG = 0x202;
++    static const int32_t STATE_START = 0x203;
++    static const int32_t STATE_STOP  = 0x204;
++    static const int32_t STATE_ERROR  = 0x205;
++
++protected:
++    // handle configure message internally.
++    int32_t handleConfigureLocked();
++    virtual int32_t onDeviceConfigureLocked() = 0;
++    // handle start message internally.
++    int32_t handleStartLocked(bool force);
++    virtual int32_t onDeviceStartLocked() = 0;
++    // handle stop message internally.
++    int32_t handleStopLocked(bool force);
++    virtual int32_t onDeviceStopLocked() = 0;
++    // handle frame message internally.
++    int32_t handleCaptureFrame();
++
++    // process capture request with lock.
++    int32_t processCaptureRequest(StreamBuffer& src, sp<CaptureRequest> req);
++    // process capture advanced settings with lock.
++    int32_t processCaptureSettings(sp<CaptureRequest> req);
++    // get buffer from V4L2.
++    StreamBuffer* acquireFrameLocked();
++    virtual int32_t onFrameAcquireLocked() = 0;
++    // put buffer back to V4L2.
++    int32_t returnFrameLocked(StreamBuffer& buf);
++    virtual int32_t onFrameReturnLocked(int32_t index, StreamBuffer& buf) = 0;
++    // get buffer index.
++    int32_t getBufferIndexLocked(StreamBuffer& buf);
++
++    // allocate buffers.
++    virtual int32_t allocateBuffersLocked() = 0;
++    // free buffers.
++    virtual int32_t freeBuffersLocked() = 0;
++
++    int32_t handleMessage();
++
++private:
++    class MessageThread : public Thread
++    {
++    public:
++        MessageThread(VideoStream *device)
++            : Thread(false), mStream(device)
++            {}
++
++        virtual void onFirstRef() {
++            run("MessageThread", PRIORITY_URGENT_DISPLAY);
++        }
++
++        virtual status_t readyToRun() {
++            g2d_open(&mStream->g2dHandle);
++            return 0;
++        }
++
++        virtual bool threadLoop() {
++            int ret = mStream->handleMessage();
++            if (ret != 0) {
++                ALOGI("%s exit...", __func__);
++                g2d_close(mStream->g2dHandle);
++                mStream.clear();
++                mStream = NULL;
++                return false;
++            }
++
++            // loop until we need to quit
++            return true;
++        }
++
++    private:
++        sp<VideoStream> mStream;
++    };
++
++protected:
++    CMessageQueue mMessageQueue;
++    sp<MessageThread> mMessageThread;
++    int32_t mState;
++
++    List< sp<CaptureRequest> > mRequests;
++    int32_t mChanged;
++
++    // camera dev node.
++    int32_t mDev;
++    void *g2dHandle;
++    uint32_t mAllocatedBuffers;
++};
++
++#endif
+-- 
+1.8.0
+

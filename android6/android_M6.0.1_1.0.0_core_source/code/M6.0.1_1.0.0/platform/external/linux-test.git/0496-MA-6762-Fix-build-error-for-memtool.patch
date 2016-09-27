@@ -1,0 +1,29 @@
+From 9ab92cbb68039e88b6ece787f79778fafccd255f Mon Sep 17 00:00:00 2001
+From: "guoyin.chen" <guoyin.chen@freescale.com>
+Date: Tue, 2 Jun 2015 09:40:05 +0800
+Subject: [PATCH 496/505] MA-6762 Fix build error for memtool
+
+Add mx6ul_modules.c for android's makefile
+
+Signed-off-by: guoyin.chen <guoyin.chen@freescale.com>
+---
+ test/memtool/Android.mk | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/test/memtool/Android.mk b/test/memtool/Android.mk
+index b0ba623..d807b78 100755
+--- a/test/memtool/Android.mk
++++ b/test/memtool/Android.mk
+@@ -7,7 +7,8 @@ LOCAL_SRC_FILES := \
+        mx6dl_modules.c \
+        mx6q_modules.c \
+        mx6sx_modules.c \
+-       mx6sl_modules.c
++       mx6sl_modules.c \
++       mx6ul_modules.c
+ 
+ #LOCAL_CFLAGS += -DBUILD_FOR_ANDROID
+ 
+-- 
+1.8.0
+

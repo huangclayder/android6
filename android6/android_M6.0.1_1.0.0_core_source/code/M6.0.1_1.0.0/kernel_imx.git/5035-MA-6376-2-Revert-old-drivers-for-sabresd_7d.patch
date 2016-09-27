@@ -1,0 +1,1844 @@
+From 790d541719bdccfa4e48677e8754d45683863376 Mon Sep 17 00:00:00 2001
+From: Haoran Wang <b50027@freescale.com>
+Date: Mon, 11 May 2015 13:00:48 +0800
+Subject: [PATCH] MA-6376-2 Revert old drivers for sabresd_7d
+
+Revert "MA-6376-1 Add DTS for sensors on sabresd_7d"
+commit 2a09acfb950a98e7e5779230938dc851f3120b8e.
+
+Revert "MA-6376 Enable sensors on sabresd_7d"
+commit 71648230698d3e18cd2c06ac29ac0097f672e83b.
+
+Signed-off-by: Haoran Wang <b50027@freescale.com>
+---
+ arch/arm/boot/dts/imx7d-sdb.dts           |   1 -
+ arch/arm/configs/imx_v7_android_defconfig |   3 -
+ drivers/hwmon/Kconfig                     |  17 -
+ drivers/hwmon/Makefile                    |   3 -
+ drivers/hwmon/fxas2100x.c                 | 532 -----------------------
+ drivers/hwmon/fxos8700.c                  | 684 ------------------------------
+ drivers/hwmon/fxos8700.h                  | 172 --------
+ drivers/hwmon/mpl3115.c                   | 340 ---------------
+ 8 files changed, 1752 deletions(-)
+
+diff --git a/arch/arm/boot/dts/imx7d-sdb.dts b/arch/arm/boot/dts/imx7d-sdb.dts
+index 787f73d..a7d50d5 100644
+--- a/arch/arm/boot/dts/imx7d-sdb.dts
++++ b/arch/arm/boot/dts/imx7d-sdb.dts
+@@ -346,7 +346,6 @@
+ 	pinctrl-names = "default";
+ 	pinctrl-0 = <&pinctrl_i2c2>;
+ 	status = "okay";
+-
+     fxos8700@0e {
+         compatible = "fsl,fxos8700";
+         reg = <0x1e>;
+diff --git a/arch/arm/configs/imx_v7_android_defconfig b/arch/arm/configs/imx_v7_android_defconfig
+index 15cc456..7cc3c7b 100644
+--- a/arch/arm/configs/imx_v7_android_defconfig
++++ b/arch/arm/configs/imx_v7_android_defconfig
+@@ -326,9 +326,6 @@ CONFIG_SABRESD_MAX8903=y
+ CONFIG_IMX6_USB_CHARGER=y
+ CONFIG_SENSORS_MAX17135=y
+ CONFIG_SENSORS_MAG3110=y
+-CONFIG_SENSORS_FXOS8700=y
+-CONFIG_SENSORS_FXAS2100X=y
+-CONFIG_SENSORS_MPL3115=y
+ CONFIG_THERMAL=y
+ CONFIG_CPU_THERMAL=y
+ CONFIG_IMX_THERMAL=y
+diff --git a/drivers/hwmon/Kconfig b/drivers/hwmon/Kconfig
+index 068d6a3..7309618 100644
+--- a/drivers/hwmon/Kconfig
++++ b/drivers/hwmon/Kconfig
+@@ -1613,21 +1613,4 @@ config MXC_MMA8x5x
+ 	default y
+ 	help
+ 	  This configure is used by android sensor driver.
+-config SENSORS_FXOS8700
+-    tristate "Freescale FXOS8700 M+G combo sensor"
+-    depends on I2C && SYSFS
+-    help
+-    If you say yes here you get support for the Freescale FXOS8700 m+g combo  sensor.
+-
+-config SENSORS_FXAS2100X
+-    tristate "Freescale FXAS2100X gyroscope sensor"
+-    depends on I2C && SYSFS
+-    help
+-    If you say yes here you get support for the Freescale FXAS2100X gyroscope sensor.
+-
+-config SENSORS_MPL3115
+-    tristate "MPL3115 pressure device driver"
+-    depends on I2C
+-    default n
+-
+ endif # HWMON
+diff --git a/drivers/hwmon/Makefile b/drivers/hwmon/Makefile
+index b665da3..4c42579 100644
+--- a/drivers/hwmon/Makefile
++++ b/drivers/hwmon/Makefile
+@@ -146,9 +146,6 @@ obj-$(CONFIG_SENSORS_WM8350)	+= wm8350-hwmon.o
+ obj-$(CONFIG_SENSORS_MAG3110)   += mag3110.o
+ #obj-$(CONFIG_MXC_MMA8451)       += mxc_mma8451.o
+ obj-$(CONFIG_MXC_MMA8x5x)       += mma8x5x.o
+-obj-$(CONFIG_SENSORS_FXOS8700)   += fxos8700.o
+-obj-$(CONFIG_SENSORS_FXAS2100X)  += fxas2100x.o
+-obj-$(CONFIG_SENSORS_MPL3115)  += mpl3115.o
+ 
+ obj-$(CONFIG_PMBUS)		+= pmbus/
+ 
+diff --git a/drivers/hwmon/fxas2100x.c b/drivers/hwmon/fxas2100x.c
+deleted file mode 100644
+index ea980ac..0000000
+--- a/drivers/hwmon/fxas2100x.c
++++ /dev/null
+@@ -1,532 +0,0 @@
+-/*
+- *  fxas2100x.c - Linux kernel modules for 3-Axis Gyroscope sensor
+- *  Copyright (C) 2012-2015 Freescale Semiconductor, Inc. All Rights Reserved.
+- *
+- *  This program is free software; you can redistribute it and/or modify
+- *  it under the terms of the GNU General Public License as published by
+- *  the Free Software Foundation; either version 2 of the License, or
+- *  (at your option) any later version.
+- *
+- *  This program is distributed in the hope that it will be useful,
+- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+- *  GNU General Public License for more details.
+- *
+- *  You should have received a copy of the GNU General Public License
+- *  along with this program; if not, write to the Free Software
+- *  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+- */
+-
+-#include <linux/module.h>
+-#include <linux/init.h>
+-#include <linux/slab.h>
+-#include <linux/i2c.h>
+-#include <linux/pm.h>
+-#include <linux/mutex.h>
+-#include <linux/delay.h>
+-#include <linux/interrupt.h>
+-#include <linux/irq.h>
+-#include <linux/hwmon-sysfs.h>
+-#include <linux/err.h>
+-#include <linux/hwmon.h>
+-#include <linux/input-polldev.h>
+-#include <linux/miscdevice.h>
+-#include <linux/poll.h>
+-
+-#define	SENSOR_IOCTL_BASE	'S'
+-#define	SENSOR_GET_MODEL_NAME		_IOR(SENSOR_IOCTL_BASE, 0, char *)
+-#define	SENSOR_GET_POWER_STATUS		_IOR(SENSOR_IOCTL_BASE, 2, int)
+-#define	SENSOR_SET_POWER_STATUS		_IOR(SENSOR_IOCTL_BASE, 3, int)
+-#define	SENSOR_GET_DELAY_TIME		_IOR(SENSOR_IOCTL_BASE, 4, int)
+-#define	SENSOR_SET_DELAY_TIME		_IOR(SENSOR_IOCTL_BASE, 5, int)
+-#define	SENSOR_GET_RAW_DATA			_IOR(SENSOR_IOCTL_BASE, 6, short[3])
+-
+-#define FXAS2100X_I2C_ADDR         0x20
+-
+-#define FXAS21000_CHIP_ID		   0xD1
+-
+-#define FXAS21002_CHID_ID_1		   0xD6
+-#define FXAS21002_CHID_ID_2		   0xD7
+-
+-#define FXAS2100X_POSITION_DEFAULT	2
+-#define FXAS2100X_DELAY_DEFAULT		200
+-
+-#define FXAS2100X_STATUS_ZYXDR    0x08
+-#define FXAS2100X_BUF_SIZE    6
+-
+-/* register enum for fxas2100x registers */
+-enum {
+-	FXAS2100X_STATUS = 0x00,
+-	FXAS2100X_OUT_X_MSB,
+-	FXAS2100X_OUT_X_LSB,
+-	FXAS2100X_OUT_Y_MSB,
+-	FXAS2100X_OUT_Y_LSB,
+-	FXAS2100X_OUT_Z_MSB,
+-	FXAS2100X_OUT_Z_LSB,
+-	FXAS2100X_DR_STATUS,
+-	FXAS2100X_F_STATUS,
+-	FXAS2100X_F_SETUP,
+-	FXAS2100X_F_EVENT,
+-	FXAS2100X_INT_SRC_FLAG,
+-	FXAS2100X_WHO_AM_I,
+-	FXAS2100X_CTRL_REG0,
+-	FXAS2100X_RT_CFG,
+-	FXAS2100X_RT_SRC,
+-	FXAS2100X_RT_THS,
+-	FXAS2100X_RT_COUNT,
+-	FXAS2100X_TEMP,
+-	FXAS2100X_CTRL_REG1,
+-	FXAS2100X_CTRL_REG2,
+-	FXAS2100X_CTRL_REG3, // fxos21002 special
+-	FXAS2100X_REG_END,
+-};
+-
+-enum {
+-	STANDBY = 0,
+-	ACTIVED,
+-};
+-struct fxas2100x_data_axis {
+-	short x;
+-	short y;
+-	short z;
+-};
+-struct fxas2100x_data {
+-	struct i2c_client *client;
+-	atomic_t active;
+-	atomic_t delay;
+-	atomic_t position;
+-	u8 chip_id;
+-};
+-static struct fxas2100x_data *g_fxas2100x_data = NULL;
+-
+-static int fxas2100x_position_setting[8][3][3] = {
+-	{ { 0,	-1, 0  }, { 1,	0,  0	   }, { 0, 0, 1	     } },
+-	{ { -1, 0,  0  }, { 0,	-1, 0	   }, { 0, 0, 1	     } },
+-	{ { 0,	1,  0  }, { -1, 0,  0	   }, { 0, 0, 1	     } },
+-	{ { 1,	0,  0  }, { 0,	1,  0	   }, { 0, 0, 1	     } },
+-
+-	{ { 0,	-1, 0  }, { -1, 0,  0	   }, { 0, 0, -1     } },
+-	{ { -1, 0,  0  }, { 0,	1,  0	   }, { 0, 0, -1     } },
+-	{ { 0,	1,  0  }, { 1,	0,  0	   }, { 0, 0, -1     } },
+-	{ { 1,	0,  0  }, { 0,	-1, 0	   }, { 0, 0, -1     } },
+-};
+-
+-static int fxas2100x_data_convert(struct fxas2100x_data *pdata,
+-		struct fxas2100x_data_axis *axis_data)
+-{
+-	short rawdata[3], data[3];
+-	int i, j;
+-	int position = atomic_read(&pdata->position);
+-
+-	if (position < 0 || position > 7)
+-		position = 0;
+-	rawdata[0] = axis_data->x;
+-	rawdata[1] = axis_data->y;
+-	rawdata[2] = axis_data->z;
+-	for (i = 0; i < 3; i++) {
+-		data[i] = 0;
+-		for (j = 0; j < 3; j++)
+-			data[i] += rawdata[j] * fxas2100x_position_setting[position][i][j];
+-	}
+-	axis_data->x = data[0];
+-	axis_data->y = data[1];
+-	axis_data->z = data[2];
+-	return 0;
+-}
+-static int fxas2100x_device_init(struct i2c_client *client)
+-{
+-	int result;
+-	u8 val;
+-	struct fxas2100x_data *pdata = i2c_get_clientdata(client);
+-	if(pdata->chip_id == FXAS21000_CHIP_ID)
+-		val = (0x01 << 2);            /*fxas21000 dr 200HZ */
+-	else
+-		val = (0x02 << 2);			  /*fxas21002 dr 200HZ */
+-	result = i2c_smbus_write_byte_data(client, FXAS2100X_CTRL_REG1,val);
+-	if (result < 0)
+-		goto out;
+-	atomic_set(&pdata->active,STANDBY);
+-	return 0;
+-out:
+-	dev_err(&client->dev, "error when init fxas2100x:(%d)", result);
+-	return result;
+-}
+-
+-static int fxas2100x_change_mode(struct i2c_client *client, int mode)
+-{
+-	u8 val;
+-	int ret;
+-	if(mode == ACTIVED){
+-		val = i2c_smbus_read_byte_data(client, FXAS2100X_CTRL_REG1);
+-		val &= ~0x03;
+-		val |= 0x02;
+-		ret = i2c_smbus_write_byte_data(client,FXAS2100X_CTRL_REG1, val);  //set bit 1
+-
+-	 }else{
+-		val = i2c_smbus_read_byte_data(client, FXAS2100X_CTRL_REG1);
+-		val &= (~0x03);
+-		ret = i2c_smbus_write_byte_data(client, FXAS2100X_CTRL_REG1,val); // clear bit 0,1
+-	}
+-	return ret;
+-}
+-static int fxas2100x_set_delay(struct i2c_client *client, int delay)
+-{
+-	return 0;
+-}
+-static int fxas2100x_device_stop(struct i2c_client *client)
+-{
+-	u8 val;
+-	val = i2c_smbus_read_byte_data(client, FXAS2100X_CTRL_REG1);
+-	val &= ~0x03;
+-	i2c_smbus_write_byte_data(client, FXAS2100X_CTRL_REG1, val);
+-	return 0;
+-}
+-
+-static int fxas2100x_read_data(struct fxas2100x_data *pdata,
+-		struct fxas2100x_data_axis *data)
+-{
+-    struct i2c_client * client = pdata->client;
+-
+-	int x ,y ,z;
+-	u8 tmp_data[FXAS2100X_BUF_SIZE];
+-	int ret;
+-
+-	ret = i2c_smbus_read_i2c_block_data(client,
+-					    FXAS2100X_OUT_X_MSB,
+-						FXAS2100X_BUF_SIZE, tmp_data);
+-	if (ret < FXAS2100X_BUF_SIZE) {
+-		dev_err(&client->dev, "i2c block read failed\n");
+-		return -EIO;
+-	}
+-	data->x = ((tmp_data[0] << 8) & 0xff00) | tmp_data[1];
+-	data->y = ((tmp_data[2] << 8) & 0xff00) | tmp_data[3];
+-	data->z = ((tmp_data[4] << 8) & 0xff00) | tmp_data[5];
+-	if(pdata->chip_id ==  FXAS21000_CHIP_ID)
+-	{
+-		x = data->x;
+-		y = data->y;
+-		z = data->z;
+-		x = x * 4 / 5;
+-		y = y * 4 / 5;
+-		z = z * 4 / 5;
+-		data->x = x;
+-		data->y = y;
+-		data->z = z;
+-	}
+-	return 0;
+-}
+-
+-//fxas2100x miscdevice
+-static long fxas2100x_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
+-{
+-	struct fxas2100x_data *pdata = file->private_data;
+-	void __user *argp = (void __user *)arg;
+-    long ret = 0;
+-	short sdata[3];
+-	int enable;
+-	int delay;
+-	struct fxas2100x_data_axis data;
+-	if(!pdata){
+-		printk(KERN_ERR "FXAS2100X struct datt point is NULL.");
+-		return -EFAULT;
+-	}
+-	switch (cmd) {
+-		case SENSOR_GET_MODEL_NAME:
+-			if(copy_to_user(argp,"FXAS2100X GYRO",strlen("FXAS2100X GYRO") +1))
+-			{
+-				printk(KERN_ERR "SENSOR_GET_MODEL_NAME copy_to_user failed.");
+-				ret = -EFAULT;
+-			}
+-			break;
+-		case SENSOR_GET_POWER_STATUS:
+-			enable = atomic_read(&pdata->active);
+-			if(copy_to_user(argp,&enable,sizeof(int)))
+-			{
+-				printk(KERN_ERR "SENSOR_SET_POWER_STATUS copy_to_user failed.");
+-				ret = -EFAULT;
+-			}
+-			break;
+-		case SENSOR_SET_POWER_STATUS:
+-			if(copy_from_user(&enable,argp,sizeof(int)))
+-			{
+-				printk(KERN_ERR "SENSOR_SET_POWER_STATUS copy_to_user failed.");
+-				ret = -EFAULT;
+-			}
+-			if(pdata->client){
+-				ret = fxas2100x_change_mode(pdata->client,enable? ACTIVED : STANDBY);
+-				if(!ret)
+-					atomic_set(&pdata->active,enable);
+-			}
+-			break;
+-		case SENSOR_GET_DELAY_TIME:
+-			delay = atomic_read(&pdata->delay);
+-			if(copy_to_user(argp, &delay, sizeof(delay)))
+-			{
+-				printk(KERN_ERR "SENSOR_GET_DELAY_TIME copy_to_user failed.");
+-				return -EFAULT;
+-			}
+-			break;
+-		case SENSOR_SET_DELAY_TIME:
+-			if(copy_from_user(&delay,argp,sizeof(int)));
+-			{
+-				printk(KERN_ERR "SENSOR_GET_DELAY_TIME copy_to_user failed.");
+-				ret = -EFAULT;
+-			}
+-			if(pdata->client && delay > 0 && delay <= 500){
+-				ret = fxas2100x_set_delay(pdata->client,delay);
+-				if(!ret)
+-					atomic_set(&pdata->delay,delay);
+-			}
+-			break;
+-		case SENSOR_GET_RAW_DATA:
+-			ret = fxas2100x_read_data(pdata,&data);
+-			if(!ret){
+-				fxas2100x_data_convert(pdata,&data);
+-				sdata[0] = data.x;
+-				sdata[1] = data.y;
+-				sdata[2] = data.z;
+-				if(copy_to_user(argp,sdata,sizeof(sdata)))
+-				{
+-					printk(KERN_ERR "SENSOR_GET_RAW_DATA copy_to_user failed.");
+-					ret = -EFAULT;
+-				}
+-			}
+-			break;
+-		default:
+-			ret = -1;
+-	}
+-	return ret;
+-}
+-
+-static int fxas2100x_open(struct inode *inode, struct file *file)
+-{
+-	file->private_data = g_fxas2100x_data;
+-	return nonseekable_open(inode, file);
+-}
+-
+-static int fxas2100x_release(struct inode *inode, struct file *file)
+-{
+-	/* note: releasing the wdt in NOWAYOUT-mode does not stop it */
+-	return 0;
+-}
+-
+-static const struct file_operations fxas2100x_fops = {
+-	.owner = THIS_MODULE,
+-	.open = fxas2100x_open,
+-	.release = fxas2100x_release,
+-	.unlocked_ioctl = fxas2100x_ioctl,
+-};
+-
+-static struct miscdevice fxas2100x_device = {
+-	.minor = MISC_DYNAMIC_MINOR,
+-	.name = "FreescaleGyroscope",
+-	.fops = &fxas2100x_fops,
+-};
+-
+-static ssize_t fxas2100x_enable_show(struct device *dev,
+-				   struct device_attribute *attr, char *buf)
+-{
+-	struct fxas2100x_data *pdata = g_fxas2100x_data;
+-	int enable = 0;
+-	enable = atomic_read(&pdata->active);
+-	return sprintf(buf, "%d\n", enable);
+-}
+-
+-static ssize_t fxas2100x_enable_store(struct device *dev,
+-				    struct device_attribute *attr,
+-				    const char *buf, size_t count)
+-{
+-	struct fxas2100x_data *pdata = g_fxas2100x_data;
+-	struct i2c_client *client = pdata->client;
+-	int ret;
+-	unsigned long enable;
+-	enable = simple_strtoul(buf, NULL, 10);
+-	enable = (enable > 0) ? 1 : 0;
+-	ret = fxas2100x_change_mode(client,(enable > 0 ? ACTIVED : STANDBY));
+-	if (!ret) {
+-		atomic_set(&pdata->active,enable);
+-		printk(KERN_INFO"mma enable setting active \n");
+-	}
+-	return count;
+-}
+-
+-static ssize_t fxas2100x_poll_delay_show(struct device *dev,
+-				   struct device_attribute *attr, char *buf)
+-{
+-	struct fxas2100x_data *pdata = g_fxas2100x_data;
+-	int delay = 0;
+-	delay = atomic_read(&pdata->delay);
+-	return sprintf(buf, "%d\n", delay);
+-}
+-
+-static ssize_t fxas2100x_poll_delay_store(struct device *dev,
+-				    struct device_attribute *attr,
+-				    const char *buf, size_t count)
+-{
+-	struct fxas2100x_data *pdata = g_fxas2100x_data;
+-	struct i2c_client *client = pdata->client;
+-	int ret;
+-	int delay;
+-	delay = simple_strtoul(buf, NULL, 10);
+-	ret = fxas2100x_set_delay(client,delay);
+-	if(!ret)
+-		atomic_set(&pdata->delay, delay);
+-	return count;
+-}
+-
+-static ssize_t fxas2100x_position_show(struct device *dev,
+-				     struct device_attribute *attr, char *buf)
+-{
+-	struct fxas2100x_data *pdata = g_fxas2100x_data;
+-	int position = 0;
+-	position = atomic_read(&pdata->position);
+-	return sprintf(buf, "%d\n", position);
+-}
+-
+-static ssize_t fxas2100x_position_store(struct device *dev,
+-				      struct device_attribute *attr,
+-				      const char *buf, size_t count)
+-{
+-	struct fxas2100x_data *pdata = g_fxas2100x_data;
+-	int position;
+-	position = simple_strtoul(buf, NULL, 10);
+-	atomic_set(&pdata->position,position);
+-	return count;
+-}
+-
+-static DEVICE_ATTR(enable, 0666, fxas2100x_enable_show, fxas2100x_enable_store);
+-
+-static DEVICE_ATTR(poll_delay, 0666,fxas2100x_poll_delay_show, fxas2100x_poll_delay_store);
+-
+-static DEVICE_ATTR(position, 0666,fxas2100x_position_show, fxas2100x_position_store);
+-
+-static struct attribute *fxas2100x_attributes[] = {
+-	&dev_attr_enable.attr,
+-	&dev_attr_poll_delay.attr,
+-	&dev_attr_position.attr,
+-	NULL
+-};
+-
+-static const struct attribute_group fxas2100x_attr_group = {
+-	.attrs	= fxas2100x_attributes,
+-};
+-
+-static int fxas2100x_probe(struct i2c_client *client,
+-				   const struct i2c_device_id *id)
+-{
+-	int result, chip_id;
+-	struct fxas2100x_data *pdata;
+-	struct i2c_adapter *adapter;
+-
+-	adapter = to_i2c_adapter(client->dev.parent);
+-	result = i2c_check_functionality(adapter,
+-					 I2C_FUNC_SMBUS_BYTE |
+-					 I2C_FUNC_SMBUS_BYTE_DATA);
+-	if (!result)
+-		goto err_out;
+-
+-	chip_id = i2c_smbus_read_byte_data(client, FXAS2100X_WHO_AM_I);
+-
+-	if (chip_id != FXAS21000_CHIP_ID && chip_id != FXAS21002_CHID_ID_1 && chip_id != FXAS21002_CHID_ID_2) {
+-		dev_err(&client->dev,"read chip ID 0x%x is not equal to 0x%x for fxos21000) or 0x%x/0x%x,(fxos21002) !\n",
+-							chip_id,FXAS21000_CHIP_ID,FXAS21002_CHID_ID_1,FXAS21002_CHID_ID_2);
+-		result = -EINVAL;
+-		goto err_out;
+-	}
+-	pdata = kzalloc(sizeof(struct fxas2100x_data), GFP_KERNEL);
+-	if (!pdata) {
+-		result = -ENOMEM;
+-		dev_err(&client->dev, "alloc data memory error!\n");
+-		goto err_out;
+-	}
+-	/* Initialize the FXAS2100X chip */
+-	g_fxas2100x_data = pdata;
+-	pdata->client = client;
+-	pdata->chip_id = chip_id;
+-	atomic_set(&pdata->delay,FXAS2100X_DELAY_DEFAULT);
+-	atomic_set(&pdata->position,FXAS2100X_POSITION_DEFAULT);
+-	i2c_set_clientdata(client, pdata);
+-	result = misc_register(&fxas2100x_device);
+-	if (result != 0) {
+-		printk(KERN_ERR "register acc miscdevice error");
+-		goto err_regsiter_misc;
+-	}
+-
+-	result = sysfs_create_group(&fxas2100x_device.this_device->kobj, &fxas2100x_attr_group);\
+-	if (result) {
+-		dev_err(&client->dev, "create device file failed!\n");
+-		result = -EINVAL;
+-		goto err_create_sysfs;
+-	}
+-	fxas2100x_device_init(client);
+-	printk(KERN_INFO"fxas2100x device driver probe successfully\n");
+-	return 0;
+-err_create_sysfs:
+-	misc_deregister(&fxas2100x_device);
+-err_regsiter_misc:
+-	kfree(pdata);
+-err_out:
+-	return result;
+-}
+-static int fxas2100x_remove(struct i2c_client *client)
+-{
+-	struct fxas2100x_data *pdata = i2c_get_clientdata(client);
+-	fxas2100x_device_stop(client);
+-	misc_deregister(&fxas2100x_device);
+-	if(pdata != NULL)
+-		kfree(pdata);
+-	return 0;
+-}
+-
+-#ifdef CONFIG_PM_SLEEP
+-static int fxas2100x_suspend(struct device *dev)
+-{
+-	struct i2c_client *client = to_i2c_client(dev);
+-	struct fxas2100x_data *pdata = i2c_get_clientdata(client);
+-
+-	if (atomic_read(&pdata->active))
+-		fxas2100x_device_stop(client);
+-	return 0;
+-}
+-
+-static int fxas2100x_resume(struct device *dev)
+-{
+-	int val = 0;
+-	struct i2c_client *client = to_i2c_client(dev);
+-	struct fxas2100x_data *pdata = i2c_get_clientdata(client);
+-
+-	if (atomic_read(&pdata->active)) {
+-		val = i2c_smbus_read_byte_data(client, FXAS2100X_CTRL_REG1);
+-		val &= ~0x03;
+-		val |= 0x02;
+-		i2c_smbus_write_byte_data(client, FXAS2100X_CTRL_REG1, val);
+-	}
+-	return 0;
+-
+-}
+-#endif
+-
+-static const struct i2c_device_id fxas2100x_id[] = {
+-	{ "fxas2100x", 0 },
+-	{ }
+-};
+-MODULE_DEVICE_TABLE(i2c, fxas2100x_id);
+-
+-static SIMPLE_DEV_PM_OPS(fxas2100x_pm_ops, fxas2100x_suspend, fxas2100x_resume);
+-static struct i2c_driver fxas2100x_driver = {
+-	.class		= I2C_CLASS_HWMON,
+-	.driver		= {
+-		.name	= "fxas2100x",
+-		.owner	= THIS_MODULE,
+-		.pm	= &fxas2100x_pm_ops,
+-	},
+-	.probe		= fxas2100x_probe,
+-	.remove		= fxas2100x_remove,
+-	.id_table	= fxas2100x_id,
+-};
+-
+-module_i2c_driver(fxas2100x_driver);
+-
+-MODULE_AUTHOR("Freescale Semiconductor, Inc.");
+-MODULE_DESCRIPTION("FXAS2100X 3-Axis Gyrosope Sensor driver");
+-MODULE_LICENSE("GPL");
+diff --git a/drivers/hwmon/fxos8700.c b/drivers/hwmon/fxos8700.c
+deleted file mode 100644
+index fd824f4..0000000
+--- a/drivers/hwmon/fxos8700.c
++++ /dev/null
+@@ -1,684 +0,0 @@
+-/*
+- *  fxos8700.c - Linux kernel modules for FXOS8700 6-Axis Acc and Mag
+- *  Combo Sensor
+- *
+- *  Copyright (C) 2012-2015 Freescale Semiconductor, Inc. All Rights Reserved.
+- *
+- *  This program is free software; you can redistribute it and/or modify
+- *  it under the terms of the GNU General Public License as published by
+- *  the Free Software Foundation; either version 2 of the License, or
+- *  (at your option) any later version.
+- *
+- *  This program is distributed in the hope that it will be useful,
+- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+- *  GNU General Public License for more details.
+- *
+- *  You should have received a copy of the GNU General Public License
+- *  along with this program; if not, write to the Free Software
+- *  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+- */
+-
+-#include <linux/module.h>
+-#include <linux/init.h>
+-#include <linux/slab.h>
+-#include <linux/i2c.h>
+-#include <linux/pm.h>
+-#include <linux/mutex.h>
+-#include <linux/delay.h>
+-#include <linux/interrupt.h>
+-#include <linux/irq.h>
+-#include <linux/hwmon-sysfs.h>
+-#include <linux/err.h>
+-#include <linux/hwmon.h>
+-#include <linux/input-polldev.h>
+-#include <linux/miscdevice.h>
+-#include <linux/poll.h>
+-#include "fxos8700.h"
+-
+-#define FXOS8700_DELAY_DEFAULT		200 	/* msecs */
+-#define FXOS8700_POSITION_DEFAULT	1 	/* msecs */
+-
+-#define FXOS8700_TYPE_ACC 	0x00
+-#define FXOS8700_TYPE_MAG 	0x01
+-
+-#define FXOS8700_STANDBY 	0x00
+-#define FXOS8700_ACTIVED 	0x01
+-
+-#define ABS_STATUS 			ABS_WHEEL
+-struct fxos8700_data_axis{
+-    short x;
+-	short y;
+-	short z;
+-};
+-
+-struct fxos8700_data{
+-	struct i2c_client * client;
+-	struct miscdevice * acc_miscdev;
+-	struct miscdevice * mag_miscdev;
+-	atomic_t acc_delay;
+-	atomic_t mag_delay;
+-	atomic_t acc_active;
+-	atomic_t mag_active;
+-	atomic_t position;
+-};
+-static struct fxos8700_data * g_fxos8700_data = NULL;
+-static int fxos8700_position_settings[8][3][3] =
+-{
+-   {{ 0, -1,  0}, { 1,  0,	0}, {0, 0,	1}},
+-   {{-1,  0,  0}, { 0, -1,	0}, {0, 0,	1}},
+-   {{ 0,  1,  0}, {-1,  0,	0}, {0, 0,	1}},
+-   {{ 1,  0,  0}, { 0,  1,	0}, {0, 0,	1}},
+-
+-   {{ 0, -1,  0}, {-1,  0,	0}, {0, 0,  -1}},
+-   {{-1,  0,  0}, { 0,  1,	0}, {0, 0,  -1}},
+-   {{ 0,  1,  0}, { 1,  0,	0}, {0, 0,  -1}},
+-   {{ 1,  0,  0}, { 0, -1,	0}, {0, 0,  -1}},
+-};
+-static int fxos8700_data_convert(struct fxos8700_data_axis *axis_data,int position)
+-{
+-   short rawdata[3],data[3];
+-   int i,j;
+-   if(position < 0 || position > 7 )
+-   		position = 0;
+-   rawdata [0] = axis_data->x;
+-   rawdata [1] = axis_data->y;
+-   rawdata [2] = axis_data->z;
+-   for(i = 0; i < 3 ; i++)
+-   {
+-   	data[i] = 0;
+-   	for(j = 0; j < 3; j++)
+-		data[i] += rawdata[j] * fxos8700_position_settings[position][i][j];
+-   }
+-   axis_data->x = data[0];
+-   axis_data->y = data[1];
+-   axis_data->z = data[2];
+-   return 0;
+-}
+-static int fxos8700_change_mode(struct i2c_client *client, int type,int active)
+-{
+-	u8 data;
+-	int acc_act,mag_act;
+-	struct fxos8700_data *pdata =  i2c_get_clientdata(client);
+-	acc_act = atomic_read(&pdata->acc_active);
+-	mag_act = atomic_read(&pdata->mag_active);
+-	data = i2c_smbus_read_byte_data(client, FXOS8700_CTRL_REG1);
+-	if(type == FXOS8700_TYPE_ACC)
+-		acc_act = active;
+-	else
+-		mag_act = active;
+-	if(acc_act ==  FXOS8700_ACTIVED || mag_act == FXOS8700_ACTIVED)
+-		data |= 0x01;
+-	else
+-		data &= ~0x01;
+-	i2c_smbus_write_byte_data(client, FXOS8700_CTRL_REG1,data);
+-	return 0;
+-
+-}
+-static int fxos8700_set_odr(struct i2c_client * client,int type, int delay){
+-	return 0;
+-}
+-
+-static int fxos8700_device_init(struct i2c_client *client)
+-{
+-	int result;
+-	struct fxos8700_data *pdata =  i2c_get_clientdata(client);
+-
+-	result = i2c_smbus_write_byte_data(client, FXOS8700_CTRL_REG1, 0x00); //standby mode
+-	if (result < 0)
+-		goto out;
+-	result = i2c_smbus_write_byte_data(client, FXOS8700_M_CTRL_REG1, 0x1F); //
+-	if (result < 0)
+-		goto out;
+-	result = i2c_smbus_write_byte_data(client, FXOS8700_M_CTRL_REG2,0x5c); //hybrid mode
+-	if (result < 0)
+-		goto out;
+-	result = i2c_smbus_write_byte_data(client, FXOS8700_CTRL_REG1, 0x03 << 3); //odr 50hz
+-	if (result < 0)
+-		goto out;
+-
+-	atomic_set(&pdata->acc_active,FXOS8700_STANDBY);
+-	atomic_set(&pdata->mag_active,FXOS8700_STANDBY);
+-    atomic_set(&pdata->position ,FXOS8700_POSITION_DEFAULT);
+-	return 0;
+-out:
+-	dev_err(&client->dev, "error when init fxos8700 device:(%d)", result);
+-	return result;
+-}
+-
+-static int fxos8700_device_stop(struct i2c_client *client)
+-{
+-	i2c_smbus_write_byte_data(client, FXOS8700_CTRL_REG1, 0x00);
+-	return 0;
+-}
+-
+-static int fxos8700_read_data(struct i2c_client *client,struct fxos8700_data_axis *data, int type)
+-{
+-	u8 tmp_data[FXOS8700_DATA_BUF_SIZE];
+-	int ret;
+-	u8 reg;
+-	if(type == FXOS8700_TYPE_ACC)
+-		reg = FXOS8700_OUT_X_MSB;
+-	else
+-		reg = FXOS8700_M_OUT_X_MSB;
+-
+-	ret = i2c_smbus_read_i2c_block_data(client, reg, FXOS8700_DATA_BUF_SIZE, tmp_data);
+-	if (ret < FXOS8700_DATA_BUF_SIZE) {
+-		dev_err(&client->dev, "i2c block read %s failed\n", (type == FXOS8700_TYPE_ACC ? "acc" : "mag"));
+-		return -EIO;
+-	}
+-	data->x = ((tmp_data[0] << 8) & 0xff00) | tmp_data[1];
+-	data->y = ((tmp_data[2] << 8) & 0xff00) | tmp_data[3];
+-	data->z = ((tmp_data[4] << 8) & 0xff00) | tmp_data[5];
+-	return 0;
+-}
+-static long fxos8700_acc_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
+-{
+-	struct fxos8700_data *pdata = file->private_data;
+-	void __user *argp = (void __user *)arg;
+-    long ret = 0;
+-	short sdata[3];
+-	int enable;
+-	int delay;
+-	int position;
+-	struct fxos8700_data_axis data;
+-	if(!pdata){
+-		printk(KERN_ERR "fxos8700 struct datt point is NULL.");
+-		return -EFAULT;
+-	}
+-	switch (cmd) {
+-		case SENSOR_GET_MODEL_NAME:
+-			if(copy_to_user(argp,"FXOS8700 ACC",strlen("FXOS8700 ACC") +1))
+-			{
+-				printk(KERN_ERR "SENSOR_GET_MODEL_NAME copy_to_user failed.");
+-				ret = -EFAULT;
+-			}
+-			break;
+-		case SENSOR_GET_POWER_STATUS:
+-			enable = atomic_read(&pdata->acc_active);
+-			if(copy_to_user(argp,&enable,sizeof(int)))
+-			{
+-				printk(KERN_ERR "SENSOR_SET_POWER_STATUS copy_to_user failed.");
+-				ret = -EFAULT;
+-			}
+-			break;
+-		case SENSOR_SET_POWER_STATUS:
+-			if(copy_from_user(&enable,argp,sizeof(int)))
+-			{
+-				printk(KERN_ERR "SENSOR_SET_POWER_STATUS copy_to_user failed.");
+-				ret = -EFAULT;
+-			}
+-			if(pdata->client){
+-				ret = fxos8700_change_mode(pdata->client, FXOS8700_TYPE_ACC,
+-										enable? FXOS8700_ACTIVED : FXOS8700_STANDBY);
+-				if(!ret)
+-					atomic_set(&pdata->acc_active,enable);
+-			}
+-			break;
+-		case SENSOR_GET_DELAY_TIME:
+-			delay = atomic_read(&pdata->acc_delay);
+-			if(copy_to_user(argp, &delay, sizeof(delay)))
+-			{
+-				printk(KERN_ERR "SENSOR_GET_DELAY_TIME copy_to_user failed.");
+-				return -EFAULT;
+-			}
+-			break;
+-		case SENSOR_SET_DELAY_TIME:
+-			if(copy_from_user(&delay,argp,sizeof(int)));
+-			{
+-				printk(KERN_ERR "SENSOR_SET_DELAY_TIME copy_to_user failed.");
+-				ret = -EFAULT;
+-			}
+-			if(pdata->client && delay > 0 && delay <= 500){
+-				ret = fxos8700_set_odr(pdata->client,FXOS8700_TYPE_ACC,delay);
+-				if(!ret)
+-					atomic_set(&pdata->acc_delay,delay);
+-			}
+-			break;
+-		case SENSOR_GET_RAW_DATA:
+-			position = atomic_read(&pdata->position);
+-			ret = fxos8700_read_data(pdata->client,&data,FXOS8700_TYPE_ACC);
+-			if(!ret){
+-				fxos8700_data_convert(&data,position);
+-				sdata[0] = data.x;
+-				sdata[1] = data.y;
+-				sdata[2] = data.z;
+-				if(copy_to_user(argp, sdata,sizeof(sdata)))
+-				{
+-					printk(KERN_ERR "SENSOR_GET_RAW_DATA copy_to_user failed.");
+-					ret = -EFAULT;
+-				}
+-			}
+-			break;
+-		default:
+-			ret = -1;
+-	}
+-	return ret;
+-}
+-
+-static int fxos8700_acc_open(struct inode *inode, struct file *file)
+-{
+-	file->private_data = g_fxos8700_data;
+-	return nonseekable_open(inode, file);
+-}
+-
+-static int fxos8700_acc_release(struct inode *inode, struct file *file)
+-{
+-	/* note: releasing the wdt in NOWAYOUT-mode does not stop it */
+-	return 0;
+-}
+-
+-static const struct file_operations fxos8700_acc_fops = {
+-	.owner = THIS_MODULE,
+-	.open = fxos8700_acc_open,
+-	.release = fxos8700_acc_release,
+-	.unlocked_ioctl = fxos8700_acc_ioctl,
+-};
+-
+-
+-//mag char miscdevice
+-static long fxos8700_mag_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
+-{
+-	struct fxos8700_data *pdata = file->private_data;
+-	void __user *argp = (void __user *)arg;
+-    long ret = 0;
+-	short sdata[3];
+-	int enable;
+-	int delay;
+-	int position;
+-
+-	struct fxos8700_data_axis data;
+-	if(!pdata){
+-		printk(KERN_ERR "fxos8700 struct datt point is NULL.");
+-		return -EFAULT;
+-	}
+-	switch (cmd) {
+-		case SENSOR_GET_MODEL_NAME:
+-			if(copy_to_user(argp,"FXOS8700 MAG",strlen("FXOS8700 MAG") +1))
+-			{
+-				printk(KERN_ERR "SENSOR_GET_MODEL_NAME copy_to_user failed.");
+-				ret = -EFAULT;
+-			}
+-			break;
+-		case SENSOR_GET_POWER_STATUS:
+-			enable = atomic_read(&pdata->mag_active);
+-			if(copy_to_user(argp,&enable,sizeof(int)))
+-			{
+-				printk(KERN_ERR "SENSOR_SET_POWER_STATUS copy_to_user failed.");
+-				ret = -EFAULT;
+-			}
+-			break;
+-		case SENSOR_SET_POWER_STATUS:
+-			if(copy_from_user(&enable,argp,sizeof(int)))
+-			{
+-				printk(KERN_ERR "SENSOR_SET_POWER_STATUS copy_to_user failed.");
+-				ret = -EFAULT;
+-			}
+-			if(pdata->client){
+-				ret = fxos8700_change_mode(pdata->client, FXOS8700_TYPE_MAG,
+-										enable? FXOS8700_ACTIVED : FXOS8700_STANDBY);
+-				if(!ret)
+-					atomic_set(&pdata->mag_active,enable);
+-			}
+-			break;
+-		case SENSOR_GET_DELAY_TIME:
+-			delay = atomic_read(&pdata->mag_delay);
+-			if(copy_to_user(argp, &delay, sizeof(delay)))
+-			{
+-				printk(KERN_ERR "SENSOR_GET_DELAY_TIME copy_to_user failed.");
+-				return -EFAULT;
+-			}
+-			break;
+-		case SENSOR_SET_DELAY_TIME:
+-			if(copy_from_user(&delay,argp,sizeof(int)));
+-			{
+-				printk(KERN_ERR "SENSOR_SET_DELAY_TIME copy_to_user failed.");
+-				ret = -EFAULT;
+-			}
+-			if(pdata->client && delay > 0 && delay <= 500){
+-				ret = fxos8700_set_odr(pdata->client,FXOS8700_TYPE_MAG,delay);
+-				if(!ret)
+-					atomic_set(&pdata->mag_delay,delay);
+-			}
+-			break;
+-		case SENSOR_GET_RAW_DATA:
+-			position = atomic_read(&pdata->position);
+-			ret = fxos8700_read_data(pdata->client,&data,FXOS8700_TYPE_MAG);
+-			if(!ret){
+-				fxos8700_data_convert(&data,position);
+-				sdata[0] = data.x;
+-				sdata[1] = data.y;
+-				sdata[2] = data.z;
+-				if(copy_to_user(argp,sdata,sizeof(sdata)))
+-				{
+-					printk(KERN_ERR "SENSOR_GET_RAW_DATA copy_to_user failed.");
+-					ret = -EFAULT;
+-				}
+-			}
+-			break;
+-		default:
+-			ret = -1;
+-	}
+-	return ret;
+-}
+-
+-static int fxos8700_mag_open(struct inode *inode, struct file *file)
+-{
+-	file->private_data = g_fxos8700_data;
+-	return nonseekable_open(inode, file);
+-}
+-
+-static int fxos8700_mag_release(struct inode *inode, struct file *file)
+-{
+-	/* note: releasing the wdt in NOWAYOUT-mode does not stop it */
+-	return 0;
+-}
+-
+-static const struct file_operations fxos8700_mag_fops = {
+-	.owner = THIS_MODULE,
+-	.open = fxos8700_mag_open,
+-	.release = fxos8700_mag_release,
+-	.unlocked_ioctl = fxos8700_mag_ioctl,
+-};
+-
+-static struct miscdevice fxos8700_acc_device = {
+-	.minor = MISC_DYNAMIC_MINOR,
+-	.name = "FreescaleAccelerometer",
+-	.fops = &fxos8700_acc_fops,
+-};
+-
+-static struct miscdevice fxos8700_mag_device = {
+-	.minor = MISC_DYNAMIC_MINOR,
+-	.name = "FreescaleMagnetometer",
+-	.fops = &fxos8700_mag_fops,
+-};
+-
+-
+-static ssize_t fxos8700_enable_show(struct device *dev,
+-				   struct device_attribute *attr, char *buf)
+-{
+-	struct miscdevice *misc_dev = dev_get_drvdata(dev);
+-	struct fxos8700_data * pdata = g_fxos8700_data;
+-    int enable;
+-	enable = 0;
+-	if(pdata->acc_miscdev == misc_dev){
+-		enable = atomic_read(&pdata->acc_active);
+-	}
+-	if(pdata->mag_miscdev == misc_dev){
+-		enable = atomic_read(&pdata->mag_active);
+-	}
+-	return sprintf(buf, "%d\n", enable);
+-}
+-
+-
+-static ssize_t fxos8700_enable_store(struct device *dev,
+-				    struct device_attribute *attr,
+-				    const char *buf, size_t count)
+-{
+-	struct miscdevice *misc_dev = dev_get_drvdata(dev);
+-	struct fxos8700_data * pdata = g_fxos8700_data;
+-	struct i2c_client *client = pdata->client;
+-	int type;
+-	int enable;
+-	int ret;
+-	enable = simple_strtoul(buf, NULL, 10);
+-	if(misc_dev == pdata->acc_miscdev)
+-		type = FXOS8700_TYPE_ACC;
+-	if(misc_dev == pdata->mag_miscdev)
+-		type = FXOS8700_TYPE_MAG;
+-	enable = (enable > 0 ? FXOS8700_ACTIVED : FXOS8700_STANDBY);
+-	ret = fxos8700_change_mode(client,type,enable);
+-	if(!ret){
+-		if(type == FXOS8700_TYPE_ACC)
+-			atomic_set(&pdata->acc_active, enable);
+-		else
+-			atomic_set(&pdata->mag_active, enable);
+-	}
+-	return count;
+-}
+-
+-static ssize_t fxos8700_poll_delay_show(struct device *dev,
+-				   struct device_attribute *attr, char *buf)
+-{
+-	struct miscdevice *misc_dev = dev_get_drvdata(dev);
+-	struct fxos8700_data * pdata = g_fxos8700_data;
+-    int poll_delay = 0;
+-	if(pdata->acc_miscdev == misc_dev){
+-		poll_delay = atomic_read(&pdata->acc_delay);
+-	}
+-	if(pdata->mag_miscdev == misc_dev){
+-		poll_delay = atomic_read(&pdata->mag_delay);
+-	}
+-	return sprintf(buf, "%d\n", poll_delay);
+-}
+-
+-
+-static ssize_t fxos8700_poll_delay_store(struct device *dev,
+-				    struct device_attribute *attr,
+-				    const char *buf, size_t count)
+-{
+-	struct miscdevice *misc_dev = dev_get_drvdata(dev);
+-	struct fxos8700_data * pdata = g_fxos8700_data;
+-	struct i2c_client *client = pdata->client;
+-	int type;
+-	int delay;
+-	int ret;
+-	delay = simple_strtoul(buf, NULL, 10);
+-	if(misc_dev == pdata->acc_miscdev)
+-		type = FXOS8700_TYPE_ACC;
+-	if(misc_dev == pdata->mag_miscdev)
+-		type = FXOS8700_TYPE_MAG;
+-	ret = fxos8700_set_odr(client,type,delay);
+-	if(!ret){
+-		if(type == FXOS8700_TYPE_ACC)
+-			atomic_set(&pdata->acc_delay,delay);
+-		else
+-			atomic_set(&pdata->mag_delay,delay);
+-	}
+-	return count;
+-}
+-
+-static ssize_t fxos8700_position_show(struct device *dev,
+-				   struct device_attribute *attr, char *buf)
+-{
+-	struct fxos8700_data * pdata = g_fxos8700_data;
+-    int position = 0;
+-    position = atomic_read(&pdata->position) ;
+-	return sprintf(buf, "%d\n", position);
+-}
+-
+-static ssize_t fxos8700_position_store(struct device *dev,
+-				    struct device_attribute *attr,
+-				    const char *buf, size_t count)
+-{
+-	int  position;
+-	struct fxos8700_data * pdata = g_fxos8700_data;
+-	position = simple_strtoul(buf, NULL, 10);
+-    atomic_set(&pdata->position, position);
+-	return count;
+-}
+-
+-static DEVICE_ATTR(enable, 0666,fxos8700_enable_show, fxos8700_enable_store);
+-
+-static DEVICE_ATTR(poll_delay,0666,fxos8700_poll_delay_show, fxos8700_poll_delay_store);
+-
+-static DEVICE_ATTR(position, 0666,fxos8700_position_show, fxos8700_position_store);
+-
+-static struct attribute *fxos8700_attributes[] = {
+-	&dev_attr_enable.attr,
+-	&dev_attr_poll_delay.attr,
+-	&dev_attr_position.attr,
+-	NULL
+-};
+-
+-static const struct attribute_group fxos8700_attr_group = {
+-	.attrs = fxos8700_attributes,
+-};
+-
+-static int fxos8700_register_sysfs_device(struct fxos8700_data *pdata)
+-{
+-	struct miscdevice *misc_dev = NULL;
+-	int err = -1;
+-	/*register sysfs for acc*/
+-	misc_dev = pdata->acc_miscdev;
+-    err = sysfs_create_group(&misc_dev->this_device->kobj, &fxos8700_attr_group);
+-	if (err) {
+-		goto out;
+-	}
+-
+-	/*register sysfs for mag*/
+-	misc_dev = pdata->mag_miscdev;
+-    err = sysfs_create_group(&misc_dev->this_device->kobj, &fxos8700_attr_group);
+-	if (err) {
+-		goto err_register_sysfs;
+-	}
+-	return 0;
+-err_register_sysfs:
+-   misc_dev = pdata->acc_miscdev;
+-   sysfs_remove_group(&misc_dev->this_device->kobj,&fxos8700_attr_group);  /*remove accel senosr sysfs*/
+-   printk("reigster mag sysfs error\n");
+-out:
+-	printk("reigster acc sysfs error\n");
+-	return err;
+-}
+-static int fxos8700_unregister_sysfs_device(struct fxos8700_data *pdata)
+-{
+-	struct miscdevice *misc_dev = NULL;
+-    misc_dev =  pdata->acc_miscdev;
+-    sysfs_remove_group(&misc_dev->this_device->kobj,&fxos8700_attr_group);  /*remove accel senosr sysfs*/
+-
+-  	misc_dev =  pdata->mag_miscdev;
+-  	sysfs_remove_group(&misc_dev->this_device->kobj,&fxos8700_attr_group);  /*remove accel senosr sysfs*/
+- 	return 0;
+-}
+-
+-static int fxos8700_probe(struct i2c_client *client,
+-				   const struct i2c_device_id *id)
+-{
+-	int result, client_id;
+-	struct fxos8700_data * pdata;
+-	struct i2c_adapter *adapter;
+-
+-	adapter = to_i2c_adapter(client->dev.parent);
+-	result = i2c_check_functionality(adapter,
+-					 I2C_FUNC_SMBUS_BYTE |
+-					 I2C_FUNC_SMBUS_BYTE_DATA);
+-	if (!result)
+-		goto err_out;
+-
+-	client_id = i2c_smbus_read_byte_data(client, FXOS8700_WHO_AM_I);
+-	if (client_id !=  FXOS8700_DEVICE_ID && client_id != FXOS8700_PRE_DEVICE_ID) {
+-		dev_err(&client->dev,
+-			"read chip ID 0x%x is not equal to 0x%x or 0x%x\n",
+-			result, FXOS8700_DEVICE_ID,FXOS8700_PRE_DEVICE_ID);
+-		result = -EINVAL;
+-		goto err_out;
+-	}
+-    pdata = kzalloc(sizeof(struct fxos8700_data), GFP_KERNEL);
+-	if(!pdata){
+-		result = -ENOMEM;
+-		dev_err(&client->dev, "alloc data memory error!\n");
+-		goto err_out;
+-    }
+-	g_fxos8700_data = pdata;
+-	pdata->client = client;
+-	atomic_set(&pdata->acc_delay, FXOS8700_DELAY_DEFAULT);
+-	atomic_set(&pdata->mag_delay, FXOS8700_DELAY_DEFAULT);
+-	i2c_set_clientdata(client,pdata);
+-
+-	result = misc_register(&fxos8700_acc_device);
+-	if (result != 0) {
+-		printk(KERN_ERR "register acc miscdevice error");
+-		goto err_regsiter_acc_misc;
+-	}
+-	pdata->acc_miscdev = &fxos8700_acc_device;
+-
+-	result = misc_register(&fxos8700_mag_device);
+-	if (result != 0) {
+-		printk(KERN_ERR "register acc miscdevice error");
+-		goto err_regsiter_mag_misc;
+-	}
+-	pdata->mag_miscdev = &fxos8700_mag_device;
+-
+-	result = fxos8700_register_sysfs_device(pdata);
+-	if (result) {
+-		dev_err(&client->dev, "create device file failed!\n");
+-		result = -EINVAL;
+-		goto err_register_sys;
+-	}
+-	fxos8700_device_init(client);
+-	printk("%s succ\n",__FUNCTION__);
+-	return 0;
+-err_register_sys:
+-	misc_deregister(&fxos8700_mag_device);
+-	pdata->mag_miscdev = NULL;
+-err_regsiter_mag_misc:
+-	misc_deregister(&fxos8700_acc_device);
+-	pdata->acc_miscdev = NULL;
+-err_regsiter_acc_misc:
+-	i2c_set_clientdata(client,NULL);
+-	kfree(pdata);
+-err_out:
+-	return result;
+-}
+-
+-static int fxos8700_remove(struct i2c_client *client)
+-{
+-	struct fxos8700_data *pdata =  i2c_get_clientdata(client);
+-	if(!pdata)
+-		return 0;
+-    fxos8700_device_stop(client);
+-	fxos8700_unregister_sysfs_device(pdata);
+-	misc_deregister(&fxos8700_acc_device);
+-	misc_deregister(&fxos8700_mag_device);
+-    kfree(pdata);
+-	return 0;
+-}
+-
+-#ifdef CONFIG_PM_SLEEP
+-static int fxos8700_suspend(struct device *dev)
+-{
+-	struct i2c_client *client = to_i2c_client(dev);
+-	struct fxos8700_data *pdata =  i2c_get_clientdata(client);
+-	if(atomic_read(&pdata->acc_active)|| atomic_read(&pdata->mag_active))
+-		fxos8700_device_stop(client);
+-	return 0;
+-}
+-
+-static int fxos8700_resume(struct device *dev)
+-{
+-    int ret = 0;
+-	struct i2c_client *client = to_i2c_client(dev);
+-	struct fxos8700_data *pdata =  i2c_get_clientdata(client);
+-	if(atomic_read(&pdata->acc_active))
+-		fxos8700_change_mode(client,FXOS8700_TYPE_ACC,FXOS8700_ACTIVED);
+-	if(atomic_read(&pdata->mag_active))
+-		fxos8700_change_mode(client,FXOS8700_TYPE_MAG,FXOS8700_ACTIVED);
+-	return ret;
+-
+-}
+-#endif
+-
+-static const struct i2c_device_id fxos8700_id[] = {
+-	{"fxos8700", 0},
+-	{ }
+-};
+-MODULE_DEVICE_TABLE(i2c, fxos8700_id);
+-
+-static SIMPLE_DEV_PM_OPS(fxos8700_pm_ops, fxos8700_suspend, fxos8700_resume);
+-static struct i2c_driver fxos8700_driver = {
+-	.driver = {
+-		   .name = "fxos8700",
+-		   .owner = THIS_MODULE,
+-		   .pm = &fxos8700_pm_ops,
+-		   },
+-	.probe = fxos8700_probe,
+-	.remove = fxos8700_remove,
+-	.id_table = fxos8700_id,
+-};
+-
+-module_i2c_driver(fxos8700_driver);
+-
+-MODULE_AUTHOR("Freescale Semiconductor, Inc.");
+-MODULE_DESCRIPTION("FXOS8700 6-Axis Acc and Mag Combo Sensor driver");
+-MODULE_LICENSE("GPL");
+diff --git a/drivers/hwmon/fxos8700.h b/drivers/hwmon/fxos8700.h
+deleted file mode 100644
+index e553171..0000000
+--- a/drivers/hwmon/fxos8700.h
++++ /dev/null
+@@ -1,172 +0,0 @@
+-/*
+- *  fxos8700.h - Linux kernel modules for FXOS8700 6-Axis Acc and Mag
+- *  Combo Sensor
+- *
+- *  Copyright (C) 2012-2015 Freescale Semiconductor, Inc. All Rights Reserved.
+- *
+- *  This program is free software; you can redistribute it and/or modify
+- *  it under the terms of the GNU General Public License as published by
+- *  the Free Software Foundation; either version 2 of the License, or
+- *  (at your option) any later version.
+- *
+- *  This program is distributed in the hope that it will be useful,
+- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+- *  GNU General Public License for more details.
+- *
+- *  You should have received a copy of the GNU General Public License
+- *  along with this program; if not, write to the Free Software
+- *  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+- */
+-
+-
+-#ifndef SENSOR_FXOS8700_H
+-#define SENSOR_FXOS8700_H
+-
+-
+-
+-#define	SENSOR_IOCTL_BASE	'S'
+-
+-
+-#define	SENSOR_GET_MODEL_NAME		_IOR(SENSOR_IOCTL_BASE, 0, char *)
+-#define	SENSOR_GET_POWER_STATUS		_IOR(SENSOR_IOCTL_BASE, 2, int)
+-#define	SENSOR_SET_POWER_STATUS		_IOR(SENSOR_IOCTL_BASE, 3, int)
+-#define	SENSOR_GET_DELAY_TIME		_IOR(SENSOR_IOCTL_BASE, 4, int)
+-#define	SENSOR_SET_DELAY_TIME		_IOR(SENSOR_IOCTL_BASE, 5, int)
+-#define	SENSOR_GET_RAW_DATA			_IOR(SENSOR_IOCTL_BASE, 6, short[3])
+-
+-
+-#define FXOS8700_I2C_ADDR			0x1E
+-#define FXOS8700_DEVICE_ID			0xC7
+-#define FXOS8700_PRE_DEVICE_ID 		0xC4
+-
+-#define FXOS8700_DATA_BUF_SIZE		6
+-
+-/*register define*/
+-#define FXOS8700_STATUS 			0x00
+-#define FXOS8700_OUT_X_MSB 			0x01
+-#define FXOS8700_OUT_X_LSB 			0x02
+-#define FXOS8700_OUT_Y_MSB 			0x03
+-#define FXOS8700_OUT_Y_LSB 			0x04
+-#define FXOS8700_OUT_Z_MSB 			0x05
+-#define FXOS8700_OUT_Z_LSB 			0x06
+-#define FXOS8700_F_SETUP 			0x09
+-#define FXOS8700_TRIG_CFG 			0x0a
+-#define FXOS8700_SYSMOD				0x0B
+-#define FXOS8700_INT_SOURCE			0x0c
+-#define FXOS8700_WHO_AM_I			0x0d
+-#define FXOS8700_XYZ_DATA_CFG		0x0e
+-#define FXOS8700_HP_FILTER_CUTOFF	0x0f
+-#define FXOS8700_PL_STATUS 			0x10
+-#define FXOS8700_PL_CFG 			0x11
+-#define FXOS8700_PL_COUNT			0x12
+-#define FXOS8700_PL_BF_ZCOMP		0x13
+-#define FXOS8700_PL_P_L_THS_REG		0x14
+-#define FXOS8700_FFMT_CFG			0x15
+-#define FXOS8700_FFMT_SRC			0x16
+-#define FXOS8700_FFMT_THS			0x17
+-#define FXOS8700_FFMT_COUNT			0x18
+-#define FXOS8700_TRANSIDENT1_CFG	0x1d
+-#define FXOS8700_TRANSIDENT1_SRC	0x1e
+-#define FXOS8700_TRANSIDENT1_THS	0x1f
+-#define FXOS8700_TRANSIDENT1_COUNT	0x20
+-#define FXOS8700_PULSE_CFG			0x21
+-#define FXOS8700_PULSE_SRC			0x22
+-#define FXOS8700_PULSE_THSX			0x23
+-#define FXOS8700_PULSE_THSY			0x24
+-#define FXOS8700_PULSE_THSZ			0x25
+-#define FXOS8700_PULSE_TMLT			0x26
+-#define FXOS8700_PULSE_LTCY			0x27
+-#define FXOS8700_PULSE_WIND			0x28
+-#define FXOS8700_ATSLP_COUNT		0x29
+-#define FXOS8700_CTRL_REG1			0x2a
+-#define FXOS8700_CTRL_REG2			0x2b
+-#define FXOS8700_CTRL_REG3			0x2c
+-#define FXOS8700_CTRL_REG4			0x2d
+-#define FXOS8700_CTRL_REG5			0x2e
+-#define FXOS8700_OFF_X				0x2f
+-#define FXOS8700_OFF_Y				0x30
+-#define FXOS8700_OFF_Z				0x31
+-#define FXOS8700_M_DR_STATUS		0x32
+-#define FXOS8700_M_OUT_X_MSB       	0x33
+-#define FXOS8700_M_OUT_X_LSB       	0x34
+-#define FXOS8700_M_OUT_Y_MSB       	0x35
+-#define FXOS8700_M_OUT_Y_LSB       	0x36
+-#define FXOS8700_M_OUT_Z_MSB       	0x37
+-#define FXOS8700_M_OUT_Z_LSB       	0x38
+-#define FXOS8700_CMP_X_MSB       	0x39
+-#define FXOS8700_CMP_X_LSB       	0x3a
+-#define FXOS8700_CMP_Y_MSB       	0x3b
+-#define FXOS8700_CMP_Y_LSB       	0x3c
+-#define FXOS8700_CMP_Z_MSB       	0x3d
+-#define FXOS8700_CMP_Z_LSB       	0x3e
+-#define FXOS8700_M_OFF_X_MSB       	0x3f
+-#define FXOS8700_M_OFF_X_LSB       	0x40
+-#define FXOS8700_M_OFF_Y_MSB       	0x41
+-#define FXOS8700_M_OFF_Y_LSB       	0x42
+-#define FXOS8700_M_OFF_Z_MSB       	0x43
+-#define FXOS8700_M_OFF_Z_LSB       	0x44
+-#define FXOS8700_MAX_X_MSB       	0x45
+-#define FXOS8700_MAX_X_LSB      	0x46
+-#define FXOS8700_MAX_Y_MSB       	0x47
+-#define FXOS8700_MAX_Y_LSB       	0x48
+-#define FXOS8700_MAX_Z_MSB       	0x49
+-#define FXOS8700_MAX_Z_LSB       	0x4a
+-#define FXOS8700_MIN_X_MSB       	0x4b
+-#define FXOS8700_MIN_X_LSB       	0x4c  //product 0x1e
+-#define FXOS8700_MIN_Y_MSB       	0x4d  //product 0x1d
+-#define FXOS8700_MIN_Y_LSB       	0x4e  //product 0x1c
+-#define FXOS8700_MIN_Z_MSB       	0x4f  //product 0x1f
+-#define FXOS8700_MIN_Z_LSB       	0x50
+-#define FXOS8700_M_TEMP       		0x51
+-#define FXOS8700_MAG_THS_CFG 		0x52
+-#define FXOS8700_MAG_THS_SRC 		0x53
+-#define FXOS8700_MAG_THS_THS_X1 	0x54
+-#define FXOS8700_MAG_THS_THS_X0 	0x55
+-#define FXOS8700_MAG_THS_THS_Y1 	0x56
+-#define FXOS8700_MAG_THS_THS_Y0 	0x57
+-#define FXOS8700_MAG_THS_THS_Z1 	0x58
+-#define FXOS8700_MAG_THS_THS_Z0 	0x59
+-#define FXOS8700_MAG_THS_CUNT		0x5a
+-#define FXOS8700_M_CTRL_REG1		0x5b
+-#define FXOS8700_M_CTRL_REG2		0x5c
+-#define FXOS8700_M_CTRL_REG3		0x5d
+-#define FXOS8700_M_INT_SOURCE		0x5e
+-#define FXOS8700_G_VECM_CFG  		0x5f
+-#define FXOS8700_G_VECM_THS_MSB  	0x60
+-#define FXOS8700_G_VECM_THS_LSB  	0x61
+-#define FXOS8700_G_VECM_CNT  		0x62
+-#define FXOS8700_G_VECM_INITX_MSB  	0x63
+-#define FXOS8700_G_VECM_INITX_LSB  	0x64
+-#define FXOS8700_G_VECM_INITY_MSB  	0x65
+-#define FXOS8700_G_VECM_INITY_LSB  	0x66
+-#define FXOS8700_G_VECM_INITZ_MSB  	0x67
+-#define FXOS8700_G_VECM_INITZ_LSB  	0x68
+-#define FXOS8700_M_VECM_CFG  		0x69
+-#define FXOS8700_M_VECM_THS_MSB 	0x6a
+-#define FXOS8700_M_VECM_THS_LSB  	0x6b
+-#define FXOS8700_M_VECM_CNT  		0x6d
+-#define FXOS8700_M_VECM_INITX_MSB  	0x6d
+-#define FXOS8700_M_VECM_INITX_LSB  	0x6e
+-#define FXOS8700_M_VECM_INITY_MSB  	0x6f
+-#define FXOS8700_M_VECM_INITY_LSB  	0x70
+-#define FXOS8700_M_VECM_INITZ_MSB  	0x71
+-#define FXOS8700_M_VECM_INITZ_LSB  	0x72
+-#define FXOS8700_G_FFMT_THS_X1  	0x73
+-#define FXOS8700_G_FFMT_THS_X0 		0x74
+-#define FXOS8700_G_FFMT_THS_Y1  	0x75
+-#define FXOS8700_G_FFMT_THS_Y0  	0x76
+-#define FXOS8700_G_FFMT_THS_Z1  	0x77
+-#define FXOS8700_G_FFMT_THS_Z0  	0x78
+-#define FXOS8700_G_TRAN_INIT_MSB  	0x79
+-#define FXOS8700_G_TRAN_INIT_LSB_X 	0x7a
+-#define FXOS8700_G_TRAN_INIT_LSB_Y 	0x7b
+-#define FXOS8700_G_TRAN_INIT_LSB_Z 	0x7d
+-#define FXOS8700_TM_NVM_LOCK 		0x7e
+-#define FXOS8700_NVM_DATA0_35		0x80
+-#define FXOS8700_NVM_DATA_BNK3		0xa4
+-#define FXOS8700_NVM_DATA_BNK2		0xa5
+-#define FXOS8700_NVM_DATA_BNK1		0xa6
+-#define FXOS8700_NVM_DATA_BNK0		0xa7
+-
+-#endif
+diff --git a/drivers/hwmon/mpl3115.c b/drivers/hwmon/mpl3115.c
+deleted file mode 100644
+index 3f67b11..0000000
+--- a/drivers/hwmon/mpl3115.c
++++ /dev/null
+@@ -1,340 +0,0 @@
+-/*
+- *  mpl3115.c - Linux kernel modules for pressure /temperature sensor
+- *
+- *  Copyright (C) 2010-2015 Freescale Semiconductor, Inc. All Rights Reserved.
+- *
+- *  This program is free software; you can redistribute it and/or modify
+- *  it under the terms of the GNU General Public License as published by
+- *  the Free Software Foundation; either version 2 of the License, or
+- *  (at your option) any later version.
+- *
+- *  This program is distributed in the hope that it will be useful,
+- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+- *  GNU General Public License for more details.
+- *
+- *  You should have received a copy of the GNU General Public License
+- *  along with this program; if not, write to the Free Software
+- *  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+- */
+-
+-#include <linux/module.h>
+-#include <linux/init.h>
+-#include <linux/slab.h>
+-#include <linux/i2c.h>
+-#include <linux/pm.h>
+-#include <linux/mutex.h>
+-#include <linux/delay.h>
+-#include <linux/interrupt.h>
+-#include <linux/irq.h>
+-#include <linux/hwmon-sysfs.h>
+-#include <linux/err.h>
+-#include <linux/hwmon.h>
+-#include <linux/input-polldev.h>
+-
+-#define MPL3115_DRV_NAME       		"mpl3115"
+-#define ABS_TEMPTERAURE          	ABS_MISC
+-#define INPUT_FUZZ					32
+-#define INPUT_FLAT					32
+-
+-
+-#define MPL_ACTIVED    		 		1
+-#define MPL_STANDBY 				0
+-#define POLL_INTERVAL_MAX			500
+-#define POLL_INTERVAL				100
+-#define POLL_INTERVAL_MIN			1
+-#define MPL3115_ID					0xc4
+-#define MPLL_ACTIVE_MASK       		0x01
+-#define MPL3115_STATUS_DR			0x08
+-
+-/*MPL3115A register address*/
+-#define MPL3115_STATUS				0x00
+-#define MPL3115_PRESSURE_DATA		0x01
+-#define MPL3115_DR_STATUS			0x06
+-#define MPL3115_DELTA_DATA			0x07
+-#define MPL3115_WHO_AM_I 			0x0c
+-#define MPL3115_FIFO_STATUS 		0x0d
+-#define MPL3115_FIFO_DATA 			0x0e
+-#define MPL3115_FIFO_SETUP 			0x0e
+-#define MPL3115_TIME_DELAY 			0x10
+-#define MPL3115_SYS_MODE 			0x11
+-#define MPL3115_INT_SORCE 			0x12
+-#define MPL3115_PT_DATA_CFG 		0x13
+-#define MPL3115_BAR_IN_MSB 			0x14
+-#define MPL3115_P_ARLARM_MSB 		0x16
+-#define MPL3115_T_ARLARM			0x18
+-#define MPL3115_P_ARLARM_WND_MSB	0x19
+-#define MPL3115_T_ARLARM_WND		0x1b
+-#define MPL3115_P_MIN_DATA			0x1c
+-#define MPL3115_T_MIN_DATA			0x1f
+-#define MPL3115_P_MAX_DATA			0x21
+-#define MPL3115_T_MAX_DATA			0x24
+-#define MPL3115_CTRL_REG1			0x26
+-#define MPL3115_CTRL_REG2			0x27
+-#define MPL3115_CTRL_REG3			0x28
+-#define MPL3115_CTRL_REG4			0x29
+-#define MPL3115_CTRL_REG5			0x2a
+-#define MPL3115_OFFSET_P			0x2b
+-#define MPL3115_OFFSET_T			0x2c
+-#define MPL3115_OFFSET_H			0x2d
+-
+-
+-#define DATA_SHIFT_BIT(data,bit)     ((data << bit) & (0xff << bit))
+-
+-struct mpl3115_data {
+-	struct i2c_client *client;
+-	struct input_polled_dev *poll_dev;
+-	struct mutex data_lock;
+-	int active;
+-};
+-static int mpl3115_i2c_read(struct i2c_client *client, u8 reg, u8 *values, u8 length)
+-{
+-	return i2c_smbus_read_i2c_block_data(client,reg, length, values);
+-}
+-
+-
+-static int mpl3115_i2c_write(struct i2c_client *client, u8 reg, const u8 *values, u8 length)
+-{
+-	return i2c_smbus_write_i2c_block_data(client,reg, length, values);
+-}
+-static ssize_t mpl3115_enable_show(struct device *dev,
+-				   struct device_attribute *attr, char *buf)
+-{
+-	int val;
+-	u8 sysmode;
+-	struct input_polled_dev *poll_dev = dev_get_drvdata(dev);
+-	struct mpl3115_data *pdata = (struct mpl3115_data *)(poll_dev->private);
+-	struct i2c_client *client = pdata->client;
+-	mutex_lock(&pdata->data_lock);
+-	mpl3115_i2c_read(client,MPL3115_CTRL_REG1,&sysmode,1);
+-	sysmode &= MPLL_ACTIVE_MASK;
+-	val = (sysmode ? 1: 0);
+-	mutex_unlock(&pdata->data_lock);
+-	return sprintf(buf, "%d\n", val);
+-}
+-
+-static ssize_t mpl3115_enable_store(struct device *dev,
+-				    struct device_attribute *attr,
+-				    const char *buf, size_t count)
+-{
+-	int  ret, enable;
+-    u8 val;
+-	struct input_polled_dev *poll_dev = dev_get_drvdata(dev);
+-	struct mpl3115_data *pdata = (struct mpl3115_data *)(poll_dev->private);
+-	struct i2c_client *client = pdata->client;
+-	enable = simple_strtoul(buf, NULL, 10);
+-	mutex_lock(&pdata->data_lock);
+-	mpl3115_i2c_read(client,MPL3115_CTRL_REG1,&val,1);
+-	if (enable &&  pdata->active == MPL_STANDBY){
+-		val |= MPLL_ACTIVE_MASK;
+-		ret = mpl3115_i2c_write(client, MPL3115_CTRL_REG1, &val,1);
+-		if(!ret)
+-			pdata->active = MPL_ACTIVED;
+-		printk("mpl3115 set active\n");
+-	}
+-	else if(!enable && pdata->active == MPL_ACTIVED){
+-		val &= ~MPLL_ACTIVE_MASK;
+-		ret = mpl3115_i2c_write(client, MPL3115_CTRL_REG1, &val,1);
+-		if(!ret)
+-			pdata->active = MPL_STANDBY;
+-		printk("mpl3115 set inactive\n");
+-
+-	}
+-	mutex_unlock(&pdata->data_lock);
+-	return count;
+-}
+-
+-static DEVICE_ATTR(enable, S_IWUSR | S_IRUGO, mpl3115_enable_show, mpl3115_enable_store);
+-
+-static struct attribute *mpl3115_attributes[] = {
+-	&dev_attr_enable.attr,
+-	NULL
+-};
+-
+-static const struct attribute_group mpl3115_attr_group = {
+-	.attrs = mpl3115_attributes,
+-};
+-static void mpl3115_device_init(struct i2c_client *client)
+-{
+-	u8 val[8];
+-	val[0] = 0x28;
+-	mpl3115_i2c_write(client,MPL3115_CTRL_REG1,val,1);
+-
+-}
+-static int mpl3115_read_data(struct i2c_client *client,int *pres, short *temp)
+-{
+-	u8 tmp[5];
+-    mpl3115_i2c_read(client,MPL3115_PRESSURE_DATA,tmp,5);
+-	*pres = (DATA_SHIFT_BIT(tmp[0],24) | DATA_SHIFT_BIT(tmp[1],16)  | DATA_SHIFT_BIT(tmp[2],8) )>>12;
+-	*temp = (DATA_SHIFT_BIT(tmp[3],8) | DATA_SHIFT_BIT(tmp[4],0))>>4;
+-	return 0;
+-}
+-
+-static void report_abs(struct mpl3115_data *pdata)
+-{
+-
+-	struct input_dev *idev;
+-	int  pressure = 0;
+-	short temperature = 0;
+- 	mutex_lock(&pdata->data_lock);
+-	if(pdata->active == MPL_STANDBY)
+-		goto out;
+-    idev = pdata->poll_dev->input;
+-	mpl3115_read_data(pdata->client,&pressure,&temperature);
+-	input_report_abs(idev, ABS_PRESSURE, pressure);
+-	input_report_abs(idev, ABS_TEMPTERAURE, temperature);
+-	input_sync(idev);
+-out:
+-	mutex_unlock(&pdata->data_lock);
+-}
+-
+-static void mpl3115_dev_poll(struct input_polled_dev *dev)
+-{
+-
+-     struct mpl3115_data* pdata = (struct mpl3115_data*)dev->private;
+-	 report_abs(pdata);
+-}
+-
+-static int mpl3115_probe(struct i2c_client *client,
+-				   const struct i2c_device_id *id)
+-{
+-	int result, client_id;
+-	struct input_dev *idev;
+-	struct i2c_adapter *adapter;
+-	struct mpl3115_data *pdata;
+-	adapter = to_i2c_adapter(client->dev.parent);
+-	result = i2c_check_functionality(adapter,
+-					 I2C_FUNC_SMBUS_BYTE |
+-					 I2C_FUNC_SMBUS_BYTE_DATA);
+-	if (!result)
+-		goto err_out;
+-
+-	client_id = i2c_smbus_read_byte_data(client, MPL3115_WHO_AM_I);
+-    printk("read mpl3115 chip id 0x%x\n",client_id);
+-	if (client_id != MPL3115_ID) {
+-		dev_err(&client->dev,
+-			"read chip ID 0x%x is not equal to 0x%x!\n",result, MPL3115_ID);
+-		result = -EINVAL;
+-		goto err_out;
+-	}
+-	pdata = kzalloc(sizeof(struct mpl3115_data), GFP_KERNEL);
+-	if (!pdata)
+-		goto err_out;
+-	pdata->client = client;
+-	i2c_set_clientdata(client, pdata);
+-	mutex_init(&pdata->data_lock);
+-	pdata->poll_dev = input_allocate_polled_device();
+-	if (!pdata->poll_dev) {
+-		result = -ENOMEM;
+-		dev_err(&client->dev, "alloc poll device failed!\n");
+-		goto err_alloc_data;
+-	}
+-	pdata->poll_dev->poll = mpl3115_dev_poll;
+-	pdata->poll_dev->private = pdata;
+-	pdata->poll_dev->poll_interval = POLL_INTERVAL;
+-	pdata->poll_dev->poll_interval_min = POLL_INTERVAL_MIN;
+-	pdata->poll_dev->poll_interval_max = POLL_INTERVAL_MAX;
+-	idev = pdata->poll_dev->input;
+-	idev->name = MPL3115_DRV_NAME;
+-	idev->id.bustype = BUS_I2C;
+-	idev->evbit[0] = BIT_MASK(EV_ABS);
+-
+-	input_set_abs_params(idev, ABS_PRESSURE, -0x7FFFFFFF, 0x7FFFFFFF, 0, 0);
+-	input_set_abs_params(idev, ABS_TEMPTERAURE, -0x7FFFFFFF, 0x7FFFFFFF, 0, 0);
+-	result = input_register_polled_device(pdata->poll_dev);
+-	if (result) {
+-		dev_err(&client->dev, "register poll device failed!\n");
+-		goto error_free_poll_dev;
+-	}
+-    result= sysfs_create_group(&idev->dev.kobj, &mpl3115_attr_group);
+-	if (result) {
+-		dev_err(&client->dev, "create device file failed!\n");
+-		result= -EINVAL;
+-		goto error_register_polled_device;
+-	}
+-	mpl3115_device_init(client);
+-	return 0;
+-error_register_polled_device:
+-	input_unregister_polled_device(pdata->poll_dev);
+-error_free_poll_dev:
+-	input_free_polled_device(pdata->poll_dev);
+-err_alloc_data:
+-	kfree(pdata);
+-err_out:
+-	return result;
+-}
+-
+-static int mpl3115_stop_chip(struct i2c_client *client)
+-{
+-    u8 val;
+-	int ret;
+-    mpl3115_i2c_read(client,MPL3115_CTRL_REG1,&val,1);
+-	val &= ~MPLL_ACTIVE_MASK;
+-	ret = mpl3115_i2c_write(client,MPL3115_CTRL_REG1, &val,1);
+-	return 0;
+-}
+-static int mpl3115_start_chip(struct i2c_client *client )
+-{
+-    u8 val;
+-	int ret;
+-    mpl3115_i2c_read(client,MPL3115_CTRL_REG1,&val,1);
+-	val |= MPLL_ACTIVE_MASK;
+-	ret = mpl3115_i2c_write(client,MPL3115_CTRL_REG1, &val,1);
+-	return 0;
+-}
+-static int mpl3115_remove(struct i2c_client *client)
+-{
+-	struct mpl3115_data * pdata = i2c_get_clientdata(client);
+-	struct input_dev *idev = pdata->poll_dev->input;
+-    mpl3115_stop_chip(client);
+-	sysfs_remove_group(&idev->dev.kobj, &mpl3115_attr_group);
+-	input_unregister_polled_device(pdata->poll_dev);
+-	kfree(pdata);
+-	return 0;
+-}
+-
+-#ifdef CONFIG_PM_SLEEP
+-static int mpl3115_suspend(struct device *dev)
+-{
+-	struct i2c_client *client = to_i2c_client(dev);
+-    struct mpl3115_data *pdata = i2c_get_clientdata(client);
+-    if(pdata->active == MPL_ACTIVED)
+-		mpl3115_stop_chip(client);
+-	return 0;
+-}
+-
+-static int mpl3115_resume(struct device *dev)
+-{
+-    struct i2c_client *client = to_i2c_client(dev);
+-    struct mpl3115_data *pdata = i2c_get_clientdata(client);
+-    if(pdata->active == MPL_ACTIVED)
+-	   mpl3115_start_chip(client);
+-	return 0;
+-}
+-#endif
+-
+-static const struct i2c_device_id mpl3115_id[] = {
+-	{MPL3115_DRV_NAME, 0},
+-	{ }
+-};
+-MODULE_DEVICE_TABLE(i2c, mpl3115_id);
+-
+-static SIMPLE_DEV_PM_OPS(mpl3115_pm_ops, mpl3115_suspend, mpl3115_resume);
+-static struct i2c_driver mpl3115_driver = {
+-	.driver = {
+-		   .name = MPL3115_DRV_NAME,
+-		   .owner = THIS_MODULE,
+-		   .pm = &mpl3115_pm_ops,
+-		   },
+-	.probe = mpl3115_probe,
+-	.remove = mpl3115_remove,
+-	.id_table = mpl3115_id,
+-};
+-
+-module_i2c_driver(mpl3115_driver);
+-
+-MODULE_AUTHOR("Freescale Semiconductor, Inc.");
+-MODULE_DESCRIPTION("MPL3115 Smart Pressure Sensor driver");
+-MODULE_LICENSE("GPL");
+-
+-
+-- 
+1.8.0
+

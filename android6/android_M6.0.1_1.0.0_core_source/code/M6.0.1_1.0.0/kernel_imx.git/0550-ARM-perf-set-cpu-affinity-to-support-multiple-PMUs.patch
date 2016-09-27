@@ -1,0 +1,199 @@
+From a7f87c4635b553d98fa0bfb58e6a20f72a0bee0f Mon Sep 17 00:00:00 2001
+From: Sudeep KarkadaNagesha <sudeep.karkadanagesha@arm.com>
+Date: Tue, 25 Sep 2012 17:26:51 +0100
+Subject: [PATCH] ARM: perf: set cpu affinity to support multiple PMUs
+
+In a system with multiple heterogeneous CPU PMUs and each PMUs can handle
+events on a subset of CPUs, probably belonging a the same cluster.
+
+This patch introduces a cpumask to track which CPUs each PMU supports.
+It also updates armpmu_event_init to reject cpu-specific events being
+initialised for unsupported CPUs. Since process-specific events can be
+initialised for all the CPU PMUs,armpmu_start/stop/add are modified to
+prevent from being added on unsupported CPUs.
+
+Signed-off-by: Sudeep KarkadaNagesha <sudeep.karkadanagesha@arm.com>
+(cherry picked from commit 7b12ebf38f57a175e1068e986b5d58e7225f1817)
+Signed-off-by: Alex Shi <alex.shi@linaro.org>
+---
+ Documentation/devicetree/bindings/arm/pmu.txt |  3 +++
+ arch/arm/include/asm/pmu.h                    |  1 +
+ arch/arm/kernel/perf_event.c                  | 16 ++++++++++++
+ arch/arm/kernel/perf_event_cpu.c              | 36 +++++++++++++++++++++------
+ 4 files changed, 49 insertions(+), 7 deletions(-)
+
+diff --git a/Documentation/devicetree/bindings/arm/pmu.txt b/Documentation/devicetree/bindings/arm/pmu.txt
+index 3e1e498..a2dbf67 100644
+--- a/Documentation/devicetree/bindings/arm/pmu.txt
++++ b/Documentation/devicetree/bindings/arm/pmu.txt
+@@ -17,6 +17,9 @@ Required properties:
+ 	"arm,arm1176-pmu"
+ 	"arm,arm1136-pmu"
+ - interrupts : 1 combined interrupt or 1 per core.
++- cluster : a phandle to the cluster to which it belongs
++	If there are more than one cluster with same CPU type
++	then there should be separate PMU nodes per cluster.
+ 
+ Example:
+ 
+diff --git a/arch/arm/include/asm/pmu.h b/arch/arm/include/asm/pmu.h
+index f24edad..3713e57 100644
+--- a/arch/arm/include/asm/pmu.h
++++ b/arch/arm/include/asm/pmu.h
+@@ -65,6 +65,7 @@ struct pmu_hw_events {
+ struct arm_pmu {
+ 	struct pmu	pmu;
+ 	cpumask_t	active_irqs;
++	cpumask_t	valid_cpus;
+ 	char		*name;
+ 	irqreturn_t	(*handle_irq)(int irq_num, void *dev);
+ 	void		(*enable)(struct perf_event *event);
+diff --git a/arch/arm/kernel/perf_event.c b/arch/arm/kernel/perf_event.c
+index f37b57c..42059a5 100644
+--- a/arch/arm/kernel/perf_event.c
++++ b/arch/arm/kernel/perf_event.c
+@@ -12,6 +12,7 @@
+  */
+ #define pr_fmt(fmt) "hw perfevents: " fmt
+ 
++#include <linux/cpumask.h>
+ #include <linux/kernel.h>
+ #include <linux/platform_device.h>
+ #include <linux/pm_runtime.h>
+@@ -162,6 +163,8 @@ armpmu_stop(struct perf_event *event, int flags)
+ 	struct arm_pmu *armpmu = to_arm_pmu(event->pmu);
+ 	struct hw_perf_event *hwc = &event->hw;
+ 
++	if (!cpumask_test_cpu(smp_processor_id(), &armpmu->valid_cpus))
++		return;
+ 	/*
+ 	 * ARM pmu always has to update the counter, so ignore
+ 	 * PERF_EF_UPDATE, see comments in armpmu_start().
+@@ -178,6 +181,8 @@ static void armpmu_start(struct perf_event *event, int flags)
+ 	struct arm_pmu *armpmu = to_arm_pmu(event->pmu);
+ 	struct hw_perf_event *hwc = &event->hw;
+ 
++	if (!cpumask_test_cpu(smp_processor_id(), &armpmu->valid_cpus))
++		return;
+ 	/*
+ 	 * ARM pmu always has to reprogram the period, so ignore
+ 	 * PERF_EF_RELOAD, see the comment below.
+@@ -205,6 +210,9 @@ armpmu_del(struct perf_event *event, int flags)
+ 	struct hw_perf_event *hwc = &event->hw;
+ 	int idx = hwc->idx;
+ 
++	if (!cpumask_test_cpu(smp_processor_id(), &armpmu->valid_cpus))
++		return;
++
+ 	armpmu_stop(event, PERF_EF_UPDATE);
+ 	hw_events->events[idx] = NULL;
+ 	clear_bit(idx, hw_events->used_mask);
+@@ -221,6 +229,10 @@ armpmu_add(struct perf_event *event, int flags)
+ 	int idx;
+ 	int err = 0;
+ 
++	/* An event following a process won't be stopped earlier */
++	if (!cpumask_test_cpu(smp_processor_id(), &armpmu->valid_cpus))
++		return 0;
++
+ 	perf_pmu_disable(event->pmu);
+ 
+ 	/* If we don't have a space for the counter then finish early. */
+@@ -422,6 +434,10 @@ static int armpmu_event_init(struct perf_event *event)
+ 	int err = 0;
+ 	atomic_t *active_events = &armpmu->active_events;
+ 
++	if (event->cpu != -1 &&
++		!cpumask_test_cpu(event->cpu, &armpmu->valid_cpus))
++		return -ENOENT;
++
+ 	/* does not support taken branch sampling */
+ 	if (has_branch_stack(event))
+ 		return -EOPNOTSUPP;
+diff --git a/arch/arm/kernel/perf_event_cpu.c b/arch/arm/kernel/perf_event_cpu.c
+index f5eba97..acdb811 100644
+--- a/arch/arm/kernel/perf_event_cpu.c
++++ b/arch/arm/kernel/perf_event_cpu.c
+@@ -137,7 +137,7 @@ static int cpu_pmu_request_irq(struct arm_pmu *cpu_pmu, irq_handler_t handler)
+ static void cpu_pmu_init(struct arm_pmu *cpu_pmu)
+ {
+ 	int cpu;
+-	for_each_possible_cpu(cpu) {
++	for_each_cpu_mask(cpu, cpu_pmu->valid_cpus) {
+ 		struct pmu_hw_events *events = &per_cpu(cpu_hw_events, cpu);
+ 		events->events = per_cpu(hw_events, cpu);
+ 		events->used_mask = per_cpu(used_mask, cpu);
+@@ -150,7 +150,7 @@ static void cpu_pmu_init(struct arm_pmu *cpu_pmu)
+ 
+ 	/* Ensure the PMU has sane values out of reset. */
+ 	if (cpu_pmu->reset)
+-		on_each_cpu(cpu_pmu->reset, cpu_pmu, 1);
++		on_each_cpu_mask(&cpu_pmu->valid_cpus, cpu_pmu->reset, cpu_pmu, 1);
+ }
+ 
+ /*
+@@ -250,6 +250,9 @@ static int probe_current_pmu(struct arm_pmu *pmu)
+ 		}
+ 	}
+ 
++	/* assume PMU support all the CPUs in this case */
++	cpumask_setall(&pmu->valid_cpus);
++
+ 	put_cpu();
+ 	return ret;
+ }
+@@ -257,10 +260,9 @@ static int probe_current_pmu(struct arm_pmu *pmu)
+ static int cpu_pmu_device_probe(struct platform_device *pdev)
+ {
+ 	const struct of_device_id *of_id;
+-	const int (*init_fn)(struct arm_pmu *);
+ 	struct device_node *node = pdev->dev.of_node;
+ 	struct arm_pmu *pmu;
+-	int ret = -ENODEV;
++	int ret = 0;
+ 	int cpu;
+ 
+ 	pmu = kzalloc(sizeof(struct arm_pmu), GFP_KERNEL);
+@@ -270,8 +272,28 @@ static int cpu_pmu_device_probe(struct platform_device *pdev)
+ 	}
+ 
+ 	if (node && (of_id = of_match_node(cpu_pmu_of_device_ids, pdev->dev.of_node))) {
+-		init_fn = of_id->data;
+-		ret = init_fn(pmu);
++		smp_call_func_t init_fn = (smp_call_func_t)of_id->data;
++		struct device_node *ncluster;
++		int cluster = -1;
++		cpumask_t sibling_mask;
++
++		ncluster = of_parse_phandle(node, "cluster", 0);
++		if (ncluster) {
++			int len;
++			const u32 *hwid;
++			hwid = of_get_property(ncluster, "reg", &len);
++			if (hwid && len == 4)
++				cluster = be32_to_cpup(hwid);
++		}
++		/* set sibling mask to all cpu mask if socket is not specified */
++		if (cluster == -1 ||
++			cluster_to_logical_mask(cluster, &sibling_mask))
++			cpumask_setall(&sibling_mask);
++
++		smp_call_function_any(&sibling_mask, init_fn, pmu, 1);
++
++		/* now set the valid_cpus after init */
++		cpumask_copy(&pmu->valid_cpus, &sibling_mask);
+ 	} else {
+ 		ret = probe_current_pmu(pmu);
+ 	}
+@@ -281,7 +303,7 @@ static int cpu_pmu_device_probe(struct platform_device *pdev)
+ 		goto out_free;
+ 	}
+ 
+-	for_each_possible_cpu(cpu)
++	for_each_cpu_mask(cpu, pmu->valid_cpus)
+ 		per_cpu(cpu_pmu, cpu) = pmu;
+ 
+ 	pmu->plat_device = pdev;
+-- 
+1.8.0
+

@@ -1,0 +1,27 @@
+From 1abfa0747d407c291a09eb3bae8ff3b45e2c4315 Mon Sep 17 00:00:00 2001
+From: Alexander Shiyan <shc_work@mail.ru>
+Date: Wed, 23 Apr 2014 15:56:42 +0800
+Subject: [PATCH] usb: chipidea: core: Add missing module owner field
+
+Signed-off-by: Alexander Shiyan <shc_work@mail.ru>
+Signed-off-by: Peter Chen <peter.chen@freescale.com>
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+---
+ drivers/usb/chipidea/core.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/drivers/usb/chipidea/core.c b/drivers/usb/chipidea/core.c
+index d506f34..6a6379a 100644
+--- a/drivers/usb/chipidea/core.c
++++ b/drivers/usb/chipidea/core.c
+@@ -735,6 +735,7 @@ static struct platform_driver ci_hdrc_driver = {
+ 	.remove	= ci_hdrc_remove,
+ 	.driver	= {
+ 		.name	= "ci_hdrc",
++		.owner	= THIS_MODULE,
+ 	},
+ };
+ 
+-- 
+1.8.0
+

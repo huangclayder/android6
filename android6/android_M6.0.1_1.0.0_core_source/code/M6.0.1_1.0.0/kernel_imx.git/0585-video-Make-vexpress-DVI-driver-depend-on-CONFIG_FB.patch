@@ -1,0 +1,52 @@
+From ae775136dae4a6cc9ecaab5b67be065cc5541bfc Mon Sep 17 00:00:00 2001
+From: Jon Medhurst <tixy@linaro.org>
+Date: Tue, 15 Jan 2013 17:45:19 +0000
+Subject: [PATCH] video: Make vexpress DVI driver depend on CONFIG_FB
+
+The driver uses symbols from fbmem.c so if CONFIG_FB is not
+selected we get build errors like:
+
+drivers/built-in.o: In function `vexpress_dvi_fb_select':
+ :(.text+0x1b6c): undefined reference to `lock_fb_info'
+ :(.text+0x1ba0): undefined reference to `registered_fb'
+
+Note, this is only a partial solution because we still have a
+problem if CONFIG_FB is selected as a module.
+
+Signed-off-by: Jon Medhurst <tixy@linaro.org>
+(cherry picked from commit 1a47603600dd0a5579bcfb12dbf084ce170fc234)
+Signed-off-by: Alex Shi <alex.shi@linaro.org>
+---
+ drivers/video/Kconfig  | 5 +++++
+ drivers/video/Makefile | 2 +-
+ 2 files changed, 6 insertions(+), 1 deletion(-)
+
+diff --git a/drivers/video/Kconfig b/drivers/video/Kconfig
+index dade5b7..d9b299f 100644
+--- a/drivers/video/Kconfig
++++ b/drivers/video/Kconfig
+@@ -39,6 +39,11 @@ config VIDEOMODE_HELPERS
+ config HDMI
+ 	bool
+ 
++config VEXPRESS_DVI_CONTROL
++	bool "Versatile Express DVI control"
++	depends on FB && VEXPRESS_CONFIG
++	default y
++
+ menuconfig FB
+ 	tristate "Support for frame buffer devices"
+ 	---help---
+diff --git a/drivers/video/Makefile b/drivers/video/Makefile
+index b005437..7004f7d 100644
+--- a/drivers/video/Makefile
++++ b/drivers/video/Makefile
+@@ -180,4 +180,4 @@ obj-$(CONFIG_VIDEOMODE_HELPERS) += of_display_timing.o of_videomode.o
+ endif
+ 
+ # platform specific output drivers
+-obj-$(CONFIG_VEXPRESS_CONFIG)	  += vexpress-dvi.o
++obj-$(CONFIG_VEXPRESS_DVI_CONTROL) += vexpress-dvi.o
+-- 
+1.8.0
+

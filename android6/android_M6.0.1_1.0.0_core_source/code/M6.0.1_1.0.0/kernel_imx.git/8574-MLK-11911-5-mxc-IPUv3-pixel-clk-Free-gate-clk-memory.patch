@@ -1,0 +1,38 @@
+From a0a3d875c91c99b8f6543a7aed478ed141909365 Mon Sep 17 00:00:00 2001
+From: Liu Ying <Ying.Liu@freescale.com>
+Date: Thu, 26 Nov 2015 16:30:25 +0800
+Subject: [PATCH] MLK-11911-5 mxc IPUv3: pixel clk: Free gate clk memory if
+ clk_regiser fails
+
+This patch fixes the following issue reported by Coverity:
+	if (IS_ERR(clk))
+freed_arg: kfree frees clk. [Note: The source code implementation of the
+function has been overridden by a builtin model.]
+		kfree(clk);
+
+Use after free (USE_AFTER_FREE)
+use_after_free: Using freed pointer clk.
+	return clk;
+
+Signed-off-by: Liu Ying <Ying.Liu@freescale.com>
+(cherry picked from commit cae72a8cf504f0a0087c326a5d11bc1d2b5b3cea)
+---
+ drivers/mxc/ipu3/ipu_pixel_clk.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/mxc/ipu3/ipu_pixel_clk.c b/drivers/mxc/ipu3/ipu_pixel_clk.c
+index 7d3e96c..66e73dd 100644
+--- a/drivers/mxc/ipu3/ipu_pixel_clk.c
++++ b/drivers/mxc/ipu3/ipu_pixel_clk.c
+@@ -311,7 +311,7 @@ struct clk *clk_register_gate_pix_clk(struct device *dev, const char *name,
+ 
+ 	clk = clk_register(dev, &gate->hw);
+ 	if (IS_ERR(clk))
+-		kfree(clk);
++		kfree(gate);
+ 
+ 	return clk;
+ }
+-- 
+1.8.0
+

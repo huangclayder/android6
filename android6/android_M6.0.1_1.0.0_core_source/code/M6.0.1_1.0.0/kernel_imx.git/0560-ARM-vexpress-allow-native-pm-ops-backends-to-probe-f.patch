@@ -1,0 +1,47 @@
+From 5da7e9b80608c6348e745357ae51c63ff7d26313 Mon Sep 17 00:00:00 2001
+From: Achin Gupta <achin.gupta@arm.com>
+Date: Mon, 17 Dec 2012 00:15:00 +0000
+Subject: [PATCH] ARM: vexpress: allow native pm ops backends to probe for
+ psci suppport
+
+This patch allows the vexpress native backends to probe the dt for
+presence of the psci backend. If present then the native
+implementation of the 'bL_platform_power_ops' is not used.
+
+Signed-off-by: Achin Gupta <achin.gupta@arm.com>
+Signed-off-by: Liviu Dudau <Liviu.Dudau@arm.com>
+Signed-off-by: Jon Medhurst <tixy@linaro.org>
+(cherry picked from commit 211c84cadc1f15cd8de562e98177b42c65a4066c)
+Signed-off-by: Alex Shi <alex.shi@linaro.org>
+---
+ arch/arm/mach-vexpress/dcscb.c | 7 +++++++
+ 1 file changed, 7 insertions(+)
+
+diff --git a/arch/arm/mach-vexpress/dcscb.c b/arch/arm/mach-vexpress/dcscb.c
+index 14d4996..b35700f 100644
+--- a/arch/arm/mach-vexpress/dcscb.c
++++ b/arch/arm/mach-vexpress/dcscb.c
+@@ -23,6 +23,7 @@
+ #include <asm/cacheflush.h>
+ #include <asm/cputype.h>
+ #include <asm/cp15.h>
++#include <asm/psci.h>
+ 
+ 
+ #define RST_HOLD0	0x0
+@@ -193,6 +194,12 @@ static int __init dcscb_init(void)
+ 	unsigned int cfg;
+ 	int ret;
+ 
++	ret = psci_probe();
++	if (!ret) {
++		pr_debug("psci found. Aborting native init\n");
++		return -ENODEV;
++	}
++
+ 	if (!cci_probed())
+ 		return -ENODEV;
+ 
+-- 
+1.8.0
+

@@ -1,0 +1,46 @@
+From 75ecbb466ec190ade8387f18471c1b623a6807de Mon Sep 17 00:00:00 2001
+From: Gao Pan <pandy.gao@nxp.com>
+Date: Fri, 25 Dec 2015 14:21:41 +0800
+Subject: [PATCH 277/280] MLK-12074 remove platform check for install statge
+ in ipu makefile
+
+To avoid platform restriction to the intall stage, remove platform
+check for install statge in ipu makefile
+
+Signed-off-by: Gao Pan <pandy.gao@nxp.com>
+---
+ ipu/Makefile | 7 -------
+ 1 file changed, 7 deletions(-)
+
+diff --git a/ipu/Makefile b/ipu/Makefile
+index f6eac52..86b0545 100644
+--- a/ipu/Makefile
++++ b/ipu/Makefile
+@@ -8,13 +8,10 @@ else
+ OBJS = mxc_ipu_hl_lib.o mxc_ipu_lib.o
+ endif
+ 
+-# list of platforms which want this test case
+-INCLUDE_LIST:= IMX37_3STACK IMX51 IMX53 IMX6Q
+ 
+ LIBNAME=libipu
+ SONAMEVERSION=0
+ 
+-ifeq ($(PLATFORM), $(findstring $(PLATFORM), $(INCLUDE_LIST)))
+ all: $(LIBNAME).so
+ 
+ install:
+@@ -23,10 +20,6 @@ install:
+ 	@mkdir -p $(DEST_DIR)/usr/include
+ 	cp mxc_ipu_hl_lib.h $(DEST_DIR)/usr/include
+ 	cp ipu.h $(DEST_DIR)/usr/include
+-else
+-all install:
+-	@echo "Not support platform, will not complile"
+-endif
+ 
+ $(LIBNAME).so.$(SONAMEVERSION): $(OBJS)
+ 	$(CC) -shared -nostartfiles -Wl,-soname,$@ -o $@ $^ $(LDFLAGS)
+-- 
+1.8.0
+

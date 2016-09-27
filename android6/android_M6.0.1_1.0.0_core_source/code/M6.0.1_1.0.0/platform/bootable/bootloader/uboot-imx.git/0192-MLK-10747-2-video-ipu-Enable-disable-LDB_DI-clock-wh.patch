@@ -1,0 +1,157 @@
+From 615d4c51679a6c2ee0ed4c5e3922eec76646eef1 Mon Sep 17 00:00:00 2001
+From: Liu Ying <Ying.Liu@freescale.com>
+Date: Mon, 27 Apr 2015 18:07:47 +0800
+Subject: [PATCH] MLK-10747-2 video: ipu: Enable/disable LDB_DI clock when
+ necessary
+
+This patch adds enable/disable hooks support for ldb_di[0/1] clocks
+and enables/disables them when necessary.
+
+Signed-off-by: Liu Ying <Ying.Liu@freescale.com>
+(cherry picked from commit 839a1da941be48baf27c9cb28939cc6b2030424a)
+---
+ drivers/video/ipu_common.c | 62 ++++++++++++++++++++++++++++++++++++++++++----
+ drivers/video/ipu_disp.c   | 10 ++++++--
+ 2 files changed, 65 insertions(+), 7 deletions(-)
+
+diff --git a/drivers/video/ipu_common.c b/drivers/video/ipu_common.c
+index a3dc695..0efb3db 100644
+--- a/drivers/video/ipu_common.c
++++ b/drivers/video/ipu_common.c
+@@ -212,17 +212,67 @@ static struct clk ipu_clk = {
+ };
+ 
+ #if defined(CONFIG_MX6) || defined(CONFIG_MX53)
+-static struct clk ldb_clk = {
++static int clk_ldb_clk_enable(struct clk *clk)
++{
++	u32 reg;
++
++	reg = __raw_readl(clk->enable_reg);
++	reg |= MXC_CCM_CCGR_CG_MASK << clk->enable_shift;
++	__raw_writel(reg, clk->enable_reg);
++
++	return 0;
++}
++
++static void clk_ldb_clk_disable(struct clk *clk)
++{
++	u32 reg;
++
++	reg = __raw_readl(clk->enable_reg);
++	reg &= ~(MXC_CCM_CCGR_CG_MASK << clk->enable_shift);
++	__raw_writel(reg, clk->enable_reg);
++}
++
++static struct clk ldb_clk[2] = {
++	{
+ 	.name = "ldb_clk",
++	.id = 0,
+ 	.rate = 65000000,
++#ifdef CONFIG_MX6
++	.enable_reg = (u32 *)(CCM_BASE_ADDR +
++		offsetof(struct mxc_ccm_reg, CCGR3)),
++	.enable_shift = MXC_CCM_CCGR3_LDB_DI0_OFFSET,
++#else
++	.enable_reg = (u32 *)(CCM_BASE_ADDR +
++		offsetof(struct mxc_ccm_reg, CCGR6)),
++	.enable_shift = MXC_CCM_CCGR6_LDB_DI0_OFFSET,
++#endif
++	.enable = clk_ldb_clk_enable,
++	.disable = clk_ldb_clk_disable,
+ 	.usecount = 0,
++	}, {
++	.name = "ldb_clk",
++	.id = 1,
++	.rate = 65000000,
++#ifdef CONFIG_MX6
++	.enable_reg = (u32 *)(CCM_BASE_ADDR +
++		offsetof(struct mxc_ccm_reg, CCGR3)),
++	.enable_shift = MXC_CCM_CCGR3_LDB_DI1_OFFSET,
++#else
++	.enable_reg = (u32 *)(CCM_BASE_ADDR +
++		offsetof(struct mxc_ccm_reg, CCGR6)),
++	.enable_shift = MXC_CCM_CCGR6_LDB_DI1_OFFSET,
++#endif
++	.enable = clk_ldb_clk_enable,
++	.disable = clk_ldb_clk_disable,
++	.usecount = 0,
++	}
+ };
+ #endif
+ 
+ /* Globals */
+ struct clk *g_ipu_clk;
+ #if defined(CONFIG_MX6) || defined(CONFIG_MX53)
+-struct clk *g_ldb_clk;
++struct clk *g_ldb_clk[2];
+ #endif
+ unsigned char g_ipu_clk_enabled;
+ struct clk *g_di_clk[2];
+@@ -377,7 +427,7 @@ static int ipu_pixel_clk_set_parent(struct clk *clk, struct clk *parent)
+ 	if (parent == g_ipu_clk)
+ 		di_gen &= ~DI_GEN_DI_CLK_EXT;
+ #if defined(CONFIG_MX6) || defined(CONFIG_MX53)
+-	else if (!IS_ERR(g_di_clk[clk->id]) && parent == g_ldb_clk)
++	else if (!IS_ERR(g_di_clk[clk->id]) && parent == g_ldb_clk[clk->id])
+ 		di_gen |= DI_GEN_DI_CLK_EXT;
+ #endif
+ 	else
+@@ -474,8 +524,10 @@ int ipu_probe(void)
+ 	g_ipu_clk = &ipu_clk;
+ 	debug("ipu_clk = %u\n", clk_get_rate(g_ipu_clk));
+ #if defined(CONFIG_MX6) || defined(CONFIG_MX53)
+-	g_ldb_clk = &ldb_clk;
+-	debug("ldb_clk = %u\n", clk_get_rate(g_ldb_clk));
++	g_ldb_clk[0] = &ldb_clk[0];
++	g_ldb_clk[1] = &ldb_clk[1];
++	debug("ldb_clk[0] = %u\n", clk_get_rate(g_ldb_clk[0]));
++	debug("ldb_clk[1] = %u\n", clk_get_rate(g_ldb_clk[1]));
+ #endif
+ 	ipu_reset();
+ 
+diff --git a/drivers/video/ipu_disp.c b/drivers/video/ipu_disp.c
+index 3c24863..5a8727f 100644
+--- a/drivers/video/ipu_disp.c
++++ b/drivers/video/ipu_disp.c
+@@ -49,7 +49,7 @@ int g_di1_tvout;
+ 
+ extern struct clk *g_ipu_clk;
+ #if defined(CONFIG_MX6) || defined(CONFIG_MX53)
+-extern struct clk *g_ldb_clk;
++extern struct clk *g_ldb_clk[2];
+ #endif
+ extern struct clk *g_di_clk[2];
+ extern struct clk *g_pixel_clk[2];
+@@ -647,6 +647,9 @@ void ipu_dp_dc_enable(ipu_channel_t channel)
+ 	__raw_writel(reg, DC_WR_CH_CONF(dc_chan));
+ 
+ 	clk_enable(g_pixel_clk[di]);
++#if defined(CONFIG_MX6) || defined(CONFIG_MX53)
++	clk_enable(g_ldb_clk[di]);
++#endif
+ }
+ 
+ static unsigned char dc_swap;
+@@ -737,6 +740,9 @@ void ipu_dp_dc_disable(ipu_channel_t channel, unsigned char swap)
+ 		/* Clock is already off because it must be done quickly, but
+ 		   we need to fix the ref count */
+ 		clk_disable(g_pixel_clk[g_dc_di_assignment[dc_chan]]);
++#if defined(CONFIG_MX6) || defined(CONFIG_MX53)
++		clk_disable(g_ldb_clk[g_dc_di_assignment[dc_chan]]);
++#endif
+ 	}
+ }
+ 
+@@ -888,7 +894,7 @@ int32_t ipu_init_sync_panel(int disp, uint32_t pixel_clk,
+ 			}
+ 		}
+ #if defined(CONFIG_MX6) || defined(CONFIG_MX53)
+-		clk_set_parent(g_pixel_clk[disp], g_ldb_clk);
++		clk_set_parent(g_pixel_clk[disp], g_ldb_clk[disp]);
+ #endif
+ 	} else {
+ 		if (clk_get_usecount(g_pixel_clk[disp]) != 0)
+-- 
+1.8.0
+

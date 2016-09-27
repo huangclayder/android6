@@ -1,0 +1,26 @@
+From f8fb8db721484d164520c27205661015f58a9f58 Mon Sep 17 00:00:00 2001
+From: Zhang Sanshan <b51434@freescale.com>
+Date: Thu, 29 Jan 2015 09:44:24 +0800
+Subject: [PATCH 433/602] MA-6189 [Android_MX6Q/DL/SX_SD/ARD] OTA: Online OTA
+ upgrade is not work. 100%
+
+When do online ota upgrade, It needs copy ota.zip to loacal board. So it needs selinux permmission.
+This patch add related permmission.
+
+Signed-off-by: Zhang Sanshan <b51434@freescale.com>
+---
+ imx6/sepolicy/system_app.te | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/imx6/sepolicy/system_app.te b/imx6/sepolicy/system_app.te
+index f696877..493ce62 100644
+--- a/imx6/sepolicy/system_app.te
++++ b/imx6/sepolicy/system_app.te
+@@ -1,2 +1,4 @@
+ allow system_app system_app_data_file:notdevfile_class_set rw_file_perms;
++allow system_app cache_file:dir { rw_file_perms add_name create };
++allow system_app cache_file:file  { rw_file_perms create };
+ 
+-- 
+1.8.0
+

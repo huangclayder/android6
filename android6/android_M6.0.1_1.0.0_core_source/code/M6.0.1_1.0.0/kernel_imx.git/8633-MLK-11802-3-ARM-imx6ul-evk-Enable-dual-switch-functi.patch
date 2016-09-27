@@ -1,0 +1,49 @@
+From 8e680f9758ff11528e8a87aaee333b88ff929391 Mon Sep 17 00:00:00 2001
+From: Peter Chen <peter.chen@freescale.com>
+Date: Fri, 30 Oct 2015 17:25:28 +0800
+Subject: [PATCH] MLK-11802-3 ARM: imx6ul-evk: Enable dual switch function for
+ USB
+
+Since we have supported control vbus through ID pin, we can
+support dual switch function for otg port, but fully otg can't
+be supported at this port.
+
+Signed-off-by: Peter Chen <peter.chen@freescale.com>
+---
+ arch/arm/boot/dts/imx6ul-14x14-evk.dts | 4 +++-
+ arch/arm/boot/dts/imx6ul-9x9-evk.dts   | 4 +++-
+ 2 files changed, 6 insertions(+), 2 deletions(-)
+
+diff --git a/arch/arm/boot/dts/imx6ul-14x14-evk.dts b/arch/arm/boot/dts/imx6ul-14x14-evk.dts
+index 6d16c60..d4c08ab 100644
+--- a/arch/arm/boot/dts/imx6ul-14x14-evk.dts
++++ b/arch/arm/boot/dts/imx6ul-14x14-evk.dts
+@@ -306,7 +306,9 @@
+ };
+ 
+ &usbotg1 {
+-	dr_mode = "peripheral";
++	srp-disable;
++	hnp-disable;
++	adp-disable;
+ 	status = "okay";
+ };
+ 
+diff --git a/arch/arm/boot/dts/imx6ul-9x9-evk.dts b/arch/arm/boot/dts/imx6ul-9x9-evk.dts
+index e04ff80..fe67bf6 100644
+--- a/arch/arm/boot/dts/imx6ul-9x9-evk.dts
++++ b/arch/arm/boot/dts/imx6ul-9x9-evk.dts
+@@ -743,7 +743,9 @@
+ };
+ 
+ &usbotg1 {
+-	dr_mode = "peripheral";
++	srp-disable;
++	hnp-disable;
++	adp-disable;
+ 	status = "okay";
+ };
+ 
+-- 
+1.8.0
+

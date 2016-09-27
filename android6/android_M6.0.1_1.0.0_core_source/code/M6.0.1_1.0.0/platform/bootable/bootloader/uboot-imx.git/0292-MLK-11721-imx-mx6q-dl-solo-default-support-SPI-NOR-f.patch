@@ -1,0 +1,72 @@
+From 0523479adc9eeed4b81ddf2f88cae6bdeed45891 Mon Sep 17 00:00:00 2001
+From: Peng Fan <Peng.Fan@freescale.com>
+Date: Fri, 16 Oct 2015 10:42:09 +0800
+Subject: [PATCH] MLK-11721 imx: mx6q/dl/solo: default support SPI-NOR for sdb
+ boards
+
+1. Default support SPI-NOR for imx6q/dl/solo sabresd board.
+2. Fix bug for mx6soloxxx_spinor_defconfig. "nosmp" should be
+   \"nosmp\".
+
+Signed-off-by: Peng Fan <Peng.Fan@freescale.com>
+---
+ configs/mx6dlsabresd_defconfig            | 2 +-
+ configs/mx6qsabresd_defconfig             | 2 +-
+ configs/mx6solosabreauto_defconfig        | 2 +-
+ configs/mx6solosabreauto_spinor_defconfig | 2 +-
+ configs/mx6solosabresd_defconfig          | 2 +-
+ 5 files changed, 5 insertions(+), 5 deletions(-)
+
+diff --git a/configs/mx6dlsabresd_defconfig b/configs/mx6dlsabresd_defconfig
+index cde0d70..3cc8d76 100644
+--- a/configs/mx6dlsabresd_defconfig
++++ b/configs/mx6dlsabresd_defconfig
+@@ -1,4 +1,4 @@
+-CONFIG_SYS_EXTRA_OPTIONS="IMX_CONFIG=board/freescale/mx6sabresd/mx6dlsabresd.cfg,MX6DL"
++CONFIG_SYS_EXTRA_OPTIONS="IMX_CONFIG=board/freescale/mx6sabresd/mx6dlsabresd.cfg,MX6DL,SYS_USE_SPINOR"
+ CONFIG_ARM=y
+ CONFIG_TARGET_MX6SABRESD=y
+ CONFIG_SYS_MALLOC_F=y
+diff --git a/configs/mx6qsabresd_defconfig b/configs/mx6qsabresd_defconfig
+index 1764b39..5aea903 100644
+--- a/configs/mx6qsabresd_defconfig
++++ b/configs/mx6qsabresd_defconfig
+@@ -1,4 +1,4 @@
+-CONFIG_SYS_EXTRA_OPTIONS="IMX_CONFIG=board/freescale/mx6sabresd/mx6q_4x_mt41j128.cfg,MX6Q"
++CONFIG_SYS_EXTRA_OPTIONS="IMX_CONFIG=board/freescale/mx6sabresd/mx6q_4x_mt41j128.cfg,MX6Q,SYS_USE_SPINOR"
+ CONFIG_ARM=y
+ CONFIG_TARGET_MX6SABRESD=y
+ CONFIG_DM=y
+diff --git a/configs/mx6solosabreauto_defconfig b/configs/mx6solosabreauto_defconfig
+index d57294e..31373f4 100644
+--- a/configs/mx6solosabreauto_defconfig
++++ b/configs/mx6solosabreauto_defconfig
+@@ -1,4 +1,4 @@
+-CONFIG_SYS_EXTRA_OPTIONS="IMX_CONFIG=board/freescale/mx6qsabreauto/mx6solo.cfg,MX6SOLO,SYS_NOSMP="nosmp""
++CONFIG_SYS_EXTRA_OPTIONS="IMX_CONFIG=board/freescale/mx6qsabreauto/mx6solo.cfg,MX6SOLO,SYS_NOSMP=\"nosmp\""
+ CONFIG_ARM=y
+ CONFIG_TARGET_MX6QSABREAUTO=y
+ CONFIG_SYS_MALLOC_F=y
+diff --git a/configs/mx6solosabreauto_spinor_defconfig b/configs/mx6solosabreauto_spinor_defconfig
+index a8f321f..3f814c9 100644
+--- a/configs/mx6solosabreauto_spinor_defconfig
++++ b/configs/mx6solosabreauto_spinor_defconfig
+@@ -1,4 +1,4 @@
+-CONFIG_SYS_EXTRA_OPTIONS="IMX_CONFIG=board/freescale/mx6qsabreauto/mx6solo.cfg,MX6SOLO,SYS_NOSMP="nosmp",SYS_BOOT_SPINOR"
++CONFIG_SYS_EXTRA_OPTIONS="IMX_CONFIG=board/freescale/mx6qsabreauto/mx6solo.cfg,MX6SOLO,SYS_NOSMP=\"nosmp\",SYS_BOOT_SPINOR"
+ CONFIG_ARM=y
+ CONFIG_TARGET_MX6QSABREAUTO=y
+ CONFIG_SYS_MALLOC_F=y
+diff --git a/configs/mx6solosabresd_defconfig b/configs/mx6solosabresd_defconfig
+index 9dbee56..f3ce9f4 100644
+--- a/configs/mx6solosabresd_defconfig
++++ b/configs/mx6solosabresd_defconfig
+@@ -1,4 +1,4 @@
+-CONFIG_SYS_EXTRA_OPTIONS="IMX_CONFIG=board/freescale/mx6sabresd/mx6solo_4x_mt41j128.cfg,MX6SOLO,SYS_USE_SPINOR,SYS_NOSMP="nosmp""
++CONFIG_SYS_EXTRA_OPTIONS="IMX_CONFIG=board/freescale/mx6sabresd/mx6solo_4x_mt41j128.cfg,MX6SOLO,SYS_USE_SPINOR,SYS_NOSMP=\"nosmp\""
+ CONFIG_ARM=y
+ CONFIG_TARGET_MX6SABRESD=y
+ CONFIG_SYS_MALLOC_F=y
+-- 
+1.8.0
+

@@ -1,0 +1,61 @@
+From e858e1fb098df08043af03c4a7c6be0bb59d02ee Mon Sep 17 00:00:00 2001
+From: Shengjiu Wang <b02247@freescale.com>
+Date: Fri, 27 Jun 2014 14:02:28 +0800
+Subject: [PATCH] ENGR00331085-9: ARM: dts: imx6sx-sdb: Support spdif out in
+ sx-sdb board
+
+Add device tree for spdif in sx-sdb board.
+
+Signed-off-by: Shengjiu Wang <b02247@freescale.com>
+---
+ arch/arm/boot/dts/imx6sx-sdb.dts | 20 ++++++++++++++++++++
+ 1 file changed, 20 insertions(+)
+
+diff --git a/arch/arm/boot/dts/imx6sx-sdb.dts b/arch/arm/boot/dts/imx6sx-sdb.dts
+index d7a7a5e..d483caf 100644
+--- a/arch/arm/boot/dts/imx6sx-sdb.dts
++++ b/arch/arm/boot/dts/imx6sx-sdb.dts
+@@ -122,6 +122,14 @@
+ 		mux-ext-port = <6>;
+ 		hp-det-gpios = <&gpio1 17 1>;
+ 	};
++
++	sound-spdif {
++		compatible = "fsl,imx-audio-spdif",
++			   "fsl,imx6sx-sdb-spdif";
++		model = "imx-spdif";
++		spdif-controller = <&spdif>;
++		spdif-out;
++	};
+ };
+ 
+ &audmux {
+@@ -281,6 +289,12 @@
+         status = "disabled";
+ };
+ 
++&spdif {
++	pinctrl-names = "default";
++	pinctrl-0 = <&pinctrl_spdif>;
++	status = "okay";
++};
++
+ &ssi2 {
+ 	status = "okay";
+ };
+@@ -694,6 +708,12 @@
+                         >;
+                 };
+ 
++		pinctrl_spdif: spdifgrp {
++			fsl,pins = <
++				MX6SX_PAD_SD4_DATA4__SPDIF_OUT          0x1b0b0
++			>;
++		};
++
+ 		pinctrl_vcc_sd3: vccsd3grp {
+ 			fsl,pins = <
+ 				MX6SX_PAD_KEY_COL1__GPIO2_IO_11		0x17059
+-- 
+1.8.0
+

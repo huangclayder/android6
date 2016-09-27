@@ -1,0 +1,65 @@
+From 603b89c8990868c51b1546db4877d198358485ff Mon Sep 17 00:00:00 2001
+From: Peng Fan <Peng.Fan@freescale.com>
+Date: Wed, 28 Oct 2015 14:36:17 +0800
+Subject: [PATCH] MLK-11799 imx: mx6qpsdb: update ddr script to 1.10
+
+http://sw-stash.freescale.net/projects/IMX/repos/ddr-scripts-rel/commits/963fbc75ef6d36e12819e81de23410749754e5ef
+http://compass.freescale.net/livelink/livelink?func=ll&objId=234709279&objAction=browse&viewType=1
+
+Main change: (SDB board ddr density is different)
+1. tRFC is different with density, tXS/tXPR refers tRFC
+
+Test Results:
+2 MX6DP-SDB and 2 MX6QP-SDB boards passed overnight stress test.
+
+Signed-off-by: Peng Fan <Peng.Fan@freescale.com>
+---
+ board/freescale/mx6sabresd/mx6qp.cfg | 4 ++--
+ board/freescale/mx6sabresd/plugin.S  | 4 ++--
+ 2 files changed, 4 insertions(+), 4 deletions(-)
+
+diff --git a/board/freescale/mx6sabresd/mx6qp.cfg b/board/freescale/mx6sabresd/mx6qp.cfg
+index cd59f77..1ae28a8 100644
+--- a/board/freescale/mx6sabresd/mx6qp.cfg
++++ b/board/freescale/mx6sabresd/mx6qp.cfg
+@@ -110,13 +110,13 @@ DATA 4, 0x021b08b8, 0x00000800
+ DATA 4, 0x021b48b8, 0x00000800
+ DATA 4, 0x021b0004, 0x00020036
+ DATA 4, 0x021b0008, 0x09444040
+-DATA 4, 0x021b000c, 0x898E7955
++DATA 4, 0x021b000c, 0x555A7955
+ DATA 4, 0x021b0010, 0xFF328F64
+ DATA 4, 0x021b0014, 0x01ff00db
+ DATA 4, 0x021b0018, 0x00001740
+ DATA 4, 0x021b001c, 0x00008000
+ DATA 4, 0x021b002c, 0x000026d2
+-DATA 4, 0x021b0030, 0x008E1023
++DATA 4, 0x021b0030, 0x005A1023
+ DATA 4, 0x021b0040, 0x00000027
+ DATA 4, 0x021b0400, 0x14420000
+ DATA 4, 0x021b0000, 0x831A0000
+diff --git a/board/freescale/mx6sabresd/plugin.S b/board/freescale/mx6sabresd/plugin.S
+index f803d73..7b15a24 100644
+--- a/board/freescale/mx6sabresd/plugin.S
++++ b/board/freescale/mx6sabresd/plugin.S
+@@ -123,7 +123,7 @@
+ 	ldr r2, =0x09444040
+ 	str r2, [r0, #0x008]
+ 
+-	ldr r2, =0x898E7955
++	ldr r2, =0x555A7955
+ 	str r2, [r0, #0x00c]
+ 	ldr r2, =0xFF328F64
+ 	str r2, [r0, #0x010]
+@@ -137,7 +137,7 @@
+ 	str r2, [r0, #0x01c]
+ 	ldr r2, =0x000026d2
+ 	str r2, [r0, #0x02c]
+-	ldr r2, =0x008E1023
++	ldr r2, =0x005A1023
+ 	str r2, [r0, #0x030]
+ 	ldr r2, =0x00000027
+ 	str r2, [r0, #0x040]
+-- 
+1.8.0
+

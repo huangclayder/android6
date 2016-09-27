@@ -1,0 +1,51 @@
+From 735b9bf95b057106e64df39a50364d3d4d105e6e Mon Sep 17 00:00:00 2001
+From: "guoyin.chen" <guoyin.chen@freescale.com>
+Date: Thu, 4 Aug 2011 10:23:33 +0800
+Subject: [PATCH 06/11] ENGR00154294 enlarge Maximum number of nak loops and
+ add wins config in pppd
+
+enlarge the maximum number of nak loops in case the modem may have more
+than 5 time of NAK for ip/dns config
+
+merge the commit in http://git.nodomain.org/gitweb/?p=ppp.git;
+a=commitdiff_plain;h=275b3d6e8901b22a609567717f7dab56c8b67f2d
+for Accept ms-wins settings provided by server.
+
+Signed-off-by: guoyin.chen <guoyin.chen@freescale.com>
+
+Conflicts:
+	pppd/ipcp.c
+---
+ pppd/fsm.h  | 2 +-
+ pppd/ipcp.c | 2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/pppd/fsm.h b/pppd/fsm.h
+index 87a78d3..9789c46 100644
+--- a/pppd/fsm.h
++++ b/pppd/fsm.h
+@@ -146,7 +146,7 @@ typedef struct fsm_callbacks {
+ #define DEFTIMEOUT	3	/* Timeout time in seconds */
+ #define DEFMAXTERMREQS	2	/* Maximum Terminate-Request transmissions */
+ #define DEFMAXCONFREQS	10	/* Maximum Configure-Request transmissions */
+-#define DEFMAXNAKLOOPS	5	/* Maximum number of nak loops */
++#define DEFMAXNAKLOOPS	30	/* Maximum number of nak loops */
+ 
+ 
+ /*
+diff --git a/pppd/ipcp.c b/pppd/ipcp.c
+index abfc051..a2f141b 100644
+--- a/pppd/ipcp.c
++++ b/pppd/ipcp.c
+@@ -830,7 +830,7 @@ ipcp_addci(f, ucp, lenp)
+ 	    neg = 0; \
+     }
+ 
+-#define ADDCIWINS(opt, addr) \
++#define ADDCIWINS(opt, addr)                  \
+     if (addr) { \
+ 	if (len >= CILEN_ADDR) { \
+ 	    u_int32_t l; \
+-- 
+1.8.0
+

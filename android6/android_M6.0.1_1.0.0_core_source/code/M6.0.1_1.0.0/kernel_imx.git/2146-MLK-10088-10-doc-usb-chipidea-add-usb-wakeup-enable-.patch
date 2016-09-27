@@ -1,0 +1,44 @@
+From c0ef1f7b695ee4b98064936c5cf9ca49b1629207 Mon Sep 17 00:00:00 2001
+From: Peter Chen <peter.chen@freescale.com>
+Date: Tue, 23 Dec 2014 13:11:34 +0800
+Subject: [PATCH] MLK-10088-10 doc: usb: chipidea: add usb wakeup enable
+ example
+
+Add the example for how to enable USB as system wakeup source.
+
+Signed-off-by: Peter Chen <peter.chen@freescale.com>
+---
+ Documentation/usb/chipidea.txt | 20 ++++++++++++++++++++
+ 1 file changed, 20 insertions(+)
+
+diff --git a/Documentation/usb/chipidea.txt b/Documentation/usb/chipidea.txt
+index 995c8bc..8974578 100644
+--- a/Documentation/usb/chipidea.txt
++++ b/Documentation/usb/chipidea.txt
+@@ -69,3 +69,23 @@ cat /sys/kernel/debug/ci_hdrc.0/registers
+ ----------------------
+ "On-The-Go and Embedded Host Supplement to the USB Revision 2.0 Specification
+ July 27, 2012 Revision 2.0 version 1.1a"
++
++2. How to enable USB as system wakeup source
++-----------------------------------
++Below is the example for how to enable USB as system wakeup source
++at imx6 platform.
++
++2.1 Enable core's wakeup
++echo enabled > /sys/bus/platform/devices/ci_hdrc.0/power/wakeup
++2.2 Enable glue layer's wakeup
++echo enabled > /sys/bus/platform/devices/2184000.usb/power/wakeup
++2.3 Enable PHY's wakeup (optional)
++echo enabled > /sys/bus/platform/devices/20c9000.usbphy/power/wakeup
++2.4 Enable roothub's wakeup
++echo enabled > /sys/bus/usb/devices/usb1/power/wakeup
++2.5 Enable related device's wakeup
++echo enabled > /sys/bus/usb/devices/1-1/power/wakeup
++
++If the system has only one usb port, and you want usb wakeup at this port, you
++can use below script to enable usb wakeup.
++for i in $(find /sys -name wakeup | grep usb);do echo enabled > $i;done;
+-- 
+1.8.0
+

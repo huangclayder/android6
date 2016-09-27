@@ -1,0 +1,50 @@
+From d8607ab2cfaed44cddbe78c1511445471d4e620f Mon Sep 17 00:00:00 2001
+From: Xu Mao <B34688@freescale.com>
+Date: Thu, 24 Jan 2013 12:37:44 +0800
+Subject: [PATCH 2/6] ENGR00133115 Make .mov, .mkv, .webm .flv, .asf, .wmv to
+ streaming
+
+            Add quiktime, matroska, flv, asf, wmv mimetype for http streaming,
+            to make .mov, .mkv, .webm, .flv, .asf, .wmv streams to streaming not
+            download source.
+
+Signed-off-by: Xu Mao <B34688@freescale.com>
+---
+ AndroidManifest.xml | 14 ++++++++++++++
+ 1 file changed, 14 insertions(+)
+
+diff --git a/AndroidManifest.xml b/AndroidManifest.xml
+index 27e9643..2cb7788 100644
+--- a/AndroidManifest.xml
++++ b/AndroidManifest.xml
+@@ -73,6 +73,13 @@
+                 <data android:mimeType="video/webm" />
+                 <data android:mimeType="video/avi" />
+                 <data android:mimeType="application/sdp" />
++                <data android:mimeType="video/x-flv" />
++                <data android:mimeType="video/x-msvideo" />
++                <data android:mimeType="video/x-ms-asf" />
++                <data android:mimeType="video/x-ms-wmv" />
++                <data android:mimeType="video/mpeg" />
++                <data android:mimeType="video/quicktime" />
++                <data android:mimeType="video/x-matroska" />
+              </intent-filter>
+              <intent-filter>
+                 <!-- HTTP live support -->
+@@ -161,6 +168,13 @@
+                 <data android:mimeType="video/3gpp" />
+                 <data android:mimeType="video/3gpp2" />
+                 <data android:mimeType="application/sdp" />
++                <data android:mimeType="video/x-flv" />
++                <data android:mimeType="video/x-msvideo" />
++                <data android:mimeType="video/x-ms-asf" />
++                <data android:mimeType="video/x-ms-wmv" />
++                <data android:mimeType="video/mpeg" />
++                <data android:mimeType="video/quicktime" />
++                <data android:mimeType="video/x-matroska" />
+             </intent-filter>
+         </activity>
+ 
+-- 
+1.8.0
+

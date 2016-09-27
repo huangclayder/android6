@@ -1,0 +1,203 @@
+From 7700122b2872d60a12dd27399a6c91324d75f9fb Mon Sep 17 00:00:00 2001
+From: Lauren Post <lauren.post@freescale.com>
+Date: Mon, 23 Mar 2015 13:44:17 -0500
+Subject: [PATCH 490/505] MLK-10459: Update makefiles for 7D and restructure
+ INCLUDE/EXCLUDE lists
+
+Switch some makefiles so they include for legacy rather than exclude
+This avoids future updates for new SOC to fix build breaks as they
+will automatically be excluded for future SOC.
+
+Signed-off-by: Lauren Post <lauren.post@freescale.com>
+---
+ test/max8660_pmic_test/Makefile | 8 ++++----
+ test/mxc_i2c_test/Makefile      | 5 +++--
+ test/mxc_mcc_tty_test/Makefile  | 2 +-
+ test/mxc_pf_test/Makefile       | 5 +++--
+ test/mxc_pmic_test/Makefile     | 2 +-
+ test/mxc_rng_test/Makefile      | 5 +++--
+ test/mxc_sahara_test/Makefile   | 5 +++--
+ test/mxc_scc/Makefile           | 3 ++-
+ test/mxc_scc2/Makefile          | 7 ++++---
+ test/mxc_v4l2_test/Makefile     | 4 ++--
+ test/pxp_v4l2_test/Makefile     | 2 +-
+ 11 files changed, 27 insertions(+), 21 deletions(-)
+
+diff --git a/test/max8660_pmic_test/Makefile b/test/max8660_pmic_test/Makefile
+index 3c2684b..998326d 100644
+--- a/test/max8660_pmic_test/Makefile
++++ b/test/max8660_pmic_test/Makefile
+@@ -1,11 +1,11 @@
+ # list of platforms which did not want this test case
+-EXCLUDE_LIST:="IMX51 IMX37_3STACK IMX31_3STACK IMX31ADS IMX27_3STACK IMX27ADS IMX25_3STACK IMX6Q IMX6SL IMX6SX"
+-
++#EXCLUDE_LIST:="IMX51 IMX37_3STACK IMX31_3STACK IMX31ADS IMX27_3STACK IMX27ADS IMX25_3STACK IMX6Q IMX6SL IMX6SX"
++INCLUDE_LIST:="IMX53"
+ 
+ LTP_DIR = $(TOPDIR)/test/mxc_pmic_test/
+ LOADLIBES+= -L$(LTP_DIR)lib -lltp
+ 
+-ifeq (,$(findstring $(PLATFORM), $(EXCLUDE_LIST)))
++ifeq ($(PLATFORM),$(findstring $(PLATFORM),$(INCLUDE_LIST)))
+ OBJS = autorun-mcu_pmic.sh libltp.a
+ else
+ OBJS =
+@@ -22,7 +22,7 @@ SUBDIRS =       protocol_tests \
+ 		pmic_testapp_rtc
+ 
+ all: $(OBJS)
+-ifeq (,$(findstring $(PLATFORM), $(EXCLUDE_LIST)))
++ifeq ($(PLATFORM),$(findstring $(PLATFORM),$(INCLUDE_LIST)))
+ 	@set -e; for i in $(SUBDIRS); do $(MAKE) -C $$i ; done
+ endif
+ 
+diff --git a/test/mxc_i2c_test/Makefile b/test/mxc_i2c_test/Makefile
+index a25604f..5fb75c7 100644
+--- a/test/mxc_i2c_test/Makefile
++++ b/test/mxc_i2c_test/Makefile
+@@ -1,7 +1,8 @@
+ # list of platforms which did not want this test case
+-EXCLUDE_LIST:="IMX35_3STACK IMX25_3STACK IMX6Q IMX6SL IMX6SX"
++#EXCLUDE_LIST:="IMX35_3STACK IMX25_3STACK IMX6Q IMX6SL IMX6SX IMX7D"
++INCLUDE_LIST:="IMX53 IMX51"
+ 
+-ifeq (,$(findstring $(PLATFORM), $(EXCLUDE_LIST)))
++ifeq ($(PLATFORM),$(findstring $(PLATFORM),$(INCLUDE_LIST)))
+ OBJS = \
+ 	$(OBJDIR)/mxc_i2c_test.out \
+ 	$(OBJDIR)/mxc_i2c_test_usb.out \
+diff --git a/test/mxc_mcc_tty_test/Makefile b/test/mxc_mcc_tty_test/Makefile
+index 6bb271c..dfe0330 100644
+--- a/test/mxc_mcc_tty_test/Makefile
++++ b/test/mxc_mcc_tty_test/Makefile
+@@ -3,7 +3,7 @@
+ #
+ 
+ # list of platforms which want this test case
+-INCLUDE_LIST:= IMX6SX
++INCLUDE_LIST:= IMX6SX IMX7D
+ 
+ ifeq ($(PLATFORM),$(findstring $(PLATFORM),$(INCLUDE_LIST)))
+ OBJS = $(OBJDIR)/mxc_mcc_tty_test.out
+diff --git a/test/mxc_pf_test/Makefile b/test/mxc_pf_test/Makefile
+index 6c80940..b759ed9 100644
+--- a/test/mxc_pf_test/Makefile
++++ b/test/mxc_pf_test/Makefile
+@@ -1,7 +1,8 @@
+ # list of platforms which did not want this test case
+-EXCLUDE_LIST:="IMX27ADS IMX37_3STACK IMX51 IMX25_3STACK IMX6Q IMX6SL IMX6SX"
++#EXCLUDE_LIST:="IMX27ADS IMX37_3STACK IMX51 IMX25_3STACK IMX6Q IMX6SL IMX6SX IMX7D"
++INCLUDE_LIST:="IMX31 IMX53"
+ 
+-ifeq (,$(findstring $(PLATFORM), $(EXCLUDE_LIST)))
++ifeq ($(PLATFORM),$(findstring $(PLATFORM),$(INCLUDE_LIST)))
+ OBJS = $(OBJDIR)/autorun-pf.sh $(OBJDIR)/mxc_pf_test.out
+ else
+ OBJS =
+diff --git a/test/mxc_pmic_test/Makefile b/test/mxc_pmic_test/Makefile
+index b70c0ad..92174f7 100644
+--- a/test/mxc_pmic_test/Makefile
++++ b/test/mxc_pmic_test/Makefile
+@@ -1,5 +1,5 @@
+ # list of platforms which did not want this test case
+-EXCLUDE_LIST:="IMX37_3STACK IMX35_3STACK IMX51 IMX6Q IMX6SL IMX6SX"
++EXCLUDE_LIST:="IMX37_3STACK IMX35_3STACK IMX51 IMX6Q IMX6SL IMX6SX IMX7D"
+ 
+ LTP_DIR = ../
+ LOADLIBES+= -L$(LTP_DIR)lib -lltp -lpthread -lm
+diff --git a/test/mxc_rng_test/Makefile b/test/mxc_rng_test/Makefile
+index c3ea840..9cbdb47 100644
+--- a/test/mxc_rng_test/Makefile
++++ b/test/mxc_rng_test/Makefile
+@@ -5,9 +5,10 @@
+ #****************************************************************************/
+ 
+ # list of platforms which did not want this test case
+-EXCLUDE_LIST:="IMX27ADS IMX51 IMX6Q IMX6SL IMX6SX"
++#EXCLUDE_LIST:="IMX27ADS IMX51 IMX6Q IMX6SL IMX6SX IMX7D"
++INCLUDE_LIST:="IMX53 IMX31"
+ 
+-ifeq (,$(findstring $(PLATFORM), $(EXCLUDE_LIST)))
++ifeq ($(PLATFORM),$(findstring $(PLATFORM),$(INCLUDE_LIST)))
+ OBJS = apitest rng_test move
+ else
+ OBJS =
+diff --git a/test/mxc_sahara_test/Makefile b/test/mxc_sahara_test/Makefile
+index a49c834..ea31a9b 100644
+--- a/test/mxc_sahara_test/Makefile
++++ b/test/mxc_sahara_test/Makefile
+@@ -1,7 +1,8 @@
+ # list of platforms which did not want this test case
+-EXCLUDE_LIST:= IMX21ADS IMX31ADS IMX31_3STACK IMX35_3STACK IMX37_3STACK IMX25_3STACK IMX50 IMX6Q IMX6SL IMX6SX
++#EXCLUDE_LIST:= IMX21ADS IMX31ADS IMX31_3STACK IMX35_3STACK IMX37_3STACK IMX25_3STACK IMX50 IMX6Q IMX6SL IMX6SX IMX7D
++INCLUDE_LIST:= "IMX53 IMX51 IMX27ADS"
+ 
+-ifeq (,$(findstring $(PLATFORM), $(EXCLUDE_LIST)))
++ifeq ($(PLATFORM),$(findstring $(PLATFORM),$(INCLUDE_LIST)))
+  OBJS= apitest
+ 
+ ifeq ("$(PLATFORM)", "IMX27ADS")
+diff --git a/test/mxc_scc/Makefile b/test/mxc_scc/Makefile
+index c1808fe..4efcd77 100644
+--- a/test/mxc_scc/Makefile
++++ b/test/mxc_scc/Makefile
+@@ -1,5 +1,6 @@
+ # list of platforms which did not want this test case
+-EXCLUDE_LIST:="IMX21ADS MXC30031ADS IMX233 IMX37_3STACK IMX51 IMX50 IMX6Q IMX6SL IMX6SX"
++#EXCLUDE_LIST:="IMX21ADS MXC30031ADS IMX233 IMX37_3STACK IMX51 IMX50 IMX6Q IMX6SL IMX6SX IMX7D"
++INCLUDE_LIST:="IMX53 IMX25_STACK"
+ 
+ ifeq (,$(findstring $(PLATFORM), $(EXCLUDE_LIST)))
+ OBJS = $(OBJDIR)/scc_test
+diff --git a/test/mxc_scc2/Makefile b/test/mxc_scc2/Makefile
+index 9cb6b2e..4dee0d2 100644
+--- a/test/mxc_scc2/Makefile
++++ b/test/mxc_scc2/Makefile
+@@ -1,7 +1,8 @@
+ # list of platforms which did not want this test case
+-EXCLUDE_LIST:="IMX21ADS IMX27ADS IMX31ADS IMX31_3STACK IMX35_3STACK IMX25_3STACK IMX233 IMX50 IMX6Q IMX6SL IMX6SX"
++#EXCLUDE_LIST:="IMX21ADS IMX27ADS IMX31ADS IMX31_3STACK IMX35_3STACK IMX25_3STACK IMX233 IMX50 IMX6Q IMX6SL IMX6SX IMX7D"
++INCLUDE_LIST:="IMX53"
+ 
+-ifeq (,$(findstring $(PLATFORM), $(EXCLUDE_LIST)))
++ifeq ($(PLATFORM),$(findstring $(PLATFORM),$(INCLUDE_LIST)))
+ OBJS = $(OBJDIR)/scc2_test.out
+ else
+ endif
+@@ -9,7 +10,7 @@ endif
+ CFLAGS += -DFSL_PLATFORM_OTHER -DFSL_HAVE_SCC2
+ 
+ all : $(OBJS)
+-ifeq (,$(findstring $(PLATFORM), $(EXCLUDE_LIST)))
++ifeq ($(PLATFORM),$(findstring $(PLATFORM),$(INCLUDE_LIST)))
+ 	cp -r *.sh $(OBJDIR)
+ endif
+ 
+diff --git a/test/mxc_v4l2_test/Makefile b/test/mxc_v4l2_test/Makefile
+index 34fdcaf..2ca39dd 100644
+--- a/test/mxc_v4l2_test/Makefile
++++ b/test/mxc_v4l2_test/Makefile
+@@ -1,7 +1,7 @@
+ # list of platforms which did not want this test case
+ EXCLUDE_LIST:=
+-CSI_LIST:=IMX25_3STACK IMX6SL IMX6SX
+-NEED_PXP_LIB_LIST:=IMX6SL IMX6SX
++CSI_LIST:=IMX25_3STACK IMX6SL IMX6SX IMX7D
++NEED_PXP_LIB_LIST:=IMX6SL IMX6SX IMX7D
+ 
+ # Just use pxp library to get contiguous physical memory for USERPTR testing
+ # However, be noticed that this is not the only way.
+diff --git a/test/pxp_v4l2_test/Makefile b/test/pxp_v4l2_test/Makefile
+index ab9ae67..0da9eba 100644
+--- a/test/pxp_v4l2_test/Makefile
++++ b/test/pxp_v4l2_test/Makefile
+@@ -1,5 +1,5 @@
+ # list of platforms which want this test case
+-INCLUDE_LIST:=IMX233 IMX28 IMX50 IMX51 IMX5 IMX6SL IMX6SX
++INCLUDE_LIST:="IMX233 IMX28 IMX50 IMX51 IMX5 IMX6SL IMX6SX IMX7D"
+ 
+ CFLAGS += -lpthread
+ 
+-- 
+1.8.0
+

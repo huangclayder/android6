@@ -1,0 +1,40 @@
+From 2fc961d6cad9b7768058ded8d30f4e86e2e872e4 Mon Sep 17 00:00:00 2001
+From: Liu Xiaowen <xiaowen.liu@freescale.com>
+Date: Thu, 8 Jan 2015 10:26:13 +0800
+Subject: [PATCH 25/45] MA-5981 fix Recent task list UI shows incorrect on
+ 6sl_evk.
+
+TaskViewThumbnail calls setClipBounds with empty rectangle.
+Software canvas accept empty rectangle to do clip.
+When clip rectangle is empty, UI show will be blocked.
+Hardware cancas ignore empty clip rectange.
+When clip rectange is empty, it won't block UI show.
+So, TaskViewThumbnail can't show up when use software canvas.
+6sl_evk doesn't have GPU 3D, so it use software canvas to draw UI.
+
+The resolution is when TaskViewThumbnail call setClipBounds
+make sure of the rectangle is not empty.
+
+Signed-off-by: Liu Xiaowen <xiaowen.liu@freescale.com>
+---
+ .../src/com/android/systemui/recents/views/TaskViewThumbnail.java     | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
+
+diff --git a/packages/SystemUI/src/com/android/systemui/recents/views/TaskViewThumbnail.java b/packages/SystemUI/src/com/android/systemui/recents/views/TaskViewThumbnail.java
+index 117a7d3..f0670f5 100644
+--- a/packages/SystemUI/src/com/android/systemui/recents/views/TaskViewThumbnail.java
++++ b/packages/SystemUI/src/com/android/systemui/recents/views/TaskViewThumbnail.java
+@@ -170,7 +170,9 @@ public class TaskViewThumbnail extends View {
+         int top = (int) Math.max(0, taskBar.getTranslationY() +
+                 taskBar.getMeasuredHeight() - 1);
+         mClipRect.set(0, top, getMeasuredWidth(), getMeasuredHeight());
+-        setClipBounds(mClipRect);
++        if (!mClipRect.isEmpty()) {
++            setClipBounds(mClipRect);
++        }
+     }
+ 
+     /** Updates the visibility of the the thumbnail. */
+-- 
+1.8.0
+

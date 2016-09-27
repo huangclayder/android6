@@ -1,0 +1,52 @@
+From eebe1fe86a8f0866ba87b199b26467f38807a001 Mon Sep 17 00:00:00 2001
+From: Wang Haoran <Haoran.Wang@freescale.com>
+Date: Fri, 20 Mar 2015 17:23:57 +0800
+Subject: [PATCH 455/602] MA-6384 Add location feature into ARD and evk_6sl
+ platform
+
+Added location and location.network feature to all of
+ARD platform and evk_6sl platform.
+
+Signed-off-by: Wang Haoran <Haoran.Wang@freescale.com>
+---
+ evk_6sl/required_hardware.xml       | 2 ++
+ sabreauto_6q/required_hardware.xml  | 2 ++
+ sabreauto_6sx/required_hardware.xml | 2 ++
+ 3 files changed, 6 insertions(+)
+
+diff --git a/evk_6sl/required_hardware.xml b/evk_6sl/required_hardware.xml
+index 3e87bef..adee65f 100644
+--- a/evk_6sl/required_hardware.xml
++++ b/evk_6sl/required_hardware.xml
+@@ -23,4 +23,6 @@
+     <feature name="android.hardware.microphone" />
+     <feature name="android.software.home_screen" />
+     <feature name="android.software.input_methods" />
++    <feature name="android.hardware.location" />
++    <feature name="android.hardware.location.network" />
+ </permissions>
+diff --git a/sabreauto_6q/required_hardware.xml b/sabreauto_6q/required_hardware.xml
+index e899b90..607483d 100644
+--- a/sabreauto_6q/required_hardware.xml
++++ b/sabreauto_6q/required_hardware.xml
+@@ -22,4 +22,6 @@
+     <feature name="android.hardware.microphone" />
+     <feature name="android.software.home_screen" />
+     <feature name="android.software.input_methods" />
++    <feature name="android.hardware.location" />
++    <feature name="android.hardware.location.network" />
+ </permissions>
+diff --git a/sabreauto_6sx/required_hardware.xml b/sabreauto_6sx/required_hardware.xml
+index b657795..ddc076b 100644
+--- a/sabreauto_6sx/required_hardware.xml
++++ b/sabreauto_6sx/required_hardware.xml
+@@ -22,4 +22,6 @@
+     <feature name="android.hardware.microphone" />
+     <feature name="android.software.home_screen" />
+     <feature name="android.software.input_methods" />
++    <feature name="android.hardware.location" />
++    <feature name="android.hardware.location.network" />
+ </permissions>
+-- 
+1.8.0
+

@@ -1,0 +1,144 @@
+From df4af18ff3322175c3300c6ea1fc0487dda48822 Mon Sep 17 00:00:00 2001
+From: Haoran Wang <b50027@freescale.com>
+Date: Wed, 11 Feb 2015 13:19:27 +0800
+Subject: [PATCH 085/115] MA-6252 Fix set static IP crash and use async static
+ IP setting
+
+This patch did:
+  1. Check empty editview in static IP settings.
+  2. Use async handler in static IP settings to
+     speed up the UI response for MA-6166.
+
+Signed-off-by: Haoran Wang <b50027@freescale.com>
+---
+ .../com/fsl/ethernet/EthernetConfigDialog.java     | 27 ++++++++++++++++++----
+ Ethernet/com/fsl/ethernet/EthernetManager.java     |  5 +++-
+ Ethernet/res/layout/eth_configure.xml              |  5 ++--
+ Ethernet/res/values/strings.xml                    |  3 ++-
+ 4 files changed, 31 insertions(+), 9 deletions(-)
+
+diff --git a/Ethernet/com/fsl/ethernet/EthernetConfigDialog.java b/Ethernet/com/fsl/ethernet/EthernetConfigDialog.java
+index 48e26aa..e6f300a 100644
+--- a/Ethernet/com/fsl/ethernet/EthernetConfigDialog.java
++++ b/Ethernet/com/fsl/ethernet/EthernetConfigDialog.java
+@@ -29,6 +29,7 @@ import android.widget.EditText;
+ import android.widget.RadioButton;
+ import android.widget.Spinner;
+ import android.widget.TextView;
++import android.os.Handler;
+ import com.fsl.ethernet.EthernetDevInfo;
+ import android.widget.LinearLayout;
+ import android.widget.CompoundButton;
+@@ -55,6 +56,7 @@ public class EthernetConfigDialog extends AlertDialog implements
+     private EditText mGateway;
+     private LinearLayout ip_dns_setting;
+     private static String Mode_dhcp = "dhcp";
++    private Handler configHandler = new Handler();
+ 
+     public EthernetConfigDialog(Context context, EthernetEnabler Enabler) {
+         super(context);
+@@ -125,10 +127,11 @@ public class EthernetConfigDialog extends AlertDialog implements
+         if (localLOGV)
+             Log.d(TAG, "Config device for " + mDevList.getSelectedItem().toString());
+         if (mConTypeManual.isChecked()) {
+-            if ((mIpaddr.getText().toString().equals(""))&&(mDns.getText().toString().equals("")))
+-            {
++            if ((mIpaddr.getText().toString().equals("")) || (mMask.getText().toString().equals("")) ||
++                        mGateway.getText().toString().equals("")) {
+                 Toast.makeText(this.getContext(), R.string.show_need_setting,Toast.LENGTH_SHORT).show();
+-            }else{
++                return;
++            } else {
+                 info.setConnectMode(EthernetDevInfo.ETHERNET_CONN_MODE_MANUAL);
+                 info.setIpAddress(mIpaddr.getText().toString());
+                 info.setDnsAddr(mDns.getText().toString());
+@@ -144,8 +147,22 @@ public class EthernetConfigDialog extends AlertDialog implements
+         info.setProxyAddr(mEthEnabler.getManager().getSharedPreProxyAddress());
+         info.setProxyPort(mEthEnabler.getManager().getSharedPreProxyPort());
+         info.setProxyExclusionList(mEthEnabler.getManager().getSharedPreProxyExclusionList());
+-        mEthEnabler.getManager().updateDevInfo(info);
+-        mEthEnabler.setEthEnabled();
++        configHandler.post(new ConfigHandler(info));
++    }
++
++    class ConfigHandler implements Runnable {
++        EthernetDevInfo info;
++
++        public ConfigHandler(EthernetDevInfo info) {
++            this.info = info;
++        }
++
++        public void run() {
++            mEthEnabler.getManager().updateDevInfo(info);
++            mEthEnabler.setEthEnabled();
++
++        }
++
+     }
+ 
+     public void onClick(DialogInterface dialog, int which) {
+diff --git a/Ethernet/com/fsl/ethernet/EthernetManager.java b/Ethernet/com/fsl/ethernet/EthernetManager.java
+index becdf39..e68a574 100644
+--- a/Ethernet/com/fsl/ethernet/EthernetManager.java
++++ b/Ethernet/com/fsl/ethernet/EthernetManager.java
+@@ -236,9 +236,12 @@ public class EthernetManager {
+                 Log.e(TAG,"Static IP configuration failed: " + e);
+             } catch (IllegalStateException e) {
+                 Log.e(TAG,"Static IP configuration fialed: " + e);
+-            }catch (IllegalArgumentException e) {
++            } catch (IllegalArgumentException e) {
+                 Log.e(TAG,"Wrong Static IP: " + e);
+                 Toast.makeText(mContext, "Illegal address inputed. You can not access the Internet.",Toast.LENGTH_SHORT).show();
++            } catch (Exception err) {
++                Log.e(TAG, "Exception in setting Static IP");
++                Toast.makeText(mContext, "We got exception when set the static IP.",Toast.LENGTH_SHORT).show();
+             }
+             Log.d(TAG, "set ip manually " + info.toString());
+             SystemProperties.set("net.dns1", info.getDnsAddr());
+diff --git a/Ethernet/res/layout/eth_configure.xml b/Ethernet/res/layout/eth_configure.xml
+index 57911e9..973b8c5 100644
+--- a/Ethernet/res/layout/eth_configure.xml
++++ b/Ethernet/res/layout/eth_configure.xml
+@@ -122,7 +122,8 @@
+                       android:textSize="18sp"
+                       android:textAlignment="viewStart"
+                       android:singleLine="true"
+-                      android:inputType="none" />
++                      android:text="@string/eth_mask_pre"
++                      android:inputType="phone" />
+             <TextView android:id="@+id/gateway_text"
+                       android:layout_width="match_parent"
+                       android:layout_height="wrap_content"
+@@ -138,7 +139,7 @@
+                       android:textSize="18sp"
+                       android:textAlignment="viewStart"
+                       android:singleLine="true"
+-                      android:inputType="none" />
++                      android:inputType="phone" />
+             </LinearLayout>
+         </LinearLayout>
+     </LinearLayout>
+diff --git a/Ethernet/res/values/strings.xml b/Ethernet/res/values/strings.xml
+index 236c0f3..9b6b209 100644
+--- a/Ethernet/res/values/strings.xml
++++ b/Ethernet/res/values/strings.xml
+@@ -20,6 +20,7 @@
+     <string name="eth_do_config" translatable="false">Configure Ethernet</string>
+     <string name="eth_conf_summary" translatable="false">Configure Ethernet devices</string>
+     <string name="eth_mask" translatable="false">Netmask</string>
++    <string name="eth_mask_pre" translatable="false">255.255.255.0</string>
+     <string name="eth_toggle_summary_off" translatable="false">Turn off Ethernet</string>
+     <string name="eth_toggle_summary_on" translatable="false">Turn on Ethernet</string>
+     <string name="menu_save">confirm</string>
+@@ -30,7 +31,7 @@
+     <string name="proxy_port">Proxy port</string>
+     <string name="proxy_exclusionlist">Bypass proxy for</string> 
+     <string name="eth_proxy_address">Proxy address</string>
+-    <string name="show_need_setting">You should setting the static IP and DNS address in this mode</string>
++    <string name="show_need_setting">You should set the static IP, Gateway and Mask in this mode</string>
+     <string name="advanced_need_setting">You should not set the Proxy address and Proxy port null</string>
+     <string name="bypass_hint">You should put valid addresses split by \",\"</string>
+     <string name="show_connect_ethernet">Connect the Ethernet before setting the proxy.</string>
+-- 
+1.8.0
+

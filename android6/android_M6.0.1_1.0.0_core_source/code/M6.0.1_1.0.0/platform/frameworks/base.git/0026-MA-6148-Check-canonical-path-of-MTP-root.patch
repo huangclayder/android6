@@ -1,0 +1,52 @@
+From 24bcb93cd5f065215af62d381a0afc654f720918 Mon Sep 17 00:00:00 2001
+From: Haoran Wang <b50027@freescale.com>
+Date: Tue, 27 Jan 2015 12:58:12 +0800
+Subject: [PATCH 26/45] MA-6148 Check canonical path of MTP root
+
+Check the canonical path instead the getPath() in
+the storage root checking.
+The getPath() will return different path string when
+it is under symbolic link from the getCanoicalPath().
+
+Signed-off-by: Haoran Wang <b50027@freescale.com>
+---
+ media/java/android/mtp/MtpDatabase.java | 11 ++++++++++-
+ 1 file changed, 10 insertions(+), 1 deletion(-)
+
+diff --git a/media/java/android/mtp/MtpDatabase.java b/media/java/android/mtp/MtpDatabase.java
+index 90d1f2d..b464111 100755
+--- a/media/java/android/mtp/MtpDatabase.java
++++ b/media/java/android/mtp/MtpDatabase.java
+@@ -1,5 +1,6 @@
+ /*
+  * Copyright (C) 2010 The Android Open Source Project
++ * Copyright (C) 2015 Freescale Semiconductor, Inc.
+  *
+  * Licensed under the Apache License, Version 2.0 (the "License");
+  * you may not use this file except in compliance with the License.
+@@ -309,13 +310,21 @@ public class MtpDatabase {
+         try {
+             File f = new File(path);
+             String canonical = f.getCanonicalPath();
++            File rootFile;
++            String rootPath;
+             for (String root: mStorageMap.keySet()) {
+-                if (canonical.startsWith(root)) {
++                rootFile = new File(root);
++                rootPath = rootFile.getCanonicalPath();
++                if (!root.equals(rootPath))
++                    Log.d (TAG, "root is " + root + ",but rootPath is" + rootPath);
++                if (canonical.startsWith(rootPath)) {
+                     return true;
+                 }
+             }
+         } catch (IOException e) {
+             // ignore
++        } catch (SecurityException e) {
++            // ignore
+         }
+         return false;
+     }
+-- 
+1.8.0
+

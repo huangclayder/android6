@@ -1,0 +1,41 @@
+From 48d77b4e07367f23f94e86b39adda86180393fd7 Mon Sep 17 00:00:00 2001
+From: "guoyin.chen" <guoyin.chen@freescale.com>
+Date: Mon, 10 Nov 2014 09:28:45 +0800
+Subject: [PATCH 26/43] MA-5839-1 Update android to Lollipop
+
+Fix the build error as Lollipop Update
+beginFrame has a parameter to indicate a force recomposing
+for all surfaces
+
+Signed-off-by: guoyin.chen <guoyin.chen@freescale.com>
+---
+ services/surfaceflinger/SurfaceFlinger.cpp | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/services/surfaceflinger/SurfaceFlinger.cpp b/services/surfaceflinger/SurfaceFlinger.cpp
+index 8d0bfb8..4f69923 100644
+--- a/services/surfaceflinger/SurfaceFlinger.cpp
++++ b/services/surfaceflinger/SurfaceFlinger.cpp
+@@ -656,8 +656,8 @@ status_t SurfaceFlinger::getDisplayConfigs(const sp<IBinder>& display,
+             swap(width, height);
+         }
+ 
+-        info->w = width;
+-        info->h = height;
++        info.w = width;
++        info.h = height;
+         info.xdpi = xdpi;
+         info.ydpi = ydpi;
+         info.fps = float(1e9 / hwConfig.refresh);
+@@ -1014,7 +1014,7 @@ void SurfaceFlinger::doDebugFlashRegions()
+     }
+ 
+     for (size_t dpy=0 ; dpy<mDisplays.size() ; dpy++) {
+-        mDisplays[dpy]->beginFrame();
++        mDisplays[dpy]->beginFrame(true);
+     }
+ 
+     HWComposer& hwc(getHwComposer());
+-- 
+1.8.0
+

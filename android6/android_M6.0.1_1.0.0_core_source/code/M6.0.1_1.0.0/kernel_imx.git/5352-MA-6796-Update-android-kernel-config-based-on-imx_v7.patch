@@ -1,0 +1,46 @@
+From 74df426758b697304e1c34634b3bd33b787adcf9 Mon Sep 17 00:00:00 2001
+From: "guoyin.chen" <guoyin.chen@freescale.com>
+Date: Thu, 11 Jun 2015 10:50:09 +0800
+Subject: [PATCH] MA-6796 Update android kernel config based on
+ imx_v7_defconfig change
+
+Add CONFIG_MXC_MIPI_CSI for 7D MIPI CSI camera
+Update the config based on "make safedefconfig" to remove duplicated setting
+
+Signed-off-by: guoyin.chen <guoyin.chen@freescale.com>
+---
+ arch/arm/configs/imx_v7_android_defconfig | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/arch/arm/configs/imx_v7_android_defconfig b/arch/arm/configs/imx_v7_android_defconfig
+index 7a319af..a065454 100644
+--- a/arch/arm/configs/imx_v7_android_defconfig
++++ b/arch/arm/configs/imx_v7_android_defconfig
+@@ -15,8 +15,6 @@ CONFIG_BLK_DEV_INITRD=y
+ CONFIG_KALLSYMS_ALL=y
+ CONFIG_EMBEDDED=y
+ CONFIG_PERF_EVENTS=y
+-CONFIG_SECCOMP=y
+-CONFIG_SECCOMP_FILTER=y
+ # CONFIG_SLUB_DEBUG is not set
+ # CONFIG_COMPAT_BRK is not set
+ CONFIG_MODULES=y
+@@ -48,6 +46,7 @@ CONFIG_AEABI=y
+ CONFIG_HIGHMEM=y
+ CONFIG_KSM=y
+ CONFIG_CMA=y
++CONFIG_SECCOMP=y
+ CONFIG_CMDLINE="noinitrd console=ttymxc0,115200"
+ CONFIG_CPU_FREQ=y
+ CONFIG_CPU_FREQ_DEFAULT_GOV_INTERACTIVE=y
+@@ -377,6 +376,7 @@ CONFIG_VIDEO_MXC_IPU_OUTPUT=y
+ CONFIG_VIDEO_MXC_PXP_V4L2=y
+ CONFIG_VIDEO_MXC_CSI_CAMERA=y
+ CONFIG_MXC_VADC=y
++CONFIG_MXC_MIPI_CSI=y
+ CONFIG_SOC_CAMERA=y
+ CONFIG_VIDEO_MX3=y
+ CONFIG_V4L_MEM2MEM_DRIVERS=y
+-- 
+1.8.0
+

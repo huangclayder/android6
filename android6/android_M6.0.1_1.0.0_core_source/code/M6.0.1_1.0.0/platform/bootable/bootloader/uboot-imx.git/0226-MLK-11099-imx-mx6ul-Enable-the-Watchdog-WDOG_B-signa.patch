@@ -1,0 +1,31 @@
+From d9a363da27c2fe7999ec4de869c81e357f67fa33 Mon Sep 17 00:00:00 2001
+From: "Ye.Li" <B37916@freescale.com>
+Date: Fri, 12 Jun 2015 14:39:36 +0800
+Subject: [PATCH] MLK-11099 imx: mx6ul: Enable the Watchdog WDOG_B signal
+ output
+
+When using watchdog timeout in kernel, the reset does not output the
+WDOG_B signal, so the power supply won't be reset. To solve the problem,
+we enable it in u-boot.
+
+Signed-off-by: Ye.Li <B37916@freescale.com>
+---
+ board/freescale/mx6ul_14x14_evk/mx6ul_14x14_evk.c | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/board/freescale/mx6ul_14x14_evk/mx6ul_14x14_evk.c b/board/freescale/mx6ul_14x14_evk/mx6ul_14x14_evk.c
+index 10e9a35..b9d691a 100644
+--- a/board/freescale/mx6ul_14x14_evk/mx6ul_14x14_evk.c
++++ b/board/freescale/mx6ul_14x14_evk/mx6ul_14x14_evk.c
+@@ -870,6 +870,8 @@ int board_late_init(void)
+ 	board_late_mmc_init();
+ #endif
+ 
++	set_wdog_reset((struct wdog_regs *)WDOG1_BASE_ADDR);
++
+ 	return 0;
+ }
+ 
+-- 
+1.8.0
+

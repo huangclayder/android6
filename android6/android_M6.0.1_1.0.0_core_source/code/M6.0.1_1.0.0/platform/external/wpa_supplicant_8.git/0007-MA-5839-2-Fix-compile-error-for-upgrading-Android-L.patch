@@ -1,0 +1,34 @@
+From caaff4ce6157a683846ad00fc08332eb203af6df Mon Sep 17 00:00:00 2001
+From: Wang Haoran <b50027@freescale.com>
+Date: Mon, 10 Nov 2014 15:13:07 +0800
+Subject: [PATCH 07/22] MA-5839-2 Fix compile error for upgrading Android-L
+
+p2p_connection_in_progress is not used in AOSP's
+wpa_supplicant_8. And this source is already removed
+by the Android-L's source.
+
+Signed-off-by: Wang Haoran <b50027@freescale.com>
+---
+ src/p2p/p2p.c | 6 ------
+ 1 file changed, 6 deletions(-)
+
+diff --git a/src/p2p/p2p.c b/src/p2p/p2p.c
+index 780d757..f364ffa 100644
+--- a/src/p2p/p2p.c
++++ b/src/p2p/p2p.c
+@@ -95,12 +95,6 @@ static void p2p_expire_peers(struct p2p_data *p2p)
+ 			continue;
+ 		}
+ 
+-#ifdef ANDROID_P2P
+-		/* If Connection is in progress, don't expire the peer
+-		*/
+-		if (p2p_connection_in_progress(p2p))
+-			continue;
+-#endif
+ #ifdef REALTEK_WIFI_VENDOR
+                if (dev->req_config_methods != 0)
+                        continue;
+-- 
+1.8.0
+

@@ -1,0 +1,40 @@
+From 15366dee3dd061fd4898545b1f97a5aee561a1b6 Mon Sep 17 00:00:00 2001
+From: Bao Xiahong <b50906@freescale.com>
+Date: Fri, 29 Aug 2014 09:53:08 +0800
+Subject: [PATCH 360/602] ENGR00326976 update imx6.mk imx5x.mk
+
+update imx6, imx5x makefile, add libav audio decoder lib
+
+Signed-off-by: Bao Xiahong <b50906@freescale.com>
+---
+ imx5x/imx5x.mk | 1 +
+ imx6/imx6.mk   | 1 +
+ 2 files changed, 2 insertions(+)
+
+diff --git a/imx5x/imx5x.mk b/imx5x/imx5x.mk
+index 75df4c0..a55065a 100644
+--- a/imx5x/imx5x.mk
++++ b/imx5x/imx5x.mk
+@@ -244,6 +244,7 @@ omx_libs := \
+ 	lib_omx_libav_video_dec_arm11_elinux \
+ 	libavcodec-55 \
+ 	libavutil-53 \
++	lib_omx_libav_audio_dec_arm11_elinux \
+ 
+ 
+ 
+diff --git a/imx6/imx6.mk b/imx6/imx6.mk
+index 6aace9b..a2ab159 100644
+--- a/imx6/imx6.mk
++++ b/imx6/imx6.mk
+@@ -263,6 +263,7 @@ omx_libs := \
+ 	lib_omx_libav_video_dec_arm11_elinux \
+ 	libavcodec-55 \
+ 	libavutil-53 \
++	lib_omx_libav_audio_dec_arm11_elinux \
+ 
+ 
+ 
+-- 
+1.8.0
+

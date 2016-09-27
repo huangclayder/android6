@@ -1,0 +1,27 @@
+From 8b08d0e657a121136eebe5bb6a998b7c9a6bff25 Mon Sep 17 00:00:00 2001
+From: Richard Zhu <Richard.Zhu@freescale.com>
+Date: Fri, 9 Oct 2015 14:41:10 +0800
+Subject: [PATCH] MLK-11681-1 ARM: imx: enable sata on imx6qp sdb board
+
+enable sata support on imx6qp sdb board.
+
+Signed-off-by: Richard Zhu <Richard.Zhu@freescale.com>
+---
+ arch/arm/boot/dts/imx6qp-sabresd.dts | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/arch/arm/boot/dts/imx6qp-sabresd.dts b/arch/arm/boot/dts/imx6qp-sabresd.dts
+index 0fb94e5..a4f066c 100644
+--- a/arch/arm/boot/dts/imx6qp-sabresd.dts
++++ b/arch/arm/boot/dts/imx6qp-sabresd.dts
+@@ -102,3 +102,7 @@
+ 	memory-region = <&memory>;
+ 	status = "okay";
+ };
++
++&sata {
++	status = "okay";
++};
+-- 
+1.8.0
+

@@ -1,0 +1,32 @@
+From 7d1bde2d60e6c2f535adac98887aaa221998f0cc Mon Sep 17 00:00:00 2001
+From: Song Bing <b06498@freescale.com>
+Date: Tue, 15 Sep 2015 14:19:02 +0800
+Subject: [PATCH] MLK-11542 media: mxc vout: reset video output count to zero
+ when streamon
+
+As streamoff/streamon will reset all buffer list, video output count should
+be reset to zero.  Or timer will get wrong schedule time if input buffer time
+stamp is 0.
+
+Signed-off-by: Song Bing b06498@freescale.com
+(cherry picked from commit 94b02969777f5b7d580e766e69fd4048608a4d2b)
+---
+ drivers/media/platform/mxc/output/mxc_vout.c | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/drivers/media/platform/mxc/output/mxc_vout.c b/drivers/media/platform/mxc/output/mxc_vout.c
+index 892cf1d..021dc8d 100644
+--- a/drivers/media/platform/mxc/output/mxc_vout.c
++++ b/drivers/media/platform/mxc/output/mxc_vout.c
+@@ -2038,6 +2038,8 @@ static int mxc_vidioc_streamon(struct file *file, void *fh,
+ 	hrtimer_init(&vout->timer, CLOCK_REALTIME, HRTIMER_MODE_ABS);
+ 	vout->timer.function = mxc_vout_timer_handler;
+ 	vout->timer_stop = true;
++	vout->frame_count = 0;
++	vout->vdi_frame_cnt = 0;
+ 
+ 	vout->start_ktime = hrtimer_cb_get_time(&vout->timer);
+ 
+-- 
+1.8.0
+

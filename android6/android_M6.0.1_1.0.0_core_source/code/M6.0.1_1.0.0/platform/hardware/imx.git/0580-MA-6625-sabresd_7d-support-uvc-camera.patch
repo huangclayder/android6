@@ -1,0 +1,895 @@
+From e6d593334acb24e9648d269549d7332d9f7153cd Mon Sep 17 00:00:00 2001
+From: fang hui <b31070@freescale.com>
+Date: Tue, 5 May 2015 14:06:46 +0800
+Subject: [PATCH 580/635] MA-6625 - [sabresd_7d]: support uvc camera
+
+Need csc from yuyv to rgb888 to display.
+When record, need backup yuyv for encoder.
+Remove macro EVK_6SL.
+
+Signed-off-by: fang hui <b31070@freescale.com>
+---
+ came1.diff                       | 78 ++++++++++++++++++++++++++++++++++++++++
+ mx6/libcamera/Android.mk         | 13 +++----
+ mx6/libcamera/CameraBridge.cpp   | 42 +++++++++++++---------
+ mx6/libcamera/CameraBridge.h     |  3 +-
+ mx6/libcamera/CameraUtil.cpp     | 44 +++++++++++++++++++++--
+ mx6/libcamera/CameraUtil.h       | 11 ++++--
+ mx6/libcamera/DeviceAdapter.cpp  | 10 ------
+ mx6/libcamera/Ov5640.cpp         | 19 +++-------
+ mx6/libcamera/OvDevice.cpp       |  7 +---
+ mx6/libcamera/PhysMemAdapter.cpp |  7 ++--
+ mx6/libcamera/SurfaceAdapter.cpp | 78 ++++++++++++++++++++++++++++++++++++++--
+ mx6/libcamera/SurfaceAdapter.h   |  5 ++-
+ mx6/libcamera/UvcDevice.cpp      | 51 ++++++++++++++------------
+ 13 files changed, 279 insertions(+), 89 deletions(-)
+ create mode 100644 came1.diff
+
+diff --git a/came1.diff b/came1.diff
+new file mode 100644
+index 0000000..6b25e6b
+--- /dev/null
++++ b/came1.diff
+@@ -0,0 +1,78 @@
++commit 844f7091dc1e7d3fa186017ca67af71340018d29
++Author: fang hui <b31070@freescale.com>
++Date:   Fri Mar 27 17:38:46 2015 +0800
++
++    MA-6421 - update to lp5.1
++    
++    Pass compile.
++    strncat check more stritly, some array size should add 1.
++    
++    Signed-off-by: fang hui <b31070@freescale.com>
++
++diff --git a/mx6/libcamera/CameraBridge.cpp b/mx6/libcamera/CameraBridge.cpp
++index dc52c5f..cc5f94e 100644
++--- a/mx6/libcamera/CameraBridge.cpp
+++++ b/mx6/libcamera/CameraBridge.cpp
++@@ -1,6 +1,6 @@
++ /*
++  * Copyright (C) 2008 The Android Open Source Project
++- * Copyright (C) 2012-2014 Freescale Semiconductor, Inc.
+++ * Copyright (C) 2012-2015 Freescale Semiconductor, Inc.
++  *
++  * Licensed under the Apache License, Version 2.0 (the "License");
++  * you may not use this file except in compliance with the License.
++@@ -110,7 +110,7 @@ status_t CameraBridge::getSupportedPictureFormat(int *pFormat,
++ 
++ status_t CameraBridge::initParameters(CameraParameters& params)
++ {
++-    char tmpBuffer[CAMER_PARAM_BUFFER_SIZE];
+++    char tmpBuffer[CAMER_PARAM_BUFFER_SIZE+1];
++ 
++     /*hard code here*/
++     params.set(CameraParameters::KEY_FOCUS_DISTANCES, "24.0,50.0,2147483648.0");
++diff --git a/mx6/libcamera/OvDevice.h b/mx6/libcamera/OvDevice.h
++index 10056e6..aa3413a 100644
++--- a/mx6/libcamera/OvDevice.h
+++++ b/mx6/libcamera/OvDevice.h
++@@ -1,6 +1,6 @@
++ /*
++  * Copyright (C) 2008 The Android Open Source Project
++- * Copyright (C) 2012 Freescale Semiconductor, Inc.
+++ * Copyright (C) 2012-2015 Freescale Semiconductor, Inc.
++  *
++  * Licensed under the Apache License, Version 2.0 (the "License");
++  * you may not use this file except in compliance with the License.
++@@ -45,8 +45,8 @@ protected:
++ 
++ protected:
++     char mSupportedFPS[MAX_SENSOR_FORMAT];
++-    char mSupportedPictureSizes[CAMER_PARAM_BUFFER_SIZE];
++-    char mSupportedPreviewSizes[CAMER_PARAM_BUFFER_SIZE];
+++    char mSupportedPictureSizes[CAMER_PARAM_BUFFER_SIZE+1];
+++    char mSupportedPreviewSizes[CAMER_PARAM_BUFFER_SIZE+1];
++ };
++ 
++ #endif // ifndef _OV_DEVICE_H_
++diff --git a/mx6/libcamera/TVINDevice.h b/mx6/libcamera/TVINDevice.h
++index 1dbd3bd..fa6573b 100644
++--- a/mx6/libcamera/TVINDevice.h
+++++ b/mx6/libcamera/TVINDevice.h
++@@ -1,6 +1,6 @@
++ /*
++  * Copyright (C) 2008 The Android Open Source Project
++- * Copyright (C) 2012-2014 Freescale Semiconductor, Inc.
+++ * Copyright (C) 2012-2015 Freescale Semiconductor, Inc.
++  *
++  * Licensed under the Apache License, Version 2.0 (the "License");
++  * you may not use this file except in compliance with the License.
++@@ -58,8 +58,8 @@ private:
++ 
++ protected:
++     char mSupportedFPS[MAX_SENSOR_FORMAT];
++-    char mSupportedPictureSizes[CAMER_PARAM_BUFFER_SIZE];
++-    char mSupportedPreviewSizes[CAMER_PARAM_BUFFER_SIZE];
+++    char mSupportedPictureSizes[CAMER_PARAM_BUFFER_SIZE+1];
+++    char mSupportedPreviewSizes[CAMER_PARAM_BUFFER_SIZE+1];
++     v4l2_std_id mSTD;
++ 
++     MemmapBuf mMapedBuf[MAX_PREVIEW_BUFFER];
+diff --git a/mx6/libcamera/Android.mk b/mx6/libcamera/Android.mk
+index 6a77b1d..be78565 100644
+--- a/mx6/libcamera/Android.mk
++++ b/mx6/libcamera/Android.mk
+@@ -74,23 +74,18 @@ else
+ endif
+ 
+  
+-ifeq ($(PRODUCT_MODEL), EVK_MX6SL)
+-    LOCAL_CPPFLAGS += -DEVK_6SL
+-endif
+-
+-ifeq ($(PRODUCT_MODEL), SABRESD-MX6SX)
+-    LOCAL_CPPFLAGS += -DEVK_6SL
+-endif
+-
+ ifeq ($(findstring x4.,x$(PLATFORM_VERSION)), x4.)
+ LOCAL_CPPFLAGS += -DPLATFORM_VERSION_4
+ endif
+ 
+ ifeq ($(PRODUCT_MODEL), SABREAUTO-MX6SX)
+-    LOCAL_CPPFLAGS += -DEVK_6SL
+     LOCAL_CPPFLAGS += -DVADC_TVIN
+ endif
+ 
++ifeq ($(PRODUCT_MODEL), SABRESD_MX7D)
++    LOCAL_CPPFLAGS += -DNO_GPU
++endif
++
+ #Define this for switch the Camera through V4L2 MXC IOCTL
+ #LOCAL_CPPFLAGS += -DV4L2_CAMERA_SWITCH
+ 
+diff --git a/mx6/libcamera/CameraBridge.cpp b/mx6/libcamera/CameraBridge.cpp
+index fd5540a..99d9a31 100644
+--- a/mx6/libcamera/CameraBridge.cpp
++++ b/mx6/libcamera/CameraBridge.cpp
+@@ -30,12 +30,7 @@ CameraBridge::CameraBridge()
+     memset(mSupprotedThumbnailSizes, 0, sizeof(mSupprotedThumbnailSizes));
+     mMetaDataBufsMap.clear();
+     mVpuSupportFmt[0] = v4l2_fourcc('N', 'V', '1', '2');
+-#ifdef EVK_6SL
+ 	mVpuSupportFmt[1] = v4l2_fourcc('Y', 'U', 'Y', 'V');
+-#else
+-	mVpuSupportFmt[1] = v4l2_fourcc('Y', 'U', '1', '2');
+-#endif
+-
+ }
+ 
+ CameraBridge::~CameraBridge()
+@@ -55,6 +50,11 @@ CameraBridge::~CameraBridge()
+     }
+ }
+ 
++bool CameraBridge::IsListenForVideo()
++{
++    return ((mMsgEnabled & CAMERA_MSG_VIDEO_FRAME) != 0);
++}
++
+ status_t CameraBridge::initialize()
+ {
+     // /Create the app notifier thread
+@@ -453,6 +453,8 @@ status_t CameraBridge::start()
+             mPreviewBufferSize = previewWidth * previewHeight * 2;
+         } else if ( (strcmp(previewFormat, "yuv420p") == 0) || (strcmp(previewFormat, "yuv420sp") == 0) ) {
+             mPreviewBufferSize = previewWidth * previewHeight * 3/2;
++        } else if (strcmp(previewFormat, "rgb888") == 0) {
++            mPreviewBufferSize = previewWidth * previewHeight * 3;
+         } else {
+             ALOGE("CameraBridge::start, not support format %s", previewFormat);
+             mPreviewBufferSize = previewWidth * previewHeight * 3/2;
+@@ -462,12 +464,9 @@ status_t CameraBridge::start()
+             mPreviewBufferSize = previewWidth * previewHeight * 3/2;
+     }
+ 
++    mParameters.getPreviewSize(&previewWidth, &previewHeight);
++    int bufSize = previewWidth*previewHeight*3/2; //nv12 for video encoder
+ 
+-#ifdef EVK_6SL //driver provide yuyv, but h264enc need nv12
+-    int bufSize = mFrameProvider->getFrameSize() * 3/4;
+-#else
+-	int bufSize = mFrameProvider->getFrameSize();
+-#endif
+     int bufCnt  = mFrameProvider->getFrameCount();
+     if (mMsgEnabled & CAMERA_MSG_PREVIEW_FRAME) {
+         if (mPreviewMemory != NULL) {
+@@ -701,6 +700,12 @@ bool CameraBridge::processImageFrame(CameraFrame *frame)
+         thumbQuality = 100;
+     }
+ 
++#ifdef NO_GPU //just use sensor format
++    const char *strPreviewFormat = "yuv422i-yuyv";
++#else
++    const char *strPreviewFormat = mParameters.getPreviewFormat();
++#endif
++
+     mainJpeg =
+         new JpegParams((uint8_t *)frame->mVirtAddr,
+                        frame->mSize,
+@@ -711,14 +716,14 @@ bool CameraBridge::processImageFrame(CameraFrame *frame)
+                        frame->mHeight,
+                        frame->mWidth,
+                        frame->mHeight,
+-                       mParameters.getPreviewFormat());
++                       strPreviewFormat);
+ 
+     thumbWidth  = mParameters.getInt(CameraParameters::KEY_JPEG_THUMBNAIL_WIDTH);
+     thumbHeight = mParameters.getInt(CameraParameters::KEY_JPEG_THUMBNAIL_HEIGHT);
+ 
+     if ((thumbWidth > 0) && (thumbHeight > 0)) {
+         int thumbSize   = 0;
+-        int thumbFormat = convertStringToV4L2Format(mParameters.getPreviewFormat());
++        int thumbFormat = convertStringToV4L2Format(strPreviewFormat);
+         switch (thumbFormat) {
+             case v4l2_fourcc('N', 'V', '1', '2'):
+                 thumbSize = thumbWidth * thumbHeight * 3 / 2;
+@@ -747,7 +752,7 @@ bool CameraBridge::processImageFrame(CameraFrame *frame)
+                            frame->mHeight,
+                            thumbWidth,
+                            thumbHeight,
+-                           mParameters.getPreviewFormat());
++                           strPreviewFormat);
+     }
+ 
+     mJpegBuilder->prepareImage(mParameters);
+@@ -853,11 +858,12 @@ void CameraBridge::sendVideoFrame(CameraFrame *frame)
+         pMetaBuf->length    = frame->mSize;
+     }
+     else {
+-#ifdef EVK_6SL
+-		convertYUYVtoNV12SP((uint8_t *)frame->mVirtAddr, pVideoBuf, frame->mWidth, frame->mHeight);
++#ifdef NO_GPU //mVirtAddr will csc to rgb888, so use mBackupVirtAddr
++        uint8_t *srcBuf = (uint8_t *)frame->mBackupVirtAddr;
+ #else
+-        memcpy(pVideoBuf, (void *)frame->mVirtAddr, mMetaDataBufsSize);
++        uint8_t *srcBuf = (uint8_t *)frame->mVirtAddr;
+ #endif
++		convertYUYVtoNV12SP(srcBuf, pVideoBuf, frame->mWidth, frame->mHeight);
+     }
+ 
+     if (mMetaDataBufsMap.indexOfKey((int)pVideoBuf) >= 0) {
+@@ -928,6 +934,10 @@ status_t CameraBridge::allocateVideoBufs()
+         mMetaDataBufsSize = mBufferSize;
+     }
+ 
++
++    ALOGI("allocateVideoBufs, mUseMetaDataBufferMode %d, mMetaDataBufsSize %d",
++        mUseMetaDataBufferMode, mMetaDataBufsSize);
++
+     mVideoMemory = mRequestMemory(-1, mMetaDataBufsSize, mBufferCount, NULL);
+     if (mVideoMemory == NULL) {
+         FLOGE("CameraBridge: allocateRecordVideoBuf mRequestMemory failed");
+diff --git a/mx6/libcamera/CameraBridge.h b/mx6/libcamera/CameraBridge.h
+index 0e5e733..d409031 100644
+--- a/mx6/libcamera/CameraBridge.h
++++ b/mx6/libcamera/CameraBridge.h
+@@ -1,6 +1,6 @@
+ /*
+  * Copyright (C) 2008 The Android Open Source Project
+- * Copyright (C) 2012-2014 Freescale Semiconductor, Inc.
++ * Copyright (C) 2012-2015 Freescale Semiconductor, Inc.
+  *
+  * Licensed under the Apache License, Version 2.0 (the "License");
+  * you may not use this file except in compliance with the License.
+@@ -62,6 +62,7 @@ public:
+     status_t stopRecording();
+     status_t useMetaDataBufferMode(bool enable);
+     void     releaseRecordingFrame(const void *mem);
++    bool     IsListenForVideo();
+ 
+ public:
+     void     setCallbacks(camera_notify_callback         notify_cb,
+diff --git a/mx6/libcamera/CameraUtil.cpp b/mx6/libcamera/CameraUtil.cpp
+index e8afbb3..d307fb5 100644
+--- a/mx6/libcamera/CameraUtil.cpp
++++ b/mx6/libcamera/CameraUtil.cpp
+@@ -1,6 +1,6 @@
+ /*
+  * Copyright (C) 2008 The Android Open Source Project
+- * Copyright (C) 2012-2014 Freescale Semiconductor, Inc.
++ * Copyright (C) 2012-2015 Freescale Semiconductor, Inc.
+  *
+  * Licensed under the Apache License, Version 2.0 (the "License");
+  * you may not use this file except in compliance with the License.
+@@ -59,6 +59,10 @@ PixelFormat convertV4L2FormatToPixelFormat(unsigned int format)
+             nFormat = HAL_PIXEL_FORMAT_YCbCr_422_I;
+             break;
+ 
++        case v4l2_fourcc('R', 'G', 'B', '3'):
++            nFormat = HAL_PIXEL_FORMAT_RGB_888;
++            break;
++
+         default:
+             FLOGE("Error: format not supported!");
+             break;
+@@ -82,6 +86,9 @@ int convertStringToPixelFormat(const char *pFormat)
+     else if (!strcmp(pFormat, "yuv422i-yuyv")) {
+         return HAL_PIXEL_FORMAT_YCbCr_422_I;
+     }
++    else if (!strcmp(pFormat, "rgb888")) {
++        return HAL_PIXEL_FORMAT_RGB_888;
++    }
+     else {
+         FLOGE("format %s is not supported", pFormat);
+         return BAD_VALUE;
+@@ -103,17 +110,20 @@ int convertStringToV4L2Format(const char *pFormat)
+     else if (!strcmp(pFormat, "yuv422i-yuyv")) {
+         return v4l2_fourcc('Y', 'U', 'Y', 'V');
+     }
++    else if (!strcmp(pFormat, "rgb888")) {
++        return v4l2_fourcc('R', 'G', 'B', '3');
++    }
+     else {
+         FLOGE("format %s is not supported", pFormat);
+         return BAD_VALUE;
+     }
+ }
+ 
++
+ CameraFrame::~CameraFrame()
+ {
+     reset();
+ }
+-
+ void CameraFrame::initialize(buffer_handle_t *buf_h,
+                              int              index)
+ {
+@@ -132,6 +142,10 @@ void CameraFrame::initialize(buffer_handle_t *buf_h,
+     mBufState  = BUFS_CREATE;
+     mFrameType = INVALID_FRAME;
+     mIndex     = index;
++
++#ifdef NO_GPU
++    mBackupVirtAddr = malloc(mSize);
++#endif
+ }
+ 
+ void CameraFrame::addState(CAMERA_BUFS_STATE state)
+@@ -181,8 +195,23 @@ void CameraFrame::reset()
+     atomic_init(&mRefCount, 0);
+     mBufState  = BUFS_CREATE;
+     mFrameType = INVALID_FRAME;
++
++#ifdef NO_GPU
++    if(mBackupVirtAddr) {
++        free(mBackupVirtAddr);
++        mBackupVirtAddr = NULL;
++    }
++#endif
+ }
+ 
++#ifdef NO_GPU
++void CameraFrame::backupYUYV()
++{
++    memcpy(mBackupVirtAddr, mVirtAddr, mSize);
++}
++#endif
++
++
+ // //////////CameraBufferProvider////////////////////
+ CameraBufferProvider::CameraBufferProvider()
+ {
+@@ -303,6 +332,17 @@ void CameraFrameProvider::dispatchCameraFrame(CameraFrame *frame)
+     CameraFrameListener *listener;
+     size_t nSize = mFrameListeners.size();
+ 
++#ifdef NO_GPU
++    //mVirtAddr hold YUYV, need csc to RGB888 to display.
++    //So need back the YUVY data for encoder.
++    for (size_t i = 0; i < nSize; i++) {
++        listener = (CameraFrameListener *)mFrameListeners[i];
++        if(listener->IsListenForVideo()) {
++            frame->backupYUYV();
++            break;
++        }
++    }
++#endif
+     // add reference here to avoid frame release too early.
+     frame->addReference();
+     for (size_t i = 0; i < nSize; i++) {
+diff --git a/mx6/libcamera/CameraUtil.h b/mx6/libcamera/CameraUtil.h
+index 6f28556..6fb571b 100644
+--- a/mx6/libcamera/CameraUtil.h
++++ b/mx6/libcamera/CameraUtil.h
+@@ -1,6 +1,6 @@
+ /*
+  * Copyright (C) 2008 The Android Open Source Project
+- * Copyright (C) 2012-2014 Freescale Semiconductor, Inc.
++ * Copyright (C) 2012-2015 Freescale Semiconductor, Inc.
+  *
+  * Licensed under the Apache License, Version 2.0 (the "License");
+  * you may not use this file except in compliance with the License.
+@@ -183,7 +183,9 @@ public:
+     void addReference();
+     void setObserver(CameraFrameObserver *observer);
+     void reset();
+-
++#ifdef NO_GPU
++    void backupYUYV();
++#endif
+ private:
+     CameraFrame(const CameraFrame&);
+     CameraFrame& operator=(const CameraFrame&);
+@@ -198,6 +200,9 @@ public:
+     int mFormat;
+     FrameType mFrameType;
+     int mIndex;
++#ifdef NO_GPU
++    void *mBackupVirtAddr;
++#endif
+ 
+ private:
+     CameraFrameObserver *mObserver;
+@@ -261,6 +266,7 @@ class CameraFrameListener {
+ public:
+     virtual void handleCameraFrame(CameraFrame *frame) = 0;
+     virtual ~CameraFrameListener() {}
++    virtual bool IsListenForVideo() { return false; }
+ };
+ 
+ class CameraFrameProvider {
+@@ -275,7 +281,6 @@ public:
+     void        clearFrameListeners();
+ 
+     void        dispatchCameraFrame(CameraFrame *frame);
+-
+ private:
+     Vector<int> mFrameListeners;
+ };
+diff --git a/mx6/libcamera/DeviceAdapter.cpp b/mx6/libcamera/DeviceAdapter.cpp
+index 7ce78eb..eb089ff 100755
+--- a/mx6/libcamera/DeviceAdapter.cpp
++++ b/mx6/libcamera/DeviceAdapter.cpp
+@@ -153,16 +153,6 @@ status_t DeviceAdapter::setDeviceConfig(int         width,
+     }
+ 
+     status_t ret = NO_ERROR;
+-	
+-#ifndef EVK_6SL //VIDIOC_S_INPUT not support in evk_6sl
+-    int input    = 1;
+-    ret = ioctl(mCameraHandle, VIDIOC_S_INPUT, &input);
+-    if (ret < 0) {
+-        FLOGE("Open: VIDIOC_S_INPUT Failed: %s", strerror(errno));
+-        return ret;
+-    }
+-#endif
+-
+     int vformat;
+     vformat = convertPixelFormatToV4L2Format(format);
+ 
+diff --git a/mx6/libcamera/Ov5640.cpp b/mx6/libcamera/Ov5640.cpp
+index 3bf3c7c..d5d2457 100644
+--- a/mx6/libcamera/Ov5640.cpp
++++ b/mx6/libcamera/Ov5640.cpp
+@@ -1,6 +1,6 @@
+ /*
+  * Copyright (C) 2008 The Android Open Source Project
+- * Copyright (C) 2012-2014 Freescale Semiconductor, Inc.
++ * Copyright (C) 2012-2015 Freescale Semiconductor, Inc.
+  *
+  * Licensed under the Apache License, Version 2.0 (the "License");
+  * you may not use this file except in compliance with the License.
+@@ -61,15 +61,9 @@ status_t Ov5640::initParameters(CameraParameters& params,
+ #endif // if 0
+ 
+     // v4l2 does not support enum format, now hard code here.
+-#ifdef EVK_6SL
+ 	sensorFormat[0] = v4l2_fourcc('Y', 'U', 'Y', 'V');
+     index           = 1;
+-#else
+-	sensorFormat[0] = v4l2_fourcc('N', 'V', '1', '2');
+-    sensorFormat[1] = v4l2_fourcc('Y', 'U', '1', '2');
+-    sensorFormat[2] = v4l2_fourcc('Y', 'U', 'Y', 'V');
+-    index           = 3;	
+-#endif
++
+     // second check match sensor format with vpu support format and picture
+     // format.
+     mPreviewPixelFormat = getMatchFormat(supportRecordingFormat,
+@@ -99,12 +93,7 @@ status_t Ov5640::initParameters(CameraParameters& params,
+         memset(TmpStr, 0, 20);
+         memset(&vid_frmsize, 0, sizeof(struct v4l2_frmsizeenum));
+         vid_frmsize.index        = index++;
+-#ifdef EVK_6SL
+ 		vid_frmsize.pixel_format = v4l2_fourcc('Y', 'U', 'Y', 'V');
+-#else
+-        vid_frmsize.pixel_format = v4l2_fourcc('N', 'V', '1', '2');
+-
+-#endif
+         ret                      = ioctl(mCameraHandle,
+                                          VIDIOC_ENUM_FRAMESIZES,
+                                          &vid_frmsize);
+@@ -112,7 +101,7 @@ status_t Ov5640::initParameters(CameraParameters& params,
+             FLOG_RUNTIME("enum frame size w:%d, h:%d",
+                          vid_frmsize.discrete.width, vid_frmsize.discrete.height);
+ 			
+-#ifdef EVK_6SL //in evk_6sl, omit large resolution
++            //omit large resolution
+ 			if((vid_frmsize.discrete.width > 640) || (vid_frmsize.discrete.height > 480))
+ 			{
+ 				continue;
+@@ -124,7 +113,7 @@ status_t Ov5640::initParameters(CameraParameters& params,
+ 			{
+ 				continue;
+ 			}
+-#endif
++
+             memset(&vid_frmval, 0, sizeof(struct v4l2_frmivalenum));
+             vid_frmval.index        = 0;
+             vid_frmval.pixel_format = vid_frmsize.pixel_format;
+diff --git a/mx6/libcamera/OvDevice.cpp b/mx6/libcamera/OvDevice.cpp
+index 2e7a91b..31fd442 100644
+--- a/mx6/libcamera/OvDevice.cpp
++++ b/mx6/libcamera/OvDevice.cpp
+@@ -1,6 +1,6 @@
+ /*
+  * Copyright (C) 2008 The Android Open Source Project
+- * Copyright (C) 2012-2013 Freescale Semiconductor, Inc.
++ * Copyright (C) 2012-2015 Freescale Semiconductor, Inc.
+  *
+  * Licensed under the Apache License, Version 2.0 (the "License");
+  * you may not use this file except in compliance with the License.
+@@ -115,12 +115,7 @@ status_t OvDevice::setPreviewStringFormat(PixelFormat format)
+     }
+ 
+     mParams.setPreviewFormat(pformat);
+-
+-#ifdef EVK_6SL //use nv12 to record
+ 	mParams.set(CameraParameters::KEY_VIDEO_FRAME_FORMAT, "yuv420sp");
+-#else
+-    mParams.set(CameraParameters::KEY_VIDEO_FRAME_FORMAT, pformat);
+-#endif
+ 
+     return NO_ERROR;
+ }
+diff --git a/mx6/libcamera/PhysMemAdapter.cpp b/mx6/libcamera/PhysMemAdapter.cpp
+index 3b2ecba..d673bbe 100644
+--- a/mx6/libcamera/PhysMemAdapter.cpp
++++ b/mx6/libcamera/PhysMemAdapter.cpp
+@@ -1,6 +1,6 @@
+ /*
+  * Copyright (C) 2008 The Android Open Source Project
+- * Copyright (C) 2012-2014 Freescale Semiconductor, Inc.
++ * Copyright (C) 2012-2015 Freescale Semiconductor, Inc.
+  *
+  * Licensed under the Apache License, Version 2.0 (the "License");
+  * you may not use this file except in compliance with the License.
+@@ -70,8 +70,11 @@ int PhysMemAdapter::allocatePictureBuffer(int width,
+             size = width * height * 2;
+             break;
+ 
++        case HAL_PIXEL_FORMAT_RGB_888: //the actual sensor format is yuyv, so we just x2.
++            size = width * height * 2;
++
+         default:
+-            FLOGE("Error: format not supported int ion alloc");
++            FLOGE("Error: format 0x%x not supported int ion alloc", format);
+             return BAD_VALUE;
+     }
+ 
+diff --git a/mx6/libcamera/SurfaceAdapter.cpp b/mx6/libcamera/SurfaceAdapter.cpp
+index 66aa82c..2278034 100644
+--- a/mx6/libcamera/SurfaceAdapter.cpp
++++ b/mx6/libcamera/SurfaceAdapter.cpp
+@@ -1,6 +1,6 @@
+ /*
+  * Copyright (C) 2008 The Android Open Source Project
+- * Copyright (C) 2012 Freescale Semiconductor, Inc.
++ * Copyright (C) 2012-2015 Freescale Semiconductor, Inc.
+  *
+  * Licensed under the Apache License, Version 2.0 (the "License");
+  * you may not use this file except in compliance with the License.
+@@ -17,11 +17,62 @@
+ 
+ #include "SurfaceAdapter.h"
+ 
++
++typedef struct tRGB{
++     unsigned char r;
++     unsigned char g;
++     unsigned char b;
++}RGB;
++
++static RGB yuvTorgb(unsigned char Y, unsigned char U, unsigned char V){
++    RGB rgb;
++    rgb.r = (int)((Y&0xff) + 1.4075 * ((V&0xff)-128));
++    rgb.g = (int)((Y&0xff) - 0.3455 * ((U&0xff)-128) - 0.7169*((V&0xff)-128));
++    rgb.b = (int)((Y&0xff) + 1.779 * ((U&0xff)-128));
++
++    return rgb;
++}
++
++
++static void YUY2ToRGB(unsigned char *src, unsigned char *dst, int width, int height){
++	int i;
++	int j;
++    int numOfPixel = width * height;
++    unsigned char *rgb = dst;
++    int lineWidth = 2*width;
++
++    for(i=0; i<height; i++){
++        int startY = i*lineWidth;
++        for(j = 0; j < lineWidth; j+=4){
++            int Y1 = j + startY;
++            int Y2 = Y1+2;
++            int U = Y1+1;
++            int V = Y1+3;
++            int index = (Y1>>1)*3;
++            RGB tmp = yuvTorgb(src[Y1], src[U], src[V]);
++            rgb[index+0] = tmp.r;
++            rgb[index+1] = tmp.g;
++            rgb[index+2] = tmp.b;
++            index += 3;
++            tmp = yuvTorgb(src[Y2], src[U], src[V]);
++            rgb[index+0] = tmp.r;
++            rgb[index+1] = tmp.g;
++            rgb[index+2] = tmp.b;
++        }
++    }
++    return;
++}
++
++
++
+ SurfaceAdapter::SurfaceAdapter()
+     : mNativeWindow(NULL), mFrameWidth(0), mFrameHeight(0),
+       mBufferCount(0), mBufferSize(0), mFormat(0), mQueueableCount(0)
+ {
+     memset(mCameraBuffer, 0, sizeof(mCameraBuffer));
++#ifdef NO_GPU
++    mTmpBuf = NULL;
++#endif
+ }
+ 
+ SurfaceAdapter::~SurfaceAdapter()
+@@ -70,6 +121,7 @@ int SurfaceAdapter::setNativeWindowAttribute(int width,
+     }
+ 
+     // Set window geometry
++    ALOGI("set_buffers_geometry, w %d, h %d, format 0x%x", width, height, format);
+     err = mNativeWindow->set_buffers_geometry(mNativeWindow,
+                                               width, height, format);
+ 
+@@ -172,7 +224,6 @@ int SurfaceAdapter::allocateBuffer(int width,
+         pVaddr = NULL;
+ 
+         // TODO(XXX): Do we need to keep stride information in camera hal?
+-
+         err = mNativeWindow->dequeue_buffer(mNativeWindow, &buf_h, &stride);
+         if (err != 0) {
+             FLOGE("dequeueBuffer failed: %s (%d)", strerror(-err), -err);
+@@ -219,6 +270,16 @@ int SurfaceAdapter::allocateBuffer(int width,
+     mFrameWidth  = width;
+     mFrameHeight = height;
+ 
++    ALOGI("SurfaceAdapter::allocateBuffer, mBufferSize %d", mBufferSize);
++
++#ifdef NO_GPU
++    mTmpBuf = (unsigned char*)malloc(mBufferSize);
++    if(mTmpBuf == NULL) {
++        ALOGE("malloc mTmpBuf failed, bytes %d", mBufferSize);
++        goto fail;
++    }
++#endif
++
+     return NO_ERROR;
+ 
+ fail:
+@@ -275,6 +336,13 @@ int SurfaceAdapter::freeBuffer()
+     // /Clear the frames with camera adapter map
+     dispatchBuffers(NULL, 0, BUFFER_DESTROY);
+ 
++#ifdef NO_GPU
++    if(mTmpBuf) {
++        free(mTmpBuf);
++        mTmpBuf = NULL;
++    }
++#endif
++
+     return ret;
+ }
+ 
+@@ -321,6 +389,12 @@ void SurfaceAdapter::renderBuffer(buffer_handle_t *bufHandle)
+     // unlock buffer before sending to display
+     mapper.unlock(*bufHandle);
+ 
++#ifdef NO_GPU
++    private_handle_t *handle = (private_handle_t *)(*bufHandle);
++    memcpy(mTmpBuf, (void *)handle->base, mBufferSize);
++    YUY2ToRGB(mTmpBuf, (unsigned char *)handle->base, mFrameWidth, mFrameHeight);
++#endif
++
+     ret = mNativeWindow->enqueue_buffer(mNativeWindow, bufHandle);
+     if (ret != 0) {
+         FLOGE("Surface::queueBuffer returned error %d", ret);
+diff --git a/mx6/libcamera/SurfaceAdapter.h b/mx6/libcamera/SurfaceAdapter.h
+index 005c68a..760023d 100644
+--- a/mx6/libcamera/SurfaceAdapter.h
++++ b/mx6/libcamera/SurfaceAdapter.h
+@@ -1,6 +1,6 @@
+ /*
+  * Copyright (C) 2008 The Android Open Source Project
+- * Copyright (C) 2012 Freescale Semiconductor, Inc.
++ * Copyright (C) 2012-2015 Freescale Semiconductor, Inc.
+  *
+  * Licensed under the Apache License, Version 2.0 (the "License");
+  * you may not use this file except in compliance with the License.
+@@ -71,6 +71,9 @@ protected:
+     int mBufferSize;
+     PixelFormat mFormat;
+     int mQueueableCount;
++#ifdef NO_GPU
++    unsigned char *mTmpBuf; //tmp buf for yuyv to rgb888
++#endif
+ };
+ 
+ #endif // ifndef _SURFACE_ADAPTER_H_
+diff --git a/mx6/libcamera/UvcDevice.cpp b/mx6/libcamera/UvcDevice.cpp
+index 39f5cd5..b1d9ef0 100644
+--- a/mx6/libcamera/UvcDevice.cpp
++++ b/mx6/libcamera/UvcDevice.cpp
+@@ -1,6 +1,6 @@
+ /*
+  * Copyright (C) 2008 The Android Open Source Project
+- * Copyright (C) 2013 Freescale Semiconductor, Inc.
++ * Copyright (C) 2013-2015 Freescale Semiconductor, Inc.
+  *
+  * Licensed under the Apache License, Version 2.0 (the "License");
+  * you may not use this file except in compliance with the License.
+@@ -24,7 +24,6 @@
+ #define UVC_DEFAULT_PICTURE_W   (320)
+ #define UVC_DEFAULT_PICTURE_H   (240)
+ 
+-
+ status_t UvcDevice::initParameters(CameraParameters& params,
+                                   int              *supportRecordingFormat,
+                                   int               rfmtLen,
+@@ -41,10 +40,10 @@ status_t UvcDevice::initParameters(CameraParameters& params,
+     // first read sensor format.
+     int ret = 0, index = 0;
+     int sensorFormat[MAX_SENSOR_FORMAT];
+-
+ 	sensorFormat[0] = v4l2_fourcc('Y', 'U', 'Y', 'V');
+     index           = 1;
+ 
++
+     // second check match sensor format with vpu support format and picture
+     // format.
+     mPreviewPixelFormat = getMatchFormat(supportRecordingFormat,
+@@ -55,6 +54,12 @@ status_t UvcDevice::initParameters(CameraParameters& params,
+                                          pfmtLen,
+                                          sensorFormat,
+                                          index);
++
++#ifdef NO_GPU
++    mPreviewPixelFormat = HAL_PIXEL_FORMAT_RGB_888;
++#endif
++
++    ALOGI("mPreviewPixelFormat 0x%x, mPicturePixelFormat 0x%x", mPreviewPixelFormat, mPicturePixelFormat);
+     setPreviewStringFormat(mPreviewPixelFormat);
+     ret = setSupportedPreviewFormats(supportRecordingFormat,
+                                      rfmtLen,
+@@ -162,16 +167,17 @@ status_t UvcDevice::setParameters(CameraParameters& params)
+ 	
+     Mutex::Autolock lock(mLock);
+ 
+-
+     max_zoom = params.getInt(CameraParameters::KEY_MAX_ZOOM);
+     zoom     = params.getInt(CameraParameters::KEY_ZOOM);
+     if (zoom > max_zoom) {
+         FLOGE("Invalid zoom setting, zoom %d, max zoom %d", zoom, max_zoom);
+         return BAD_VALUE;
+     }
++
+     if (!((strcmp(params.getPreviewFormat(), "yuv420sp") == 0) ||
+           (strcmp(params.getPreviewFormat(), "yuv420p") == 0) ||
+-          (strcmp(params.getPreviewFormat(), "yuv422i-yuyv") == 0))) {
++          (strcmp(params.getPreviewFormat(), "yuv422i-yuyv") == 0) ||
++          (strcmp(params.getPreviewFormat(), "rgb888") == 0) )) {
+         FLOGE("Only yuv420sp or yuv420pis supported, but input format is %s",
+               params.getPreviewFormat());
+         return BAD_VALUE;
+@@ -327,6 +333,9 @@ status_t UvcDevice::setPreviewStringFormat(PixelFormat format)
+     else if (format == HAL_PIXEL_FORMAT_YCbCr_422_I) {
+         pformat = "yuv422i-yuyv";
+     }
++    else if (format == HAL_PIXEL_FORMAT_RGB_888) {
++        pformat = "rgb888";
++    }
+     else {
+         FLOGE("format %d is not supported", format);
+         return BAD_VALUE;
+@@ -415,7 +424,7 @@ status_t UvcDevice::initialize(const CameraInfo& info)
+ 
+ status_t UvcDevice::setDeviceConfig(int         width,
+                                         int         height,
+-                                        PixelFormat format,
++                                        PixelFormat /*format*/,
+                                         int         fps)
+ {		
+ 	status_t ret = NO_ERROR;	
+@@ -436,9 +445,10 @@ status_t UvcDevice::setDeviceConfig(int         width,
+         FLOGE("setDeviceConfig: invalid parameters");
+         return BAD_VALUE;
+     }    
+-	
++
++
+     int vformat;
+-    vformat = convertPixelFormatToV4L2Format(format);
++    vformat = v4l2_fourcc('Y', 'U', 'Y', 'V');
+ 
+     if ((width > 1920) || (height > 1080)) {
+         fps = 15;
+@@ -478,7 +488,7 @@ status_t UvcDevice::setDeviceConfig(int         width,
+     mVideoInfo->format.fmt.pix.bytesperline = 0;
+ 
+ 
+-	FLOGE("Open: VIDIOC_S_FMT, w %d, h %d, pixel 0x%x", 
++	FLOGI("Open: VIDIOC_S_FMT, w %d, h %d, pixel 0x%x",
+ 		mVideoInfo->format.fmt.pix.width, mVideoInfo->format.fmt.pix.height,
+ 		mVideoInfo->format.fmt.pix.pixelformat);
+ 	
+@@ -515,7 +525,7 @@ status_t UvcDevice::startDeviceLocked()
+         mVideoInfo->buf.memory   = V4L2_MEMORY_MMAP;
+         mVideoInfo->buf.m.offset = phyAddr;
+ 
+-		ALOGE("VIDIOC_QBUF, idx %d, phyAddr 0x%x", i, phyAddr);
++		ALOGI("VIDIOC_QBUF, idx %d, phyAddr 0x%x", i, phyAddr);
+         ret = ioctl(mCameraHandle, VIDIOC_QBUF, &mVideoInfo->buf);
+ 	    if (ret < 0) {
+             FLOGE("VIDIOC_QBUF Failed, %s, mCameraHandle %d", strerror(errno), mCameraHandle);
+@@ -531,7 +541,7 @@ status_t UvcDevice::startDeviceLocked()
+         bufType = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+ 
+         ret = ioctl(mCameraHandle, VIDIOC_STREAMON, &bufType);
+-		ALOGE("VIDIOC_STREAMON, ret %d", ret);
++		ALOGI("VIDIOC_STREAMON, ret %d", ret);
+         if (ret < 0) {
+             FLOGE("VIDIOC_STREAMON failed: %s", strerror(errno));
+             return ret;
+@@ -590,8 +600,7 @@ status_t UvcDevice::fillCameraFrame(CameraFrame *frame)
+ 
+ 	MemmapBuf *pMemmapBuf = (MemmapBuf *) mMapedBufVector.keyAt(i);
+ 	phyAddr = (unsigned int)pMemmapBuf->offset;
+-//	FLOGI("==== VIDIOC_QBUF idx %d, phy 0x%x", i, phyAddr);
+-
++//    FLOGI("==== VIDIOC_QBUF idx %d, phy 0x%x", i, phyAddr);
+ 
+     struct v4l2_buffer cfilledbuffer;
+     memset(&cfilledbuffer, 0, sizeof (struct v4l2_buffer));
+@@ -610,8 +619,6 @@ status_t UvcDevice::fillCameraFrame(CameraFrame *frame)
+     return ret;
+ }
+ 
+-
+-
+ CameraFrame * UvcDevice::acquireCameraFrame()
+ {
+     int ret;	
+@@ -658,14 +665,14 @@ dopoll:
+ 		CameraFrame *camFrame = (CameraFrame *)mPreviewBufs.keyAt(index);
+ 		MemmapBuf *pMapedBuf = (MemmapBuf *)mMapedBufVector.keyAt(index);
+ 
+-//		ALOGI("VIDIOC_DQBUF, idx %d, copy src 0x%x, %d, dst 0x%x, %d", index,
+-	//		pMapedBuf->start, pMapedBuf->length,
+-		//	camFrame->mVirtAddr, camFrame->mSize);
+-		
+-		memcpy(camFrame->mVirtAddr, pMapedBuf->start, camFrame->mSize);
+-		
+-	    return camFrame;
++        // ALOGI("VIDIOC_DQBUF, idx %d, copy src 0x%x, %d, dst 0x%x, %d", index,
++        //      pMapedBuf->start, pMapedBuf->length,
++        //      camFrame->mVirtAddr, camFrame->mSize);
+ 
++        uint32_t copySize = (pMapedBuf->length <= camFrame->mSize) ? pMapedBuf->length : camFrame->mSize;
++		memcpy(camFrame->mVirtAddr, pMapedBuf->start, copySize);
++
++	    return camFrame;
+     }
+ 	else {
+         FLOGW("Poll the V4L2 Handler, revent 0x%x, pollCount %d", fdListen.revents, pollCount);
+-- 
+1.8.0
+

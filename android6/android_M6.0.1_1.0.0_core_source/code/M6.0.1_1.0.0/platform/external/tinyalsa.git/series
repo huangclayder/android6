@@ -1,0 +1,13 @@
+0001-ENGR00179411-add-control-interface-in-tinyalsa.patch
+0002-ENGR00179411-print-some-error-message.patch
+0003-ENGR00182565-No-audio-after-playback-music-overnight.patch
+0004-ENGR00214857-add-the-pcm_prepare-function.patch
+0005-ENGR00220066-tinyalsa-add-api-for-control-and-pcm.patch
+0006-ENGR00219871-add-api-for-getting-the-time-that-strea.patch
+0007-ENGR00225708-Merge-patches-from-maddev_ics.patch
+0008-ENGR00234494-update-the-pcm_get_near_rate-to-pcm_get.patch
+0009-ENGR00236896-Add-function-to-check-mask-param.patch
+0010-ENGR00241758-Fix-noise-when-input-and-output-opened-.patch
+0011-ENGR00272743-Remove-duplicated-function-as-it-define.patch
+0012-ENGR00272743-1-Add-param_set_max-as-it-been-removed-.patch
+0013-MA-5839-1-Update-android-to-Lollipop.patch

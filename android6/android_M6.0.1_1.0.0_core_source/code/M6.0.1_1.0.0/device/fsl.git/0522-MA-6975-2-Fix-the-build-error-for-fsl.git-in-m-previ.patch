@@ -1,0 +1,52 @@
+From 0b20684835ba789239ec6115532e754ec5de787b Mon Sep 17 00:00:00 2001
+From: "guoyin.chen" <guoyin.chen@freescale.com>
+Date: Thu, 6 Aug 2015 12:43:39 +0800
+Subject: [PATCH 522/602] MA-6975-2 Fix the build error for fsl.git in
+ m-preview
+
+Fix the build issue as below:
+device/fsl/common/recovery/recovery_ui.cpp: In constructor 'ImxDevice::ImxDevice()':
+device/fsl/common/recovery/recovery_ui.cpp:52:21: error: no matching function for call to 'Device::Device()'
+
+Signed-off-by: guoyin.chen <guoyin.chen@freescale.com>
+---
+ common/recovery/recovery_ui.cpp | 8 ++------
+ 1 file changed, 2 insertions(+), 6 deletions(-)
+
+diff --git a/common/recovery/recovery_ui.cpp b/common/recovery/recovery_ui.cpp
+index ccf8ccd..0a85307 100644
+--- a/common/recovery/recovery_ui.cpp
++++ b/common/recovery/recovery_ui.cpp
+@@ -1,6 +1,6 @@
+ /*
+  * Copyright (C) 2011 The Android Open Source Project
+- * Copyright (C) 2013 Freescale Semiconductor, Inc.
++ * Copyright (C) 2013-2015 Freescale Semiconductor, Inc.
+  *
+  * Licensed under the Apache License, Version 2.0 (the "License");
+  * you may not use this file except in compliance with the License.
+@@ -49,11 +49,9 @@ class ImxUI : public ScreenRecoveryUI {
+ class ImxDevice : public Device {
+   public:
+     ImxDevice() :
+-        ui(new ImxUI) {
++        Device(new ImxUI) {
+     }
+ 
+-    RecoveryUI* GetUI() { return ui; }
+-
+     int HandleMenuKey(int key_code, int visible) {
+         if (visible) {
+             switch (key_code) {
+@@ -86,8 +84,6 @@ class ImxDevice : public Device {
+     const char* const* GetMenuHeaders() { return HEADERS; }
+     const char* const* GetMenuItems() { return ITEMS; }
+ 
+-  private:
+-    RecoveryUI* ui;
+ };
+ 
+ Device* make_device() {
+-- 
+1.8.0
+

@@ -1,0 +1,39 @@
+From 6f727706d5188e93ab21c46c39e586efa1416faf Mon Sep 17 00:00:00 2001
+From: Dong Aisheng <b29396@freescale.com>
+Date: Tue, 31 Dec 2013 16:22:44 +0800
+Subject: [PATCH] ENGR00295184-1 mmc: sdhci: do not enable card detect
+ interrupt for gpio cd type
+
+Except SDHCI_QUIRK_BROKEN_CARD_DETECTION and MMC_CAP_NONREMOVABLE,
+we also do not need to handle controller native card detect interrupt
+for gpio as card detect case.
+If we wrong enabled the card detect interrupt for gpio case,
+it will cause a lot of unexpected card detect interrupts during data transfer
+which should not happen.
+
+Signed-off-by: Dong Aisheng <b29396@freescale.com>
+(cherry picked from commit 2bf47f78bee173798e6d6f360b12defd945c936c)
+---
+ drivers/mmc/host/sdhci.c | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
+
+diff --git a/drivers/mmc/host/sdhci.c b/drivers/mmc/host/sdhci.c
+index cd84fd1..8d73f04 100644
+--- a/drivers/mmc/host/sdhci.c
++++ b/drivers/mmc/host/sdhci.c
+@@ -155,9 +155,11 @@ static void sdhci_mask_irqs(struct sdhci_host *host, u32 irqs)
+ static void sdhci_set_card_detection(struct sdhci_host *host, bool enable)
+ {
+ 	u32 present, irqs;
++	int gpio_cd = mmc_gpio_get_cd(host->mmc);
+ 
+ 	if ((host->quirks & SDHCI_QUIRK_BROKEN_CARD_DETECTION) ||
+-	    (host->mmc->caps & MMC_CAP_NONREMOVABLE))
++	    (host->mmc->caps & MMC_CAP_NONREMOVABLE) ||
++	    !IS_ERR_VALUE(gpio_cd))
+ 		return;
+ 
+ 	present = sdhci_readl(host, SDHCI_PRESENT_STATE) &
+-- 
+1.8.0
+

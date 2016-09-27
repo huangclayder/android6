@@ -1,0 +1,73 @@
+From 253936bb920c5bb8e7d26e0425d155fb2576ab77 Mon Sep 17 00:00:00 2001
+From: "Ye.Li" <B37916@freescale.com>
+Date: Fri, 10 Apr 2015 12:10:34 +0800
+Subject: [PATCH] MLK-10542 video: Support multiple lines version string
+ display
+
+The caculation of left space for version string is not correct, should
+use VIDEO_COLS not VIDEO_LINE_LEN / 2, otherwise we will get larger space
+than actual have and cause string to overlay logo picture.
+
+Also current version string display only supports two lines words at max.
+This also causes overlay when the LCD pixel colume size is not enough.
+
+Signed-off-by: Ye.Li <B37916@freescale.com>
+(cherry picked from commit ed53487d36a886fb4557088804a4b5232b168889)
+---
+ drivers/video/cfb_console.c | 30 +++++++++++++++++++++++-------
+ 1 file changed, 23 insertions(+), 7 deletions(-)
+
+diff --git a/drivers/video/cfb_console.c b/drivers/video/cfb_console.c
+index a81affa..9079ac4 100644
+--- a/drivers/video/cfb_console.c
++++ b/drivers/video/cfb_console.c
+@@ -2,6 +2,8 @@
+  * (C) Copyright 2002 ELTEC Elektronik AG
+  * Frank Gottschling <fgottschling@eltec.de>
+  *
++ * Copyright (C) 2015 Freescale Semiconductor, Inc.
++ *
+  * SPDX-License-Identifier:	GPL-2.0+
+  */
+ 
+@@ -2036,16 +2038,30 @@ static void *video_logo(void)
+ 
+ 	sprintf(info, " %s", version_string);
+ 
+-	space = (VIDEO_LINE_LEN / 2 - VIDEO_INFO_X) / VIDEO_FONT_WIDTH;
++	space = (VIDEO_COLS - VIDEO_INFO_X) / VIDEO_FONT_WIDTH;
+ 	len = strlen(info);
+ 
+ 	if (len > space) {
+-		video_drawchars(VIDEO_INFO_X, VIDEO_INFO_Y,
+-				(uchar *) info, space);
+-		video_drawchars(VIDEO_INFO_X + VIDEO_FONT_WIDTH,
+-				VIDEO_INFO_Y + VIDEO_FONT_HEIGHT,
+-				(uchar *) info + space, len - space);
+-		y_off = 1;
++		int xx = VIDEO_INFO_X, yy = VIDEO_INFO_Y;
++		while (len) {
++			if (len > space) {
++				video_drawchars(xx, yy,
++					(uchar *) info + (y_off * space), space);
++				len -= space;
++
++				if (!y_off) {
++					xx += VIDEO_FONT_WIDTH;
++					space--;
++				}
++				yy += VIDEO_FONT_HEIGHT;
++
++				y_off++;
++			} else {
++				video_drawchars(xx, yy,
++					(uchar *) info + (y_off * space), len);
++				len = 0;
++			}
++		}
+ 	} else
+ 		video_drawstring(VIDEO_INFO_X, VIDEO_INFO_Y, (uchar *) info);
+ 
+-- 
+1.8.0
+

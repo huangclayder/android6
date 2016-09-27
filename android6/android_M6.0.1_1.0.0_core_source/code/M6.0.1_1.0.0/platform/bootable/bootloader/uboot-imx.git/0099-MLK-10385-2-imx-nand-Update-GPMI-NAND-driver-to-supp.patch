@@ -1,0 +1,63 @@
+From 5f162a619777d9535387968c4799d7e9f484784d Mon Sep 17 00:00:00 2001
+From: "Ye.Li" <B37916@freescale.com>
+Date: Mon, 9 Mar 2015 11:55:39 +0800
+Subject: [PATCH] MLK-10385-2 imx: nand: Update GPMI NAND driver to support
+ MX7D
+
+Update GPMI NAND driver and BCH head file with definitions for CONFIG_MX7
+
+Signed-off-by: Ye.Li <B37916@freescale.com>
+(cherry picked from commit 9c50677dac30085742ef216b9f2e19308e123d2b)
+Signed-off-by: Peng Fan <Peng.Fan@freescale.com>
+---
+ arch/arm/include/asm/imx-common/regs-bch.h | 6 +++---
+ drivers/mtd/nand/mxs_nand.c                | 2 +-
+ 2 files changed, 4 insertions(+), 4 deletions(-)
+
+diff --git a/arch/arm/include/asm/imx-common/regs-bch.h b/arch/arm/include/asm/imx-common/regs-bch.h
+index 1a60b15..0322403 100644
+--- a/arch/arm/include/asm/imx-common/regs-bch.h
++++ b/arch/arm/include/asm/imx-common/regs-bch.h
+@@ -5,7 +5,7 @@
+  * on behalf of DENX Software Engineering GmbH
+  *
+  * Based on code from LTIB:
+- * Copyright 2008-2014 Freescale Semiconductor, Inc. All Rights Reserved.
++ * Copyright 2008-2015 Freescale Semiconductor, Inc. All Rights Reserved.
+  *
+  * SPDX-License-Identifier:	GPL-2.0+
+  */
+@@ -123,7 +123,7 @@ struct mxs_bch_regs {
+ #define	BCH_FLASHLAYOUT0_NBLOCKS_OFFSET			24
+ #define	BCH_FLASHLAYOUT0_META_SIZE_MASK			(0xff << 16)
+ #define	BCH_FLASHLAYOUT0_META_SIZE_OFFSET		16
+-#if defined(CONFIG_MX6)
++#if (defined(CONFIG_MX6) || defined(CONFIG_MX7))
+ #define	BCH_FLASHLAYOUT0_ECC0_MASK			(0x1f << 11)
+ #define	BCH_FLASHLAYOUT0_ECC0_OFFSET			11
+ #else
+@@ -154,7 +154,7 @@ struct mxs_bch_regs {
+ 
+ #define	BCH_FLASHLAYOUT1_PAGE_SIZE_MASK			(0xffff << 16)
+ #define	BCH_FLASHLAYOUT1_PAGE_SIZE_OFFSET		16
+-#if defined(CONFIG_MX6)
++#if (defined(CONFIG_MX6) || defined(CONFIG_MX7))
+ #define	BCH_FLASHLAYOUT1_ECCN_MASK			(0x1f << 11)
+ #define	BCH_FLASHLAYOUT1_ECCN_OFFSET			11
+ #else
+diff --git a/drivers/mtd/nand/mxs_nand.c b/drivers/mtd/nand/mxs_nand.c
+index 0779866..3f8d223 100644
+--- a/drivers/mtd/nand/mxs_nand.c
++++ b/drivers/mtd/nand/mxs_nand.c
+@@ -30,7 +30,7 @@
+ #define	MXS_NAND_DMA_DESCRIPTOR_COUNT		4
+ 
+ #define	MXS_NAND_CHUNK_DATA_CHUNK_SIZE		512
+-#if defined(CONFIG_MX6)
++#if (defined(CONFIG_MX6) || defined(CONFIG_MX7))
+ #define	MXS_NAND_CHUNK_DATA_CHUNK_SIZE_SHIFT	2
+ #else
+ #define	MXS_NAND_CHUNK_DATA_CHUNK_SIZE_SHIFT	0
+-- 
+1.8.0
+

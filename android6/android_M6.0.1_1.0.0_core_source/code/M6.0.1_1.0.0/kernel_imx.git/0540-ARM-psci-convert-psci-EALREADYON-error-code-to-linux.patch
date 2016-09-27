@@ -1,0 +1,42 @@
+From dce37279cd64136c365d5394ac3d5de096cd0319 Mon Sep 17 00:00:00 2001
+From: Achin Gupta <achin.gupta@arm.com>
+Date: Sun, 10 Mar 2013 21:31:29 +0000
+Subject: [PATCH] ARM: psci: convert psci '-EALREADYON' error code to linux
+ '-EAGAIN'
+
+This patch adds a possible error code of the cpu_on psci api. It
+indicates that the cpu specified in the cpu_on call is up and running
+(e.g. the firmware still has not seen the preceding cpu_off call).
+
+Signed-off-by: Achin Gupta <achin.gupta@arm.com>
+Signed-off-by: Liviu Dudau <Liviu.Dudau@arm.com>
+(cherry picked from commit 9011497515a11e69e5e037925abdf07aedd8b1f0)
+Signed-off-by: Alex Shi <alex.shi@linaro.org>
+---
+ arch/arm/kernel/psci.c | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/arch/arm/kernel/psci.c b/arch/arm/kernel/psci.c
+index 4693188..61f7675 100644
+--- a/arch/arm/kernel/psci.c
++++ b/arch/arm/kernel/psci.c
+@@ -42,6 +42,7 @@ static u32 psci_function_id[PSCI_FN_MAX];
+ #define PSCI_RET_EOPNOTSUPP		-1
+ #define PSCI_RET_EINVAL			-2
+ #define PSCI_RET_EPERM			-3
++#define PSCI_RET_EALREADYON		-4
+ 
+ static int psci_to_linux_errno(int errno)
+ {
+@@ -54,6 +55,8 @@ static int psci_to_linux_errno(int errno)
+ 		return -EINVAL;
+ 	case PSCI_RET_EPERM:
+ 		return -EPERM;
++	case PSCI_RET_EALREADYON:
++		return -EAGAIN;
+ 	};
+ 
+ 	return -EINVAL;
+-- 
+1.8.0
+

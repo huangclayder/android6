@@ -1,0 +1,151 @@
+From 58bc928735cdd3e6ae407ecacea132e1e5785a59 Mon Sep 17 00:00:00 2001
+From: Wang Haoran <b50027@freescale.com>
+Date: Wed, 30 Jul 2014 21:02:58 +0800
+Subject: [PATCH 62/95] ENGR00324018 UIBC issued when source rotated
+
+When UIBC packet arrive the source will check
+whether the screen rotated. If so it will recalculate
+the uibc paramaters via the swaped height and width.
+
+Signed-off-by: Wang Haoran <b50027@freescale.com>
+---
+ .../wifi-display/source/WifiDisplaySource.cpp      | 65 ++++++++++++++++++++--
+ .../wifi-display/source/WifiDisplaySource.h        |  5 ++
+ 2 files changed, 66 insertions(+), 4 deletions(-)
+
+diff --git a/media/libstagefright/wifi-display/source/WifiDisplaySource.cpp b/media/libstagefright/wifi-display/source/WifiDisplaySource.cpp
+index f863528..68fd4ac 100644
+--- a/media/libstagefright/wifi-display/source/WifiDisplaySource.cpp
++++ b/media/libstagefright/wifi-display/source/WifiDisplaySource.cpp
+@@ -117,6 +117,25 @@ WifiDisplaySource::WifiDisplaySource(
+     mResolution_RealW = mainDpyInfo.w;
+     mResolution_RealH = mainDpyInfo.h;
+ 
++    mOrientation = mainDpyInfo.orientation;
++    uint8_t sysOrientation = 0;
++    char sysOriprop[PROPERTY_VALUE_MAX];
++    property_get("ro.sf.hwrotation", sysOriprop, NULL);
++    ALOGD("sendrolon system orientation is %s", sysOriprop);
++    if (!strcmp("0", sysOriprop) || !strcmp("180", sysOriprop)) {
++        sysOrientation = DISPLAY_ORIENTATION_0;
++    } else if (!strcmp("90", sysOriprop) || !strcmp("270", sysOriprop)) {
++        sysOrientation = DISPLAY_ORIENTATION_90;
++    } else {
++        sysOrientation = DISPLAY_ORIENTATION_0;
++    }
++
++    if ((sysOrientation & 0x1) ^ (mOrientation & 0x1)) {
++        size_t tmp = mResolution_RealW;
++        mResolution_RealW = mResolution_RealH;
++        mResolution_RealH = tmp;
++    }
++
+     mSupportedSourceVideoFormats.disableAll();
+ 
+     mSupportedSourceVideoFormats.setNativeResolution(
+@@ -130,6 +149,20 @@ WifiDisplaySource::WifiDisplaySource(
+ 
+ }
+ 
++uint8_t WifiDisplaySource::getOrientation() {
++    DisplayInfo mainDpyInfo;
++    int err;
++    sp<IBinder> mainDpy = SurfaceComposerClient::getBuiltInDisplay(
++    ISurfaceComposer::eDisplayIdMain);
++    err = SurfaceComposerClient::getDisplayInfo(mainDpy, &mainDpyInfo);
++    if (err != NO_ERROR) {
++        fprintf(stderr, "ERROR: unable to get display characteristics\n");
++        return -1;
++    }
++    return mainDpyInfo.orientation;
++
++}
++
+ WifiDisplaySource::~WifiDisplaySource() {
+ }
+ 
+@@ -222,15 +255,23 @@ int WifiDisplaySource::calc_uibc_parameter(size_t width, size_t height)
+ {
+     //scan and select touch input device
+     struct input_absinfo absinfo;
+-    float this_w, this_h, dw, dh;
++    float this_w, this_h, dw, dh, vWidth = (float) width, vHeight = (float) height;
+ 
+     this_w = mResolution_RealW;
+     this_h = mResolution_RealH;
+ 
+-    dw = mResolution_NativeW / this_w;
+-    dh = mResolution_NativeH / this_h;
++    dw = mResolution_NativeW / vWidth;
++    dh = mResolution_NativeH / vHeight;
++
+ 
+     uibc_calc_data_Ss = (dw > dh) ? dh : dw;
++    ALOGI("uibc_para Ss1 = %f vWidth = %f vHeight = %f", uibc_calc_data_Ss, vWidth, vHeight);
++
++    dw =  vWidth / this_w;
++    dh =  vHeight / this_h;
++
++    uibc_calc_data_Ss = ((dw > dh) ? dh : dw) * uibc_calc_data_Ss;
++
+     uibc_calc_data_Wbs = (mResolution_NativeW - this_w * uibc_calc_data_Ss) / 2;
+     uibc_calc_data_Hbs = (mResolution_NativeH - this_h * uibc_calc_data_Ss) / 2;
+ 
+@@ -256,7 +297,6 @@ void WifiDisplaySource::calculateNormalXY(float x, float y, int *abs_x, int *abs
+ 
+     ALOGD("calcNormalXY (%f,%f)",dx / uibc_calc_data_Ss, dy / uibc_calc_data_Ss);
+ 
+-
+     *abs_x = (int) (
+              ((dx / uibc_calc_data_Ss) + 0.5));
+     *abs_y = (int) (
+@@ -287,6 +327,21 @@ void WifiDisplaySource::parseUIBCtouchEvent(const uint8_t *data) {
+                 ALOGI("UIBC latency is %d",(int16_t)(ALooper::GetNowUs()-timestamp));
+             }
+             int32_t abs_x, abs_y;
++            if (action == TOUCH_ACTION_DOWN) {
++                uint8_t ori = getOrientation();
++                bool swap = false;
++                /* Orientation = 0 and 2 are the same and 1 and 3 are same*/
++                if ((ori & 0x1) ^ (mOrientation & 0x1)) {
++                    ALOGW("sendrolon on UIBC swaped");
++                    mOrientation = ori;
++                    size_t tmp = mResolution_RealW;
++                    mResolution_RealW = mResolution_RealH;
++                    mResolution_RealH = tmp;
++                    calc_uibc_parameter(mVideoWidth, mVideoHeight);
++
++                }
++
++            }
+             calculateNormalXY(x, y, &abs_x, &abs_y);
+ 
+             ALOGI("WFD UIBC TOUCH x=%d y=%d action=%d", abs_x, abs_y,action);
+@@ -1207,6 +1262,8 @@ status_t WifiDisplaySource::onReceiveM3Response(
+                        &mResolution_NativeH,
+                        NULL, NULL);
+ 
++        mVideoHeight = height;
++        mVideoWidth = width;
+         calc_uibc_parameter(width,height);
+ 
+         ALOGI("Picked AVC profile %d, level %d",
+diff --git a/media/libstagefright/wifi-display/source/WifiDisplaySource.h b/media/libstagefright/wifi-display/source/WifiDisplaySource.h
+index 1697eb1..f79f5fa 100644
+--- a/media/libstagefright/wifi-display/source/WifiDisplaySource.h
++++ b/media/libstagefright/wifi-display/source/WifiDisplaySource.h
+@@ -213,6 +213,11 @@ private:
+     void parseUIBCscrollEvent(const uint8_t *data);
+     void parseUIBCkeyEvent(const uint8_t *data);
+ 
++    uint8_t getOrientation();
++    uint8_t mOrientation;
++    size_t mVideoWidth;
++    size_t mVideoHeight;
++
+     status_t makeHDCP();
+     // <<<< HDCP specific section
+ 
+-- 
+1.8.0
+

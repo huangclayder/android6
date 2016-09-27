@@ -1,0 +1,42 @@
+From cb75ac1d83e3030e889c4b6f4861d8f2cd666dd6 Mon Sep 17 00:00:00 2001
+From: gaopan <b54642@freescale.com>
+Date: Thu, 21 May 2015 14:29:31 +0800
+Subject: [PATCH] MLK-10946 ARM: dts: imx6ul-evk: enable sensor fxls8471
+
+Enable sensor fxls8471.
+
+Signed-off-by: Gao Pan <b54642@freescale.com>
+---
+ arch/arm/boot/dts/imx6ul-evk.dts | 9 +++++++++
+ 1 file changed, 9 insertions(+)
+
+diff --git a/arch/arm/boot/dts/imx6ul-evk.dts b/arch/arm/boot/dts/imx6ul-evk.dts
+index 04ac65f..c608d55 100755
+--- a/arch/arm/boot/dts/imx6ul-evk.dts
++++ b/arch/arm/boot/dts/imx6ul-evk.dts
+@@ -320,6 +320,14 @@
+ 		reg = <0x0e>;
+ 		position = <2>;
+ 	};
++
++	fxls8471@1e {
++		compatible = "fsl,fxls8471";
++		reg = <0x1e>;
++		position = <0>;
++		interrupt-parent = <&gpio5>;
++		interrupts = <0 8>;
++	};
+ };
+ 
+ &i2c2 {
+@@ -390,6 +398,7 @@
+ 				MX6UL_PAD_ENET2_TX_DATA0__ENET2_TDATA00	0x1b0b0
+ 				MX6UL_PAD_ENET2_TX_DATA1__ENET2_TDATA01	0x1b0b0
+ 				MX6UL_PAD_ENET2_TX_CLK__ENET2_REF_CLK2	0x4001b031
++				MX6UL_PAD_SNVS_TAMPER0__GPIO5_IO00	0x80000000
+ 			>;
+ 		};
+ 
+-- 
+1.8.0
+

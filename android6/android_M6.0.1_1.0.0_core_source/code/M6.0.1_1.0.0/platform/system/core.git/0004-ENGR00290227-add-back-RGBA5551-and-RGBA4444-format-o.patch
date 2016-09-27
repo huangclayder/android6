@@ -1,0 +1,30 @@
+From 7d3b91888068bce79061104e0f65bf05ea6f3107 Mon Sep 17 00:00:00 2001
+From: Richard Liu <r66033@freescale.com>
+Date: Fri, 29 Nov 2013 18:12:20 +0800
+Subject: [PATCH 04/22] ENGR00290227 add back RGBA5551 and RGBA4444 format on
+ KitKat
+
+add back RGBA5551 and RGBA4444 format on KitKat
+GPU driver need these format else can't pass build.
+
+Signed-off-by: Richard Liu <r66033@freescale.com>
+---
+ include/system/graphics.h | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/include/system/graphics.h b/include/system/graphics.h
+index bad5421..9e6df74 100644
+--- a/include/system/graphics.h
++++ b/include/system/graphics.h
+@@ -57,6 +57,8 @@ enum {
+     HAL_PIXEL_FORMAT_RGB_888            = 3,
+     HAL_PIXEL_FORMAT_RGB_565            = 4,
+     HAL_PIXEL_FORMAT_BGRA_8888          = 5,
++    HAL_PIXEL_FORMAT_RGBA_5551          = 6,
++    HAL_PIXEL_FORMAT_RGBA_4444          = 7,
+ 
+     /*
+      * 0x100 - 0x1FF
+-- 
+1.8.0
+

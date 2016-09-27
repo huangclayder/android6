@@ -1,0 +1,47 @@
+From 17d83a5518abee43547e8ad39ae4b2648fcd35b3 Mon Sep 17 00:00:00 2001
+From: Haoran Wang <b50027@freescale.com>
+Date: Mon, 27 Jul 2015 18:22:57 +0800
+Subject: [PATCH 518/602] MA-6859 Define firmware path for bcm4339
+
+Define the firmware path and firmware parameter location
+for bcm4339 wifi.
+
+Signed-off-by: Haoran Wang <b50027@freescale.com>
+---
+ imx7/imx7.mk              | 3 ++-
+ sabresd_7d/BoardConfig.mk | 5 +++++
+ 2 files changed, 7 insertions(+), 1 deletion(-)
+
+diff --git a/imx7/imx7.mk b/imx7/imx7.mk
+index b466101..beb4302 100644
+--- a/imx7/imx7.mk
++++ b/imx7/imx7.mk
+@@ -113,7 +113,8 @@ PRODUCT_PACKAGES += \
+ 	Type_ZP.hcd					\
+ 	bcmdhd.cal					\
+ 	bt_vendor.conf				\
+-	fw_bcmdhd.bin
++	fw_bcmdhd.bin				\
++	fw_bcmdhd_apsta.bin
+ 
+ 
+ # Atheros wifi firmwre files.
+diff --git a/sabresd_7d/BoardConfig.mk b/sabresd_7d/BoardConfig.mk
+index de92faa..e68b12a 100644
+--- a/sabresd_7d/BoardConfig.mk
++++ b/sabresd_7d/BoardConfig.mk
+@@ -62,6 +62,11 @@ WIFI_DRIVER_MODULE_NAME                  := "iwlagn"
+ WIFI_DRIVER_MODULE_PATH                  ?= auto
+ endif
+ 
++WIFI_DRIVER_FW_PATH_STA 	:= "/system/etc/firmware/bcm/fw_bcmdhd.bin"
++WIFI_DRIVER_FW_PATH_P2P 	:= "/system/etc/firmware/bcm/fw_bcmdhd.bin"
++WIFI_DRIVER_FW_PATH_AP  	:= "/system/etc/firmware/bcm/fw_bcmdhd_apsta.bin"
++WIFI_DRIVER_FW_PATH_PARAM 	:= "/sys/module/bcmdhd/parameters/firmware_path"
++
+ BOARD_MODEM_VENDOR := AMAZON
+ 
+ USE_ATHR_GPS_HARDWARE := false
+-- 
+1.8.0
+

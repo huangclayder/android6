@@ -1,0 +1,31 @@
+From 84d5b5d590b218313ccc0156d1d510acc0961f32 Mon Sep 17 00:00:00 2001
+From: Robby Cai <r63905@freescale.com>
+Date: Thu, 26 Mar 2015 18:51:45 +0800
+Subject: [PATCH] MLK-10481 ARM: dts: imx7d-sdb: set pixelclk-active to 0 for
+ AT043TN24 panel
+
+According to the timing diagram of 43T panel, the data is launched
+at negative edge of pixel clock and captured at positive edge.
+Thus need to set pixelclk-active to 0.
+
+Signed-off-by: Robby Cai <r63905@freescale.com>
+---
+ arch/arm/boot/dts/imx7d-sdb.dts | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/arch/arm/boot/dts/imx7d-sdb.dts b/arch/arm/boot/dts/imx7d-sdb.dts
+index bdd5379..4b57177 100644
+--- a/arch/arm/boot/dts/imx7d-sdb.dts
++++ b/arch/arm/boot/dts/imx7d-sdb.dts
+@@ -392,7 +392,7 @@
+ 			hsync-active = <0>;
+ 			vsync-active = <0>;
+ 			de-active = <1>;
+-			pixelclk-active = <1>;
++			pixelclk-active = <0>;
+ 			};
+ 		};
+ 	};
+-- 
+1.8.0
+

@@ -1,0 +1,194 @@
+From 158ca8e690b84a36af9b7c78c0a4fbc34d4d5a9f Mon Sep 17 00:00:00 2001
+From: Winter Wang <b55847@freescale.com>
+Date: Wed, 9 Dec 2015 15:54:30 +0800
+Subject: [PATCH 575/602] MA-7279 enable systrace for android
+
+mount debugfs with mode 0755 and move this to
+early-init section before chmod and chown for
+/sys/kernel/debug/tracing happens which is in
+early-boot section in init.trace.rc
+
+Signed-off-by: Winter Wang <b55847@freescale.com>
+---
+ evk_6sl/init.rc       | 7 ++++---
+ evk_6ul/init.rc       | 7 ++++---
+ sabreauto_6q/init.rc  | 7 ++++---
+ sabreauto_6sx/init.rc | 7 ++++---
+ sabresd_6dq/init.rc   | 7 ++++---
+ sabresd_6sx/init.rc   | 7 ++++---
+ sabresd_7d/init.rc    | 7 ++++---
+ 7 files changed, 28 insertions(+), 21 deletions(-)
+
+diff --git a/evk_6sl/init.rc b/evk_6sl/init.rc
+index 373de58..03e1b18 100644
+--- a/evk_6sl/init.rc
++++ b/evk_6sl/init.rc
+@@ -1,5 +1,9 @@
+ import init.${ro.hardware}.usb.rc
+ 
++on early-init
++    # mount the debugfs
++    mount debugfs none /sys/kernel/debug/ mode=0755
++
+ on init
+     start watchdogd
+ 
+@@ -137,9 +141,6 @@ on boot
+     # No bluetooth hardware present
+     setprop wlan.interface wlan0
+ 
+-# mount the debugfs
+-    mount debugfs none /sys/kernel/debug/
+-
+ 
+ on property:sys.boot_completed=1
+ # Set default CPU frequency governor
+diff --git a/evk_6ul/init.rc b/evk_6ul/init.rc
+index 070939c..9e3116c 100644
+--- a/evk_6ul/init.rc
++++ b/evk_6ul/init.rc
+@@ -1,5 +1,9 @@
+ import init.${ro.hardware}.usb.rc
+ 
++on early-init
++    # mount the debugfs
++    mount debugfs none /sys/kernel/debug/ mode=0755
++
+ on init
+     start watchdogd
+ 
+@@ -137,9 +141,6 @@ on boot
+     # No bluetooth hardware present
+     setprop wlan.interface wlan0
+ 
+-# mount the debugfs
+-    mount debugfs none /sys/kernel/debug/
+-
+ 
+ on property:sys.boot_completed=1
+ # Set default CPU frequency governor
+diff --git a/sabreauto_6q/init.rc b/sabreauto_6q/init.rc
+index a2b958f..809129a 100644
+--- a/sabreauto_6q/init.rc
++++ b/sabreauto_6q/init.rc
+@@ -1,6 +1,10 @@
+ import init.${ro.hardware}.usb.rc
+ import init.${ro.hardware}.${ro.soc}.rc
+ 
++on early-init
++    # mount the debugfs
++    mount debugfs none /sys/kernel/debug/ mode=0755
++
+ on init
+     start watchdogd
+ 
+@@ -134,9 +138,6 @@ on boot
+     # Set WiFi Display Source VideoBitRate Adaptive
+     setprop media.wfd.video-bitrate 3000000
+ 
+-# mount the debugfs
+-    mount debugfs none /sys/kernel/debug/
+-
+ 
+ on property:sys.boot_completed=1
+ # Set default CPU frequency governor
+diff --git a/sabreauto_6sx/init.rc b/sabreauto_6sx/init.rc
+index ead6feb..66c3007 100755
+--- a/sabreauto_6sx/init.rc
++++ b/sabreauto_6sx/init.rc
+@@ -1,5 +1,9 @@
+ import init.${ro.hardware}.usb.rc
+ 
++on early-init
++    # mount the debugfs
++    mount debugfs none /sys/kernel/debug/ mode=0755
++
+ on init
+     start watchdogd
+ 
+@@ -136,9 +140,6 @@ on boot
+     setprop hw.bluetooth 0
+     setprop wlan.interface wlan0
+ 
+-# mount the debugfs
+-    mount debugfs none /sys/kernel/debug/
+-
+ 
+ on property:sys.boot_completed=1
+ # Set default CPU frequency governor
+diff --git a/sabresd_6dq/init.rc b/sabresd_6dq/init.rc
+index 6fdd637..25ff265 100755
+--- a/sabresd_6dq/init.rc
++++ b/sabresd_6dq/init.rc
+@@ -1,6 +1,10 @@
+ import init.${ro.hardware}.usb.rc
+ import init.${ro.hardware}.${ro.soc}.rc
+ 
++on early-init
++    # mount the debugfs
++    mount debugfs none /sys/kernel/debug/ mode=0755
++
+ on init
+     start watchdogd
+ 
+@@ -133,9 +137,6 @@ on boot
+     # Set WiFi Display Source VideoBitRate Adaptive
+     setprop media.wfd.video-bitrate 3000000
+ 
+-# mount the debugfs
+-    mount debugfs none /sys/kernel/debug/
+-
+ # Set watchdog timer to 30 seconds and pet it every 10 seconds to get a 20 second margin
+     service watchdogd /sbin/watchdogd 10 20
+     class core
+diff --git a/sabresd_6sx/init.rc b/sabresd_6sx/init.rc
+index b6e0309..8bb4c85 100755
+--- a/sabresd_6sx/init.rc
++++ b/sabresd_6sx/init.rc
+@@ -1,5 +1,9 @@
+ import init.${ro.hardware}.usb.rc
+ 
++on early-init
++    # mount the debugfs
++    mount debugfs none /sys/kernel/debug/ mode=0755
++
+ on init
+     start watchdogd
+ 
+@@ -137,9 +141,6 @@ on boot
+     # No bluetooth hardware present
+     setprop wlan.interface wlan0
+ 
+-# mount the debugfs
+-    mount debugfs none /sys/kernel/debug/
+-
+ 
+ on charger
+     # Enable Power modes and set the CPU Freq Sampling rates
+diff --git a/sabresd_7d/init.rc b/sabresd_7d/init.rc
+index 34c4a1f..a41f59f 100644
+--- a/sabresd_7d/init.rc
++++ b/sabresd_7d/init.rc
+@@ -1,5 +1,9 @@
+ import init.${ro.hardware}.usb.rc
+ 
++on early-init
++    # mount the debugfs
++    mount debugfs none /sys/kernel/debug/ mode=0755
++
+ on init
+     start watchdogd
+ 
+@@ -142,9 +146,6 @@ on boot
+     # No bluetooth hardware present
+     setprop wlan.interface wlan0
+ 
+-# mount the debugfs
+-    mount debugfs none /sys/kernel/debug/
+-
+ 
+ on property:sys.boot_completed=1
+ # Set default CPU frequency governor
+-- 
+1.8.0
+

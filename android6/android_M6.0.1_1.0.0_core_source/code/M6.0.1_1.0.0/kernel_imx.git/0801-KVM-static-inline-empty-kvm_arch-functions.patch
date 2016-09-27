@@ -1,0 +1,458 @@
+From 13727a1e81c3a52162f010aa3a162f5fdf47f173 Mon Sep 17 00:00:00 2001
+From: Christoffer Dall <christoffer.dall@linaro.org>
+Date: Thu, 2 Oct 2014 22:28:31 +0200
+Subject: [PATCH] KVM: static inline empty kvm_arch functions
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Using static inline is going to save few bytes and cycles.
+For example on powerpc, the difference is 700 B after stripping.
+(5 kB before)
+
+This patch also deals with two overlooked empty functions:
+kvm_arch_flush_shadow was not removed from arch/mips/kvm/mips.c
+  2df72e9bc KVM: split kvm_arch_flush_shadow
+and kvm_arch_sched_in never made it into arch/ia64/kvm/kvm-ia64.c.
+  e790d9ef6 KVM: add kvm_arch_sched_in
+
+Signed-off-by: Radim KrÄmÃ¡Å™ <rkrcmar@redhat.com>
+Signed-off-by: Paolo Bonzini <pbonzini@redhat.com>
+(cherry picked from commit 0865e636aef751966e6e0f8950a26bc7391e923c)
+Signed-off-by: Christoffer Dall <christoffer.dall@linaro.org>
+---
+ arch/arm/include/asm/kvm_host.h     |  6 ++++++
+ arch/arm/kvm/arm.c                  | 19 ----------------
+ arch/arm64/include/asm/kvm_host.h   |  6 ++++++
+ arch/ia64/include/asm/kvm_host.h    | 12 +++++++++++
+ arch/ia64/kvm/kvm-ia64.c            | 30 --------------------------
+ arch/mips/include/asm/kvm_host.h    | 11 ++++++++++
+ arch/powerpc/include/asm/kvm_host.h |  8 +++++++
+ arch/powerpc/kvm/powerpc.c          | 29 -------------------------
+ arch/s390/include/asm/kvm_host.h    | 14 ++++++++++++
+ arch/s390/kvm/kvm-s390.c            | 43 -------------------------------------
+ 10 files changed, 57 insertions(+), 121 deletions(-)
+
+diff --git a/arch/arm/include/asm/kvm_host.h b/arch/arm/include/asm/kvm_host.h
+index 0bc5295..2b17f6a 100644
+--- a/arch/arm/include/asm/kvm_host.h
++++ b/arch/arm/include/asm/kvm_host.h
+@@ -230,4 +230,10 @@ static inline void vgic_arch_setup(const struct vgic_params *vgic)
+ int kvm_perf_init(void);
+ int kvm_perf_teardown(void);
+ 
++static inline void kvm_arch_hardware_disable(void *garbage) {}
++static inline void kvm_arch_hardware_unsetup(void) {}
++static inline void kvm_arch_sync_events(struct kvm *kvm) {}
++static inline void kvm_arch_vcpu_uninit(struct kvm_vcpu *vcpu) {}
++static inline void kvm_arch_sched_in(struct kvm_vcpu *vcpu, int cpu) {}
++
+ #endif /* __ARM_KVM_HOST_H__ */
+diff --git a/arch/arm/kvm/arm.c b/arch/arm/kvm/arm.c
+index 82a1044..a3073d4 100644
+--- a/arch/arm/kvm/arm.c
++++ b/arch/arm/kvm/arm.c
+@@ -97,27 +97,16 @@ int kvm_arch_vcpu_should_kick(struct kvm_vcpu *vcpu)
+ 	return kvm_vcpu_exiting_guest_mode(vcpu) == IN_GUEST_MODE;
+ }
+ 
+-void kvm_arch_hardware_disable(void *garbage)
+-{
+-}
+-
+ int kvm_arch_hardware_setup(void)
+ {
+ 	return 0;
+ }
+ 
+-void kvm_arch_hardware_unsetup(void)
+-{
+-}
+-
+ void kvm_arch_check_processor_compat(void *rtn)
+ {
+ 	*(int *)rtn = 0;
+ }
+ 
+-void kvm_arch_sync_events(struct kvm *kvm)
+-{
+-}
+ 
+ /**
+  * kvm_arch_init_vm - initializes a VM data structure
+@@ -285,14 +274,6 @@ int kvm_arch_vcpu_init(struct kvm_vcpu *vcpu)
+ 	return 0;
+ }
+ 
+-void kvm_arch_vcpu_uninit(struct kvm_vcpu *vcpu)
+-{
+-}
+-
+-void kvm_arch_sched_in(struct kvm_vcpu *vcpu, int cpu)
+-{
+-}
+-
+ void kvm_arch_vcpu_load(struct kvm_vcpu *vcpu, int cpu)
+ {
+ 	vcpu->cpu = cpu;
+diff --git a/arch/arm64/include/asm/kvm_host.h b/arch/arm64/include/asm/kvm_host.h
+index ac99093..eaf689c 100644
+--- a/arch/arm64/include/asm/kvm_host.h
++++ b/arch/arm64/include/asm/kvm_host.h
+@@ -242,4 +242,10 @@ static inline void vgic_arch_setup(const struct vgic_params *vgic)
+ 	}
+ }
+ 
++static inline void kvm_arch_hardware_disable(void *garbage) {}
++static inline void kvm_arch_hardware_unsetup(void) {}
++static inline void kvm_arch_sync_events(struct kvm *kvm) {}
++static inline void kvm_arch_vcpu_uninit(struct kvm_vcpu *vcpu) {}
++static inline void kvm_arch_sched_in(struct kvm_vcpu *vcpu, int cpu) {}
++
+ #endif /* __ARM64_KVM_HOST_H__ */
+diff --git a/arch/ia64/include/asm/kvm_host.h b/arch/ia64/include/asm/kvm_host.h
+index fccc09d..4729752 100644
+--- a/arch/ia64/include/asm/kvm_host.h
++++ b/arch/ia64/include/asm/kvm_host.h
+@@ -592,6 +592,18 @@ void kvm_sal_emul(struct kvm_vcpu *vcpu);
+ struct kvm *kvm_arch_alloc_vm(void);
+ void kvm_arch_free_vm(struct kvm *kvm);
+ 
++static inline void kvm_arch_sync_events(struct kvm *kvm) {}
++static inline void kvm_arch_vcpu_put(struct kvm_vcpu *vcpu) {}
++static inline void kvm_arch_sched_in(struct kvm_vcpu *vcpu) {}
++static inline void kvm_arch_free_memslot(struct kvm *kvm,
++		struct kvm_memory_slot *free, struct kvm_memory_slot *dont) {}
++static inline void kvm_arch_memslots_updated(struct kvm *kvm) {}
++static inline void kvm_arch_commit_memory_region(struct kvm *kvm,
++		struct kvm_userspace_memory_region *mem,
++		const struct kvm_memory_slot *old,
++		enum kvm_mr_change change) {}
++static inline void kvm_arch_hardware_unsetup(void) {}
++
+ #endif /* __ASSEMBLY__*/
+ 
+ #endif
+diff --git a/arch/ia64/kvm/kvm-ia64.c b/arch/ia64/kvm/kvm-ia64.c
+index b48aa69..b1e074d 100644
+--- a/arch/ia64/kvm/kvm-ia64.c
++++ b/arch/ia64/kvm/kvm-ia64.c
+@@ -1363,10 +1363,6 @@ static void kvm_release_vm_pages(struct kvm *kvm)
+ 	}
+ }
+ 
+-void kvm_arch_sync_events(struct kvm *kvm)
+-{
+-}
+-
+ void kvm_arch_destroy_vm(struct kvm *kvm)
+ {
+ 	kvm_iommu_unmap_guest(kvm);
+@@ -1375,10 +1371,6 @@ void kvm_arch_destroy_vm(struct kvm *kvm)
+ 	kvm_release_vm_pages(kvm);
+ }
+ 
+-void kvm_arch_vcpu_put(struct kvm_vcpu *vcpu)
+-{
+-}
+-
+ void kvm_arch_vcpu_load(struct kvm_vcpu *vcpu, int cpu)
+ {
+ 	if (cpu != vcpu->cpu) {
+@@ -1467,7 +1459,6 @@ void kvm_arch_vcpu_uninit(struct kvm_vcpu *vcpu)
+ 	kfree(vcpu->arch.apic);
+ }
+ 
+-
+ long kvm_arch_vcpu_ioctl(struct file *filp,
+ 			 unsigned int ioctl, unsigned long arg)
+ {
+@@ -1550,21 +1541,12 @@ int kvm_arch_vcpu_fault(struct kvm_vcpu *vcpu, struct vm_fault *vmf)
+ 	return VM_FAULT_SIGBUS;
+ }
+ 
+-void kvm_arch_free_memslot(struct kvm *kvm, struct kvm_memory_slot *free,
+-			   struct kvm_memory_slot *dont)
+-{
+-}
+-
+ int kvm_arch_create_memslot(struct kvm *kvm, struct kvm_memory_slot *slot,
+ 			    unsigned long npages)
+ {
+ 	return 0;
+ }
+ 
+-void kvm_arch_memslots_updated(struct kvm *kvm)
+-{
+-}
+-
+ int kvm_arch_prepare_memory_region(struct kvm *kvm,
+ 		struct kvm_memory_slot *memslot,
+ 		struct kvm_userspace_memory_region *mem,
+@@ -1596,14 +1578,6 @@ int kvm_arch_prepare_memory_region(struct kvm *kvm,
+ 	return 0;
+ }
+ 
+-void kvm_arch_commit_memory_region(struct kvm *kvm,
+-		struct kvm_userspace_memory_region *mem,
+-		const struct kvm_memory_slot *old,
+-		enum kvm_mr_change change)
+-{
+-	return;
+-}
+-
+ void kvm_arch_flush_shadow_all(struct kvm *kvm)
+ {
+ 	kvm_flush_remote_tlbs(kvm);
+@@ -1852,10 +1826,6 @@ int kvm_arch_hardware_setup(void)
+ 	return 0;
+ }
+ 
+-void kvm_arch_hardware_unsetup(void)
+-{
+-}
+-
+ int kvm_apic_set_irq(struct kvm_vcpu *vcpu, struct kvm_lapic_irq *irq)
+ {
+ 	return __apic_accept_irq(vcpu, irq->vector);
+diff --git a/arch/mips/include/asm/kvm_host.h b/arch/mips/include/asm/kvm_host.h
+index 34867fc..3225496 100644
+--- a/arch/mips/include/asm/kvm_host.h
++++ b/arch/mips/include/asm/kvm_host.h
+@@ -640,5 +640,16 @@ extern void mips32_SyncICache(unsigned long addr, unsigned long size);
+ extern int kvm_mips_dump_stats(struct kvm_vcpu *vcpu);
+ extern unsigned long kvm_mips_get_ramsize(struct kvm *kvm);
+ 
++static inline void kvm_arch_hardware_disable(void *garbage) {}
++static inline void kvm_arch_hardware_unsetup(void) {}
++static inline void kvm_arch_sync_events(struct kvm *kvm) {}
++static inline void kvm_arch_free_memslot(struct kvm *kvm,
++		struct kvm_memory_slot *free, struct kvm_memory_slot *dont) {}
++static inline void kvm_arch_memslots_updated(struct kvm *kvm) {}
++static inline void kvm_arch_flush_shadow_all(struct kvm *kvm) {}
++static inline void kvm_arch_flush_shadow_memslot(struct kvm *kvm,
++		struct kvm_memory_slot *slot) {}
++static inline void kvm_arch_vcpu_uninit(struct kvm_vcpu *vcpu) {}
++static inline void kvm_arch_sched_in(struct kvm_vcpu *vcpu, int cpu) {}
+ 
+ #endif /* __MIPS_KVM_HOST_H__ */
+diff --git a/arch/powerpc/include/asm/kvm_host.h b/arch/powerpc/include/asm/kvm_host.h
+index 9715517..c53d5da 100644
+--- a/arch/powerpc/include/asm/kvm_host.h
++++ b/arch/powerpc/include/asm/kvm_host.h
+@@ -671,4 +671,12 @@ struct kvm_vcpu_arch {
+ #define __KVM_HAVE_ARCH_WQP
+ #define __KVM_HAVE_CREATE_DEVICE
+ 
++static inline void kvm_arch_hardware_disable(void *garbage) {}
++static inline void kvm_arch_hardware_unsetup(void) {}
++static inline void kvm_arch_sync_events(struct kvm *kvm) {}
++static inline void kvm_arch_memslots_updated(struct kvm *kvm) {}
++static inline void kvm_arch_flush_shadow_all(struct kvm *kvm) {}
++static inline void kvm_arch_sched_in(struct kvm_vcpu *vcpu, int cpu) {}
++static inline void kvm_arch_exit(void) {}
++
+ #endif /* __POWERPC_KVM_HOST_H__ */
+diff --git a/arch/powerpc/kvm/powerpc.c b/arch/powerpc/kvm/powerpc.c
+index b8edae5..8d6a254 100644
+--- a/arch/powerpc/kvm/powerpc.c
++++ b/arch/powerpc/kvm/powerpc.c
+@@ -248,19 +248,11 @@ int kvm_arch_hardware_enable(void *garbage)
+ 	return 0;
+ }
+ 
+-void kvm_arch_hardware_disable(void *garbage)
+-{
+-}
+-
+ int kvm_arch_hardware_setup(void)
+ {
+ 	return 0;
+ }
+ 
+-void kvm_arch_hardware_unsetup(void)
+-{
+-}
+-
+ void kvm_arch_check_processor_compat(void *rtn)
+ {
+ 	*(int *)rtn = kvmppc_core_check_processor_compat();
+@@ -321,10 +313,6 @@ void kvm_arch_destroy_vm(struct kvm *kvm)
+ 	module_put(kvm->arch.kvm_ops->owner);
+ }
+ 
+-void kvm_arch_sync_events(struct kvm *kvm)
+-{
+-}
+-
+ int kvm_vm_ioctl_check_extension(struct kvm *kvm, long ext)
+ {
+ 	int r;
+@@ -458,10 +446,6 @@ int kvm_arch_create_memslot(struct kvm *kvm, struct kvm_memory_slot *slot,
+ 	return kvmppc_core_create_memslot(kvm, slot, npages);
+ }
+ 
+-void kvm_arch_memslots_updated(struct kvm *kvm)
+-{
+-}
+-
+ int kvm_arch_prepare_memory_region(struct kvm *kvm,
+ 				   struct kvm_memory_slot *memslot,
+ 				   struct kvm_userspace_memory_region *mem,
+@@ -478,10 +462,6 @@ void kvm_arch_commit_memory_region(struct kvm *kvm,
+ 	kvmppc_core_commit_memory_region(kvm, mem, old);
+ }
+ 
+-void kvm_arch_flush_shadow_all(struct kvm *kvm)
+-{
+-}
+-
+ void kvm_arch_flush_shadow_memslot(struct kvm *kvm,
+ 				   struct kvm_memory_slot *slot)
+ {
+@@ -570,10 +550,6 @@ void kvm_arch_vcpu_uninit(struct kvm_vcpu *vcpu)
+ 	kvmppc_subarch_vcpu_uninit(vcpu);
+ }
+ 
+-void kvm_arch_sched_in(struct kvm_vcpu *vcpu, int cpu)
+-{
+-}
+-
+ void kvm_arch_vcpu_load(struct kvm_vcpu *vcpu, int cpu)
+ {
+ #ifdef CONFIG_BOOKE
+@@ -1161,8 +1137,3 @@ int kvm_arch_init(void *opaque)
+ {
+ 	return 0;
+ }
+-
+-void kvm_arch_exit(void)
+-{
+-
+-}
+diff --git a/arch/s390/include/asm/kvm_host.h b/arch/s390/include/asm/kvm_host.h
+index 84da7a4..afce8ee 100644
+--- a/arch/s390/include/asm/kvm_host.h
++++ b/arch/s390/include/asm/kvm_host.h
+@@ -292,4 +292,18 @@ static inline bool kvm_is_error_hva(unsigned long addr)
+ 
+ extern int sie64a(struct kvm_s390_sie_block *, u64 *);
+ extern char sie_exit;
++
++static inline void kvm_arch_hardware_disable(void *garbage) {}
++static inline void kvm_arch_check_processor_compat(void *rtn) {}
++static inline void kvm_arch_exit(void) {}
++static inline void kvm_arch_sync_events(struct kvm *kvm) {}
++static inline void kvm_arch_vcpu_uninit(struct kvm_vcpu *vcpu) {}
++static inline void kvm_arch_sched_in(struct kvm_vcpu *vcpu, int cpu) {}
++static inline void kvm_arch_free_memslot(struct kvm *kvm,
++		struct kvm_memory_slot *free, struct kvm_memory_slot *dont) {}
++static inline void kvm_arch_memslots_updated(struct kvm *kvm) {}
++static inline void kvm_arch_flush_shadow_all(struct kvm *kvm) {}
++static inline void kvm_arch_flush_shadow_memslot(struct kvm *kvm,
++		struct kvm_memory_slot *slot) {}
++
+ #endif
+diff --git a/arch/s390/kvm/kvm-s390.c b/arch/s390/kvm/kvm-s390.c
+index 1ea4033..57852c6 100644
+--- a/arch/s390/kvm/kvm-s390.c
++++ b/arch/s390/kvm/kvm-s390.c
+@@ -101,10 +101,6 @@ int kvm_arch_hardware_enable(void *garbage)
+ 	return 0;
+ }
+ 
+-void kvm_arch_hardware_disable(void *garbage)
+-{
+-}
+-
+ static void kvm_gmap_notifier(struct gmap *gmap, unsigned long address);
+ 
+ int kvm_arch_hardware_setup(void)
+@@ -119,19 +115,11 @@ void kvm_arch_hardware_unsetup(void)
+ 	gmap_unregister_ipte_notifier(&gmap_notifier);
+ }
+ 
+-void kvm_arch_check_processor_compat(void *rtn)
+-{
+-}
+-
+ int kvm_arch_init(void *opaque)
+ {
+ 	return 0;
+ }
+ 
+-void kvm_arch_exit(void)
+-{
+-}
+-
+ /* Section: device related */
+ long kvm_arch_dev_ioctl(struct file *filp,
+ 			unsigned int ioctl, unsigned long arg)
+@@ -304,10 +292,6 @@ static void kvm_free_vcpus(struct kvm *kvm)
+ 	mutex_unlock(&kvm->lock);
+ }
+ 
+-void kvm_arch_sync_events(struct kvm *kvm)
+-{
+-}
+-
+ void kvm_arch_destroy_vm(struct kvm *kvm)
+ {
+ 	kvm_free_vcpus(kvm);
+@@ -336,15 +320,6 @@ int kvm_arch_vcpu_init(struct kvm_vcpu *vcpu)
+ 	return 0;
+ }
+ 
+-void kvm_arch_vcpu_uninit(struct kvm_vcpu *vcpu)
+-{
+-	/* Nothing todo */
+-}
+-
+-void kvm_arch_sched_in(struct kvm_vcpu *vcpu, int cpu)
+-{
+-}
+-
+ void kvm_arch_vcpu_load(struct kvm_vcpu *vcpu, int cpu)
+ {
+ 	save_fp_ctl(&vcpu->arch.host_fpregs.fpc);
+@@ -1104,21 +1079,12 @@ int kvm_arch_vcpu_fault(struct kvm_vcpu *vcpu, struct vm_fault *vmf)
+ 	return VM_FAULT_SIGBUS;
+ }
+ 
+-void kvm_arch_free_memslot(struct kvm *kvm, struct kvm_memory_slot *free,
+-			   struct kvm_memory_slot *dont)
+-{
+-}
+-
+ int kvm_arch_create_memslot(struct kvm *kvm, struct kvm_memory_slot *slot,
+ 			    unsigned long npages)
+ {
+ 	return 0;
+ }
+ 
+-void kvm_arch_memslots_updated(struct kvm *kvm)
+-{
+-}
+-
+ /* Section: memory related */
+ int kvm_arch_prepare_memory_region(struct kvm *kvm,
+ 				   struct kvm_memory_slot *memslot,
+@@ -1164,15 +1130,6 @@ void kvm_arch_commit_memory_region(struct kvm *kvm,
+ 	return;
+ }
+ 
+-void kvm_arch_flush_shadow_all(struct kvm *kvm)
+-{
+-}
+-
+-void kvm_arch_flush_shadow_memslot(struct kvm *kvm,
+-				   struct kvm_memory_slot *slot)
+-{
+-}
+-
+ static int __init kvm_s390_init(void)
+ {
+ 	int ret;
+-- 
+1.8.0
+

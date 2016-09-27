@@ -1,0 +1,28 @@
+From bc23b56c3fb232a5599ad5e6da8e762ce354b883 Mon Sep 17 00:00:00 2001
+From: "guoyin.chen" <guoyin.chen@freescale.com>
+Date: Mon, 27 Oct 2014 12:58:05 +0800
+Subject: [PATCH] MA-5789 Enable Backlight for android SX AI board
+
+Align the device name for backlight with init.freescale.rc setting
+
+Signed-off-by: guoyin.chen <guoyin.chen@freescale.com>
+---
+ arch/arm/boot/dts/imx6sx-sabreauto.dts | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/arch/arm/boot/dts/imx6sx-sabreauto.dts b/arch/arm/boot/dts/imx6sx-sabreauto.dts
+index 2991ef3..081bb3a 100644
+--- a/arch/arm/boot/dts/imx6sx-sabreauto.dts
++++ b/arch/arm/boot/dts/imx6sx-sabreauto.dts
+@@ -14,7 +14,7 @@
+ 	model = "Freescale i.MX6 SoloX Sabre Auto Board";
+ 	compatible = "fsl,imx6sx-sabreauto", "fsl,imx6sx";
+ 
+-	backlight2 {
++	pwm-backlight {
+ 		compatible = "pwm-backlight";
+ 		pwms = <&pwm4 0 5000000>;
+ 		brightness-levels = <0 4 8 16 32 64 128 255>;
+-- 
+1.8.0
+

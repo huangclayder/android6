@@ -1,0 +1,23 @@
+From 50e31902cf7250986cdab11b5d7ff916db31775a Mon Sep 17 00:00:00 2001
+From: Mark Brown <broonie@linaro.org>
+Date: Fri, 14 Mar 2014 20:20:35 +0000
+Subject: [PATCH] configs: Add big endian config fragment
+
+Signed-off-by: Mark Brown <broonie@linaro.org>
+---
+ linaro/configs/bigendian.conf | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/linaro/configs/bigendian.conf b/linaro/configs/bigendian.conf
+new file mode 100644
+index 0000000..6a10202
+--- /dev/null
++++ b/linaro/configs/bigendian.conf
+@@ -0,0 +1,4 @@
++CONFIG_CPU_BIG_ENDIAN=y
++CONFIG_CPU_ENDIAN_BE8=y
++# CONFIG_VIRTUALIZATION is not set
++# CONFIG_MMC_DW_IDMAC is not set
+-- 
+1.8.0
+

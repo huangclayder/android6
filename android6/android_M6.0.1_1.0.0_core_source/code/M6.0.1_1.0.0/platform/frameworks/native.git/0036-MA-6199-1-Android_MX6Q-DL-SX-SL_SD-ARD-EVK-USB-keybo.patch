@@ -1,0 +1,30 @@
+From 3423b8e97496c02e83c4e460a36a44ca64616b57 Mon Sep 17 00:00:00 2001
+From: zhang sanshan <b51434@freescale.com>
+Date: Thu, 5 Feb 2015 12:26:33 +0800
+Subject: [PATCH 36/43] MA-6199-1 [Android_MX6Q/DL/SX/SL_SD/ARD/EVK]USB
+ keyboard: F1~F12 can't work normally.100%
+
+F1-F9 can't work normally.up down left right and esc work fine.
+The keyboard load the Generic.kl which  is not Dell_Dell_USB_Keyboard.kl.
+Add flag "WAKE" to align with kk4.4.3. This flag make some key have the ability to wake up the device.
+
+Signed-off-by: zhang sanshan <b51434@freescale.com>
+---
+ include/input/InputEventLabels.h | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/include/input/InputEventLabels.h b/include/input/InputEventLabels.h
+index 3962001..c2ed503 100644
+--- a/include/input/InputEventLabels.h
++++ b/include/input/InputEventLabels.h
+@@ -378,6 +378,7 @@ static const InputEventLabel LEDS[] = {
+ };
+ 
+ static const InputEventLabel FLAGS[] = {
++    DEFINE_FLAG(WAKE),
+     DEFINE_FLAG(VIRTUAL),
+     DEFINE_FLAG(FUNCTION),
+     DEFINE_FLAG(GESTURE),
+-- 
+1.8.0
+

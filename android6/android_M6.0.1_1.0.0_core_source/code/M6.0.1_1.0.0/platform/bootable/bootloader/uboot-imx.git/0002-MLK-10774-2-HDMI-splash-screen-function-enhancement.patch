@@ -1,0 +1,224 @@
+From 5028519b434d5dfbe53c48ac4b115ff8b69bbac7 Mon Sep 17 00:00:00 2001
+From: Peng Fan <Peng.Fan@freescale.com>
+Date: Thu, 19 Mar 2015 10:10:07 +0800
+Subject: [PATCH] MLK-10774-2 HDMI: splash screen function enhancement
+
+-Change HDMI video mode to VGA.
+-Add pixel clock fraction part setting in IPU driver,
+ fix video mode timing issue.
+-Add overflow state clear workaround,
+ fix kernel hang in HDMI driver issue.
+-Correct IPU clock to 264MHz.
+
+Signed-off-by: Sandor Yu <R01008@freescale.com>
+Signed-off-by: Nitin Garg <nitin.garg@freescale.com>
+(cherry picked from commit 45d532a0237f5baf2ec95b4364ec5bc94d312689)
+Signed-off-by: Peng Fan <Peng.Fan@freescale.com>
+---
+ arch/arm/cpu/armv7/mx6/soc.c            | 12 +++++-
+ board/freescale/mx6sabresd/mx6sabresd.c | 20 +++++-----
+ drivers/video/ipu_common.c              | 69 ++++++++++++++++++++++++---------
+ include/configs/mx6sabre_common.h       |  6 ++-
+ 4 files changed, 76 insertions(+), 31 deletions(-)
+
+diff --git a/arch/arm/cpu/armv7/mx6/soc.c b/arch/arm/cpu/armv7/mx6/soc.c
+index 0d1801c..06a9e6d 100644
+--- a/arch/arm/cpu/armv7/mx6/soc.c
++++ b/arch/arm/cpu/armv7/mx6/soc.c
+@@ -638,7 +638,8 @@ void imx_setup_hdmi(void)
+ {
+ 	struct mxc_ccm_reg *mxc_ccm = (struct mxc_ccm_reg *)CCM_BASE_ADDR;
+ 	struct hdmi_regs *hdmi  = (struct hdmi_regs *)HDMI_ARB_BASE_ADDR;
+-	int reg;
++	int reg, count;
++	u8 val;
+ 
+ 	/* Turn on HDMI PHY clock */
+ 	reg = readl(&mxc_ccm->CCGR2);
+@@ -655,6 +656,15 @@ void imx_setup_hdmi(void)
+ 		 |(CHSCCDR_IPU_PRE_CLK_540M_PFD
+ 		 << MXC_CCM_CHSCCDR_IPU1_DI0_PRE_CLK_SEL_OFFSET);
+ 	writel(reg, &mxc_ccm->chsccdr);
++
++	/* Workaround to clear the overflow condition */
++	if (readb(&hdmi->ih_fc_stat2) & HDMI_IH_FC_STAT2_OVERFLOW_MASK) {
++		/* TMDS software reset */
++		writeb((u8)~HDMI_MC_SWRSTZ_TMDSSWRST_REQ, &hdmi->mc_swrstz);
++		val = readb(&hdmi->fc_invidconf);
++		for (count = 0 ; count < 5 ; count++)
++			writeb(val, &hdmi->fc_invidconf);
++	}
+ }
+ #endif
+ 
+diff --git a/board/freescale/mx6sabresd/mx6sabresd.c b/board/freescale/mx6sabresd/mx6sabresd.c
+index bb2dd96..b813f6f 100644
+--- a/board/freescale/mx6sabresd/mx6sabresd.c
++++ b/board/freescale/mx6sabresd/mx6sabresd.c
+@@ -431,16 +431,16 @@ struct display_info_t const displays[] = {{
+ 	.mode	= {
+ 		.name           = "HDMI",
+ 		.refresh        = 60,
+-		.xres           = 1024,
+-		.yres           = 768,
+-		.pixclock       = 15385,
+-		.left_margin    = 220,
+-		.right_margin   = 40,
+-		.upper_margin   = 21,
+-		.lower_margin   = 7,
+-		.hsync_len      = 60,
+-		.vsync_len      = 10,
+-		.sync           = FB_SYNC_EXT,
++		.xres           = 640,
++		.yres           = 480,
++		.pixclock       = 39721,
++		.left_margin    = 48,
++		.right_margin   = 16,
++		.upper_margin   = 33,
++		.lower_margin   = 10,
++		.hsync_len      = 96,
++		.vsync_len      = 2,
++		.sync           = 0,
+ 		.vmode          = FB_VMODE_NONINTERLACED
+ } }, {
+ 	.bus	= 0,
+diff --git a/drivers/video/ipu_common.c b/drivers/video/ipu_common.c
+index 5873531..d22b963 100644
+--- a/drivers/video/ipu_common.c
++++ b/drivers/video/ipu_common.c
+@@ -6,7 +6,7 @@
+  *
+  * Linux IPU driver for MX51:
+  *
+- * (C) Copyright 2005-2010 Freescale Semiconductor, Inc.
++ * (C) Copyright 2005-2014 Freescale Semiconductor, Inc.
+  *
+  * SPDX-License-Identifier:	GPL-2.0+
+  */
+@@ -19,6 +19,7 @@
+ #include <asm/errno.h>
+ #include <asm/arch/imx-regs.h>
+ #include <asm/arch/crm_regs.h>
++#include <div64.h>
+ #include "ipu.h"
+ #include "ipu_regs.h"
+ 
+@@ -271,50 +272,80 @@ static inline void ipu_ch_param_set_buffer(uint32_t ch, int bufNum,
+ 
+ static void ipu_pixel_clk_recalc(struct clk *clk)
+ {
+-	u32 div = __raw_readl(DI_BS_CLKGEN0(clk->id));
+-	if (div == 0)
+-		clk->rate = 0;
+-	else
+-		clk->rate = (clk->parent->rate * 16) / div;
++	u32 div;
++	u64 final_rate = (unsigned long long)clk->parent->rate * 16;
++
++	div = __raw_readl(DI_BS_CLKGEN0(clk->id));
++	debug("read BS_CLKGEN0 div:%d, final_rate:%lld, prate:%ld\n",
++			div, final_rate, clk->parent->rate);
++
++	clk->rate = 0;
++	if (div != 0) {
++		do_div(final_rate, div);
++		clk->rate = final_rate;
++	}
+ }
+ 
+ static unsigned long ipu_pixel_clk_round_rate(struct clk *clk,
+ 	unsigned long rate)
+ {
+-	u32 div, div1;
+-	u32 tmp;
++	u64 div, final_rate;
++	u32 remainder;
++	u64 parent_rate = (unsigned long long)clk->parent->rate * 16;
++
+ 	/*
+ 	 * Calculate divider
+ 	 * Fractional part is 4 bits,
+ 	 * so simply multiply by 2^4 to get fractional part.
+ 	 */
+-	tmp = (clk->parent->rate * 16);
+-	div = tmp / rate;
+-
++	div = parent_rate;
++	remainder = do_div(div, rate);
++	/* Round the divider value */
++	if (remainder > (rate/2))
++		div++;
+ 	if (div < 0x10)            /* Min DI disp clock divider is 1 */
+ 		div = 0x10;
+ 	if (div & ~0xFEF)
+ 		div &= 0xFF8;
+ 	else {
+-		div1 = div & 0xFE0;
+-		if ((tmp/div1 - tmp/div) < rate / 4)
+-			div = div1;
+-		else
+-			div &= 0xFF8;
++		/* Round up divider if it gets us closer to desired pix clk */
++		if ((div & 0xC) == 0xC) {
++			div += 0x10;
++			div &= ~0xF;
++		}
+ 	}
+-	return (clk->parent->rate * 16) / div;
++	final_rate = parent_rate;
++	do_div(final_rate, div);
++
++	return final_rate;
+ }
+ 
+ static int ipu_pixel_clk_set_rate(struct clk *clk, unsigned long rate)
+ {
+-	u32 div = (clk->parent->rate * 16) / rate;
++	u64 div, parent_rate;
++	u32 remainder;
++
++	parent_rate = (unsigned long long)clk->parent->rate * 16;
++	div = parent_rate;
++	remainder = do_div(div, rate);
++	/* Round the divider value */
++	if (remainder > (rate/2))
++		div++;
++
++	/* Round up divider if it gets us closer to desired pix clk */
++	if ((div & 0xC) == 0xC) {
++		div += 0x10;
++		div &= ~0xF;
++	}
++	if (div > 0x1000)
++		debug("Overflow, DI_BS_CLKGEN0 div:0x%x\n", (u32)div);
+ 
+ 	__raw_writel(div, DI_BS_CLKGEN0(clk->id));
+ 
+ 	/* Setup pixel clock timing */
++	/* Down time is half of period */
+ 	__raw_writel((div / 16) << 16, DI_BS_CLKGEN1(clk->id));
+ 
+-	clk->rate = (clk->parent->rate * 16) / div;
+ 	return 0;
+ }
+ 
+diff --git a/include/configs/mx6sabre_common.h b/include/configs/mx6sabre_common.h
+index b72522b..1b4ec5b 100644
+--- a/include/configs/mx6sabre_common.h
++++ b/include/configs/mx6sabre_common.h
+@@ -272,7 +272,11 @@
+ #define CONFIG_BMP_16BPP
+ #define CONFIG_VIDEO_LOGO
+ #define CONFIG_VIDEO_BMP_LOGO
+-#define CONFIG_IPUV3_CLK 260000000
++#ifdef CONFIG_MX6DL                                                             
++#define CONFIG_IPUV3_CLK 198000000
++#else
++#define CONFIG_IPUV3_CLK 264000000
++#endif
+ #define CONFIG_IMX_HDMI
+ #define CONFIG_IMX_VIDEO_SKIP
+ 
+-- 
+1.8.0
+

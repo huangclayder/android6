@@ -1,0 +1,41 @@
+From 19e49f1edacec014a4fc9117b01f6bcf3a6f7232 Mon Sep 17 00:00:00 2001
+From: Jason Liu <r64343@freescale.com>
+Date: Tue, 17 Nov 2015 17:38:02 +0800
+Subject: [PATCH] MLK-11860 ARM: i.MX: remove annotation __init from function
+ mmdc_ch1_handshake
+
+kbuild throw out the following compile warnings:
+
+WARNING: arch/arm/mach-imx/built-in.o(.text.unlikely+0x228): Section mismatch
+in reference from the function init_ldb_clks() to the function
+.init.text:mmdc_ch1_handshake()
+The function init_ldb_clks() references
+the function __init mmdc_ch1_handshake().
+This is often because init_ldb_clks lacks a __init
+annotation or the annotation of mmdc_ch1_handshake is wrong.
+
+This patch to fix the build warnings. Moreover,the function annotated by __init
+will be discarded after boot up, so, there will be an issue when the code call
+the function annotated with __init will be error after freeing the __init section.
+
+Signed-off-by: Jason Liu <r64343@freescale.com>
+---
+ arch/arm/mach-imx/clk-imx6q.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/arch/arm/mach-imx/clk-imx6q.c b/arch/arm/mach-imx/clk-imx6q.c
+index e64384e..bc3feec 100644
+--- a/arch/arm/mach-imx/clk-imx6q.c
++++ b/arch/arm/mach-imx/clk-imx6q.c
+@@ -206,7 +206,7 @@ static void of_assigned_ldb_sels(struct device_node *node,
+ 	}
+ }
+ 
+-static void __init mmdc_ch1_handshake(bool enable)
++static void mmdc_ch1_handshake(bool enable)
+ {
+ 	unsigned int reg;
+ 
+-- 
+1.8.0
+

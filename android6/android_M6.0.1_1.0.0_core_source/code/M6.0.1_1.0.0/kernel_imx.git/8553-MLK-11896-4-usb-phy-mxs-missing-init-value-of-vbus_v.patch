@@ -1,0 +1,30 @@
+From 07f19bdf357f37563535ae17aa280ac00fb6a048 Mon Sep 17 00:00:00 2001
+From: Li Jun <jun.li@freescale.com>
+Date: Thu, 26 Nov 2015 16:45:23 +0800
+Subject: [PATCH] MLK-11896-4 usb: phy: mxs: missing init value of vbus_value
+ when declaration
+
+Init vbus_value to be 0 when declaring it.
+
+Acked-by: Peter Chen <peter.chen@freescale.com>
+Signed-off-by: Li Jun <jun.li@freescale.com>
+---
+ drivers/usb/phy/phy-mxs-usb.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/usb/phy/phy-mxs-usb.c b/drivers/usb/phy/phy-mxs-usb.c
+index 24df7e5..95ffcee 100644
+--- a/drivers/usb/phy/phy-mxs-usb.c
++++ b/drivers/usb/phy/phy-mxs-usb.c
+@@ -254,7 +254,7 @@ static int mxs_phy_hw_init(struct mxs_phy *mxs_phy)
+ /* Return true if the vbus is there */
+ static bool mxs_phy_get_vbus_status(struct mxs_phy *mxs_phy)
+ {
+-	unsigned int vbus_value;
++	unsigned int vbus_value = 0;
+ 
+ 	if (mxs_phy->port_id == 0)
+ 		regmap_read(mxs_phy->regmap_anatop,
+-- 
+1.8.0
+

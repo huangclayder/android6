@@ -1,0 +1,47 @@
+From 7be7a3ca2eb59ae299d881279fa46dd55c32f8af Mon Sep 17 00:00:00 2001
+From: Haoran Wang <b50027@freescale.com>
+Date: Thu, 5 Mar 2015 12:42:20 +0800
+Subject: [PATCH 088/115] MA-6357 Add audio request to mute other sounds
+
+Request audio focus to mute other sounds when
+A2dpSink is enabled to playback the source sounds.
+
+Signed-off-by: Haoran Wang <b50027@freescale.com>
+---
+ .../java/com/freescale/a2dpsinkapp/MainActivity.java        | 13 +++++++++++++
+ 1 file changed, 13 insertions(+)
+
+diff --git a/A2dpSinkApp/java/com/freescale/a2dpsinkapp/MainActivity.java b/A2dpSinkApp/java/com/freescale/a2dpsinkapp/MainActivity.java
+index 5902608..607b934 100755
+--- a/A2dpSinkApp/java/com/freescale/a2dpsinkapp/MainActivity.java
++++ b/A2dpSinkApp/java/com/freescale/a2dpsinkapp/MainActivity.java
+@@ -68,6 +68,18 @@ public class MainActivity extends Activity {
+     static int AVRCP_BTN_PRESS = 0;
+     static int AVRCP_BTN_RELEASE = 1;
+ 
++    private void requestAudio() {
++        AudioManager am = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
++        int result = am.requestAudioFocus(null,
++                AudioManager.STREAM_MUSIC,
++                AudioManager.AUDIOFOCUS_GAIN);
++        if (result != AudioManager.AUDIOFOCUS_REQUEST_GRANTED) {
++            Log.w(TAG, "requestAudioFocus failed result is (" + result + ")");
++        } else {
++            Log.i(TAG, "requestAudioFocus Successfully!");
++        }
++
++    }
+ 
+     class EnableButtonlistener implements OnClickListener, OnTouchListener {
+         public void onClick(View v) {
+@@ -76,6 +88,7 @@ public class MainActivity extends Activity {
+ 
+         public boolean onTouch(View v, MotionEvent event) {
+ 
++            requestAudio();
+             int action = event.getAction();
+             if (action == MotionEvent.ACTION_DOWN) {
+                 if (isPlaying) {
+-- 
+1.8.0
+

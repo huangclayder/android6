@@ -1,0 +1,38 @@
+From e618f5c5de08879d7078cd38eae0a8f74fb55d0b Mon Sep 17 00:00:00 2001
+From: Peng Fan <Peng.Fan@freescale.com>
+Date: Mon, 9 Mar 2015 13:57:13 +0800
+Subject: [PATCH] MLK-10774-28 imx:thermal Fix temperature checking issue
+
+This patch is from commit c83c6cc7dedf9759bf193044ff5c3572d5f6afd2
+
+Signed-off-by: Peng Fan <Peng.Fan@freescale.com>
+Signed-off-by: Ye.Li <B37916@freescale.com>
+---
+ drivers/thermal/imx_thermal.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/thermal/imx_thermal.c b/drivers/thermal/imx_thermal.c
+index 0bd9cfd..4e1e412 100644
+--- a/drivers/thermal/imx_thermal.c
++++ b/drivers/thermal/imx_thermal.c
+@@ -122,7 +122,7 @@ int imx_thermal_get_temp(struct udevice *dev, int *temp)
+ 	int cpu_tmp = 0;
+ 
+ 	cpu_tmp = read_cpu_temperature(dev);
+-	while (cpu_tmp > TEMPERATURE_MIN && cpu_tmp < TEMPERATURE_MAX) {
++	while (cpu_tmp > TEMPERATURE_MIN) {
+ 		if (cpu_tmp >= TEMPERATURE_HOT) {
+ 			printf("CPU Temperature is %d C, too hot to boot, waiting...\n",
+ 			       cpu_tmp);
+@@ -153,7 +153,7 @@ static int imx_thermal_probe(struct udevice *dev)
+ 	fuse_read(pdata->fuse_bank, pdata->fuse_word, &fuse);
+ 
+ 	/* Check for valid fuse */
+-	if (fuse == 0 || fuse == ~0) {
++	if (fuse == 0 || fuse == ~0 || (fuse & 0xfff00000) == 0) {
+ 		printf("CPU:   Thermal invalid data, fuse: 0x%x\n", fuse);
+ 		return -EPERM;
+ 	}
+-- 
+1.8.0
+

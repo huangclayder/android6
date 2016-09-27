@@ -1,0 +1,72 @@
+From 893267c7434f53e0d17f101e9feae1974720a469 Mon Sep 17 00:00:00 2001
+From: "Ye.Li" <B37916@freescale.com>
+Date: Wed, 11 Jun 2014 15:49:22 +0800
+Subject: [PATCH] ENGR00315894-57 iMX6SX: Add M4 boot support at soc level
+
+Implement the override function "arch_auxiliary_core_up" to boot
+Cortex-M4 by executing command "bootaux".
+The parameter "boot_private_data" points to fields where stores
+the stack address and PC address for M4 to run.
+
+Signed-off-by: Ye.Li <B37916@freescale.com>
+(cherry picked from commit 98c15deb3083d5dac7900c58e95f2ac2f422a4d3)
+Signed-off-by: Peng Fan <Peng.Fan@freescale.com>
+---
+ arch/arm/cpu/armv7/mx6/soc.c              | 25 +++++++++++++++++++++++++
+ arch/arm/include/asm/arch-mx6/sys_proto.h |  4 ++++
+ 2 files changed, 29 insertions(+)
+
+diff --git a/arch/arm/cpu/armv7/mx6/soc.c b/arch/arm/cpu/armv7/mx6/soc.c
+index f43d7ff..0e7b457 100644
+--- a/arch/arm/cpu/armv7/mx6/soc.c
++++ b/arch/arm/cpu/armv7/mx6/soc.c
+@@ -452,6 +452,31 @@ void imx_get_mac_from_fuse(int dev_id, unsigned char *mac)
+ }
+ #endif
+ 
++#ifdef CONFIG_MX6SX
++int arch_auxiliary_core_up(u32 core_id, u32 boot_private_data)
++{
++	struct src *src_reg;
++	u32 stack, pc;
++
++	if (!boot_private_data)
++		return 1;
++
++	stack = *(u32 *)boot_private_data;
++	pc = *(u32 *)(boot_private_data + 4);
++
++	/* Set the stack and pc to M4 bootROM */
++	writel(stack, M4_BOOTROM_BASE_ADDR);
++	writel(pc, M4_BOOTROM_BASE_ADDR + 4);
++
++	/* Enable M4 */
++	src_reg = (struct src *)SRC_BASE_ADDR;
++	setbits_le32(&src_reg->scr, 0x00400000);
++	clrbits_le32(&src_reg->scr, 0x00000010);
++
++	return 0;
++}
++#endif
++
+ void boot_mode_apply(unsigned cfg_val)
+ {
+ 	unsigned reg;
+diff --git a/arch/arm/include/asm/arch-mx6/sys_proto.h b/arch/arm/include/asm/arch-mx6/sys_proto.h
+index 10bab2b..b89faca 100644
+--- a/arch/arm/include/asm/arch-mx6/sys_proto.h
++++ b/arch/arm/include/asm/arch-mx6/sys_proto.h
+@@ -38,6 +38,10 @@ void prep_anatop_bypass(void);
+ void finish_anatop_bypass(void);
+ #endif
+ 
++#ifdef CONFIG_MX6SX
++int arch_auxiliary_core_up(u32 core_id, u32 boot_private_data);
++#endif
++
+ /*
+  * Initializes on-chip ethernet controllers.
+  * to override, implement board_eth_init()
+-- 
+1.8.0
+

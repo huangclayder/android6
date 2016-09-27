@@ -1,0 +1,40 @@
+From c875a3d928a1a20696b4cb3c2d522f2f6ac413ba Mon Sep 17 00:00:00 2001
+From: Dong Aisheng <b29396@freescale.com>
+Date: Mon, 15 Jun 2015 19:35:15 +0800
+Subject: [PATCH] Revert "MLK-11080-3 dts: imx_v7_defconfig: enable
+ CONFIG_BCM4339 to optimize performance"
+
+WL_HOST_WAKEUP feature causes system suspend/resume break, so revert.
+This reverts commit d9edd6e61897e4253fcbf0c7d2680933583e13c8.
+---
+ arch/arm/configs/imx_v7_defconfig | 3 +--
+ 1 file changed, 1 insertion(+), 2 deletions(-)
+
+diff --git a/arch/arm/configs/imx_v7_defconfig b/arch/arm/configs/imx_v7_defconfig
+index 86e8305..25b765d 100644
+--- a/arch/arm/configs/imx_v7_defconfig
++++ b/arch/arm/configs/imx_v7_defconfig
+@@ -157,7 +157,6 @@ CONFIG_ATH6KL=m
+ CONFIG_ATH6KL_SDIO=m
+ CONFIG_BCMDHD=m
+ CONFIG_BCMDHD_SDIO=y
+-CONFIG_BCM4339=m
+ CONFIG_BCMDHD_FW_PATH="/lib/firmware/bcm/fw_bcmdhd.bin"
+ CONFIG_BCMDHD_NVRAM_PATH="/lib/firmware/bcm/bcmdhd.cal"
+ # CONFIG_INPUT_MOUSEDEV_PSAUX is not set
+@@ -181,7 +180,6 @@ CONFIG_INPUT_MISC=y
+ CONFIG_INPUT_MMA8450=y
+ CONFIG_INPUT_ISL29023=y
+ CONFIG_INPUT_MPL3115=y
+-CONFIG_SENSOR_FXLS8471=y
+ CONFIG_SERIO_SERPORT=m
+ # CONFIG_LEGACY_PTYS is not set
+ # CONFIG_DEVKMEM is not set
+@@ -447,3 +445,4 @@ CONFIG_LIBCRC32C=m
+ CONFIG_FONTS=y
+ CONFIG_FONT_8x8=y
+ CONFIG_FONT_8x16=y
++CONFIG_SENSOR_FXLS8471=y
+-- 
+1.8.0
+

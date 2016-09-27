@@ -1,0 +1,55 @@
+From 8687a9dda351da72575fa29c9ec6f5d99839f7f7 Mon Sep 17 00:00:00 2001
+From: Haoran Wang <b50027@freescale.com>
+Date: Mon, 27 Apr 2015 13:31:11 +0800
+Subject: [PATCH 093/115] MA-6593 Add exception catch for Null dhcp info
+
+In Lollipop 5.1 if there is no ethernet connection
+and no DHCP info for ConnectivityService the dhcpInfo
+will be null.
+Added missed Null pointer exception catch to avoiding
+crashing.
+
+Signed-off-by: Haoran Wang <b50027@freescale.com>
+---
+ Ethernet/com/fsl/ethernet/EthernetManager.java | 21 +++++++++++++++------
+ 1 file changed, 15 insertions(+), 6 deletions(-)
+
+diff --git a/Ethernet/com/fsl/ethernet/EthernetManager.java b/Ethernet/com/fsl/ethernet/EthernetManager.java
+index e68a574..3d7eaec 100644
+--- a/Ethernet/com/fsl/ethernet/EthernetManager.java
++++ b/Ethernet/com/fsl/ethernet/EthernetManager.java
+@@ -256,16 +256,25 @@ public class EthernetManager {
+         infotemp.setIfName(DevName[0]);
+         infotemp.setConnectMode(EthernetDevInfo.ETHERNET_CONN_MODE_DHCP);
+         String ip;
+-        ip = mConnMgr.getLinkProperties(ConnectivityManager.TYPE_ETHERNET).getAddresses().toString();
++        try {
++            ip = mConnMgr.getLinkProperties(ConnectivityManager.TYPE_ETHERNET).getAddresses().toString();
++        } catch (Exception err) {
++            ip = "[]";
++            Log.w(TAG, "getDhcpInfo error:" + err.toString());
++        }
+         if (ip != "[]" )
+             infotemp.setIpAddress(ip.substring(2, ip.length()-1));
+         String dns = " ";
++        try {
+         int i = 0;
+-        for( InetAddress d : mConnMgr.getLinkProperties(ConnectivityManager.TYPE_ETHERNET).getDnsServers()) {
+-            String temp = d.toString();
+-            if (temp != null)
+-                dns = temp.substring(1, temp.length()-1);
+-            break;
++            for( InetAddress d : mConnMgr.getLinkProperties(ConnectivityManager.TYPE_ETHERNET).getDnsServers()) {
++                String temp = d.toString();
++                if (temp != null)
++                    dns = temp.substring(1, temp.length()-1);
++                break;
++            }
++        } catch (Exception err) {
++            Log.w(TAG, "getDhcpInfo error:" + err.toString());
+         }
+         infotemp.setDnsAddr(dns);// now only use dns1, need optimization later here.
+         String proxyAddress = getSharedPreProxyAddress();
+-- 
+1.8.0
+

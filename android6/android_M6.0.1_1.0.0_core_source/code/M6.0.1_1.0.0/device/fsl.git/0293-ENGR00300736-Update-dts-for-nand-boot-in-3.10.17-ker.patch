@@ -1,0 +1,26 @@
+From 29a13bd765ca78a4748f360885863cf24131cd91 Mon Sep 17 00:00:00 2001
+From: "guoyin.chen" <guoyin.chen@freescale.com>
+Date: Tue, 25 Feb 2014 16:44:46 +0800
+Subject: [PATCH 293/602] ENGR00300736 Update dts for nand boot in 3.10.17
+ kernel
+
+Align with 3.10.17 GA release on nand dts file
+
+Signed-off-by: guoyin.chen <guoyin.chen@freescale.com>
+---
+ sabreauto_6q/BoardConfig.mk | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/sabreauto_6q/BoardConfig.mk b/sabreauto_6q/BoardConfig.mk
+index 9ab6769..ce4a655 100644
+--- a/sabreauto_6q/BoardConfig.mk
++++ b/sabreauto_6q/BoardConfig.mk
+@@ -103,4 +103,4 @@ endif
+ endif
+ 
+ TARGET_BOOTLOADER_CONFIG := mx6q:mx6qsabreautoandroid mx6dl:mx6dlsabreautoandroid mx6solo:mx6solosabresdandroid mx6q-nand:mx6qsabreautoandroid_nand mx6dl-nand:mx6dlsabreautoandroid_nand mx6solo-nand:mx6solosabreauto_nand
+-TARGET_BOARD_DTS_CONFIG := mx6q:imx6q-sabreauto.dtb mx6dl:imx6dl-sabreauto.dtb
++TARGET_BOARD_DTS_CONFIG := mx6q:imx6q-sabreauto.dtb mx6dl:imx6dl-sabreauto.dtb mx6q-nand:imx6q-sabreauto-gpmi-weim.dtb mx6dl-nand:imx6dl-sabreauto-gpmi-weim.dtb
+-- 
+1.8.0
+

@@ -1,0 +1,31 @@
+From a90a0a685d1b3508c85a1e326ed3cb91093931dc Mon Sep 17 00:00:00 2001
+From: Ming Zhou <b42586@freescale.com>
+Date: Mon, 18 Jan 2016 14:19:41 +0800
+Subject: [PATCH 592/602] MA-7532: enlarge dalvik.vm.heapgrowthlimit to pass
+ cts
+
+com.android.cts.videoperf.VideoEncoderDecoderTest#testAvc1920x1080Other
+
+Signed-off-by: Ming Zhou <b42586@freescale.com>
+---
+ imx6/imx6.mk | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/imx6/imx6.mk b/imx6/imx6.mk
+index 43979dd..25aca24 100644
+--- a/imx6/imx6.mk
++++ b/imx6/imx6.mk
+@@ -369,6 +369,10 @@ PRODUCT_TAGS += dalvik.gc.type-precise
+ PRODUCT_DEFAULT_PROPERTY_OVERRIDES += \
+ 	persist.sys.usb.config=mtp
+ 
++#this must be set before including tablet-7in-hdpi-1024-dalvik-heap.mk
++PRODUCT_PROPERTY_OVERRIDES += \
++        dalvik.vm.heapgrowthlimit=128m
++
+ PRODUCT_DEFAULT_DEV_CERTIFICATE := \
+         device/fsl/common/security/testkey
+ 
+-- 
+1.8.0
+

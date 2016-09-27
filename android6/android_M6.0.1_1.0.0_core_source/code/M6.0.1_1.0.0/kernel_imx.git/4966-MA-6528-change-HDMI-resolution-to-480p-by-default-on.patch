@@ -1,0 +1,28 @@
+From 96518f36273f55bfe8dc734b30805e85000028ce Mon Sep 17 00:00:00 2001
+From: Liu Xiaowen <xiaowen.liu@freescale.com>
+Date: Fri, 10 Apr 2015 16:43:12 +0800
+Subject: [PATCH] MA-6528 change HDMI resolution to 480p by default on imx7D.
+
+change HDMI resolution to 480p by default on imx7D.
+
+Signed-off-by: Liu Xiaowen <xiaowen.liu@freescale.com>
+---
+ arch/arm/boot/dts/imx7d-sdb.dts | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/arch/arm/boot/dts/imx7d-sdb.dts b/arch/arm/boot/dts/imx7d-sdb.dts
+index 74d9cdf..54fb68c 100644
+--- a/arch/arm/boot/dts/imx7d-sdb.dts
++++ b/arch/arm/boot/dts/imx7d-sdb.dts
+@@ -386,7 +386,7 @@
+ 		pinctrl-0 = <&pinctrl_sii902x>;
+ 		interrupt-parent = <&gpio2>;
+ 		interrupts = <13 IRQ_TYPE_EDGE_FALLING>;
+-		mode_str ="1280x720M@60";
++		mode_str ="640x480M@60";
+ 		bits-per-pixel = <16>;
+ 		reg = <0x39>;
+ 		status = "okay";
+-- 
+1.8.0
+

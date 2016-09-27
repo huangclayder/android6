@@ -1,0 +1,61 @@
+From 681f076d7b19a2c7e133910719c6d5437351ea76 Mon Sep 17 00:00:00 2001
+From: Peng Fan <Peng.Fan@freescale.com>
+Date: Fri, 3 Jul 2015 09:56:42 +0800
+Subject: [PATCH] MLK-11216-1 imx:mx7d_12x12_ddr3_arm2 add missed Kconfig
+ files
+
+Add missed Kconfig files for mx7d_12x12_ddr3_arm2 board.
+
+Signed-off-by: Peng Fan <Peng.Fan@freescale.com>
+---
+ arch/arm/Kconfig                             |  5 +++++
+ board/freescale/mx7d_12x12_ddr3_arm2/Kconfig | 15 +++++++++++++++
+ 2 files changed, 20 insertions(+)
+
+diff --git a/arch/arm/Kconfig b/arch/arm/Kconfig
+index 2174996..0c82b17 100644
+--- a/arch/arm/Kconfig
++++ b/arch/arm/Kconfig
+@@ -548,6 +548,10 @@ config TARGET_MX7D_12X12_LPDDR3_ARM2
+ 	bool "Support mx7d_12x12_lpddr3_arm2"
+ 	select CPU_V7
+ 
++config TARGET_MX7D_12X12_DDR3_ARM2
++	bool "Support mx7d_12x12_ddr3_arm2"
++	select CPU_V7
++
+ config TARGET_MX7D_19X19_LPDDR3_ARM2
+ 	bool "Support mx7d_19x19_lpddr3_arm2"
+ 	select CPU_V7
+@@ -869,6 +873,7 @@ source "board/freescale/mx6sxsabreauto/Kconfig"
+ source "board/freescale/mx6sx_17x17_arm2/Kconfig"
+ source "board/freescale/mx6sx_19x19_arm2/Kconfig"
+ source "board/freescale/mx7d_12x12_lpddr3_arm2/Kconfig"
++source "board/freescale/mx7d_12x12_ddr3_arm2/Kconfig"
+ source "board/freescale/mx7d_19x19_lpddr3_arm2/Kconfig"
+ source "board/freescale/mx7d_19x19_ddr3_arm2/Kconfig"
+ source "board/freescale/mx7dsabresd/Kconfig"
+diff --git a/board/freescale/mx7d_12x12_ddr3_arm2/Kconfig b/board/freescale/mx7d_12x12_ddr3_arm2/Kconfig
+new file mode 100644
+index 0000000..a7a1391
+--- /dev/null
++++ b/board/freescale/mx7d_12x12_ddr3_arm2/Kconfig
+@@ -0,0 +1,15 @@
++if TARGET_MX7D_12X12_DDR3_ARM2
++
++config SYS_BOARD
++	default "mx7d_12x12_ddr3_arm2"
++
++config SYS_VENDOR
++	default "freescale"
++
++config SYS_SOC
++	default "mx7"
++
++config SYS_CONFIG_NAME
++	default "mx7d_12x12_ddr3_arm2"
++
++endif
+-- 
+1.8.0
+

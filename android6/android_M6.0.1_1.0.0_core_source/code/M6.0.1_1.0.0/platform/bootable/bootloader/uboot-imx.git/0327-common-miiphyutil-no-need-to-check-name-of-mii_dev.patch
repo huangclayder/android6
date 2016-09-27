@@ -1,0 +1,36 @@
+From 80619e6641db799e13b73d4940f8ec4ae9861128 Mon Sep 17 00:00:00 2001
+From: Peng Fan <Peng.Fan@freescale.com>
+Date: Tue, 24 Nov 2015 17:03:47 +0800
+Subject: [PATCH] common: miiphyutil: no need to check name of mii_dev
+
+The entry name of mii_dev is an array not pointer, so
+no need to check.
+
+Signed-off-by: Peng Fan <Peng.Fan@freescale.com>
+Cc: Joe Hershberger <joe.hershberger@ni.com>
+Cc: Simon Glass <sjg@chromium.org>
+Cc: Bin Meng <bmeng.cn@gmail.com>
+Reviewed-by: Simon Glass <sjg@chromium.org>
+Acked-by: Joe Hershberger <joe.hershberger@ni.com>
+Reviewed-by: Bin Meng <bmeng.cn@gmail.com>
+(cherry picked from commit d39449b110c8da47bf5b8dc372bd5cd1c33a1a67)
+---
+ common/miiphyutil.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/common/miiphyutil.c b/common/miiphyutil.c
+index dd05362..c0274f4 100644
+--- a/common/miiphyutil.c
++++ b/common/miiphyutil.c
+@@ -158,7 +158,7 @@ void mdio_free(struct mii_dev *bus)
+ 
+ int mdio_register(struct mii_dev *bus)
+ {
+-	if (!bus || !bus->name || !bus->read || !bus->write)
++	if (!bus || !bus->read || !bus->write)
+ 		return -1;
+ 
+ 	/* check if we have unique name */
+-- 
+1.8.0
+

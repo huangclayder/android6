@@ -1,0 +1,43 @@
+From e92712590a3572264283a4af90b54d3f195d3b4e Mon Sep 17 00:00:00 2001
+From: Zidan Wang <zidan.wang@freescale.com>
+Date: Mon, 21 Dec 2015 19:27:39 +0800
+Subject: [PATCH] MLK-12058 ARM: dts: add audio support for imx7d-sdb revb
+ board
+
+add audio support for imx7d-sdb revb board.
+
+Signed-off-by: Zidan Wang <zidan.wang@freescale.com>
+---
+ arch/arm/boot/dts/imx7d-sdb.dts | 8 ++++++++
+ 1 file changed, 8 insertions(+)
+
+diff --git a/arch/arm/boot/dts/imx7d-sdb.dts b/arch/arm/boot/dts/imx7d-sdb.dts
+index 912ca3a..4ef683b 100644
+--- a/arch/arm/boot/dts/imx7d-sdb.dts
++++ b/arch/arm/boot/dts/imx7d-sdb.dts
+@@ -107,7 +107,14 @@
+ 		codec-master;
+ 		/* JD2: hp detect high for headphone*/
+ 		hp-det = <2 0>;
++		hp-det-gpios = <&gpio2 28 0>;
+ 		audio-routing =
++			"Headphone Jack", "HP_L",
++			"Headphone Jack", "HP_R",
++			"Ext Spk", "SPK_LP",
++			"Ext Spk", "SPK_LN",
++			"Ext Spk", "SPK_RP",
++			"Ext Spk", "SPK_RN",
+ 			"LINPUT1", "Main MIC",
+ 			"Main MIC", "MICB";
+ 		assigned-clocks = <&clks IMX7D_AUDIO_MCLK_ROOT_SRC>,
+@@ -519,6 +526,7 @@
+ 				MX7D_PAD_SD1_CD_B__GPIO5_IO0		0x59 /* CD */
+ 				MX7D_PAD_SD1_WP__GPIO5_IO1		0x59 /* WP */
+ 				MX7D_PAD_SD1_RESET_B__GPIO5_IO2		0x59 /* vmmc */
++				MX7D_PAD_EPDC_BDR0__GPIO2_IO28		0x59 /* headphone detect */
+ 			>;
+ 		};
+ 
+-- 
+1.8.0
+

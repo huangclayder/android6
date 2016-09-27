@@ -1,0 +1,234 @@
+From 475e763ae01b3740db7b3990193bb7c40097dbd5 Mon Sep 17 00:00:00 2001
+From: "Ye.Li" <B37916@freescale.com>
+Date: Wed, 4 Mar 2015 00:17:15 +0800
+Subject: [PATCH] MLK-10363-3 Android: Add android support for MX7D SABRESD
+ board
+
+Enable android fastboot, recovery, booti features for mx7d sabresd
+board by using new build target: mx7devkandroid_config
+
+Signed-off-by: Ye.Li <B37916@freescale.com>
+(cherry picked from commit bfc2b467ddac9c6eccb3f39aad3663a959546b64)
+Signed-off-by: Peng Fan <Peng.Fan@freescale.com>
+
+Conflicts:
+	boards.cfg
+---
+ board/freescale/mx7dsabresd/mx7dsabresd.c | 103 ++++++++++++++++++++++++++++++
+ configs/mx7dsabresdandroid_defconfig      |   7 ++
+ include/configs/mx7dsabresd.h             |   3 +
+ include/configs/mx7dsabresdandroid.h      |  53 +++++++++++++++
+ 4 files changed, 166 insertions(+)
+
+diff --git a/board/freescale/mx7dsabresd/mx7dsabresd.c b/board/freescale/mx7dsabresd/mx7dsabresd.c
+index 43cdfa0..ab6c21c 100644
+--- a/board/freescale/mx7dsabresd/mx7dsabresd.c
++++ b/board/freescale/mx7dsabresd/mx7dsabresd.c
+@@ -33,6 +33,14 @@
+ #include <mxsfb.h>
+ #endif
+ 
++#ifdef CONFIG_FASTBOOT
++#include <fastboot.h>
++#ifdef CONFIG_ANDROID_RECOVERY
++#include <recovery.h>
++#endif
++#endif /*CONFIG_FASTBOOT*/
++
++
+ DECLARE_GLOBAL_DATA_PTR;
+ 
+ #define UART_PAD_CTRL  (PAD_CTL_DSE_3P3V_49OHM | \
+@@ -60,6 +68,8 @@ DECLARE_GLOBAL_DATA_PTR;
+ 
+ #define SPI_PAD_CTRL (PAD_CTL_DSE_3P3V_49OHM | PAD_CTL_SRE_SLOW | PAD_CTL_HYS)
+ 
++#define BUTTON_PAD_CTRL    (PAD_CTL_PUS_PU5KOHM | PAD_CTL_DSE_3P3V_98OHM)
++
+ #ifdef CONFIG_SYS_I2C_MXC
+ #define PC MUX_PAD_CTRL(I2C_PAD_CTRL)
+ /* I2C1 for PMIC */
+@@ -880,3 +890,96 @@ int board_ehci_hcd_init(int port)
+ 	return 0;
+ }
+ #endif
++
++#ifdef CONFIG_FASTBOOT
++
++void board_fastboot_setup(void)
++{
++	switch (get_boot_device()) {
++#if defined(CONFIG_FASTBOOT_STORAGE_MMC)
++	case SD1_BOOT:
++	case MMC1_BOOT:
++		if (!getenv("fastboot_dev"))
++			setenv("fastboot_dev", "mmc0");
++		if (!getenv("bootcmd"))
++			setenv("bootcmd", "booti mmc0");
++		break;
++	case SD3_BOOT:
++	case MMC3_BOOT:
++		if (!getenv("fastboot_dev"))
++			setenv("fastboot_dev", "mmc1");
++		if (!getenv("bootcmd"))
++			setenv("bootcmd", "booti mmc1");
++		break;
++#endif /*CONFIG_FASTBOOT_STORAGE_MMC*/
++	default:
++		printf("unsupported boot devices\n");
++		break;
++	}
++}
++
++#ifdef CONFIG_ANDROID_RECOVERY
++
++/* Use S3 button for recovery key */
++#define GPIO_VOL_DN_KEY IMX_GPIO_NR(5, 10)
++iomux_v3_cfg_t const recovery_key_pads[] = {
++	(MX7D_PAD_SD2_WP__GPIO5_IO10 | MUX_PAD_CTRL(BUTTON_PAD_CTRL)),
++};
++
++int check_recovery_cmd_file(void)
++{
++	int button_pressed = 0;
++	int recovery_mode = 0;
++
++	recovery_mode = recovery_check_and_clean_flag();
++
++	/* Check Recovery Combo Button press or not. */
++	imx_iomux_v3_setup_multiple_pads(recovery_key_pads,
++		ARRAY_SIZE(recovery_key_pads));
++
++	gpio_direction_input(GPIO_VOL_DN_KEY);
++
++	if (gpio_get_value(GPIO_VOL_DN_KEY) == 0) { /* VOL_DN key is low assert */
++		button_pressed = 1;
++		printf("Recovery key pressed\n");
++	}
++
++	return recovery_mode || button_pressed;
++}
++
++void board_recovery_setup(void)
++{
++	int bootdev = get_boot_device();
++
++	switch (bootdev) {
++#if defined(CONFIG_FASTBOOT_STORAGE_MMC)
++	case SD1_BOOT:
++	case MMC1_BOOT:
++		if (!getenv("bootcmd_android_recovery"))
++			setenv("bootcmd_android_recovery", "booti mmc0 recovery");
++		break;
++	case SD3_BOOT:
++	case MMC3_BOOT:
++		if (!getenv("bootcmd_android_recovery"))
++			setenv("bootcmd_android_recovery", "booti mmc1 recovery");
++		break;
++#endif /*CONFIG_FASTBOOT_STORAGE_MMC*/
++	default:
++		printf("Unsupported bootup device for recovery: dev: %d\n",
++			bootdev);
++		return;
++	}
++
++	printf("setup env for recovery..\n");
++	setenv("bootcmd", "run bootcmd_android_recovery");
++}
++#endif /*CONFIG_ANDROID_RECOVERY*/
++
++#endif /*CONFIG_FASTBOOT*/
++
++#ifdef CONFIG_IMX_UDC
++void udc_pins_setting(void)
++{
++}
++
++#endif /*CONFIG_IMX_UDC*/
+diff --git a/configs/mx7dsabresdandroid_defconfig b/configs/mx7dsabresdandroid_defconfig
+new file mode 100644
+index 0000000..fdd0f14
+--- /dev/null
++++ b/configs/mx7dsabresdandroid_defconfig
+@@ -0,0 +1,7 @@
++CONFIG_SYS_EXTRA_OPTIONS="IMX_CONFIG=board/freescale/mx7dsabresd/imximage.cfg,MX7D,ANDROID_SUPPORT"
++CONFIG_ARM=y
++CONFIG_TARGET_MX7DSABRESD=y
++CONFIG_SYS_MALLOC_F=y
++CONFIG_SYS_MALLOC_F_LEN=0x400
++CONFIG_DM=y
++CONFIG_DM_THERMAL=y
+diff --git a/include/configs/mx7dsabresd.h b/include/configs/mx7dsabresd.h
+index dc27795..3986170 100644
+--- a/include/configs/mx7dsabresd.h
++++ b/include/configs/mx7dsabresd.h
+@@ -435,4 +435,7 @@
+ #error "EPDC Pins conflicts QSPI, Either EPDC or QSPI can be enabled!"
+ #endif
+ 
++#if defined(CONFIG_ANDROID_SUPPORT)
++#include "mx7dsabresdandroid.h"
++#endif
+ #endif	/* __CONFIG_H */
+diff --git a/include/configs/mx7dsabresdandroid.h b/include/configs/mx7dsabresdandroid.h
+new file mode 100644
+index 0000000..6efe69c
+--- /dev/null
++++ b/include/configs/mx7dsabresdandroid.h
+@@ -0,0 +1,53 @@
++
++/*
++ * Copyright (C) 2015 Freescale Semiconductor, Inc.
++ *
++ * SPDX-License-Identifier:	GPL-2.0+
++ */
++
++#ifndef __MX7D_SABRESD_ANDROID_H
++#define __MX7D_SABRESD_ANDROID_H
++
++#define CONFIG_SERIAL_TAG
++
++#define CONFIG_USB_DEVICE
++#define CONFIG_IMX_UDC		       1
++#define OTG_BASE_ADDR USBOTG1_IPS_BASE_ADDR
++
++#define CONFIG_FASTBOOT		       1
++#define CONFIG_FASTBOOT_VENDOR_ID      0x18d1
++#define CONFIG_FASTBOOT_PRODUCT_ID     0x0d02
++#define CONFIG_FASTBOOT_BCD_DEVICE     0x311
++#define CONFIG_FASTBOOT_MANUFACTURER_STR  "Freescale"
++#define CONFIG_FASTBOOT_PRODUCT_NAME_STR "i.MX7D SABRESD Board"
++#define CONFIG_FASTBOOT_INTERFACE_STR	 "Android fastboot"
++#define CONFIG_FASTBOOT_CONFIGURATION_STR  "Android fastboot"
++#define CONFIG_FASTBOOT_SERIAL_NUM	"12345"
++#define CONFIG_FASTBOOT_SATA_NO		 0
++
++#define CONFIG_FASTBOOT_STORAGE_MMC
++
++/*  For system.img growing up more than 256MB, more buffer needs
++*   to receive the system.img*/
++#define CONFIG_FASTBOOT_TRANSFER_BUF	0x8c000000
++#define CONFIG_FASTBOOT_TRANSFER_BUF_SIZE 0x19000000 /* 400M byte */
++
++
++#define CONFIG_CMD_BOOTI
++#define CONFIG_ANDROID_RECOVERY
++/* which mmc bus is your main storage ? */
++#define CONFIG_ANDROID_MAIN_MMC_BUS 2
++#define CONFIG_ANDROID_BOOT_PARTITION_MMC 1
++#define CONFIG_ANDROID_SYSTEM_PARTITION_MMC 5
++#define CONFIG_ANDROID_RECOVERY_PARTITION_MMC 2
++#define CONFIG_ANDROID_CACHE_PARTITION_MMC 6
++
++#undef CONFIG_EXTRA_ENV_SETTINGS
++#undef CONFIG_BOOTCOMMAND
++
++#define CONFIG_EXTRA_ENV_SETTINGS					\
++	"splashpos=m,m\0"	  \
++	"fdt_high=0xffffffff\0"	  \
++	"initrd_high=0xffffffff\0" \
++
++#endif
+-- 
+1.8.0
+

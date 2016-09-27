@@ -1,0 +1,41 @@
+From 50090e1bf8289b915335159a7aef2b9d2dede103 Mon Sep 17 00:00:00 2001
+From: Yu Zhen <b53395@freescale.com>
+Date: Mon, 9 Feb 2015 14:36:52 +0800
+Subject: [PATCH 084/115] MA-6245 fix incorrect definition of theme
+
+add a customized theme to comform to system behavior.
+
+Signed-off-by: Yu Zhen <b53395@freescale.com>
+---
+ Ethernet/AndroidManifest.xml   | 2 +-
+ Ethernet/res/values/themes.xml | 2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/Ethernet/AndroidManifest.xml b/Ethernet/AndroidManifest.xml
+index 6042412..68506c0 100644
+--- a/Ethernet/AndroidManifest.xml
++++ b/Ethernet/AndroidManifest.xml
+@@ -13,7 +13,7 @@
+         android:allowBackup="true"
+         android:icon="@drawable/ic_launcher"
+         android:label="@string/app_name"
+-        android:theme="@style/theme" >
++        android:theme="@style/CustomTheme" >
+         <activity
+             android:name="com.fsl.ethernet.MainActivity"
+             android:label="@string/app_name"
+diff --git a/Ethernet/res/values/themes.xml b/Ethernet/res/values/themes.xml
+index 3efaeb9..f1873a9 100755
+--- a/Ethernet/res/values/themes.xml
++++ b/Ethernet/res/values/themes.xml
+@@ -1,6 +1,6 @@
+ <?xml version="1.0" encoding="utf-8"?>
+ <resources>
+-    <style name="theme">
++    <style name="CustomTheme" parent="@android:style/Theme.Material">
+         <item name="android:windowNoTitle">true</item>
+         <item name="android:windowFullscreen">?android:windowNoTitle</item>
+         <item name="android:windowBackground">@android:drawable/screen_background_dark</item>
+-- 
+1.8.0
+

@@ -1,0 +1,582 @@
+From 15ba5b338ab94d956f06d006d2391741032157a8 Mon Sep 17 00:00:00 2001
+From: Wang Haoran <b50027@freescale.com>
+Date: Mon, 30 Jun 2014 10:34:23 +0800
+Subject: [PATCH 57/95] ENGR00320248 Wifi-Display UIBC supports mouse &
+ different resolution
+
+Rewrite the low layer UIBC event module. Use the Android framework
+event injection to replace the original injecting event to linux device files.
+Add an interface "onUibcData" to pass the uibc data from the WifiDisplaySource
+into the WifiDisplayController. So that we can inject the event in Java layer.
+Added the UIBC scroll infor packet handler in WifiDisplaySource also.
+For the different resolution the source calculate the scale and the black block
+for the encoded video resolution. When the UIBC coordinate is received it will be
+calculated to the local ones via those parameters.
+
+Signed-off-by: Wang Haoran <b50027@freescale.com>
+---
+ include/media/IRemoteDisplayClient.h               |   3 +
+ media/libmedia/IRemoteDisplayClient.cpp            |  20 ++
+ media/libstagefright/wifi-display/VideoFormats.cpp |   2 +-
+ .../wifi-display/source/WifiDisplaySource.cpp      | 339 ++++++++++-----------
+ .../wifi-display/source/WifiDisplaySource.h        |  30 ++
+ 5 files changed, 220 insertions(+), 174 deletions(-)
+
+diff --git a/include/media/IRemoteDisplayClient.h b/include/media/IRemoteDisplayClient.h
+index 0e6d55d..da6ab82 100644
+--- a/include/media/IRemoteDisplayClient.h
++++ b/include/media/IRemoteDisplayClient.h
+@@ -60,6 +60,9 @@ public:
+     // Indicates that a connection could not be established to the remote display
+     // or an unrecoverable error occurred and the connection was severed.
+     virtual void onDisplayError(int32_t error) = 0; // one-way
++
++    // Uibc data will be easy to realize in java
++    virtual void onUibcData(uint32_t type, float f0, float f1, uint32_t i0) = 0;
+ };
+ 
+ 
+diff --git a/media/libmedia/IRemoteDisplayClient.cpp b/media/libmedia/IRemoteDisplayClient.cpp
+index bedeb6c..f0c19eb 100644
+--- a/media/libmedia/IRemoteDisplayClient.cpp
++++ b/media/libmedia/IRemoteDisplayClient.cpp
+@@ -27,6 +27,7 @@ enum {
+     ON_DISPLAY_CONNECTED = IBinder::FIRST_CALL_TRANSACTION,
+     ON_DISPLAY_DISCONNECTED,
+     ON_DISPLAY_ERROR,
++    ON_DISPLAY_UIBC,
+ };
+ 
+ class BpRemoteDisplayClient: public BpInterface<IRemoteDisplayClient>
+@@ -37,6 +38,17 @@ public:
+     {
+     }
+ 
++    void onUibcData(uint32_t type, float f0, float f1, uint32_t i0)
++    {
++        Parcel data, reply;
++        data.writeInterfaceToken(IRemoteDisplayClient::getInterfaceDescriptor());
++        data.writeInt32(type);
++        data.writeFloat(f0);
++        data.writeFloat(f1);
++        data.writeInt32(i0);
++        remote()->transact(ON_DISPLAY_UIBC, data, &reply, IBinder::FLAG_ONEWAY);
++    }
++
+     void onDisplayConnected(const sp<IGraphicBufferProducer>& bufferProducer,
+             uint32_t width, uint32_t height, uint32_t flags, uint32_t session)
+     {
+@@ -96,6 +108,14 @@ status_t BnRemoteDisplayClient::onTransact(
+             onDisplayError(error);
+             return NO_ERROR;
+         }
++        case ON_DISPLAY_UIBC: {
++            CHECK_INTERFACE(IRemoteDisplayClient, data, reply);
++            uint32_t type = data.readInt32();
++            float f0      = data.readFloat();
++            float f1      = data.readFloat();
++            uint32_t i0   = data.readInt32();
++            onUibcData(type, f0, f1, i0);
++        }
+         default:
+             return BBinder::onTransact(code, data, reply, flags);
+     }
+diff --git a/media/libstagefright/wifi-display/VideoFormats.cpp b/media/libstagefright/wifi-display/VideoFormats.cpp
+index 7f96196..44a2f8b 100644
+--- a/media/libstagefright/wifi-display/VideoFormats.cpp
++++ b/media/libstagefright/wifi-display/VideoFormats.cpp
+@@ -531,7 +531,7 @@ bool VideoFormats::PickBestFormat(
+                 continue;
+             }
+ 
+-            ALOGV("type %zu, index %zu, %zu x %zu %c%zu supported",
++            ALOGD("type %zu, index %zu, %zu x %zu %c%zu supported",
+                   i, j, width, height, interlaced ? 'i' : 'p', framesPerSecond);
+ 
+             uint32_t score = width * height * framesPerSecond;
+diff --git a/media/libstagefright/wifi-display/source/WifiDisplaySource.cpp b/media/libstagefright/wifi-display/source/WifiDisplaySource.cpp
+index 65c43a8..f863528 100644
+--- a/media/libstagefright/wifi-display/source/WifiDisplaySource.cpp
++++ b/media/libstagefright/wifi-display/source/WifiDisplaySource.cpp
+@@ -43,6 +43,10 @@
+ 
+ #include <ctype.h>
+ 
++#define UIBC_SCROLL_MOUSE_NOTCH 0x4000
++#define UIBC_SCROLL_MOUSE_UP    0x2000
++#define UIBC_SCROLL_NUMBER_MASK 0x1FFF
++
+ namespace android {
+ 
+ // static
+@@ -69,6 +73,16 @@ WifiDisplaySource::WifiDisplaySource(
+       mAbs_x_max(-1),
+       mAbs_y_min(-1),
+       mAbs_y_max(-1),
++      resolutionWidth(0),
++      resolutionHeigh(0),
++      uibc_calc_data_Ss(0),
++      uibc_calc_data_Wbs(0),
++      uibc_calc_data_Hbs(0),
++      mResolution_RealW(0),
++      mResolution_RealH(0),
++      mResolution_NativeW(0),
++      mResolution_NativeH(0),
++      mUibcMouseID(-1),
+       mStopReplyID(NULL),
+       mChosenRTPPort(-1),
+       mUsingPCMAudio(false),
+@@ -100,6 +114,9 @@ WifiDisplaySource::WifiDisplaySource(
+             mainDpyInfo.w, mainDpyInfo.h, mainDpyInfo.fps,
+             type, index);
+ 
++    mResolution_RealW = mainDpyInfo.w;
++    mResolution_RealH = mainDpyInfo.h;
++
+     mSupportedSourceVideoFormats.disableAll();
+ 
+     mSupportedSourceVideoFormats.setNativeResolution(
+@@ -110,6 +127,7 @@ WifiDisplaySource::WifiDisplaySource(
+             type, index,
+             VideoFormats::PROFILE_CHP,  // Constrained High Profile
+             VideoFormats::LEVEL_32);    // Level 3.2
++
+ }
+ 
+ WifiDisplaySource::~WifiDisplaySource() {
+@@ -200,13 +218,49 @@ int WifiDisplaySource::write_event(int fd, int type, int code, int value)
+     return 0;
+ }
+ 
+-void WifiDisplaySource::calculateXY(float x, float y, int32_t *abs_x, int32_t *abs_y)
++int WifiDisplaySource::calc_uibc_parameter(size_t width, size_t height)
+ {
+-    //need to get sink and self resolutions
+-    *abs_x = mAbs_x_min +
+-        (int)((x * (float)(mAbs_x_max - mAbs_x_min)) / 1024 + 0.5);
+-    *abs_y = mAbs_y_min +
+-        (int)((y * (float)(mAbs_y_max - mAbs_y_min)) / 768 + 0.5);
++    //scan and select touch input device
++    struct input_absinfo absinfo;
++    float this_w, this_h, dw, dh;
++
++    this_w = mResolution_RealW;
++    this_h = mResolution_RealH;
++
++    dw = mResolution_NativeW / this_w;
++    dh = mResolution_NativeH / this_h;
++
++    uibc_calc_data_Ss = (dw > dh) ? dh : dw;
++    uibc_calc_data_Wbs = (mResolution_NativeW - this_w * uibc_calc_data_Ss) / 2;
++    uibc_calc_data_Hbs = (mResolution_NativeH - this_h * uibc_calc_data_Ss) / 2;
++
++    ALOGI("sendrolon: uibc_para: ss %f wbs %f hbs %f native: width %u height %u real:%f x %f",uibc_calc_data_Ss, uibc_calc_data_Wbs, uibc_calc_data_Hbs, mResolution_NativeW, mResolution_NativeH, this_w, this_h);
++
++    return 0;
++}
++
++void WifiDisplaySource::calculateNormalXY(float x, float y, int *abs_x, int *abs_y)
++{
++    float dx, dy;
++    dx = x - uibc_calc_data_Wbs;
++    dx = dx > 0 ? dx : 0;
++    dy = y - uibc_calc_data_Hbs;
++    dy = dy > 0 ? dy : 0;
++
++    if(uibc_calc_data_Ss >= -0.000001 && uibc_calc_data_Ss <= 0.000001) {
++        *abs_x = (int)(x + 0.5);
++        *abs_y = (int)(y + 0.5);
++        ALOGW("calculateNormalXY: Ss is zero!!!");
++        return;
++    }
++
++    ALOGD("calcNormalXY (%f,%f)",dx / uibc_calc_data_Ss, dy / uibc_calc_data_Ss);
++
++
++    *abs_x = (int) (
++             ((dx / uibc_calc_data_Ss) + 0.5));
++    *abs_y = (int) (
++             ((dy / uibc_calc_data_Ss) + 0.5));
+ }
+ 
+ int WifiDisplaySource::containsNonZeroByte(const uint8_t* array, uint32_t startIndex, uint32_t endIndex)
+@@ -220,192 +274,117 @@ int WifiDisplaySource::containsNonZeroByte(const uint8_t* array, uint32_t startI
+     }
+     return 0;
+ }
+-int WifiDisplaySource::scan_dir(const char *dirname)
+-{
+-    char devname[PATH_MAX];
+-    char *filename;
+-    DIR *dir;
+-    struct dirent *de;
+-    dir = opendir(dirname);
+-    if(dir == NULL)
+-        return -1;
+-    strcpy(devname, dirname);
+-    filename = devname + strlen(devname);
+-    *filename++ = '/';
+-    while((de = readdir(dir))) {
+-        if(de->d_name[0] == '.' &&
+-                (de->d_name[1] == '\0' ||
+-                 (de->d_name[1] == '.' && de->d_name[2] == '\0')))
+-            continue;
+-        strcpy(filename, de->d_name);
+-        open_dev(devname);
+-    }
+-    closedir(dir);
+-    return 0;
+-}
+-
+-int WifiDisplaySource::open_dev(const char *deviceName)
+-{
+-    int fd;
+-    int version;
+-    uint8_t key_bitmask[sizeof_bit_array(KEY_MAX + 1)];
+-    uint8_t abs_bitmask[sizeof_bit_array(ABS_MAX + 1)];
+-    fd = open(deviceName, O_RDWR);
+-    if(fd < 0) {
+-        ALOGI("could not open device uid=%d gid=%d [%d]: %s",getuid(), getgid(), errno, strerror(errno));
+-        return -1;
+-    }
+ 
+-    if(ioctl(fd, EVIOCGVERSION, &version)) {
+-        return -1;
+-    }
++void WifiDisplaySource::parseUIBCtouchEvent(const uint8_t *data) {
++    if (data[6] < 3) {
++        for (int i = 0; i < data[7]; i++) {
++            int32_t x = (int32_t)U16_AT(&data[9]);
++            int32_t y = (int32_t)U16_AT(&data[11]);
++            int32_t action = (int32_t)data[6];
++            //Just mesure uibc latency here
++            int16_t timestamp = (int32_t)U16_AT(&data[4]);
++            if (timestamp > 0) {
++                ALOGI("UIBC latency is %d",(int16_t)(ALooper::GetNowUs()-timestamp));
++            }
++            int32_t abs_x, abs_y;
++            calculateNormalXY(x, y, &abs_x, &abs_y);
+ 
+-    memset(key_bitmask, 0, sizeof(key_bitmask));
+-    if (ioctl(fd, EVIOCGBIT(EV_KEY, sizeof(key_bitmask)), key_bitmask) >= 0) {
+-        if (containsNonZeroByte(key_bitmask, 0, sizeof_bit_array(BTN_MISC))
+-                || containsNonZeroByte(key_bitmask, sizeof_bit_array(BTN_GAMEPAD),
+-                    sizeof_bit_array(BTN_DIGI))
+-                || containsNonZeroByte(key_bitmask, sizeof_bit_array(KEY_OK),
+-                    sizeof_bit_array(KEY_MAX + 1))) {
+-            mUibcKeyFd = fd;
+-            ALOGI("get key input device: %s", deviceName);
++            ALOGI("WFD UIBC TOUCH x=%d y=%d action=%d", abs_x, abs_y,action);
++            mClient->onUibcData(action, (float)abs_x, (float)abs_y, 0);
+         }
++    } else {
++        ALOGE("parseUIBCtouchEvent wrong type!");
+     }
+ 
+-    memset(abs_bitmask, 0, sizeof(abs_bitmask));
+-    if (ioctl(fd, EVIOCGBIT(EV_ABS, sizeof(abs_bitmask)), abs_bitmask) >= 0) {
+-        // Is this a new modern multi-touch driver?
+-        if (test_bit(ABS_MT_POSITION_X, abs_bitmask)
+-                && test_bit(ABS_MT_POSITION_Y, abs_bitmask)) {
+-            mUibcTouchFd = fd;
+-            ALOGI("get multi-touch input device: %s", deviceName);
++}
+ 
+-            // Is this an old style single-touch driver?
+-        } else if (test_bit(BTN_TOUCH, key_bitmask)
+-                && test_bit(ABS_X, abs_bitmask) && test_bit(ABS_Y, abs_bitmask)) {
+-            mUibcTouchFd = fd;
+-            ALOGI("get single-touch input device: %s", deviceName);
+-        }
++void WifiDisplaySource::parseUIBCscrollEvent(const uint8_t *data) {
++    if (data == NULL)
++         return;
++    if (data[3] != 9) {
++         ALOGI("parseUIBCscrollEvent data len error!");
++         return;
++    }
++
++    int16_t d = data[7];
++    d = (d << 8) & 0xff00;
++    d = d | data[8];
++    int updown = 0;
++    float x = 0;
++    if (d & UIBC_SCROLL_MOUSE_UP) {
++        updown = 1;
++        x = 1.0f;
++    } else {
++        x = -1.0f;
++        updown = 0;
+     }
+-    return 0;
+-}
++    ALOGI("WFD UIBC SCROLL updown(%d) action=%d", updown, data[6]);
++    if (data[6] == UIBC_MOUSE_VSCROLL)
++        mClient->onUibcData(ANDROID_ACTION_SCROLL, x, 0, updown);
++    else
++        mClient->onUibcData(ANDROID_ACTION_SCROLL, 0, x, updown);
+ 
+-status_t WifiDisplaySource::sendtouchevent(int32_t action, int32_t x, int32_t y)
+-{
+-    int32_t abs_x, abs_y;
+-    struct input_absinfo absinfo;
+-    //scan and select touch input device
+-    if (mUibcTouchFd < 0) {
+-        scan_dir(DEV_DIR);
++}
+ 
+-        //Get touch screen absolute Axis edge value
+-        if(ioctl(mUibcTouchFd, EVIOCGABS(ABS_MT_POSITION_X), &absinfo)) {
+-            ALOGI("Error reading absolute controller ABS_X[%d]: %s", errno, strerror(errno));
+-            return -1;
+-        }
+-        mAbs_x_min = absinfo.minimum;
+-        mAbs_x_max = absinfo.maximum;
+-        if(ioctl(mUibcTouchFd, EVIOCGABS(ABS_MT_POSITION_Y), &absinfo)) {
+-            ALOGI("Error reading absolute controller ABS_Y[%d]: %s", errno, strerror(errno));
+-            return -2;
+-        }
+-        mAbs_y_min = absinfo.minimum;
+-        mAbs_y_max = absinfo.maximum;
++void WifiDisplaySource::parseUIBCkeyEvent(const uint8_t *data) {
+ 
++    if (data[3] != 10) {
++        ALOGE("parseUIBCkeyEvent length err!!");
++        return;
+     }
+-    if(mUibcTouchFd < 0) {
+-        ALOGI("couldn't open touch event device");
+-        return -3;
+-    }
+-    switch(action)
+-    {
+-        //According to specific touch to decide event sequence
++    int action = data[6];
++    int keycode = data[8];
++
++    ALOGI("WFD UIBC KEY action=%d keycode=%d", action, keycode);
++
++    mClient->onUibcData(action, 0, 0, keycode);
++
++
++
++}
++
++status_t WifiDisplaySource::parseUIBC(const uint8_t *data) {
++    switch (data[6]) {
+         case TOUCH_ACTION_DOWN:
+-            ALOGI("action down");
+-        case TOUCH_ACTION_POINTER_DOWN:
+-            ALOGI("action pointer down");
+-        case TOUCH_ACTION_MOVE:
+-            ALOGI("send move x=%d y=%d", x, y);
+-            calculateXY(x, y, &abs_x, &abs_y);
+-            write_event(mUibcTouchFd, EV_ABS, ABS_MT_POSITION_X, abs_x);
+-            write_event(mUibcTouchFd, EV_ABS, ABS_MT_POSITION_Y, abs_y);
+-            write_event(mUibcTouchFd, EV_ABS, ABS_MT_PRESSURE, TOUCH_RANDOM_PRESSURE);
+-            write_event(mUibcTouchFd, EV_ABS, ABS_MT_TOUCH_MAJOR, 1);
+-            write_event(mUibcTouchFd, EV_ABS, ABS_MT_TRACKING_ID, 0);
+-            write_event(mUibcTouchFd, EV_SYN, SYN_MT_REPORT, 0);
+-            write_event(mUibcTouchFd, EV_ABS, ABS_MT_POSITION_X, 0);
+-            write_event(mUibcTouchFd, EV_ABS, ABS_MT_POSITION_Y, 0);
+-            write_event(mUibcTouchFd, EV_ABS, ABS_MT_PRESSURE, 0);
+-            write_event(mUibcTouchFd, EV_ABS, ABS_MT_TOUCH_MAJOR, 1);
+-            write_event(mUibcTouchFd, EV_ABS, ABS_MT_TRACKING_ID, 1);
+-            write_event(mUibcTouchFd, EV_SYN, SYN_MT_REPORT, 0);
+-            write_event(mUibcTouchFd, EV_SYN, SYN_REPORT, 0);
++        {
++            parseUIBCtouchEvent(data);
+             break;
++        }
+         case TOUCH_ACTION_UP:
+-            ALOGI("action up");
+-        case TOUCH_ACTION_POINTER_UP:
+-            ALOGI("action pointer up");
+-        case TOUCH_ACTION_CANCEL:
+-            ALOGI("action cancel");
+-            write_event(mUibcTouchFd, EV_ABS, ABS_MT_POSITION_X, 0);
+-            write_event(mUibcTouchFd, EV_ABS, ABS_MT_POSITION_Y, 0);
+-            write_event(mUibcTouchFd, EV_ABS, ABS_MT_PRESSURE, 0);
+-            write_event(mUibcTouchFd, EV_ABS, ABS_MT_TOUCH_MAJOR, 1);
+-            write_event(mUibcTouchFd, EV_ABS, ABS_MT_TRACKING_ID, 1);
+-            write_event(mUibcTouchFd, EV_SYN, SYN_MT_REPORT, 0);
+-            write_event(mUibcTouchFd, EV_SYN, SYN_REPORT, 0);
++        {
++            parseUIBCtouchEvent(data);
+             break;
+-    }
+-    return 0;
+-}
+-
+-status_t WifiDisplaySource::sendkeyevent(int16_t action, int16_t keycode)
+-{
+-    //scan and select key input device
+-    if (mUibcKeyFd < 0) {
+-        scan_dir(DEV_DIR);
+-    }
+-    if(mUibcKeyFd < 0) {
+-        ALOGI("couldn't open touch event device");
+-        return -3;
+-    }
+-    switch(action)
+-    {
++        }
++        case TOUCH_ACTION_MOVE:
++        {
++            parseUIBCtouchEvent(data);
++            break;
++        }
+         case KEY_ACTION_DOWN:
+-            ALOGI("key down");
+-            write_event(mUibcKeyFd, EV_KEY, KEY_VOLUMEDOWN, 1);
+-            write_event(mUibcKeyFd, EV_SYN, 0, 0);
+-            write_event(mUibcKeyFd, EV_KEY, KEY_VOLUMEDOWN, 0);
+-            write_event(mUibcKeyFd, EV_SYN, 0, 0);
+-
++        {
++            parseUIBCkeyEvent(data);
+             break;
++        }
+         case KEY_ACTION_UP:
+-            ALOGI("key up");
+-            write_event(mUibcKeyFd, EV_KEY, KEY_VOLUMEUP, 1);
+-            write_event(mUibcKeyFd, EV_SYN, 0, 0);
+-            write_event(mUibcKeyFd, EV_KEY, KEY_VOLUMEUP, 0);
+-            write_event(mUibcKeyFd, EV_SYN, 0, 0);
++        {
++            parseUIBCkeyEvent(data);
+             break;
+-    }
+-    return 0;
+-}
+-status_t WifiDisplaySource::parseUIBC(const uint8_t *data) {
+-    if (data[6] < 3) {
+-        for (int i = 0; i < data[7]; i++) {
+-            int32_t x = (int32_t)U16_AT(&data[9]);
+-            int32_t y = (int32_t)U16_AT(&data[11]);
+-            int32_t action = (int32_t)data[6];
+-            ALOGI("wifi display source x=%d y=%d action=%d", x, y,action);
+-            //Just mesure uibc latency here
+-            int16_t timestamp = (int32_t)U16_AT(&data[4]);
+-            if (timestamp > 0) {
+-                ALOGI("UIBC latency is %d",(int16_t)(ALooper::GetNowUs()-timestamp));
+-            }
+-            sendtouchevent(action, x, y);
+         }
+-    } else if (data[6] == 3 || data[6] == 4 ) {
+-            sendkeyevent(data[6], data[8]);
++        case UIBC_MOUSE_HSCROLL:
++        {
++            parseUIBCscrollEvent(data);
++            break;
++        }
++        case UIBC_MOUSE_VSCROLL:
++        {
++            parseUIBCscrollEvent(data);
++            break;
++        }
++        default:
++            ALOGW("On UIBC parse meet unknown style");
++
+     }
++
+     return OK;
+ }
+ 
+@@ -1213,8 +1192,22 @@ status_t WifiDisplaySource::onReceiveM3Response(
+                     &framesPerSecond,
+                     &interlaced));
+ 
+-        ALOGI("Picked video resolution %zu x %zu %c%zu",
+-              width, height, interlaced ? 'i' : 'p', framesPerSecond);
++        ALOGI("Picked video resolution %zu x %zu %c%zu Type: %u Index : %u ",
++              width, height, interlaced ? 'i' : 'p', framesPerSecond, mChosenVideoResolutionType, mChosenVideoResolutionIndex);
++
++        VideoFormats::ResolutionType mResolutionType;
++        size_t mResolutionIndex;
++
++        mSupportedSinkVideoFormats.getNativeResolution(&mResolutionType,&mResolutionIndex);
++
++        VideoFormats::GetConfiguration(
++                       mResolutionType,
++                       mResolutionIndex,
++                       &mResolution_NativeW,
++                       &mResolution_NativeH,
++                       NULL, NULL);
++
++        calc_uibc_parameter(width,height);
+ 
+         ALOGI("Picked AVC profile %d, level %d",
+               mChosenVideoProfile, mChosenVideoLevel);
+diff --git a/media/libstagefright/wifi-display/source/WifiDisplaySource.h b/media/libstagefright/wifi-display/source/WifiDisplaySource.h
+index 9a24979..1697eb1 100644
+--- a/media/libstagefright/wifi-display/source/WifiDisplaySource.h
++++ b/media/libstagefright/wifi-display/source/WifiDisplaySource.h
+@@ -180,6 +180,22 @@ private:
+ 
+     KeyedVector<ResponseID, HandleRTSPResponseFunc> mResponseHandlers;
+ 
++    //VideoResolution
++    size_t resolutionWidth;
++    size_t resolutionHeigh;
++
++    //UIBC Native and real resolution data
++    size_t mResolution_RealW;
++    size_t mResolution_RealH;
++    size_t mResolution_NativeW;
++    size_t mResolution_NativeH;
++
++    //UIBC calc data
++    float uibc_calc_data_Ss;
++    float uibc_calc_data_Wbs;
++    float uibc_calc_data_Hbs;
++    int32_t mUibcMouseID;
++
+     // HDCP specific section >>>>
+     bool mUsingHDCP;
+     bool mIsHDCP2_0;
+@@ -192,6 +208,11 @@ private:
+ 
+     bool mPlaybackSessionEstablished;
+ 
++    //Parse UIBC data
++    void parseUIBCtouchEvent(const uint8_t *data);
++    void parseUIBCscrollEvent(const uint8_t *data);
++    void parseUIBCkeyEvent(const uint8_t *data);
++
+     status_t makeHDCP();
+     // <<<< HDCP specific section
+ 
+@@ -277,6 +298,9 @@ private:
+     void scheduleReaper();
+     void scheduleKeepAlive(int32_t sessionID);
+ 
++    //calc UIBC coordinate para
++    int calc_uibc_parameter(size_t witdh, size_t height);
++
+     int32_t makeUniquePlaybackSessionID() const;
+ 
+     sp<PlaybackSession> findPlaybackSession(
+@@ -293,6 +317,7 @@ private:
+     int open_dev(const char *deviceName);
+     int write_event(int fd, int type, int code, int value);
+     void calculateXY(float x, float y, int *abs_x, int *abs_y);
++    void calculateNormalXY(float x, float y, int *abs_x, int *abs_y);
+     int containsNonZeroByte(const uint8_t* array, uint32_t startIndex, uint32_t endIndex);
+     DISALLOW_EVIL_CONSTRUCTORS(WifiDisplaySource);
+ };
+@@ -310,6 +335,11 @@ private:
+     const int16_t TOUCH_RANDOM_PRESSURE = 1234;
+     const int16_t KEY_ACTION_DOWN = 3;
+     const int16_t KEY_ACTION_UP = 4;
++    const int16_t MOUSE_WHEEL_SCROLL = 8;
++    const int16_t UIBC_MOUSE_VSCROLL = 6;
++    const int16_t UIBC_MOUSE_HSCROLL = 7;
++
++    const int16_t ANDROID_ACTION_SCROLL = 0x8;
+ }  // namespace android
+ 
+ #endif  // WIFI_DISPLAY_SOURCE_H_
+-- 
+1.8.0
+

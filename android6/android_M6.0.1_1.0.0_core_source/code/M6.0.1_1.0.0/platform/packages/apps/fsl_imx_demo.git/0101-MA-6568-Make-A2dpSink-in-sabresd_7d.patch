@@ -1,0 +1,25 @@
+From 2f7ad5287557f36b694cfba4b412f1e12c379166 Mon Sep 17 00:00:00 2001
+From: Haoran Wang <b50027@freescale.com>
+Date: Mon, 29 Jun 2015 15:16:20 +0800
+Subject: [PATCH 101/115] MA-6568 Make A2dpSink in sabresd_7d
+
+Added macro to compile A2dpSink in sabresd_7d.
+
+Signed-off-by: Haoran Wang <b50027@freescale.com>
+---
+ A2dpSinkApp/Android.mk | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/A2dpSinkApp/Android.mk b/A2dpSinkApp/Android.mk
+index 6a6f5c9..8b573e0 100644
+--- a/A2dpSinkApp/Android.mk
++++ b/A2dpSinkApp/Android.mk
+@@ -1,4 +1,4 @@
+-ifeq ($(BOARD_USE_AR3K_BLUETOOTH),true)
++ifeq (true,$(filter true,$(BOARD_USE_AR3K_BLUETOOTH) $(BOARD_HAVE_BLUETOOTH_BCM)))
+ LOCAL_PATH:= $(call my-dir)
+ include $(CLEAR_VARS)
+ 
+-- 
+1.8.0
+

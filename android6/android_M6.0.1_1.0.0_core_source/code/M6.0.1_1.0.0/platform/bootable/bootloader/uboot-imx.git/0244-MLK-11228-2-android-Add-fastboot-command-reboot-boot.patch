@@ -1,0 +1,98 @@
+From 80088504c8151eb7a3d8283bce0ad645eeb636f2 Mon Sep 17 00:00:00 2001
+From: "Ye.Li" <B37916@freescale.com>
+Date: Thu, 9 Jul 2015 14:20:00 +0800
+Subject: [PATCH] MLK-11228-2 android: Add fastboot command
+ "reboot-bootloader" support
+
+enable fastboot command: "fastboot reboot-bootloader"
+After type this command, the board will reboot to bootloader mode.
+Set ANDROID_FASTBOOT_BOOT flag in SNVS_LPGPR before reboot.
+
+Signed-off-by: Zhang Sanshan <b51434@freescale.com>
+Signed-off-by: Ye.Li <B37916@freescale.com>
+---
+ arch/arm/cpu/armv7/mx6/soc.c    |  6 ++++++
+ arch/arm/cpu/armv7/mx7/soc.c    |  6 ++++++
+ drivers/usb/gadget/f_fastboot.c | 20 +++++++++++++++++---
+ 3 files changed, 29 insertions(+), 3 deletions(-)
+
+diff --git a/arch/arm/cpu/armv7/mx6/soc.c b/arch/arm/cpu/armv7/mx6/soc.c
+index 7ad2757..eba3756 100644
+--- a/arch/arm/cpu/armv7/mx6/soc.c
++++ b/arch/arm/cpu/armv7/mx6/soc.c
+@@ -1060,4 +1060,10 @@ int fastboot_check_and_clean_flag(void)
+ 
+ 	return flag_set;
+ }
++
++void fastboot_enable_flag(void)
++{
++	setbits_le32(SNVS_BASE_ADDR + SNVS_LPGPR,
++		ANDROID_FASTBOOT_BOOT);
++}
+ #endif /*CONFIG_FSL_FASTBOOT*/
+diff --git a/arch/arm/cpu/armv7/mx7/soc.c b/arch/arm/cpu/armv7/mx7/soc.c
+index c459797..e30493e 100644
+--- a/arch/arm/cpu/armv7/mx7/soc.c
++++ b/arch/arm/cpu/armv7/mx7/soc.c
+@@ -442,4 +442,10 @@ int fastboot_check_and_clean_flag(void)
+ 
+ 	return flag_set;
+ }
++
++void fastboot_enable_flag(void)
++{
++	setbits_le32(SNVS_BASE_ADDR + SNVS_LPGPR,
++		ANDROID_FASTBOOT_BOOT);
++}
+ #endif /*CONFIG_FSL_FASTBOOT*/
+diff --git a/drivers/usb/gadget/f_fastboot.c b/drivers/usb/gadget/f_fastboot.c
+index cbe4236..e59d038 100644
+--- a/drivers/usb/gadget/f_fastboot.c
++++ b/drivers/usb/gadget/f_fastboot.c
+@@ -1814,11 +1814,8 @@ U_BOOT_CMD(
+ 	"if no partition give, will going to 'boot' partition\n"
+ );
+ #endif	/* CONFIG_CMD_BOOTA */
+-
+-
+ #endif
+ 
+-
+ static void rx_handler_command(struct usb_ep *ep, struct usb_request *req);
+ 
+ static void fastboot_complete(struct usb_ep *ep, struct usb_request *req)
+@@ -2323,6 +2320,17 @@ static void cb_erase(struct usb_ep *ep, struct usb_request *req)
+ }
+ #endif
+ 
++#ifdef CONFIG_FSL_FASTBOOT
++static void cb_reboot_bootloader(struct usb_ep *ep, struct usb_request *req)
++{
++	fastboot_tx_write_str("OKAY");
++
++	udelay(1000000);
++	fastboot_enable_flag();
++	do_reset(NULL, 0, 0, NULL);
++}
++#endif
++
+ struct cmd_dispatch_info {
+ 	char *cmd;
+ 	void (*cb)(struct usb_ep *ep, struct usb_request *req);
+@@ -2358,6 +2366,12 @@ static const struct cmd_dispatch_info cmd_dispatch_info[] = {
+ 		.cmd = "oem",
+ 		.cb = cb_oem,
+ 	},
++#ifdef CONFIG_FSL_FASTBOOT
++	{
++		.cmd = "reboot-bootloader",
++		.cb = cb_reboot_bootloader,
++	},
++#endif
+ };
+ 
+ static void rx_handler_command(struct usb_ep *ep, struct usb_request *req)
+-- 
+1.8.0
+

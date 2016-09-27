@@ -1,0 +1,128 @@
+From 011dfd5f99414de517132254541640ac9f2fa988 Mon Sep 17 00:00:00 2001
+From: Liu Xiaowen <b37945@freescale.com>
+Date: Wed, 8 Oct 2014 12:37:43 +0800
+Subject: [PATCH 529/635] MA-5741 fix physical displays support number issue.
+
+correct display support number to HWC_NUM_PHYSICAL_DISPLAY_TYPES.
+
+Signed-off-by: Liu Xiaowen <b37945@freescale.com>
+---
+ mx6/hwcomposer/hwc_context.h   |  4 ++--
+ mx6/hwcomposer/hwc_display.cpp |  8 ++++----
+ mx6/hwcomposer/hwcomposer.cpp  | 10 +++++-----
+ 3 files changed, 11 insertions(+), 11 deletions(-)
+
+diff --git a/mx6/hwcomposer/hwc_context.h b/mx6/hwcomposer/hwc_context.h
+index fbae66a..dfa1d05 100644
+--- a/mx6/hwcomposer/hwc_context.h
++++ b/mx6/hwcomposer/hwc_context.h
+@@ -92,7 +92,7 @@ struct hwc_operations {
+ struct hwc_context_t {
+     hwc_composer_device_1 device;
+     /* our private state goes below here */
+-    displayInfo mDispInfo[HWC_NUM_DISPLAY_TYPES];
++    displayInfo mDispInfo[HWC_NUM_PHYSICAL_DISPLAY_TYPES];
+ 
+     bool m_vsync_enable;
+ 
+@@ -104,7 +104,7 @@ struct hwc_context_t {
+     hwc_composer_device_1* m_viv_hwc;
+     hw_module_t const *m_gralloc_module;
+ 
+-    framebuffer_device_t* mFbDev[HWC_NUM_DISPLAY_TYPES];
++    framebuffer_device_t* mFbDev[HWC_NUM_PHYSICAL_DISPLAY_TYPES];
+ 
+     //fsl private property and operations.
+     void* m_priv;
+diff --git a/mx6/hwcomposer/hwc_display.cpp b/mx6/hwcomposer/hwc_display.cpp
+index b041211..388e984 100644
+--- a/mx6/hwcomposer/hwc_display.cpp
++++ b/mx6/hwcomposer/hwc_display.cpp
+@@ -44,7 +44,7 @@ static int hwc_judge_display_state(struct hwc_context_t* ctx)
+     int dispid = 0;
+ 
+     for (int i = 0; i < HWC_MAX_FB; i++) {
+-        if(dispid >= HWC_NUM_DISPLAY_TYPES) {
++        if(dispid >= HWC_NUM_PHYSICAL_DISPLAY_TYPES) {
+             ALOGW("system can't support more than %d devices", dispid);
+             break;
+         }
+@@ -226,7 +226,7 @@ int hwc_get_display_info(struct hwc_context_t* ctx)
+     int dispid = 0;
+ 
+     hwc_judge_display_state(ctx);
+-    for(dispid=0; dispid<HWC_NUM_DISPLAY_TYPES; dispid++) {
++    for(dispid=0; dispid<HWC_NUM_PHYSICAL_DISPLAY_TYPES; dispid++) {
+         displayInfo *pInfo = &ctx->mDispInfo[dispid];
+         if(pInfo->connected) {
+             err = hwc_get_framebuffer_info(pInfo);
+@@ -243,7 +243,7 @@ int hwc_get_display_fbid(struct hwc_context_t* ctx, int disp_type)
+ {
+     int fbid = -1;
+     int dispid = 0;
+-    for(dispid=0; dispid<HWC_NUM_DISPLAY_TYPES; dispid++) {
++    for(dispid=0; dispid<HWC_NUM_PHYSICAL_DISPLAY_TYPES; dispid++) {
+         displayInfo *pInfo = &ctx->mDispInfo[dispid];
+         if(pInfo->type == disp_type) {
+             fbid = pInfo->fb_num;
+@@ -257,7 +257,7 @@ int hwc_get_display_fbid(struct hwc_context_t* ctx, int disp_type)
+ int hwc_get_display_dispid(struct hwc_context_t* ctx, int disp_type)
+ {
+     int dispid = 0;
+-    for(dispid=0; dispid<HWC_NUM_DISPLAY_TYPES; dispid++) {
++    for(dispid=0; dispid<HWC_NUM_PHYSICAL_DISPLAY_TYPES; dispid++) {
+         displayInfo *pInfo = &ctx->mDispInfo[dispid];
+         if(pInfo->type == disp_type) {
+             return dispid;
+diff --git a/mx6/hwcomposer/hwcomposer.cpp b/mx6/hwcomposer/hwcomposer.cpp
+index f215b5e..3ca4a36 100644
+--- a/mx6/hwcomposer/hwcomposer.cpp
++++ b/mx6/hwcomposer/hwcomposer.cpp
+@@ -100,7 +100,7 @@ static int hwc_device_close(struct hw_device_t *dev)
+             ctx->m_uevent_thread.clear();
+         }
+ 
+-        for (int i=0; i<HWC_NUM_DISPLAY_TYPES; i++) {
++        for (int i=0; i<HWC_NUM_PHYSICAL_DISPLAY_TYPES; i++) {
+             if(ctx->mDispInfo[i].connected)
+                 close(ctx->mDispInfo[i].fd);
+         }
+@@ -245,7 +245,7 @@ static int hwc_query(struct hwc_composer_device_1* dev,
+ static int hwc_blank(struct hwc_composer_device_1 *dev, int disp, int blank)
+ {
+     struct hwc_context_t* ctx = (struct hwc_context_t*)dev;
+-    if (!ctx || disp < 0 || disp >= HWC_NUM_DISPLAY_TYPES) {
++    if (!ctx || disp < 0 || disp >= HWC_NUM_PHYSICAL_DISPLAY_TYPES) {
+         return 0;
+     }
+ 
+@@ -280,7 +280,7 @@ static int hwc_getDisplayConfigs(struct hwc_composer_device_1 *dev,
+         return 0;
+ 
+     struct hwc_context_t* ctx = (struct hwc_context_t*)dev;
+-    if (!ctx || disp < 0 || disp >= HWC_NUM_DISPLAY_TYPES) {
++    if (!ctx || disp < 0 || disp >= HWC_NUM_PHYSICAL_DISPLAY_TYPES) {
+         return -EINVAL;
+     }
+ 
+@@ -297,7 +297,7 @@ static int hwc_getDisplayAttributes(struct hwc_composer_device_1 *dev,
+         int disp, uint32_t config, const uint32_t *attributes, int32_t *values)
+ {
+     struct hwc_context_t* ctx = (struct hwc_context_t*)dev;
+-    if (!ctx || disp < 0 || disp >= HWC_NUM_DISPLAY_TYPES) {
++    if (!ctx || disp < 0 || disp >= HWC_NUM_PHYSICAL_DISPLAY_TYPES) {
+         return -EINVAL;
+     }
+ 
+@@ -409,7 +409,7 @@ static int hwc_device_open(const struct hw_module_t* module, const char* name,
+         struct private_module_t *priv_m =
+                          (struct private_module_t *)dev->m_gralloc_module;
+ 
+-        for(int dispid=0; dispid<HWC_NUM_DISPLAY_TYPES; dispid++) {
++        for(int dispid=0; dispid<HWC_NUM_PHYSICAL_DISPLAY_TYPES; dispid++) {
+             if(dev->mDispInfo[dispid].connected && dev->m_gralloc_module != NULL) {
+                 int fbid = dev->mDispInfo[dispid].fb_num;
+                 char fbname[HWC_STRING_LENGTH];
+-- 
+1.8.0
+

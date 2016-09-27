@@ -1,0 +1,40 @@
+From 61a8eb5871e841aa5fd42dddfda9dbae651af427 Mon Sep 17 00:00:00 2001
+From: Loren Huang <b02279@freescale.com>
+Date: Wed, 24 Sep 2014 15:47:46 +0800
+Subject: [PATCH 465/505] ENGR00332951 Enable 16/32bit system support for tool
+ mmdc2
+
+Enhance the mmdc tool to use bus width information for utilization
+calculation so that it can support 16/32bit system properly.
+
+Signed-off-by: Loren Huang <b02279@freescale.com>
+---
+ test/mmdc/mmdc.c | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
+
+diff --git a/test/mmdc/mmdc.c b/test/mmdc/mmdc.c
+index c91123b..c25e54a 100644
+--- a/test/mmdc/mmdc.c
++++ b/test/mmdc/mmdc.c
+@@ -88,15 +88,17 @@ void clear_mmdc_results(pMMDC_t mmdc)
+ 
+ void get_mmdc_profiling_results(pMMDC_t mmdc, MMDC_PROFILE_RES_t *results)
+ {
++	unsigned int bytewidth;
+ 	results->total_cycles 	= mmdc->madpsr0;
+ 	results->busy_cycles 	= mmdc->madpsr1;
+ 	results->read_accesses	= mmdc->madpsr2;
+ 	results->write_accesses	= mmdc->madpsr3;
+ 	results->read_bytes		= mmdc->madpsr4;
+ 	results->write_bytes	= mmdc->madpsr5;
++	bytewidth = 4 << ((mmdc->mdctl & 0x30000)>>16);
+ 	if(results->read_bytes!=0 || results->write_bytes!=0)
+ 	{
+-		results->utilization	= (int)(((float)results->read_bytes+(float)results->write_bytes)/((float)results->busy_cycles * 16) * 100);
++		results->utilization	= (int)(((float)results->read_bytes+(float)results->write_bytes)/((float)results->busy_cycles * bytewidth) * 100);
+ 
+ 		results->data_load  	= (int)((float)results->busy_cycles/(float)results->total_cycles * 100);
+ 		results->access_utilization	= (int)(((float)results->read_bytes+(float)results->write_bytes)/((float)results->read_accesses + (float)results->write_accesses));
+-- 
+1.8.0
+

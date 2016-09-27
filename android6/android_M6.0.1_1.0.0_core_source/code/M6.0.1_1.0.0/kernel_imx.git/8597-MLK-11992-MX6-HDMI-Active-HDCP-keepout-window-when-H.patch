@@ -1,0 +1,52 @@
+From 7da8e278fe67a7d54fc8ca65ec960d0d35b8393a Mon Sep 17 00:00:00 2001
+From: Sandor Yu <r01008@freescale.com>
+Date: Fri, 4 Dec 2015 15:06:42 +0800
+Subject: [PATCH] MLK-11992: MX6 HDMI: Active HDCP keepout window when HDCP
+ enable
+
+When HDCP running in repeater mode,
+HDCP software workaround "HW_WA_HDCP_DC0" is working in
+HDCP keepout window stop state.
+It will cause HDCP compliance test 1B-01A failed.
+So active HDCP keepout widows and 1B-01A is passed.
+
+Signed-off-by: Sandor Yu <R01008@freescale.com>
+---
+ drivers/video/mxc/mxc_hdmi.c | 6 +++++-
+ include/video/mxc_hdmi.h     | 3 +++
+ 2 files changed, 8 insertions(+), 1 deletion(-)
+
+diff --git a/drivers/video/mxc/mxc_hdmi.c b/drivers/video/mxc/mxc_hdmi.c
+index 7c636b7..f4207e7 100644
+--- a/drivers/video/mxc/mxc_hdmi.c
++++ b/drivers/video/mxc/mxc_hdmi.c
+@@ -1444,7 +1444,11 @@ static void hdmi_av_composer(struct mxc_hdmi *hdmi)
+ 	dev_dbg(&hdmi->pdev->dev, "final pixclk = %d\n", vmode->mPixelClock);
+ 
+ 	/* Set up HDMI_FC_INVIDCONF */
+-	inv_val = (vmode->mVSyncPolarity ?
++	inv_val = (hdmi->hdmi_data.hdcp_enable ?
++		HDMI_FC_INVIDCONF_HDCP_KEEPOUT_ACTIVE :
++		HDMI_FC_INVIDCONF_HDCP_KEEPOUT_INACTIVE);
++
++	inv_val |= (vmode->mVSyncPolarity ?
+ 		HDMI_FC_INVIDCONF_VSYNC_IN_POLARITY_ACTIVE_HIGH :
+ 		HDMI_FC_INVIDCONF_VSYNC_IN_POLARITY_ACTIVE_LOW);
+ 
+diff --git a/include/video/mxc_hdmi.h b/include/video/mxc_hdmi.h
+index 6ed1749..3bd9abd 100644
+--- a/include/video/mxc_hdmi.h
++++ b/include/video/mxc_hdmi.h
+@@ -674,6 +674,9 @@ enum {
+ 	HDMI_VP_REMAP_YCC422_16bit = 0x0,
+ 
+ /* FC_INVIDCONF field values */
++	HDMI_FC_INVIDCONF_HDCP_KEEPOUT_MASK = 0x80,
++	HDMI_FC_INVIDCONF_HDCP_KEEPOUT_ACTIVE = 0x80,
++	HDMI_FC_INVIDCONF_HDCP_KEEPOUT_INACTIVE = 0x00,
+ 	HDMI_FC_INVIDCONF_VSYNC_IN_POLARITY_MASK = 0x40,
+ 	HDMI_FC_INVIDCONF_VSYNC_IN_POLARITY_ACTIVE_HIGH = 0x40,
+ 	HDMI_FC_INVIDCONF_VSYNC_IN_POLARITY_ACTIVE_LOW = 0x00,
+-- 
+1.8.0
+

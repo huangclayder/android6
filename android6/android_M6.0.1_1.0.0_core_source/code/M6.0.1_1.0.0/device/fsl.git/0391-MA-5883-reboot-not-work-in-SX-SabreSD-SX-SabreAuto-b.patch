@@ -1,0 +1,56 @@
+From 596a7f610cb5f0943ef990451ca292ae0584db50 Mon Sep 17 00:00:00 2001
+From: "guoyin.chen" <guoyin.chen@freescale.com>
+Date: Thu, 20 Nov 2014 11:15:16 +0800
+Subject: [PATCH 391/602] MA-5883 reboot not work in SX SabreSD&SX SabreAuto
+ board
+
+Kernel have below commit to use WDOG_B for reset
+"MLK-9819 ARM: imx6sx: Add WDOG_B reset for i.mx6sx boards"
+Watchdog driver will take a 120s timeout for each reboot request
+if the userspace watchdog been enabled and WDOG_B doest not connect
+with the PMIC_PWRON on PMIC
+Workaround this issue by removing watchdogd in init.freescale.rc
+
+Signed-off-by: guoyin.chen <guoyin.chen@freescale.com>
+
+Conflicts:
+	sabresd_6sx/init.rc
+---
+ sabreauto_6sx/init.rc | 4 ----
+ sabresd_6sx/init.rc   | 5 -----
+ 2 files changed, 9 deletions(-)
+
+diff --git a/sabreauto_6sx/init.rc b/sabreauto_6sx/init.rc
+index 003c1df..f18a9d8 100755
+--- a/sabreauto_6sx/init.rc
++++ b/sabreauto_6sx/init.rc
+@@ -166,10 +166,6 @@ service ing /system/bin/ingsvcd -c /system/etc/gps/Orion.ini
+     group gps
+     oneshot
+ 
+-# Set watchdog timer to 30 seconds and pet it every 10 seconds to get a 20 second margin
+-service watchdogd /sbin/watchdogd 10 20
+-    class core
+-
+ on fs
+ # mount ext4 partitions
+     mount_all /fstab.freescale
+diff --git a/sabresd_6sx/init.rc b/sabresd_6sx/init.rc
+index 948d86b..7557403 100755
+--- a/sabresd_6sx/init.rc
++++ b/sabresd_6sx/init.rc
+@@ -102,11 +102,6 @@ on boot
+ # mount the debugfs
+     mount debugfs none /sys/kernel/debug/
+ 
+-# Set watchdog timer to 30 seconds and pet it every 10 seconds to get a 20 second margin
+-    service watchdogd /sbin/watchdogd 10 20
+-    class core
+-    seclabel u:r:watchdogd:s0
+-
+ on charger
+     # Enable Power modes and set the CPU Freq Sampling rates
+     write /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor "powersave"
+-- 
+1.8.0
+

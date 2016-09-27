@@ -1,0 +1,36 @@
+From 38090cc8e9b6fb5c04503963f6ed4c163f4628d8 Mon Sep 17 00:00:00 2001
+From: Haoran Wang <b50027@freescale.com>
+Date: Wed, 14 Oct 2015 15:25:45 +0800
+Subject: [PATCH 10/10] MA-7113 Fix compile error for marshmallow.
+
+Marshmallow has changed the head file location.
+Modify to pass compile.
+
+Signed-off-by: Haoran Wang <b50027@freescale.com>
+---
+ wlan/wpa_supplicant_8_lib/driver_cmd_nl80211.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/wlan/wpa_supplicant_8_lib/driver_cmd_nl80211.c b/wlan/wpa_supplicant_8_lib/driver_cmd_nl80211.c
+index 7c2017a..133feca 100755
+--- a/wlan/wpa_supplicant_8_lib/driver_cmd_nl80211.c
++++ b/wlan/wpa_supplicant_8_lib/driver_cmd_nl80211.c
+@@ -1,5 +1,5 @@
+ /*
+- * Copyright (C) 2012-2014 Freescale Semiconductor, Inc.
++ * Copyright (C) 2012-2015 Freescale Semiconductor, Inc.
+  * Driver interaction with extended Linux CFG8021
+  *
+  * This program is free software; you can redistribute it and/or modify
+@@ -12,7 +12,7 @@
+  */
+ 
+ #include <sys/cdefs.h>
+-#include "hardware_legacy/driver_nl80211.h"
++#include "driver_nl80211.h"
+ #include "wpa_supplicant_i.h"
+ #include "config.h"
+ #ifdef ANDROID
+-- 
+1.8.0
+

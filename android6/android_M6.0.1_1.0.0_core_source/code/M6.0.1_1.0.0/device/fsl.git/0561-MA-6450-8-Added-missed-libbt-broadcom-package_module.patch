@@ -1,0 +1,27 @@
+From 0924507cda3d39f351df61cc1311aa9d43eb6751 Mon Sep 17 00:00:00 2001
+From: Haoran Wang <b50027@freescale.com>
+Date: Thu, 29 Oct 2015 22:35:50 +0800
+Subject: [PATCH 561/602] MA-6450-8 Added missed libbt-broadcom package_module
+
+Added libbt-vendor-broadcom for sabresd_7d.
+
+Signed-off-by: Haoran Wang <b50027@freescale.com>
+---
+ imx7/imx7.mk | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/imx7/imx7.mk b/imx7/imx7.mk
+index bd13455..14634c9 100644
+--- a/imx7/imx7.mk
++++ b/imx7/imx7.mk
+@@ -99,6 +99,7 @@ PRODUCT_PACKAGES += \
+ 	power.imx7				\
+ 	audio.r_submix.default			\
+ 	libbt-vendor				\
++	libbt-vendor-broadcom			\
+ 	magd                                    \
+ 	fsl_sensor_fusion
+ 
+-- 
+1.8.0
+

@@ -1,0 +1,28 @@
+From c673449b45574b3e344bb9f8ddffd0a8ed1b9066 Mon Sep 17 00:00:00 2001
+From: Wenbo Zhu <b52619@freescale.com>
+Date: Thu, 13 Aug 2015 13:57:00 +0800
+Subject: [PATCH 2/2] MA-6708 [Android_MX7D/6SL_SD/EVK]UI: Folder name can't
+ update timely when change it at launcher.
+
+add destroyDrawingCache() to refresh UI.
+
+Signed-off-by: Wenbo Zhu <b52619@freescale.com>
+---
+ src/com/android/launcher2/Folder.java | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/src/com/android/launcher2/Folder.java b/src/com/android/launcher2/Folder.java
+index 52b4253..bb6f059 100644
+--- a/src/com/android/launcher2/Folder.java
++++ b/src/com/android/launcher2/Folder.java
+@@ -242,6 +242,7 @@ public class Folder extends LinearLayout implements DragSource, View.OnClickList
+     public void startEditingFolderName() {
+         mFolderName.setHint("");
+         mIsEditingName = true;
++        destroyDrawingCache();
+     }
+ 
+     public void dismissEditingName() {
+-- 
+1.8.0
+

@@ -1,0 +1,30 @@
+From 59e52b92b38a6d387477595eb049aae30328cbce Mon Sep 17 00:00:00 2001
+From: "Ye.Li" <B37916@freescale.com>
+Date: Tue, 15 Sep 2015 20:54:31 +0800
+Subject: [PATCH] MLK-11554 imx: mx6ulevk: Modify the mtest memory end to half
+ of PHYS_SDRAM_SIZE
+
+Since the mx6ul 9x9 evk has different DDR size with 14x14 evk, change
+to use the half of PHYS_SDRAM_SIZE for mtest end.
+
+Signed-off-by: Ye.Li <B37916@freescale.com>
+---
+ include/configs/mx6ul_14x14_evk.h | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/include/configs/mx6ul_14x14_evk.h b/include/configs/mx6ul_14x14_evk.h
+index 0ccd984..902207b 100644
+--- a/include/configs/mx6ul_14x14_evk.h
++++ b/include/configs/mx6ul_14x14_evk.h
+@@ -296,7 +296,7 @@
+ 
+ #define CONFIG_CMD_MEMTEST
+ #define CONFIG_SYS_MEMTEST_START	0x80000000
+-#define CONFIG_SYS_MEMTEST_END		(CONFIG_SYS_MEMTEST_START + 0x10000000)
++#define CONFIG_SYS_MEMTEST_END		(CONFIG_SYS_MEMTEST_START + (PHYS_SDRAM_SIZE >> 1))
+ 
+ #define CONFIG_SYS_LOAD_ADDR		CONFIG_LOADADDR
+ #define CONFIG_SYS_HZ			1000
+-- 
+1.8.0
+

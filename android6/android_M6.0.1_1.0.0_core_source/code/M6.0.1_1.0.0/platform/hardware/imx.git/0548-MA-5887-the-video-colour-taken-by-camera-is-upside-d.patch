@@ -1,0 +1,53 @@
+From 006885b0bc7104ab3663d8115e884b588bd6db94 Mon Sep 17 00:00:00 2001
+From: Fang Hui <b31070@freescale.com>
+Date: Tue, 25 Nov 2014 17:36:48 +0800
+Subject: [PATCH 548/635] MA-5887 - the video colour taken by camera is upside
+ down
+
+In 4.x, although report format is nv12, but seems the softavc enc use nv21.
+In 5.x, the softavc enc use nv12.
+
+Signed-off-by: Fang Hui <b31070@freescale.com>
+---
+ mx6/libcamera/Android.mk       | 4 ++++
+ mx6/libcamera/CameraBridge.cpp | 8 ++++++--
+ 2 files changed, 10 insertions(+), 2 deletions(-)
+
+diff --git a/mx6/libcamera/Android.mk b/mx6/libcamera/Android.mk
+index 66e000b..1798ed6 100644
+--- a/mx6/libcamera/Android.mk
++++ b/mx6/libcamera/Android.mk
+@@ -83,6 +83,10 @@ ifeq ($(PRODUCT_MODEL), SABRESD-MX6SX)
+     LOCAL_CPPFLAGS += -DEVK_6SL
+ endif
+ 
++ifeq ($(findstring x4.,x$(PLATFORM_VERSION)), x4.)
++LOCAL_CPPFLAGS += -DPLATFORM_VERSION_4
++endif
++
+ #Define this for switch the Camera through V4L2 MXC IOCTL
+ #LOCAL_CPPFLAGS += -DV4L2_CAMERA_SWITCH
+ 
+diff --git a/mx6/libcamera/CameraBridge.cpp b/mx6/libcamera/CameraBridge.cpp
+index bae925b..42c5e92 100644
+--- a/mx6/libcamera/CameraBridge.cpp
++++ b/mx6/libcamera/CameraBridge.cpp
+@@ -1008,9 +1008,13 @@ void CameraBridge::convertYUYVtoNV12SP(uint8_t *inputBuffer,
+                *pYDstOffset = (((u32)(*(pYSrcOffset+0)))<<0)  +  (((u32)(*(pYSrcOffset+2)))<<8) + (((u32)(*(pYSrcOffset+4)))<<16) + (((u32)(*(pYSrcOffset+6)))<<24) ;
+                pYSrcOffset += 8;
+                pYDstOffset += 1;
+-               //*pUVDstOffset = (((u32)(*(pUSrcOffset+0)))<<0)  + (((u32)(*(pVSrcOffset+0)))<<8) + (((u32)(*(pUSrcOffset+4)))<<16) + (((u32)(*(pVSrcOffset+4)))<<24) ;
+-			   //maybe th encoder use VUVU planner
++
++              #ifdef PLATFORM_VERSION_4
++			   //seems th encoder use VUVU planner
+                *pUVDstOffset = (((u32)(*(pVSrcOffset+0)))<<0)  + (((u32)(*(pUSrcOffset+0)))<<8) + (((u32)(*(pVSrcOffset+4)))<<16) + (((u32)(*(pUSrcOffset+4)))<<24) ;
++              #else
++               *pUVDstOffset = (((u32)(*(pUSrcOffset+0)))<<0)  + (((u32)(*(pVSrcOffset+0)))<<8) + (((u32)(*(pUSrcOffset+4)))<<16) + (((u32)(*(pVSrcOffset+4)))<<24) ;
++              #endif
+                pUSrcOffset += 8;
+                pVSrcOffset += 8;
+                pUVDstOffset += 1;
+-- 
+1.8.0
+

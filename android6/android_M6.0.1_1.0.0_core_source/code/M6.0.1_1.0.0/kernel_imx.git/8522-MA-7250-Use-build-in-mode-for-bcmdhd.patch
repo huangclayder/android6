@@ -1,0 +1,55 @@
+From 4957f0c1ea27dfcc5456d20a54be20cae4269de8 Mon Sep 17 00:00:00 2001
+From: Haoran Wang <b50027@freescale.com>
+Date: Thu, 12 Nov 2015 14:43:42 +0800
+Subject: [PATCH] MA-7250 Use build-in mode for bcmdhd
+
+The BCMDHD and cfg80211 will be build-in
+the kernel.
+
+Signed-off-by: Haoran Wang <b50027@freescale.com>
+---
+ arch/arm/configs/imx_v7_android_defconfig | 6 +++---
+ drivers/net/wireless/bcmdhd/Makefile      | 2 +-
+ 2 files changed, 4 insertions(+), 4 deletions(-)
+
+diff --git a/arch/arm/configs/imx_v7_android_defconfig b/arch/arm/configs/imx_v7_android_defconfig
+index 9fb3206..5682e78 100644
+--- a/arch/arm/configs/imx_v7_android_defconfig
++++ b/arch/arm/configs/imx_v7_android_defconfig
+@@ -186,9 +186,9 @@ CONFIG_BT_HCIUART_H4=y
+ CONFIG_BT_HCIUART_BCSP=y
+ CONFIG_BT_HCIUART_ATH3K=y
+ CONFIG_BT_HCIBCM203X=y
+-CONFIG_CFG80211=m
++CONFIG_CFG80211=y
+ CONFIG_CFG80211_WEXT=y
+-CONFIG_MAC80211=m
++CONFIG_MAC80211=y
+ CONFIG_RFKILL=y
+ CONFIG_RFKILL_INPUT=y
+ CONFIG_RFKILL_GPIO=y
+@@ -276,7 +276,7 @@ CONFIG_USB_NET_CDC_EEM=y
+ CONFIG_ATH_CARDS=m
+ CONFIG_ATH6KL=m
+ CONFIG_ATH6KL_SDIO=m
+-CONFIG_BCMDHD=m
++CONFIG_BCMDHD=y
+ CONFIG_BCMDHD_SDIO=y
+ CONFIG_BCMDHD_FW_PATH="/system/etc/firmware/bcm/fw_bcmdhd.bin"
+ CONFIG_BCMDHD_NVRAM_PATH="/system/etc/firmware/bcm/bcmdhd.cal"
+diff --git a/drivers/net/wireless/bcmdhd/Makefile b/drivers/net/wireless/bcmdhd/Makefile
+index a49b5b9..4a80817 100644
+--- a/drivers/net/wireless/bcmdhd/Makefile
++++ b/drivers/net/wireless/bcmdhd/Makefile
+@@ -94,7 +94,7 @@ DHDCFLAGS += -DWL_IFACE_COMB_NUM_CHANNELS
+ # m: module type driver
+ # y: built-in type driver
+ ##########################
+-DRIVER_TYPE ?= m
++DRIVER_TYPE ?= y
+ 
+ #########################
+ # Chip dependent feature
+-- 
+1.8.0
+

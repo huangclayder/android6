@@ -1,0 +1,36 @@
+From 88a7e49e30eb33e62d39daeefd4ad2ffeeb44517 Mon Sep 17 00:00:00 2001
+From: Liu Ying <Ying.Liu@freescale.com>
+Date: Tue, 8 Dec 2015 17:20:16 +0800
+Subject: [PATCH] MLK-11920 video: mxc ipuv3 fb: Use fb_set_var() to unblank a
+ framebuffer
+
+The resolution of an overlay framebuffer could be at most the same to the
+one of the relevant background framebuffer.  However, the resolution of a
+HDMI monitor could be changed at runtime.  Thus, when we unblank the overlay
+framebuffer, we should check it's resolution and start position in case it
+exceeds the boundary of the background framebuffer.  This patch replaces
+mxcfb_set_par() with fb_set_var() to implement the unblank operation so that
+the logic contains the ->fb_check_var() path.
+
+Signed-off-by: Liu Ying <Ying.Liu@freescale.com>
+(cherry picked from commit 40d53a675e5369b97ad13b5d8685b9254d35a515)
+---
+ drivers/video/mxc/mxc_ipuv3_fb.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/video/mxc/mxc_ipuv3_fb.c b/drivers/video/mxc/mxc_ipuv3_fb.c
+index 38ea948..5535138 100644
+--- a/drivers/video/mxc/mxc_ipuv3_fb.c
++++ b/drivers/video/mxc/mxc_ipuv3_fb.c
+@@ -2338,7 +2338,7 @@ static int mxcfb_blank(int blank, struct fb_info *info)
+ 	case FB_BLANK_UNBLANK:
+ 		info->var.activate = (info->var.activate & ~FB_ACTIVATE_MASK) |
+ 				FB_ACTIVATE_NOW | FB_ACTIVATE_FORCE;
+-		ret = mxcfb_set_par(info);
++		ret = fb_set_var(info, &info->var);
+ 		break;
+ 	}
+ 	if (!ret)
+-- 
+1.8.0
+

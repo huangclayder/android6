@@ -1,0 +1,33 @@
+From 8c24340ee0a92cc560eba2175130bb4785858b45 Mon Sep 17 00:00:00 2001
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Thu, 10 Jul 2014 15:29:32 +0200
+Subject: [PATCH] spi: core: Fix check for dma_map_sg() failures
+
+According to Documentation/DMA-API.txt, dma_map_sg() returns 0 on failure.
+As spi_map_buf() returns an error code, convert zero into -ENOMEM.
+Keep the existing check for negative numbers just in case.
+
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Mark Brown <broonie@linaro.org>
+(cherry picked from commit 89e4b66a2e34744615c79349aa936df1b4204faf)
+(cherry picked from commit d176f970196ecc2c0f0c30116061fdeba3461556)
+---
+ drivers/spi/spi.c | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/drivers/spi/spi.c b/drivers/spi/spi.c
+index 1c77a00..e347332 100644
+--- a/drivers/spi/spi.c
++++ b/drivers/spi/spi.c
+@@ -622,6 +622,8 @@ static int spi_map_buf(struct spi_master *master, struct device *dev,
+ 	}
+ 
+ 	ret = dma_map_sg(dev, sgt->sgl, sgt->nents, dir);
++	if (!ret)
++		ret = -ENOMEM;
+ 	if (ret < 0) {
+ 		sg_free_table(sgt);
+ 		return ret;
+-- 
+1.8.0
+

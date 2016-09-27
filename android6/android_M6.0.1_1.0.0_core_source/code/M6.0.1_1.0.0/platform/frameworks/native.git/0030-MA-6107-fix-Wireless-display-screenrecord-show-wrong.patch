@@ -1,0 +1,47 @@
+From da6bee8710ba6e2cc535e04f5445ddf12fc97ead Mon Sep 17 00:00:00 2001
+From: Liu Xiaowen <xiaowen.liu@freescale.com>
+Date: Fri, 9 Jan 2015 17:17:51 +0800
+Subject: [PATCH 30/43] MA-6107 fix Wireless display&screenrecord show wrong
+ format when set 16bpp.
+
+Reset virtual display buffer format to its initial value.
+Because it is changed by eglCreateWindowSurface().
+
+Conflicts:
+	services/surfaceflinger/DisplayDevice.cpp
+
+Signed-off-by: Liu Xiaowen <xiaowen.liu@freescale.com>
+---
+ services/surfaceflinger/DisplayDevice.cpp | 8 ++++++--
+ 1 file changed, 6 insertions(+), 2 deletions(-)
+
+diff --git a/services/surfaceflinger/DisplayDevice.cpp b/services/surfaceflinger/DisplayDevice.cpp
+index 072d40e..cfb4c0c 100644
+--- a/services/surfaceflinger/DisplayDevice.cpp
++++ b/services/surfaceflinger/DisplayDevice.cpp
+@@ -14,7 +14,7 @@
+  * limitations under the License.
+  */
+ 
+-/* Copyright (C) 2013 Freescale Semiconductor, Inc. */
++/* Copyright (C) 2013-2015 Freescale Semiconductor, Inc. */
+ 
+ #include <stdlib.h>
+ #include <stdio.h>
+@@ -113,8 +113,12 @@ DisplayDevice::DisplayDevice(
+     // * In makeCurrent(), using eglSwapInterval. Some EGL drivers set the
+     //   window's swap interval in eglMakeCurrent, so they'll override the
+     //   interval we set here.
+-    if (mType >= DisplayDevice::DISPLAY_VIRTUAL)
++    if (mType >= DisplayDevice::DISPLAY_VIRTUAL) {
++        // reset virtual display buffer format.
++        // because it is changed by eglCreateWindowSurface().
++        native_window_set_buffers_format(window, format);
+         window->setSwapInterval(window, 0);
++    }
+ 
+     mConfig = config;
+     mDisplay = display;
+-- 
+1.8.0
+

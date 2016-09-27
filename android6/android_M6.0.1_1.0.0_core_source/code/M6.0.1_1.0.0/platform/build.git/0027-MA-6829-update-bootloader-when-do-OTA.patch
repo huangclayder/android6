@@ -1,0 +1,95 @@
+From 571d9e0c5e4ad903d7148d41fb4d1a4c05c3e6b8 Mon Sep 17 00:00:00 2001
+From: Zhang Sanshan <b51434@freescale.com>
+Date: Thu, 25 Jun 2015 14:35:36 +0800
+Subject: [PATCH 27/34] MA-6829 update bootloader when do OTA
+
+Copy the uboot.imx to OTA package according dts.
+call different FullOTA_InstallEnd according the file type(ext4 or ubifs)
+
+Signed-off-by: Zhang Sanshan <b51434@freescale.com>
+
+Conflicts:
+	tools/releasetools/ota_from_target_files
+---
+ core/Makefile                               | 7 ++++++-
+ tools/releasetools/common.py                | 9 +++++++--
+ tools/releasetools/ota_from_target_files    | 1 -
+ tools/releasetools/ota_from_target_files.py | 5 ++++-
+ 4 files changed, 17 insertions(+), 5 deletions(-)
+
+diff --git a/core/Makefile b/core/Makefile
+index 580c46e..56b1666 100644
+--- a/core/Makefile
++++ b/core/Makefile
+@@ -1616,8 +1616,13 @@ endif
+ ifdef BOARD_KERNEL_DTS
+ 	$(hide) echo "$(BOARD_KERNEL_DTS)" > $(zip_root)/BOOT/dtb
+ endif
++ifdef DTS_PLATFORM
++	$(hide) mkdir -p $(zip_root)/RADIO;	
++	$(hide) $(ACP) $(PRODUCT_OUT)/u-boot-$(DTS_PLATFORM).imx $(zip_root)/RADIO/bootloader.img
++endif
+ 	$(hide) $(foreach t,$(INSTALLED_RADIOIMAGE_TARGET),\
+ 	            mkdir -p $(zip_root)/RADIO; \
++		    echo "INSTALLED_RADIOIMAGE_TARGET *******";\
+ 	            $(ACP) $(t) $(zip_root)/RADIO/$(notdir $(t));)
+ 	@# Contents of the system image
+ 	$(hide) $(call package_files-copy-root, \
+@@ -1735,7 +1740,7 @@ otagenerate: $(INTERNAL_OTA_PACKAGE_TARGET)
+ otapackage:
+ 	@echo "Package OTA Start...: $@"
+ 	for dtsplat in $(TARGET_BOARD_DTS_CONFIG); do \
+-		DTS_PLATFORM=`echo $$dtsplat | cut -d':' -f1`; \
++		export DTS_PLATFORM=`echo $$dtsplat | cut -d':' -f1`; \
+ 		DTS_BOARD=`echo $$dtsplat | cut -d':' -f2`; \
+ 		export BOARD_KERNEL_DTS="$(PRODUCT_OUT)/$$DTS_BOARD" ; \
+ 		make otagenerate; \
+diff --git a/tools/releasetools/common.py b/tools/releasetools/common.py
+index a691522..033ec93 100644
+--- a/tools/releasetools/common.py
++++ b/tools/releasetools/common.py
+@@ -992,10 +992,15 @@ class DeviceSpecificParams(object):
+     """Called at the start of full OTA installation."""
+     return self._DoCall("FullOTA_InstallBegin")
+ 
+-  def FullOTA_InstallEnd(self):
++  def FullOTA_InstallEnd_Ext4(self):
+     """Called at the end of full OTA installation; typically this is
+     used to install the image for the device's baseband processor."""
+-    return self._DoCall("FullOTA_InstallEnd")
++    return self._DoCall("FullOTA_InstallEnd_Ext4")
++
++  def FullOTA_InstallEnd_Ubifs(self):
++    """Called at the end of full OTA installation; typically this is
++    used to install the image for the device's baseband processor."""
++    return self._DoCall("FullOTA_InstallEnd_Ubifs")
+ 
+   def IncrementalOTA_Assertions(self):
+     """Called after emitting the block of assertions at the top of an
+diff --git a/tools/releasetools/ota_from_target_files b/tools/releasetools/ota_from_target_files
+deleted file mode 120000
+index 6755a90..0000000
+--- a/tools/releasetools/ota_from_target_files
++++ /dev/null
+@@ -1 +0,0 @@
+-ota_from_target_files.py
+\ No newline at end of file
+diff --git a/tools/releasetools/ota_from_target_files.py b/tools/releasetools/ota_from_target_files.py
+index c5c16b4..1dcf8b1 100755
+--- a/tools/releasetools/ota_from_target_files.py
++++ b/tools/releasetools/ota_from_target_files.py
+@@ -662,7 +662,10 @@ else if get_stage("%(bcb_dev)s") == "3/3" then
+   script.WriteRawImage("/boot", "boot.img")
+ 
+   script.ShowProgress(0.2, 10)
+-  device_specific.FullOTA_InstallEnd()
++  if block_based:
++    device_specific.FullOTA_InstallEnd_Ext4()
++  else:
++    device_specific.FullOTA_InstallEnd_Ubifs()
+ 
+   if OPTIONS.extra_script is not None:
+     script.AppendExtra(OPTIONS.extra_script)
+-- 
+1.8.0
+

@@ -1,0 +1,32 @@
+From 64bc61afa05e9078d083e754ef375e5ed806b5f6 Mon Sep 17 00:00:00 2001
+From: John Stultz <john.stultz@linaro.org>
+Date: Tue, 9 Apr 2013 10:45:09 -0700
+Subject: [PATCH] config: Set CPU_FREQ_GOV_INTERACTIVE default n
+
+The CPU_FREQ_GOV_INTERACTIVE text states:
+"If in doubt, say N." however the option defaults to Y.
+
+Make this consistent by defaulting to n.
+
+Change-Id: I9625aa6b083c8ca0a99deb81c1e91b720fc76943
+Reported-by: Jon Medhurst (Tixy) <tixy@linaro.org>
+Signed-off-by: John Stultz <john.stultz@linaro.org>
+---
+ drivers/cpufreq/Kconfig | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/drivers/cpufreq/Kconfig b/drivers/cpufreq/Kconfig
+index f74f603..3a7202d 100644
+--- a/drivers/cpufreq/Kconfig
++++ b/drivers/cpufreq/Kconfig
+@@ -171,6 +171,7 @@ config CPU_FREQ_GOV_ONDEMAND
+ 
+ config CPU_FREQ_GOV_INTERACTIVE
+ 	tristate "'interactive' cpufreq policy governor"
++	default n
+ 	help
+ 	  'interactive' - This driver adds a dynamic cpufreq policy governor
+ 	  designed for latency-sensitive workloads.
+-- 
+1.8.0
+

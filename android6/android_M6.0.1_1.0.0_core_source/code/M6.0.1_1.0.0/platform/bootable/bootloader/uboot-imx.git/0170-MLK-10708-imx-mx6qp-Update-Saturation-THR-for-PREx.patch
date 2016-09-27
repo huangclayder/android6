@@ -1,0 +1,39 @@
+From f7c5cf580fcc2c8ab95a8d835f5874d26216910f Mon Sep 17 00:00:00 2001
+From: Peng Fan <Peng.Fan@freescale.com>
+Date: Tue, 21 Apr 2015 11:38:09 +0800
+Subject: [PATCH] MLK-10708 imx:mx6qp Update Saturation THR for PREx
+
+Update settings for PRE. Value for Saturation THR of PREx,
+changed from 0x20 to 0x10 to make system more stable.
+
+Signed-off-by: Peng Fan <Peng.Fan@freescale.com>
+(cherry picked from commit 02e7090604e55d9690532294b02b499609d46e63)
+---
+ arch/arm/cpu/armv7/mx6/clock.c | 8 ++++----
+ 1 file changed, 4 insertions(+), 4 deletions(-)
+
+diff --git a/arch/arm/cpu/armv7/mx6/clock.c b/arch/arm/cpu/armv7/mx6/clock.c
+index 8f7676b..abac65d 100644
+--- a/arch/arm/cpu/armv7/mx6/clock.c
++++ b/arch/arm/cpu/armv7/mx6/clock.c
+@@ -1114,13 +1114,13 @@ static void pre_misc_setting(void)
+ 	/* Bandwidth THR for of PRE3 */
+ 	writel(0x00000200, 0x00bb0810);
+ 	/* Saturation THR for of PRE0 */
+-	writel(0x00000020, 0x00bb0694);
++	writel(0x00000010, 0x00bb0694);
+ 	/* Saturation THR for of PRE1 */
+-	writel(0x00000020, 0x00bb0714);
++	writel(0x00000010, 0x00bb0714);
+ 	/* Saturation THR for of PRE2 */
+-	writel(0x00000020, 0x00bb0794);
++	writel(0x00000010, 0x00bb0794);
+ 	/* Saturation THR for of PRE */
+-	writel(0x00000020, 0x00bb0814);
++	writel(0x00000010, 0x00bb0814);
+ }
+ #endif
+ 
+-- 
+1.8.0
+

@@ -1,0 +1,34 @@
+From bc1985bd645a175f06c44547b5dd69a0a81a5bcf Mon Sep 17 00:00:00 2001
+From: Li Jun <jun.li@freescale.com>
+Date: Fri, 27 Mar 2015 19:43:01 +0800
+Subject: [PATCH] usb: chipidea: debug: add low power mode check before print
+ registers
+
+Since the required clock to access registers is gated off in low power mode,
+add ci->in_lpm check before try to dump registers value.
+
+Signed-off-by: Li Jun <jun.li@freescale.com>
+Signed-off-by: Peter Chen <peter.chen@freescale.com>
+Signed-off-by: Peter Chen <peter.chen@kernel.org>
+---
+ drivers/usb/chipidea/debug.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/usb/chipidea/debug.c b/drivers/usb/chipidea/debug.c
+index 268e423..dfb05ed 100644
+--- a/drivers/usb/chipidea/debug.c
++++ b/drivers/usb/chipidea/debug.c
+@@ -336,8 +336,8 @@ static int ci_registers_show(struct seq_file *s, void *unused)
+ 	struct ci_hdrc *ci = s->private;
+ 	u32 tmp_reg;
+ 
+-	if (!ci)
+-		return 0;
++	if (!ci || ci->in_lpm)
++		return -EPERM;
+ 
+ 	/* ------ Registers ----- */
+ 	tmp_reg = hw_read_intr_enable(ci);
+-- 
+1.8.0
+

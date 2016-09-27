@@ -1,0 +1,46 @@
+From e26c5223bb4cb52915b7d006d528e015dd44dd13 Mon Sep 17 00:00:00 2001
+From: Fang Hui <b31070@freescale.com>
+Date: Tue, 2 Dec 2014 18:41:02 +0800
+Subject: [PATCH 4/5] MA-5921 - sabreauto_6sx: enable tvin
+
+add 720x576, 720x480 in arrays.xml
+
+Signed-off-by: Fang Hui <b31070@freescale.com>
+---
+ res/values/arrays.xml | 6 ++++++
+ 1 file changed, 6 insertions(+)
+
+diff --git a/res/values/arrays.xml b/res/values/arrays.xml
+index 1180e9b..e7d63e5 100644
+--- a/res/values/arrays.xml
++++ b/res/values/arrays.xml
+@@ -13,6 +13,8 @@
+  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  * See the License for the specific language governing permissions and
+  * limitations under the License.
++ *
++ * Copyright (C) 2014 Freescale Semiconductor, Inc.
+  -->
+ 
+ <resources>
+@@ -90,6 +92,8 @@
+         <item>@string/pref_camera_picturesize_entry_1600x1200</item>
+         <item>@string/pref_camera_picturesize_entry_1280x960</item>
+         <item>@string/pref_camera_picturesize_entry_1024x768</item>
++        <item>720 x 576</item>
++        <item>720 x 480</item>
+         <item>@string/pref_camera_picturesize_entry_640x480</item>
+         <item>@string/pref_camera_picturesize_entry_320x240</item>
+     </string-array>
+@@ -105,6 +109,8 @@
+         <item>1600x1200</item>
+         <item>1280x960</item>
+         <item>1024x768</item>
++        <item>720x576</item>
++        <item>720x480</item>
+         <item>640x480</item>
+         <item>320x240</item>
+     </string-array>
+-- 
+1.8.0
+

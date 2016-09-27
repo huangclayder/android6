@@ -1,0 +1,45 @@
+From d6394310ee6b5a086d6f28ca44b8603dca2560d0 Mon Sep 17 00:00:00 2001
+From: Liu Ying <Ying.Liu@freescale.com>
+Date: Thu, 26 Nov 2015 16:30:08 +0800
+Subject: [PATCH] MLK-11911-4 mxc IPUv3: pixel clk: Free di_div clk memory if
+ clk_regiser fails
+
+This patch fixes the following issue reported by Coverity:
+	if (IS_ERR(clk))
+freed_arg: kfree frees clk. [Note: The source code implementation of the
+function has been overridden by a builtin model.]
+		kfree(clk);
+
+Use after free (USE_AFTER_FREE)
+use_after_free: Using freed pointer clk.
+	return clk;
+
+Signed-off-by: Liu Ying <Ying.Liu@freescale.com>
+(cherry picked from commit 7aabc548fd8f31dcdd9196c33d34ca5f8427f549)
+---
+ drivers/mxc/ipu3/ipu_pixel_clk.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/mxc/ipu3/ipu_pixel_clk.c b/drivers/mxc/ipu3/ipu_pixel_clk.c
+index c1f6f7d..7d3e96c 100644
+--- a/drivers/mxc/ipu3/ipu_pixel_clk.c
++++ b/drivers/mxc/ipu3/ipu_pixel_clk.c
+@@ -1,5 +1,5 @@
+ /*
+- * Copyright (C) 2013 Freescale Semiconductor, Inc. All Rights Reserved.
++ * Copyright (C) 2013-2015 Freescale Semiconductor, Inc. All Rights Reserved.
+  */
+ 
+ /*
+@@ -238,7 +238,7 @@ struct clk *clk_register_div_pix_clk(struct device *dev, const char *name,
+ 
+ 	clk = clk_register(dev, &di_div->hw);
+ 	if (IS_ERR(clk))
+-		kfree(clk);
++		kfree(di_div);
+ 
+ 	return clk;
+ }
+-- 
+1.8.0
+

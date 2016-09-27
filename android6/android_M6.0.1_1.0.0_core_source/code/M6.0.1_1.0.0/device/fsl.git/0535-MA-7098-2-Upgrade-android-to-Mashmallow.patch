@@ -1,0 +1,57 @@
+From 290866398f972f7a58e1041234aa9964102f3413 Mon Sep 17 00:00:00 2001
+From: zhang sanshan <b51434@freescale.com>
+Date: Tue, 13 Oct 2015 13:40:18 +0800
+Subject: [PATCH 535/602] MA-7098-2 Upgrade android to Mashmallow
+
+update selinux policy for Mashmallow.
+
+Signed-off-by: zhang sanshan <b51434@freescale.com>
+---
+ imx6/sepolicy/sensors.te    | 2 +-
+ imx6/sepolicy/system_app.te | 1 -
+ imx7/sepolicy/sensors.te    | 2 +-
+ imx7/sepolicy/system_app.te | 1 -
+ 4 files changed, 2 insertions(+), 4 deletions(-)
+
+diff --git a/imx6/sepolicy/sensors.te b/imx6/sepolicy/sensors.te
+index aa8713a..e907322 100644
+--- a/imx6/sepolicy/sensors.te
++++ b/imx6/sepolicy/sensors.te
+@@ -26,4 +26,4 @@ allow sensors cgroup:dir { create add_name };
+ allow sensors input_device:chr_file rw_file_perms;
+ allow sensors input_device:dir r_dir_perms;
+ allow sensors system_data_file:dir { write add_name };
+-allow sensors system_data_file:file { create open write };
++allow sensors system_data_file:file { open };
+diff --git a/imx6/sepolicy/system_app.te b/imx6/sepolicy/system_app.te
+index 0241913..cf90a3a 100644
+--- a/imx6/sepolicy/system_app.te
++++ b/imx6/sepolicy/system_app.te
+@@ -6,5 +6,4 @@ allow system_app net_radio_prop:property_service  { set };
+ allow system_app net_radio_prop:property_service  { set };
+ allow system_app ctl_default_prop:property_service  { set };
+ allow system_app dhcp_prop:property_service  { set };
+-allow system_app default_prop:property_service { set };
+ 
+diff --git a/imx7/sepolicy/sensors.te b/imx7/sepolicy/sensors.te
+index 3b9f4ec..fd31867 100644
+--- a/imx7/sepolicy/sensors.te
++++ b/imx7/sepolicy/sensors.te
+@@ -26,4 +26,4 @@ allow sensors cgroup:dir { create add_name };
+ allow sensors input_device:chr_file rw_file_perms;
+ allow sensors input_device:dir r_dir_perms;
+ allow sensors uhid_device:chr_file rw_file_perms;
+-allow sensors system_data_file:file { create open write };
++allow sensors system_data_file:file { open };
+diff --git a/imx7/sepolicy/system_app.te b/imx7/sepolicy/system_app.te
+index b41fb8d..b9b3b44 100644
+--- a/imx7/sepolicy/system_app.te
++++ b/imx7/sepolicy/system_app.te
+@@ -6,4 +6,3 @@ allow system_app net_radio_prop:property_service  { set };
+ allow system_app net_radio_prop:property_service  { set };
+ allow system_app ctl_default_prop:property_service  { set };
+ allow system_app dhcp_prop:property_service  { set };
+-allow system_app default_prop:property_service { set };
+-- 
+1.8.0
+

@@ -1,0 +1,40 @@
+From f8b6071279a0081821c4afed5cb31eb6ad62f77a Mon Sep 17 00:00:00 2001
+From: Wang Haoran <b50027@freescale.com>
+Date: Wed, 5 Nov 2014 09:45:25 +0800
+Subject: [PATCH 367/602] MA-5824 change the permission of GPS power&reset
+ GPIO
+
+Change the GPS power and reset control GPIO gpio64 and
+gpio60 to 0660 for gps group. Then the Orion lib is able
+to access them.
+
+Signed-off-by: Wang Haoran <b50027@freescale.com>
+---
+ sabresd_6dq/init.rc | 8 +++++---
+ 1 file changed, 5 insertions(+), 3 deletions(-)
+
+diff --git a/sabresd_6dq/init.rc b/sabresd_6dq/init.rc
+index 478380b..a78e7bc 100755
+--- a/sabresd_6dq/init.rc
++++ b/sabresd_6dq/init.rc
+@@ -28,12 +28,14 @@ on boot
+     symlink /dev/ttymxc2 /dev/gpsdevice
+     write /sys/class/gpio/export 64
+     write /sys/class/gpio/gpio64/direction "out"
+-    chown system /sys/class/gpio/gpio64/value
+-    write /sys/class/gpio/gpio60/value 0
++    chown gps gps /sys/class/gpio/gpio64/value
++    chmod 0660 /sys/class/gpio/gpio64/value
++    write /sys/class/gpio/gpio64/value 0
+ 
+     write /sys/class/gpio/export 60
+     write /sys/class/gpio/gpio60/direction "out"
+-    chown system /sys/class/gpio/gpio60/value
++    chown gps gps /sys/class/gpio/gpio60/value
++    chmod 0660 /sys/class/gpio/gpio60/value
+     write /sys/class/gpio/gpio60/value 1
+ 
+     # Enable Tethering in the Settings
+-- 
+1.8.0
+

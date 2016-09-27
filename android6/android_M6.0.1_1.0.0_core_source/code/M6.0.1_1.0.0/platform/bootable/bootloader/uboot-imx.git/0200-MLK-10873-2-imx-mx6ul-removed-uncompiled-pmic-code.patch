@@ -1,0 +1,35 @@
+From 49b90a23a3e267ee293dabe971bee4f7eabd8373 Mon Sep 17 00:00:00 2001
+From: Peng Fan <Peng.Fan@freescale.com>
+Date: Mon, 11 May 2015 13:51:35 +0800
+Subject: [PATCH] MLK-10873-2 imx:mx6ul removed uncompiled pmic code
+
+This piece of code will never be compiled and used,
+since we use pmic framework. So remove the code block.
+
+Signed-off-by: Peng Fan <Peng.Fan@freescale.com>
+---
+ board/freescale/mx6ul_ddr3_arm2/mx6ul_ddr3_arm2.c | 8 --------
+ 1 file changed, 8 deletions(-)
+
+diff --git a/board/freescale/mx6ul_ddr3_arm2/mx6ul_ddr3_arm2.c b/board/freescale/mx6ul_ddr3_arm2/mx6ul_ddr3_arm2.c
+index c1ec25c..e2cc28e 100644
+--- a/board/freescale/mx6ul_ddr3_arm2/mx6ul_ddr3_arm2.c
++++ b/board/freescale/mx6ul_ddr3_arm2/mx6ul_ddr3_arm2.c
+@@ -950,14 +950,6 @@ int board_late_init(void)
+ 	add_board_boot_modes(board_boot_modes);
+ #endif
+ 
+-#ifdef CONFIG_PFUZE100_PMIC_I2C
+-	int ret = 0;
+-
+-	ret = setup_pmic_voltages();
+-	if (ret)
+-		return -1;
+-#endif
+-
+ #ifdef CONFIG_ENV_IS_IN_MMC
+ 	board_late_mmc_init();
+ #endif
+-- 
+1.8.0
+

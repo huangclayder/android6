@@ -1,0 +1,32 @@
+From 0a035ded0c1ef44424c8096ab385a5dd44401187 Mon Sep 17 00:00:00 2001
+From: Mikko Perttunen <mperttunen@nvidia.com>
+Date: Wed, 16 Jul 2014 11:54:21 +0300
+Subject: [PATCH] ata: ahci_platform: Increase AHCI_MAX_CLKS to 4
+
+The Tegra124 SATA controller requires 4 clocks. Increase this constant
+to be able to use them all.
+
+Signed-off-by: Mikko Perttunen <mperttunen@nvidia.com>
+Acked-by: Hans de Goede <hdegoede@redhat.com>
+Signed-off-by: Tejun Heo <tj@kernel.org>
+(cherry picked from commit 0e38699387fd2fd433618bb67612f3aae676fbae)
+---
+ drivers/ata/ahci.h | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/ata/ahci.h b/drivers/ata/ahci.h
+index 47bb831..3d26a3c 100644
+--- a/drivers/ata/ahci.h
++++ b/drivers/ata/ahci.h
+@@ -53,7 +53,7 @@
+ 
+ enum {
+ 	AHCI_MAX_PORTS		= 32,
+-	AHCI_MAX_CLKS		= 3,
++	AHCI_MAX_CLKS		= 4,
+ 	AHCI_MAX_SG		= 168, /* hardware max is 64K */
+ 	AHCI_DMA_BOUNDARY	= 0xffffffff,
+ 	AHCI_MAX_CMDS		= 32,
+-- 
+1.8.0
+

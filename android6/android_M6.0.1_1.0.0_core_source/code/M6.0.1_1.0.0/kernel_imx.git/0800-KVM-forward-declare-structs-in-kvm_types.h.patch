@@ -1,0 +1,259 @@
+From eae47fe4cfb0f2841ff9770ebec7542cf9967d25 Mon Sep 17 00:00:00 2001
+From: Christoffer Dall <christoffer.dall@linaro.org>
+Date: Thu, 2 Oct 2014 22:27:08 +0200
+Subject: [PATCH] KVM: forward declare structs in kvm_types.h
+
+Opaque KVM structs are useful for prototypes in asm/kvm_host.h, to avoid
+"'struct foo' declared inside parameter list" warnings (and consequent
+breakage due to conflicting types).
+
+Move them from individual files to a generic place in linux/kvm_types.h.
+
+Signed-off-by: Paolo Bonzini <pbonzini@redhat.com>
+(cherry picked from commit 656473003bc7e056c3bbd4a4d9832dad01e86f76)
+Signed-off-by: Christoffer Dall <christoffer.dall@linaro.org>
+---
+ arch/arm/include/asm/kvm_host.h     |  7 ++-----
+ arch/arm64/include/asm/kvm_host.h   |  6 ++----
+ arch/ia64/include/asm/kvm_host.h    |  3 ---
+ arch/mips/include/asm/kvm_host.h    |  5 -----
+ arch/powerpc/include/asm/kvm_host.h |  5 -----
+ arch/s390/include/asm/kvm_host.h    |  3 +++
+ arch/x86/include/asm/kvm_host.h     |  4 ----
+ include/linux/kvm_host.h            |  6 ------
+ include/linux/kvm_types.h           | 14 ++++++++++++++
+ 9 files changed, 21 insertions(+), 32 deletions(-)
+
+diff --git a/arch/arm/include/asm/kvm_host.h b/arch/arm/include/asm/kvm_host.h
+index fcb12a6..0bc5295 100644
+--- a/arch/arm/include/asm/kvm_host.h
++++ b/arch/arm/include/asm/kvm_host.h
+@@ -19,6 +19,8 @@
+ #ifndef __ARM_KVM_HOST_H__
+ #define __ARM_KVM_HOST_H__
+ 
++#include <linux/types.h>
++#include <linux/kvm_types.h>
+ #include <asm/kvm.h>
+ #include <asm/kvm_asm.h>
+ #include <asm/kvm_mmio.h>
+@@ -40,7 +42,6 @@
+ 
+ #include <kvm/arm_vgic.h>
+ 
+-struct kvm_vcpu;
+ u32 *kvm_vcpu_reg(struct kvm_vcpu *vcpu, u8 reg_num, u32 mode);
+ int __attribute_const__ kvm_target_cpu(void);
+ int kvm_reset_vcpu(struct kvm_vcpu *vcpu);
+@@ -149,20 +150,17 @@ struct kvm_vcpu_stat {
+ 	u32 halt_wakeup;
+ };
+ 
+-struct kvm_vcpu_init;
+ int kvm_vcpu_set_target(struct kvm_vcpu *vcpu,
+ 			const struct kvm_vcpu_init *init);
+ int kvm_vcpu_preferred_target(struct kvm_vcpu_init *init);
+ unsigned long kvm_arm_num_regs(struct kvm_vcpu *vcpu);
+ int kvm_arm_copy_reg_indices(struct kvm_vcpu *vcpu, u64 __user *indices);
+-struct kvm_one_reg;
+ int kvm_arm_get_reg(struct kvm_vcpu *vcpu, const struct kvm_one_reg *reg);
+ int kvm_arm_set_reg(struct kvm_vcpu *vcpu, const struct kvm_one_reg *reg);
+ u64 kvm_call_hyp(void *hypfn, ...);
+ void force_vm_exit(const cpumask_t *mask);
+ 
+ #define KVM_ARCH_WANT_MMU_NOTIFIER
+-struct kvm;
+ int kvm_unmap_hva(struct kvm *kvm, unsigned long hva);
+ int kvm_unmap_hva_range(struct kvm *kvm,
+ 			unsigned long start, unsigned long end);
+@@ -187,7 +185,6 @@ struct kvm_vcpu __percpu **kvm_get_running_vcpus(void);
+ 
+ int kvm_arm_copy_coproc_indices(struct kvm_vcpu *vcpu, u64 __user *uindices);
+ unsigned long kvm_arm_num_coproc_regs(struct kvm_vcpu *vcpu);
+-struct kvm_one_reg;
+ int kvm_arm_coproc_get_reg(struct kvm_vcpu *vcpu, const struct kvm_one_reg *);
+ int kvm_arm_coproc_set_reg(struct kvm_vcpu *vcpu, const struct kvm_one_reg *);
+ 
+diff --git a/arch/arm64/include/asm/kvm_host.h b/arch/arm64/include/asm/kvm_host.h
+index 50431d3..ac99093 100644
+--- a/arch/arm64/include/asm/kvm_host.h
++++ b/arch/arm64/include/asm/kvm_host.h
+@@ -22,6 +22,8 @@
+ #ifndef __ARM64_KVM_HOST_H__
+ #define __ARM64_KVM_HOST_H__
+ 
++#include <linux/types.h>
++#include <linux/kvm_types.h>
+ #include <asm/kvm.h>
+ #include <asm/kvm_asm.h>
+ #include <asm/kvm_mmio.h>
+@@ -41,7 +43,6 @@
+ 
+ #define KVM_VCPU_MAX_FEATURES 3
+ 
+-struct kvm_vcpu;
+ int __attribute_const__ kvm_target_cpu(void);
+ int kvm_reset_vcpu(struct kvm_vcpu *vcpu);
+ int kvm_arch_dev_ioctl_check_extension(long ext);
+@@ -164,18 +165,15 @@ struct kvm_vcpu_stat {
+ 	u32 halt_wakeup;
+ };
+ 
+-struct kvm_vcpu_init;
+ int kvm_vcpu_set_target(struct kvm_vcpu *vcpu,
+ 			const struct kvm_vcpu_init *init);
+ int kvm_vcpu_preferred_target(struct kvm_vcpu_init *init);
+ unsigned long kvm_arm_num_regs(struct kvm_vcpu *vcpu);
+ int kvm_arm_copy_reg_indices(struct kvm_vcpu *vcpu, u64 __user *indices);
+-struct kvm_one_reg;
+ int kvm_arm_get_reg(struct kvm_vcpu *vcpu, const struct kvm_one_reg *reg);
+ int kvm_arm_set_reg(struct kvm_vcpu *vcpu, const struct kvm_one_reg *reg);
+ 
+ #define KVM_ARCH_WANT_MMU_NOTIFIER
+-struct kvm;
+ int kvm_unmap_hva(struct kvm *kvm, unsigned long hva);
+ int kvm_unmap_hva_range(struct kvm *kvm,
+ 			unsigned long start, unsigned long end);
+diff --git a/arch/ia64/include/asm/kvm_host.h b/arch/ia64/include/asm/kvm_host.h
+index db95f57..fccc09d 100644
+--- a/arch/ia64/include/asm/kvm_host.h
++++ b/arch/ia64/include/asm/kvm_host.h
+@@ -234,9 +234,6 @@ struct kvm_vm_data {
+ #define KVM_REQ_PTC_G		32
+ #define KVM_REQ_RESUME		33
+ 
+-struct kvm;
+-struct kvm_vcpu;
+-
+ struct kvm_mmio_req {
+ 	uint64_t addr;          /*  physical address		*/
+ 	uint64_t size;          /*  size in bytes		*/
+diff --git a/arch/mips/include/asm/kvm_host.h b/arch/mips/include/asm/kvm_host.h
+index a995fce..34867fc 100644
+--- a/arch/mips/include/asm/kvm_host.h
++++ b/arch/mips/include/asm/kvm_host.h
+@@ -64,11 +64,6 @@
+ #define CAUSEB_DC       27
+ #define CAUSEF_DC       (_ULCAST_(1)   << 27)
+ 
+-struct kvm;
+-struct kvm_run;
+-struct kvm_vcpu;
+-struct kvm_interrupt;
+-
+ extern atomic_t kvm_mips_instance;
+ extern pfn_t(*kvm_mips_gfn_to_pfn) (struct kvm *kvm, gfn_t gfn);
+ extern void (*kvm_mips_release_pfn_clean) (pfn_t pfn);
+diff --git a/arch/powerpc/include/asm/kvm_host.h b/arch/powerpc/include/asm/kvm_host.h
+index 1eaea2d..9715517 100644
+--- a/arch/powerpc/include/asm/kvm_host.h
++++ b/arch/powerpc/include/asm/kvm_host.h
+@@ -53,7 +53,6 @@
+ 
+ #define KVM_ARCH_WANT_MMU_NOTIFIER
+ 
+-struct kvm;
+ extern int kvm_unmap_hva(struct kvm *kvm, unsigned long hva);
+ extern int kvm_unmap_hva_range(struct kvm *kvm,
+ 			       unsigned long start, unsigned long end);
+@@ -78,10 +77,6 @@ extern void kvm_set_spte_hva(struct kvm *kvm, unsigned long hva, pte_t pte);
+ /* Physical Address Mask - allowed range of real mode RAM access */
+ #define KVM_PAM			0x0fffffffffffffffULL
+ 
+-struct kvm;
+-struct kvm_run;
+-struct kvm_vcpu;
+-
+ struct lppaca;
+ struct slb_shadow;
+ struct dtl_entry;
+diff --git a/arch/s390/include/asm/kvm_host.h b/arch/s390/include/asm/kvm_host.h
+index eef3dd3..84da7a4 100644
+--- a/arch/s390/include/asm/kvm_host.h
++++ b/arch/s390/include/asm/kvm_host.h
+@@ -13,8 +13,11 @@
+ 
+ #ifndef ASM_KVM_HOST_H
+ #define ASM_KVM_HOST_H
++
++#include <linux/types.h>
+ #include <linux/hrtimer.h>
+ #include <linux/interrupt.h>
++#include <linux/kvm_types.h>
+ #include <linux/kvm_host.h>
+ #include <asm/debug.h>
+ #include <asm/cpu.h>
+diff --git a/arch/x86/include/asm/kvm_host.h b/arch/x86/include/asm/kvm_host.h
+index fdf83af..323c23c 100644
+--- a/arch/x86/include/asm/kvm_host.h
++++ b/arch/x86/include/asm/kvm_host.h
+@@ -103,10 +103,6 @@ static inline gfn_t gfn_to_index(gfn_t gfn, gfn_t base_gfn, int level)
+ 
+ #define ASYNC_PF_PER_VCPU 64
+ 
+-struct kvm_vcpu;
+-struct kvm;
+-struct kvm_async_pf;
+-
+ enum kvm_reg {
+ 	VCPU_REGS_RAX = 0,
+ 	VCPU_REGS_RCX = 1,
+diff --git a/include/linux/kvm_host.h b/include/linux/kvm_host.h
+index caadbe6..e276456 100644
+--- a/include/linux/kvm_host.h
++++ b/include/linux/kvm_host.h
+@@ -138,8 +138,6 @@ static inline bool is_error_page(struct page *page)
+ #define KVM_USERSPACE_IRQ_SOURCE_ID		0
+ #define KVM_IRQFD_RESAMPLE_IRQ_SOURCE_ID	1
+ 
+-struct kvm;
+-struct kvm_vcpu;
+ extern struct kmem_cache *kvm_vcpu_cache;
+ 
+ extern spinlock_t kvm_lock;
+@@ -313,8 +311,6 @@ struct kvm_kernel_irq_routing_entry {
+ 	struct hlist_node link;
+ };
+ 
+-struct kvm_irq_routing_table;
+-
+ #ifndef KVM_PRIVATE_MEM_SLOTS
+ #define KVM_PRIVATE_MEM_SLOTS 0
+ #endif
+@@ -1022,8 +1018,6 @@ static inline bool kvm_check_request(int req, struct kvm_vcpu *vcpu)
+ 
+ extern bool kvm_rebooting;
+ 
+-struct kvm_device_ops;
+-
+ struct kvm_device {
+ 	struct kvm_device_ops *ops;
+ 	struct kvm *kvm;
+diff --git a/include/linux/kvm_types.h b/include/linux/kvm_types.h
+index b0bcce0..b606bb6 100644
+--- a/include/linux/kvm_types.h
++++ b/include/linux/kvm_types.h
+@@ -17,6 +17,20 @@
+ #ifndef __KVM_TYPES_H__
+ #define __KVM_TYPES_H__
+ 
++struct kvm;
++struct kvm_async_pf;
++struct kvm_device_ops;
++struct kvm_interrupt;
++struct kvm_irq_routing_table;
++struct kvm_memory_slot;
++struct kvm_one_reg;
++struct kvm_run;
++struct kvm_userspace_memory_region;
++struct kvm_vcpu;
++struct kvm_vcpu_init;
++
++enum kvm_mr_change;
++
+ #include <asm/types.h>
+ 
+ /*
+-- 
+1.8.0
+

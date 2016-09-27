@@ -1,0 +1,34 @@
+From 6d96e814114f769fdcbe84586d88f7657c1eefa7 Mon Sep 17 00:00:00 2001
+From: Haoran Wang <b50027@freescale.com>
+Date: Fri, 29 May 2015 10:08:13 +0800
+Subject: [PATCH 07/12] MA-6749 Do not find slotId when check Ethernet in
+ DataUsage
+
+As the slotId check in DataUsage doesn't consider the
+Ethernet tag and it will cause Settings crash. So ignore
+the slotId check when check Ethernet DataUsage.
+
+Signed-off-by: Haoran Wang <b50027@freescale.com>
+
+Conflicts:
+	src/com/android/settings/DataUsageSummary.java
+---
+ src/com/android/settings/DataUsageSummary.java | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/src/com/android/settings/DataUsageSummary.java b/src/com/android/settings/DataUsageSummary.java
+index 135328b..9cc3638 100644
+--- a/src/com/android/settings/DataUsageSummary.java
++++ b/src/com/android/settings/DataUsageSummary.java
+@@ -903,7 +903,7 @@ public class DataUsageSummary extends HighlightingFragment implements Indexable
+         mBinding = false;
+ 
+         int seriesColor = context.getColor(R.color.sim_noitification);
+-        if (mCurrentTab != null && mCurrentTab.length() > TAB_MOBILE.length() ){
++        if (mCurrentTab != null && mCurrentTab.length() > TAB_MOBILE.length() && !TAB_ETHERNET.equals(currentTab)){
+             final int slotId = Integer.parseInt(mCurrentTab.substring(TAB_MOBILE.length(),
+                     mCurrentTab.length()));
+             final SubscriptionInfo sir = mSubscriptionManager
+-- 
+1.8.0
+

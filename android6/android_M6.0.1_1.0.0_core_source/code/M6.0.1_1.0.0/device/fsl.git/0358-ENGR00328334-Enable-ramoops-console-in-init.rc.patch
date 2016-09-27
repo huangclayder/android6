@@ -1,0 +1,30 @@
+From 72034d7d1c7979f4675e9e2b941efe4f2cc1638c Mon Sep 17 00:00:00 2001
+From: Ke Qinghua <qinghua.ke@freescale.com>
+Date: Mon, 25 Aug 2014 13:10:34 +0800
+Subject: [PATCH 358/602] ENGR00328334 Enable ramoops console in init.rc
+
+Add ramoops console config in init.rc
+
+Signed-off-by: Ke Qinghua <qinghua.ke@freescale.com>
+---
+ imx6/etc/init.rc | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/imx6/etc/init.rc b/imx6/etc/init.rc
+index f02b8c8..5f6f484 100755
+--- a/imx6/etc/init.rc
++++ b/imx6/etc/init.rc
+@@ -156,6 +156,10 @@ loglevel 3
+ # checker programs.
+     mkdir /dev/fscklogs 0770 root system
+ 
++    # pstore/ramoops previous console log
++    mount pstore pstore /sys/fs/pstore
++    chown system log /sys/fs/pstore/console-ramoops
++    chmod 0440 /sys/fs/pstore/console-ramoops
+ # disable cursor blink for fbcon, if no splash screen support
+     write /sys/class/graphics/fbcon/cursor_blink 0
+ 
+-- 
+1.8.0
+

@@ -1,0 +1,32 @@
+From 7b5e08474de1f793de1dce869f0bf69d33420dd0 Mon Sep 17 00:00:00 2001
+From: Anson Huang <b20788@freescale.com>
+Date: Wed, 29 Jul 2015 22:13:02 +0800
+Subject: [PATCH] MLK-11281-2 ARM: imx7d: enable plug in mode by default for
+ lpsr mode
+
+As we need to support LPSR mode resume and due to hardware
+design requirement, DCD can NOT put DRAM exit from retention
+mode, so only plug in mode can do that to support LPSR mode,
+so enabled plug in mode by default for imx7d 12x12-lpddr3-arm2
+board.
+
+Signed-off-by: Anson Huang <b20788@freescale.com>
+---
+ include/configs/mx7d_12x12_lpddr3_arm2.h | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/include/configs/mx7d_12x12_lpddr3_arm2.h b/include/configs/mx7d_12x12_lpddr3_arm2.h
+index 1ad45c1..4ccf3e2 100644
+--- a/include/configs/mx7d_12x12_lpddr3_arm2.h
++++ b/include/configs/mx7d_12x12_lpddr3_arm2.h
+@@ -65,6 +65,7 @@
+ /* #define CONFIG_SPLASH_SCREEN*/
+ /* #define CONFIG_MXC_EPDC*/
+ 
++#define CONFIG_USE_PLUGIN
+ #include "mx7d_arm2.h"
+ 
+ #endif
+-- 
+1.8.0
+

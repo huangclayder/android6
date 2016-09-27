@@ -1,0 +1,46 @@
+From a903b18d6c4afc95dff11a7f7b21d79b6ba45eba Mon Sep 17 00:00:00 2001
+From: Nimrod Andy <B38611@freescale.com>
+Date: Thu, 12 Jun 2014 08:16:19 +0800
+Subject: [PATCH] net: fec: Enable IP header hardware checksum
+
+IP header checksum is calcalated by network layer in default.
+To support software TSO, it is better to use HW calculate the
+IP header checksum.
+
+FEC hw checksum feature request the checksum field in frame
+is zero, otherwise the calculative CRC is not correct.
+
+For segmentated TCP packet, HW calculate the IP header checksum again,
+it doesn't bring any impact. For SW TSO, HW calculated checksum bring
+better performance.
+
+Signed-off-by: Fugang Duan <B38611@freescale.com>
+Signed-off-by: David S. Miller <davem@davemloft.net>
+---
+ drivers/net/ethernet/freescale/fec_main.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/drivers/net/ethernet/freescale/fec_main.c b/drivers/net/ethernet/freescale/fec_main.c
+index ee8e547..55b55d2 100644
+--- a/drivers/net/ethernet/freescale/fec_main.c
++++ b/drivers/net/ethernet/freescale/fec_main.c
+@@ -314,6 +314,7 @@ fec_enet_clear_csum(struct sk_buff *skb, struct net_device *ndev)
+ 	if (unlikely(skb_cow_head(skb, 0)))
+ 		return -1;
+ 
++	ip_hdr(skb)->check = 0;
+ 	*(__sum16 *)(skb->head + skb->csum_start + skb->csum_offset) = 0;
+ 
+ 	return 0;
+@@ -395,7 +396,7 @@ static int txq_submit_skb(struct sk_buff *skb, struct net_device *ndev)
+ 			 * are done by the kernel
+ 			 */
+ 			if (skb->ip_summed == CHECKSUM_PARTIAL)
+-				ebdp->cbd_esc |= BD_ENET_TX_PINS;
++				ebdp->cbd_esc |= BD_ENET_TX_PINS | BD_ENET_TX_IINS;
+ 		}
+ 	}
+ 
+-- 
+1.8.0
+

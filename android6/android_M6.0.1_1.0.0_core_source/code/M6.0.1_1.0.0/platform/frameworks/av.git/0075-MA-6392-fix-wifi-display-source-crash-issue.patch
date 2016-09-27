@@ -1,0 +1,38 @@
+From 4fb58da3d107e17f3a07cdd40c693a8e2ff30811 Mon Sep 17 00:00:00 2001
+From: Liu Xiaowen <xiaowen.liu@freescale.com>
+Date: Wed, 8 Apr 2015 15:18:00 +0800
+Subject: [PATCH 75/95] MA-6392 fix wifi display source crash issue.
+
+When video track is removed, the video track index should be reset.
+
+Signed-off-by: Liu Xiaowen <xiaowen.liu@freescale.com>
+---
+ media/libstagefright/wifi-display/source/PlaybackSession.cpp | 6 +++++-
+ 1 file changed, 5 insertions(+), 1 deletion(-)
+
+diff --git a/media/libstagefright/wifi-display/source/PlaybackSession.cpp b/media/libstagefright/wifi-display/source/PlaybackSession.cpp
+index 11fb4af..488563f 100644
+--- a/media/libstagefright/wifi-display/source/PlaybackSession.cpp
++++ b/media/libstagefright/wifi-display/source/PlaybackSession.cpp
+@@ -1,6 +1,6 @@
+ /*
+  * Copyright 2012, The Android Open Source Project
+- * Copyright (C) 2014 Freescale Semiconductor, Inc.
++ * Copyright (C) 2014-2015 Freescale Semiconductor, Inc.
+  *
+  * Licensed under the Apache License, Version 2.0 (the "License");
+  * you may not use this file except in compliance with the License.
+@@ -591,6 +591,10 @@ void WifiDisplaySource::PlaybackSession::onMessageReceived(
+                 mTracks.removeItem(trackIndex);
+                 track.clear();
+ 
++                if (mVideoTrackIndex == (ssize_t)trackIndex) {
++                    mVideoTrackIndex = -1;
++                }
++
+                 if (!mTracks.isEmpty()) {
+                     ALOGI("not all tracks are stopped yet");
+                     break;
+-- 
+1.8.0
+

@@ -1,0 +1,45 @@
+From 3efd56a6eb545e84e8d80bada802719db4c105ce Mon Sep 17 00:00:00 2001
+From: Dmitry Torokhov <dmitry.torokhov@gmail.com>
+Date: Thu, 6 Aug 2015 19:15:30 -0700
+Subject: [PATCH] Input: do not emit unneeded EV_SYN when suspending
+
+Do not emit EV_SYN/SYN_REPORT on suspend if there were no keys that are
+still pressed as we are suspending the device (and in all other cases when
+input core is forcibly releasing keys via input_dev_release_keys() call).
+
+Reviewed-by: Benson Leung <bleung@chromium.org>
+Signed-off-by: Dmitry Torokhov <dmitry.torokhov@gmail.com>
+Conflicts:
+	drivers/input/input.c
+---
+ drivers/input/input.c | 5 ++++-
+ 1 file changed, 4 insertions(+), 1 deletion(-)
+
+diff --git a/drivers/input/input.c b/drivers/input/input.c
+index 29ca0bb..087255a 100644
+--- a/drivers/input/input.c
++++ b/drivers/input/input.c
+@@ -667,6 +667,7 @@ EXPORT_SYMBOL(input_close_device);
+  */
+ static void input_dev_release_keys(struct input_dev *dev)
+ {
++	bool need_sync = false;
+ 	int code;
+ 
+ 	if (is_event_supported(EV_KEY, dev->evbit, EV_MAX)) {
+@@ -674,9 +675,11 @@ static void input_dev_release_keys(struct input_dev *dev)
+ 			if (is_event_supported(code, dev->keybit, KEY_MAX) &&
+ 			    __test_and_clear_bit(code, dev->key)) {
+ 				input_pass_event(dev, EV_KEY, code, 0);
++				need_sync = true;
+ 			}
+ 		}
+-		input_pass_event(dev, EV_SYN, SYN_REPORT, 1);
++		if (need_sync)
++			input_pass_event(dev, EV_SYN, SYN_REPORT, 1);
+ 	}
+ }
+ 
+-- 
+1.8.0
+

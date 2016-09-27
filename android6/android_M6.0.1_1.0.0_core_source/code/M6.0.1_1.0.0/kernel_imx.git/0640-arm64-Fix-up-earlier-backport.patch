@@ -1,0 +1,28 @@
+From 7c6c08d531ecea6c3c314591b319e42a42405101 Mon Sep 17 00:00:00 2001
+From: Mark Brown <broonie@linaro.org>
+Date: Mon, 11 Aug 2014 21:49:57 +0100
+Subject: [PATCH] arm64: Fix up earlier backport
+
+Crept in during a cherry-pick run; ideally should be squished down.
+
+Signed-off-by: Mark Brown <broonie@linaro.org>
+---
+ arch/arm64/mm/mmu.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/arch/arm64/mm/mmu.c b/arch/arm64/mm/mmu.c
+index 37d02a8..ad70f0e 100644
+--- a/arch/arm64/mm/mmu.c
++++ b/arch/arm64/mm/mmu.c
+@@ -168,7 +168,7 @@ static void __init alloc_init_pmd(pud_t *pud, unsigned long addr,
+ 			    PMD_ATTRINDX(MT_DEVICE_nGnRE);
+ 		prot_pte = __pgprot(PROT_DEVICE_nGnRE);
+ 	} else {
+-		prot_sect = prot_sect_kernel;
++		prot_sect = PROT_SECT_NORMAL_EXEC;
+ 		prot_pte = PAGE_KERNEL_EXEC;
+ 	}
+ 
+-- 
+1.8.0
+

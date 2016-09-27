@@ -1,0 +1,34 @@
+From cd245b34afb8e3dab9086eff6870820559a16688 Mon Sep 17 00:00:00 2001
+From: Zidan Wang <zidan.wang@freescale.com>
+Date: Fri, 18 Sep 2015 17:19:43 +0800
+Subject: [PATCH] ASoC: wm8960: correct the max register value of mic boost
+ pga
+
+the max register value of mic boost pga should be 3.
+
+Signed-off-by: Zidan Wang <zidan.wang@freescale.com>
+Acked-by: Charles Keepax <ckeepax@opensource.wolfsonmicro.com>
+Signed-off-by: Mark Brown <broonie@kernel.org>
+---
+ sound/soc/codecs/wm8960.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/sound/soc/codecs/wm8960.c b/sound/soc/codecs/wm8960.c
+index 8e0ae94..8715361 100644
+--- a/sound/soc/codecs/wm8960.c
++++ b/sound/soc/codecs/wm8960.c
+@@ -234,9 +234,9 @@ SOC_SINGLE_TLV("Left Input Boost Mixer LINPUT3 Volume",
+ SOC_SINGLE_TLV("Left Input Boost Mixer LINPUT2 Volume",
+ 	       WM8960_INBMIX2, 1, 7, 0, lineinboost_tlv),
+ SOC_SINGLE_TLV("Right Input Boost Mixer RINPUT1 Volume",
+-		WM8960_RINPATH, 4, 4, 0, micboost_tlv),
++		WM8960_RINPATH, 4, 3, 0, micboost_tlv),
+ SOC_SINGLE_TLV("Left Input Boost Mixer LINPUT1 Volume",
+-		WM8960_LINPATH, 4, 4, 0, micboost_tlv),
++		WM8960_LINPATH, 4, 3, 0, micboost_tlv),
+ 
+ SOC_DOUBLE_R_TLV("Playback Volume", WM8960_LDAC, WM8960_RDAC,
+ 		 0, 255, 0, dac_tlv),
+-- 
+1.8.0
+

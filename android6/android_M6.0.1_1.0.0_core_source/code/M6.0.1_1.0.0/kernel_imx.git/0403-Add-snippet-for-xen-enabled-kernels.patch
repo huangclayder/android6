@@ -1,0 +1,25 @@
+From d2d9b247a5a4467eabe424a88ec48240ee7d6721 Mon Sep 17 00:00:00 2001
+From: Wookey <wookey@wookware.org>
+Date: Wed, 10 Jul 2013 18:35:54 +0100
+Subject: [PATCH] Add snippet for xen-enabled kernels
+
+---
+ linaro/configs/xen.conf | 7 +++++++
+ 1 file changed, 7 insertions(+)
+
+diff --git a/linaro/configs/xen.conf b/linaro/configs/xen.conf
+new file mode 100644
+index 0000000..d24fabb
+--- /dev/null
++++ b/linaro/configs/xen.conf
+@@ -0,0 +1,7 @@
++CONFIG_XEN=y
++CONFIG_XEN_NETDEV_FRONTEND=y
++CONFIG_XEN_NETDEV_BACKEND=y
++CONFIG_XEN_BLKDEV_FRONTEND=y
++CONFIG_XEN_BLKDEV_BACKEND=y
++CONFIG_XENFS=y
++CONFIG_XEN_COMPAT_XENFS=y
+-- 
+1.8.0
+

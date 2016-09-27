@@ -1,0 +1,33 @@
+From 50ad168c5d07583e0a6b445cc30abb227ccd53ed Mon Sep 17 00:00:00 2001
+From: Haibo Chen <haibo.chen@freescale.com>
+Date: Mon, 7 Dec 2015 16:11:45 +0800
+Subject: [PATCH] MLK-11958 iio: adc: ad2802a: change the data type of value
+ 'ret'
+
+Change the data type of value 'ret' from unsigned long to long,
+otherwise the compare operation 'ret < 0' is never true.
+
+As wait_for_completion_interruptible_timeout can return -ERESTARTSTSYS,
+if interrupted, ret must be signed.
+
+Signed-off-by: Haibo Chen <haibo.chen@freescale.com>
+---
+ drivers/iio/adc/ad2802a.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/iio/adc/ad2802a.c b/drivers/iio/adc/ad2802a.c
+index e82e39b..44eb2e82 100644
+--- a/drivers/iio/adc/ad2802a.c
++++ b/drivers/iio/adc/ad2802a.c
+@@ -295,7 +295,7 @@ static int ad2802_read_raw(struct iio_dev *indio_dev,
+ 	struct ad2802_adc *info = iio_priv(indio_dev);
+ 
+ 	u32 channel;
+-	unsigned long ret;
++	long ret;
+ 
+ 	switch (mask) {
+ 	case IIO_CHAN_INFO_RAW:
+-- 
+1.8.0
+

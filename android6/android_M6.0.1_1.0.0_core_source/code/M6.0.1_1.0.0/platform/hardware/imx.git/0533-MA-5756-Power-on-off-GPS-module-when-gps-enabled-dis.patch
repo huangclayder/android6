@@ -1,0 +1,82 @@
+From 0633792ea96249a0279dd7b49f46d23c22573952 Mon Sep 17 00:00:00 2001
+From: Haoran Wang <Haoran.Wang@freescale.com>
+Date: Fri, 17 Oct 2014 01:18:02 +0800
+Subject: [PATCH 533/635] MA-5756 Power on/off GPS module when gps
+ enabled/disable
+
+As the GPS module is power off when boot up. Enable the
+power on GPIO when framework use GPS and turn it off when
+doesn't use.
+
+Signed-off-by: Haoran Wang <Haoran.Wang@freescale.com>
+---
+ libgps/athr_gps.c | 25 +++++++++++++++++++++++--
+ 1 file changed, 23 insertions(+), 2 deletions(-)
+
+diff --git a/libgps/athr_gps.c b/libgps/athr_gps.c
+index 2bf7c20..922aa20 100755
+--- a/libgps/athr_gps.c
++++ b/libgps/athr_gps.c
+@@ -41,6 +41,9 @@
+ #define ATHR_GPS
+ #define ATHR_GPSXtra
+ #define ATHR_GPSNi
++#define GPS_DEVICE_NODE "/sys/class/gpio/gpio64/value"
++#define GPS_ENABLE 1
++#define GPS_DISABLE 0
+ 
+ //#define  GPS_DEBUG
+ #undef	 GPS_DEBUG_TOKEN	/* print out NMEA tokens */
+@@ -137,6 +140,24 @@ void gps_state_unlock_fix(GpsState *state) {
+ 	}
+ }
+ 
++int gps_enable_hardware(int enable) {
++    ALOGI("%s the GPS", (enable) ? "enabled" : "disabled");
++    FILE * f = fopen(GPS_DEVICE_NODE, "w");
++    if (f != NULL) {
++        if (GPS_ENABLE == enable) {
++            fwrite("1", 1, 1, f);
++        }
++        else {
++            fwrite("0", 1, 1, f);
++        }
++        fclose(f);
++        return 0;
++    }
++    else
++        ALOGW("GPS node file %s cannot be opened :(", GPS_DEVICE_NODE);
++    return -1;
++}
++
+ int 	gps_opentty(GpsState *state);
+ void 	gps_closetty(GpsState *state);
+ void 	gps_wakeup(GpsState *state);
+@@ -1614,7 +1635,7 @@ Fail:
+ static int athr_gps_init(GpsCallbacks* callbacks)
+ {
+     GpsState*  s = _gps_state;
+-
++    gps_enable_hardware(GPS_ENABLE);
+ 	D("gps state initializing %d",s->init);
+ 
+     s->callbacks = *callbacks;
+@@ -1636,6 +1657,7 @@ athr_gps_cleanup(void)
+ 
+     if (s->init)
+         gps_state_done(s);
++    gps_enable_hardware(GPS_DISABLE);
+ }
+ 
+ static int athr_gps_start()
+@@ -1674,7 +1696,6 @@ athr_gps_stop()
+ 	D("Try to change state to init");
+ 	//change state to INIT
+ 	GPS_STATUS_CB(s->callbacks, GPS_STATUS_SESSION_END);
+-
+     return 0;
+ }
+ 
+-- 
+1.8.0
+

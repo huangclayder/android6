@@ -1,0 +1,26 @@
+From b10cf52859df933c579c50d3cd050dcfff263019 Mon Sep 17 00:00:00 2001
+From: Haoran Wang <b50027@freescale.com>
+Date: Thu, 29 Oct 2015 19:47:52 +0800
+Subject: [PATCH 108/115] MA-7179 Remove support for AR6223
+
+If we have BCM BT the A2dpSink APK will
+be compiled.
+
+Signed-off-by: Haoran Wang <b50027@freescale.com>
+---
+ A2dpSinkApp/Android.mk | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/A2dpSinkApp/Android.mk b/A2dpSinkApp/Android.mk
+index 8b573e0..41662c1 100644
+--- a/A2dpSinkApp/Android.mk
++++ b/A2dpSinkApp/Android.mk
+@@ -1,4 +1,4 @@
+-ifeq (true,$(filter true,$(BOARD_USE_AR3K_BLUETOOTH) $(BOARD_HAVE_BLUETOOTH_BCM)))
++ifneq ($(BOARD_HAVE_BLUETOOTH_BCM),)
+ LOCAL_PATH:= $(call my-dir)
+ include $(CLEAR_VARS)
+ 
+-- 
+1.8.0
+

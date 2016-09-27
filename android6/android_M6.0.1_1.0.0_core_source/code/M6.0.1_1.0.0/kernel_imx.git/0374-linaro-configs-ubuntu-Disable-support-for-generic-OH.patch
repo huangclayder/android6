@@ -1,0 +1,30 @@
+From 70f9865de5e5b330fc5655103bdc261e722a1ebf Mon Sep 17 00:00:00 2001
+From: Tushar Behera <tushar.behera@linaro.org>
+Date: Fri, 14 Sep 2012 09:00:51 +0530
+Subject: [PATCH] linaro/configs: ubuntu: Disable support for generic OHCI
+ platform driver
+
+OHCI-HCD driver does not support multiple SoC drivers during the compile
+time. Hence the generic driver should be disabled in ubuntu.conf and
+enabled in respective board config files.
+
+Signed-off-by: Tushar Behera <tushar.behera@linaro.org>
+---
+ linaro/configs/ubuntu.conf | 1 -
+ 1 file changed, 1 deletion(-)
+
+diff --git a/linaro/configs/ubuntu.conf b/linaro/configs/ubuntu.conf
+index 5d0a372..88e58df 100644
+--- a/linaro/configs/ubuntu.conf
++++ b/linaro/configs/ubuntu.conf
+@@ -1556,7 +1556,6 @@ CONFIG_USB_OXU210HP_HCD=m
+ CONFIG_USB_ISP116X_HCD=m
+ CONFIG_USB_ISP1760_HCD=m
+ CONFIG_USB_OHCI_HCD=y
+-CONFIG_USB_OHCI_HCD_PLATFORM=y
+ CONFIG_USB_OHCI_LITTLE_ENDIAN=y
+ CONFIG_USB_U132_HCD=m
+ CONFIG_USB_SL811_HCD=m
+-- 
+1.8.0
+

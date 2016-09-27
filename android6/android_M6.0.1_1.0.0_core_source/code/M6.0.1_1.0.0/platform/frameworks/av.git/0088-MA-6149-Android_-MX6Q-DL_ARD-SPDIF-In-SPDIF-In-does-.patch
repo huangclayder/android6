@@ -1,0 +1,50 @@
+From dfaac91bc9fe9b3b4a113f2df94383b6587fb361 Mon Sep 17 00:00:00 2001
+From: Fang Hui <b31070@freescale.com>
+Date: Tue, 1 Dec 2015 18:56:20 +0800
+Subject: [PATCH 88/95] MA-6149 - Android_ MX6Q/DL_ARD]SPDIF-In: SPDIF-In does
+ not work. 100%
+
+Add support for AUDIO_DEVICE_IN_AUX_DIGITAL in audio policy.
+
+pick code from commit 48d2d50963b692ac860333262e94de55d71e4b89 in
+hardware/libhardware_legacy/audio
+
+Signed-off-by: Winter Wang <b55847@freescale.com>
+---
+ services/audiopolicy/enginedefault/src/Engine.cpp | 7 ++++++-
+ 1 file changed, 6 insertions(+), 1 deletion(-)
+
+diff --git a/services/audiopolicy/enginedefault/src/Engine.cpp b/services/audiopolicy/enginedefault/src/Engine.cpp
+index 0686414..b64bda5 100755
+--- a/services/audiopolicy/enginedefault/src/Engine.cpp
++++ b/services/audiopolicy/enginedefault/src/Engine.cpp
+@@ -1,5 +1,6 @@
+ /*
+  * Copyright (C) 2015 The Android Open Source Project
++ * Copyright (C) 2015 Freescale Semiconductor, Inc.
+  *
+  * Licensed under the Apache License, Version 2.0 (the "License");
+  * you may not use this file except in compliance with the License.
+@@ -615,6 +616,8 @@ audio_devices_t Engine::getDeviceForInputSource(audio_source_t inputSource) cons
+         device = AUDIO_DEVICE_IN_BLUETOOTH_SCO_HEADSET;
+     } else if (availableDeviceTypes & AUDIO_DEVICE_IN_WIRED_HEADSET) {
+         device = AUDIO_DEVICE_IN_WIRED_HEADSET;
++    } else if (availableDeviceTypes & AUDIO_DEVICE_IN_AUX_DIGITAL) {
++            device = AUDIO_DEVICE_IN_AUX_DIGITAL;
+     } else if (availableDeviceTypes & AUDIO_DEVICE_IN_USB_DEVICE) {
+         device = AUDIO_DEVICE_IN_USB_DEVICE;
+     } else if (availableDeviceTypes & AUDIO_DEVICE_IN_BUILTIN_MIC) {
+@@ -676,7 +679,9 @@ audio_devices_t Engine::getDeviceForInputSource(audio_source_t inputSource) cons
+         }
+         break;
+     case AUDIO_SOURCE_CAMCORDER:
+-        if (availableDeviceTypes & AUDIO_DEVICE_IN_BACK_MIC) {
++        if (availableDeviceTypes & AUDIO_DEVICE_IN_AUX_DIGITAL) {
++            device = AUDIO_DEVICE_IN_AUX_DIGITAL;
++        } else if (availableDeviceTypes & AUDIO_DEVICE_IN_BACK_MIC) {
+             device = AUDIO_DEVICE_IN_BACK_MIC;
+         } else if (availableDeviceTypes & AUDIO_DEVICE_IN_BUILTIN_MIC) {
+             device = AUDIO_DEVICE_IN_BUILTIN_MIC;
+-- 
+1.8.0
+

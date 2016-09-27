@@ -1,0 +1,40 @@
+From 612b31af315b86dab3f1583a7ef9a404a679b0e2 Mon Sep 17 00:00:00 2001
+From: Jon Medhurst <tixy@linaro.org>
+Date: Thu, 13 Mar 2014 11:24:30 +0000
+Subject: [PATCH] amba-clcd: Hack RGB ordering in 32-bit video modes
+
+There is confusion somewhere about RGB ordering in 32-bit video modes.
+This hack get's these modes working in Linaro's ALIP and Android builds.
+
+Signed-off-by: Jon Medhurst <tixy@linaro.org>
+(cherry picked from commit b764a2b5f6fc0a87834c20ecf358c2c3a90e2e4c)
+Signed-off-by: Alex Shi <alex.shi@linaro.org>
+---
+ drivers/video/amba-clcd.c | 11 +++++++++++
+ 1 file changed, 11 insertions(+)
+
+diff --git a/drivers/video/amba-clcd.c b/drivers/video/amba-clcd.c
+index e30cc7a..12f8c46 100644
+--- a/drivers/video/amba-clcd.c
++++ b/drivers/video/amba-clcd.c
+@@ -249,6 +249,17 @@ clcdfb_set_bitfields(struct clcd_fb *fb, struct fb_var_screeninfo *var)
+ 		bgr = caps & CLCD_CAP_BGR && var->blue.offset == 0;
+ 		rgb = caps & CLCD_CAP_RGB && var->red.offset == 0;
+ 
++		/*
++		 * Seems that for 32-bit mode there is confusion about RGB
++		 * ordering somewhere between user-side, kernel and hardware.
++		 * The following hack seems get things working, at least on
++		 * vexpress hardware and models...
++		 */
++		if (var->bits_per_pixel == 32) {
++			bgr = false;
++			rgb = true;
++		}
++
+ 		if (!bgr && !rgb)
+ 			/*
+ 			 * The requested format was not possible, try just
+-- 
+1.8.0
+

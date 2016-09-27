@@ -1,0 +1,35 @@
+From fa2c875699daa3d28b1d70da477ca94a4294460e Mon Sep 17 00:00:00 2001
+From: Sandor Yu <R01008@freescale.com>
+Date: Thu, 12 Mar 2015 16:17:39 +0800
+Subject: [PATCH 486/505] MLK-10401-1: v4l2 capture: Add V4L2_MEMORY_USERPTR
+ support
+
+Initialize v4l2_buffer.m.userptr with virtual address that is
+required by V4L2 IOCTL VIDIOC_QBUF when memory type is
+V4L2_MEMORY_USERPTR.
+
+Signed-off-by: Sandor Yu <R01008@freescale.com>
+---
+ test/mxc_v4l2_test/mx6s_v4l2_capture.c | 6 +++++-
+ 1 file changed, 5 insertions(+), 1 deletion(-)
+
+diff --git a/test/mxc_v4l2_test/mx6s_v4l2_capture.c b/test/mxc_v4l2_test/mx6s_v4l2_capture.c
+index cb809bf..9edffc8 100644
+--- a/test/mxc_v4l2_test/mx6s_v4l2_capture.c
++++ b/test/mxc_v4l2_test/mx6s_v4l2_capture.c
+@@ -135,7 +135,11 @@ int start_capturing(int fd_v4l)
+ 		buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+ 		buf.memory = g_mem_type;
+ 		buf.index = i;
+-		buf.m.offset = buffers[i].offset;
++		buf.length = buffers[i].length;
++		if (g_mem_type == V4L2_MEMORY_USERPTR)
++			buf.m.userptr = (unsigned long) buffers[i].start;
++		else
++			buf.m.offset = buffers[i].offset;
+ 
+ 		if (ioctl (fd_v4l, VIDIOC_QBUF, &buf) < 0) {
+ 			printf("VIDIOC_QBUF error\n");
+-- 
+1.8.0
+

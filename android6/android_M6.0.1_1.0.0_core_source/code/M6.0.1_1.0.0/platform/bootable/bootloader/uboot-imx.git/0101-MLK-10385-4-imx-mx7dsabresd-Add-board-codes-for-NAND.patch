@@ -1,0 +1,229 @@
+From 6af24d6b2166b1e43c5339e21f14c22309743dec Mon Sep 17 00:00:00 2001
+From: "Ye.Li" <B37916@freescale.com>
+Date: Mon, 9 Mar 2015 11:59:08 +0800
+Subject: [PATCH] MLK-10385-4 imx: mx7dsabresd: Add board codes for NAND flash
+ support
+
+Update board codes to support GPMI NAND flash. Since the GPMI NAND needs
+board rework, it is disabled at default. Two ways to enable GPMI NAND:
+
+1. Define CONFIG_SYS_BOOT_NAND for NAND boot case
+2. Modify the line 306 in mx7dsabresd.h from QSPI to NAND.
+   #define CONFIG_SYS_USE_QSPI   /* Enable the QSPI flash at default */
+       to
+   #define CONFIG_SYS_USE_NAND   /* Enable the NAND flash at default */
+
+Signed-off-by: Ye.Li <B37916@freescale.com>
+(cherry picked from commit 5db03facf3add6a95728bc97ac2300003a103932)
+Signed-off-by: Peng Fan <Peng.Fan@freescale.com>
+---
+ board/freescale/mx7dsabresd/mx7dsabresd.c | 47 +++++++++---------
+ include/configs/mx7dsabresd.h             | 81 ++++++++++++++++---------------
+ 2 files changed, 67 insertions(+), 61 deletions(-)
+
+diff --git a/board/freescale/mx7dsabresd/mx7dsabresd.c b/board/freescale/mx7dsabresd/mx7dsabresd.c
+index ab6c21c..13aed0e 100644
+--- a/board/freescale/mx7dsabresd/mx7dsabresd.c
++++ b/board/freescale/mx7dsabresd/mx7dsabresd.c
+@@ -61,7 +61,7 @@ DECLARE_GLOBAL_DATA_PTR;
+ 	PAD_CTL_DSE_3P3V_49OHM)
+ 
+ #define EPDC_PAD_CTRL	(PAD_CTL_HYS | PAD_CTL_DSE_40ohm |     \
+-	PAD_CTL_DSE_3P3V_490HM)
++	PAD_CTL_DSE_3P3V_49OHM)
+ 
+ #define QSPI_PAD_CTRL	\
+ 	(PAD_CTL_DSE_3P3V_49OHM | PAD_CTL_PUE | PAD_CTL_PUS_PU47KOHM)
+@@ -70,6 +70,11 @@ DECLARE_GLOBAL_DATA_PTR;
+ 
+ #define BUTTON_PAD_CTRL    (PAD_CTL_PUS_PU5KOHM | PAD_CTL_DSE_3P3V_98OHM)
+ 
++#define NAND_PAD_CTRL (PAD_CTL_DSE_3P3V_49OHM | PAD_CTL_SRE_SLOW | PAD_CTL_HYS)
++
++#define NAND_PAD_READY0_CTRL (PAD_CTL_DSE_3P3V_49OHM | PAD_CTL_PUS_PU5KOHM)
++
++
+ #ifdef CONFIG_SYS_I2C_MXC
+ #define PC MUX_PAD_CTRL(I2C_PAD_CTRL)
+ /* I2C1 for PMIC */
+@@ -273,31 +278,29 @@ void iox74lv_set(int index)
+ 
+ #ifdef CONFIG_SYS_USE_NAND
+ static iomux_v3_cfg_t const gpmi_pads[] = {
+-	MX7D_PAD_SD3_DATA0__NAND_DATA00 | MUX_PAD_CTRL(GPMI_PAD_CTRL2),
+-	MX7D_PAD_SD3_DATA1__NAND_DATA01 | MUX_PAD_CTRL(GPMI_PAD_CTRL2),
+-	MX7D_PAD_SD3_DATA2__NAND_DATA02 | MUX_PAD_CTRL(GPMI_PAD_CTRL2),
+-	MX7D_PAD_SD3_DATA3__NAND_DATA03 | MUX_PAD_CTRL(GPMI_PAD_CTRL2),
+-	MX7D_PAD_SD3_DATA4__NAND_DATA04 | MUX_PAD_CTRL(GPMI_PAD_CTRL2),
+-	MX7D_PAD_SD3_DATA5__NAND_DATA05 | MUX_PAD_CTRL(GPMI_PAD_CTRL2),
+-	MX7D_PAD_SD3_DATA6__NAND_DATA06 | MUX_PAD_CTRL(GPMI_PAD_CTRL2),
+-	MX7D_PAD_SD3_DATA7__NAND_DATA07 | MUX_PAD_CTRL(GPMI_PAD_CTRL2),
+-	MX7D_PAD_SD3_CLK__NAND_CLE	| MUX_PAD_CTRL(GPMI_PAD_CTRL2),
+-	MX7D_PAD_SD3_CMD__NAND_ALE	| MUX_PAD_CTRL(GPMI_PAD_CTRL2),
+-	MX7D_PAD_SD3_STROBE__NAND_RE_B	| MUX_PAD_CTRL(GPMI_PAD_CTRL2),
+-	MX7D_PAD_SD3_RESET_B__NAND_WE_B	| MUX_PAD_CTRL(GPMI_PAD_CTRL2),
+-	MX7D_PAD_SAI1_MCLK__NAND_WP_B	| MUX_PAD_CTRL(GPMI_PAD_CTRL2),
+-	MX7D_PAD_SAI1_RX_BCLK__NAND_CE3_B	| MUX_PAD_CTRL(GPMI_PAD_CTRL2),
+-	MX7D_PAD_SAI1_RX_SYNC__NAND_CE2_B	| MUX_PAD_CTRL(GPMI_PAD_CTRL2),
+-	MX7D_PAD_SAI1_RX_DATA__NAND_CE1_B	| MUX_PAD_CTRL(GPMI_PAD_CTRL2),
+-	MX7D_PAD_SAI1_TX_BCLK__NAND_CE0_B	| MUX_PAD_CTRL(GPMI_PAD_CTRL2),
+-	MX7D_PAD_SAI1_TX_SYNC__NAND_DQS	| MUX_PAD_CTRL(GPMI_PAD_CTRL1),
+-	MX7D_PAD_SAI1_TX_DATA__NAND_READY_B	| MUX_PAD_CTRL(GPMI_PAD_CTRL0),
++	MX7D_PAD_SD3_DATA0__NAND_DATA00 | MUX_PAD_CTRL(NAND_PAD_CTRL),
++	MX7D_PAD_SD3_DATA1__NAND_DATA01 | MUX_PAD_CTRL(NAND_PAD_CTRL),
++	MX7D_PAD_SD3_DATA2__NAND_DATA02 | MUX_PAD_CTRL(NAND_PAD_CTRL),
++	MX7D_PAD_SD3_DATA3__NAND_DATA03 | MUX_PAD_CTRL(NAND_PAD_CTRL),
++	MX7D_PAD_SD3_DATA4__NAND_DATA04 | MUX_PAD_CTRL(NAND_PAD_CTRL),
++	MX7D_PAD_SD3_DATA5__NAND_DATA05 | MUX_PAD_CTRL(NAND_PAD_CTRL),
++	MX7D_PAD_SD3_DATA6__NAND_DATA06 | MUX_PAD_CTRL(NAND_PAD_CTRL),
++	MX7D_PAD_SD3_DATA7__NAND_DATA07 | MUX_PAD_CTRL(NAND_PAD_CTRL),
++	MX7D_PAD_SD3_CLK__NAND_CLE	| MUX_PAD_CTRL(NAND_PAD_CTRL),
++	MX7D_PAD_SD3_CMD__NAND_ALE	| MUX_PAD_CTRL(NAND_PAD_CTRL),
++	MX7D_PAD_SD3_STROBE__NAND_RE_B	| MUX_PAD_CTRL(NAND_PAD_CTRL),
++	MX7D_PAD_SD3_RESET_B__NAND_WE_B	| MUX_PAD_CTRL(NAND_PAD_CTRL),
++	MX7D_PAD_SAI1_MCLK__NAND_WP_B	| MUX_PAD_CTRL(NAND_PAD_CTRL),
++	MX7D_PAD_SAI1_RX_BCLK__NAND_CE3_B	| MUX_PAD_CTRL(NAND_PAD_CTRL),
++	MX7D_PAD_SAI1_RX_SYNC__NAND_CE2_B	| MUX_PAD_CTRL(NAND_PAD_CTRL),
++	MX7D_PAD_SAI1_RX_DATA__NAND_CE1_B	| MUX_PAD_CTRL(NAND_PAD_CTRL),
++	MX7D_PAD_SAI1_TX_BCLK__NAND_CE0_B	| MUX_PAD_CTRL(NAND_PAD_CTRL),
++	MX7D_PAD_SAI1_TX_SYNC__NAND_DQS	| MUX_PAD_CTRL(NAND_PAD_CTRL),
++	MX7D_PAD_SAI1_TX_DATA__NAND_READY_B	| MUX_PAD_CTRL(NAND_PAD_READY0_CTRL),
+ };
+ 
+ static void setup_gpmi_nand(void)
+ {
+-	u32 target;
+-
+ 	imx_iomux_v3_setup_multiple_pads(gpmi_pads, ARRAY_SIZE(gpmi_pads));
+ 
+ 	/*
+diff --git a/include/configs/mx7dsabresd.h b/include/configs/mx7dsabresd.h
+index 3986170..f5f2f1c 100644
+--- a/include/configs/mx7dsabresd.h
++++ b/include/configs/mx7dsabresd.h
+@@ -42,6 +42,11 @@
+ #define CONFIG_MXC_UART
+ #define CONFIG_MXC_UART_BASE		UART1_IPS_BASE_ADDR
+ 
++/* allow to overwrite serial and ethaddr */
++#define CONFIG_ENV_OVERWRITE
++#define CONFIG_CONS_INDEX		1
++#define CONFIG_BAUDRATE			115200
++
+ #define CONFIG_CMD_FUSE
+ #ifdef CONFIG_CMD_FUSE
+ #define CONFIG_MXC_OCOTP
+@@ -59,13 +64,6 @@
+ #define CONFIG_DOS_PARTITION
+ #define CONFIG_SUPPORT_EMMC_BOOT /* eMMC specific */
+ 
+-#define CONFIG_BAUDRATE			115200
+-
+-#define CONFIG_SYS_FSL_USDHC_NUM	2
+-#define CONFIG_SYS_MMC_ENV_DEV		0   /* USDHC1 */
+-#define CONFIG_SYS_MMC_ENV_PART		0	/* user area */
+-#define CONFIG_MMCROOT			"/dev/mmcblk0p2"  /* USDHC1 */
+-
+ #define PHYS_SDRAM_SIZE			SZ_1G
+ 
+ #define CONFIG_CMD_PING
+@@ -85,34 +83,6 @@
+ /* ENET1 */
+ #define IMX_FEC_BASE			ENET_IPS_BASE_ADDR
+ 
+-#ifdef CONFIG_SYS_BOOT_QSPI
+-#define CONFIG_SYS_USE_QSPI
+-#define CONFIG_ENV_IS_IN_SPI_FLASH
+-#elif defined CONFIG_SYS_BOOT_NAND
+-#define CONFIG_SYS_USE_NAND
+-#define CONFIG_ENV_IS_IN_NAND
+-#else
+-#define CONFIG_SYS_USE_QSPI   /* Enable the QSPI flash at default */
+-#define CONFIG_ENV_IS_IN_MMC
+-#endif
+-
+-#ifdef CONFIG_SYS_USE_NAND
+-#define CONFIG_CMD_NAND
+-#define CONFIG_CMD_NAND_TRIMFFS
+-
+-/* NAND stuff */
+-#define CONFIG_NAND_MXS
+-#define CONFIG_SYS_MAX_NAND_DEVICE	1
+-#define CONFIG_SYS_NAND_BASE		0x40000000
+-#define CONFIG_SYS_NAND_5_ADDR_CYCLE
+-#define CONFIG_SYS_NAND_ONFI_DETECTION
+-
+-/* DMA stuff, needed for GPMI/MXS NAND support */
+-#define CONFIG_APBH_DMA
+-#define CONFIG_APBH_DMA_BURST
+-#define CONFIG_APBH_DMA_BURST8
+-#endif
+-
+ /* PMIC */
+ #define CONFIG_PFUZE3000_PMIC_I2C
+ #ifdef CONFIG_PFUZE3000_PMIC_I2C
+@@ -127,10 +97,6 @@
+ #undef CONFIG_CMD_EXPORTENV
+ #undef CONFIG_CMD_IMPORTENV
+ 
+-/* allow to overwrite serial and ethaddr */
+-#define CONFIG_ENV_OVERWRITE
+-#define CONFIG_CONS_INDEX		1
+-
+ /* I2C configs */
+ #define CONFIG_CMD_I2C
+ #define CONFIG_SYS_I2C
+@@ -330,6 +296,34 @@
+ 
+ #define CONFIG_ENV_SIZE			SZ_8K
+ 
++#ifdef CONFIG_SYS_BOOT_QSPI
++#define CONFIG_SYS_USE_QSPI
++#define CONFIG_ENV_IS_IN_SPI_FLASH
++#elif defined CONFIG_SYS_BOOT_NAND
++#define CONFIG_SYS_USE_NAND
++#define CONFIG_ENV_IS_IN_NAND
++#else
++#define CONFIG_SYS_USE_QSPI   /* Enable the QSPI flash at default */
++#define CONFIG_ENV_IS_IN_MMC
++#endif
++
++#ifdef CONFIG_SYS_USE_NAND
++#define CONFIG_CMD_NAND
++#define CONFIG_CMD_NAND_TRIMFFS
++
++/* NAND stuff */
++#define CONFIG_NAND_MXS
++#define CONFIG_SYS_MAX_NAND_DEVICE	1
++#define CONFIG_SYS_NAND_BASE		0x40000000
++#define CONFIG_SYS_NAND_5_ADDR_CYCLE
++#define CONFIG_SYS_NAND_ONFI_DETECTION
++
++/* DMA stuff, needed for GPMI/MXS NAND support */
++#define CONFIG_APBH_DMA
++#define CONFIG_APBH_DMA_BURST
++#define CONFIG_APBH_DMA_BURST8
++#endif
++
+ #ifdef CONFIG_SYS_USE_QSPI
+ #define CONFIG_FSL_QSPI    /* enable the QUADSPI driver */
+ #define CONFIG_QSPI_BASE		QSPI1_IPS_BASE_ADDR
+@@ -361,6 +355,15 @@
+ #define CONFIG_ENV_SIZE			CONFIG_ENV_SECT_SIZE
+ #endif
+ 
++#ifdef CONFIG_SYS_USE_NAND
++#define CONFIG_SYS_FSL_USDHC_NUM	1
++#else
++#define CONFIG_SYS_FSL_USDHC_NUM	2
++#endif
++#define CONFIG_SYS_MMC_ENV_DEV		0   /* USDHC1 */
++#define CONFIG_SYS_MMC_ENV_PART		0	/* user area */
++#define CONFIG_MMCROOT			"/dev/mmcblk0p2"  /* USDHC1 */
++
+ #define CONFIG_OF_LIBFDT
+ #define CONFIG_CMD_BOOTZ
+ 
+-- 
+1.8.0
+

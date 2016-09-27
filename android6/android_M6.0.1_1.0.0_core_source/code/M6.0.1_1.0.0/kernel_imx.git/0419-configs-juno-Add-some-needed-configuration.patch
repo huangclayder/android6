@@ -1,0 +1,39 @@
+From b8108fe7c6d7f8d65d5fa7759918b062672cfe2a Mon Sep 17 00:00:00 2001
+From: Ryan Harkin <ryan.harkin@linaro.org>
+Date: Tue, 13 May 2014 18:51:34 +0100
+Subject: [PATCH] configs: juno: Add some needed configuration
+
+Signed-off-by: Ryan Harkin <ryan.harkin@linaro.org>
+Signed-off-by: Mark Brown <broonie@linaro.org>
+---
+ linaro/configs/vexpress64.conf | 17 +++++++++++++++++
+ 1 file changed, 17 insertions(+)
+
+diff --git a/linaro/configs/vexpress64.conf b/linaro/configs/vexpress64.conf
+index eecc6d5..8d5c85a 100644
+--- a/linaro/configs/vexpress64.conf
++++ b/linaro/configs/vexpress64.conf
+@@ -30,3 +30,20 @@ CONFIG_VIRTIO_BLK=y
+ CONFIG_VIRTIO_MMIO=y
+ CONFIG_REGULATOR=y
+ CONFIG_REGULATOR_FIXED_VOLTAGE=y
++CONFIG_CMA=y
++CONFIG_DMA_CMA=y
++CONFIG_COMMON_CLK_SCPI=y
++CONFIG_SMSC911X=y
++CONFIG_I2C=y
++CONFIG_ARM_MHU_MBOX=y
++CONFIG_ARM_SCPI_PROTOCOL=y
++CONFIG_USB_HIDDEV=y
++CONFIG_SCSI=y
++CONFIG_BLK_DEV_SD=y
++CONFIG_USB_STORAGE=y
++CONFIG_USB=y
++CONFIG_USB_ULPI=y
++CONFIG_USB_EHCI_HCD=y
++CONFIG_USB_EHCI_HCD_SYNOPSYS=y
++CONFIG_USB_OHCI_HCD=y
++CONFIG_USB_PHY=y
+-- 
+1.8.0
+

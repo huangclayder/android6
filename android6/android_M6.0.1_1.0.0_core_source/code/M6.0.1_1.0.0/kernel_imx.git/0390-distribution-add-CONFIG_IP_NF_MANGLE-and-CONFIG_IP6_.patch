@@ -1,0 +1,31 @@
+From 5596740485c4a97ac24935c91ca1a5b0a38b8c6c Mon Sep 17 00:00:00 2001
+From: Fathi Boudra <fathi.boudra@linaro.org>
+Date: Wed, 5 Jun 2013 09:58:23 +0300
+Subject: [PATCH] distribution: add CONFIG_IP_NF_MANGLE and
+ CONFIG_IP6_NF_MANGLE
+
+Signed-off-by: Fathi Boudra <fathi.boudra@linaro.org>
+---
+ linaro/configs/distribution.conf | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/linaro/configs/distribution.conf b/linaro/configs/distribution.conf
+index cb77d39..848d5ff 100644
+--- a/linaro/configs/distribution.conf
++++ b/linaro/configs/distribution.conf
+@@ -12,10 +12,12 @@ CONFIG_NF_CONNTRACK_IPV4=m
+ CONFIG_NF_NAT_IPV4=m
+ CONFIG_IP_NF_IPTABLES=m
+ CONFIG_IP_NF_FILTER=m
++CONFIG_IP_NF_MANGLE=m
+ CONFIG_NF_CONNTRACK_IPV6=m
+ CONFIG_NF_NAT_IPV6=m
+ CONFIG_IP6_NF_IPTABLES=m
+ CONFIG_IP6_NF_FILTER=m
++CONFIG_IP6_NF_MANGLE=m
+ CONFIG_DEVTMPFS=y
+ CONFIG_DEVTMPFS_MOUNT=y
+ CONFIG_BLK_DEV_RAM=y
+-- 
+1.8.0
+

@@ -1,0 +1,232 @@
+From 869f6fafdf5b2baa42ba35084e1eb5552b65f004 Mon Sep 17 00:00:00 2001
+From: Liu Xiaowen <xiaowen.liu@freescale.com>
+Date: Thu, 25 Dec 2014 16:52:04 +0800
+Subject: [PATCH 09/21] MA-5969 fix when we do factory reset,the colour of
+ robot is blue.
+
+The root cause is minui in recovery changes a lot on 5.0 which
+remove PixelFlinger code and hard code to only support RGBX8888 format.
+But 6SX and 6SL platform only support BGRX8888 and RGB565 format.
+
+The solution is to provide RGB565 format because all imx6 serial platform
+can support RGB565 format.
+
+Signed-off-by: Liu Xiaowen <xiaowen.liu@freescale.com>
+
+Conflicts:
+	minui/graphics.cpp
+	minui/graphics_fbdev.cpp
+---
+ minui/graphics.cpp       | 100 +++++++++++++++++++++++------------------------
+ minui/graphics_fbdev.cpp |  20 ++++++----
+ 2 files changed, 62 insertions(+), 58 deletions(-)
+
+diff --git a/minui/graphics.cpp b/minui/graphics.cpp
+index c0eea9e..d2a1bd4 100644
+--- a/minui/graphics.cpp
++++ b/minui/graphics.cpp
+@@ -1,5 +1,6 @@
+ /*
+  * Copyright (C) 2007 The Android Open Source Project
++ * Copyright (C) 2015 Freescale Semiconductor, Inc.
+  *
+  * Licensed under the Apache License, Version 2.0 (the "License");
+  * you may not use this file except in compliance with the License.
+@@ -48,9 +49,11 @@ static int overscan_percent = OVERSCAN_PERCENT;
+ static int overscan_offset_x = 0;
+ static int overscan_offset_y = 0;
+ 
+-static unsigned char gr_current_r = 255;
+-static unsigned char gr_current_g = 255;
+-static unsigned char gr_current_b = 255;
++static int gr_vt_fd = -1;
++
++static unsigned char gr_current_r = 31;
++static unsigned char gr_current_g = 63;
++static unsigned char gr_current_b = 31;
+ static unsigned char gr_current_a = 255;
+ 
+ static GRSurface* gr_draw = NULL;
+@@ -77,26 +80,24 @@ static void text_blend(unsigned char* src_p, int src_row_bytes,
+ {
+     for (int j = 0; j < height; ++j) {
+         unsigned char* sx = src_p;
+-        unsigned char* px = dst_p;
++        unsigned short* px = (unsigned short*)dst_p;
+         for (int i = 0; i < width; ++i) {
+             unsigned char a = *sx++;
++            unsigned char vr, vg, vb;
++            unsigned short xv = *px;
+             if (gr_current_a < 255) a = ((int)a * gr_current_a) / 255;
+             if (a == 255) {
+-                *px++ = gr_current_r;
+-                *px++ = gr_current_g;
+-                *px++ = gr_current_b;
+-                px++;
++                *px = (unsigned short)(((unsigned short)((gr_current_r&0x1f) << 11)) |
++                      ((unsigned short)((gr_current_g&0x3f) << 5)) |
++                      ((unsigned short)(gr_current_b&0x1f)));
+             } else if (a > 0) {
+-                *px = (*px * (255-a) + gr_current_r * a) / 255;
+-                ++px;
+-                *px = (*px * (255-a) + gr_current_g * a) / 255;
+-                ++px;
+-                *px = (*px * (255-a) + gr_current_b * a) / 255;
+-                ++px;
+-                ++px;
+-            } else {
+-                px += 4;
++                vr = (((unsigned short)((xv&0xf800) >> 11)) * (255-a) + (int)(gr_current_r&0x1f) * a) / 255;
++                vg = (((unsigned short)((xv&0x07e0) >> 5)) * (255-a) + (int)(gr_current_g&0x3f) * a) / 255;
++                vb = (((unsigned short)(xv&0x001f)) * (255-a) + (int)(gr_current_b&0x1f) * a) / 255;
++                *px = (unsigned short)(((unsigned short)((vr&0x1f) << 11)) |
++                      ((unsigned short)((vg&0x3f) << 5)) | (vb&0x1f));
+             }
++            px+=1;
+         }
+         src_p += src_row_bytes;
+         dst_p += dst_row_bytes;
+@@ -172,19 +173,16 @@ void gr_color(unsigned char r, unsigned char g, unsigned char b, unsigned char a
+ 
+ void gr_clear()
+ {
+-    if (gr_current_r == gr_current_g && gr_current_r == gr_current_b) {
+-        memset(gr_draw->data, gr_current_r, gr_draw->height * gr_draw->row_bytes);
+-    } else {
+-        unsigned char* px = gr_draw->data;
+-        for (int y = 0; y < gr_draw->height; ++y) {
+-            for (int x = 0; x < gr_draw->width; ++x) {
+-                *px++ = gr_current_r;
+-                *px++ = gr_current_g;
+-                *px++ = gr_current_b;
+-                px++;
+-            }
+-            px += gr_draw->row_bytes - (gr_draw->width * gr_draw->pixel_bytes);
++    int x, y;
++    unsigned char* px = gr_draw->data;
++    for (y = 0; y < gr_draw->height; ++y) {
++        unsigned short* sx = (unsigned short*)px;
++        for (x = 0; x < gr_draw->width; ++x) {
++            *sx = (unsigned short)(((unsigned short)((gr_current_r&0x1f) << 11)) |
++                  ((unsigned short)((gr_current_g&0x3f) << 5)) | (gr_current_b&0x1f));
++            sx++;
+         }
++        px += gr_draw->row_bytes;
+     }
+ }
+ 
+@@ -202,11 +200,10 @@ void gr_fill(int x1, int y1, int x2, int y2)
+     if (gr_current_a == 255) {
+         int x, y;
+         for (y = y1; y < y2; ++y) {
+-            unsigned char* px = p;
++            unsigned short* px = (unsigned short*)p;
+             for (x = x1; x < x2; ++x) {
+-                *px++ = gr_current_r;
+-                *px++ = gr_current_g;
+-                *px++ = gr_current_b;
++                *px = (unsigned short)(((unsigned short)((gr_current_r&0x1f) << 11)) |
++                      ((unsigned short)((gr_current_g&0x3f) << 5)) | (gr_current_b&0x1f));
+                 px++;
+             }
+             p += gr_draw->row_bytes;
+@@ -214,15 +211,17 @@ void gr_fill(int x1, int y1, int x2, int y2)
+     } else if (gr_current_a > 0) {
+         int x, y;
+         for (y = y1; y < y2; ++y) {
+-            unsigned char* px = p;
++            unsigned short* px = (unsigned short*)p;
++            unsigned char vr, vg, vb;
++            unsigned short vx = *px;
+             for (x = x1; x < x2; ++x) {
+-                *px = (*px * (255-gr_current_a) + gr_current_r * gr_current_a) / 255;
+-                ++px;
+-                *px = (*px * (255-gr_current_a) + gr_current_g * gr_current_a) / 255;
+-                ++px;
+-                *px = (*px * (255-gr_current_a) + gr_current_b * gr_current_a) / 255;
+-                ++px;
+-                ++px;
++                vr = (((unsigned short)((vx&0xf800) >> 11)) * (255-gr_current_a) + (gr_current_r&0x1f) * gr_current_a) / 255;
++                vg = (((unsigned short)((vx&0x07e0) >> 5)) * (255-gr_current_a) + (gr_current_g&0x3f) * gr_current_a) / 255;
++                vb = (((unsigned short)(vx&0x001f)) * (255-gr_current_a) + (gr_current_b&0x1f) * gr_current_a) / 255;
++                *px = (unsigned short)(((unsigned short)((vr&0x1f) << 11)) |
++                      ((unsigned short)((vg&0x3f) << 5)) | (vb&0x1f));
++
++                px++;
+             }
+             p += gr_draw->row_bytes;
+         }
+@@ -231,12 +230,6 @@ void gr_fill(int x1, int y1, int x2, int y2)
+ 
+ void gr_blit(GRSurface* source, int sx, int sy, int w, int h, int dx, int dy) {
+     if (source == NULL) return;
+-
+-    if (gr_draw->pixel_bytes != source->pixel_bytes) {
+-        printf("gr_blit: source has wrong format\n");
+-        return;
+-    }
+-
+     dx += overscan_offset_x;
+     dy += overscan_offset_y;
+ 
+@@ -245,9 +238,16 @@ void gr_blit(GRSurface* source, int sx, int sy, int w, int h, int dx, int dy) {
+     unsigned char* src_p = source->data + sy*source->row_bytes + sx*source->pixel_bytes;
+     unsigned char* dst_p = gr_draw->data + dy*gr_draw->row_bytes + dx*gr_draw->pixel_bytes;
+ 
+-    int i;
+-    for (i = 0; i < h; ++i) {
+-        memcpy(dst_p, src_p, w * source->pixel_bytes);
++    int x, y;
++    for (y = 0; y < h; ++y) {
++        unsigned int *psx = (unsigned int*)src_p;
++        unsigned short *pdx = (unsigned short*)dst_p;
++        for (x=0; x < w; ++x) {
++            unsigned int sv = *psx;
++            *pdx = (unsigned short)(((sv << 8)&0xf800) | ((sv>>5)&0x07e0) | ((sv>>19)&0x001f));
++            pdx++;
++            psx++;
++        }
+         src_p += source->row_bytes;
+         dst_p += gr_draw->row_bytes;
+     }
+diff --git a/minui/graphics_fbdev.cpp b/minui/graphics_fbdev.cpp
+index 9c98b68..be4a329 100644
+--- a/minui/graphics_fbdev.cpp
++++ b/minui/graphics_fbdev.cpp
+@@ -1,5 +1,6 @@
+ /*
+  * Copyright (C) 2014 The Android Open Source Project
++ * Copyright (C) 2015 Freescale Semiconductor, Inc.
+  *
+  * Licensed under the Apache License, Version 2.0 (the "License");
+  * you may not use this file except in compliance with the License.
+@@ -99,15 +100,18 @@ static GRSurface* fbdev_init(minui_backend* backend) {
+         return NULL;
+     }
+ 
+-    vi.red.offset     = 0;
+-    vi.red.length     = 8;
+-    vi.green.offset   = 8;
+-    vi.green.length   = 8;
+-    vi.blue.offset    = 16;
+-    vi.blue.length    = 8;
+-    vi.transp.offset  = 24;
+-    vi.transp.length  = 8;
++    vi.red.offset     = 11;
++    vi.red.length     = 5;
++    vi.green.offset   = 5;
++    vi.green.length   = 6;
++    vi.blue.offset    = 0;
++    vi.blue.length    = 5;
++    vi.transp.offset  = 0;
++    vi.transp.length  = 0;
++    vi.bits_per_pixel = 16;
++    vi.xres_virtual = vi.xres;
+     vi.yres_virtual = vi.yres * 2;
++    vi.activate = FB_ACTIVATE_NOW;
+ 
+     if (ioctl(fd, FBIOPUT_VSCREENINFO, &vi) < 0) {
+         perror("failed to put fb0 info");
+-- 
+1.8.0
+

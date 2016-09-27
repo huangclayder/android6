@@ -1,0 +1,147 @@
+From f644d0a9c0502cc68b26b2fa2d97907f5a5a1529 Mon Sep 17 00:00:00 2001
+From: Hongzhang Yang <Hongzhang.Yang@freescale.com>
+Date: Wed, 4 Mar 2015 15:45:39 +0800
+Subject: [PATCH 269/280] MLK-10286 No output after decoding a jpg file
+
+vpu lib v5.4.29
+
+Bug:
+VPU has no output after decoding a very small jpg file in
+ring buffer mode.
+
+Root cause:
+Gram setup loads the last packet of the file without updating
+stream last.
+
+Solution:
+If gram setup loads the last packet, update stream last.
+
+Signed-off-by: Hongzhang Yang <Hongzhang.Yang@freescale.com>
+---
+ vpu/vpu_lib.c  | 11 ++++++++---
+ vpu/vpu_lib.h  |  2 +-
+ vpu/vpu_util.c |  9 ++++++++-
+ vpu/vpu_util.h |  4 +++-
+ 4 files changed, 20 insertions(+), 6 deletions(-)
+
+diff --git a/vpu/vpu_lib.c b/vpu/vpu_lib.c
+index 461c9cf..e906d7f 100644
+--- a/vpu/vpu_lib.c
++++ b/vpu/vpu_lib.c
+@@ -1,7 +1,7 @@
+ /*
+  * Copyright (c) 2006, Chips & Media.  All rights reserved.
+  *
+- * Copyright (C) 2004-2014 Freescale Semiconductor, Inc.
++ * Copyright (C) 2004-2015 Freescale Semiconductor, Inc.
+  */
+ 
+ /* The following programs are the sole property of Freescale Semiconductor Inc.,
+@@ -167,9 +167,11 @@ int vpu_WaitForInt(int timeout_in_ms)
+ 						dprintf(4, "wrap around in decoding\n");
+ 						VpuWriteReg(MJPEG_BBC_CUR_POS_REG, 0);
+ 						wrPtr = pDecInfo->streamWrPtr;
+-						if (pDecInfo->streamEndflag)
++						if (pDecInfo->streamEndflag) {
+ 							/* set to unreachable position to disable BBC interrupt */
+ 							VpuWriteReg(MJPEG_BBC_END_ADDR_REG, wrPtr+256);
++							pDecInfo->jpgInfo.lastRound = 1;
++						}
+ 						else
+ 							VpuWriteReg(MJPEG_BBC_END_ADDR_REG,
+ 									wrPtr & 0xFFFFFE00);
+@@ -3697,6 +3699,7 @@ RetCode vpu_DecUpdateBitstreamBuffer(DecHandle handle, Uint32 size)
+ 			val = wrOffset / 256;
+ 			if (wrOffset % 256)
+ 				val += 1;
++			pDecInfo->jpgInfo.curPosStreamEnd = val;
+ 			val = (1 << 31 | val);
+ 			pDecInfo->jpgInfo.bbcStreamCtl = val;
+ 			pDecInfo->streamEndflag = 1;
+@@ -3717,8 +3720,10 @@ RetCode vpu_DecUpdateBitstreamBuffer(DecHandle handle, Uint32 size)
+ 
+ 		if (wrOffset < pDecInfo->jpgInfo.frameOffset)
+ 			pDecInfo->jpgInfo.bbcEndAddr = pDecInfo->streamBufEndAddr;
+-		else if (pDecInfo->streamEndflag)
++		else if (pDecInfo->streamEndflag) {
+ 			pDecInfo->jpgInfo.bbcEndAddr = wrPtr+256;
++			pDecInfo->jpgInfo.lastRound = 1;
++		}
+ 		else
+ 			pDecInfo->jpgInfo.bbcEndAddr = wrPtr & 0xFFFFFE00;
+ 
+diff --git a/vpu/vpu_lib.h b/vpu/vpu_lib.h
+index e1ee39e..58f77cb 100644
+--- a/vpu/vpu_lib.h
++++ b/vpu/vpu_lib.h
+@@ -707,7 +707,7 @@ static const SocInfo soc_info[] = {
+  * v4.2.2 [2008.09.03] support encoder on MX51
+  * v4.0.2 [2008.08.21] add the IOClkGateSet() for power saving.
+  */
+-#define VPU_LIB_VERSION_CODE	VPU_LIB_VERSION(5, 4, 28)
++#define VPU_LIB_VERSION_CODE	VPU_LIB_VERSION(5, 4, 29)
+ 
+ extern unsigned int system_rev;
+ 
+diff --git a/vpu/vpu_util.c b/vpu/vpu_util.c
+index 993b269..051b0ea 100644
+--- a/vpu/vpu_util.c
++++ b/vpu/vpu_util.c
+@@ -1,7 +1,7 @@
+ /*
+  * Copyright (c) 2006, Chips & Media.  All rights reserved.
+  *
+- * Copyright (C) 2004-2014 Freescale Semiconductor, Inc.
++ * Copyright (C) 2004-2015 Freescale Semiconductor, Inc.
+  */
+ 
+ /* The following programs are the sole property of Freescale Semiconductor Inc.,
+@@ -2118,6 +2118,11 @@ void JpgDecGramSetup(DecInfo * pDecInfo)
+ 
+ 	dMibStatus = 1;
+ 	dExtBitBufCurPos = dExtBitBufCurPos + 1;
++	if (pDecInfo->jpgInfo.lastRound
++			&& (dExtBitBufCurPos >= pDecInfo->jpgInfo.curPosStreamEnd)) {
++		pDecInfo->jpgInfo.bbcStreamCtl |= (1 << 28);
++		VpuWriteReg(MJPEG_BBC_STRM_CTRL_REG, pDecInfo->jpgInfo.bbcStreamCtl);
++	}
+ 
+ 	VpuWriteReg(MJPEG_BBC_CUR_POS_REG, dExtBitBufCurPos);
+ 	VpuWriteReg(MJPEG_BBC_CTRL_REG, 1);
+@@ -3337,9 +3342,11 @@ proc_wrap:
+ 			val = wrOffset / 256;
+ 			if (wrOffset % 256)
+ 				val += 1;
++			pDecInfo->jpgInfo.curPosStreamEnd = val;
+ 			val = (1 << 31 | val);
+ 			pDecInfo->jpgInfo.bbcStreamCtl = val;
+ 			pDecInfo->jpgInfo.bbcEndAddr = pDecInfo->streamWrPtr+256;
++			pDecInfo->jpgInfo.lastRound = 1;
+ 		}
+ 		else
+ 			pDecInfo->jpgInfo.bbcEndAddr = pDecInfo->streamWrPtr & 0xFFFFFE00;
+diff --git a/vpu/vpu_util.h b/vpu/vpu_util.h
+index ee1397b..9972e4f 100644
+--- a/vpu/vpu_util.h
++++ b/vpu/vpu_util.h
+@@ -1,7 +1,7 @@
+ /*
+  * Copyright (c) 2006, Chips & Media.  All rights reserved.
+  *
+- * Copyright (C) 2004-2014 Freescale Semiconductor, Inc.
++ * Copyright (C) 2004-2015 Freescale Semiconductor, Inc.
+  */
+ 
+ /* The following programs are the sole property of Freescale Semiconductor Inc.,
+@@ -480,6 +480,8 @@ typedef struct {
+ 	int wrappedHeader;
+ 	int header_status;
+ 	int inProcess;
++	int lastRound;
++	int curPosStreamEnd;
+ } JpgDecInfo;
+ 
+ typedef struct {
+-- 
+1.8.0
+

@@ -1,0 +1,39 @@
+From c58a091feea94cc9b8b34a0b48253250e0ac6de9 Mon Sep 17 00:00:00 2001
+From: Xiaowen Liu <xiaowen.liu@freescale.com>
+Date: Tue, 13 Oct 2015 09:04:59 -0400
+Subject: [PATCH 7/8] MA-7089 Upgrade android to Mashmallow 6.0 version.
+
+fix camera2 apk build errors.
+camera2 apk import new com.android.ex.camera2.portability.Size class.
+com.android.camera.util.Size introduces convert() to convert to that class.
+
+Signed-off-by: Xiaowen Liu <xiaowen.liu@freescale.com>
+---
+ src/com/android/camera/VideoModule.java | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/src/com/android/camera/VideoModule.java b/src/com/android/camera/VideoModule.java
+index 6222967..36f6b81 100644
+--- a/src/com/android/camera/VideoModule.java
++++ b/src/com/android/camera/VideoModule.java
+@@ -769,7 +769,7 @@ public class VideoModule extends CameraModule
+ 
+ 		//For TVIN, either 720x576 or 720x480, media_profile can't give a suitable resolution,
+ 		//so change the profile value.
+-		List<Size> sizes = mCameraCapabilities.getSupportedPreviewSizes();
++		List<Size> sizes = Size.convert(mCameraCapabilities.getSupportedPreviewSizes());
+ 		if( (sizes.size() == 1 ) &&
+ 			( (sizes.get(0).width() != mProfile.videoFrameWidth) || (sizes.get(0).height() != mProfile.videoFrameHeight) ) ) {
+ 			Log.w(TAG, "Only support one preview resolution diff with profile, change profile frome " +
+@@ -822,7 +822,7 @@ public class VideoModule extends CameraModule
+      */
+     private static Point getDesiredPreviewSize(CameraCapabilities capabilities,
+           CamcorderProfile profile, Point previewScreenSize) {
+-        List<Size> videoSizes = capabilities.getSupportedVideoSizes();
++        List<Size> videoSizes = Size.convert(capabilities.getSupportedVideoSizes());
+         if (videoSizes == null || videoSizes.size() == 0) {
+             // Driver doesn't support separate outputs for preview and video.
+             return new Point(profile.videoFrameWidth, profile.videoFrameHeight);
+-- 
+1.8.0
+

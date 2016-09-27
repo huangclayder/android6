@@ -1,0 +1,30 @@
+From d094d2bc451ee7a060a211dcbc2ad3be4c0ba4b2 Mon Sep 17 00:00:00 2001
+From: Liu Xiaowen <xiaowen.liu@freescale.com>
+Date: Tue, 15 Sep 2015 15:04:20 +0800
+Subject: [PATCH 16/22] MA-7046 enable ZRAM function for Android to enlarge
+ memory size.
+
+By default, the Linux kernel swaps in 8 pages of memory at a time.
+When using ZRAM, the incremental cost of reading 1 page at a time
+is negligible and may help in case the device is under extreme memory pressure.
+
+Signed-off-by: Liu Xiaowen <xiaowen.liu@freescale.com>
+---
+ rootdir/init.rc | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/rootdir/init.rc b/rootdir/init.rc
+index 9dab39c..a4bdf7c 100644
+--- a/rootdir/init.rc
++++ b/rootdir/init.rc
+@@ -425,6 +425,7 @@ on boot
+     # Memory management.  Basic kernel parameters, and allow the high
+     # level system server to be able to adjust the kernel OOM driver
+     # parameters to match how it is managing things.
++    write /proc/sys/vm/page-cluster 0
+     write /proc/sys/vm/overcommit_memory 1
+     write /proc/sys/vm/min_free_order_shift 4
+     chown root system /sys/module/lowmemorykiller/parameters/adj
+-- 
+1.8.0
+

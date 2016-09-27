@@ -1,0 +1,60 @@
+From c618285086db023df6cb76def3fe3aebcca46e08 Mon Sep 17 00:00:00 2001
+From: Liu Xiaowen <xiaowen.liu@freescale.com>
+Date: Tue, 27 Jan 2015 11:03:43 +0800
+Subject: [PATCH 31/43] MA-6158 fix bottom part of Thumbnail is black in
+ Recent Task List.
+
+When do capture screen with software opengl, the source crop
+is not taken into account.
+Use source crop to calculate glOrthof region.
+
+Signed-off-by: Liu Xiaowen <xiaowen.liu@freescale.com>
+---
+ services/surfaceflinger/SurfaceFlinger.cpp | 20 +++++++++++++++++---
+ 1 file changed, 17 insertions(+), 3 deletions(-)
+
+diff --git a/services/surfaceflinger/SurfaceFlinger.cpp b/services/surfaceflinger/SurfaceFlinger.cpp
+index 341b510..37142b0 100644
+--- a/services/surfaceflinger/SurfaceFlinger.cpp
++++ b/services/surfaceflinger/SurfaceFlinger.cpp
+@@ -14,7 +14,7 @@
+  * limitations under the License.
+  */
+ 
+-/* Copyright (C) 2013-2014 Freescale Semiconductor, Inc. */
++/* Copyright (C) 2013-2015 Freescale Semiconductor, Inc. */
+ 
+ #define ATRACE_TAG ATRACE_TAG_GRAPHICS
+ 
+@@ -3395,12 +3395,26 @@ void SurfaceFlinger::renderScreenImplLocked(
+     // make sure to clear all GL error flags
+     while ( glGetError() != GL_NO_ERROR ) ;
+ 
++    // if a default or invalid sourceCrop is passed in, set reasonable values
++    if (sourceCrop.width() == 0 || sourceCrop.height() == 0 ||
++            !sourceCrop.isValid()) {
++        sourceCrop.setLeftTop(Point(0, 0));
++        sourceCrop.setRightBottom(Point(hw_w, hw_h));
++    }
++
++    size_t l = sourceCrop.left;
++    size_t r = sourceCrop.right;
++
++    // In GL, (0, 0) is the bottom-left corner, so flip y coordinate.
++    size_t t = hw_h - sourceCrop.top;
++    size_t b = hw_h - sourceCrop.bottom;
++
+     // set-up our viewport
+     glViewport(0, 0, reqWidth, reqHeight);
+     glMatrixMode(GL_PROJECTION);
+     glLoadIdentity();
+-    if (yswap)  glOrthof(0, hw_w, hw_h, 0, 0, 1);
+-    else        glOrthof(0, hw_w, 0, hw_h, 0, 1);
++    if (yswap)  glOrthof(l, r, t, b, 0, 1);
++    else        glOrthof(l, r, b, t, 0, 1);
+     glMatrixMode(GL_MODELVIEW);
+     glLoadIdentity();
+ 
+-- 
+1.8.0
+

@@ -1,0 +1,35 @@
+From e1c4c194677f3625500955ddfe9638a27e4e36e3 Mon Sep 17 00:00:00 2001
+From: Christian Engelmayer <cengelma@gmx.at>
+Date: Fri, 23 May 2014 23:33:55 +0200
+Subject: [PATCH] of: mdio: fix compile warning in of_mdiobus_register_phy()
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Commit de906af1 (net: phy: make of_set_phy_supported work with genphy driver)
+removed the last user of variable 'max_speed' in function
+of_mdiobus_register_phy(), leading to compile warning "unused variable
+‘max_speed’ [-Wunused-variable]". Thus remove it.
+
+Signed-off-by: Christian Engelmayer <cengelma@gmx.at>
+Acked-by: Florian Fainelli <f.fainelli@gmail.com>
+Signed-off-by: David S. Miller <davem@davemloft.net>
+---
+ drivers/of/of_mdio.c | 1 -
+ 1 file changed, 1 deletion(-)
+
+diff --git a/drivers/of/of_mdio.c b/drivers/of/of_mdio.c
+index b857094..7c6e277 100644
+--- a/drivers/of/of_mdio.c
++++ b/drivers/of/of_mdio.c
+@@ -46,7 +46,6 @@ static int of_mdiobus_register_phy(struct mii_bus *mdio, struct device_node *chi
+ 	struct phy_device *phy;
+ 	bool is_c45;
+ 	int rc;
+-	u32 max_speed = 0;
+ 	u32 phy_id;
+ 
+ 	is_c45 = of_device_is_compatible(child,
+-- 
+1.8.0
+

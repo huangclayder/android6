@@ -1,0 +1,36 @@
+From 3d20c4a5ebffee4924c20972aea3e68e22ec8ec9 Mon Sep 17 00:00:00 2001
+From: Marc Zyngier <marc.zyngier@arm.com>
+Date: Fri, 7 Dec 2012 18:35:41 +0000
+Subject: [PATCH] arm64: KVM: define HYP and Stage-2 translation page flags
+
+Add HYP and S2 page flags, for both normal and device memory.
+
+Reviewed-by: Christopher Covington <cov@codeaurora.org>
+Reviewed-by: Catalin Marinas <catalin.marinas@arm.com>
+Signed-off-by: Marc Zyngier <marc.zyngier@arm.com>
+(cherry picked from commit 363116073a26dbc2903d8417047597eebcc05273)
+Signed-off-by: Mark Brown <broonie@linaro.org>
+
+Conflicts:
+	arch/arm64/include/asm/pgtable-hwdef.h
+	arch/arm64/include/asm/pgtable.h
+---
+ arch/arm64/include/asm/pgtable-hwdef.h | 2 --
+ 1 file changed, 2 deletions(-)
+
+diff --git a/arch/arm64/include/asm/pgtable-hwdef.h b/arch/arm64/include/asm/pgtable-hwdef.h
+index b1d2e26..2e9d836 100644
+--- a/arch/arm64/include/asm/pgtable-hwdef.h
++++ b/arch/arm64/include/asm/pgtable-hwdef.h
+@@ -85,8 +85,6 @@
+ #define PTE_S2_RDONLY		(_AT(pteval_t, 1) << 6)   /* HAP[2:1] */
+ #define PTE_S2_RDWR		(_AT(pteval_t, 3) << 6)   /* HAP[2:1] */
+ 
+-#define PMD_S2_RDWR		(_AT(pmdval_t, 3) << 6)   /* HAP[2:1] */
+-
+ /*
+  * Memory Attribute override for Stage-2 (MemAttr[3:0])
+  */
+-- 
+1.8.0
+

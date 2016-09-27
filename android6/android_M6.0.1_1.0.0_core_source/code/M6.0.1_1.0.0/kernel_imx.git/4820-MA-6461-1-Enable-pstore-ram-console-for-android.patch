@@ -1,0 +1,512 @@
+From b1dab9f7f1722a1fea279f44af142be1a064bd21 Mon Sep 17 00:00:00 2001
+From: Ke Qinghua <qinghua.ke@freescale.com>
+Date: Thu, 24 Jul 2014 15:53:15 +0800
+Subject: [PATCH] MA-6461-1 Enable pstore ram console for android
+
+Cherry-pick below three commits from imx_3.10.y_android branch
+    commit 070a06308e1f51250b9cd982369c504be8ce04af
+    Author: Ke Qinghua <qinghua.ke@freescale.com>
+    Date:   Fri Aug 1 14:13:08 2014 +0800
+
+        ENGR00324230-3 Enable pstore ram console for android
+
+        Enable memblock_alloc for ramoops instead of bootargs
+
+    commit a56ff60b6bb756c1fcafa738ed822079fbe48b3e
+    Author: Ke Qinghua <qinghua.ke@freescale.com>
+    Date:   Mon Jul 28 12:00:11 2014 +0800
+
+        ENGR00324230-2 Enable pstore ram console for android
+
+        Disable function trace for reduce image size
+
+    commit 9a9399d564dce26cc5e467f5d261ea1df40e60ad
+    Author: Ke Qinghua <qinghua.ke@freescale.com>
+    Date:   Thu Jul 24 15:53:15 2014 +0800
+
+        ENGR00324230 Enable pstore ram console for android
+
+        Enable pstore ram console and function trace  in kernel
+
+Signed-off-by: guoyin.chen <guoyin.chen@freescale.com>
+---
+ arch/arm/boot/dts/imx6qdl-sabreauto.dtsi  |   9 ++
+ arch/arm/boot/dts/imx6qdl-sabresd.dtsi    |   9 ++
+ arch/arm/boot/dts/imx6sl-evk.dts          |   9 ++
+ arch/arm/boot/dts/imx6sx-sdb.dts          |   9 ++
+ arch/arm/configs/imx_v7_android_defconfig |   1 +
+ arch/arm/mach-imx/Kconfig                 |   7 ++
+ arch/arm/mach-imx/Makefile                |   1 +
+ arch/arm/mach-imx/mach-imx6q.c            |  43 +++++++++-
+ arch/arm/mach-imx/mach-imx6sl.c           |  44 +++++++++-
+ arch/arm/mach-imx/mach-imx6sx.c           |  42 ++++++++++
+ arch/arm/mach-imx/mx6_ramoops.c           | 134 ++++++++++++++++++++++++++++++
+ 11 files changed, 306 insertions(+), 2 deletions(-)
+
+diff --git a/arch/arm/boot/dts/imx6qdl-sabreauto.dtsi b/arch/arm/boot/dts/imx6qdl-sabreauto.dtsi
+index 25880d5..675c248 100644
+--- a/arch/arm/boot/dts/imx6qdl-sabreauto.dtsi
++++ b/arch/arm/boot/dts/imx6qdl-sabreauto.dtsi
+@@ -284,6 +284,15 @@
+ 		compatible = "fsl,mxc_v4l2_output";
+ 		status = "okay";
+ 	};
++
++	ramoops_device {
++		compatible = "fsl,mxc_ramoops";
++		record_size = <524288>; /*512K*/
++		console_size= <262144>; /*256K*/
++		ftrace_size= <262144>;  /*256K*/
++		dump_oops = <1>;
++		status = "okay";
++	};
+ };
+ 
+ &audmux {
+diff --git a/arch/arm/boot/dts/imx6qdl-sabresd.dtsi b/arch/arm/boot/dts/imx6qdl-sabresd.dtsi
+index 138f608..152eda5 100644
+--- a/arch/arm/boot/dts/imx6qdl-sabresd.dtsi
++++ b/arch/arm/boot/dts/imx6qdl-sabresd.dtsi
+@@ -256,6 +256,15 @@
+ 	minipcie_ctrl {
+ 		power-on-gpio = <&gpio3 19 0>;
+ 	};
++
++	ramoops_device {
++		compatible = "fsl,mxc_ramoops";
++		record_size = <524288>; /*512K*/
++		console_size = <262144>; /*256K*/
++		ftrace_size = <262144>;  /*256K*/
++		dump_oops = <1>;
++		status = "okay";
++	};
+ };
+ 
+ &audmux {
+diff --git a/arch/arm/boot/dts/imx6sl-evk.dts b/arch/arm/boot/dts/imx6sl-evk.dts
+index 6ef4328..a41d133 100644
+--- a/arch/arm/boot/dts/imx6sl-evk.dts
++++ b/arch/arm/boot/dts/imx6sl-evk.dts
+@@ -155,6 +155,15 @@
+ 		reset-delay-us = <100000>;
+ 		#reset-cells = <0>;
+ 	};
++
++	ramoops_device {
++		compatible = "fsl,mxc_ramoops";
++		record_size = <524288>; /*512K*/
++		console_size= <262144>; /*256K*/
++		ftrace_size= <262144>;  /*256K*/
++		dump_oops = <1>;
++		status = "okay";
++	};
+ };
+ 
+ &audmux {
+diff --git a/arch/arm/boot/dts/imx6sx-sdb.dts b/arch/arm/boot/dts/imx6sx-sdb.dts
+index 7eab7b7..c37b52a 100644
+--- a/arch/arm/boot/dts/imx6sx-sdb.dts
++++ b/arch/arm/boot/dts/imx6sx-sdb.dts
+@@ -195,6 +195,15 @@
+ 		#reset-cells = <0>;
+ 		status = "disabled";
+ 	};
++
++	ramoops_device {
++		compatible = "fsl,mxc_ramoops";
++		record_size = <524288>; /*512K*/
++		console_size= <262144>; /*256K*/
++		ftrace_size= <262144>;  /*256K*/
++		dump_oops = <1>;
++		status = "okay";
++	};
+ };
+ 
+ &adc1 {
+diff --git a/arch/arm/configs/imx_v7_android_defconfig b/arch/arm/configs/imx_v7_android_defconfig
+index 3064614..b83eefd 100644
+--- a/arch/arm/configs/imx_v7_android_defconfig
++++ b/arch/arm/configs/imx_v7_android_defconfig
+@@ -35,6 +35,7 @@ CONFIG_SOC_IMX6SX=y
+ CONFIG_SOC_IMX7D=y
+ CONFIG_SOC_VF610=y
+ CONFIG_MXC_REBOOT_ANDROID_CMD=y
++CONFIG_MX6_RAMOOPS=y
+ # CONFIG_SWP_EMULATE is not set
+ CONFIG_SMP=y
+ CONFIG_HAVE_ARM_ARCH_TIMER=y
+diff --git a/arch/arm/mach-imx/Kconfig b/arch/arm/mach-imx/Kconfig
+index 69f10c7..0af7c67 100644
+--- a/arch/arm/mach-imx/Kconfig
++++ b/arch/arm/mach-imx/Kconfig
+@@ -880,6 +880,13 @@ config MXC_REBOOT_ANDROID_CMD
+ 
+ endif
+ 
++config MX6_RAMOOPS
++	bool "MX6 ramoops Support"
++	depends on PSTORE_RAM
++	default n
++	help
++	 This config is for MX6 ramoop support
++
+ source "arch/arm/mach-imx/devices/Kconfig"
+ 
+ endmenu
+diff --git a/arch/arm/mach-imx/Makefile b/arch/arm/mach-imx/Makefile
+index b1456d1..5d95a61 100644
+--- a/arch/arm/mach-imx/Makefile
++++ b/arch/arm/mach-imx/Makefile
+@@ -141,4 +141,5 @@ obj-$(CONFIG_SOC_IMX53) += mach-imx53.o
+ 
+ obj-$(CONFIG_SOC_VF610) += clk-vf610.o mach-vf610.o
+ 
++obj-$(CONFIG_MX6_RAMOOPS) += mx6_ramoops.o
+ obj-y += devices/
+diff --git a/arch/arm/mach-imx/mach-imx6q.c b/arch/arm/mach-imx/mach-imx6q.c
+index 46c53e2..37f54f3 100644
+--- a/arch/arm/mach-imx/mach-imx6q.c
++++ b/arch/arm/mach-imx/mach-imx6q.c
+@@ -40,6 +40,8 @@
+ #include <asm/mach/arch.h>
+ #include <asm/mach/map.h>
+ #include <asm/system_misc.h>
++#include <linux/memblock.h>
++#include <asm/setup.h>
+ 
+ #include "common.h"
+ #include "cpuidle.h"
+@@ -621,6 +623,44 @@ static const char *imx6q_dt_compat[] __initdata = {
+ 	NULL,
+ };
+ 
++extern unsigned long int ramoops_phys_addr;
++extern unsigned long int ramoops_mem_size;
++static void imx6q_reserve(void)
++{
++	phys_addr_t phys;
++	phys_addr_t max_phys;
++	struct meminfo *mi;
++	struct membank *bank;
++
++#ifdef CONFIG_PSTORE_RAM
++	mi = &meminfo;
++	if (!mi) {
++		pr_err("no memory reserve for ramoops.\n");
++		return;
++	}
++	/* use memmory bank 0 for ram console store */
++	bank = &mi->bank[0];
++	if (!bank) {
++		pr_err("no memory reserve for ramoops.\n");
++		return;
++	}
++	max_phys = bank->start + bank->size;
++	/* reserve 256M for uboot avoid ram console data is cleaned by uboot */
++	phys = memblock_alloc_base(SZ_1M, SZ_4K, max_phys - SZ_256M);
++	if (phys) {
++		memblock_remove(phys, SZ_1M);
++		memblock_reserve(phys, SZ_1M);
++		ramoops_phys_addr = phys;
++		ramoops_mem_size = SZ_1M;
++	} else {
++		ramoops_phys_addr = 0;
++		ramoops_mem_size = 0;
++		pr_err("no memory reserve for ramoops.\n");
++	}
++#endif
++	return;
++}
++
+ DT_MACHINE_START(IMX6Q, "Freescale i.MX6 Quad/DualLite (Device Tree)")
+ 	/*
+ 	 * i.MX6Q/DL maps system memory at 0x10000000 (offset 256MiB), and
+@@ -633,6 +673,7 @@ DT_MACHINE_START(IMX6Q, "Freescale i.MX6 Quad/DualLite (Device Tree)")
+ 	.init_irq	= imx6q_init_irq,
+ 	.init_machine	= imx6q_init_machine,
+ 	.init_late      = imx6q_init_late,
+-	.dt_compat	= imx6q_dt_compat,
++	.dt_compat	 = imx6q_dt_compat,
++	.reserve     = imx6q_reserve,
+ 	.restart	= mxc_restart,
+ MACHINE_END
+diff --git a/arch/arm/mach-imx/mach-imx6sl.c b/arch/arm/mach-imx/mach-imx6sl.c
+index 9fc399b..4dbf244 100644
+--- a/arch/arm/mach-imx/mach-imx6sl.c
++++ b/arch/arm/mach-imx/mach-imx6sl.c
+@@ -1,5 +1,5 @@
+ /*
+- * Copyright (C) 2013-2014 Freescale Semiconductor, Inc.
++ * Copyright (C) 2013-2015 Freescale Semiconductor, Inc.
+  *
+  * This program is free software; you can redistribute it and/or modify
+  * it under the terms of the GNU General Public License version 2 as
+@@ -15,6 +15,9 @@
+ #include <linux/regmap.h>
+ #include <asm/mach/arch.h>
+ #include <asm/mach/map.h>
++#include <asm/system_misc.h>
++#include <linux/memblock.h>
++#include <asm/setup.h>
+ 
+ #include "common.h"
+ #include "cpuidle.h"
+@@ -87,11 +90,50 @@ static void __init imx6sl_map_io(void)
+ 	imx6_busfreq_map_io();
+ }
+ 
++extern unsigned long int ramoops_phys_addr;
++extern unsigned long int ramoops_mem_size;
++static void imx6sl_reserve(void)
++{
++	phys_addr_t phys;
++	phys_addr_t max_phys;
++	struct meminfo *mi;
++	struct membank *bank;
++
++#ifdef CONFIG_PSTORE_RAM
++	mi = &meminfo;
++	if (!mi) {
++		pr_err("no memory reserve for ramoops.\n");
++		return;
++	}
++	/* use memmory bank 0 for ram console store */
++	bank = &mi->bank[0];
++	if (!bank) {
++		pr_err("no memory reserve for ramoops.\n");
++		return;
++	}
++	max_phys = bank->start + bank->size;
++	/* reserve 256M for uboot avoid ram console data is cleaned by uboot */
++	phys = memblock_alloc_base(SZ_1M, SZ_4K, max_phys - SZ_256M);
++	if (phys) {
++		memblock_remove(phys, SZ_1M);
++		memblock_reserve(phys, SZ_1M);
++		ramoops_phys_addr = phys;
++		ramoops_mem_size = SZ_1M;
++	} else {
++		ramoops_phys_addr = 0;
++		ramoops_mem_size = 0;
++		pr_err("no memory reserve for ramoops.\n");
++	}
++#endif
++	return;
++}
++
+ DT_MACHINE_START(IMX6SL, "Freescale i.MX6 SoloLite (Device Tree)")
+ 	.map_io		= imx6sl_map_io,
+ 	.init_irq	= imx6sl_init_irq,
+ 	.init_machine	= imx6sl_init_machine,
+ 	.init_late      = imx6sl_init_late,
+ 	.dt_compat	= imx6sl_dt_compat,
++	.reserve     = imx6sl_reserve,
+ 	.restart	= mxc_restart,
+ MACHINE_END
+diff --git a/arch/arm/mach-imx/mach-imx6sx.c b/arch/arm/mach-imx/mach-imx6sx.c
+index 7f5188f..f59450a 100755
+--- a/arch/arm/mach-imx/mach-imx6sx.c
++++ b/arch/arm/mach-imx/mach-imx6sx.c
+@@ -21,6 +21,9 @@
+ #include <linux/netdevice.h>
+ #include <asm/mach/arch.h>
+ #include <asm/mach/map.h>
++#include <asm/system_misc.h>
++#include <linux/memblock.h>
++#include <asm/setup.h>
+ 
+ #include "common.h"
+ #include "cpuidle.h"
+@@ -330,11 +333,50 @@ static void __init imx6sx_map_io(void)
+ 	imx6_busfreq_map_io();
+ }
+ 
++extern unsigned long int ramoops_phys_addr;
++extern unsigned long int ramoops_mem_size;
++static void imx6sx_reserve(void)
++{
++	phys_addr_t phys;
++	phys_addr_t max_phys;
++	struct meminfo *mi;
++	struct membank *bank;
++
++#ifdef CONFIG_PSTORE_RAM
++	mi = &meminfo;
++	if (!mi) {
++		pr_err("no memory reserve for ramoops.\n");
++		return;
++	}
++	/* use memmory bank 0 for ram console store */
++	bank = &mi->bank[0];
++	if (!bank) {
++		pr_err("no memory reserve for ramoops.\n");
++		return;
++	}
++	max_phys = bank->start + bank->size;
++	/* reserve 256M for uboot avoid ram console data is cleaned by uboot */
++	phys = memblock_alloc_base(SZ_1M, SZ_4K, max_phys - SZ_256M);
++	if (phys) {
++		memblock_remove(phys, SZ_1M);
++		memblock_reserve(phys, SZ_1M);
++		ramoops_phys_addr = phys;
++		ramoops_mem_size = SZ_1M;
++	} else {
++		ramoops_phys_addr = 0;
++		ramoops_mem_size = 0;
++		pr_err("no memory reserve for ramoops.\n");
++	}
++#endif
++	return;
++}
++
+ DT_MACHINE_START(IMX6SX, "Freescale i.MX6 SoloX (Device Tree)")
+ 	.map_io		= imx6sx_map_io,
+ 	.init_irq	= imx6sx_init_irq,
+ 	.init_machine	= imx6sx_init_machine,
+ 	.init_late	= imx6sx_init_late,
+ 	.dt_compat	= imx6sx_dt_compat,
++	.reserve    = imx6sx_reserve,
+ 	.restart	= mxc_restart,
+ MACHINE_END
+diff --git a/arch/arm/mach-imx/mx6_ramoops.c b/arch/arm/mach-imx/mx6_ramoops.c
+new file mode 100644
+index 0000000..e7b0e08
+--- /dev/null
++++ b/arch/arm/mach-imx/mx6_ramoops.c
+@@ -0,0 +1,134 @@
++/*
++ * Copyright (C) 2014-2015 Freescale Semiconductor, Inc. All Rights Reserved.
++ */
++
++/*
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation; either version 2 of the License, or
++ * (at your option) any later version.
++
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++
++ * You should have received a copy of the GNU General Public License along
++ * with this program; if not, write to the Free Software Foundation, Inc.,
++ * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
++ */
++
++/*!
++ * @file mx6_ramoops.c
++ *
++ */
++
++#include <linux/module.h>
++#include <linux/platform_device.h>
++#include <linux/device.h>
++#include <linux/kernel.h>
++#include <linux/suspend.h>
++#include <linux/init.h>
++#include <linux/delay.h>
++#include <linux/rfkill.h>
++#include <linux/of_gpio.h>
++#include <linux/of_device.h>
++#include <linux/gpio.h>
++#include <linux/pstore_ram.h>
++
++unsigned long int ramoops_phys_addr;
++EXPORT_SYMBOL(ramoops_phys_addr);
++unsigned long int ramoops_mem_size;
++EXPORT_SYMBOL(ramoops_mem_size);
++
++
++static struct ramoops_platform_data ramoops_data;
++
++static struct platform_device ramoops_dev = {
++	.name = "ramoops",
++	.dev = {
++		.platform_data = &ramoops_data,
++	},
++};
++#if defined(CONFIG_OF)
++static const struct of_device_id mxc_ramoops_dt_ids[] = {
++	{ .compatible = "fsl,mxc_ramoops", },
++	{ /* sentinel */ }
++};
++MODULE_DEVICE_TABLE(of, mxc_ramoops_dt_ids);
++#endif
++
++
++static int mxc_ramoops_probe(struct platform_device *pdev)
++{
++	int ret;
++	struct device_node *np = pdev->dev.of_node;
++
++	ramoops_data.mem_address = ramoops_phys_addr;
++	ramoops_data.mem_size = ramoops_mem_size;
++	ret = of_property_read_u32(np, "record_size",
++			(u32 *)(&(ramoops_data.record_size)));
++	if (ret < 0) {
++		dev_dbg(&pdev->dev, "can not get record_size\n");
++		goto err;
++	}
++	ret = of_property_read_u32(np, "console_size",
++			(u32 *)(&(ramoops_data.console_size)));
++	if (ret < 0) {
++		dev_dbg(&pdev->dev, "can not get console_size\n");
++		goto err;
++	}
++	ret = of_property_read_u32(np, "ftrace_size",
++			(u32 *)(&(ramoops_data.ftrace_size)));
++	if (ret < 0) {
++		dev_dbg(&pdev->dev, "can not get ftrace_size\n");
++		goto err;
++	}
++
++	ret = of_property_read_u32(np, "dump_oops",
++			(u32 *)(&(ramoops_data.dump_oops)));
++	if (ret < 0) {
++		dev_dbg(&pdev->dev, "can not get dump_oops\n");
++		goto err;
++	}
++	if ((0 == ramoops_data.mem_size) ||
++		(ramoops_data.mem_size <
++		(ramoops_data.record_size +
++		 ramoops_data.console_size +
++		 ramoops_data.ftrace_size))) {
++		 dev_dbg(&pdev->dev, "memory reserve and config does not match!\n");
++		goto err;
++	}
++	ret = platform_device_register(&ramoops_dev);
++	if (ret) {
++		printk(KERN_ERR "unable to register platform device\n");
++		return -1;
++	}
++	platform_set_drvdata(pdev, NULL);
++	printk(KERN_INFO "mxc_ramoops device success loaded\n");
++	return 0;
++
++err:
++	return ret;
++}
++
++static int  mxc_ramoops_remove(struct platform_device *pdev)
++{
++	return 0;
++}
++
++static struct platform_driver mxc_ramoops_driver = {
++	.probe	= mxc_ramoops_probe,
++	.remove	= mxc_ramoops_remove,
++	.driver = {
++		.name	= "mxc_ramoops",
++		.owner	= THIS_MODULE,
++		.of_match_table = of_match_ptr(mxc_ramoops_dt_ids),
++	},
++};
++
++module_platform_driver(mxc_ramoops_driver)
++
++MODULE_LICENSE("GPL");
++MODULE_AUTHOR("Freescale Semiconductor, Inc.");
++MODULE_DESCRIPTION("Pstore RAM Oops driver for  MX6 Platform");
+-- 
+1.8.0
+

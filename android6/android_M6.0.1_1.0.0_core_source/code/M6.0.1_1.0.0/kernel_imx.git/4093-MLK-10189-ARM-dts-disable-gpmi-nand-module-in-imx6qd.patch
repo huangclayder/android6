@@ -1,0 +1,30 @@
+From ace12b77c9956a5608cfcd5d8003977930149567 Mon Sep 17 00:00:00 2001
+From: Allen Xu <b45815@freescale.com>
+Date: Fri, 30 Jan 2015 01:57:44 +0800
+Subject: [PATCH] MLK-10189: ARM:dts: disable gpmi nand module in imx6qdl
+ sabreauto dts
+
+disable gpmi nand module in imx6qdl default dts since it conflicts with
+uart3
+
+Signed-off-by: Allen Xu <b45815@freescale.com>
+---
+ arch/arm/boot/dts/imx6qdl-sabreauto.dtsi | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/arch/arm/boot/dts/imx6qdl-sabreauto.dtsi b/arch/arm/boot/dts/imx6qdl-sabreauto.dtsi
+index 0987f86..ea296c9 100644
+--- a/arch/arm/boot/dts/imx6qdl-sabreauto.dtsi
++++ b/arch/arm/boot/dts/imx6qdl-sabreauto.dtsi
+@@ -325,7 +325,7 @@
+ &gpmi {
+ 	pinctrl-names = "default";
+ 	pinctrl-0 = <&pinctrl_gpmi_nand>;
+-	status = "okay";
++	status = "disabled"; /* pin conflict with uart3 */
+ 	nand-on-flash-bbt;
+ };
+ 
+-- 
+1.8.0
+

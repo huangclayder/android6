@@ -1,0 +1,31 @@
+From c00d5d54175e902c10708b07558ede02ae544234 Mon Sep 17 00:00:00 2001
+From: Dong Aisheng <b29396@freescale.com>
+Date: Thu, 9 Apr 2015 17:05:24 +0800
+Subject: [PATCH] MLK-10629-6 dts: imx7d-sdb: do not enable wlreg_on always
+
+Broadcom WiFi requires reset by operating wlreg_on regulator
+when doing insmod/rmmod.
+Keep wlreg_on will cause card state wrong and unable to re-insmod.
+
+Signed-off-by: Dong Aisheng <b29396@freescale.com>
+(cherry picked from commit 507784ecb7d0d96b425168383816235056b5b6a7)
+---
+ arch/arm/boot/dts/imx7d-sdb.dts | 2 --
+ 1 file changed, 2 deletions(-)
+
+diff --git a/arch/arm/boot/dts/imx7d-sdb.dts b/arch/arm/boot/dts/imx7d-sdb.dts
+index 8998e7c..dc6f278 100644
+--- a/arch/arm/boot/dts/imx7d-sdb.dts
++++ b/arch/arm/boot/dts/imx7d-sdb.dts
+@@ -80,8 +80,6 @@
+ 			regulator-name = "wlreg_on";
+ 			gpio = <&gpio4 21 GPIO_ACTIVE_HIGH>;
+ 			enable-active-high;
+-			regulator-boot-on;
+-			regulator-always-on;
+ 		};
+ 	};
+ 
+-- 
+1.8.0
+

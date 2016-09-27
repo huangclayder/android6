@@ -1,0 +1,26 @@
+From d78c540ad5c38bc787d231edc5e3a02c99c2f1eb Mon Sep 17 00:00:00 2001
+From: Wenbo Zhu <b52619@freescale.com>
+Date: Wed, 22 Jul 2015 17:26:42 +0800
+Subject: [PATCH 514/602] MA-6914 when auto sx/dq diaplay without hdmi, the
+ "enable passthrough" isn't be show on AudioRoute
+ application. and make the apk support sabresd dq.
+
+  add "PACKAGES+=AudioRoute" in sabresd_6dq.mk
+
+Signed-off-by: Wenbo Zhu <b52619@freescale.com>
+---
+ imx6/sabresd_6dq.mk | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/imx6/sabresd_6dq.mk b/imx6/sabresd_6dq.mk
+index d4af3b4..7e6551c 100644
+--- a/imx6/sabresd_6dq.mk
++++ b/imx6/sabresd_6dq.mk
+@@ -59,3 +59,4 @@ PRODUCT_COPY_FILES += \
+ 	frameworks/native/data/etc/android.hardware.consumerir.xml:system/etc/permissions/android.hardware.consumerir.xml \
+ 	frameworks/native/data/etc/android.hardware.ethernet.xml:system/etc/permissions/android.hardware.ethernet.xml \
+ 	device/fsl/sabresd_6dq/required_hardware.xml:system/etc/permissions/required_hardware.xml
++PRODUCT_PACKAGES += AudioRoute
+-- 
+1.8.0
+

@@ -1,0 +1,74 @@
+From 6b8b2ccaa636d9e0108a69451c4a63ea85c06e47 Mon Sep 17 00:00:00 2001
+From: Richard Liu <r66033@freescale.com>
+Date: Tue, 15 Dec 2015 13:50:06 +0800
+Subject: [PATCH 579/602] MA-7348 add a build config to support disable
+ prebuilt
+
+Default GPU, WFDSink and FSL hwcomposer source code are not open,
+sometimes we need disable prebuilt to build them by source code,
+to easy do that we add a build config DISABLE_FSL_PREBUILT here,
+with this config you can easy disable prebuilt by add a define
+DISABLE_FSL_PREBUILT=(GPU,WFD,HWC,ALL).
+
+Usage example:
+make PRODUCT-sabresd_6dq-user DISABLE_FSL_PREBUILT=GPU
+make PRODUCT-sabresd_6dq-user DISABLE_FSL_PREBUILT=ALL
+mm DISABLE_FSL_PREBUILT=GPU
+
+Signed-off-by: Richard Liu <r66033@freescale.com>
+---
+ imx6/BoardConfigCommon.mk | 13 +++++++++++++
+ imx7/BoardConfigCommon.mk | 13 +++++++++++++
+ 2 files changed, 26 insertions(+)
+
+diff --git a/imx6/BoardConfigCommon.mk b/imx6/BoardConfigCommon.mk
+index b0a0ea1..4f28cb1 100644
+--- a/imx6/BoardConfigCommon.mk
++++ b/imx6/BoardConfigCommon.mk
+@@ -58,6 +58,19 @@ PREBUILT_FSL_IMX_GPU := true
+ PREBUILT_FSL_WFDSINK := true
+ PREBUILT_FSL_HWCOMPOSER := true
+ 
++# override some prebuilt setting if DISABLE_FSL_PREBUILT is define
++ifeq ($(DISABLE_FSL_PREBUILT),GPU)
++PREBUILT_FSL_IMX_GPU := false
++else ifeq ($(DISABLE_FSL_PREBUILT),WFD)
++PREBUILT_FSL_WFDSINK := false
++else ifeq ($(DISABLE_FSL_PREBUILT),HWC)
++PREBUILT_FSL_HWCOMPOSER := false
++else ifeq ($(DISABLE_FSL_PREBUILT),ALL)
++PREBUILT_FSL_IMX_GPU := false
++PREBUILT_FSL_WFDSINK := false
++PREBUILT_FSL_HWCOMPOSER := false
++endif
++
+ # use non-neon memory copy on mx6x to get better performance
+ ARCH_ARM_USE_NON_NEON_MEMCPY := true
+ 
+diff --git a/imx7/BoardConfigCommon.mk b/imx7/BoardConfigCommon.mk
+index 7c6c640..d6c0d22 100644
+--- a/imx7/BoardConfigCommon.mk
++++ b/imx7/BoardConfigCommon.mk
+@@ -58,6 +58,19 @@ PREBUILT_FSL_IMX_GPU := true
+ PREBUILT_FSL_WFDSINK := true
+ PREBUILT_FSL_HWCOMPOSER := true
+ 
++# override some prebuilt setting if DISABLE_FSL_PREBUILT is define
++ifeq ($(DISABLE_FSL_PREBUILT),GPU)
++PREBUILT_FSL_IMX_GPU := false
++else ifeq ($(DISABLE_FSL_PREBUILT),WFD)
++PREBUILT_FSL_WFDSINK := false
++else ifeq ($(DISABLE_FSL_PREBUILT),HWC)
++PREBUILT_FSL_HWCOMPOSER := false
++else ifeq ($(DISABLE_FSL_PREBUILT),ALL)
++PREBUILT_FSL_IMX_GPU := false
++PREBUILT_FSL_WFDSINK := false
++PREBUILT_FSL_HWCOMPOSER := false
++endif
++
+ # use non-neon memory copy on mx6x to get better performance
+ ARCH_ARM_USE_NON_NEON_MEMCPY := true
+ 
+-- 
+1.8.0
+

@@ -1,0 +1,17 @@
+From db2efd6f12ca0e7174be5bde3f11239c25b932bf Mon Sep 17 00:00:00 2001
+From: Anson Huang <b20788@freescale.com>
+Date: Wed, 6 May 2015 13:20:58 +0800
+Subject: [PATCH] MLK-10788-6 ARM: dts: correct file property
+
+Correct pinfunc head file property.
+
+Signed-off-by: Anson Huang <b20788@freescale.com>
+---
+ 0 files changed
+
+diff --git a/arch/arm/boot/dts/imx6ul-pinfunc.h b/arch/arm/boot/dts/imx6ul-pinfunc.h
+old mode 100755
+new mode 100644
+-- 
+1.8.0
+

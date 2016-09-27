@@ -1,0 +1,50 @@
+From 3f30d2f54144967e2201a62608890b60ff7cc33b Mon Sep 17 00:00:00 2001
+From: "guoyin.chen" <guoyin.chen@freescale.com>
+Date: Mon, 20 Apr 2015 20:30:16 +0800
+Subject: [PATCH 576/635] MA-6560-2 No hardware hal library for imx7 soc
+
+Make Camera HAL depends on BOARD_HAVE_IMX_CAMERA but not the soc type
+
+Signed-off-by: guoyin.chen <guoyin.chen@freescale.com>
+---
+ mx6/libcamera/Android.mk  | 2 --
+ mx6/libcamera2/Android.mk | 2 --
+ 2 files changed, 4 deletions(-)
+
+diff --git a/mx6/libcamera/Android.mk b/mx6/libcamera/Android.mk
+index b60af03..6a77b1d 100644
+--- a/mx6/libcamera/Android.mk
++++ b/mx6/libcamera/Android.mk
+@@ -12,7 +12,6 @@
+ # See the License for the specific language governing permissions and
+ # limitations under the License.
+ 
+-ifeq ($(BOARD_SOC_CLASS),IMX6)
+ LOCAL_PATH:= $(call my-dir)
+ 
+ ifeq ($(BOARD_HAVE_IMX_CAMERA),true)
+@@ -107,4 +106,3 @@ LOCAL_MODULE_TAGS := eng
+ include $(BUILD_SHARED_LIBRARY)
+ endif
+ 
+-endif
+diff --git a/mx6/libcamera2/Android.mk b/mx6/libcamera2/Android.mk
+index 943a607..1f11dd7 100644
+--- a/mx6/libcamera2/Android.mk
++++ b/mx6/libcamera2/Android.mk
+@@ -12,7 +12,6 @@
+ # See the License for the specific language governing permissions and
+ # limitations under the License.
+ 
+-ifeq ($(BOARD_SOC_CLASS),IMX6)
+ LOCAL_PATH:= $(call my-dir)
+ 
+ ifeq ($(BOARD_HAVE_IMX_CAMERA),true)
+@@ -100,4 +99,3 @@ LOCAL_MODULE_TAGS := eng
+ include $(BUILD_SHARED_LIBRARY)
+ endif
+ 
+-endif
+-- 
+1.8.0
+

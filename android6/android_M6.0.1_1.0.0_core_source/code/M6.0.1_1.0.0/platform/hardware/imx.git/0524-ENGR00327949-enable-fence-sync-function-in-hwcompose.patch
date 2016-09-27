@@ -1,0 +1,91 @@
+From b7e80cdd157eec6e712903206781d0a8b5bfdb5e Mon Sep 17 00:00:00 2001
+From: b37945 <b37945@freescale.com>
+Date: Thu, 21 Aug 2014 12:43:44 +0800
+Subject: [PATCH 524/635] ENGR00327949 enable fence sync function in
+ hwcomposer.
+
+add fence sync function before framebuffer post.
+
+Signed-off-by: b37945 <b37945@freescale.com>
+---
+ mx6/hwcomposer/Android.mk                |  3 ++-
+ mx6/hwcomposer/hwcomposer.cpp            | 20 +++++++++++++++++---
+ mx6/libgralloc_wrapper/BufferManager.cpp |  2 +-
+ 3 files changed, 20 insertions(+), 5 deletions(-)
+
+diff --git a/mx6/hwcomposer/Android.mk b/mx6/hwcomposer/Android.mk
+index efb7c5a..d36ebbb 100644
+--- a/mx6/hwcomposer/Android.mk
++++ b/mx6/hwcomposer/Android.mk
+@@ -29,7 +29,8 @@ LOCAL_SHARED_LIBRARIES :=			\
+ 	libui					\
+ 	libhardware				\
+ 	libhardware_legacy			\
+-	libbinder
++	libbinder				\
++	libsync
+ 
+ LOCAL_SRC_FILES :=				\
+ 	hwcomposer.cpp				\
+diff --git a/mx6/hwcomposer/hwcomposer.cpp b/mx6/hwcomposer/hwcomposer.cpp
+index 3085939..f215b5e 100644
+--- a/mx6/hwcomposer/hwcomposer.cpp
++++ b/mx6/hwcomposer/hwcomposer.cpp
+@@ -42,7 +42,6 @@
+ #include <sync/sync.h>
+ 
+ /*****************************************************************************/
+-#define HWC_G2D   100
+ 
+ typedef EGLClientBuffer (EGLAPIENTRYP PFNEGLGETRENDERBUFFERVIVPROC) (EGLClientBuffer Handle);
+ typedef EGLBoolean (EGLAPIENTRYP PFNEGLPOSTBUFFERVIVPROC) (EGLClientBuffer Buffer);
+@@ -174,16 +173,31 @@ static int hwc_set(struct hwc_composer_device_1 *dev,
+ 
+     if (primary && ctx->mDispInfo[HWC_DISPLAY_PRIMARY].blank == 0) {
+         hwc_layer_1 *fbt = &primary->hwLayers[primary->numHwLayers-1];
+-        if(ctx->mFbDev[HWC_DISPLAY_PRIMARY] != NULL)
++        if(ctx->mFbDev[HWC_DISPLAY_PRIMARY] != NULL && fbt != NULL) {
++            int fenceFd = fbt->acquireFenceFd;
++            if (fenceFd != -1) {
++                sync_wait(fenceFd, -1);
++                close(fenceFd);
++                fbt->acquireFenceFd = -1;
++            }
++
+             ctx->mFbDev[HWC_DISPLAY_PRIMARY]->post(
+                      ctx->mFbDev[HWC_DISPLAY_PRIMARY],  fbt->handle);
++       }
+     }
+ 
+     if (external && ctx->mDispInfo[HWC_DISPLAY_EXTERNAL].blank == 0) {
+         hwc_layer_1 *fbt = &external->hwLayers[external->numHwLayers-1];
+-        if(ctx->mFbDev[HWC_DISPLAY_EXTERNAL] != NULL)
++        if(ctx->mFbDev[HWC_DISPLAY_EXTERNAL] != NULL && fbt != NULL) {
++            int fenceFd = fbt->acquireFenceFd;
++            if (fenceFd != -1) {
++                sync_wait(fenceFd, -1);
++                close(fenceFd);
++                fbt->acquireFenceFd = -1;
++            }
+             ctx->mFbDev[HWC_DISPLAY_EXTERNAL]->post(
+                      ctx->mFbDev[HWC_DISPLAY_EXTERNAL], fbt->handle);
++        }
+     }
+ 
+     return 0;
+diff --git a/mx6/libgralloc_wrapper/BufferManager.cpp b/mx6/libgralloc_wrapper/BufferManager.cpp
+index c2ab553..235da19 100755
+--- a/mx6/libgralloc_wrapper/BufferManager.cpp
++++ b/mx6/libgralloc_wrapper/BufferManager.cpp
+@@ -151,7 +151,7 @@ int BufferManager::alloc(int w, int h, int format, int usage,
+ 
+ int BufferManager::free(buffer_handle_t handle)
+ {
+-    if (private_handle_t::validate(handle) < 0) {
++    if (validateHandle(handle) < 0) {
+         ALOGE("%s invalid handle", __FUNCTION__);
+         return -EINVAL;
+     }
+-- 
+1.8.0
+

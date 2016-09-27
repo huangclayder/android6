@@ -1,0 +1,6 @@
+0001-ENGR00215174-add-GRALLOC_USAGE_HW_FBX-support.patch
+0002-ENGR00217633-Add-new-usage-to-indicate-allocate-cont.patch
+0003-ENGR00269800-Support-RGB565-FB-device.patch
+0004-ENGR00275212-enable-alpha-and-dim-layer-process-by-h.patch
+0005-MA-6365-make-default-gralloc-work-on-6sl_evk.patch
+0006-MA-6544-fix-framebuffer-post-will-reinitialize-FB-de.patch

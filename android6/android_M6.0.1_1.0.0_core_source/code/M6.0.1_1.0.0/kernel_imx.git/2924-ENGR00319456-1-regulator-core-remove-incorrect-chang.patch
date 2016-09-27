@@ -1,0 +1,32 @@
+From b229805dfa6db5e84c6dab8fa3a96035ea70b6fb Mon Sep 17 00:00:00 2001
+From: Anson Huang <b20788@freescale.com>
+Date: Fri, 20 Jun 2014 13:59:55 +0800
+Subject: [PATCH] ENGR00319456-1 regulator: core: remove incorrect change of
+ regulator_get
+
+If user do NOT want a dummy regulator returned when
+there is no matching regulator found, then they should use
+regulator_get_optional instead of regulator_get. So remove
+incorrect change.
+
+Signed-off-by: Anson Huang <b20788@freescale.com>
+---
+ drivers/regulator/core.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/regulator/core.c b/drivers/regulator/core.c
+index a254e56..5d8d2dc 100644
+--- a/drivers/regulator/core.c
++++ b/drivers/regulator/core.c
+@@ -1342,7 +1342,7 @@ static struct regulator *_regulator_get(struct device *dev, const char *id,
+ 	 * If we have return value from dev_lookup fail, we do not expect to
+ 	 * succeed, so, quit with appropriate error value
+ 	 */
+-	if (ret && ret == -ENODEV)
++	if (ret && ret != -ENODEV)
+ 		goto out;
+ 
+ 	if (!devname)
+-- 
+1.8.0
+

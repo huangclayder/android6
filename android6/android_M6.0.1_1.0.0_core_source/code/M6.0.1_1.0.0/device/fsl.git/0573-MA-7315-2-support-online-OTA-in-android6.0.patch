@@ -1,0 +1,88 @@
+From acedf4d65d47a8ddc63110af2cf1a07933aaec92 Mon Sep 17 00:00:00 2001
+From: Zhang Sanshan <b51434@freescale.com>
+Date: Fri, 4 Dec 2015 15:58:25 +0800
+Subject: [PATCH 573/602] MA-7315-2 support online OTA in android6.0
+
+1 When building ota package, it need cache_size.
+2 The default online ota package is located at
+  10.192.224.178:/srv/ftp/android_daily_latest/board_marshmallow_6.0
+  change the ota folder name for the ota apk.
+3 add selinux policy for recovery when do online ota.
+
+Signed-off-by: Zhang Sanshan <b51434@freescale.com>
+---
+ imx6/BoardConfigCommon.mk | 1 +
+ imx6/etc/ota.conf         | 2 +-
+ imx6/sepolicy/recovery.te | 1 +
+ imx7/BoardConfigCommon.mk | 1 +
+ imx7/etc/ota.conf         | 2 +-
+ imx7/sepolicy/recovery.te | 1 +
+ 6 files changed, 6 insertions(+), 2 deletions(-)
+
+diff --git a/imx6/BoardConfigCommon.mk b/imx6/BoardConfigCommon.mk
+index 0566450..94ee082 100644
+--- a/imx6/BoardConfigCommon.mk
++++ b/imx6/BoardConfigCommon.mk
+@@ -61,6 +61,7 @@ BOARD_BOOTIMAGE_PARTITION_SIZE := 16777216
+ BOARD_RECOVERYIMAGE_PARTITION_SIZE := 16777216
+ 
+ BOARD_SYSTEMIMAGE_PARTITION_SIZE := 444596224
++BOARD_CACHEIMAGE_PARTITION_SIZE := 444596224
+ BOARD_FLASH_BLOCK_SIZE := 4096
+ TARGET_RECOVERY_UI_LIB := librecovery_ui_imx
+ 
+diff --git a/imx6/etc/ota.conf b/imx6/etc/ota.conf
+index 5f02f84..5facf76 100644
+--- a/imx6/etc/ota.conf
++++ b/imx6/etc/ota.conf
+@@ -1,3 +1,3 @@
+ server=10.192.224.178
+ port=10888
+-ota_folder_suffix=lollipop
++ota_folder_suffix=marshmallow
+diff --git a/imx6/sepolicy/recovery.te b/imx6/sepolicy/recovery.te
+index a57519b..946b740 100644
+--- a/imx6/sepolicy/recovery.te
++++ b/imx6/sepolicy/recovery.te
+@@ -6,5 +6,6 @@ recovery_only(`
+   allow recovery mtd_device:dir { search }; 
+   allow recovery mtd_device:chr_file { getattr read write open ioctl};
+   allow recovery cache_file:dir { mounton }; 
++  allow recovery debug_prop:property_service { set }; 
+ ')
+ 
+diff --git a/imx7/BoardConfigCommon.mk b/imx7/BoardConfigCommon.mk
+index 4bd5bed..2bb3157 100644
+--- a/imx7/BoardConfigCommon.mk
++++ b/imx7/BoardConfigCommon.mk
+@@ -61,6 +61,7 @@ BOARD_BOOTIMAGE_PARTITION_SIZE :=  16777216
+ BOARD_RECOVERYIMAGE_PARTITION_SIZE := 16777216
+ 
+ BOARD_SYSTEMIMAGE_PARTITION_SIZE := 444596224
++BOARD_CACHEIMAGE_PARTITION_SIZE := 444596224
+ BOARD_FLASH_BLOCK_SIZE := 4096
+ TARGET_RECOVERY_UI_LIB := librecovery_ui_imx
+ 
+diff --git a/imx7/etc/ota.conf b/imx7/etc/ota.conf
+index 5f02f84..5facf76 100644
+--- a/imx7/etc/ota.conf
++++ b/imx7/etc/ota.conf
+@@ -1,3 +1,3 @@
+ server=10.192.224.178
+ port=10888
+-ota_folder_suffix=lollipop
++ota_folder_suffix=marshmallow
+diff --git a/imx7/sepolicy/recovery.te b/imx7/sepolicy/recovery.te
+index c59141b..11716dc 100644
+--- a/imx7/sepolicy/recovery.te
++++ b/imx7/sepolicy/recovery.te
+@@ -6,5 +6,6 @@ recovery_only(`
+   allow recovery mtd_device:dir { search }; 
+   allow recovery mtd_device:chr_file { getattr read write open ioctl};
+   allow recovery cache_file:dir { mounton };  
++  allow recovery debug_prop:property_service { set }; 
+ ')
+ 
+-- 
+1.8.0
+

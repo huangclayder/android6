@@ -1,0 +1,43 @@
+From a5fa9c1c40930952ae94455a62ea7007380b6567 Mon Sep 17 00:00:00 2001
+From: fang hui <b31070@freescale.com>
+Date: Tue, 24 Mar 2015 10:21:26 +0800
+Subject: [PATCH 06/12] MA-6421-1 - update to lp5.1
+
+change mShowSystemTime type from CheckBoxPreference to SwitchPreference
+
+Change-Id: I5f0878f89901da587136a4e3bfef93a8525bc8bf
+Signed-off-by: fang hui <b31070@freescale.com>
+---
+ res/xml/development_prefs.xml                     | 2 +-
+ src/com/android/settings/DevelopmentSettings.java | 2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/res/xml/development_prefs.xml b/res/xml/development_prefs.xml
+index 80f53e0..a56738a 100644
+--- a/res/xml/development_prefs.xml
++++ b/res/xml/development_prefs.xml
+@@ -301,7 +301,7 @@
+             android:title="@string/show_cpu_usage"
+             android:summary="@string/show_cpu_usage_summary"/>
+ 
+-        <CheckBoxPreference
++        <SwitchPreference
+                 android:key="show_cpu_system_time"
+                 android:title="@string/show_system_time"
+                 android:summary="@string/show_system_time_summary"/>
+diff --git a/src/com/android/settings/DevelopmentSettings.java b/src/com/android/settings/DevelopmentSettings.java
+index 1b42f20..a325845 100644
+--- a/src/com/android/settings/DevelopmentSettings.java
++++ b/src/com/android/settings/DevelopmentSettings.java
+@@ -1350,7 +1350,7 @@ public class DevelopmentSettings extends SettingsPreferenceFragment
+     }
+ 	
+     private void updateSystemTimeOptions() {
+-        updateCheckBox(mShowSystemTime, Settings.Global.getInt(getActivity().getContentResolver(),
++        updateSwitchPreference(mShowSystemTime, Settings.Global.getInt(getActivity().getContentResolver(),
+                 Settings.Global.SHOW_SYSTEM_TIME, 0) != 0);
+         Log.i(TAG, "updateSystemTimeOptions:" + Settings.Global.getInt(getActivity().getContentResolver(),
+                 Settings.Global.SHOW_PROCESSES, 0));
+-- 
+1.8.0
+

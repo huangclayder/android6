@@ -1,0 +1,32 @@
+From 77bd79984194ce9e891e3bf489e3036c4b24ecac Mon Sep 17 00:00:00 2001
+From: Jon Medhurst <tixy@linaro.org>
+Date: Thu, 6 Jun 2013 14:36:40 +0100
+Subject: [PATCH] ARM: vexpress: Select CONFIG_ARM_ERRATA_643719
+
+The CA9X4 CoreTile suffers from this errata and as a consequence has
+reboot and shutdown crashes since the cpu hotplug changes introduced in
+Linux 3.10. (Commit bca7a5a04933 "ARM: cpu hotplug: remove majority of
+cache flushing from platforms")
+
+Signed-off-by: Jon Medhurst <tixy@linaro.org>
+(cherry picked from commit 885c77d96c6ca8a09dd3eb4edb8812aa5e6fdadd)
+Signed-off-by: Alex Shi <alex.shi@linaro.org>
+---
+ arch/arm/mach-vexpress/Kconfig | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/arch/arm/mach-vexpress/Kconfig b/arch/arm/mach-vexpress/Kconfig
+index 4a70be4..556b01d 100644
+--- a/arch/arm/mach-vexpress/Kconfig
++++ b/arch/arm/mach-vexpress/Kconfig
+@@ -55,6 +55,7 @@ config ARCH_VEXPRESS_CORTEX_A5_A9_ERRATA
+ 
+ config ARCH_VEXPRESS_CA9X4
+ 	bool "Versatile Express Cortex-A9x4 tile"
++	select ARM_ERRATA_643719
+ 
+ config ARCH_VEXPRESS_DCSCB
+ 	bool "Dual Cluster System Control Block (DCSCB) support"
+-- 
+1.8.0
+

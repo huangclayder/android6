@@ -1,0 +1,102 @@
+From 0c600f6a67f00fe0c674c08c355bea3789109679 Mon Sep 17 00:00:00 2001
+From: Peng Fan <Peng.Fan@freescale.com>
+Date: Wed, 13 May 2015 16:25:34 +0800
+Subject: [PATCH] MLK-10885 imx: mx6slevk ignore elan init when no epdc on
+ board
+
+If no epdc pannel is plugged into mx6slevk board, no need to
+do the elan init operation for each i2c init transfer which
+will slow the i2c speed.
+
+If epdc panned is plugged into mx6slevk board, all works as the
+original patch: "b6ba68516b681a38025252bd0ef6a6ed3e8adfa0" -
+"MLK-10215 Add elan init in i.MX6SL-EVK board"
+
+This patch also fix a bug that setup_elan_pads should be called in
+board_init, but not board_late_init where too late to setup_elan_pads.
+And align pad property with linux kernel, value is 0x17000.
+
+Signed-off-by: Peng Fan <Peng.Fan@freescale.com>
+---
+ board/freescale/mx6slevk/mx6slevk.c | 34 +++++++++++++++++++++-------------
+ 1 file changed, 21 insertions(+), 13 deletions(-)
+
+diff --git a/board/freescale/mx6slevk/mx6slevk.c b/board/freescale/mx6slevk/mx6slevk.c
+index 76a991f..dda3f68 100644
+--- a/board/freescale/mx6slevk/mx6slevk.c
++++ b/board/freescale/mx6slevk/mx6slevk.c
+@@ -67,7 +67,9 @@ DECLARE_GLOBAL_DATA_PTR;
+ 			PAD_CTL_PUS_47K_UP | PAD_CTL_SPEED_LOW |\
+ 			PAD_CTL_DSE_80ohm | PAD_CTL_HYS |	\
+ 			PAD_CTL_SRE_FAST)
+-#define ELAN_INTR_PAD_CTRL	(PAD_CTL_PUS_47K_UP | PAD_CTL_HYS)
++
++#define ELAN_INTR_PAD_CTRL (PAD_CTL_PKE | PAD_CTL_PUE | \
++			    PAD_CTL_PUS_47K_UP | PAD_CTL_HYS)
+ 
+ #define EPDC_PAD_CTRL    (PAD_CTL_PKE | PAD_CTL_SPEED_MED |	\
+ 	PAD_CTL_DSE_40ohm | PAD_CTL_HYS)
+@@ -763,6 +765,14 @@ void epdc_power_off(void)
+ }
+ #endif
+ 
++void setup_elan_pads(void)
++{
++#define TOUCH_CS	IMX_GPIO_NR(2, 9)
++#define TOUCH_INT   IMX_GPIO_NR(2, 10)
++#define TOUCH_RST	IMX_GPIO_NR(4, 4)
++	imx_iomux_v3_setup_multiple_pads(elan_pads, ARRAY_SIZE(elan_pads));
++}
++
+ int board_init(void)
+ {
+ 	/* address of boot parameters */
+@@ -770,6 +780,7 @@ int board_init(void)
+ 
+ #ifdef CONFIG_SYS_I2C_MXC
+ 	setup_i2c(0, CONFIG_SYS_I2C_SPEED, 0x7f, &i2c_pad_info1);
++	setup_elan_pads();
+ #endif
+ 
+ #ifdef	CONFIG_FEC_MXC
+@@ -787,17 +798,18 @@ int board_init(void)
+ 	return 0;
+ }
+ 
+-void setup_elan_pads(void)
+-{
+-#define TOUCH_CS	IMX_GPIO_NR(2, 9)
+-#define TOUCH_INT   IMX_GPIO_NR(2, 10)
+-#define TOUCH_RST	IMX_GPIO_NR(4, 4)
+-	imx_iomux_v3_setup_multiple_pads(elan_pads, ARRAY_SIZE(elan_pads));
+-}
+-
+ void elan_init(void)
+ {
+ 	gpio_direction_input(TOUCH_INT);
++	/*
++	 * If epdc panel not plugged in, gpio_get_value(TOUCH_INT) will
++	 * return 1. And no need to mdelay, which will make i2c operation
++	 * slow.
++	 * If epdc panel plugged in, gpio_get_value(TOUCH_INT) will
++	 * return 0. And elan init flow will be executed.
++	 */
++	if (gpio_get_value(TOUCH_INT))
++		return;
+ 	gpio_direction_output(TOUCH_CS , 1);
+ 	gpio_set_value(TOUCH_CS, 0);
+ 	gpio_direction_output(TOUCH_RST , 1);
+@@ -819,10 +831,6 @@ void i2c_force_reset_slave(void)
+ 
+ int board_late_init(void)
+ {
+-#ifdef CONFIG_SYS_I2C_MXC
+-	setup_elan_pads();
+-#endif
+-
+ #ifdef CONFIG_ENV_IS_IN_MMC
+ 	board_late_mmc_env_init();
+ #endif
+-- 
+1.8.0
+

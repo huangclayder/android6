@@ -1,0 +1,50 @@
+From 16bbfa2cd4aec021c6e672bf3509dda632c9db96 Mon Sep 17 00:00:00 2001
+From: Liu Xiaowen <xiaowen.liu@freescale.com>
+Date: Tue, 15 Sep 2015 14:22:29 +0800
+Subject: [PATCH] MA-7046 enable ZRAM function for Android to enlarge memory
+ size.
+
+enable ZRAM relevant kernel configure.
+
+Signed-off-by: Liu Xiaowen <xiaowen.liu@freescale.com>
+---
+ arch/arm/configs/imx_v7_android_defconfig | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/arch/arm/configs/imx_v7_android_defconfig b/arch/arm/configs/imx_v7_android_defconfig
+index cf4a186..57cc21f 100644
+--- a/arch/arm/configs/imx_v7_android_defconfig
++++ b/arch/arm/configs/imx_v7_android_defconfig
+@@ -46,6 +46,7 @@ CONFIG_AEABI=y
+ CONFIG_HIGHMEM=y
+ CONFIG_KSM=y
+ CONFIG_CMA=y
++CONFIG_ZSMALLOC=y
+ CONFIG_SECCOMP=y
+ CONFIG_CMDLINE="noinitrd console=ttymxc0,115200"
+ CONFIG_CPU_FREQ=y
+@@ -182,12 +183,10 @@ CONFIG_BT_BNEP_PROTO_FILTER=y
+ CONFIG_BT_HIDP=y
+ CONFIG_BT_HCIBTUSB=y
+ CONFIG_BT_HCIUART=y
++CONFIG_BT_HCIUART_H4=y
+ CONFIG_BT_HCIUART_BCSP=y
+ CONFIG_BT_HCIUART_ATH3K=y
+ CONFIG_BT_HCIBCM203X=y
+-CONFIG_BT_L2CAP=y
+-CONFIG_BT_SCO=y
+-CONFIG_BT_HCIUART_H4=y
+ CONFIG_CFG80211=m
+ CONFIG_CFG80211_WEXT=y
+ CONFIG_MAC80211=m
+@@ -219,6 +218,7 @@ CONFIG_MTD_NAND_MXC=y
+ CONFIG_MTD_SPI_NOR=y
+ CONFIG_SPI_FSL_QUADSPI=y
+ CONFIG_MTD_UBI=y
++CONFIG_ZRAM=y
+ CONFIG_BLK_DEV_LOOP=y
+ CONFIG_BLK_DEV_RAM=y
+ CONFIG_BLK_DEV_RAM_SIZE=8192
+-- 
+1.8.0
+

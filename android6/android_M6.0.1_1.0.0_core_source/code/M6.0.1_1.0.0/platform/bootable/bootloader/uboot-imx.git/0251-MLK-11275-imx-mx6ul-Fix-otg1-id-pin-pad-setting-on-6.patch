@@ -1,0 +1,32 @@
+From ccef4600bf6dab04ee778c457f4d59c2a750cad9 Mon Sep 17 00:00:00 2001
+From: "Ye.Li" <B37916@freescale.com>
+Date: Wed, 22 Jul 2015 15:25:50 +0800
+Subject: [PATCH] MLK-11275 imx: mx6ul: Fix otg1 id pin pad setting on 6ul
+ DDR3 ARM2
+
+This pin is missed to change in patch:
+"MLK-11230 imx6: USB: Modify OTG ID pin pad setting to pull up"
+
+Should set it to pull down at default.
+
+Signed-off-by: Ye.Li <B37916@freescale.com>
+---
+ board/freescale/mx6ul_14x14_ddr3_arm2/mx6ul_14x14_ddr3_arm2.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/board/freescale/mx6ul_14x14_ddr3_arm2/mx6ul_14x14_ddr3_arm2.c b/board/freescale/mx6ul_14x14_ddr3_arm2/mx6ul_14x14_ddr3_arm2.c
+index 46e7cd1..0751829 100644
+--- a/board/freescale/mx6ul_14x14_ddr3_arm2/mx6ul_14x14_ddr3_arm2.c
++++ b/board/freescale/mx6ul_14x14_ddr3_arm2/mx6ul_14x14_ddr3_arm2.c
+@@ -978,7 +978,7 @@ int checkboard(void)
+ #define UCTRL_PWR_POL		(1 << 9)
+ iomux_v3_cfg_t const usb_otg1_pads[] = {
+ 	MX6_PAD_GPIO1_IO04__USB_OTG1_PWR | MUX_PAD_CTRL(NO_PAD_CTRL),
+-	MX6_PAD_GPIO1_IO00__ANATOP_OTG1_ID | MUX_PAD_CTRL(NO_PAD_CTRL),
++	MX6_PAD_GPIO1_IO00__ANATOP_OTG1_ID | MUX_PAD_CTRL(OTG_ID_PAD_CTRL),
+ };
+ 
+ /*
+-- 
+1.8.0
+

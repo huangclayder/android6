@@ -1,0 +1,44 @@
+From f11274d835635288295a341bec298297b97b759c Mon Sep 17 00:00:00 2001
+From: zhang sanshan <b51434@freescale.com>
+Date: Thu, 29 Oct 2015 15:23:11 +0800
+Subject: [PATCH] MA-7092 [Android_6SX_ARD]Sensor: It doesn't point to the
+ correct direction in compass. 100%
+
+The compass sensor need initial position for it calculating the Compass direction.
+Need to modify the init value from 2 to 7.
+
+Signed-off-by: zhang sanshan <b51434@freescale.com>
+---
+ arch/arm/boot/dts/imx6qdl-sabreauto.dtsi | 2 +-
+ arch/arm/boot/dts/imx6sx-sabreauto.dts   | 2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/arch/arm/boot/dts/imx6qdl-sabreauto.dtsi b/arch/arm/boot/dts/imx6qdl-sabreauto.dtsi
+index 9f47150..162c6e59 100644
+--- a/arch/arm/boot/dts/imx6qdl-sabreauto.dtsi
++++ b/arch/arm/boot/dts/imx6qdl-sabreauto.dtsi
+@@ -556,7 +556,7 @@
+ 	mag3110@0e {
+ 		compatible = "fsl,mag3110";
+ 		reg = <0x0e>;
+-		position = <2>;
++		position = <7>;
+ 		interrupt-parent = <&gpio2>;
+ 		interrupts = <29 1>;
+ 	};
+diff --git a/arch/arm/boot/dts/imx6sx-sabreauto.dts b/arch/arm/boot/dts/imx6sx-sabreauto.dts
+index 8d34213..21b864e 100644
+--- a/arch/arm/boot/dts/imx6sx-sabreauto.dts
++++ b/arch/arm/boot/dts/imx6sx-sabreauto.dts
+@@ -785,7 +785,7 @@
+ 	mag3110@0e {
+ 		compatible = "fsl,mag3110";
+ 		reg = <0x0e>;
+-		position = <2>;
++		position = <7>;
+ 		interrupt-parent = <&gpio6>;
+ 		interrupts = <6 1>;
+ 	};
+-- 
+1.8.0
+

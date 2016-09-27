@@ -1,0 +1,41 @@
+From 17fdf4168e35e061cd0d522dabdb8d559a463906 Mon Sep 17 00:00:00 2001
+From: Peng Fan <Peng.Fan@freescale.com>
+Date: Thu, 26 Nov 2015 10:26:59 +0800
+Subject: [PATCH] common: miiphyutil: avoid memory leak
+
+The following code will alloc memory for new_dev and ldev:
+"
+new_dev = mdio_alloc();
+ldev = malloc(sizeof(*ldev));
+"
+Either new_dev or ldev is NULL, directly return, but this may leak memory.
+So before return, using free(ldev) and mdio_free(new_dev) to avoid
+leaking memory, also free can handle NULL pointer.
+
+Signed-off-by: Peng Fan <Peng.Fan@freescale.com>
+Cc: Joe Hershberger <joe.hershberger@ni.com>
+Cc: Simon Glass <sjg@chromium.org>
+Cc: Bin Meng <bmeng.cn@gmail.com>
+Reviewed-by: Bin Meng <bmeng.cn@gmail.com>
+Acked-by: Joe Hershberger <joe.hershberger@ni.com>
+(cherry picked from commit 746da1bd42aa5ecc47898399514c9c76d0329706)
+---
+ common/miiphyutil.c | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/common/miiphyutil.c b/common/miiphyutil.c
+index c0274f4..cff93b1 100644
+--- a/common/miiphyutil.c
++++ b/common/miiphyutil.c
+@@ -113,6 +113,8 @@ void miiphy_register(const char *name,
+ 	if (new_dev == NULL || ldev == NULL) {
+ 		printf("miiphy_register: cannot allocate memory for '%s'\n",
+ 			name);
++		free(ldev);
++		mdio_free(new_dev);
+ 		return;
+ 	}
+ 
+-- 
+1.8.0
+

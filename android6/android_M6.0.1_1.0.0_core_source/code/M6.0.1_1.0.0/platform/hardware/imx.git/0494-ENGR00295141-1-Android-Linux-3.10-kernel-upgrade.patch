@@ -1,0 +1,93 @@
+From f75e1c6d1f0a41219c301bba97dc421fbf98b129 Mon Sep 17 00:00:00 2001
+From: Ke Qinghua <qinghua.ke@freescale.com>
+Date: Tue, 14 Jan 2014 16:59:27 +0800
+Subject: [PATCH 494/635] ENGR00295141-1 Android Linux 3.10 kernel upgrade
+
+Update "struct ion_handle" to "ion_user_handle_t" to align with 3.10 ION driver
+
+Signed-off-by: Ke Qinghua <qinghua.ke@freescale.com>
+---
+ mx6/libcamera/PhysMemAdapter.cpp       | 8 ++++----
+ mx6/libcamera2/PhysMemAdapter.cpp      | 8 ++++----
+ mx6/libgralloc_wrapper/fsl_gralloc.cpp | 2 +-
+ 3 files changed, 9 insertions(+), 9 deletions(-)
+
+diff --git a/mx6/libcamera/PhysMemAdapter.cpp b/mx6/libcamera/PhysMemAdapter.cpp
+index 45409ee..84767fd 100644
+--- a/mx6/libcamera/PhysMemAdapter.cpp
++++ b/mx6/libcamera/PhysMemAdapter.cpp
+@@ -1,6 +1,6 @@
+ /*
+  * Copyright (C) 2008 The Android Open Source Project
+- * Copyright (C) 2012-2013 Freescale Semiconductor, Inc.
++ * Copyright (C) 2012-2014 Freescale Semiconductor, Inc.
+  *
+  * Licensed under the Apache License, Version 2.0 (the "License");
+  * you may not use this file except in compliance with the License.
+@@ -78,7 +78,7 @@ int PhysMemAdapter::allocatePictureBuffer(int width,
+     unsigned char *ptr = NULL;
+     int sharedFd;
+     int phyAddr;
+-    struct ion_handle *ionHandle;
++    ion_user_handle_t *ionHandle;
+     size = (size + PAGE_SIZE - 1) & (~(PAGE_SIZE - 1));
+ 
+     FLOGI("allocateBufferFromIon buffer num:%d", numBufs);
+@@ -144,8 +144,8 @@ int PhysMemAdapter::freeBuffer()
+ 
+     FLOGI("freeBufferToIon buffer num:%d", mBufferCount);
+     for (int i = 0; i < mBufferCount; i++) {
+-        struct ion_handle *ionHandle =
+-            (struct ion_handle *)mCameraBuffer[i].mBufHandle;
++        ion_user_handle_t *ionHandle =
++            (ion_user_handle_t *)mCameraBuffer[i].mBufHandle;
+         ion_free(mIonFd, ionHandle);
+         munmap(mCameraBuffer[i].mVirtAddr, mCameraBuffer[i].mSize);
+     }
+diff --git a/mx6/libcamera2/PhysMemAdapter.cpp b/mx6/libcamera2/PhysMemAdapter.cpp
+index e0fde2c..cc6f44d 100755
+--- a/mx6/libcamera2/PhysMemAdapter.cpp
++++ b/mx6/libcamera2/PhysMemAdapter.cpp
+@@ -1,5 +1,5 @@
+ /*
+- * Copyright (C) 2012-2013 Freescale Semiconductor, Inc.
++ * Copyright (C) 2012-2014 Freescale Semiconductor, Inc.
+  *
+  * Licensed under the Apache License, Version 2.0 (the "License");
+  * you may not use this file except in compliance with the License.
+@@ -67,7 +67,7 @@ int PhysMemAdapter::allocateBuffers(int width,int height,
+     unsigned char *ptr = NULL;
+     int sharedFd;
+     int phyAddr;
+-    struct ion_handle *ionHandle;
++    ion_user_handle_t *ionHandle;
+     size = (size + PAGE_SIZE) & (~(PAGE_SIZE - 1));
+ 
+     FLOGI("allocateBufferFromIon buffer num:%d", numBufs);
+@@ -133,8 +133,8 @@ int PhysMemAdapter::freeBuffers()
+ 
+     FLOGI("freeBufferToIon buffer num:%d", mBufferCount);
+     for (int i = 0; i < mBufferCount; i++) {
+-        struct ion_handle *ionHandle =
+-            (struct ion_handle *)mCameraBuffer[i].mBufHandle;
++        ion_user_handle_t *ionHandle =
++            (ion_user_handle_t *)mCameraBuffer[i].mBufHandle;
+         ion_free(mIonFd, ionHandle);
+         munmap(mCameraBuffer[i].mVirtAddr, mCameraBuffer[i].mSize);
+     }
+diff --git a/mx6/libgralloc_wrapper/fsl_gralloc.cpp b/mx6/libgralloc_wrapper/fsl_gralloc.cpp
+index 9c1ee87..9f13d54 100644
+--- a/mx6/libgralloc_wrapper/fsl_gralloc.cpp
++++ b/mx6/libgralloc_wrapper/fsl_gralloc.cpp
+@@ -116,7 +116,7 @@ static int fsl_gralloc_alloc_buffer(alloc_device_t* dev,
+     unsigned char *ptr = NULL;
+     int sharedFd;
+     int phyAddr;
+-    struct ion_handle *ion_hnd = NULL;
++    ion_user_handle_t *ion_hnd = NULL;
+     size = (size + PAGE_SIZE) & (~(PAGE_SIZE - 1));
+ 
+     private_module_t* m = reinterpret_cast<private_module_t*>(dev->common.module);
+-- 
+1.8.0
+

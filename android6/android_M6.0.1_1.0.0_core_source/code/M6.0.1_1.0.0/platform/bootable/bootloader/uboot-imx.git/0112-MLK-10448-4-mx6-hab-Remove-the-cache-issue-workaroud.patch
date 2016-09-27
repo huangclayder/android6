@@ -1,0 +1,35 @@
+From 8397fa986a27dda1bf933387b7389f493b0cb0dd Mon Sep 17 00:00:00 2001
+From: "Ye.Li" <B37916@freescale.com>
+Date: Mon, 23 Mar 2015 15:56:45 +0800
+Subject: [PATCH] MLK-10448-4 mx6: hab : Remove the cache issue workaroud in
+ hab for i.MX6QP
+
+Since the i.MX6QP has fixed the issue in boot ROM, so remove the workaround
+for i.MX6QP.
+
+Signed-off-by: Ye.Li <B37916@freescale.com>
+(cherry picked from commit 96e13b57ead3ed00c3a32c5373c7a2a876947f99)
+
+Conflicts:
+	arch/arm/cpu/armv7/mx6/hab.c
+---
+ arch/arm/cpu/armv7/mx6/hab.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/arch/arm/cpu/armv7/mx6/hab.c b/arch/arm/cpu/armv7/mx6/hab.c
+index a360386..d6ca139 100644
+--- a/arch/arm/cpu/armv7/mx6/hab.c
++++ b/arch/arm/cpu/armv7/mx6/hab.c
+@@ -257,7 +257,8 @@ uint32_t authenticate_image(uint32_t ddr_start, uint32_t image_size)
+ 					 * do cache flushes. don't think any
+ 					 * exist, so we ignore them.
+ 					 */
+-					writel(1, MX6DQ_PU_IROM_MMU_EN_VAR);
++					if (!is_mx6dqp())
++						writel(1, MX6DQ_PU_IROM_MMU_EN_VAR);
+ 				} else if (is_cpu_type(MXC_CPU_MX6DL) ||
+ 					   is_cpu_type(MXC_CPU_MX6SOLO)) {
+ 					writel(1, MX6DLS_PU_IROM_MMU_EN_VAR);
+-- 
+1.8.0
+

@@ -1,0 +1,25 @@
+From a05782cc37747cc02b29023916b7bb6cd1fa5200 Mon Sep 17 00:00:00 2001
+From: Ulises Cardenas <Ulises.Cardenas@freescale.com>
+Date: Fri, 12 Jun 2015 05:54:36 -0500
+Subject: [PATCH] MLK-11103 Missing register in Secure memory configuration v1
+
+Added missing reserved register for caam_secure_mem_v1 struct
+---
+ drivers/crypto/caam/regs.h | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/drivers/crypto/caam/regs.h b/drivers/crypto/caam/regs.h
+index e206660..798e6fa 100644
+--- a/drivers/crypto/caam/regs.h
++++ b/drivers/crypto/caam/regs.h
+@@ -504,6 +504,7 @@ struct caam_secure_mem_v1 {
+ 	u32 sm_cmd;	/* SMCJRx - Secure memory command */
+ 	u32 rsvd1;
+ 	u32 sm_status;	/* SMCSJRx - Secure memory status */
++    u32 rsvd2;
+ 
+ 	u32 sm_perm;	/* SMAPJRx - Secure memory access perms */
+ 	u32 sm_group2;	/* SMAP2JRx - Secure memory access group 2 */
+-- 
+1.8.0
+

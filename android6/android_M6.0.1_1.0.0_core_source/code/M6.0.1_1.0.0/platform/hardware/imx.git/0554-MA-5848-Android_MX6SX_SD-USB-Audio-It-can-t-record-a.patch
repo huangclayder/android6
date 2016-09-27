@@ -1,0 +1,29 @@
+From 8aba5d1ea217eb1ea111a5205002321ccd29f2d3 Mon Sep 17 00:00:00 2001
+From: Fang Hui <b31070@freescale.com>
+Date: Tue, 18 Nov 2014 15:15:26 +0800
+Subject: [PATCH 554/635] MA-5848 - [Android_MX6SX_SD]USB Audio: It can't
+ record audio from USB Microphone.100%
+
+Add AUDIO_DEVICE_IN_DGTL_DOCK_HEADSET in config_usbaudio.h
+
+Signed-off-by: Fang Hui <b31070@freescale.com>
+---
+ alsa/config_usbaudio.h | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/alsa/config_usbaudio.h b/alsa/config_usbaudio.h
+index 1c94061..6419b59 100644
+--- a/alsa/config_usbaudio.h
++++ b/alsa/config_usbaudio.h
+@@ -26,7 +26,7 @@ static struct audio_card  usbaudio_card = {
+     .name = "USB Device",
+     .driver_name = "USB-Audio",
+     .supported_out_devices  = AUDIO_DEVICE_OUT_DGTL_DOCK_HEADSET,
+-    .supported_in_devices   = AUDIO_DEVICE_IN_USB_DEVICE,
++    .supported_in_devices   = AUDIO_DEVICE_IN_USB_DEVICE|AUDIO_DEVICE_IN_DGTL_DOCK_HEADSET,
+     .defaults            = NULL,
+     .bt_output           = NULL,
+     .speaker_output      = NULL,
+-- 
+1.8.0
+

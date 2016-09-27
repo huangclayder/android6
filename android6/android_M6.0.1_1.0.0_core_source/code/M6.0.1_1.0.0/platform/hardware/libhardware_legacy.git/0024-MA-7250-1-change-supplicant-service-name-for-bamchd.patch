@@ -1,0 +1,31 @@
+From ff645507ef7c3b88e7b5340b1fcc7c96a9dc114a Mon Sep 17 00:00:00 2001
+From: Haoran Wang <b50027@freescale.com>
+Date: Thu, 12 Nov 2015 14:04:11 +0800
+Subject: [PATCH 24/25] MA-7250-1 change supplicant service name for bamchd
+
+Use wpa_supplicant service for the bcmdhd's
+supplicant.
+
+Signed-off-by: Haoran Wang <b50027@freescale.com>
+---
+ wifi/wifi_unite.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/wifi/wifi_unite.c b/wifi/wifi_unite.c
+index 5d9fcbb..d4fb524 100644
+--- a/wifi/wifi_unite.c
++++ b/wifi/wifi_unite.c
+@@ -166,8 +166,8 @@ static const char DRIVER_SDIO_IF_MODULE_ARG[]   = WIFI_SDIO_IF_DRIVER_MODULE_ARG
+ 
+ static const char IFACE_DIR[]           = "/data/system/wpa_supplicant";
+ 
+-static const char BCM_SUPP_PROP_NAME[]      = "init.svc.bcm_supplicant";
+-static const char BCM_SUPPLICANT_NAME[]     = "bcm_supplicant";
++static const char BCM_SUPP_PROP_NAME[]      = "init.svc.wpa_supplicant";
++static const char BCM_SUPPLICANT_NAME[]     = "wpa_supplicant";
+ static const char FIRMWARE_LOADER[]     = WIFI_FIRMWARE_LOADER;
+ static const char DRIVER_PROP_NAME[]    = "wlan.driver.status";
+ static const char DRIVER_VENDOR_NAME[]  = "wlan.vendor";
+-- 
+1.8.0
+

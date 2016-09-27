@@ -1,0 +1,30 @@
+From 937e2cda38e87a48cccc5548a459e593adcf0fb1 Mon Sep 17 00:00:00 2001
+From: Jon Medhurst <tixy@linaro.org>
+Date: Thu, 26 Jul 2012 15:49:50 +0100
+Subject: [PATCH] configs: vexpress: Enable CONFIG_SMC91X
+
+This is the ethernet device RTSM models and we want normal vexpress
+kernels also working on RTSM.
+
+Signed-off-by: Jon Medhurst <tixy@linaro.org>
+(cherry picked from commit e244f2a88a34963d26132832718779f68861e195)
+Signed-off-by: Alex Shi <alex.shi@linaro.org>
+---
+ linaro/configs/vexpress.conf | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/linaro/configs/vexpress.conf b/linaro/configs/vexpress.conf
+index 4aca6be..6a06e8b 100644
+--- a/linaro/configs/vexpress.conf
++++ b/linaro/configs/vexpress.conf
+@@ -7,6 +7,7 @@ CONFIG_NEON=y
+ CONFIG_SCSI=y
+ CONFIG_BLK_DEV_SD=y
+ CONFIG_SMSC911X=y
++CONFIG_SMC91X=y
+ CONFIG_INPUT_EVDEV=y
+ CONFIG_SERIO_AMBAKMI=y
+ CONFIG_SERIAL_AMBA_PL011=y
+-- 
+1.8.0
+

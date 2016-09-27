@@ -1,0 +1,32 @@
+From 8f48bb71889fa1380cece2034242d182097b6e9d Mon Sep 17 00:00:00 2001
+From: Robin Gong <b38343@freescale.com>
+Date: Thu, 21 May 2015 10:45:03 +0800
+Subject: [PATCH] MLK-10957: ARM: mx6qp: do not turn off PU
+
+There is narrow window that PRE driver is ready but  GPU driver probe later,
+and the later GPU driver turn on PU may cause 'PRE hang' issue. To simplify
+thing, do not turn off PU in u-boot.
+
+Signed-off-by: Robin Gong <b38343@freescale.com>
+(cherry picked from commit 6b0787b726e2ff32210d742d93ecd3f4bb2ae402)
+---
+ arch/arm/cpu/armv7/mx6/soc.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/arch/arm/cpu/armv7/mx6/soc.c b/arch/arm/cpu/armv7/mx6/soc.c
+index eba3756..7266d10 100644
+--- a/arch/arm/cpu/armv7/mx6/soc.c
++++ b/arch/arm/cpu/armv7/mx6/soc.c
+@@ -495,7 +495,8 @@ int arch_cpu_init(void)
+ #endif
+ 
+ #if !defined(CONFIG_MX6UL)
+-	imx_set_vddpu_power_down();
++	if (!is_mx6dqp())
++		imx_set_vddpu_power_down();
+ #endif
+ 
+ #ifdef CONFIG_APBH_DMA
+-- 
+1.8.0
+

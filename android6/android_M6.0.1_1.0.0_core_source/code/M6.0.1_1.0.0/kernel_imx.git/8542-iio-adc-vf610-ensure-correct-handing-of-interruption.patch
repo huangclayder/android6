@@ -1,0 +1,36 @@
+From b4ea39b39bd124e1bc9adb00ba49c4e77fc79a47 Mon Sep 17 00:00:00 2001
+From: Jonathan Cameron <jic23@kernel.org>
+Date: Fri, 3 Jan 2014 22:02:00 +0000
+Subject: [PATCH] iio:adc:vf610 ensure correct handing of interruption of wait
+ for completion
+
+Issue highlighted by smatch warning:
+
+CHECK   drivers/iio/adc/vf610_adc.c
+drivers/iio/adc/vf610_adc.c:466 vf610_read_raw() warn: unsigned 'ret' is never less than zero.
+
+As wait_for_completion_interruptible_timeout can return -ERESTARTSTSYS, if
+interrupted, ret must be signed.
+
+Signed-off-by: Jonathan Cameron <jic23@kernel.org>
+Acked-by: Fugang Duan <B38611@freescale.com>
+---
+ drivers/iio/adc/vf610_adc.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/iio/adc/vf610_adc.c b/drivers/iio/adc/vf610_adc.c
+index 844f9bd..7ea64bb 100644
+--- a/drivers/iio/adc/vf610_adc.c
++++ b/drivers/iio/adc/vf610_adc.c
+@@ -447,7 +447,7 @@ static int vf610_read_raw(struct iio_dev *indio_dev,
+ {
+ 	struct vf610_adc *info = iio_priv(indio_dev);
+ 	unsigned int hc_cfg;
+-	unsigned long ret;
++	long ret;
+ 
+ 	switch (mask) {
+ 	case IIO_CHAN_INFO_RAW:
+-- 
+1.8.0
+

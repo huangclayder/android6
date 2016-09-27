@@ -1,0 +1,32 @@
+From 2e645a28a2831ec61ec6d30036823fd6dc09fe7f Mon Sep 17 00:00:00 2001
+From: fang hui <b31070@freescale.com>
+Date: Sun, 6 Sep 2015 13:09:52 +0800
+Subject: [PATCH 595/635] MA-7018 - [Android_ MX6Q_ARD]Video/Streaming:When
+ use browser to open
+
+http://html5demos.com/, and play the streaming by allowing use camera,
+the video can not display.100%
+
+The application will check yuv420 format, although actually use yuv422sp,
+Add yuv420 to pass parameters check.
+
+Signed-off-by: fang hui <b31070@freescale.com>
+---
+ mx6/libcamera2/UvcDevice.cpp | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/mx6/libcamera2/UvcDevice.cpp b/mx6/libcamera2/UvcDevice.cpp
+index 3fc8692..07ab30e 100644
+--- a/mx6/libcamera2/UvcDevice.cpp
++++ b/mx6/libcamera2/UvcDevice.cpp
+@@ -202,6 +202,7 @@ status_t UvcDevice::initSensorInfo(const CameraInfo& info)
+             sensorFormats[index++] = vid_fmtdesc.pixelformat;
+         }
+     }
++    sensorFormats[index++] = v4l2_fourcc('Y', 'V', '1', '2');
+     sensorFormats[index++] = v4l2_fourcc('B', 'L', 'O', 'B');
+     sensorFormats[index++] = v4l2_fourcc('R', 'A', 'W', 'S');
+ 
+-- 
+1.8.0
+

@@ -1,0 +1,70 @@
+From 2c4798a1edfe466c34e48a001c753c53e5ca048f Mon Sep 17 00:00:00 2001
+From: Jianzheng Zhou <jianzheng.zhou@freescale.com>
+Date: Wed, 11 Dec 2013 17:55:02 +0800
+Subject: [PATCH 2/6] ENGR00284562 NFS:workaround one bug
+
+After enable CONFIG_IP_MULTIPLE_TABLES in kernel,new added codes
+in KK4.4 will change ethernet's link properity. Continue to comment
+it out to hack it when using NFS rootfs.
+
+Signed-off-by: Jianzheng Zhou <jianzheng.zhou@freescale.com>
+---
+ server/CommandListener.cpp  | 9 ++++++++-
+ server/SoftapController.cpp | 2 +-
+ 2 files changed, 9 insertions(+), 2 deletions(-)
+
+diff --git a/server/CommandListener.cpp b/server/CommandListener.cpp
+index 7ecbffc..620221c 100644
+--- a/server/CommandListener.cpp
++++ b/server/CommandListener.cpp
+@@ -1,5 +1,6 @@
+ /*
+  * Copyright (C) 2008 The Android Open Source Project
++ * Copyright (C) 2014 Freescale Semiconductor, Inc.
+  *
+  * Licensed under the Apache License, Version 2.0 (the "License");
+  * you may not use this file except in compliance with the License.
+@@ -35,6 +36,7 @@
+ #include <cutils/log.h>
+ #include <netutils/ifc.h>
+ #include <sysutils/SocketClient.h>
++#include <cutils/properties.h>
+ 
+ #include "CommandListener.h"
+ #include "ResponseCode.h"
+@@ -171,6 +173,8 @@ static void createChildChains(IptablesTarget target, const char* table, const ch
+ 
+ CommandListener::CommandListener() :
+                  FrameworkListener("netd", true) {
++    char nfsmode[PROPERTY_VALUE_MAX] = {'\0'};
++
+     registerCmd(new InterfaceCmd());
+     registerCmd(new IpFwdCmd());
+     registerCmd(new TetherCmd());
+@@ -229,7 +233,10 @@ CommandListener::CommandListener() :
+     createChildChains(V4V6, "mangle", "POSTROUTING", MANGLE_POSTROUTING);
+     createChildChains(V4, "mangle", "FORWARD", MANGLE_FORWARD);
+     createChildChains(V4, "nat", "PREROUTING", NAT_PREROUTING);
+-    createChildChains(V4, "nat", "POSTROUTING", NAT_POSTROUTING);
++
++    if ( property_get("ro.nfs.mode", nfsmode, "no")
++                    && (strcmp(nfsmode, "no") == 0))
++        createChildChains(V4, "nat", "POSTROUTING", NAT_POSTROUTING);
+ 
+     // Let each module setup their child chains
+     setupOemIptablesHook();
+diff --git a/server/SoftapController.cpp b/server/SoftapController.cpp
+index 9790a50..f079a2d 100644
+--- a/server/SoftapController.cpp
++++ b/server/SoftapController.cpp
+@@ -1,6 +1,6 @@
+ /*
+  * Copyright (C) 2008 The Android Open Source Project
+- * Copyright (C) 2013 Freescale Semiconductor, Inc.
++ * Copyright (C) 2014 Freescale Semiconductor, Inc.
+  *
+  * Licensed under the Apache License, Version 2.0 (the "License");
+  * you may not use this file except in compliance with the License.
+-- 
+1.8.0
+

@@ -1,0 +1,33 @@
+From 5c99a845d700756b4907389377ed64a12b36979e Mon Sep 17 00:00:00 2001
+From: zhang sanshan <b51434@freescale.com>
+Date: Wed, 14 Oct 2015 17:36:58 +0800
+Subject: [PATCH] MA-7098-6 Upgrade android to Mashmallow
+
+The API slow_avc_audit in google's patch is not compatible with current 3.14 kernel.
+slow_avc_audit in google patch is align with aosp.
+
+The selinux Version 30 is officially supported in AOSP, but it not support in imx3.14.y.
+The purpose of version 30 is to provide access control for ioctl commands.
+The four google's patch(from aosp 3.14) enable this future.
+
+Signed-off-by: zhang sanshan <b51434@freescale.com>
+---
+ security/selinux/avc.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/security/selinux/avc.c b/security/selinux/avc.c
+index f7b03f0..1457aa5 100644
+--- a/security/selinux/avc.c
++++ b/security/selinux/avc.c
+@@ -488,7 +488,7 @@ static inline int avc_operation_audit(u32 ssid, u32 tsid, u16 tclass,
+ 	if (likely(!audited))
+ 		return 0;
+ 	return slow_avc_audit(ssid, tsid, tclass, requested,
+-			audited, denied, result, ad, 0);
++			audited, denied, ad, 0);
+ }
+ 
+ static void avc_node_free(struct rcu_head *rhead)
+-- 
+1.8.0
+

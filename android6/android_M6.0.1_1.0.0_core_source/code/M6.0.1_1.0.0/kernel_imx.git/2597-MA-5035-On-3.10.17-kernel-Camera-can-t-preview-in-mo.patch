@@ -1,0 +1,30 @@
+From 6d3cc68fa38672401d615d0160eee510dd54355a Mon Sep 17 00:00:00 2001
+From: Fang Hui <b31070@freescale.com>
+Date: Thu, 20 Feb 2014 17:33:02 +0800
+Subject: [PATCH] MA-5035 On 3.10.17 kernel, Camera can't preview in most
+ resolutions
+
+when queue buffer, just compare input size with cam->v2f.fmt.pix.sizeimage,
+don't with PAGE_ALIGN(cam->v2f.fmt.pix.sizeimage).
+
+Signed-off-by: Fang Hui <b31070@freescale.com>
+---
+ drivers/media/platform/mxc/capture/mxc_v4l2_capture.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/media/platform/mxc/capture/mxc_v4l2_capture.c b/drivers/media/platform/mxc/capture/mxc_v4l2_capture.c
+index 3926baa..8a57225 100644
+--- a/drivers/media/platform/mxc/capture/mxc_v4l2_capture.c
++++ b/drivers/media/platform/mxc/capture/mxc_v4l2_capture.c
+@@ -349,7 +349,7 @@ static int mxc_v4l2_prepare_bufs(cam_data *cam, struct v4l2_buffer *buf)
+ 	pr_debug("In MVC:mxc_v4l2_prepare_bufs\n");
+ 
+ 	if (buf->index < 0 || buf->index >= FRAME_NUM || buf->length <
+-			PAGE_ALIGN(cam->v2f.fmt.pix.sizeimage)) {
++			cam->v2f.fmt.pix.sizeimage) {
+ 		pr_err("ERROR: v4l2 capture: mxc_v4l2_prepare_bufs buffers "
+ 			"not allocated,index=%d, length=%d\n", buf->index,
+ 			buf->length);
+-- 
+1.8.0
+

@@ -1,0 +1,30 @@
+From 4ec08752731b54ea508526ed748a3de837a75a29 Mon Sep 17 00:00:00 2001
+From: Alexander Shiyan <shc_work@mail.ru>
+Date: Sat, 22 Feb 2014 17:23:46 +0400
+Subject: [PATCH] spi/imx: Use dev_name() for request_irq() to distinguish
+ SPIs
+
+Signed-off-by: Alexander Shiyan <shc_work@mail.ru>
+Signed-off-by: Mark Brown <broonie@linaro.org>
+(cherry picked from commit 8fc39b516623f3beed18be701d2acfe0e50b8d86)
+(cherry picked from commit fac24d90c8b851179d46aee6f9229f4665c14395)
+---
+ drivers/spi/spi-imx.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/spi/spi-imx.c b/drivers/spi/spi-imx.c
+index 855d651..5f3d627 100644
+--- a/drivers/spi/spi-imx.c
++++ b/drivers/spi/spi-imx.c
+@@ -884,7 +884,7 @@ static int spi_imx_probe(struct platform_device *pdev)
+ 	}
+ 
+ 	ret = devm_request_irq(&pdev->dev, spi_imx->irq, spi_imx_isr, 0,
+-			       DRIVER_NAME, spi_imx);
++			       dev_name(&pdev->dev), spi_imx);
+ 	if (ret) {
+ 		dev_err(&pdev->dev, "can't get irq%d: %d\n", spi_imx->irq, ret);
+ 		goto out_master_put;
+-- 
+1.8.0
+

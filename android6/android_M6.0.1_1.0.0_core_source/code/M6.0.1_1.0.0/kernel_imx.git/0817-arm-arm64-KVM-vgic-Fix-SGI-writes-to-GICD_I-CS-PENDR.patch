@@ -1,0 +1,79 @@
+From 543cbd3252398a1e5ccde861703025cc8a32996f Mon Sep 17 00:00:00 2001
+From: Christoffer Dall <christoffer.dall@linaro.org>
+Date: Sat, 14 Jun 2014 22:30:45 +0200
+Subject: [PATCH] arm/arm64: KVM: vgic: Fix SGI writes to GICD_I{CS}PENDR0
+
+Writes to GICD_ISPENDR0 and GICD_ICPENDR0 ignore all settings of the
+pending state for SGIs.  Make sure the implementation handles this
+correctly.
+
+Signed-off-by: Christoffer Dall <christoffer.dall@linaro.org>
+(cherry picked from commit 9da48b5502622f9f0e49df957521ec43a0c9f4c1)
+Signed-off-by: Christoffer Dall <christoffer.dall@linaro.org>
+---
+ virt/kvm/arm/vgic.c | 18 ++++++++++++++++--
+ 1 file changed, 16 insertions(+), 2 deletions(-)
+
+diff --git a/virt/kvm/arm/vgic.c b/virt/kvm/arm/vgic.c
+index bb78526..a915452 100644
+--- a/virt/kvm/arm/vgic.c
++++ b/virt/kvm/arm/vgic.c
+@@ -454,7 +454,7 @@ static bool handle_mmio_set_pending_reg(struct kvm_vcpu *vcpu,
+ 					struct kvm_exit_mmio *mmio,
+ 					phys_addr_t offset)
+ {
+-	u32 *reg;
++	u32 *reg, orig;
+ 	u32 level_mask;
+ 	struct vgic_dist *dist = &vcpu->kvm->arch.vgic;
+ 
+@@ -463,6 +463,7 @@ static bool handle_mmio_set_pending_reg(struct kvm_vcpu *vcpu,
+ 
+ 	/* Mark both level and edge triggered irqs as pending */
+ 	reg = vgic_bitmap_get_reg(&dist->irq_pending, vcpu->vcpu_id, offset);
++	orig = *reg;
+ 	vgic_reg_access(mmio, reg, offset,
+ 			ACCESS_READ_VALUE | ACCESS_WRITE_SETBIT);
+ 
+@@ -474,6 +475,12 @@ static bool handle_mmio_set_pending_reg(struct kvm_vcpu *vcpu,
+ 				ACCESS_READ_VALUE | ACCESS_WRITE_SETBIT);
+ 		*reg &= level_mask;
+ 
++		/* Ignore writes to SGIs */
++		if (offset < 2) {
++			*reg &= ~0xffff;
++			*reg |= orig & 0xffff;
++		}
++
+ 		vgic_update_state(vcpu->kvm);
+ 		return true;
+ 	}
+@@ -486,10 +493,11 @@ static bool handle_mmio_clear_pending_reg(struct kvm_vcpu *vcpu,
+ 					  phys_addr_t offset)
+ {
+ 	u32 *level_active;
+-	u32 *reg;
++	u32 *reg, orig;
+ 	struct vgic_dist *dist = &vcpu->kvm->arch.vgic;
+ 
+ 	reg = vgic_bitmap_get_reg(&dist->irq_pending, vcpu->vcpu_id, offset);
++	orig = *reg;
+ 	vgic_reg_access(mmio, reg, offset,
+ 			ACCESS_READ_VALUE | ACCESS_WRITE_CLEARBIT);
+ 	if (mmio->is_write) {
+@@ -500,6 +508,12 @@ static bool handle_mmio_clear_pending_reg(struct kvm_vcpu *vcpu,
+ 					  vcpu->vcpu_id, offset);
+ 		*reg |= *level_active;
+ 
++		/* Ignore writes to SGIs */
++		if (offset < 2) {
++			*reg &= ~0xffff;
++			*reg |= orig & 0xffff;
++		}
++
+ 		/* Clear soft-pending flags */
+ 		reg = vgic_bitmap_get_reg(&dist->irq_soft_pend,
+ 					  vcpu->vcpu_id, offset);
+-- 
+1.8.0
+

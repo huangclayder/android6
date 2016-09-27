@@ -1,0 +1,41 @@
+From 45626716a385979ffc4841b7a8ff281c757b9b9f Mon Sep 17 00:00:00 2001
+From: Li Jun <B47624@freescale.com>
+Date: Wed, 23 Apr 2014 15:56:46 +0800
+Subject: [PATCH] usb: chipidea: host: init otg port number
+
+Init otg_port number of otg capable host to be 1 at host start.
+
+Signed-off-by: Peter Chen <peter.chen@freescale.com>
+Signed-off-by: Li Jun <b47624@freescale.com>
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+---
+ drivers/usb/chipidea/host.c | 11 +++++++++--
+ 1 file changed, 9 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/usb/chipidea/host.c b/drivers/usb/chipidea/host.c
+index ffb4168..a93d950 100644
+--- a/drivers/usb/chipidea/host.c
++++ b/drivers/usb/chipidea/host.c
+@@ -82,10 +82,17 @@ static int host_start(struct ci_hdrc *ci)
+ 	}
+ 
+ 	ret = usb_add_hcd(hcd, 0, 0);
+-	if (ret)
++	if (ret) {
+ 		goto disable_reg;
+-	else
++	} else {
++		struct usb_otg *otg = ci->transceiver->otg;
++
+ 		ci->hcd = hcd;
++		if (otg) {
++			otg->host = &hcd->self;
++			hcd->self.otg_port = 1;
++		}
++	}
+ 
+ 	if (ci->platdata->flags & CI_HDRC_DISABLE_STREAMING)
+ 		hw_write(ci, OP_USBMODE, USBMODE_CI_SDIS, USBMODE_CI_SDIS);
+-- 
+1.8.0
+

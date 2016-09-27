@@ -1,0 +1,30 @@
+From b959ad4bb2eeaa29974af2c2b08f8233d60e13a4 Mon Sep 17 00:00:00 2001
+From: Fancy Fang <chen.fang@freescale.com>
+Date: Mon, 1 Jun 2015 14:52:43 +0800
+Subject: [PATCH] MLK-11009 ARM: dts: add
+ 'imx7d-12x12-lpddr3-arm2-mipi_dsi.dts' to the dts Makefile
+
+Add the new dts file 'imx7d-12x12-lpddr3-arm2-mipi_dsi.dts'
+to the dts Makefile to make it to be compiled when running
+'make ARH=arm dtbs'.
+
+Signed-off-by: Fancy Fang <chen.fang@freescale.com>
+---
+ arch/arm/boot/dts/Makefile | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/arch/arm/boot/dts/Makefile b/arch/arm/boot/dts/Makefile
+index 5591163..c88ebfb 100644
+--- a/arch/arm/boot/dts/Makefile
++++ b/arch/arm/boot/dts/Makefile
+@@ -228,6 +228,7 @@ dtb-$(CONFIG_ARCH_MXC) += \
+ 	imx7d-12x12-lpddr3-arm2-sim.dtb \
+ 	imx7d-12x12-lpddr3-arm2-m4.dtb \
+ 	imx7d-12x12-lpddr3-arm2-pcie.dtb \
++	imx7d-12x12-lpddr3-arm2-mipi_dsi.dts \
+ 	imx7d-19x19-lpddr3-arm2.dtb \
+ 	imx7d-19x19-ddr3-arm2.dtb \
+ 	imx7d-19x19-ddr3-arm2-csi.dtb \
+-- 
+1.8.0
+

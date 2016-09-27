@@ -1,0 +1,31 @@
+From d513ab291ea35d82d6cfe96b8ca70be5abe6a0d6 Mon Sep 17 00:00:00 2001
+From: Nitin Garg <nitin.garg@freescale.com>
+Date: Wed, 17 Oct 2012 22:37:56 -0500
+Subject: [PATCH 02/34] ENGR00230334: Fix the u-boot distclean rule
+
+The u-boot distclean need the CROSS_COMPILE prefix
+otherwise it assumes arm-linux- and does not find the
+compiler.
+
+Change-Id: If12d94f0b91c4f73bc5dca6f5fc14223f4f90320
+Signed-off-by: Nitin Garg <nitin.garg@freescale.com>
+---
+ core/Makefile | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/core/Makefile b/core/Makefile
+index 04a8bf8..9fefba4 100644
+--- a/core/Makefile
++++ b/core/Makefile
+@@ -939,7 +939,7 @@ $(TARGET_BOOTLOADER_IMAGE):
+ 	@for ubootplat in $(TARGET_BOOTLOADER_CONFIG); do \
+ 		UBOOT_PLATFORM=`echo $$ubootplat | cut -d':' -f1`; \
+ 		UBOOT_CONFIG=`echo $$ubootplat | cut -d':' -f2`; \
+-		$(MAKE) -C bootable/bootloader/uboot-imx/ distclean; \
++		$(MAKE) -C bootable/bootloader/uboot-imx/ distclean $(BOOTLOADER_ENV); \
+ 		$(MAKE) -C bootable/bootloader/uboot-imx/ $$UBOOT_CONFIG $(BOOTLOADER_ENV); \
+ 		$(MAKE) -C bootable/bootloader/uboot-imx/ $(BOOTLOADER_ENV); \
+ 		install -D bootable/bootloader/uboot-imx/u-boot.bin $(PRODUCT_OUT)/u-boot-$$UBOOT_PLATFORM.bin; \
+-- 
+1.8.0
+

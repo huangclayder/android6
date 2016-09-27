@@ -1,0 +1,29 @@
+From 2bcbb14004a2420cd7321cd445db97a5bc17ae42 Mon Sep 17 00:00:00 2001
+From: Sandor Yu <R01008@freescale.com>
+Date: Wed, 11 Feb 2015 17:14:16 +0800
+Subject: [PATCH 483/505] MLK-10251: mx6s_capture app: return -1 when failed
+ open device
+
+Return -1 when failed open video device.
+
+Signed-off-by: Sandor Yu <R01008@freescale.com>
+---
+ test/mxc_v4l2_test/mx6s_v4l2_capture.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/test/mxc_v4l2_test/mx6s_v4l2_capture.c b/test/mxc_v4l2_test/mx6s_v4l2_capture.c
+index 4a42dff..cb809bf 100644
+--- a/test/mxc_v4l2_test/mx6s_v4l2_capture.c
++++ b/test/mxc_v4l2_test/mx6s_v4l2_capture.c
+@@ -249,7 +249,7 @@ int v4l_capture_setup(void)
+ 	if ((fd_v4l = open_video_device()) < 0)
+ 	{
+ 		printf("Unable to open v4l2 capture device.\n");
+-		return 0;
++		return -1;
+ 	}
+ 
+ 	parm.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+-- 
+1.8.0
+

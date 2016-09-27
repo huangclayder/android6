@@ -1,0 +1,55 @@
+From b61bfdf08ddde7984f6c0fe5b23d027ee7a8e1c2 Mon Sep 17 00:00:00 2001
+From: Liu Xiaowen <xiaowen.liu@freescale.com>
+Date: Wed, 4 Feb 2015 15:10:09 +0800
+Subject: [PATCH 563/635] MA-6219 fix HDMI: Video playback has obvious frame
+ drop after HDMI hotplug.
+
+The root cause is audio hal doesn't record dropped audio frames after
+HDMI hotplug.
+The resolution is record dropped audio frames to out->written.
+
+Signed-off-by: Liu Xiaowen <xiaowen.liu@freescale.com>
+---
+ alsa/tinyalsa_hal.c | 7 +++----
+ 1 file changed, 3 insertions(+), 4 deletions(-)
+
+diff --git a/alsa/tinyalsa_hal.c b/alsa/tinyalsa_hal.c
+index 313a7c3..a4644ac 100644
+--- a/alsa/tinyalsa_hal.c
++++ b/alsa/tinyalsa_hal.c
+@@ -1290,9 +1290,8 @@ static ssize_t out_write_primary(struct audio_stream_out *stream, const void* bu
+         }
+     }
+ 
+-   if (ret == 0)  out->written += bytes / frame_size;
+-
+ exit:
++    out->written += bytes / frame_size;
+     pthread_mutex_unlock(&out->lock);
+ 
+     if (ret != 0) {
+@@ -1342,9 +1341,9 @@ static ssize_t out_write_hdmi(struct audio_stream_out *stream, const void* buffe
+     /* do not allow more than out->write_threshold frames in kernel pcm driver buffer */
+ 
+     ret = pcm_write_wrapper(out->pcm[PCM_HDMI], (void *)buffer, bytes, out->write_flags[PCM_HDMI]);
+-    if (ret == 0)  out->written += bytes / frame_size;
+ 
+ exit:
++    out->written += bytes / frame_size;
+     pthread_mutex_unlock(&out->lock);
+ 
+     if (ret != 0) {
+@@ -1436,9 +1435,9 @@ static ssize_t out_write_esai(struct audio_stream_out *stream, const void* buffe
+ 
+     convert_output_for_esai(buffer, bytes, out->config[PCM_ESAI].channels);
+     ret = pcm_write_wrapper(out->pcm[PCM_ESAI], (void *)buffer, bytes, out->write_flags[PCM_ESAI]);
+-    if (ret == 0)  out->written += bytes / frame_size;
+ 
+ exit:
++    out->written += bytes / frame_size;
+     pthread_mutex_unlock(&out->lock);
+ 
+     if (ret != 0) {
+-- 
+1.8.0
+

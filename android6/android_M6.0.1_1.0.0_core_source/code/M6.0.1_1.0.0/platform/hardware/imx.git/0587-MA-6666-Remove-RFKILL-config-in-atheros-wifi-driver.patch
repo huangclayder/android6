@@ -1,0 +1,44 @@
+From 2f1f85b10d869ce62ff28044635899905d6bf42f Mon Sep 17 00:00:00 2001
+From: Haoran Wang <b50027@freescale.com>
+Date: Tue, 23 Jun 2015 09:03:38 +0800
+Subject: [PATCH 587/635] MA-6666 Remove RFKILL config in atheros wifi driver
+
+Remove RFKILL config in atheros to remove below compile error:
+
+hardware/imx/wlan/atheros/compat-wireless/net/rfkill/rfkill-gpio.c:216:2:
+error: implicit declaration of function '__devexit_p'
+[-Werror=implicit-function-declaration]
+hardware/imx/wlan/atheros/compat-wireless/net/rfkill/rfkill-gpio.c:216:2:
+error: initializer element is not constant
+hardware/imx/wlan/atheros/compat-wireless/net/rfkill/rfkill-gpio.c:216:2:
+error: (near initialization for 'rfkill_gpio_driver.remove')
+cc1: some warnings being treated as errors
+
+make[5]: ***
+[hardware/imx/wlan/atheros/compat-wireless/net/rfkill/rfkill-gpio.o]
+Error 1
+make[4]: ***
+[hardware/imx/wlan/atheros/compat-wireless/net/rfkill]
+Error 2
+
+Signed-off-by: Haoran Wang <b50027@freescale.com>
+---
+ wlan/atheros/compat-wireless/config.mk | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/wlan/atheros/compat-wireless/config.mk b/wlan/atheros/compat-wireless/config.mk
+index 54b746d..3916e93 100644
+--- a/wlan/atheros/compat-wireless/config.mk
++++ b/wlan/atheros/compat-wireless/config.mk
+@@ -95,7 +95,7 @@ endif # build check
+ endif # kernel Makefile check
+ 
+ # These both are needed by compat-wireless || compat-bluetooth so enable them
+- CONFIG_COMPAT_RFKILL=y
++ CONFIG_COMPAT_RFKILL=n
+ 
+ ifeq ($(CONFIG_MAC80211),y)
+ $(error "ERROR: you have MAC80211 compiled into the kernel, CONFIG_MAC80211=y, as such you cannot replace its mac80211 driver. You need this set to CONFIG_MAC80211=m. If you are using Fedora upgrade your kernel as later version should this set as modular. For further information on Fedora see https://bugzilla.redhat.com/show_bug.cgi?id=470143. If you are using your own kernel recompile it and make mac80211 modular")
+-- 
+1.8.0
+

@@ -1,0 +1,35 @@
+From 50eff0eebe9f32cbdc28faf3bd78d72218d15024 Mon Sep 17 00:00:00 2001
+From: Peter Chen <peter.chen@freescale.com>
+Date: Tue, 14 Jul 2015 14:26:20 +0800
+Subject: [PATCH] MLK-10932-3 common: autoboot: need to disconnect with pc for
+ usb boot
+
+For USB boot, eg, mfgtool programming case, some laptops/pcs
+may not work properly if the board do not disconnect until
+linux kernel usb driver initialization process, finishes the
+ROM code connection at u-boot can fix this problem, and this
+was the original work flow when mfgtool flow was introduced at
+u-boot.
+
+Tested-by: Spring Zhang <b17931@freescale.com>
+Tested-by: Zhang Sanshan <b51434@freescale.com>
+Signed-off-by: Peter Chen <peter.chen@freescale.com>
+---
+ common/autoboot.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/common/autoboot.c b/common/autoboot.c
+index f5184a0..1c08c08 100644
+--- a/common/autoboot.c
++++ b/common/autoboot.c
+@@ -252,6 +252,7 @@ const char *bootdelay_process(void)
+ 
+ #ifdef is_boot_from_usb
+ 	if (is_boot_from_usb()) {
++		disconnect_from_pc();
+ 		printf("Boot from USB for mfgtools\n");
+ 		bootdelay = 0;
+ 		set_default_env("Use default environment for \
+-- 
+1.8.0
+

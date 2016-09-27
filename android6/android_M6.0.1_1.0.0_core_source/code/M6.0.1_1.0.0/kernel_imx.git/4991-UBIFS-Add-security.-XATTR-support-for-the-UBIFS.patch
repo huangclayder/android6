@@ -1,0 +1,201 @@
+From d8f2d44588fe885849fbb46cba931df056f9a490 Mon Sep 17 00:00:00 2001
+From: Subodh Nijsure <snijsure@grid-net.com>
+Date: Fri, 31 Oct 2014 13:50:30 -0500
+Subject: [PATCH] UBIFS: Add security.* XATTR support for the UBIFS
+
+Artem: rename static functions so that they do not use the "ubifs_" prefix - we
+       only use this prefix for non-static functions.
+Artem: remove few junk white-space changes in file.c
+
+Signed-off-by: Subodh Nijsure <snijsure@grid-net.com>
+Signed-off-by: Marc Kleine-Budde <mkl@pengutronix.de>
+Signed-off-by: Ben Shelton <ben.shelton@ni.com>
+Acked-by: Brad Mouring <brad.mouring@ni.com>
+Acked-by: Terry Wilcox <terry.wilcox@ni.com>
+Acked-by: Gratian Crisan <gratian.crisan@ni.com>
+Signed-off-by: Artem Bityutskiy <artem.bityutskiy@linux.intel.com>
+---
+ fs/ubifs/dir.c   | 16 ++++++++++++
+ fs/ubifs/super.c |  1 +
+ fs/ubifs/ubifs.h |  4 +++
+ fs/ubifs/xattr.c | 78 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ 4 files changed, 99 insertions(+)
+
+diff --git a/fs/ubifs/dir.c b/fs/ubifs/dir.c
+index ea41649..f7e8f76 100644
+--- a/fs/ubifs/dir.c
++++ b/fs/ubifs/dir.c
+@@ -272,6 +272,10 @@ static int ubifs_create(struct inode *dir, struct dentry *dentry, umode_t mode,
+ 		goto out_budg;
+ 	}
+ 
++	err = ubifs_init_security(dir, inode, &dentry->d_name);
++	if (err)
++		goto out_cancel;
++
+ 	mutex_lock(&dir_ui->ui_mutex);
+ 	dir->i_size += sz_change;
+ 	dir_ui->ui_size = dir->i_size;
+@@ -728,6 +732,10 @@ static int ubifs_mkdir(struct inode *dir, struct dentry *dentry, umode_t mode)
+ 		goto out_budg;
+ 	}
+ 
++	err = ubifs_init_security(dir, inode, &dentry->d_name);
++	if (err)
++		goto out_cancel;
++
+ 	mutex_lock(&dir_ui->ui_mutex);
+ 	insert_inode_hash(inode);
+ 	inc_nlink(inode);
+@@ -808,6 +816,10 @@ static int ubifs_mknod(struct inode *dir, struct dentry *dentry,
+ 	ui->data = dev;
+ 	ui->data_len = devlen;
+ 
++	err = ubifs_init_security(dir, inode, &dentry->d_name);
++	if (err)
++		goto out_cancel;
++
+ 	mutex_lock(&dir_ui->ui_mutex);
+ 	dir->i_size += sz_change;
+ 	dir_ui->ui_size = dir->i_size;
+@@ -884,6 +896,10 @@ static int ubifs_symlink(struct inode *dir, struct dentry *dentry,
+ 	ui->data_len = len;
+ 	inode->i_size = ubifs_inode(inode)->ui_size = len;
+ 
++	err = ubifs_init_security(dir, inode, &dentry->d_name);
++	if (err)
++		goto out_cancel;
++
+ 	mutex_lock(&dir_ui->ui_mutex);
+ 	dir->i_size += sz_change;
+ 	dir_ui->ui_size = dir->i_size;
+diff --git a/fs/ubifs/super.c b/fs/ubifs/super.c
+index 94d9a64..6da2705 100644
+--- a/fs/ubifs/super.c
++++ b/fs/ubifs/super.c
+@@ -2033,6 +2033,7 @@ static int ubifs_fill_super(struct super_block *sb, void *data, int silent)
+ 	if (c->max_inode_sz > MAX_LFS_FILESIZE)
+ 		sb->s_maxbytes = c->max_inode_sz = MAX_LFS_FILESIZE;
+ 	sb->s_op = &ubifs_super_operations;
++	sb->s_xattr = ubifs_xattr_handlers;
+ 
+ 	mutex_lock(&c->umount_mutex);
+ 	err = mount_ubifs(c);
+diff --git a/fs/ubifs/ubifs.h b/fs/ubifs/ubifs.h
+index 7ab9c71..1e47583 100644
+--- a/fs/ubifs/ubifs.h
++++ b/fs/ubifs/ubifs.h
+@@ -36,6 +36,7 @@
+ #include <linux/mtd/ubi.h>
+ #include <linux/pagemap.h>
+ #include <linux/backing-dev.h>
++#include <linux/security.h>
+ #include "ubifs-media.h"
+ 
+ /* Version of this UBIFS implementation */
+@@ -1456,6 +1457,7 @@ extern spinlock_t ubifs_infos_lock;
+ extern atomic_long_t ubifs_clean_zn_cnt;
+ extern struct kmem_cache *ubifs_inode_slab;
+ extern const struct super_operations ubifs_super_operations;
++extern const struct xattr_handler *ubifs_xattr_handlers[];
+ extern const struct address_space_operations ubifs_file_address_operations;
+ extern const struct file_operations ubifs_file_operations;
+ extern const struct inode_operations ubifs_file_inode_operations;
+@@ -1745,6 +1747,8 @@ ssize_t ubifs_getxattr(struct dentry *dentry, const char *name, void *buf,
+ 		       size_t size);
+ ssize_t ubifs_listxattr(struct dentry *dentry, char *buffer, size_t size);
+ int ubifs_removexattr(struct dentry *dentry, const char *name);
++int ubifs_init_security(struct inode *dentry, struct inode *inode,
++			const struct qstr *qstr);
+ 
+ /* super.c */
+ struct inode *ubifs_iget(struct super_block *sb, unsigned long inum);
+diff --git a/fs/ubifs/xattr.c b/fs/ubifs/xattr.c
+index c3254a6..2bdab8b 100644
+--- a/fs/ubifs/xattr.c
++++ b/fs/ubifs/xattr.c
+@@ -575,3 +575,81 @@ out_free:
+ 	kfree(xent);
+ 	return err;
+ }
++
++static size_t security_listxattr(struct dentry *d, char *list, size_t list_size,
++				 const char *name, size_t name_len, int flags)
++{
++	const int prefix_len = XATTR_SECURITY_PREFIX_LEN;
++	const size_t total_len = prefix_len + name_len + 1;
++
++	if (list && total_len <= list_size) {
++		memcpy(list, XATTR_SECURITY_PREFIX, prefix_len);
++		memcpy(list + prefix_len, name, name_len);
++		list[prefix_len + name_len] = '\0';
++	}
++
++	return total_len;
++}
++
++static int security_getxattr(struct dentry *d, const char *name, void *buffer,
++		      size_t size, int flags)
++{
++	return ubifs_getxattr(d, name, buffer, size);
++}
++
++static int security_setxattr(struct dentry *d, const char *name,
++			     const void *value, size_t size, int flags,
++			     int handler_flags)
++{
++	return ubifs_setxattr(d, name, value, size, flags);
++}
++
++static const struct xattr_handler ubifs_xattr_security_handler = {
++	.prefix = XATTR_SECURITY_PREFIX,
++	.list   = security_listxattr,
++	.get    = security_getxattr,
++	.set    = security_setxattr,
++};
++
++const struct xattr_handler *ubifs_xattr_handlers[] = {
++	&ubifs_xattr_security_handler,
++	NULL,
++};
++
++static int init_xattrs(struct inode *inode, const struct xattr *xattr_array,
++		      void *fs_info)
++{
++	const struct xattr *xattr;
++	char *name;
++	int err = 0;
++
++	for (xattr = xattr_array; xattr->name != NULL; xattr++) {
++		name = kmalloc(XATTR_SECURITY_PREFIX_LEN +
++			       strlen(xattr->name) + 1, GFP_NOFS);
++		if (!name) {
++			err = -ENOMEM;
++			break;
++		}
++		strcpy(name, XATTR_SECURITY_PREFIX);
++		strcpy(name + XATTR_SECURITY_PREFIX_LEN, xattr->name);
++		err = setxattr(inode, name, xattr->value, xattr->value_len, 0);
++		kfree(name);
++		if (err < 0)
++			break;
++	}
++
++	return err;
++}
++
++int ubifs_init_security(struct inode *dentry, struct inode *inode,
++			const struct qstr *qstr)
++{
++	int err;
++
++	mutex_lock(&inode->i_mutex);
++	err = security_inode_init_security(inode, dentry, qstr,
++					   &init_xattrs, 0);
++	mutex_unlock(&inode->i_mutex);
++
++	return err;
++}
+-- 
+1.8.0
+

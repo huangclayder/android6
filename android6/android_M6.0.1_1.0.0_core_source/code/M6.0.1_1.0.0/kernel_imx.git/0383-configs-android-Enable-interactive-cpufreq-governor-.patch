@@ -1,0 +1,27 @@
+From a08960100959b5b1503e599bdd1fd76ec72bab34 Mon Sep 17 00:00:00 2001
+From: Jon Medhurst <tixy@linaro.org>
+Date: Thu, 11 Apr 2013 08:41:40 +0100
+Subject: [PATCH] configs: android: Enable interactive cpufreq governor by
+ default
+
+This is Android's standard cpufreq governor and is enabled by
+default in the AOSP tree.
+
+Signed-off-by: Jon Medhurst <tixy@linaro.org>
+---
+ linaro/configs/android.conf | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/linaro/configs/android.conf b/linaro/configs/android.conf
+index 8d7628c..bb90ecd 100644
+--- a/linaro/configs/android.conf
++++ b/linaro/configs/android.conf
+@@ -27,3 +27,5 @@ CONFIG_BLK_DEV_RAM=y
+ CONFIG_BLK_DEV_RAM_COUNT=16
+ CONFIG_BLK_DEV_RAM_SIZE=16384
+ CONFIG_FUSE_FS=y
++CONFIG_CPU_FREQ_GOV_INTERACTIVE=y
++CONFIG_CPU_FREQ_DEFAULT_GOV_INTERACTIVE=y
+-- 
+1.8.0
+

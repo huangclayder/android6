@@ -1,0 +1,31 @@
+From 1454451968fc5af1a0c597f93f0fc074f4978a19 Mon Sep 17 00:00:00 2001
+From: Li Jun <jun.li@freescale.com>
+Date: Fri, 3 Jul 2015 14:11:21 +0800
+Subject: [PATCH] MLK-11123-26 ARM: dts: disable otg features for
+ imx6sx-19x19-arm2 board
+
+Disable all otg features for otg1 port of imx6sx-19x19-arm2 board, then
+the otg port can only do role swtich by ID pin state.
+
+Signed-off-by: Li Jun <jun.li@freescale.com>
+---
+ arch/arm/boot/dts/imx6sx-19x19-arm2.dts | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/arch/arm/boot/dts/imx6sx-19x19-arm2.dts b/arch/arm/boot/dts/imx6sx-19x19-arm2.dts
+index f1092fe..99478eb 100644
+--- a/arch/arm/boot/dts/imx6sx-19x19-arm2.dts
++++ b/arch/arm/boot/dts/imx6sx-19x19-arm2.dts
+@@ -504,6 +504,9 @@
+ 	pinctrl-names = "default";
+ 	pinctrl-0 = <&pinctrl_usbotg1_1>;
+ 	disable-over-current;
++	srp-disable;
++	hnp-disable;
++	adp-disable;
+ 	status = "okay";
+ };
+ 
+-- 
+1.8.0
+

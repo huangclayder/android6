@@ -1,0 +1,90 @@
+From d44c3b3e1f4db81b573482df0b3ec3770e831bce Mon Sep 17 00:00:00 2001
+From: zhang sanshan <b51434@freescale.com>
+Date: Tue, 28 Jul 2015 18:40:53 +0800
+Subject: [PATCH] MA-6928 Bootargs cannot be set
+
+The bootargs is not set correctly.
+The final bootargs consist of uboot's bootargs and bootimg's bootargs.
+This patch set bootimg's bootargs as final bootargs if uboot's bootargs is not set.
+And take uboot's bootargs as final bootargs if uboot's bootargs is set.
+
+Signed-off-by: zhang sanshan <b51434@freescale.com>
+---
+ common/image-android.c          | 21 ++++++++++++++++-----
+ drivers/usb/gadget/f_fastboot.c | 20 --------------------
+ 2 files changed, 16 insertions(+), 25 deletions(-)
+
+diff --git a/common/image-android.c b/common/image-android.c
+index eb1582b..5cd3a8c 100644
+--- a/common/image-android.c
++++ b/common/image-android.c
+@@ -9,6 +9,7 @@
+ #include <android_image.h>
+ #include <malloc.h>
+ #include <errno.h>
++#include <asm/bootm.h>
+ 
+ static char andr_tmp_str[ANDR_BOOT_ARGS_SIZE + 1];
+ 
+@@ -62,12 +63,22 @@ int android_image_get_kernel(const struct andr_img_hdr *hdr, int verify,
+ 
+ 	if (bootargs) {
+ 		strcpy(newbootargs, bootargs);
+-		strcat(newbootargs, " ");
+-	}
+-	if (*hdr->cmdline)
++	} else if (*hdr->cmdline) {
+ 		strcat(newbootargs, hdr->cmdline);
+-
+-	setenv("bootargs", newbootargs);
++	}
++#ifdef CONFIG_SERIAL_TAG
++	struct tag_serialnr serialnr;
++	char commandline[ANDR_BOOT_ARGS_SIZE];
++	get_board_serial(&serialnr);
++
++	sprintf(commandline,
++					"%s androidboot.serialno=%08x%08x",
++					newbootargs,
++					serialnr.high,
++					serialnr.low);
++#endif
++
++	setenv("bootargs", commandline);
+ 
+ 	if (os_data) {
+ 		*os_data = (ulong)hdr;
+diff --git a/drivers/usb/gadget/f_fastboot.c b/drivers/usb/gadget/f_fastboot.c
+index 4f3d0f8..519a9d3 100644
+--- a/drivers/usb/gadget/f_fastboot.c
++++ b/drivers/usb/gadget/f_fastboot.c
+@@ -1762,26 +1762,6 @@ int do_boota(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
+ 		printf("fdt      @ %08x (%d)\n", hdr->second_addr, hdr->second_size);
+ #endif /*CONFIG_OF_LIBFDT*/
+ 
+-#ifdef CONFIG_SERIAL_TAG
+-	struct tag_serialnr serialnr;
+-	char bootargs[ANDR_BOOT_ARGS_SIZE];
+-	char *commandline = getenv("bootargs");
+-	get_board_serial(&serialnr);
+-
+-	if (commandline) {
+-		sprintf(bootargs,
+-						"%s androidboot.serialno=%08x%08x",
+-						commandline,
+-						serialnr.high,
+-						serialnr.low);
+-	} else {
+-		sprintf(bootargs,
+-				"androidboot.serialno=%08x%08x",
+-				serialnr.high,
+-				serialnr.low);
+-	}
+-	setenv("bootargs", bootargs);
+-#endif
+ 
+ 	char boot_addr_start[12];
+ 	char ramdisk_addr[25];
+-- 
+1.8.0
+

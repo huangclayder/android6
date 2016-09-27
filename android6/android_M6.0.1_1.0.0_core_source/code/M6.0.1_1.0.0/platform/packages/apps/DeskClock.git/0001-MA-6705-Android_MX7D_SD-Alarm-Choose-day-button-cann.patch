@@ -1,0 +1,28 @@
+From 15773054628d206a601606bebe47e8640cdc76be Mon Sep 17 00:00:00 2001
+From: Wenbo Zhu <b52619@freescale.com>
+Date: Thu, 30 Jul 2015 15:17:26 +0800
+Subject: [PATCH] MA-6705 [Android_MX7D_SD]Alarm: Choose day button cannot
+ display simultaneously. 100%
+
+add "itemHolder.repeatDays.destroyDrawingCache();"
+
+Signed-off-by: Wenbo Zhu <b52619@freescale.com>
+---
+ src/com/android/deskclock/AlarmClockFragment.java | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/src/com/android/deskclock/AlarmClockFragment.java b/src/com/android/deskclock/AlarmClockFragment.java
+index 9cee1af..1600244 100644
+--- a/src/com/android/deskclock/AlarmClockFragment.java
++++ b/src/com/android/deskclock/AlarmClockFragment.java
+@@ -920,6 +920,7 @@ public abstract class AlarmClockFragment extends DeskClockFragment implements
+             if (mRepeatChecked.contains(alarm.id) || itemHolder.alarm.daysOfWeek.isRepeating()) {
+                 itemHolder.repeat.setChecked(true);
+                 itemHolder.repeatDays.setVisibility(View.VISIBLE);
++                itemHolder.repeatDays.destroyDrawingCache();
+             } else {
+                 itemHolder.repeat.setChecked(false);
+                 itemHolder.repeatDays.setVisibility(View.GONE);
+-- 
+1.8.0
+

@@ -1,0 +1,30 @@
+From a66778817922de030120a9e889823d328368b9db Mon Sep 17 00:00:00 2001
+From: Haoran Wang <b50027@freescale.com>
+Date: Thu, 31 Dec 2015 15:06:02 +0800
+Subject: [PATCH 3/4] MA-7413 Ignore the HID socket status check
+
+As the unblock socket might won't update the
+"ready" event. So don't check it before inject
+the data.
+
+Signed-off-by: Haoran Wang <b50027@freescale.com>
+---
+ btif/co/bta_hh_co.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/btif/co/bta_hh_co.c b/btif/co/bta_hh_co.c
+index bd6fd6f..7947472 100644
+--- a/btif/co/bta_hh_co.c
++++ b/btif/co/bta_hh_co.c
+@@ -426,7 +426,7 @@ void bta_hh_co_data(UINT8 dev_handle, UINT8 *p_rpt, UINT16 len, tBTA_HH_PROTO_MO
+     }
+ 
+     // Send the HID data to the kernel.
+-    if ((p_dev->fd >= 0) && p_dev->ready_for_data) {
++    if (p_dev->fd >= 0) {
+         bta_hh_co_write(p_dev->fd, p_rpt, len);
+     }else {
+         APPL_TRACE_WARNING("%s: Error: fd = %d, ready %d, len = %d", __FUNCTION__, p_dev->fd, 
+-- 
+1.8.0
+

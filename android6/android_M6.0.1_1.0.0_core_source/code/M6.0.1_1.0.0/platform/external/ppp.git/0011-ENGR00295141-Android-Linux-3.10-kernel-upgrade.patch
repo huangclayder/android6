@@ -1,0 +1,27 @@
+From cc0f556e2b0be4338be4d2381ceaca763d8d072a Mon Sep 17 00:00:00 2001
+From: Ke Qinghua <qinghua.ke@freescale.com>
+Date: Tue, 14 Jan 2014 17:06:24 +0800
+Subject: [PATCH 11/11] ENGR00295141 Android Linux 3.10 kernel upgrade
+
+Include tty.h to fix the build error without definition "N_TTY", "N_PPP"
+
+Signed-off-by: Ke Qinghua <qinghua.ke@freescale.com>
+---
+ pppd/sys-linux.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/pppd/sys-linux.c b/pppd/sys-linux.c
+index d5dbc7c..8d19239 100644
+--- a/pppd/sys-linux.c
++++ b/pppd/sys-linux.c
+@@ -79,6 +79,7 @@
+ #include <sys/utsname.h>
+ #include <sys/sysmacros.h>
+ 
++#include <linux/tty.h>
+ #include <stdio.h>
+ #include <stdlib.h>
+ #include <syslog.h>
+-- 
+1.8.0
+

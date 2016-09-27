@@ -1,0 +1,93 @@
+From c1a7f6e50740ffb137b9e2c3c9eedfd317bc2906 Mon Sep 17 00:00:00 2001
+From: hs <b49858@freescale.com>
+Date: Thu, 24 Jul 2014 13:06:03 +0800
+Subject: [PATCH 074/115] ENGR00303833 Ethernet still save the change if
+ choose Cancel at setting dialog.
+
+Add cancel function to fix the cancel button not work issue.
+
+Signed-off-by: hs <b49858@freescale.com>
+
+Conflicts:
+	Ethernet/com/fsl/ethernet/MainActivity.java
+---
+ Ethernet/com/fsl/ethernet/EthernetAdvDialog.java    | 10 +---------
+ Ethernet/com/fsl/ethernet/EthernetConfigDialog.java |  2 +-
+ Ethernet/com/fsl/ethernet/MainActivity.java         |  8 ++++----
+ 3 files changed, 6 insertions(+), 14 deletions(-)
+
+diff --git a/Ethernet/com/fsl/ethernet/EthernetAdvDialog.java b/Ethernet/com/fsl/ethernet/EthernetAdvDialog.java
+index e97a944..0ee46aa 100644
+--- a/Ethernet/com/fsl/ethernet/EthernetAdvDialog.java
++++ b/Ethernet/com/fsl/ethernet/EthernetAdvDialog.java
+@@ -95,7 +95,7 @@ public class EthernetAdvDialog extends AlertDialog implements DialogInterface.On
+                 handle_saveconf();
+                 break;
+             case BUTTON_NEGATIVE:
+-                //Don't need to do anything
++                dialog.cancel();
+                 break;
+             default:
+                 Log.e(TAG,"Unknow button");
+@@ -108,12 +108,4 @@ public class EthernetAdvDialog extends AlertDialog implements DialogInterface.On
+ 
+     }
+ 
+-
+-  @Override
+-    public void show() {
+-          super.show();
+-          mProxyIp.setText(mEthEnabler.getManager().getSharedPreProxyAddress(),TextView.BufferType.EDITABLE);
+-          mProxyPort.setText(mEthEnabler.getManager().getSharedPreProxyPort(),TextView.BufferType.EDITABLE);
+-          mProxyExclusionList.setText(mEthEnabler.getManager().getSharedPreProxyExclusionList(),TextView.BufferType.EDITABLE);
+-    }
+ }
+diff --git a/Ethernet/com/fsl/ethernet/EthernetConfigDialog.java b/Ethernet/com/fsl/ethernet/EthernetConfigDialog.java
+index 161724c..3f01332 100644
+--- a/Ethernet/com/fsl/ethernet/EthernetConfigDialog.java
++++ b/Ethernet/com/fsl/ethernet/EthernetConfigDialog.java
+@@ -145,7 +145,7 @@ public class EthernetConfigDialog extends AlertDialog implements
+                 handle_saveconf();
+                 break;
+             case BUTTON_NEGATIVE:
+-                //Don't need to do anything
++                dialog.cancel();
+                 break;
+             default:
+                 Log.e(TAG,"Unknow button");
+diff --git a/Ethernet/com/fsl/ethernet/MainActivity.java b/Ethernet/com/fsl/ethernet/MainActivity.java
+index 0fe6933..6b51ae6 100644
+--- a/Ethernet/com/fsl/ethernet/MainActivity.java
++++ b/Ethernet/com/fsl/ethernet/MainActivity.java
+@@ -83,10 +83,6 @@ public class MainActivity extends Activity {
+                 Context.MODE_WORLD_WRITEABLE);
+ 
+         mEthEnabler = new EthernetEnabler(this);
+-        mEthConfigDialog = new EthernetConfigDialog(this, mEthEnabler);
+-        mEthEnabler.setConfigDialog(mEthConfigDialog);
+-        mEthAdvancedDialog = new EthernetAdvDialog(this, mEthEnabler);
+-        mEthEnabler.setmEthAdvancedDialog(mEthAdvancedDialog);
+         addListenerOnBtnConfig();
+         addListenerOnBtnCheck();
+         addListenerOnBtnAdvanced();
+@@ -110,6 +106,8 @@ public class MainActivity extends Activity {
+         mBtnConfig.setOnClickListener(new OnClickListener() {
+             @Override
+             public void onClick(View v) {
++                mEthConfigDialog = new EthernetConfigDialog(MainActivity.this, mEthEnabler);
++                mEthEnabler.setConfigDialog(mEthConfigDialog);
+                 mEthConfigDialog.show();
+             }
+         });
+@@ -144,6 +142,8 @@ public class MainActivity extends Activity {
+             public void onClick(View v) {
+                 mSaveConfig = mEthEnabler.getManager().getSavedConfig();
+                 if (mSaveConfig != null) {
++                    mEthAdvancedDialog = new EthernetAdvDialog(MainActivity.this,mEthEnabler);
++                    mEthEnabler.setmEthAdvancedDialog(mEthAdvancedDialog);
+                     mEthAdvancedDialog.show();
+                 }
+             }
+-- 
+1.8.0
+

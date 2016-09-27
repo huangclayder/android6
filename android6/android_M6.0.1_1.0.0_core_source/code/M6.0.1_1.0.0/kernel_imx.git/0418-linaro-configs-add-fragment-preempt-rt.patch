@@ -1,0 +1,24 @@
+From 90ef7a4c01c920826c8b5048938357b9aad8a7ab Mon Sep 17 00:00:00 2001
+From: Anders Roxell <anders.roxell@linaro.org>
+Date: Wed, 7 May 2014 16:21:08 +0200
+Subject: [PATCH] linaro/configs: add fragment preempt-rt
+
+Signed-off-by: Anders Roxell <anders.roxell@linaro.org>
+Signed-off-by: Mark Brown <broonie@linaro.org>
+---
+ linaro/configs/preempt-rt.conf | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/linaro/configs/preempt-rt.conf b/linaro/configs/preempt-rt.conf
+new file mode 100644
+index 0000000..f8873a6
+--- /dev/null
++++ b/linaro/configs/preempt-rt.conf
+@@ -0,0 +1,4 @@
++CONFIG_PREEMPT=y
++CONFIG_PREEMPT_RT_FULL=y
++CONFIG_SLUB=y
++CONFIG_CPU_FREQ=n
+-- 
+1.8.0
+

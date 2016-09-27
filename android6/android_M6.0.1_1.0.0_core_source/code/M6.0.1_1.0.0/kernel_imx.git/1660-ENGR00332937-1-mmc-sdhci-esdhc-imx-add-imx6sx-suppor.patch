@@ -1,0 +1,42 @@
+From 47f5078a0aba7db792452132bcd6bc0c364c004d Mon Sep 17 00:00:00 2001
+From: Dong Aisheng <b29396@freescale.com>
+Date: Thu, 6 Mar 2014 16:04:19 +0800
+Subject: [PATCH] ENGR00332937-1 mmc: sdhci-esdhc-imx: add imx6sx support
+
+The imx6sx usdhc is derived from imx6sl, the difference is minor.
+imx6sx have the errata ESDHC_FLAG_ERR004536 fixed.
+So introduce a new compatible string for imx6sx to distinguish them.
+
+Signed-off-by: Dong Aisheng <b29396@freescale.com>
+(cherry picked from commit 775f880758c59297dba3c54dd2499f5d165daaa9)
+---
+ drivers/mmc/host/sdhci-esdhc-imx.c | 6 ++++++
+ 1 file changed, 6 insertions(+)
+
+diff --git a/drivers/mmc/host/sdhci-esdhc-imx.c b/drivers/mmc/host/sdhci-esdhc-imx.c
+index a3959fd..6d5d31a 100644
+--- a/drivers/mmc/host/sdhci-esdhc-imx.c
++++ b/drivers/mmc/host/sdhci-esdhc-imx.c
+@@ -150,6 +150,11 @@ static struct esdhc_soc_data usdhc_imx6sl_data = {
+ 			| ESDHC_FLAG_BUSFREQ,
+ };
+ 
++static struct esdhc_soc_data usdhc_imx6sx_data = {
++	.flags = ESDHC_FLAG_USDHC | ESDHC_FLAG_STD_TUNING
++			| ESDHC_FLAG_HAVE_CAP1,
++};
++
+ struct pltfm_imx_data {
+ 	u32 scratchpad;
+ 	struct pinctrl *pinctrl;
+@@ -191,6 +196,7 @@ static const struct of_device_id imx_esdhc_dt_ids[] = {
+ 	{ .compatible = "fsl,imx35-esdhc", .data = &esdhc_imx35_data, },
+ 	{ .compatible = "fsl,imx51-esdhc", .data = &esdhc_imx51_data, },
+ 	{ .compatible = "fsl,imx53-esdhc", .data = &esdhc_imx53_data, },
++	{ .compatible = "fsl,imx6sx-usdhc", .data = &usdhc_imx6sx_data, },
+ 	{ .compatible = "fsl,imx6sl-usdhc", .data = &usdhc_imx6sl_data, },
+ 	{ .compatible = "fsl,imx6q-usdhc", .data = &usdhc_imx6q_data, },
+ 	{ /* sentinel */ }
+-- 
+1.8.0
+

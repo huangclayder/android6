@@ -1,0 +1,25 @@
+From 112c10b97e537048b2198d9d34df6d2626baeb29 Mon Sep 17 00:00:00 2001
+From: Mark Brown <broonie@linaro.org>
+Date: Mon, 9 Dec 2013 11:48:23 +0000
+Subject: [PATCH] configs: Enable ION in Android builds
+
+We don't have any devices that usefully use ION but this at least
+ensures that we have build coverage.
+
+Signed-off-by: Mark Brown <broonie@linaro.org>
+---
+ linaro/configs/android.conf | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/linaro/configs/android.conf b/linaro/configs/android.conf
+index bb90ecd..538adef 100644
+--- a/linaro/configs/android.conf
++++ b/linaro/configs/android.conf
+@@ -29,3 +29,4 @@ CONFIG_BLK_DEV_RAM_SIZE=16384
+ CONFIG_FUSE_FS=y
+ CONFIG_CPU_FREQ_GOV_INTERACTIVE=y
+ CONFIG_CPU_FREQ_DEFAULT_GOV_INTERACTIVE=y
++CONFIG_ION=y
+-- 
+1.8.0
+

@@ -1,0 +1,30 @@
+From 79bf3447b5892f15381538f187559fc4addf6529 Mon Sep 17 00:00:00 2001
+From: "guoyin.chen" <guoyin.chen@freescale.com>
+Date: Mon, 10 Nov 2014 09:25:54 +0800
+Subject: [PATCH 542/635] MA-5839-2 Update android to Lollipop
+
+Add new API init in gralloc as:
+lockAsync, unlockAsync, lockAsync_ycbcr
+
+Signed-off-by: guoyin.chen <guoyin.chen@freescale.com>
+---
+ mx6/libgralloc_wrapper/gralloc.cpp | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/mx6/libgralloc_wrapper/gralloc.cpp b/mx6/libgralloc_wrapper/gralloc.cpp
+index 382987d..9b706c8 100755
+--- a/mx6/libgralloc_wrapper/gralloc.cpp
++++ b/mx6/libgralloc_wrapper/gralloc.cpp
+@@ -251,6 +251,9 @@ struct private_module_t HAL_MODULE_INFO_SYM = {
+         unlock: BufferManager::gralloc_unlock,
+         perform: 0,
+         lock_ycbcr: 0,
++        lockAsync: 0,
++        unlockAsync: 0,
++        lockAsync_ycbcr: 0,
+         reserved_proc: {0}
+     },
+ };
+-- 
+1.8.0
+

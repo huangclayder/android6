@@ -1,0 +1,70 @@
+From a4a0f723756b8f89bdebe6370b58763bf098975b Mon Sep 17 00:00:00 2001
+From: Fang Hui <b31070@freescale.com>
+Date: Fri, 7 Nov 2014 13:50:55 +0800
+Subject: [PATCH 13/13] MA-5839-1 Update android to Lollipop
+
+param_set_max already defined in lp, remove redefine codes.
+
+pcm_prepare already defined in lp, remove redefine codes.
+Also, add pcm_sync_ptr(pcm, 0); in pcm_prepare().
+
+Signed-off-by: Fang Hui <b31070@freescale.com>
+---
+ pcm.c | 20 +++-----------------
+ 1 file changed, 3 insertions(+), 17 deletions(-)
+
+diff --git a/pcm.c b/pcm.c
+index 290bbb2..371ba58 100644
+--- a/pcm.c
++++ b/pcm.c
+@@ -1,7 +1,7 @@
+ /* pcm.c
+ **
+ ** Copyright 2011, The Android Open Source Project
+-** Copyright (C) 2012-2013 Freescale Semiconductor, Inc.
++** Copyright (C) 2012-2014 Freescale Semiconductor, Inc.
+ **
+ ** Redistribution and use in source and binary forms, with or without
+ ** modification, are permitted provided that the following conditions are met:
+@@ -199,13 +199,6 @@ static unsigned int param_get_max(struct snd_pcm_hw_params *p, int n)
+     return 0;
+ }
+ 
+-static void param_set_max(struct snd_pcm_hw_params *p, int n, unsigned int val)
+-{
+-    if (param_is_interval(n)) {
+-        struct snd_interval *i = param_to_interval(p, n);
+-        i->max = val;
+-    }
+-}
+ 
+ static void param_set_int(struct snd_pcm_hw_params *p, int n, unsigned int val)
+ {
+@@ -1043,6 +1036,8 @@ int pcm_prepare(struct pcm *pcm)
+     if (ioctl(pcm->fd, SNDRV_PCM_IOCTL_PREPARE) < 0)
+         return oops(pcm, errno, "cannot prepare channel");
+ 
++    pcm_sync_ptr(pcm, 0);
++
+     pcm->prepared = 1;
+     return 0;
+ }
+@@ -1367,15 +1362,6 @@ int pcm_drain(struct pcm *pcm)
+     return 0;
+ }
+ 
+-int pcm_prepare(struct pcm *pcm) {
+-    if (ioctl(pcm->fd, SNDRV_PCM_IOCTL_PREPARE) < 0){
+-        return oops(pcm, errno, "cannot prepare channel");
+-    }
+-
+-    pcm_sync_ptr(pcm, 0);
+-    return 0;
+-}
+-
+ int pcm_get_near_param(unsigned int card, unsigned int device,
+                      unsigned int flags, int type, int *data)
+ {
+-- 
+1.8.0
+

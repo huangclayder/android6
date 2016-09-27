@@ -1,0 +1,107 @@
+From 5d8b87265f28a70754ac7ac26ecfdc517560297b Mon Sep 17 00:00:00 2001
+From: "guoyin.chen" <guoyin.chen@freescale.com>
+Date: Fri, 14 Nov 2014 14:09:17 +0800
+Subject: [PATCH 388/602] MA-5839-10 Update android to Lollipop
+
+Unify the feature list for sabreaauto imx6dq with below rules:
+1. Include the feature file if it exist in frameworks/native/data/etc
+2. Add those feature into required_hardware.xml if it cannot be
+find in framework/native/data/etc
+
+Signed-off-by: guoyin.chen <guoyin.chen@freescale.com>
+---
+ imx6/sabreauto_6sx.mk               | 31 ++++++++++++++++++-------------
+ sabreauto_6sx/required_hardware.xml | 21 +--------------------
+ 2 files changed, 19 insertions(+), 33 deletions(-)
+
+diff --git a/imx6/sabreauto_6sx.mk b/imx6/sabreauto_6sx.mk
+index eb1a65a..ec17ee8 100644
+--- a/imx6/sabreauto_6sx.mk
++++ b/imx6/sabreauto_6sx.mk
+@@ -17,7 +17,6 @@ PRODUCT_DEVICE := sabreauto_6sx
+ 
+ 
+ PRODUCT_COPY_FILES += \
+-	device/fsl/sabreauto_6sx/required_hardware.xml:system/etc/permissions/required_hardware.xml \
+ 	device/fsl/sabreauto_6sx/init.rc:root/init.freescale.rc \
+ 	device/fsl/sabreauto_6sx/audio_policy.conf:system/etc/audio_policy.conf \
+ 	device/fsl/sabreauto_6sx/audio_effects.conf:system/vendor/etc/audio_effects.conf
+@@ -31,23 +30,29 @@ PRODUCT_CHARACTERISTICS := tablet
+ PRODUCT_AAPT_CONFIG += xlarge large tvdpi hdpi
+ 
+ PRODUCT_COPY_FILES += \
++	frameworks/native/data/etc/android.hardware.audio.output.xml:system/etc/permissions/android.hardware.audio.output.xml \
++	frameworks/native/data/etc/android.hardware.sensor.compass.xml:system/etc/permissions/android.hardware.sensor.compass.xml \
++	frameworks/native/data/etc/android.hardware.sensor.accelerometer.xml:system/etc/permissions/android.hardware.sensor.accelerometer.xml \
++	frameworks/native/data/etc/android.hardware.touchscreen.xml:system/etc/permissions/android.hardware.touchscreen.xml \
++	frameworks/native/data/etc/android.hardware.touchscreen.multitouch.xml:system/etc/permissions/android.hardware.touchscreen.multitouch.xml \
++	frameworks/native/data/etc/android.hardware.touchscreen.multitouch.distinct.xml:system/etc/permissions/android.hardware.touchscreen.multitouch.distinct.xml \
++	frameworks/native/data/etc/android.hardware.screen.portrait.xml:system/etc/permissions/android.hardware.screen.portrait.xml \
++	frameworks/native/data/etc/android.hardware.screen.landscape.xml:system/etc/permissions/android.hardware.screen.landscape.xml \
++	frameworks/native/data/etc/android.software.app_widgets.xml:system/etc/permissions/android.software.app_widgets.xml \
++	frameworks/native/data/etc/android.software.voice_recognizers.xml:system/etc/permissions/android.software.voice_recognizers.xml \
++	frameworks/native/data/etc/android.software.backup.xml:system/etc/permissions/android.software.backup.xml \
++	frameworks/native/data/etc/android.software.print.xml:system/etc/permissions/android.software.print.xml \
++	frameworks/native/data/etc/android.software.device_admin.xml:system/etc/permissions/android.software.device_admin.xml \
++	frameworks/native/data/etc/android.software.managed_users.xml:system/etc/permissions/android.software.managed_users.xml \
+ 	frameworks/native/data/etc/android.hardware.wifi.xml:system/etc/permissions/android.hardware.wifi.xml \
+ 	frameworks/native/data/etc/android.hardware.wifi.direct.xml:system/etc/permissions/android.hardware.wifi.direct.xml \
+ 	frameworks/native/data/etc/android.hardware.sensor.light.xml:system/etc/permissions/android.hardware.sensor.light.xml \
+-	frameworks/native/data/etc/android.hardware.sensor.accelerometer.xml:system/etc/permissions/android.hardware.sensor.accelerometer.xml \
+-	frameworks/native/data/etc/android.hardware.faketouch.xml:system/etc/permissions/android.hardware.faketouch.xml \
+-	frameworks/native/data/etc/android.hardware.touchscreen.multitouch.jazzhand.xml:system/etc/permissions/android.hardware.touchscreen.multitouch.jazzhand.xml \
+ 	frameworks/native/data/etc/android.software.sip.voip.xml:system/etc/permissions/android.software.sip.voip.xml \
+ 	frameworks/native/data/etc/android.hardware.usb.host.xml:system/etc/permissions/android.hardware.usb.host.xml \
+ 	frameworks/native/data/etc/android.hardware.usb.accessory.xml:system/etc/permissions/android.hardware.usb.accessory.xml \
+-    frameworks/native/data/etc/android.hardware.ethernet.xml:system/etc/permissions/android.hardware.ethernet.xml \
+-	frameworks/native/data/etc/android.hardware.bluetooth_le.xml:system/etc/permissions/android.hardware.bluetooth_le.xml
+-
+-# for PDK build, include only when the dir exists
+-# too early to use $(TARGET_BUILD_PDK)
+-ifneq ($(wildcard packages/wallpapers/LivePicker),)
+-PRODUCT_COPY_FILES += \
+-	packages/wallpapers/LivePicker/android.software.live_wallpaper.xml:system/etc/permissions/android.software.live_wallpaper.xml
+-endif
++	frameworks/native/data/etc/android.hardware.camera.xml:system/etc/permissions/android.hardware.camera.xml \
++	frameworks/native/data/etc/android.hardware.camera.front.xml:system/etc/permissions/android.hardware.camera.front.xml \
++	frameworks/native/data/etc/android.hardware.ethernet.xml:system/etc/permissions/android.hardware.ethernet.xml \
++	device/fsl/sabreauto_6sx/required_hardware.xml:system/etc/permissions/required_hardware.xml \
+ 
+ PRODUCT_PACKAGES += AudioRoute
+diff --git a/sabreauto_6sx/required_hardware.xml b/sabreauto_6sx/required_hardware.xml
+index 21d809d..b657795 100644
+--- a/sabreauto_6sx/required_hardware.xml
++++ b/sabreauto_6sx/required_hardware.xml
+@@ -17,28 +17,9 @@
+ <!-- These are the hardware components that are included in i.MX reference board
+ -->
+ <permissions>
+-    <feature name="android.hardware.camera.any" />
+-    <feature name="android.hardware.camera" />
+-    <feature name="android.hardware.camera.front" />
++   <feature name="android.hardware.camera.any" />
+     <feature name="android.hardware.camera.flash" />
+-    <!-- <feature name="android.hardware.location" /> -->
+-    <!-- <feature name="android.hardware.location.network" /> -->
+-    <feature name="android.hardware.sensor.accelerometer" />
+-    <feature name="android.hardware.sensor.compass" />
+-    <!-- <feature name="android.hardware.bluetooth" /> -->
+-    <feature name="android.hardware.touchscreen" />
+-    <feature name="android.hardware.touchscreen.multitouch" />
+-    <feature name="android.hardware.touchscreen.multitouch.distinct" />
+     <feature name="android.hardware.microphone" />
+-    <feature name="android.hardware.screen.portrait" />
+-    <feature name="android.hardware.screen.landscape" />
+-    <feature name="android.software.app_widgets" />
+     <feature name="android.software.home_screen" />
+     <feature name="android.software.input_methods" />
+-    <!-- Feature to specify if the device supports adding device admins. -->
+-    <feature name="android.software.device_admin" />
+-
+-    <!-- This is added by FSL. -->
+-    <feature name="android.software.live_wallpaper" />
+-
+ </permissions>
+-- 
+1.8.0
+

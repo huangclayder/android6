@@ -1,0 +1,110 @@
+From d359ca1e2145b61dc9bd4c6f6ec8b23212042467 Mon Sep 17 00:00:00 2001
+From: Fang Hui <b31070@freescale.com>
+Date: Fri, 17 Oct 2014 09:28:07 +0800
+Subject: [PATCH 534/635] MA-5764 [sabresd-6dq]: camera exit after shift
+ between record, photo
+
+When shift, record stream is not reconstructed, just thread destroy and create.
+So need clear message queue, or message from last time will received,
+so the refcount is not balanced. Cause assertion "mRefCount > 0" failed.
+
+Signed-off-by: Fang Hui <b31070@freescale.com>
+---
+ mx6/libcamera2/StreamAdapter.cpp | 4 +++-
+ mx6/libcamera2/StreamAdapter.h   | 4 ++--
+ mx6/libcamera2/messageQueue.cpp  | 7 ++++++-
+ mx6/libcamera2/messageQueue.h    | 3 ++-
+ 4 files changed, 13 insertions(+), 5 deletions(-)
+
+diff --git a/mx6/libcamera2/StreamAdapter.cpp b/mx6/libcamera2/StreamAdapter.cpp
+index 188c6d8..c0616e4 100755
+--- a/mx6/libcamera2/StreamAdapter.cpp
++++ b/mx6/libcamera2/StreamAdapter.cpp
+@@ -1,5 +1,5 @@
+ /*
+- * Copyright (C) 2012-2013 Freescale Semiconductor, Inc.
++ * Copyright (C) 2012-2014 Freescale Semiconductor, Inc.
+  *
+  * Licensed under the Apache License, Version 2.0 (the "License");
+  * you may not use this file except in compliance with the License.
+@@ -75,6 +75,7 @@ int StreamAdapter::start()
+     }
+ 
+     mStreamThread = new StreamThread(this);
++    mThreadQueue.Clear();
+     mThreadQueue.postSyncMessage(new SyncMessage(STREAM_START, 0));
+ 
+     fAssert(mDeviceAdapter.get() != NULL);
+@@ -117,6 +118,7 @@ int StreamAdapter::release()
+     mThreadQueue.postSyncMessage(new SyncMessage(STREAM_EXIT, 0));
+     mStreamThread->requestExitAndWait();
+     mStreamThread.clear();
++    mThreadQueue.Clear();
+     mStreamState = STREAM_INVALID;
+     mPrepared = false;
+ 
+diff --git a/mx6/libcamera2/StreamAdapter.h b/mx6/libcamera2/StreamAdapter.h
+index b28ac00..6c52f43 100755
+--- a/mx6/libcamera2/StreamAdapter.h
++++ b/mx6/libcamera2/StreamAdapter.h
+@@ -1,5 +1,5 @@
+ /*
+- * Copyright (C) 2012-2013 Freescale Semiconductor, Inc.
++ * Copyright (C) 2012-2014 Freescale Semiconductor, Inc.
+  *
+  * Licensed under the Apache License, Version 2.0 (the "License");
+  * you may not use this file except in compliance with the License.
+@@ -89,7 +89,7 @@ public:
+             Thread(false), mStream(stream) {}
+ 
+         virtual void onFirstRef() {
+-            run("RequestHandle", PRIORITY_DEFAULT);
++            run("StreamThread", PRIORITY_DEFAULT);
+         }
+ 
+         virtual bool threadLoop() {
+diff --git a/mx6/libcamera2/messageQueue.cpp b/mx6/libcamera2/messageQueue.cpp
+index 662a01a..b90acba 100755
+--- a/mx6/libcamera2/messageQueue.cpp
++++ b/mx6/libcamera2/messageQueue.cpp
+@@ -1,5 +1,5 @@
+ /*
+- * Copyright (C) 2009-2013 Freescale Semiconductor, Inc.
++ * Copyright (C) 2009-2014 Freescale Semiconductor, Inc.
+  *
+  * Licensed under the Apache License, Version 2.0 (the "License");
+  * you may not use this file except in compliance with the License.
+@@ -55,6 +55,11 @@ CMessageQueue::~CMessageQueue()
+ 
+     mMessages.clear();
+ }
++void CMessageQueue::Clear()
++{
++    mMessages.clear();
++    mSyncMessages.clear();
++}
+ 
+ sp<CMessage>CMessageQueue::waitMessage(nsecs_t timeout)
+ {
+diff --git a/mx6/libcamera2/messageQueue.h b/mx6/libcamera2/messageQueue.h
+index 575dcd6..51615ec 100755
+--- a/mx6/libcamera2/messageQueue.h
++++ b/mx6/libcamera2/messageQueue.h
+@@ -1,5 +1,5 @@
+ /*
+- * Copyright (C) 2009-2013 Freescale Semiconductor, Inc.
++ * Copyright (C) 2009-2014 Freescale Semiconductor, Inc.
+  *
+  * Licensed under the Apache License, Version 2.0 (the "License");
+  * you may not use this file except in compliance with the License.
+@@ -114,6 +114,7 @@ public:
+                              int32_t             flags = 0);
+     status_t     postSyncMessage(const sp<SyncMessage>& message,
+                                  int32_t                flags = 0);
++	void Clear();
+ 
+ private:
+     status_t queueMessage(const sp<CMessage>& message,
+-- 
+1.8.0
+

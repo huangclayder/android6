@@ -1,0 +1,96 @@
+From 879a037fc454cd0afc0028075d01863e23816064 Mon Sep 17 00:00:00 2001
+From: MJm <B55507@freescale.com>
+Date: Mon, 12 Oct 2015 11:35:32 +0800
+Subject: [PATCH 11/12] MA-7013 whether we can achieve the same function by
+ removing the SHOW_SYSTEM_TIMEin api/current.txt
+
+Change the Setting.Global.SHOW_SYSTEM_TIME to Developer.getShowSystemTime()
+
+Signed-off-by: Ma Jiamin<b55507@freescale.com>
+
+Conflicts:
+	AndroidManifest.xml
+	src/com/android/settings/DevelopmentSettings.java
+---
+ Android.mk                                        | 2 +-
+ AndroidManifest.xml                               | 5 ++---
+ src/com/android/settings/DevelopmentSettings.java | 6 +++---
+ 3 files changed, 6 insertions(+), 7 deletions(-)
+
+diff --git a/Android.mk b/Android.mk
+index 7043ad4..e8b8479 100644
+--- a/Android.mk
++++ b/Android.mk
+@@ -1,7 +1,7 @@
+ LOCAL_PATH:= $(call my-dir)
+ include $(CLEAR_VARS)
+ 
+-LOCAL_JAVA_LIBRARIES := bouncycastle conscrypt telephony-common ims-common
++LOCAL_JAVA_LIBRARIES := bouncycastle conscrypt telephony-common ims-common freescale-extended
+ LOCAL_STATIC_JAVA_LIBRARIES := android-support-v4 android-support-v13 jsr305
+ 
+ LOCAL_MODULE_TAGS := optional
+diff --git a/AndroidManifest.xml b/AndroidManifest.xml
+index 3d538a1..6b4b9ba 100644
+--- a/AndroidManifest.xml
++++ b/AndroidManifest.xml
+@@ -94,8 +94,8 @@
+             android:usesCleartextTraffic="true">
+ 
+         <!-- Settings -->
+-
+-        <activity android:name="Settings"
++	 <uses-library android:name="freescale-extended" />
++	 <activity android:name="Settings"
+                 android:taskAffinity="com.android.settings"
+                 android:label="@string/settings_label_launcher"
+                 android:launchMode="singleTask">
+@@ -106,7 +106,6 @@
+             <meta-data android:name="com.android.settings.PRIMARY_PROFILE_CONTROLLED"
+                 android:value="true" />
+         </activity>
+-
+         <!-- Alias for launcher activity only, as this belongs to each profile. -->
+         <activity-alias android:name="Settings"
+                 android:taskAffinity="com.android.settings"
+diff --git a/src/com/android/settings/DevelopmentSettings.java b/src/com/android/settings/DevelopmentSettings.java
+index 0d4dc71..2ccc610 100644
+--- a/src/com/android/settings/DevelopmentSettings.java
++++ b/src/com/android/settings/DevelopmentSettings.java
+@@ -17,6 +17,7 @@
+ package com.android.settings;
+ 
+ import android.Manifest;
++import com.freescale.provider.Developer;
+ import android.app.Activity;
+ import android.app.ActivityManagerNative;
+ import android.app.AlertDialog;
+@@ -317,7 +318,6 @@ public class DevelopmentSettings extends SettingsPreferenceFragment
+     @Override
+     public void onCreate(Bundle icicle) {
+         super.onCreate(icicle);
+-
+         mWindowManager = IWindowManager.Stub.asInterface(ServiceManager.getService("window"));
+         mBackupManager = IBackupManager.Stub.asInterface(
+                 ServiceManager.getService(Context.BACKUP_SERVICE));
+@@ -1508,7 +1508,7 @@ public class DevelopmentSettings extends SettingsPreferenceFragment
+ 	
+     private void updateSystemTimeOptions() {
+         updateSwitchPreference(mShowSystemTime, Settings.Global.getInt(getActivity().getContentResolver(),
+-                Settings.Global.SHOW_SYSTEM_TIME, 0) != 0);
++                new Developer().getShowSystemTime(), 0) != 0);
+         Log.i(TAG, "updateSystemTimeOptions:" + Settings.Global.getInt(getActivity().getContentResolver(),
+                 Settings.Global.SHOW_PROCESSES, 0));
+     }
+@@ -1530,7 +1530,7 @@ public class DevelopmentSettings extends SettingsPreferenceFragment
+        boolean value = mShowSystemTime.isChecked();
+        Log.i(TAG, "writeSystemTimeOptions: " + value);
+        Settings.Global.putInt(getActivity().getContentResolver(),
+-               Settings.Global.SHOW_SYSTEM_TIME, value ? 1 : 0);
++               new Developer().getShowSystemTime(), value ? 1 : 0);
+        Intent service = (new Intent())
+                 .setClassName("com.android.systemui", "com.android.systemui.LoadSystemTime");
+         if (value) {
+-- 
+1.8.0
+

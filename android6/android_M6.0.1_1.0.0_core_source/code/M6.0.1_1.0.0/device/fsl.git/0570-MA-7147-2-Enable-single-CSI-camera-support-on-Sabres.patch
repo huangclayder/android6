@@ -1,0 +1,28 @@
+From 39e279b45106878669626a3b780a85c01430fb97 Mon Sep 17 00:00:00 2001
+From: Liu Xiaowen <xiaowen.liu@freescale.com>
+Date: Thu, 29 Oct 2015 11:09:00 +0800
+Subject: [PATCH 570/602] MA-7147-2 Enable single CSI camera support on
+ Sabresd-6qp board.
+
+disable front camera support by default.
+
+Signed-off-by: Liu Xiaowen <xiaowen.liu@freescale.com>
+---
+ sabresd_6dq/init.i.MX6QP.rc | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/sabresd_6dq/init.i.MX6QP.rc b/sabresd_6dq/init.i.MX6QP.rc
+index 39e715d..a606ccf 100755
+--- a/sabresd_6dq/init.i.MX6QP.rc
++++ b/sabresd_6dq/init.i.MX6QP.rc
+@@ -12,5 +12,5 @@ on boot
+     # set back camera.
+     setprop back_camera_name ov5640_camera
+ 
+-    # set front camera.
+-    setprop front_camera_name uvc,ov5642_camera,ov5640_mipi
++    # disable front camera support.
++    setprop front_camera_name 0
+-- 
+1.8.0
+

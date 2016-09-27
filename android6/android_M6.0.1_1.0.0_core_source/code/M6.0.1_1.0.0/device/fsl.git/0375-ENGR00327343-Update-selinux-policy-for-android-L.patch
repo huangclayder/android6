@@ -1,0 +1,544 @@
+From 416e9320162dc1bf5f8ecdeaae8f9f3019b7d633 Mon Sep 17 00:00:00 2001
+From: Ke Qinghua <qinghua.ke@freescale.com>
+Date: Fri, 15 Aug 2014 17:59:35 +0800
+Subject: [PATCH 375/602] ENGR00327343 Update selinux policy for android L
+
+Update selinux policy for android L
+Move common sepolicy to /device/fsl/imx6/sepolicy
+
+Change-Id: I422f6034ea4801c879f5461afdbcd5acaf59ce91
+Signed-off-by: Ke Qinghua <qinghua.ke@freescale.com>
+---
+ imx6/sepolicy/bluetooth.te             |  2 ++
+ imx6/sepolicy/domain.te                | 22 ++++++++++++++++++++++
+ imx6/sepolicy/file_contexts            | 11 +++++++++++
+ imx6/sepolicy/fs_use                   |  4 ++++
+ imx6/sepolicy/genfs_contexts           |  2 ++
+ imx6/sepolicy/init_shell.te            |  9 +++++++++
+ imx6/sepolicy/kernel.te                |  2 ++
+ imx6/sepolicy/sensors.te               | 27 +++++++++++++++++++++++++++
+ imx6/sepolicy/system_app.te            |  2 ++
+ imx6/sepolicy/system_server.te         |  4 ++++
+ imx6/sepolicy/untrusted_app.te         |  6 ++++++
+ sabreauto_6q/BoardConfig.mk            | 12 ++++++++++--
+ sabreauto_6q/init.rc                   |  3 +++
+ sabreauto_6q/sepolicy/app.te           |  7 -------
+ sabreauto_6q/sepolicy/file_contexts    |  6 ------
+ sabreauto_6q/sepolicy/fs_use           |  4 ----
+ sabreauto_6q/sepolicy/genfs_contexts   |  2 --
+ sabreauto_6q/sepolicy/untrusted_app.te |  9 ---------
+ sabresd_6dq/BoardConfig.mk             | 14 ++++++++++++--
+ sabresd_6dq/sepolicy/app.te            |  7 -------
+ sabresd_6dq/sepolicy/file_contexts     |  6 ------
+ sabresd_6dq/sepolicy/fs_use            |  4 ----
+ sabresd_6dq/sepolicy/genfs_contexts    |  2 --
+ sabresd_6dq/sepolicy/untrusted_app.te  |  9 ---------
+ sabresd_6sx/BoardConfig.mk             | 13 +++++++++++--
+ sabresd_6sx/init.rc                    |  3 +++
+ sabresd_6sx/sepolicy/app.te            |  7 -------
+ sabresd_6sx/sepolicy/file_contexts     |  6 ------
+ sabresd_6sx/sepolicy/fs_use            |  3 ---
+ sabresd_6sx/sepolicy/genfs_contexts    |  2 --
+ sabresd_6sx/sepolicy/untrusted_app.te  |  9 ---------
+ 31 files changed, 130 insertions(+), 89 deletions(-)
+ create mode 100644 imx6/sepolicy/bluetooth.te
+ create mode 100644 imx6/sepolicy/domain.te
+ create mode 100644 imx6/sepolicy/file_contexts
+ create mode 100644 imx6/sepolicy/fs_use
+ create mode 100644 imx6/sepolicy/genfs_contexts
+ create mode 100644 imx6/sepolicy/init_shell.te
+ create mode 100644 imx6/sepolicy/kernel.te
+ create mode 100644 imx6/sepolicy/sensors.te
+ create mode 100644 imx6/sepolicy/system_app.te
+ create mode 100644 imx6/sepolicy/system_server.te
+ create mode 100644 imx6/sepolicy/untrusted_app.te
+ delete mode 100644 sabreauto_6q/sepolicy/app.te
+ delete mode 100644 sabreauto_6q/sepolicy/file_contexts
+ delete mode 100644 sabreauto_6q/sepolicy/fs_use
+ delete mode 100644 sabreauto_6q/sepolicy/genfs_contexts
+ delete mode 100644 sabreauto_6q/sepolicy/untrusted_app.te
+ delete mode 100644 sabresd_6dq/sepolicy/app.te
+ delete mode 100644 sabresd_6dq/sepolicy/file_contexts
+ delete mode 100644 sabresd_6dq/sepolicy/fs_use
+ delete mode 100644 sabresd_6dq/sepolicy/genfs_contexts
+ delete mode 100644 sabresd_6dq/sepolicy/untrusted_app.te
+ delete mode 100644 sabresd_6sx/sepolicy/app.te
+ delete mode 100644 sabresd_6sx/sepolicy/file_contexts
+ delete mode 100644 sabresd_6sx/sepolicy/fs_use
+ delete mode 100644 sabresd_6sx/sepolicy/genfs_contexts
+ delete mode 100644 sabresd_6sx/sepolicy/untrusted_app.te
+
+diff --git a/imx6/sepolicy/bluetooth.te b/imx6/sepolicy/bluetooth.te
+new file mode 100644
+index 0000000..a8c1b64
+--- /dev/null
++++ b/imx6/sepolicy/bluetooth.te
+@@ -0,0 +1,2 @@
++allow bluetooth sysfs:file rw_file_perms;
++
+diff --git a/imx6/sepolicy/domain.te b/imx6/sepolicy/domain.te
+new file mode 100644
+index 0000000..8dd243a
+--- /dev/null
++++ b/imx6/sepolicy/domain.te
+@@ -0,0 +1,22 @@
++allow vold      self:capability { setgid setuid };
++allow vold      fuse_device:chr_file rw_file_perms;
++
++allow domain tty_device:chr_file rw_file_perms;
++allow domain self:process execmem;
++allow init_shell unlabeled:file rw_file_perms;
++allow gpsd properties_device:chr_file rw_file_perms;
++allow gpsd property_socket:sock_file rw_file_perms;
++allow gpsd apk_data_file:dir rw_dir_perms;
++allow gpsd apk_data_file:file create_file_perms;
++allow gpsd properties_device:file rwx_file_perms;
++allow gpsd init:unix_stream_socket connectto;
++allow gpsd default_prop:property_service set;
++allow gpsd device:dir rw_dir_perms;
++allow gpsd device:notdevfile_class_set create_file_perms;
++allow gpsd self:capability sys_nice;
++allow gpsd devpts:chr_file create_file_perms;
++allow {domain -untrusted_app -shell -isolated_app} graphics_device:chr_file rw_file_perms;
++allow {domain -untrusted_app -shell -isolated_app} graphics_device:dir rw_dir_perms;
++allow domain self:process execmem;
++allow domain unlabeled:file { setattr getattr rename link_file_perms rw_file_perms };
++allow domain unlabeled:dir { setattr getattr rename link_file_perms rw_dir_perms };
+diff --git a/imx6/sepolicy/file_contexts b/imx6/sepolicy/file_contexts
+new file mode 100644
+index 0000000..892ad62
+--- /dev/null
++++ b/imx6/sepolicy/file_contexts
+@@ -0,0 +1,11 @@
++/system/bin/magd                u:object_r:sensors_exec:s0
++/system/bin/ingsvcd             u:object_r:gpsd_exec:s0
++/system/bin/rtl_wpa_supplicant  u:object_r:wpa_exec:s0
++/system/bin/rtl_hostapd         u:object_r:hostapd_exec:s0
++/dev/ttyGS[0-9]*                u:object_r:tty_device:s0
++/dev/ttymxc[0-9]*               u:object_r:tty_device:s0
++/dev/mma8x5x                    u:object_r:sensors_device:s0
++/dev/ubi0_0                     u:object_r:block_device:s0
++/dev/ubi0_1                     u:object_r:block_device:s0
++/dev/ubi0_2                     u:object_r:block_device:s0
++/dev/ubi0_3                     u:object_r:block_device:s0
+\ No newline at end of file
+diff --git a/imx6/sepolicy/fs_use b/imx6/sepolicy/fs_use
+new file mode 100644
+index 0000000..848581b
+--- /dev/null
++++ b/imx6/sepolicy/fs_use
+@@ -0,0 +1,4 @@
++# Label inodes via getxattr.
++fs_use_xattr ubifs u:object_r:labeledfs:s0;
++
++
+diff --git a/imx6/sepolicy/genfs_contexts b/imx6/sepolicy/genfs_contexts
+new file mode 100644
+index 0000000..34f9db4
+--- /dev/null
++++ b/imx6/sepolicy/genfs_contexts
+@@ -0,0 +1,2 @@
++genfscon nfs / u:object_r:rootfs:s0
++genfscon fuseblk / u:object_r:sdcard_external:s0
+diff --git a/imx6/sepolicy/init_shell.te b/imx6/sepolicy/init_shell.te
+new file mode 100644
+index 0000000..e5a1542
+--- /dev/null
++++ b/imx6/sepolicy/init_shell.te
+@@ -0,0 +1,9 @@
++allow init_shell domain:file rw_file_perms;
++allow init_shell domain:dir rw_dir_perms;
++allow init_shell domain:process {getattr};
++allow init_shell unlabeled:file rw_file_perms;
++allow init_shell unlabeled:dir rw_dir_perms;
++allow init_shell { file_type -keystore_data_file}:file { getattr };
++allow init_shell { dev_type -keystore_data_file -kmem_device -hw_random_device }:chr_file { getattr };
++allow init_shell sdcard_external:dir rw_dir_perms;
++allow init_shell sdcard_external:file rw_file_perms;
+\ No newline at end of file
+diff --git a/imx6/sepolicy/kernel.te b/imx6/sepolicy/kernel.te
+new file mode 100644
+index 0000000..2708c70
+--- /dev/null
++++ b/imx6/sepolicy/kernel.te
+@@ -0,0 +1,2 @@
++allow kernel self:capability { mknod };
++
+diff --git a/imx6/sepolicy/sensors.te b/imx6/sepolicy/sensors.te
+new file mode 100644
+index 0000000..e19953e
+--- /dev/null
++++ b/imx6/sepolicy/sensors.te
+@@ -0,0 +1,27 @@
++# Integrated qualcomm sensor process
++type sensors, domain;
++type sensors_exec, exec_type, file_type;
++
++# Started by init
++init_daemon_domain(sensors)
++
++# Change own perms to (nobody,nobody)
++allow sensors self:capability { setuid setgid };
++# Chown /data/misc/sensors/debug/ to nobody
++allow sensors self:capability chown;
++dontaudit sensors self:capability fsetid;
++
++# Access /data/misc/sensors/debug and /data/system/sensors/settings
++allow sensors self:capability dac_read_search;
++dontaudit sensors self:capability dac_override;
++
++# Access sensor nodes (/dev/msm_dsps)
++allow sensors sensors_device:chr_file rw_file_perms;
++
++
++# Wake lock access
++wakelock_use(sensors)
++
++allow sensors cgroup:dir { create add_name };
++allow sensors input_device:chr_file rw_file_perms;
++allow sensors input_device:dir r_dir_perms;
+diff --git a/imx6/sepolicy/system_app.te b/imx6/sepolicy/system_app.te
+new file mode 100644
+index 0000000..f696877
+--- /dev/null
++++ b/imx6/sepolicy/system_app.te
+@@ -0,0 +1,2 @@
++allow system_app system_app_data_file:notdevfile_class_set rw_file_perms;
++
+diff --git a/imx6/sepolicy/system_server.te b/imx6/sepolicy/system_server.te
+new file mode 100644
+index 0000000..f55c3cf
+--- /dev/null
++++ b/imx6/sepolicy/system_server.te
+@@ -0,0 +1,4 @@
++allow system_server unlabeled:dir {relabelfrom rw_dir_perms};
++allow system_server unlabeled:sock_file {link_file_perms rw_file_perms};
++allow system_server system_data_file:file {relabelto rw_file_perms};
++allow system_server system_data_file:dir {relabelto rw_dir_perms};
+\ No newline at end of file
+diff --git a/imx6/sepolicy/untrusted_app.te b/imx6/sepolicy/untrusted_app.te
+new file mode 100644
+index 0000000..e77e344
+--- /dev/null
++++ b/imx6/sepolicy/untrusted_app.te
+@@ -0,0 +1,6 @@
++allow untrusted_app graphics_device:dir rw_dir_perms;
++allow untrusted_app graphics_device:file rw_file_perms;
++allow untrusted_app graphics_device:chr_file rw_file_perms;
++allow untrusted_app unlabeled:dir rw_dir_perms;
++allow untrusted_app sdcard_external:dir rw_dir_perms;
++allow untrusted_app sdcard_external:file rw_file_perms;
+\ No newline at end of file
+diff --git a/sabreauto_6q/BoardConfig.mk b/sabreauto_6q/BoardConfig.mk
+index 9382358..3383a5b 100644
+--- a/sabreauto_6q/BoardConfig.mk
++++ b/sabreauto_6q/BoardConfig.mk
+@@ -107,9 +107,17 @@ TARGET_BOOTLOADER_CONFIG := imx6q:mx6qsabreautoandroid_config imx6dl:mx6dlsabrea
+ TARGET_BOARD_DTS_CONFIG := imx6q:imx6q-sabreauto.dtb imx6dl:imx6dl-sabreauto.dtb imx6q-nand:imx6q-sabreauto-gpmi-weim.dtb imx6dl-nand:imx6dl-sabreauto-gpmi-weim.dtb
+ 
+ BOARD_SEPOLICY_DIRS := \
++       device/fsl/imx6/sepolicy \
+        device/fsl/sabreauto_6q/sepolicy
+ 
+ BOARD_SEPOLICY_UNION := \
++       domain.te \
++       system_app.te \
++       system_server.te \
++       untrusted_app.te \
++       sensors.te \
++       init_shell.te \
++       kernel.te \
+        file_contexts \
+-       fs_use \
+-       genfs_contexts
++       genfs_contexts \
++       fs_use 
+diff --git a/sabreauto_6q/init.rc b/sabreauto_6q/init.rc
+index 45e8bbc..eec908f 100644
+--- a/sabreauto_6q/init.rc
++++ b/sabreauto_6q/init.rc
+@@ -154,6 +154,7 @@ service wpa_supplicant /system/bin/wpa_supplicant \
+ # magd daemon
+ service magd /system/bin/magd
+     class late_start
++    seclabel u:r:sensors:s0
+     user system
+     group input
+     oneshot
+@@ -164,6 +165,7 @@ service ing /system/bin/ingsvcd -c /system/etc/gps/Orion.ini
+     socket athrshmsocket stream 666 system system
+     socket athrsupl59991 stream 666 system system
+     class late_start
++    seclabel u:r:gpsd:s0
+     user root
+     group gps
+     oneshot
+@@ -171,6 +173,7 @@ service ing /system/bin/ingsvcd -c /system/etc/gps/Orion.ini
+ # Set watchdog timer to 30 seconds and pet it every 10 seconds to get a 20 second margin
+ service watchdogd /sbin/watchdogd 10 20
+     class core
++    seclabel u:r:watchdogd:s0
+ 
+ on fs
+ # mount ext4 partitions
+diff --git a/sabreauto_6q/sepolicy/app.te b/sabreauto_6q/sepolicy/app.te
+deleted file mode 100644
+index 561a2b1..0000000
+--- a/sabreauto_6q/sepolicy/app.te
++++ /dev/null
+@@ -1,7 +0,0 @@
+-# Grant GPU access to all processes started by Zygote.
+-# They need that to render the standard UI.
+-allow domain    graphics_device:chr_file rw_file_perms;
+-allow domain    graphics_device:dir { write create add_name setattr mounton search };
+-allow system    system_data_file:dir *;
+-allow vold      self:capability { setgid setuid };
+-allow vold      fuse_device:chr_file rw_file_perms;
+diff --git a/sabreauto_6q/sepolicy/file_contexts b/sabreauto_6q/sepolicy/file_contexts
+deleted file mode 100644
+index 55d7e38..0000000
+--- a/sabreauto_6q/sepolicy/file_contexts
++++ /dev/null
+@@ -1,6 +0,0 @@
+-/system/bin/rtl_wpa_supplicant  u:object_r:wpa_exec:s0
+-/system/bin/rtl_hostapd     u:object_r:hostapd_exec:s0
+-/dev/ubi0_0                   u:object_r:block_device:s0
+-/dev/ubi0_1                   u:object_r:block_device:s0
+-/dev/ubi0_2                   u:object_r:block_device:s0
+-/dev/ubi0_3                   u:object_r:block_device:s0
+\ No newline at end of file
+diff --git a/sabreauto_6q/sepolicy/fs_use b/sabreauto_6q/sepolicy/fs_use
+deleted file mode 100644
+index 848581b..0000000
+--- a/sabreauto_6q/sepolicy/fs_use
++++ /dev/null
+@@ -1,4 +0,0 @@
+-# Label inodes via getxattr.
+-fs_use_xattr ubifs u:object_r:labeledfs:s0;
+-
+-
+diff --git a/sabreauto_6q/sepolicy/genfs_contexts b/sabreauto_6q/sepolicy/genfs_contexts
+deleted file mode 100644
+index 34f9db4..0000000
+--- a/sabreauto_6q/sepolicy/genfs_contexts
++++ /dev/null
+@@ -1,2 +0,0 @@
+-genfscon nfs / u:object_r:rootfs:s0
+-genfscon fuseblk / u:object_r:sdcard_external:s0
+diff --git a/sabreauto_6q/sepolicy/untrusted_app.te b/sabreauto_6q/sepolicy/untrusted_app.te
+deleted file mode 100644
+index d03f9c6..0000000
+--- a/sabreauto_6q/sepolicy/untrusted_app.te
++++ /dev/null
+@@ -1,9 +0,0 @@
+-allow untrusted_app domain:dir r_dir_perms;
+-allow untrusted_app domain:file rw_file_perms;
+-allow untrusted_app domain:unix_stream_socket {read write};
+-allow untrusted_app appdomain:dir r_dir_perms;
+-allow untrusted_app appdomain:file rw_file_perms;
+-allow untrusted_app fs_type:dir r_dir_perms;
+-allow untrusted_app fs_type:file rw_file_perms;
+-allow untrusted_app untrusted_app:process *;
+-allow untrusted_app init_tmpfs:file rw_file_perms;
+diff --git a/sabresd_6dq/BoardConfig.mk b/sabresd_6dq/BoardConfig.mk
+index 02deecd..3a34405 100644
+--- a/sabresd_6dq/BoardConfig.mk
++++ b/sabresd_6dq/BoardConfig.mk
+@@ -111,11 +111,21 @@ TARGET_BOOTLOADER_CONFIG := imx6q:mx6qsabresdandroid_config imx6dl:mx6dlsabresda
+ TARGET_BOARD_DTS_CONFIG := imx6q:imx6q-sabresd.dtb imx6dl:imx6dl-sabresd.dtb imx6q-ldo:imx6q-sabresd-ldo.dtb
+ 
+ BOARD_SEPOLICY_DIRS := \
++       device/fsl/imx6/sepolicy \
+        device/fsl/sabresd_6dq/sepolicy
+ 
+ BOARD_SEPOLICY_UNION := \
++       domain.te \
++       system_app.te \
++       system_server.te \
++       untrusted_app.te \
++       sensors.te \
++       init_shell.te \
++       bluetooth.te \
++       kernel.te \
+        file_contexts \
+-       fs_use \
+-       genfs_contexts
++       genfs_contexts \
++       fs_use 
++
+ 
+ 
+diff --git a/sabresd_6dq/sepolicy/app.te b/sabresd_6dq/sepolicy/app.te
+deleted file mode 100644
+index 561a2b1..0000000
+--- a/sabresd_6dq/sepolicy/app.te
++++ /dev/null
+@@ -1,7 +0,0 @@
+-# Grant GPU access to all processes started by Zygote.
+-# They need that to render the standard UI.
+-allow domain    graphics_device:chr_file rw_file_perms;
+-allow domain    graphics_device:dir { write create add_name setattr mounton search };
+-allow system    system_data_file:dir *;
+-allow vold      self:capability { setgid setuid };
+-allow vold      fuse_device:chr_file rw_file_perms;
+diff --git a/sabresd_6dq/sepolicy/file_contexts b/sabresd_6dq/sepolicy/file_contexts
+deleted file mode 100644
+index 55d7e38..0000000
+--- a/sabresd_6dq/sepolicy/file_contexts
++++ /dev/null
+@@ -1,6 +0,0 @@
+-/system/bin/rtl_wpa_supplicant  u:object_r:wpa_exec:s0
+-/system/bin/rtl_hostapd     u:object_r:hostapd_exec:s0
+-/dev/ubi0_0                   u:object_r:block_device:s0
+-/dev/ubi0_1                   u:object_r:block_device:s0
+-/dev/ubi0_2                   u:object_r:block_device:s0
+-/dev/ubi0_3                   u:object_r:block_device:s0
+\ No newline at end of file
+diff --git a/sabresd_6dq/sepolicy/fs_use b/sabresd_6dq/sepolicy/fs_use
+deleted file mode 100644
+index 848581b..0000000
+--- a/sabresd_6dq/sepolicy/fs_use
++++ /dev/null
+@@ -1,4 +0,0 @@
+-# Label inodes via getxattr.
+-fs_use_xattr ubifs u:object_r:labeledfs:s0;
+-
+-
+diff --git a/sabresd_6dq/sepolicy/genfs_contexts b/sabresd_6dq/sepolicy/genfs_contexts
+deleted file mode 100644
+index 34f9db4..0000000
+--- a/sabresd_6dq/sepolicy/genfs_contexts
++++ /dev/null
+@@ -1,2 +0,0 @@
+-genfscon nfs / u:object_r:rootfs:s0
+-genfscon fuseblk / u:object_r:sdcard_external:s0
+diff --git a/sabresd_6dq/sepolicy/untrusted_app.te b/sabresd_6dq/sepolicy/untrusted_app.te
+deleted file mode 100644
+index d03f9c6..0000000
+--- a/sabresd_6dq/sepolicy/untrusted_app.te
++++ /dev/null
+@@ -1,9 +0,0 @@
+-allow untrusted_app domain:dir r_dir_perms;
+-allow untrusted_app domain:file rw_file_perms;
+-allow untrusted_app domain:unix_stream_socket {read write};
+-allow untrusted_app appdomain:dir r_dir_perms;
+-allow untrusted_app appdomain:file rw_file_perms;
+-allow untrusted_app fs_type:dir r_dir_perms;
+-allow untrusted_app fs_type:file rw_file_perms;
+-allow untrusted_app untrusted_app:process *;
+-allow untrusted_app init_tmpfs:file rw_file_perms;
+diff --git a/sabresd_6sx/BoardConfig.mk b/sabresd_6sx/BoardConfig.mk
+index ffd173c..e881272 100644
+--- a/sabresd_6sx/BoardConfig.mk
++++ b/sabresd_6sx/BoardConfig.mk
+@@ -109,10 +109,19 @@ TARGET_BOOTLOADER_CONFIG := imx6sx:mx6sxsabresdandroid_config
+ TARGET_BOARD_DTS_CONFIG := imx6sx:imx6sx-sdb.dtb
+ 
+ BOARD_SEPOLICY_DIRS := \
++       device/fsl/imx6/sepolicy \
+        device/fsl/sabresd_6sx/sepolicy
+ 
+ BOARD_SEPOLICY_UNION := \
++       domain.te \
++       system_app.te \
++       system_server.te \
++       untrusted_app.te \
++       sensors.te \
++       init_shell.te \
++       bluetooth.te \
++       kernel.te \
+        file_contexts \
+-       fs_use \
+-       genfs_contexts
++       genfs_contexts \
++       fs_use 
+ 
+diff --git a/sabresd_6sx/init.rc b/sabresd_6sx/init.rc
+index bbeb874..948d86b 100755
+--- a/sabresd_6sx/init.rc
++++ b/sabresd_6sx/init.rc
+@@ -105,6 +105,7 @@ on boot
+ # Set watchdog timer to 30 seconds and pet it every 10 seconds to get a 20 second margin
+     service watchdogd /sbin/watchdogd 10 20
+     class core
++    seclabel u:r:watchdogd:s0
+ 
+ on charger
+     # Enable Power modes and set the CPU Freq Sampling rates
+@@ -167,6 +168,7 @@ service wpa_supplicant /system/bin/wpa_supplicant \
+ # magd daemon
+ service magd /system/bin/magd
+     class late_start
++    seclabel u:r:sensors:s0
+     user system
+     group input
+     oneshot
+@@ -177,6 +179,7 @@ service ing /system/bin/ingsvcd -c /system/etc/gps/Orion.ini
+     socket athrshmsocket stream 666 system system
+     socket athrsupl59991 stream 666 system system
+     class late_start
++    seclabel u:r:gpsd:s0
+     user root
+     group gps
+     oneshot
+diff --git a/sabresd_6sx/sepolicy/app.te b/sabresd_6sx/sepolicy/app.te
+deleted file mode 100644
+index 561a2b1..0000000
+--- a/sabresd_6sx/sepolicy/app.te
++++ /dev/null
+@@ -1,7 +0,0 @@
+-# Grant GPU access to all processes started by Zygote.
+-# They need that to render the standard UI.
+-allow domain    graphics_device:chr_file rw_file_perms;
+-allow domain    graphics_device:dir { write create add_name setattr mounton search };
+-allow system    system_data_file:dir *;
+-allow vold      self:capability { setgid setuid };
+-allow vold      fuse_device:chr_file rw_file_perms;
+diff --git a/sabresd_6sx/sepolicy/file_contexts b/sabresd_6sx/sepolicy/file_contexts
+deleted file mode 100644
+index 55d7e38..0000000
+--- a/sabresd_6sx/sepolicy/file_contexts
++++ /dev/null
+@@ -1,6 +0,0 @@
+-/system/bin/rtl_wpa_supplicant  u:object_r:wpa_exec:s0
+-/system/bin/rtl_hostapd     u:object_r:hostapd_exec:s0
+-/dev/ubi0_0                   u:object_r:block_device:s0
+-/dev/ubi0_1                   u:object_r:block_device:s0
+-/dev/ubi0_2                   u:object_r:block_device:s0
+-/dev/ubi0_3                   u:object_r:block_device:s0
+\ No newline at end of file
+diff --git a/sabresd_6sx/sepolicy/fs_use b/sabresd_6sx/sepolicy/fs_use
+deleted file mode 100644
+index 0794b81..0000000
+--- a/sabresd_6sx/sepolicy/fs_use
++++ /dev/null
+@@ -1,3 +0,0 @@
+-# Label inodes via getxattr.
+-fs_use_xattr ubifs u:object_r:labeledfs:s0;
+-
+diff --git a/sabresd_6sx/sepolicy/genfs_contexts b/sabresd_6sx/sepolicy/genfs_contexts
+deleted file mode 100644
+index 34f9db4..0000000
+--- a/sabresd_6sx/sepolicy/genfs_contexts
++++ /dev/null
+@@ -1,2 +0,0 @@
+-genfscon nfs / u:object_r:rootfs:s0
+-genfscon fuseblk / u:object_r:sdcard_external:s0
+diff --git a/sabresd_6sx/sepolicy/untrusted_app.te b/sabresd_6sx/sepolicy/untrusted_app.te
+deleted file mode 100644
+index d03f9c6..0000000
+--- a/sabresd_6sx/sepolicy/untrusted_app.te
++++ /dev/null
+@@ -1,9 +0,0 @@
+-allow untrusted_app domain:dir r_dir_perms;
+-allow untrusted_app domain:file rw_file_perms;
+-allow untrusted_app domain:unix_stream_socket {read write};
+-allow untrusted_app appdomain:dir r_dir_perms;
+-allow untrusted_app appdomain:file rw_file_perms;
+-allow untrusted_app fs_type:dir r_dir_perms;
+-allow untrusted_app fs_type:file rw_file_perms;
+-allow untrusted_app untrusted_app:process *;
+-allow untrusted_app init_tmpfs:file rw_file_perms;
+-- 
+1.8.0
+

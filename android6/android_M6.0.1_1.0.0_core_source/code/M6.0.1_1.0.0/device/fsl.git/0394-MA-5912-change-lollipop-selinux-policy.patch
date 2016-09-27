@@ -1,0 +1,249 @@
+From 4a41316512610e724e258e370f58c00db9626b68 Mon Sep 17 00:00:00 2001
+From: zhang sanshan <b51434@freescale.com>
+Date: Thu, 27 Nov 2014 16:16:36 +0800
+Subject: [PATCH 394/602] MA-5912 change lollipop selinux policy
+
+change selinux policy on board sabresd_6dq sabreauto_6q
+sabresd_6sx evk_6sl.
+
+Signed-off-by: zhang sanshan <b51434@freescale.com>
+---
+ evk_6sl/BoardConfig.mk         | 8 ++++++--
+ imx6/etc/init.rc               | 3 ---
+ imx6/sepolicy/bootanim.te      | 1 +
+ imx6/sepolicy/domain.te        | 2 ++
+ imx6/sepolicy/file_contexts    | 3 ++-
+ imx6/sepolicy/init.te          | 1 +
+ imx6/sepolicy/init_shell.te    | 5 ++++-
+ imx6/sepolicy/kernel.te        | 1 +
+ imx6/sepolicy/netd.te          | 1 +
+ imx6/sepolicy/rild.te          | 2 ++
+ imx6/sepolicy/system_server.te | 3 ++-
+ imx6/sepolicy/untrusted_app.te | 1 +
+ sabreauto_6q/BoardConfig.mk    | 9 +++++++--
+ sabresd_6dq/BoardConfig.mk     | 9 ++++++---
+ sabresd_6sx/BoardConfig.mk     | 8 ++++++--
+ 15 files changed, 42 insertions(+), 15 deletions(-)
+ create mode 100644 imx6/sepolicy/bootanim.te
+ create mode 100644 imx6/sepolicy/init.te
+ create mode 100644 imx6/sepolicy/netd.te
+ create mode 100644 imx6/sepolicy/rild.te
+
+diff --git a/evk_6sl/BoardConfig.mk b/evk_6sl/BoardConfig.mk
+index a5dd069..0fc8de7 100644
+--- a/evk_6sl/BoardConfig.mk
++++ b/evk_6sl/BoardConfig.mk
+@@ -75,7 +75,7 @@ USE_GPU_ALLOCATOR := true
+ # camera hal v2
+ IMX_CAMERA_HAL_V2 := false
+ 
+-BOARD_KERNEL_CMDLINE := console=ttymxc0,115200 init=/init androidboot.console=ttymxc0 consoleblank=0 androidboot.hardware=freescale androidboot.selinux=disabled
++BOARD_KERNEL_CMDLINE := console=ttymxc0,115200 init=/init androidboot.console=ttymxc0 consoleblank=0 androidboot.hardware=freescale 
+ TARGET_BOOTLOADER_CONFIG := imx6sl:mx6slevkandroid_config
+ TARGET_BOARD_DTS_CONFIG := imx6sl:imx6sl-evk-csi.dtb
+ 
+@@ -93,4 +93,8 @@ BOARD_SEPOLICY_UNION := \
+        mediaserver.te \
+        file_contexts \
+        genfs_contexts \
+-       fs_use 
++       fs_use \
++       rild.te \
++       init.te \
++       netd.te \
++       bootanim.te  
+diff --git a/imx6/etc/init.rc b/imx6/etc/init.rc
+index 0955c88..5e90c2c 100755
+--- a/imx6/etc/init.rc
++++ b/imx6/etc/init.rc
+@@ -806,9 +806,6 @@ service pppd_gprs /etc/ppp/init.gprs-pppd
+     disabled
+     oneshot
+ 
+-service wifi_mac /system/bin/sh /system/etc/check_wifi_mac.sh
+-    class late_start
+-    oneshot
+ 
+ # virtual sdcard daemon running as media_rw (1023)
+ # default 4 threads have better performance to 2 threads.
+diff --git a/imx6/sepolicy/bootanim.te b/imx6/sepolicy/bootanim.te
+new file mode 100644
+index 0000000..73edc34
+--- /dev/null
++++ b/imx6/sepolicy/bootanim.te
+@@ -0,0 +1 @@
++allow bootanim ashmem_device:chr_file {execute};
+diff --git a/imx6/sepolicy/domain.te b/imx6/sepolicy/domain.te
+index 3646b35..c045380 100644
+--- a/imx6/sepolicy/domain.te
++++ b/imx6/sepolicy/domain.te
+@@ -18,3 +18,5 @@ allow {domain -untrusted_app -shell -isolated_app} graphics_device:dir rw_dir_pe
+ allow domain self:process execmem;
+ allow domain unlabeled:file { setattr getattr rename link_file_perms rw_file_perms };
+ allow domain unlabeled:dir { setattr getattr rename link_file_perms rw_dir_perms };
++allow domain unlabeled:lnk_file { setattr getattr read };
++allow domain ashmem_device:chr_file {execute};
+diff --git a/imx6/sepolicy/file_contexts b/imx6/sepolicy/file_contexts
+index f6423ed..9786716 100644
+--- a/imx6/sepolicy/file_contexts
++++ b/imx6/sepolicy/file_contexts
+@@ -4,6 +4,7 @@
+ /system/bin/rtl_hostapd         u:object_r:hostapd_exec:s0
+ /dev/ttyGS[0-9]*                u:object_r:tty_device:s0
+ /dev/ttymxc[0-9]*               u:object_r:tty_device:s0
++/dev/ttyUSB[0-9]*               u:object_r:tty_device:s0 
+ /dev/mma8x5x                    u:object_r:sensors_device:s0
+ /dev/mxc_asrc                   u:object_r:audio_device:s0
+ /dev/mxc_hdmi                   u:object_r:video_device:s0
+@@ -14,4 +15,4 @@
+ /dev/ubi0_2                     u:object_r:block_device:s0
+ /dev/ubi0_3                     u:object_r:block_device:s0
+ /dev/galcore                    u:object_r:gpu_device:s0
+-
++/dev/sda[0-8]*			u:object_r:sdcard_internal:s0
+diff --git a/imx6/sepolicy/init.te b/imx6/sepolicy/init.te
+new file mode 100644
+index 0000000..4d6c59c
+--- /dev/null
++++ b/imx6/sepolicy/init.te
+@@ -0,0 +1 @@
++allow init ppp_exec:file { execute_no_trans };
+diff --git a/imx6/sepolicy/init_shell.te b/imx6/sepolicy/init_shell.te
+index 9a089a7..535106e 100644
+--- a/imx6/sepolicy/init_shell.te
++++ b/imx6/sepolicy/init_shell.te
+@@ -9,4 +9,7 @@ allow init_shell unlabeled:dir rw_dir_perms;
+ allow init_shell { file_type -keystore_data_file}:file { getattr };
+ allow init_shell { dev_type -keystore_data_file -kmem_device -hw_random_device }:chr_file { getattr };
+ allow init_shell sdcard_external:dir rw_dir_perms;
+-allow init_shell sdcard_external:file rw_file_perms;
+\ No newline at end of file
++allow init_shell sdcard_external:file rw_file_perms;
++allow init_shell powerctl_prop:property_service {set};
++allow init_shell fuse:dir {search read open};
++allow init_shell kernel:system { syslog_mod syslog_read};
+diff --git a/imx6/sepolicy/kernel.te b/imx6/sepolicy/kernel.te
+index 1fadcbe..a0465bb 100644
+--- a/imx6/sepolicy/kernel.te
++++ b/imx6/sepolicy/kernel.te
+@@ -1,4 +1,5 @@
+ allow kernel self:capability { mknod };
+ allow kernel sdcard_internal:file rw_file_perms;
+ allow kernel sdcard_internal:dir rw_dir_perms;
++allow kernel device:blk_file  { create setattr getattr unlink};
+ 
+diff --git a/imx6/sepolicy/netd.te b/imx6/sepolicy/netd.te
+new file mode 100644
+index 0000000..f1bf0e7
+--- /dev/null
++++ b/imx6/sepolicy/netd.te
+@@ -0,0 +1 @@
++allow netd kernel:system { module_request };
+diff --git a/imx6/sepolicy/rild.te b/imx6/sepolicy/rild.te
+new file mode 100644
+index 0000000..446f86e
+--- /dev/null
++++ b/imx6/sepolicy/rild.te
+@@ -0,0 +1,2 @@
++allow rild net_radio_prop:property_service {set};
++allow rild ctl_default_prop:property_service {set};
+diff --git a/imx6/sepolicy/system_server.te b/imx6/sepolicy/system_server.te
+index f55c3cf..c45343a 100644
+--- a/imx6/sepolicy/system_server.te
++++ b/imx6/sepolicy/system_server.te
+@@ -1,4 +1,5 @@
+ allow system_server unlabeled:dir {relabelfrom rw_dir_perms};
+ allow system_server unlabeled:sock_file {link_file_perms rw_file_perms};
+ allow system_server system_data_file:file {relabelto rw_file_perms};
+-allow system_server system_data_file:dir {relabelto rw_dir_perms};
+\ No newline at end of file
++allow system_server system_data_file:dir {relabelto rw_dir_perms};
++allow system_server default_prop:property_service { set };
+diff --git a/imx6/sepolicy/untrusted_app.te b/imx6/sepolicy/untrusted_app.te
+index 5080429..8c60ac6 100644
+--- a/imx6/sepolicy/untrusted_app.te
++++ b/imx6/sepolicy/untrusted_app.te
+@@ -1,5 +1,6 @@
+ allow untrusted_app graphics_device:dir rw_dir_perms;
+ allow untrusted_app graphics_device:file rw_file_perms;
+ allow untrusted_app unlabeled:dir rw_dir_perms;
++allow untrusted_app unlabeled:lnk_file {read};
+ allow untrusted_app sdcard_external:dir rw_dir_perms;
+ allow untrusted_app sdcard_external:file rw_file_perms;
+diff --git a/sabreauto_6q/BoardConfig.mk b/sabreauto_6q/BoardConfig.mk
+index 28a3935..8353aed 100644
+--- a/sabreauto_6q/BoardConfig.mk
++++ b/sabreauto_6q/BoardConfig.mk
+@@ -82,7 +82,7 @@ BOARD_HAVE_USB_CAMERA := true
+ USE_ION_ALLOCATOR := false
+ USE_GPU_ALLOCATOR := true
+ 
+-BOARD_KERNEL_CMDLINE := console=ttymxc3,115200 init=/init video=mxcfb0:dev=ldb,bpp=32 video=mxcfb1:off video=mxcfb2:off video=mxcfb3:off vmalloc=400M androidboot.console=ttymxc3 consoleblank=0 androidboot.hardware=freescale cma=384M androidboot.selinux=disabled
++BOARD_KERNEL_CMDLINE := console=ttymxc3,115200 init=/init video=mxcfb0:dev=ldb,bpp=32 video=mxcfb1:off video=mxcfb2:off video=mxcfb3:off vmalloc=400M androidboot.console=ttymxc3 consoleblank=0 androidboot.hardware=freescale cma=384M 
+ 
+ ifeq ($(TARGET_USERIMAGES_USE_UBIFS),true)
+ #UBI boot command line.
+@@ -118,4 +118,9 @@ BOARD_SEPOLICY_UNION := \
+        mediaserver.te \
+        file_contexts \
+        genfs_contexts \
+-       fs_use 
++       fs_use \
++       rild.te \
++       init.te \
++       netd.te \
++       bootanim.te
++
+diff --git a/sabresd_6dq/BoardConfig.mk b/sabresd_6dq/BoardConfig.mk
+index fe35fd7..e4a589d 100644
+--- a/sabresd_6dq/BoardConfig.mk
++++ b/sabresd_6dq/BoardConfig.mk
+@@ -83,7 +83,7 @@ $(error "TARGET_USERIMAGES_USE_UBIFS and TARGET_USERIMAGES_USE_EXT4 config open
+ endif
+ endif
+ 
+-BOARD_KERNEL_CMDLINE := console=ttymxc0,115200 init=/init video=mxcfb0:dev=ldb,bpp=32 video=mxcfb1:off video=mxcfb2:off video=mxcfb3:off vmalloc=400M androidboot.console=ttymxc0 consoleblank=0 androidboot.hardware=freescale cma=384M androidboot.selinux=disabled
++BOARD_KERNEL_CMDLINE := console=ttymxc0,115200 init=/init video=mxcfb0:dev=ldb,bpp=32 video=mxcfb1:off video=mxcfb2:off video=mxcfb3:off vmalloc=400M androidboot.console=ttymxc0 consoleblank=0 androidboot.hardware=freescale cma=384M
+ 
+ ifeq ($(TARGET_USERIMAGES_USE_UBIFS),true)
+ #UBI boot command line.
+@@ -123,7 +123,10 @@ BOARD_SEPOLICY_UNION := \
+        mediaserver.te \
+        file_contexts \
+        genfs_contexts \
+-       fs_use 
+-
++       fs_use  \
++       rild.te \
++       init.te \
++       netd.te \
++       bootanim.te
+ 
+ 
+diff --git a/sabresd_6sx/BoardConfig.mk b/sabresd_6sx/BoardConfig.mk
+index 37a02c2..91e30c5 100644
+--- a/sabresd_6sx/BoardConfig.mk
++++ b/sabresd_6sx/BoardConfig.mk
+@@ -83,7 +83,7 @@ $(error "TARGET_USERIMAGES_USE_UBIFS and TARGET_USERIMAGES_USE_EXT4 config open
+ endif
+ endif
+ 
+-BOARD_KERNEL_CMDLINE := console=ttymxc0,115200 init=/init androidboot.console=ttymxc0 consoleblank=0 androidboot.hardware=freescale vmalloc=400M cma=384M androidboot.selinux=disabled
++BOARD_KERNEL_CMDLINE := console=ttymxc0,115200 init=/init androidboot.console=ttymxc0 consoleblank=0 androidboot.hardware=freescale vmalloc=400M cma=384M 
+ 
+ ifeq ($(TARGET_USERIMAGES_USE_UBIFS),true)
+ #UBI boot command line.
+@@ -121,5 +121,9 @@ BOARD_SEPOLICY_UNION := \
+        mediaserver.te \
+        file_contexts \
+        genfs_contexts \
+-       fs_use 
++       fs_use  \
++       rild.te \
++       init.te \
++       netd.te \
++       bootanim.te
+ 
+-- 
+1.8.0
+

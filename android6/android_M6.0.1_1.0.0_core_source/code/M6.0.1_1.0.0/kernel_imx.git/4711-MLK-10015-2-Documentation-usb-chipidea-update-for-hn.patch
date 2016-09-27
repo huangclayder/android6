@@ -1,0 +1,41 @@
+From a91e295f39fd327dae073ac189f05b8701925f12 Mon Sep 17 00:00:00 2001
+From: Li Jun <B47624@freescale.com>
+Date: Wed, 14 Jan 2015 15:48:35 +0800
+Subject: [PATCH] MLK-10015-2 Documentation: usb: chipidea: update for
+ hnp_enable usage
+
+Add documentation for how to use hnp_enable input file to enable or disable
+full OTG HNP function in runtime.
+
+Acked-by: Peter Chen <peter.chen@freescale.com>
+Signed-off-by: Li Jun <jun.li@freescale.com>
+(cherry picked from commit cd7a4868a63297e11a699b5f96f118df2bc9f437)
+---
+ Documentation/usb/chipidea.txt | 11 +++++++++++
+ 1 file changed, 11 insertions(+)
+
+diff --git a/Documentation/usb/chipidea.txt b/Documentation/usb/chipidea.txt
+index 43cc0c8..678ebb9 100644
+--- a/Documentation/usb/chipidea.txt
++++ b/Documentation/usb/chipidea.txt
+@@ -77,6 +77,17 @@ compliant(with otg descriptor comply with USB OTG and EH 2.0 as a peripheral):
+ - ether
+ - serial
+ 
++1.5 Runtime enable and disable full HNP
++---------------------------------------
++One more input file is created:
++/sys/bus/platform/devices/ci_hdrc.0/inputs/hnp_enable
++
++Defaultly USB OTG full HNP(do role switch by SW protocol, no need exchange OTG
++plug) is not enabled, user can enable or disable it after disconnect from other
++end device by:
++	echo 1 or 0 > /sys/bus/platform/devices/ci_hdrc.0/inputs/hnp_enable
++If this input is 0, only OTG role switch by ID pin detection can be supported.
++
+ 2. How to enable USB as system wakeup source
+ -----------------------------------
+ Below is the example for how to enable USB as system wakeup source
+-- 
+1.8.0
+

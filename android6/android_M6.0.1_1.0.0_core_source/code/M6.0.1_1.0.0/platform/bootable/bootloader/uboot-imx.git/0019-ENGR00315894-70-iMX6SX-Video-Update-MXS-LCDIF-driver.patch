@@ -1,0 +1,192 @@
+From d7f49b9378547c3a57b96bcdb907fc44616beb3d Mon Sep 17 00:00:00 2001
+From: "Ye.Li" <B37916@freescale.com>
+Date: Thu, 12 Jun 2014 17:10:32 +0800
+Subject: [PATCH] ENGR00315894-70 iMX6SX:Video Update MXS LCDIF driver
+
+Add a new interface "mxs_lcd_panel_setup" to setup fb parameters and
+specifies the LCDIF controller for multiple controllers of iMX6SX.
+Pass fb parameters via "videomode" env remains work if the new interface
+is not called before video initialization.
+
+Modify LCDIF clock interface "mxs_set_lcdclk" to support multiple
+LCDIF controllers on iMX6SX.
+
+Signed-off-by: Ye.Li <B37916@freescale.com>
+(cherry picked from commit 054fed6bab5b05a054c7e3cb5362635a40e6ee18)
+Signed-off-by: Peng Fan <Peng.Fan@freescale.com>
+---
+ arch/arm/cpu/arm926ejs/mxs/clock.c    |  4 +--
+ arch/arm/include/asm/arch-mxs/clock.h |  2 +-
+ drivers/video/mxsfb.c                 | 59 +++++++++++++++++++++++++++++------
+ include/mxsfb.h                       | 15 +++++++++
+ 4 files changed, 67 insertions(+), 13 deletions(-)
+
+diff --git a/arch/arm/cpu/arm926ejs/mxs/clock.c b/arch/arm/cpu/arm926ejs/mxs/clock.c
+index e9d8800..ca020ca 100644
+--- a/arch/arm/cpu/arm926ejs/mxs/clock.c
++++ b/arch/arm/cpu/arm926ejs/mxs/clock.c
+@@ -5,7 +5,7 @@
+  * on behalf of DENX Software Engineering GmbH
+  *
+  * Based on code from LTIB:
+- * Copyright (C) 2010 Freescale Semiconductor, Inc.
++ * Copyright (C) 2010-2014 Freescale Semiconductor, Inc.
+  *
+  * SPDX-License-Identifier:	GPL-2.0+
+  */
+@@ -309,7 +309,7 @@ void mxs_set_ssp_busclock(unsigned int bus, uint32_t freq)
+ 		bus, tgtclk, freq);
+ }
+ 
+-void mxs_set_lcdclk(uint32_t freq)
++void mxs_set_lcdclk(uint32_t base_addr, uint32_t freq)
+ {
+ 	struct mxs_clkctrl_regs *clkctrl_regs =
+ 		(struct mxs_clkctrl_regs *)MXS_CLKCTRL_BASE;
+diff --git a/arch/arm/include/asm/arch-mxs/clock.h b/arch/arm/include/asm/arch-mxs/clock.h
+index fc9d75b..8840335 100644
+--- a/arch/arm/include/asm/arch-mxs/clock.h
++++ b/arch/arm/include/asm/arch-mxs/clock.h
+@@ -46,7 +46,7 @@ uint32_t mxc_get_clock(enum mxc_clock clk);
+ void mxs_set_ioclk(enum mxs_ioclock io, uint32_t freq);
+ void mxs_set_sspclk(enum mxs_sspclock ssp, uint32_t freq, int xtal);
+ void mxs_set_ssp_busclock(unsigned int bus, uint32_t freq);
+-void mxs_set_lcdclk(uint32_t freq);
++void mxs_set_lcdclk(uint32_t base_addr, uint32_t freq);
+ 
+ /* Compatibility with the FEC Ethernet driver */
+ #define	imx_get_fecclk()	mxc_get_clock(MXC_AHB_CLK)
+diff --git a/drivers/video/mxsfb.c b/drivers/video/mxsfb.c
+index 03b0f88..e9978c2 100644
+--- a/drivers/video/mxsfb.c
++++ b/drivers/video/mxsfb.c
+@@ -18,6 +18,10 @@
+ #include <asm/imx-common/dma.h>
+ 
+ #include "videomodes.h"
++#include <linux/string.h>
++#include <linux/list.h>
++#include <linux/fb.h>
++
+ 
+ #define	PS2KHZ(ps)	(1000000000UL / (ps))
+ 
+@@ -35,6 +39,22 @@ __weak void mxsfb_system_setup(void)
+ {
+ }
+ 
++static int setup;
++static struct fb_videomode fbmode;
++static int depth;
++
++int mxs_lcd_panel_setup(struct fb_videomode mode, int bpp,
++	uint32_t base_addr)
++{
++	fbmode = mode;
++	depth  = bpp;
++	panel.isaBase  = base_addr;
++
++	setup = 1;
++
++	return 0;
++}
++
+ /*
+  * DENX M28EVK:
+  * setenv videomode
+@@ -50,15 +70,15 @@ __weak void mxsfb_system_setup(void)
+ static void mxs_lcd_init(GraphicDevice *panel,
+ 			struct ctfb_res_modes *mode, int bpp)
+ {
+-	struct mxs_lcdif_regs *regs = (struct mxs_lcdif_regs *)MXS_LCDIF_BASE;
++	struct mxs_lcdif_regs *regs = (struct mxs_lcdif_regs *)(panel->isaBase);
+ 	uint32_t word_len = 0, bus_width = 0;
+ 	uint8_t valid_data = 0;
+ 
+ 	/* Kick in the LCDIF clock */
+-	mxs_set_lcdclk(PS2KHZ(mode->pixclock));
++	mxs_set_lcdclk(panel->isaBase, PS2KHZ(mode->pixclock));
+ 
+ 	/* Restart the LCDIF block */
+-	mxs_reset_block(&regs->hw_lcdif_ctrl_reg);
++	mxs_reset_block((struct mxs_register_32 *)&regs->hw_lcdif_ctrl);
+ 
+ 	switch (bpp) {
+ 	case 24:
+@@ -140,19 +160,37 @@ void *video_hw_init(void)
+ 
+ 	puts("Video: ");
+ 
+-	/* Suck display configuration from "videomode" variable */
+-	penv = getenv("videomode");
+-	if (!penv) {
+-		puts("MXSFB: 'videomode' variable not set!\n");
+-		return NULL;
++	if (!setup) {
++
++		/* Suck display configuration from "videomode" variable */
++		penv = getenv("videomode");
++		if (!penv) {
++			printf("MXSFB: 'videomode' variable not set!\n");
++			return NULL;
++		}
++
++		bpp = video_get_params(&mode, penv);
++		panel.isaBase  = MXS_LCDIF_BASE;
++	} else {
++		mode.xres = fbmode.xres;
++		mode.yres = fbmode.yres;
++		mode.pixclock = fbmode.pixclock;
++		mode.left_margin = fbmode.left_margin;
++		mode.right_margin = fbmode.right_margin;
++		mode.upper_margin = fbmode.upper_margin;
++		mode.lower_margin = fbmode.lower_margin;
++		mode.hsync_len = fbmode.hsync_len;
++		mode.vsync_len = fbmode.vsync_len;
++		mode.sync = fbmode.sync;
++		mode.vmode = fbmode.vmode;
++		bpp = depth;
+ 	}
+ 
+-	bpp = video_get_params(&mode, penv);
+-
+ 	/* fill in Graphic device struct */
+ 	sprintf(panel.modeIdent, "%dx%dx%d",
+ 			mode.xres, mode.yres, bpp);
+ 
++
+ 	panel.winSizeX = mode.xres;
+ 	panel.winSizeY = mode.yres;
+ 	panel.plnSizeX = mode.xres;
+@@ -179,6 +217,7 @@ void *video_hw_init(void)
+ 
+ 	panel.memSize = mode.xres * mode.yres * panel.gdfBytesPP;
+ 
++
+ 	/* Allocate framebuffer */
+ 	fb = memalign(ARCH_DMA_MINALIGN,
+ 		      roundup(panel.memSize, ARCH_DMA_MINALIGN));
+diff --git a/include/mxsfb.h b/include/mxsfb.h
+new file mode 100644
+index 0000000..a4e27a8
+--- /dev/null
++++ b/include/mxsfb.h
+@@ -0,0 +1,15 @@
++/*
++ * Copyright (C) 2014 Freescale Semiconductor, Inc.
++ *
++ * SPDX-License-Identifier:	GPL-2.0+
++ */
++
++#ifndef __MXSFB_H__
++#define __MXSFB_H__
++
++#ifdef CONFIG_VIDEO_MXS
++int mxs_lcd_panel_setup(struct fb_videomode mode, int bpp,
++	uint32_t base_addr);
++#endif
++
++#endif				/* __MXSFB_H__ */
+-- 
+1.8.0
+

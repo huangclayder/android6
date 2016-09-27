@@ -1,0 +1,37 @@
+From 7c3831859b72cd253df8d604ad1da869b1e5a98a Mon Sep 17 00:00:00 2001
+From: Peng Fan <Peng.Fan@freescale.com>
+Date: Fri, 20 Mar 2015 17:16:39 +0800
+Subject: [PATCH] MLK-10453 mmc: fix possible unintialized ocr
+
+This commit ca4113da25b42bce44a2e7998966a47352f11613
+"mmc: fix OCR Polling"
+does not consider cmd structure, and may leave it in uninitialized state.
+We can directly use op_cond_response here, since until here,
+op_cond_response already get the OCR value from chip.
+
+Signed-off-by: Peng Fan <Peng.Fan@freescale.com>
+Suggested-by: Ye.Li <B37916@freescale.com>
+(cherry picked from commit a033d2d43904f27778ee6a44f3e35494f9f72152)
+---
+ drivers/mmc/mmc.c | 5 ++++-
+ 1 file changed, 4 insertions(+), 1 deletion(-)
+
+diff --git a/drivers/mmc/mmc.c b/drivers/mmc/mmc.c
+index 43a9a8a..5bc8d63 100644
+--- a/drivers/mmc/mmc.c
++++ b/drivers/mmc/mmc.c
+@@ -436,7 +436,10 @@ static int mmc_complete_op_cond(struct mmc *mmc)
+ 	}
+ 
+ 	mmc->version = MMC_VERSION_UNKNOWN;
+-	mmc->ocr = cmd.response[0];
++	if (mmc_host_is_spi(mmc))
++		mmc->ocr = cmd.response[0];
++	else
++		mmc->ocr = mmc->op_cond_response;
+ 
+ 	mmc->high_capacity = ((mmc->ocr & OCR_HCS) == OCR_HCS);
+ 	mmc->rca = 1;
+-- 
+1.8.0
+

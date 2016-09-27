@@ -1,0 +1,51 @@
+From 7e2701d218781d9ef6aa9e24fe3a410dd2988755 Mon Sep 17 00:00:00 2001
+From: "xuegang.liu" <xuegang.liu@freescale.com>
+Date: Mon, 21 Sep 2015 16:15:23 +0800
+Subject: [PATCH] MA-7063 [#1909] Enable record array size optimization on
+ GC2000 R2
+
+GC2000 R2 takes more vmalloc size comparing with GC2000
+and GC880, easy meet out of vmalloc space on GC2000 R2
+with kernel 1G/3G config and vmalloc=256. Enable GPU
+record array size optimization on GC2000 R2 for android.
+
+On sabreauto_6q board:
+0x00000000-0x00000000 176128 gckOS_AllocateMemory+0x64/0x7c pages=42 vmalloc
+0x00000000-0x00000000 176128 gckOS_AllocateMemory+0x64/0x7c pages=42 vmalloc
+0x00000000-0x00000000 118784 gckOS_AllocateMemory+0x64/0x7c pages=28 vmalloc
+On sabreauto_6qp board:
+0x00000000-0x00000000 610304 gckOS_AllocateMemory+0x68/0x80 pages=148 vmalloc
+0x00000000-0x00000000 610304 gckOS_AllocateMemory+0x68/0x80 pages=148 vmalloc
+0x00000000-0x00000000 610304 gckOS_AllocateMemory+0x68/0x80 pages=148 vmalloc
+
+Date Sep 21, 2015
+
+Signed-off-by: Richard Liu <r66033@freescale.com>
+---
+ drivers/mxc/gpu-viv/hal/kernel/arch/gc_hal_kernel_context.c | 10 ++++++++++
+ 1 file changed, 10 insertions(+)
+
+diff --git a/drivers/mxc/gpu-viv/hal/kernel/arch/gc_hal_kernel_context.c b/drivers/mxc/gpu-viv/hal/kernel/arch/gc_hal_kernel_context.c
+index c501919..19a8b30 100644
+--- a/drivers/mxc/gpu-viv/hal/kernel/arch/gc_hal_kernel_context.c
++++ b/drivers/mxc/gpu-viv/hal/kernel/arch/gc_hal_kernel_context.c
+@@ -1581,6 +1581,16 @@ gckCONTEXT_Construct(
+         = gcmSIZEOF(gcsSTATE_DELTA_RECORD) * (gctUINT)context->numStates;
+ #endif
+ 
++#ifdef CONFIG_ANDROID
++    if (!((context->hardware->identity.chipModel == gcv3000)
++     && (context->hardware->identity.chipRevision == 0x5450)
++     && (context->hardware->identity.chipFlags & gcvCHIP_FLAG_GC2000_R2))
++    )
++    {
++        context->recordArraySize
++            = gcmSIZEOF(gcsSTATE_DELTA_RECORD) * (gctUINT)context->numStates;
++    }
++#endif
+ 
+     if (context->maxState > 0)
+     {
+-- 
+1.8.0
+

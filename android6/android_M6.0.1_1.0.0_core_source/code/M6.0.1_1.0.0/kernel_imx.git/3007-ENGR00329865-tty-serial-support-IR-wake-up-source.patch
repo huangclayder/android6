@@ -1,0 +1,51 @@
+From 2cedd3d80e286b045f00f29b47be7ddcd6ba300a Mon Sep 17 00:00:00 2001
+From: Fugang Duan <b38611@freescale.com>
+Date: Wed, 3 Sep 2014 18:17:07 +0800
+Subject: [PATCH] ENGR00329865 tty: serial: support IR wake up source
+
+Add IR wake up source support.
+(cherry picked from commit 1076fddcbd025c9685aa3b51f3d9a298a47aa73e)
+
+Signed-off-by: Fugang Duan <B38611@freescale.com>
+---
+ drivers/tty/serial/imx.c | 10 ++++++++--
+ 1 file changed, 8 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/tty/serial/imx.c b/drivers/tty/serial/imx.c
+index 919e2d7..8fda6d2 100644
+--- a/drivers/tty/serial/imx.c
++++ b/drivers/tty/serial/imx.c
+@@ -786,6 +786,9 @@ static irqreturn_t imx_int(int irq, void *dev_id)
+ 	if (sts & USR1_AWAKE)
+ 		writel(USR1_AWAKE, sport->port.membase + USR1);
+ 
++	if (sts & USR1_AIRINT)
++		writel(USR1_AIRINT, sport->port.membase + USR1);
++
+ 	sts2 = readl(sport->port.membase + USR2);
+ 	if (sts2 & USR2_ORE) {
+ 		dev_err(sport->port.dev, "Rx FIFO overrun\n");
+@@ -1862,7 +1865,10 @@ static int serial_imx_suspend(struct platform_device *dev, pm_message_t state)
+ 
+ 	/* enable wakeup from i.MX UART */
+ 	val = readl(sport->port.membase + UCR3);
+-	val |= UCR3_AWAKEN;
++	if (USE_IRDA(sport))
++		val |= UCR3_AIRINTEN;
++	else
++		val |= UCR3_AWAKEN;
+ 	writel(val, sport->port.membase + UCR3);
+ 
+ 	uart_suspend_port(&imx_reg, &sport->port);
+@@ -1902,7 +1908,7 @@ static int serial_imx_resume(struct platform_device *dev)
+ 
+ 	/* disable wakeup from i.MX UART */
+ 	val = readl(sport->port.membase + UCR3);
+-	val &= ~UCR3_AWAKEN;
++	val &= ~(UCR3_AWAKEN | UCR3_AIRINTEN);
+ 	writel(val, sport->port.membase + UCR3);
+ 
+ 	uart_resume_port(&imx_reg, &sport->port);
+-- 
+1.8.0
+

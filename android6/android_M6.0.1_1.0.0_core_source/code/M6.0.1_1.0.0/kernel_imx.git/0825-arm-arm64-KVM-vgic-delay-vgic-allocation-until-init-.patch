@@ -1,0 +1,177 @@
+From 9d4d6eba152e879d1b7e55e814a9c036d3e943a3 Mon Sep 17 00:00:00 2001
+From: Marc Zyngier <marc.zyngier@arm.com>
+Date: Tue, 8 Jul 2014 12:09:06 +0100
+Subject: [PATCH] arm/arm64: KVM: vgic: delay vgic allocation until init time
+
+It is now quite easy to delay the allocation of the vgic tables
+until we actually require it to be up and running (when the first
+vcpu is kicking around, or someones tries to access the GIC registers).
+
+This allow us to allocate memory for the exact number of CPUs we
+have. As nobody configures the number of interrupts just yet,
+use a fallback to VGIC_NR_IRQS_LEGACY.
+
+Reviewed-by: Christoffer Dall <christoffer.dall@linaro.org>
+Signed-off-by: Marc Zyngier <marc.zyngier@arm.com>
+(cherry picked from commit 4956f2bc1fdee4bc336532f3f34635a8534cedfd)
+Signed-off-by: Christoffer Dall <christoffer.dall@linaro.org>
+---
+ arch/arm/kvm/arm.c     |  7 -------
+ include/kvm/arm_vgic.h |  1 -
+ virt/kvm/arm/vgic.c    | 42 +++++++++++++++++++++++++++++-------------
+ 3 files changed, 29 insertions(+), 21 deletions(-)
+
+diff --git a/arch/arm/kvm/arm.c b/arch/arm/kvm/arm.c
+index 0414f12..0d7e657 100644
+--- a/arch/arm/kvm/arm.c
++++ b/arch/arm/kvm/arm.c
+@@ -261,16 +261,9 @@ int kvm_cpu_has_pending_timer(struct kvm_vcpu *vcpu)
+ 
+ int kvm_arch_vcpu_init(struct kvm_vcpu *vcpu)
+ {
+-	int ret;
+-
+ 	/* Force users to call KVM_ARM_VCPU_INIT */
+ 	vcpu->arch.target = -1;
+ 
+-	/* Set up VGIC */
+-	ret = kvm_vgic_vcpu_init(vcpu);
+-	if (ret)
+-		return ret;
+-
+ 	/* Set up the timer */
+ 	kvm_timer_vcpu_init(vcpu);
+ 
+diff --git a/include/kvm/arm_vgic.h b/include/kvm/arm_vgic.h
+index aa20d4a..2f2aac8 100644
+--- a/include/kvm/arm_vgic.h
++++ b/include/kvm/arm_vgic.h
+@@ -277,7 +277,6 @@ int kvm_vgic_hyp_init(void);
+ int kvm_vgic_init(struct kvm *kvm);
+ int kvm_vgic_create(struct kvm *kvm);
+ void kvm_vgic_destroy(struct kvm *kvm);
+-int kvm_vgic_vcpu_init(struct kvm_vcpu *vcpu);
+ void kvm_vgic_vcpu_destroy(struct kvm_vcpu *vcpu);
+ void kvm_vgic_flush_hwstate(struct kvm_vcpu *vcpu);
+ void kvm_vgic_sync_hwstate(struct kvm_vcpu *vcpu);
+diff --git a/virt/kvm/arm/vgic.c b/virt/kvm/arm/vgic.c
+index b0e3768..dd94dbc 100644
+--- a/virt/kvm/arm/vgic.c
++++ b/virt/kvm/arm/vgic.c
+@@ -1729,15 +1729,12 @@ static int vgic_vcpu_init_maps(struct kvm_vcpu *vcpu, int nr_irqs)
+  * Initialize the vgic_cpu struct and vgic_dist struct fields pertaining to
+  * this vcpu and enable the VGIC for this VCPU
+  */
+-int kvm_vgic_vcpu_init(struct kvm_vcpu *vcpu)
++static void kvm_vgic_vcpu_init(struct kvm_vcpu *vcpu)
+ {
+ 	struct vgic_cpu *vgic_cpu = &vcpu->arch.vgic_cpu;
+ 	struct vgic_dist *dist = &vcpu->kvm->arch.vgic;
+ 	int i;
+ 
+-	if (vcpu->vcpu_id >= dist->nr_cpus)
+-		return -EBUSY;
+-
+ 	for (i = 0; i < dist->nr_irqs; i++) {
+ 		if (i < VGIC_NR_PPIS)
+ 			vgic_bitmap_set_irq_val(&dist->irq_enabled,
+@@ -1757,8 +1754,6 @@ int kvm_vgic_vcpu_init(struct kvm_vcpu *vcpu)
+ 	vgic_cpu->nr_lr = vgic->nr_lr;
+ 
+ 	vgic_enable(vcpu);
+-
+-	return 0;
+ }
+ 
+ void kvm_vgic_destroy(struct kvm *kvm)
+@@ -1802,8 +1797,17 @@ static int vgic_init_maps(struct kvm *kvm)
+ 	int nr_cpus, nr_irqs;
+ 	int ret, i;
+ 
+-	nr_cpus = dist->nr_cpus = KVM_MAX_VCPUS;
++	if (dist->nr_cpus)	/* Already allocated */
++		return 0;
++
++	nr_cpus = dist->nr_cpus = atomic_read(&kvm->online_vcpus);
++	if (!nr_cpus)		/* No vcpus? Can't be good... */
++		return -EINVAL;
+ 
++	/*
++	 * If nobody configured the number of interrupts, use the
++	 * legacy one.
++	 */
+ 	if (!dist->nr_irqs)
+ 		dist->nr_irqs = VGIC_NR_IRQS_LEGACY;
+ 
+@@ -1849,6 +1853,9 @@ static int vgic_init_maps(struct kvm *kvm)
+ 		}
+ 	}
+ 
++	for (i = VGIC_NR_PRIVATE_IRQS; i < dist->nr_irqs; i += 4)
++		vgic_set_target_reg(kvm, 0, i);
++
+ out:
+ 	if (ret)
+ 		kvm_vgic_destroy(kvm);
+@@ -1867,6 +1874,7 @@ out:
+  */
+ int kvm_vgic_init(struct kvm *kvm)
+ {
++	struct kvm_vcpu *vcpu;
+ 	int ret = 0, i;
+ 
+ 	if (!irqchip_in_kernel(kvm))
+@@ -1884,6 +1892,12 @@ int kvm_vgic_init(struct kvm *kvm)
+ 		goto out;
+ 	}
+ 
++	ret = vgic_init_maps(kvm);
++	if (ret) {
++		kvm_err("Unable to allocate maps\n");
++		goto out;
++	}
++
+ 	ret = kvm_phys_addr_ioremap(kvm, kvm->arch.vgic.vgic_cpu_base,
+ 				    vgic->vcpu_base, KVM_VGIC_V2_CPU_SIZE);
+ 	if (ret) {
+@@ -1891,11 +1905,13 @@ int kvm_vgic_init(struct kvm *kvm)
+ 		goto out;
+ 	}
+ 
+-	for (i = VGIC_NR_PRIVATE_IRQS; i < kvm->arch.vgic.nr_irqs; i += 4)
+-		vgic_set_target_reg(kvm, 0, i);
++	kvm_for_each_vcpu(i, vcpu, kvm)
++		kvm_vgic_vcpu_init(vcpu);
+ 
+ 	kvm->arch.vgic.ready = true;
+ out:
++	if (ret)
++		kvm_vgic_destroy(kvm);
+ 	mutex_unlock(&kvm->lock);
+ 	return ret;
+ }
+@@ -1936,10 +1952,6 @@ int kvm_vgic_create(struct kvm *kvm)
+ 	kvm->arch.vgic.vgic_dist_base = VGIC_ADDR_UNDEF;
+ 	kvm->arch.vgic.vgic_cpu_base = VGIC_ADDR_UNDEF;
+ 
+-	ret = vgic_init_maps(kvm);
+-	if (ret)
+-		kvm_err("Unable to allocate maps\n");
+-
+ out_unlock:
+ 	for (; vcpu_lock_idx >= 0; vcpu_lock_idx--) {
+ 		vcpu = kvm_get_vcpu(kvm, vcpu_lock_idx);
+@@ -2140,6 +2152,10 @@ static int vgic_attr_regs_access(struct kvm_device *dev,
+ 
+ 	mutex_lock(&dev->kvm->lock);
+ 
++	ret = vgic_init_maps(dev->kvm);
++	if (ret)
++		goto out;
++
+ 	if (cpuid >= atomic_read(&dev->kvm->online_vcpus)) {
+ 		ret = -EINVAL;
+ 		goto out;
+-- 
+1.8.0
+

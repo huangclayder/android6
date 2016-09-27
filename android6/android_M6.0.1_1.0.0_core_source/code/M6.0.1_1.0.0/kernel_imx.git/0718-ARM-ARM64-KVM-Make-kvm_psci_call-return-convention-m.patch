@@ -1,0 +1,183 @@
+From e437de3d19300ec0c0e2bb7c9a9e09be1972aeec Mon Sep 17 00:00:00 2001
+From: Anup Patel <anup.patel@linaro.org>
+Date: Tue, 29 Apr 2014 11:24:18 +0530
+Subject: [PATCH] ARM/ARM64: KVM: Make kvm_psci_call() return convention more
+ flexible
+
+Currently, the kvm_psci_call() returns 'true' or 'false' based on whether
+the PSCI function call was handled successfully or not. This does not help
+us emulate system-level PSCI functions where the actual emulation work will
+be done by user space (QEMU or KVMTOOL). Examples of such system-level PSCI
+functions are: PSCI v0.2 SYSTEM_OFF and SYSTEM_RESET.
+
+This patch updates kvm_psci_call() to return three types of values:
+1) > 0 (success)
+2) = 0 (success but exit to user space)
+3) < 0 (errors)
+
+Signed-off-by: Anup Patel <anup.patel@linaro.org>
+Signed-off-by: Pranavkumar Sawargaonkar <pranavkumar@linaro.org>
+Reviewed-by: Christoffer Dall <christoffer.dall@linaro.org>
+Acked-by: Marc Zyngier <marc.zyngier@arm.com>
+Signed-off-by: Christoffer Dall <christoffer.dall@linaro.org>
+(cherry picked from commit e8e7fcc5e2710b31ef842ee799db99c07986c364)
+Signed-off-by: Christoffer Dall <christoffer.dall@linaro.org>
+---
+ arch/arm/include/asm/kvm_psci.h   |  2 +-
+ arch/arm/kvm/handle_exit.c        | 10 +++++++---
+ arch/arm/kvm/psci.c               | 28 ++++++++++++++++------------
+ arch/arm64/include/asm/kvm_psci.h |  2 +-
+ arch/arm64/kvm/handle_exit.c      | 10 +++++++---
+ 5 files changed, 32 insertions(+), 20 deletions(-)
+
+diff --git a/arch/arm/include/asm/kvm_psci.h b/arch/arm/include/asm/kvm_psci.h
+index 4c0e3e1..6bda945 100644
+--- a/arch/arm/include/asm/kvm_psci.h
++++ b/arch/arm/include/asm/kvm_psci.h
+@@ -22,6 +22,6 @@
+ #define KVM_ARM_PSCI_0_2	2
+ 
+ int kvm_psci_version(struct kvm_vcpu *vcpu);
+-bool kvm_psci_call(struct kvm_vcpu *vcpu);
++int kvm_psci_call(struct kvm_vcpu *vcpu);
+ 
+ #endif /* __ARM_KVM_PSCI_H__ */
+diff --git a/arch/arm/kvm/handle_exit.c b/arch/arm/kvm/handle_exit.c
+index 0de91fc..4c979d4 100644
+--- a/arch/arm/kvm/handle_exit.c
++++ b/arch/arm/kvm/handle_exit.c
+@@ -38,14 +38,18 @@ static int handle_svc_hyp(struct kvm_vcpu *vcpu, struct kvm_run *run)
+ 
+ static int handle_hvc(struct kvm_vcpu *vcpu, struct kvm_run *run)
+ {
++	int ret;
++
+ 	trace_kvm_hvc(*vcpu_pc(vcpu), *vcpu_reg(vcpu, 0),
+ 		      kvm_vcpu_hvc_get_imm(vcpu));
+ 
+-	if (kvm_psci_call(vcpu))
++	ret = kvm_psci_call(vcpu);
++	if (ret < 0) {
++		kvm_inject_undefined(vcpu);
+ 		return 1;
++	}
+ 
+-	kvm_inject_undefined(vcpu);
+-	return 1;
++	return ret;
+ }
+ 
+ static int handle_smc(struct kvm_vcpu *vcpu, struct kvm_run *run)
+diff --git a/arch/arm/kvm/psci.c b/arch/arm/kvm/psci.c
+index 8c42596c..14e6fa6 100644
+--- a/arch/arm/kvm/psci.c
++++ b/arch/arm/kvm/psci.c
+@@ -93,7 +93,7 @@ int kvm_psci_version(struct kvm_vcpu *vcpu)
+ 	return KVM_ARM_PSCI_0_1;
+ }
+ 
+-static bool kvm_psci_0_2_call(struct kvm_vcpu *vcpu)
++static int kvm_psci_0_2_call(struct kvm_vcpu *vcpu)
+ {
+ 	unsigned long psci_fn = *vcpu_reg(vcpu, 0) & ~((u32) 0);
+ 	unsigned long val;
+@@ -128,14 +128,14 @@ static bool kvm_psci_0_2_call(struct kvm_vcpu *vcpu)
+ 		val = PSCI_RET_NOT_SUPPORTED;
+ 		break;
+ 	default:
+-		return false;
++		return -EINVAL;
+ 	}
+ 
+ 	*vcpu_reg(vcpu, 0) = val;
+-	return true;
++	return 1;
+ }
+ 
+-static bool kvm_psci_0_1_call(struct kvm_vcpu *vcpu)
++static int kvm_psci_0_1_call(struct kvm_vcpu *vcpu)
+ {
+ 	unsigned long psci_fn = *vcpu_reg(vcpu, 0) & ~((u32) 0);
+ 	unsigned long val;
+@@ -153,11 +153,11 @@ static bool kvm_psci_0_1_call(struct kvm_vcpu *vcpu)
+ 		val = PSCI_RET_NOT_SUPPORTED;
+ 		break;
+ 	default:
+-		return false;
++		return -EINVAL;
+ 	}
+ 
+ 	*vcpu_reg(vcpu, 0) = val;
+-	return true;
++	return 1;
+ }
+ 
+ /**
+@@ -165,12 +165,16 @@ static bool kvm_psci_0_1_call(struct kvm_vcpu *vcpu)
+  * @vcpu: Pointer to the VCPU struct
+  *
+  * Handle PSCI calls from guests through traps from HVC instructions.
+- * The calling convention is similar to SMC calls to the secure world where
+- * the function number is placed in r0 and this function returns true if the
+- * function number specified in r0 is withing the PSCI range, and false
+- * otherwise.
++ * The calling convention is similar to SMC calls to the secure world
++ * where the function number is placed in r0.
++ *
++ * This function returns: > 0 (success), 0 (success but exit to user
++ * space), and < 0 (errors)
++ *
++ * Errors:
++ * -EINVAL: Unrecognized PSCI function
+  */
+-bool kvm_psci_call(struct kvm_vcpu *vcpu)
++int kvm_psci_call(struct kvm_vcpu *vcpu)
+ {
+ 	switch (kvm_psci_version(vcpu)) {
+ 	case KVM_ARM_PSCI_0_2:
+@@ -178,6 +182,6 @@ bool kvm_psci_call(struct kvm_vcpu *vcpu)
+ 	case KVM_ARM_PSCI_0_1:
+ 		return kvm_psci_0_1_call(vcpu);
+ 	default:
+-		return false;
++		return -EINVAL;
+ 	};
+ }
+diff --git a/arch/arm64/include/asm/kvm_psci.h b/arch/arm64/include/asm/kvm_psci.h
+index e25c658..bc39e55 100644
+--- a/arch/arm64/include/asm/kvm_psci.h
++++ b/arch/arm64/include/asm/kvm_psci.h
+@@ -22,6 +22,6 @@
+ #define KVM_ARM_PSCI_0_2	2
+ 
+ int kvm_psci_version(struct kvm_vcpu *vcpu);
+-bool kvm_psci_call(struct kvm_vcpu *vcpu);
++int kvm_psci_call(struct kvm_vcpu *vcpu);
+ 
+ #endif /* __ARM64_KVM_PSCI_H__ */
+diff --git a/arch/arm64/kvm/handle_exit.c b/arch/arm64/kvm/handle_exit.c
+index 7bc41ea..182415e 100644
+--- a/arch/arm64/kvm/handle_exit.c
++++ b/arch/arm64/kvm/handle_exit.c
+@@ -30,11 +30,15 @@ typedef int (*exit_handle_fn)(struct kvm_vcpu *, struct kvm_run *);
+ 
+ static int handle_hvc(struct kvm_vcpu *vcpu, struct kvm_run *run)
+ {
+-	if (kvm_psci_call(vcpu))
++	int ret;
++
++	ret = kvm_psci_call(vcpu);
++	if (ret < 0) {
++		kvm_inject_undefined(vcpu);
+ 		return 1;
++	}
+ 
+-	kvm_inject_undefined(vcpu);
+-	return 1;
++	return ret;
+ }
+ 
+ static int handle_smc(struct kvm_vcpu *vcpu, struct kvm_run *run)
+-- 
+1.8.0
+

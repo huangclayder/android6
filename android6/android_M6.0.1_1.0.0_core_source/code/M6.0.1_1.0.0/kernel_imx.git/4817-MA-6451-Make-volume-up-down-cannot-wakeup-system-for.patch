@@ -1,0 +1,60 @@
+From df5d32b2edc9207f2e9fa4062891df5f463aaec9 Mon Sep 17 00:00:00 2001
+From: "guoyin.chen" <guoyin.chen@freescale.com>
+Date: Wed, 25 Mar 2015 13:59:24 +0800
+Subject: [PATCH] MA-6451 Make volume-up/down cannot wakeup system for SD and
+ AI boards
+
+Only Power can wake up system as android device defined
+Remove wakeup attribute in SD and AI dts
+
+Signed-off-by: guoyin.chen <guoyin.chen@freescale.com>
+---
+ arch/arm/boot/dts/imx6qdl-sabreauto.dtsi | 4 ++--
+ arch/arm/boot/dts/imx6qdl-sabresd.dtsi   | 4 ++--
+ 2 files changed, 4 insertions(+), 4 deletions(-)
+
+diff --git a/arch/arm/boot/dts/imx6qdl-sabreauto.dtsi b/arch/arm/boot/dts/imx6qdl-sabreauto.dtsi
+index 1625898..25880d5 100644
+--- a/arch/arm/boot/dts/imx6qdl-sabreauto.dtsi
++++ b/arch/arm/boot/dts/imx6qdl-sabreauto.dtsi
+@@ -80,14 +80,14 @@
+ 		volume-up {
+ 			label = "Volume Up";
+ 			gpios = <&gpio2 15 1>;
+-			gpio-key,wakeup;
++			gpio-key;
+ 			linux,code = <KEY_VOLUMEUP>;
+ 		};
+ 
+ 		volume-down {
+ 			label = "Volume Down";
+ 			gpios = <&gpio5 14 1>;
+-			gpio-key,wakeup;
++			gpio-key;
+ 			linux,code = <KEY_VOLUMEDOWN>;
+ 		};
+ 	};
+diff --git a/arch/arm/boot/dts/imx6qdl-sabresd.dtsi b/arch/arm/boot/dts/imx6qdl-sabresd.dtsi
+index 078de89..138f608 100644
+--- a/arch/arm/boot/dts/imx6qdl-sabresd.dtsi
++++ b/arch/arm/boot/dts/imx6qdl-sabresd.dtsi
+@@ -114,14 +114,14 @@
+ 		volume-up {
+ 			label = "Volume Up";
+ 			gpios = <&gpio1 4 1>;
+-			gpio-key,wakeup;
++			gpio-key;
+ 			linux,code = <KEY_VOLUMEUP>;
+ 		};
+ 
+ 		volume-down {
+ 			label = "Volume Down";
+ 			gpios = <&gpio1 5 1>;
+-			gpio-key,wakeup;
++			gpio-key;
+ 			linux,code = <KEY_VOLUMEDOWN>;
+ 		};
+ 	};
+-- 
+1.8.0
+

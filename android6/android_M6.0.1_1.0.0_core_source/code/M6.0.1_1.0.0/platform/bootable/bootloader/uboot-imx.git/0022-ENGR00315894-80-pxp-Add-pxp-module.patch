@@ -1,0 +1,356 @@
+From 92295fafcdbaa3a3fe0a63ede15f896dfc9ce0b0 Mon Sep 17 00:00:00 2001
+From: "Ye.Li" <B37916@freescale.com>
+Date: Thu, 12 Jun 2014 19:40:53 +0800
+Subject: [PATCH] ENGR00315894-80 pxp: Add pxp module
+
+Add pxp module.
+Support csc between YUV444 and RGB888 and scaling.
+
+Signed-off-by: Sandor Yu <R01008@freescale.com>
+Signed-off-by: Ye.Li <B37916@freescale.com>
+(cherry picked from commit 4c6e1f9ed1b2f5c98a34502b44b6414593fdd290)
+Signed-off-by: Peng Fan <Peng.Fan@freescale.com>
+---
+ drivers/video/mxc_pxp.c | 207 ++++++++++++++++++++++++++++++++++++++++++++++++
+ drivers/video/mxc_pxp.h | 117 +++++++++++++++++++++++++++
+ 2 files changed, 324 insertions(+)
+
+diff --git a/drivers/video/mxc_pxp.c b/drivers/video/mxc_pxp.c
+new file mode 100644
+index 0000000..ea70bdd
+--- /dev/null
++++ b/drivers/video/mxc_pxp.c
+@@ -0,0 +1,207 @@
++/*
++ * Copyright (C) 2014 Freescale Semiconductor, Inc. All Rights Reserved.
++ *
++ * SPDX-License-Identifier:	GPL-2.0+
++ */
++
++#include <common.h>
++
++#include <asm/arch/imx-regs.h>
++#include <asm/arch/sys_proto.h>
++#include <asm/errno.h>
++#include <asm/io.h>
++
++#include <linux/string.h>
++#include <linux/list.h>
++#include <gis.h>
++
++#include "mxc_pxp.h"
++
++#define BV_PXP_OUT_CTRL_FORMAT__RGB888	  0x4
++#define BV_PXP_OUT_CTRL_FORMAT__RGB555	  0xC
++#define BV_PXP_OUT_CTRL_FORMAT__RGB444	  0xD
++#define BV_PXP_OUT_CTRL_FORMAT__RGB565	  0xE
++#define BV_PXP_OUT_CTRL_FORMAT__YUV1P444  0x10
++#define BV_PXP_OUT_CTRL_FORMAT__UYVY1P422 0x12
++#define BV_PXP_OUT_CTRL_FORMAT__VYUY1P422 0x13
++
++#define BV_PXP_PS_CTRL_FORMAT__RGB888	 0x4
++#define BV_PXP_PS_CTRL_FORMAT__RGB565	 0xE
++#define BV_PXP_PS_CTRL_FORMAT__YUV1P444  0x10
++#define BV_PXP_PS_CTRL_FORMAT__UYVY1P422 0x12
++#define BV_PXP_PS_CTRL_FORMAT__VYUY1P422 0x13
++
++#define BP_PXP_PS_CTRL_SWAP 5
++#define BM_PXP_PS_CTRL_SWAP 0x000000E0
++#define BF_PXP_PS_CTRL_SWAP(v)  \
++	(((v) << 5) & BM_PXP_PS_CTRL_SWAP)
++
++#define PXP_DOWNSCALE_THRESHOLD     0x4000
++
++static void pxp_set_ctrl(struct pxp_config_data *pxp_conf)
++{
++	u32 ctrl;
++	u32 fmt_ctrl;
++	int need_swap = 0;   /* to support YUYV and YVYU formats */
++	struct mxs_pxp_regs *regs = (struct mxs_pxp_regs *)PXP_BASE_ADDR;
++
++	/* Configure S0 input format */
++	switch (pxp_conf->s0_param.pixel_fmt) {
++	case FMT_YUV444:
++		fmt_ctrl = BV_PXP_PS_CTRL_FORMAT__YUV1P444;
++		break;
++	case FMT_UYVY:
++		fmt_ctrl = BV_PXP_PS_CTRL_FORMAT__UYVY1P422;
++		break;
++	case FMT_YUYV:
++		fmt_ctrl = BV_PXP_PS_CTRL_FORMAT__UYVY1P422;
++		need_swap = 1;
++	default:
++		fmt_ctrl = 0;
++	}
++
++	ctrl = BF_PXP_PS_CTRL_FORMAT(fmt_ctrl) | BF_PXP_PS_CTRL_SWAP(need_swap);
++	writel(ctrl, &regs->pxp_ps_ctrl);
++
++	/* Configure output format based on out_channel format */
++	switch (pxp_conf->out_param.pixel_fmt) {
++	case FMT_RGB565:
++		fmt_ctrl = BV_PXP_OUT_CTRL_FORMAT__RGB565;
++		break;
++	case FMT_RGB888:
++		fmt_ctrl = BV_PXP_OUT_CTRL_FORMAT__RGB888;
++		break;
++	default:
++		fmt_ctrl = 0;
++	}
++
++	ctrl = BF_PXP_OUT_CTRL_FORMAT(fmt_ctrl);
++	writel(ctrl, &regs->pxp_out_ctrl);
++}
++
++static int pxp_set_scaling(struct pxp_config_data *pxp_conf)
++{
++	int ret = 0;
++	u32 xscale, yscale, s0scale;
++	u32 decx, decy, xdec = 0, ydec = 0;
++	struct pxp_layer_param *s0_params = &pxp_conf->s0_param;
++	struct pxp_layer_param *out_params = &pxp_conf->out_param;
++	struct mxs_pxp_regs *regs = (struct mxs_pxp_regs *)PXP_BASE_ADDR;
++
++	decx = s0_params->width / out_params->width;
++	decy = s0_params->height / out_params->height;
++	if (decx > 1) {
++		if (decx >= 2 && decx < 4) {
++			decx = 2;
++			xdec = 1;
++		} else if (decx >= 4 && decx < 8) {
++			decx = 4;
++			xdec = 2;
++		} else if (decx >= 8) {
++			decx = 8;
++			xdec = 3;
++		}
++		xscale = s0_params->width * 0x1000 /
++			 (out_params->width * decx);
++	} else {
++		if ((s0_params->pixel_fmt == FMT_YUYV) ||
++		    (s0_params->pixel_fmt == FMT_UYVY) ||
++		    (s0_params->pixel_fmt == FMT_YUV444))
++			xscale = (s0_params->width - 1) * 0x1000 /
++				 (out_params->width - 1);
++		else
++			xscale = (s0_params->width - 2) * 0x1000 /
++				 (out_params->width - 1);
++	}
++	if (decy > 1) {
++		if (decy >= 2 && decy < 4) {
++			decy = 2;
++			ydec = 1;
++		} else if (decy >= 4 && decy < 8) {
++			decy = 4;
++			ydec = 2;
++		} else if (decy >= 8) {
++			decy = 8;
++			ydec = 3;
++		}
++		yscale = s0_params->height * 0x1000 /
++			 (out_params->height * decy);
++	} else
++		yscale = (s0_params->height - 1) * 0x1000 /
++			 (out_params->height - 1);
++
++	writel((xdec << 10) | (ydec << 8), &regs->pxp_ps_ctrl);
++
++	if (xscale > PXP_DOWNSCALE_THRESHOLD)
++		xscale = PXP_DOWNSCALE_THRESHOLD;
++	if (yscale > PXP_DOWNSCALE_THRESHOLD)
++		yscale = PXP_DOWNSCALE_THRESHOLD;
++	s0scale = BF_PXP_PS_SCALE_YSCALE(yscale) |
++		BF_PXP_PS_SCALE_XSCALE(xscale);
++	writel(s0scale, &regs->pxp_ps_scale);
++
++	pxp_set_ctrl(pxp_conf);
++
++	return ret;
++}
++
++void pxp_power_down(void)
++{
++	struct mxs_pxp_regs *regs = (struct mxs_pxp_regs *)PXP_BASE_ADDR;
++	u32 val;
++
++	val = BM_PXP_CTRL_SFTRST | BM_PXP_CTRL_CLKGATE;
++	writel(val , &regs->pxp_ctrl);
++}
++
++void pxp_config(struct pxp_config_data *pxp_conf)
++{
++	struct mxs_pxp_regs *regs = (struct mxs_pxp_regs *)PXP_BASE_ADDR;
++
++	/* reset */
++	mxs_reset_block(&regs->pxp_ctrl_reg);
++
++	/* output buffer */
++	if (pxp_conf->out_param.pixel_fmt == FMT_RGB888)
++		writel(BV_PXP_OUT_CTRL_FORMAT__RGB888, &regs->pxp_out_ctrl);
++	else
++		writel(BV_PXP_OUT_CTRL_FORMAT__RGB565, &regs->pxp_out_ctrl);
++
++	writel((u32)pxp_conf->out_param.paddr, &regs->pxp_out_buf);
++
++	writel(pxp_conf->out_param.stride, &regs->pxp_out_pitch);
++	writel((pxp_conf->out_param.width - 1) << 16 |
++			(pxp_conf->out_param.height - 1),
++			&regs->pxp_out_lrc);
++
++	/* scale needed  */
++	writel(0, &regs->pxp_out_ps_ulc);
++	writel((pxp_conf->out_param.width - 1) << 16 |
++			(pxp_conf->out_param.height - 1),
++			&regs->pxp_out_ps_lrc);
++	pxp_set_scaling(pxp_conf);
++
++	writel(0, &regs->pxp_out_as_ulc);
++	writel(0, &regs->pxp_out_as_lrc);
++
++	/* input buffer */
++	if (pxp_conf->s0_param.pixel_fmt == FMT_YUV444)
++		writel(BV_PXP_PS_CTRL_FORMAT__YUV1P444, &regs->pxp_ps_ctrl);
++	else if (pxp_conf->s0_param.pixel_fmt == FMT_YUYV)
++		writel(BV_PXP_PS_CTRL_FORMAT__UYVY1P422 | BF_PXP_PS_CTRL_SWAP(1),
++				&regs->pxp_ps_ctrl);
++	else if (pxp_conf->s0_param.pixel_fmt == FMT_UYVY)
++		writel(BV_PXP_PS_CTRL_FORMAT__UYVY1P422, &regs->pxp_ps_ctrl);
++	else
++		printf("%s, unsupport fmt\n", __func__);
++
++	writel((u32)pxp_conf->s0_param.paddr, &regs->pxp_ps_buf);
++	writel(pxp_conf->s0_param.stride, &regs->pxp_ps_pitch);
++	writel(0, &regs->pxp_ps_background);
++	writel(0x84ab01f0, &regs->pxp_csc1_coef0);
++	writel(0x01980204, &regs->pxp_csc1_coef1);
++	writel(0x0730079c, &regs->pxp_csc1_coef2);
++
++	/* pxp start  */
++	writel(BM_PXP_CTRL_IRQ_ENABLE | BM_PXP_CTRL_ENABLE, &regs->pxp_ctrl);
++}
+diff --git a/drivers/video/mxc_pxp.h b/drivers/video/mxc_pxp.h
+new file mode 100644
+index 0000000..106f929
+--- /dev/null
++++ b/drivers/video/mxc_pxp.h
+@@ -0,0 +1,117 @@
++/*
++ * Copyright (C) 2014 Freescale Semiconductor, Inc. All Rights Reserved.
++ *
++ * SPDX-License-Identifier:	GPL-2.0+
++ */
++
++#ifndef MXC_PXP_H
++#define MXC_PXP_H
++
++#include <asm/imx-common/regs-common.h>
++
++struct mxs_pxp_regs{
++	mxs_reg_32(pxp_ctrl)           /* 0x00  */
++	mxs_reg_32(pxp_stat)           /* 0x10  */
++	mxs_reg_32(pxp_out_ctrl)       /* 0x20  */
++	mxs_reg_32(pxp_out_buf)        /* 0x30  */
++	mxs_reg_32(pxp_out_buf2)       /* 0x40  */
++	mxs_reg_32(pxp_out_pitch)      /* 0x50  */
++	mxs_reg_32(pxp_out_lrc)        /* 0x60  */
++	mxs_reg_32(pxp_out_ps_ulc)     /* 0x70  */
++	mxs_reg_32(pxp_out_ps_lrc)     /* 0x80  */
++	mxs_reg_32(pxp_out_as_ulc)     /* 0x90  */
++	mxs_reg_32(pxp_out_as_lrc)     /* 0xa0  */
++	mxs_reg_32(pxp_ps_ctrl)        /* 0xb0  */
++	mxs_reg_32(pxp_ps_buf)         /* 0xc0  */
++	mxs_reg_32(pxp_ps_ubuf)        /* 0xd0  */
++	mxs_reg_32(pxp_ps_vbuf)        /* 0xe0  */
++	mxs_reg_32(pxp_ps_pitch)       /* 0xf0  */
++	mxs_reg_32(pxp_ps_background)  /* 0x100 */
++	mxs_reg_32(pxp_ps_scale)       /* 0x110 */
++	mxs_reg_32(pxp_ps_offset)      /* 0x120 */
++	mxs_reg_32(pxp_ps_clrkeylow)   /* 0x130 */
++	mxs_reg_32(pxp_ps_clrkeyhigh)  /* 0x140 */
++	mxs_reg_32(pxp_as_ctrl)        /* 0x150 */
++	mxs_reg_32(pxp_as_buf)         /* 0x160 */
++	mxs_reg_32(pxp_as_pitch)       /* 0x170 */
++	mxs_reg_32(pxp_as_clrkeylow)   /* 0x180 */
++	mxs_reg_32(pxp_as_clrkeyhigh)  /* 0x190 */
++	mxs_reg_32(pxp_csc1_coef0)     /* 0x1a0 */
++	mxs_reg_32(pxp_csc1_coef1)     /* 0x1b0 */
++	mxs_reg_32(pxp_csc1_coef2)     /* 0x1c0 */
++	mxs_reg_32(pxp_csc2_ctrl)      /* 0x1d0 */
++	mxs_reg_32(pxp_csc2_coef0)     /* 0x1e0 */
++	mxs_reg_32(pxp_csc2_coef1)     /* 0x1f0 */
++	mxs_reg_32(pxp_csc2_coef2)     /* 0x200 */
++	mxs_reg_32(pxp_csc2_coef3)     /* 0x210 */
++	mxs_reg_32(pxp_csc2_coef4)     /* 0x220 */
++	mxs_reg_32(pxp_csc2_coef5)     /* 0x230 */
++	mxs_reg_32(pxp_lut_ctrl)       /* 0x240 */
++	mxs_reg_32(pxp_lut_addr)       /* 0x250 */
++	mxs_reg_32(pxp_lut_data)       /* 0x260 */
++	mxs_reg_32(pxp_lut_extmem)     /* 0x270 */
++	mxs_reg_32(pxp_cfa)            /* 0x280 */
++	mxs_reg_32(pxp_hist_ctrl)      /* 0x290 */
++	mxs_reg_32(pxp_hist2_param)    /* 0x2a0 */
++	mxs_reg_32(pxp_hist4_param)    /* 0x2b0 */
++	mxs_reg_32(pxp_hist8_param0)   /* 0x2c0 */
++	mxs_reg_32(pxp_hist8_param1)   /* 0x2d0 */
++	mxs_reg_32(pxp_hist16_param0)  /* 0x2e0 */
++	mxs_reg_32(pxp_hist16_param1)  /* 0x2f0 */
++	mxs_reg_32(pxp_hist16_param2)  /* 0x300 */
++	mxs_reg_32(pxp_hist16_param3)  /* 0x310 */
++	mxs_reg_32(pxp_power)          /* 0x320 */
++	uint32_t	reserved1[4*13];
++	mxs_reg_32(pxp_next)           /* 0x400 */
++};
++
++#define BM_PXP_CTRL_IRQ_ENABLE 0x00000002
++#define BM_PXP_CTRL_ENABLE 0x00000001
++
++#define BM_PXP_STAT_IRQ 0x00000001
++
++#define BP_PXP_OUT_CTRL_FORMAT	    0
++#define BM_PXP_OUT_CTRL_FORMAT 0x0000001F
++#define BF_PXP_OUT_CTRL_FORMAT(v)  \
++	(((v) << 0) & BM_PXP_OUT_CTRL_FORMAT)
++
++#define HW_PXP_PS_SCALE	(0x00000110)
++
++#define BM_PXP_PS_SCALE_RSVD2 0x80000000
++#define BP_PXP_PS_SCALE_YSCALE	    16
++#define BM_PXP_PS_SCALE_YSCALE 0x7FFF0000
++#define BF_PXP_PS_SCALE_YSCALE(v)  \
++	(((v) << 16) & BM_PXP_PS_SCALE_YSCALE)
++#define BM_PXP_PS_SCALE_RSVD1 0x00008000
++#define BP_PXP_PS_SCALE_XSCALE	    0
++#define BM_PXP_PS_SCALE_XSCALE 0x00007FFF
++#define BF_PXP_PS_SCALE_XSCALE(v)  \
++	(((v) << 0) & BM_PXP_PS_SCALE_XSCALE)
++
++#define BP_PXP_PS_CTRL_SWAP 5
++#define BM_PXP_PS_CTRL_SWAP 0x000000E0
++#define BF_PXP_PS_CTRL_SWAP(v)  \
++	(((v) << 5) & BM_PXP_PS_CTRL_SWAP)
++#define BP_PXP_PS_CTRL_FORMAT	   0
++#define BM_PXP_PS_CTRL_FORMAT 0x0000001F
++#define BF_PXP_PS_CTRL_FORMAT(v)  \
++	(((v) << 0) & BM_PXP_PS_CTRL_FORMAT)
++#define BM_PXP_CTRL_SFTRST 0x80000000
++#define BM_PXP_CTRL_CLKGATE 0x40000000
++
++struct pxp_layer_param {
++	unsigned short width;
++	unsigned short height;
++	unsigned short stride; /* aka pitch */
++	unsigned int pixel_fmt;
++	void *paddr;
++};
++
++struct pxp_config_data {
++	struct pxp_layer_param s0_param;
++	struct pxp_layer_param out_param;
++};
++
++void pxp_config(struct pxp_config_data *pxp_conf);
++
++#endif
+-- 
+1.8.0
+

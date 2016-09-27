@@ -1,0 +1,29 @@
+From ab3df3613939b6a0d894d43849f82f2223e8e860 Mon Sep 17 00:00:00 2001
+From: Fang Hui <b31070@freescale.com>
+Date: Wed, 5 Mar 2014 10:44:35 +0800
+Subject: [PATCH 295/602] ENGR00301815 - [evk_6sl]: on 3.10.17 kernel, 5640
+ can't work
+
+Should use imx6sl-evk-csi.dtb
+
+Signed-off-by: Fang Hui <b31070@freescale.com>
+---
+ evk_6sl/BoardConfig.mk | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/evk_6sl/BoardConfig.mk b/evk_6sl/BoardConfig.mk
+index ed8cbe5..7db508a 100644
+--- a/evk_6sl/BoardConfig.mk
++++ b/evk_6sl/BoardConfig.mk
+@@ -77,6 +77,6 @@ IMX_CAMERA_HAL_V2 := false
+ # define frame buffer count
+ NUM_FRAMEBUFFER_SURFACE_BUFFERS := 3
+ 
+-BOARD_KERNEL_CMDLINE := console=ttymxc0,115200 init=/init androidboot.console=ttymxc0 video=mxc_elcdif_fb:bpp=32 androidboot.hardware=freescale csi
++BOARD_KERNEL_CMDLINE := console=ttymxc0,115200 init=/init androidboot.console=ttymxc0 video=mxc_elcdif_fb:bpp=32 androidboot.hardware=freescale
+ TARGET_BOOTLOADER_CONFIG := imx6sl:mx6slevkandroid
+-TARGET_BOARD_DTS_CONFIG := imx6sl:imx6sl-evk.dtb
++TARGET_BOARD_DTS_CONFIG := imx6sl:imx6sl-evk-csi.dtb
+-- 
+1.8.0
+

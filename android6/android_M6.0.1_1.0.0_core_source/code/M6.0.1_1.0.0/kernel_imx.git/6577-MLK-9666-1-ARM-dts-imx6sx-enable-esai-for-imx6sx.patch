@@ -1,0 +1,37 @@
+From 4aabf3f47004fc0f4f8dee0bef8c29a7f53e1160 Mon Sep 17 00:00:00 2001
+From: Shengjiu Wang <shengjiu.wang@freescale.com>
+Date: Wed, 24 Sep 2014 11:33:41 +0800
+Subject: [PATCH] MLK-9666-1: ARM: dts: imx6sx: enable esai for imx6sx
+
+update dts file to enable esai
+
+Signed-off-by: Shengjiu Wang <shengjiu.wang@freescale.com>
+---
+ arch/arm/boot/dts/imx6sx.dtsi | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/arch/arm/boot/dts/imx6sx.dtsi b/arch/arm/boot/dts/imx6sx.dtsi
+index b155b09..c5835e3 100644
+--- a/arch/arm/boot/dts/imx6sx.dtsi
++++ b/arch/arm/boot/dts/imx6sx.dtsi
+@@ -291,6 +291,7 @@
+ 				};
+ 
+ 				esai: esai@02024000 {
++					compatible = "fsl,imx35-esai";
+ 					reg = <0x02024000 0x4000>;
+ 					interrupts = <GIC_SPI 51 IRQ_TYPE_LEVEL_HIGH>;
+ 					clocks = <&clks IMX6SX_CLK_ESAI_IPG>,
+@@ -300,6 +301,9 @@
+ 						 <&clks IMX6SX_CLK_SPBA>;
+ 					clock-names = "core", "mem", "extal",
+ 						      "fsys", "dma";
++					dmas = <&sdma 23 21 0>,
++					       <&sdma 24 21 0>;
++					dma-names = "rx", "tx";
+ 					status = "disabled";
+ 				};
+ 
+-- 
+1.8.0
+

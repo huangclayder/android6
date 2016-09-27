@@ -1,0 +1,28 @@
+From 2da8049ecdbba1473f18e23e1ef0cd950b5b44df Mon Sep 17 00:00:00 2001
+From: Xiaowen Liu <b37945@freescale.com>
+Date: Mon, 4 Mar 2013 10:11:36 +0800
+Subject: [PATCH 13/95] ENGR00215174 add I420 format support to calculate
+ buffer size.
+
+add I420 format support to calculate buffer size.
+
+Signed-off-by: Xiaowen Liu <b37945@freescale.com>
+---
+ services/camera/libcameraservice/api1/Camera2Client.cpp | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/services/camera/libcameraservice/api1/Camera2Client.cpp b/services/camera/libcameraservice/api1/Camera2Client.cpp
+index 2cda0a4..f97ddc9 100644
+--- a/services/camera/libcameraservice/api1/Camera2Client.cpp
++++ b/services/camera/libcameraservice/api1/Camera2Client.cpp
+@@ -2051,6 +2051,7 @@ size_t Camera2Client::calculateBufferSize(int width, int height,
+             return width * height * 3 / 2;
+         case HAL_PIXEL_FORMAT_YCbCr_422_I: // YUY2
+             return width * height * 2;
++        case HAL_PIXEL_FORMAT_YCbCr_420_P: // I420
+         case HAL_PIXEL_FORMAT_YV12: {      // YV12
+             size_t ySize = stride * height;
+             size_t uvStride = (stride / 2 + 0xF) & ~0xF;
+-- 
+1.8.0
+

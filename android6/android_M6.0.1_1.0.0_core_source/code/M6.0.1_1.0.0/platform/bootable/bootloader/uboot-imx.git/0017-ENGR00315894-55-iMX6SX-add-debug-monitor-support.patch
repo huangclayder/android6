@@ -1,0 +1,80 @@
+From c0e9828414fd7292ec5a84cf890d76ed675e56f0 Mon Sep 17 00:00:00 2001
+From: "Ye.Li" <B37916@freescale.com>
+Date: Wed, 11 Jun 2014 15:34:49 +0800
+Subject: [PATCH] ENGR00315894-55 iMX6SX: add debug monitor support
+
+Debug monitor will print out last failed AXI access info when
+system reboot is caused by AXI access failure, only works when
+debug monitor is enabled.
+
+Enable this module on i.MX6SX.
+
+Signed-off-by: Anson Huang <b20788@freescale.com>
+Signed-off-by: Ye.Li <B37916@freescale.com>
+(cherry picked from commit df6ac8531d498021ed379c74fc1847bd2cec7179)
+Signed-off-by: Peng Fan <Peng.Fan@freescale.com>
+
+Conflicts:
+	arch/arm/include/asm/arch-mx6/imx-regs.h
+---
+ arch/arm/imx-common/cpu.c                | 12 ++++++++++++
+ arch/arm/include/asm/arch-mx6/imx-regs.h | 13 +++++++++++++
+ 2 files changed, 25 insertions(+)
+
+diff --git a/arch/arm/imx-common/cpu.c b/arch/arm/imx-common/cpu.c
+index 67c4197..0a7d476 100644
+--- a/arch/arm/imx-common/cpu.c
++++ b/arch/arm/imx-common/cpu.c
+@@ -143,6 +143,10 @@ const char *get_imx_type(u32 imxtype)
+ int print_cpuinfo(void)
+ {
+ 	u32 cpurev;
++#if defined(CONFIG_DBG_MONITOR)
++	struct dbg_monitor_regs *dbg =
++		(struct dbg_monitor_regs *)DEBUG_MONITOR_BASE_ADDR;
++#endif
+ 
+ #if defined(CONFIG_MX6) && defined(CONFIG_IMX6_THERMAL)
+ 	struct udevice *thermal_dev;
+@@ -171,6 +175,14 @@ int print_cpuinfo(void)
+ 	}
+ #endif
+ 
++#if defined(CONFIG_DBG_MONITOR)
++	if (readl(&dbg->snvs_addr))
++		printf("DBG snvs regs addr 0x%x, data 0x%x, info 0x%x\n",
++		       readl(&dbg->snvs_addr),
++		       readl(&dbg->snvs_data),
++		       readl(&dbg->snvs_info));
++#endif
++
+ 	printf("Reset cause: %s\n", get_reset_cause());
+ 	return 0;
+ }
+diff --git a/arch/arm/include/asm/arch-mx6/imx-regs.h b/arch/arm/include/asm/arch-mx6/imx-regs.h
+index ecf4c30..e08253c 100644
+--- a/arch/arm/include/asm/arch-mx6/imx-regs.h
++++ b/arch/arm/include/asm/arch-mx6/imx-regs.h
+@@ -867,6 +867,19 @@ struct pwm_regs {
+ 	u32	cnr;
+ };
+ 
++struct dbg_monitor_regs {
++	u32	ctrl[4];		/* Control */
++	u32	master_en[4];		/* Master enable */
++	u32	irq[4];			/* IRQ */
++	u32	trap_addr_low[4];	/* Trap address low */
++	u32	trap_addr_high[4];	/* Trap address high */
++	u32	trap_id[4];		/* Trap ID */
++	u32	snvs_addr[4];		/* SNVS address */
++	u32	snvs_data[4];		/* SNVS data */
++	u32	snvs_info[4];		/* SNVS info */
++	u32	version[4];		/* Version */
++};
++
+ /* eLCDIF controller registers */
+ struct mxs_lcdif_regs {
+ 	u32	hw_lcdif_ctrl;			/* 0x00 */
+-- 
+1.8.0
+

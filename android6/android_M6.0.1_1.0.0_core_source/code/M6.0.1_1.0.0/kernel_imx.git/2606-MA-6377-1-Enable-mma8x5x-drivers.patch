@@ -1,0 +1,48 @@
+From 4da385a8e0d36189f90b8777a9dcf73576aa26fb Mon Sep 17 00:00:00 2001
+From: Wang Haoran <Haoran.Wang@freescale.com>
+Date: Tue, 10 Mar 2015 19:46:11 +0800
+Subject: [PATCH] MA-6377-1 Enable mma8x5x drivers
+
+Enable mma8x5x and disable mxc_mma845x for Android.
+
+Signed-off-by: Wang Haoran <Haoran.Wang@freescale.com>
+---
+ drivers/hwmon/Kconfig  | 4 ++--
+ drivers/hwmon/Makefile | 2 +-
+ 2 files changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/drivers/hwmon/Kconfig b/drivers/hwmon/Kconfig
+index 81c278b..7309618 100644
+--- a/drivers/hwmon/Kconfig
++++ b/drivers/hwmon/Kconfig
+@@ -1605,12 +1605,12 @@ config SENSORS_MAG3110
+ config MXC_MMA8451
+ 	tristate "MMA8451 device driver"
+ 	depends on I2C
+-	default y
++	default n
+ 
+ config MXC_MMA8x5x
+ 	tristate "MMA8x5x device driver"
+ 	depends on I2C && SYSFS
+-	default n
++	default y
+ 	help
+ 	  This configure is used by android sensor driver.
+ endif # HWMON
+diff --git a/drivers/hwmon/Makefile b/drivers/hwmon/Makefile
+index ef8a1de..4c42579 100644
+--- a/drivers/hwmon/Makefile
++++ b/drivers/hwmon/Makefile
+@@ -144,7 +144,7 @@ obj-$(CONFIG_SENSORS_W83L786NG)	+= w83l786ng.o
+ obj-$(CONFIG_SENSORS_WM831X)	+= wm831x-hwmon.o
+ obj-$(CONFIG_SENSORS_WM8350)	+= wm8350-hwmon.o
+ obj-$(CONFIG_SENSORS_MAG3110)   += mag3110.o
+-obj-$(CONFIG_MXC_MMA8451)       += mxc_mma8451.o
++#obj-$(CONFIG_MXC_MMA8451)       += mxc_mma8451.o
+ obj-$(CONFIG_MXC_MMA8x5x)       += mma8x5x.o
+ 
+ obj-$(CONFIG_PMBUS)		+= pmbus/
+-- 
+1.8.0
+

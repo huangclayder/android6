@@ -1,0 +1,30 @@
+From c9298d071c5b9742938161dcd4698fdff5f157a5 Mon Sep 17 00:00:00 2001
+From: Victoria Milhoan <vicki.milhoan@freescale.com>
+Date: Fri, 14 Nov 2014 13:31:29 -0700
+Subject: [PATCH] MLK-9769-12 caam secvio - use explicit includes for OF
+ header files
+
+Add explicit includes for OF header files.  This patch is based on
+upstream commit 5af5073004071cedd0343eee51d77955037ec6f3.
+
+Signed-off-by: Victoria Milhoan <vicki.milhoan@freescale.com>
+---
+ drivers/crypto/caam/secvio.c | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/drivers/crypto/caam/secvio.c b/drivers/crypto/caam/secvio.c
+index 1c94560..3ea3636 100644
+--- a/drivers/crypto/caam/secvio.c
++++ b/drivers/crypto/caam/secvio.c
+@@ -4,6 +4,8 @@
+  * Copyright (C) 2012-2015 Freescale Semiconductor, Inc., All Rights Reserved
+  */
+ 
++#include <linux/of_address.h>
++#include <linux/of_irq.h>
+ #include "compat.h"
+ #include "intern.h"
+ #include "secvio.h"
+-- 
+1.8.0
+

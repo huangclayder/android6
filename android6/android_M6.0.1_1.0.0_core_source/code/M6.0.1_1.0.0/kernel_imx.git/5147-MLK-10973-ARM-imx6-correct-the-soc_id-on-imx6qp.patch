@@ -1,0 +1,32 @@
+From 05cad17d7cac86e5af9d3f2a84d5c44f0bec8cbb Mon Sep 17 00:00:00 2001
+From: Bai Ping <b51503@freescale.com>
+Date: Tue, 26 May 2015 23:41:13 +0800
+Subject: [PATCH] MLK-10973 ARM: imx6: correct the soc_id on imx6qp
+
+On i.MX6QP, the soc_id exported to the /sys/devices/soc0/soc_id
+should be 'i.MX6QP'.
+
+Signed-off-by: Bai Ping <b51503@freescale.com>
+---
+ arch/arm/mach-imx/cpu.c | 5 ++++-
+ 1 file changed, 4 insertions(+), 1 deletion(-)
+
+diff --git a/arch/arm/mach-imx/cpu.c b/arch/arm/mach-imx/cpu.c
+index 2eac865..a32aa0c 100644
+--- a/arch/arm/mach-imx/cpu.c
++++ b/arch/arm/mach-imx/cpu.c
+@@ -125,7 +125,10 @@ struct device * __init imx_soc_device_init(void)
+ 		soc_id = "i.MX6UL";
+ 		break;
+ 	case MXC_CPU_IMX6Q:
+-		soc_id = "i.MX6Q";
++		if (imx_get_soc_revision() == IMX_CHIP_REVISION_2_0)
++			soc_id = "i.MX6QP";
++		else
++			soc_id = "i.MX6Q";
+ 		break;
+ 	case MXC_CPU_IMX7D:
+ 		soc_id = "i.MX7D";
+-- 
+1.8.0
+

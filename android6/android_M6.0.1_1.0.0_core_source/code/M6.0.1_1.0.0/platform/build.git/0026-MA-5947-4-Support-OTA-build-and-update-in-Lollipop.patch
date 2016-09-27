@@ -1,0 +1,52 @@
+From c5b1cc8d6590b1a838184be4cd3714db45176b7f Mon Sep 17 00:00:00 2001
+From: zhang sanshan <b51434@freescale.com>
+Date: Fri, 26 Jun 2015 09:49:57 +0800
+Subject: [PATCH 26/34] MA-5947-4 Support OTA build and update in Lollipop"
+
+This reverts commit 889b618d2bb70e2048e9175cb6e1056996f5e6b1.
+
+Signed-off-by: zhang sanshan <b51434@freescale.com>
+
+Conflicts:
+	core/main.mk
+---
+ core/Makefile | 10 +---------
+ 1 file changed, 1 insertion(+), 9 deletions(-)
+
+diff --git a/core/Makefile b/core/Makefile
+index a99afb8..580c46e 100644
+--- a/core/Makefile
++++ b/core/Makefile
+@@ -1164,18 +1164,13 @@ define build-systemimage-target
+                echo "The max is $$(( $(BOARD_SYSTEMIMAGE_PARTITION_SIZE) / 1048576 )) MB." 1>&2 ;\
+            fi; \
+            mkdir -p $(DIST_DIR); cp $(INSTALLED_FILES_FILE) $(DIST_DIR)/installed-files-rescued.txt; \
+-           exit 1 ) 
++           exit 1 )
+ endef
+ 
+ $(BUILT_SYSTEMIMAGE): $(FULL_SYSTEMIMAGE_DEPS) $(INSTALLED_FILES_FILE)
+ 	$(call build-systemimage-target,$@)
+ 
+-ifeq ($(INTERNAL_USERIMAGES_USE_EXT),true)
+-INSTALLED_SYSTEMIMAGE := $(PRODUCT_OUT)/system_sparse.img
+-else
+ INSTALLED_SYSTEMIMAGE := $(PRODUCT_OUT)/system.img
+-endif
+-
+ SYSTEMIMAGE_SOURCE_DIR := $(TARGET_OUT)
+ 
+ # The system partition needs room for the recovery image as well.  We
+@@ -1200,9 +1195,6 @@ $(INSTALLED_SYSTEMIMAGE): $(BUILT_SYSTEMIMAGE) $(RECOVERY_FROM_BOOT_PATCH) | $(A
+ 	@echo "Install system fs image: $@"
+ 	$(copy-file-to-target)
+ 	$(hide) $(call assert-max-image-size,$@ $(RECOVERY_FROM_BOOT_PATCH),$(BOARD_SYSTEMIMAGE_PARTITION_SIZE))
+-	if [ $(INTERNAL_USERIMAGES_USE_EXT) = true ]; then \
+-        simg2img $(PRODUCT_OUT)/system_sparse.img $(PRODUCT_OUT)/system.img; \
+-        fi
+ 
+ systemimage: $(INSTALLED_SYSTEMIMAGE)
+ 
+-- 
+1.8.0
+

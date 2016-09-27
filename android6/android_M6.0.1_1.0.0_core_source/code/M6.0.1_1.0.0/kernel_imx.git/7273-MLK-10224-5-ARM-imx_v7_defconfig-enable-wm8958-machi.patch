@@ -1,0 +1,28 @@
+From c1f763e8affe63209cde9f9c245201add0078030 Mon Sep 17 00:00:00 2001
+From: Zidan Wang <zidan.wang@freescale.com>
+Date: Tue, 10 Feb 2015 11:31:21 +0800
+Subject: [PATCH] MLK-10224-5 ARM: imx_v7_defconfig: enable wm8958 machine
+ driver
+
+Enable wm8958 machine driver.
+
+Signed-off-by: Zidan Wang <zidan.wang@freescale.com>
+---
+ arch/arm/configs/imx_v7_defconfig | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/arch/arm/configs/imx_v7_defconfig b/arch/arm/configs/imx_v7_defconfig
+index f9940f0..14775bd 100644
+--- a/arch/arm/configs/imx_v7_defconfig
++++ b/arch/arm/configs/imx_v7_defconfig
+@@ -267,6 +267,7 @@ CONFIG_SND_SOC=y
+ CONFIG_SND_IMX_SOC=y
+ CONFIG_SND_SOC_EUKREA_TLV320=y
+ CONFIG_SND_SOC_IMX_CS42888=y
++CONFIG_SND_SOC_IMX_WM8958=y
+ CONFIG_SND_SOC_IMX_WM8962=y
+ CONFIG_SND_SOC_IMX_SGTL5000=y
+ CONFIG_SND_SOC_IMX_MQS=y
+-- 
+1.8.0
+

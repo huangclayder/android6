@@ -1,0 +1,24 @@
+From d911162ccd4a45e1857f63b90c5af3fcfb43587d Mon Sep 17 00:00:00 2001
+From: Lauren Post <lauren.post@freescale.com>
+Date: Thu, 26 Mar 2015 14:58:42 -0500
+Subject: [PATCH 271/280] MLK-10484: sahara2: Not supported for mx7 so exclude
+ from build
+
+Signed-off-by: Lauren Post <lauren.post@freescale.com>
+---
+ sahara2/Makefile | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/sahara2/Makefile b/sahara2/Makefile
+index 156d9d5..4f483c7 100644
+--- a/sahara2/Makefile
++++ b/sahara2/Makefile
+@@ -1,4 +1,4 @@
+-EXCLUDE_LIST:= IMX6Q IMX6S
++EXCLUDE_LIST:= IMX6Q IMX6S IMX7
+ 
+ ifeq (,$(findstring $(PLATFORM), $(EXCLUDE_LIST)))
+ AR = ar -crv
+-- 
+1.8.0
+

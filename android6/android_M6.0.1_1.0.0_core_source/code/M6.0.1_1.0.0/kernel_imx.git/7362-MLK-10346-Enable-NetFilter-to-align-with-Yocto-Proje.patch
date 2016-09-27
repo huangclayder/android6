@@ -1,0 +1,29 @@
+From 7a8ea277a1f0953824be54b5ccb48912c6473675 Mon Sep 17 00:00:00 2001
+From: Nitin Garg <nitin.garg@freescale.com>
+Date: Thu, 26 Feb 2015 12:24:03 -0600
+Subject: [PATCH] MLK-10346: Enable NetFilter to align with Yocto Project
+ community
+
+Enable CONFIG_NETFILTER as requested by Yocto community.
+
+Signed-off-by: Nitin Garg <nitin.garg@freescale.com>
+(cherry picked from commit f6ab40182ff07ecd8e9b2662b4efee0797d7d48d)
+---
+ arch/arm/configs/imx_v7_defconfig | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/arch/arm/configs/imx_v7_defconfig b/arch/arm/configs/imx_v7_defconfig
+index 002ac32..e5a93f8 100644
+--- a/arch/arm/configs/imx_v7_defconfig
++++ b/arch/arm/configs/imx_v7_defconfig
+@@ -62,6 +62,7 @@ CONFIG_IP_PNP_DHCP=y
+ # CONFIG_INET_XFRM_MODE_BEET is not set
+ # CONFIG_INET_LRO is not set
+ CONFIG_IPV6=y
++CONFIG_NETFILTER=y
+ CONFIG_VLAN_8021Q=y
+ CONFIG_LLC2=y
+ CONFIG_CAN=y
+-- 
+1.8.0
+

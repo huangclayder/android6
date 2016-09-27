@@ -1,0 +1,47 @@
+From 2436dd7709b030a00307dd31c72e2d2dff2fcce0 Mon Sep 17 00:00:00 2001
+From: Zhang Sanshan <b51434@freescale.com>
+Date: Thu, 10 Dec 2015 16:23:40 +0800
+Subject: [PATCH 576/602] MA-7012 Build failure with 'make
+ WITH_DEXPREOPT=true' in mm6.0
+
+Always failed at "out/host/linux-x86/bin/dex2oatd --runtime-arg -Xms --runtime-arg -Xmx \......"
+It lack with 64m after -Xms and -Xmx compared with lp5.1 compile log.
+The property dalvik.vm.image-dex2oat-Xms and dalvik.vm.image-dex2oat-Xmx are all masked.
+The root cause is android system will loader runtime_libart.mk and then imx6/imx6.mk in mm6.0.
+So these two properties are masked.
+
+Signed-off-by: Zhang Sanshan <b51434@freescale.com>
+---
+ imx6/imx6.mk | 2 +-
+ imx7/imx7.mk | 2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/imx6/imx6.mk b/imx6/imx6.mk
+index e478de1..e48be31 100644
+--- a/imx6/imx6.mk
++++ b/imx6/imx6.mk
+@@ -358,7 +358,7 @@ PRODUCT_COPY_FILES +=	\
+ PRODUCT_TAGS += dalvik.gc.type-precise
+ 
+ # for property
+-PRODUCT_DEFAULT_PROPERTY_OVERRIDES := \
++PRODUCT_DEFAULT_PROPERTY_OVERRIDES += \
+ 	persist.sys.usb.config=mtp
+ 
+ PRODUCT_DEFAULT_DEV_CERTIFICATE := \
+diff --git a/imx7/imx7.mk b/imx7/imx7.mk
+index 7347443..4d0c0d3 100644
+--- a/imx7/imx7.mk
++++ b/imx7/imx7.mk
+@@ -351,7 +351,7 @@ PRODUCT_COPY_FILES +=	\
+ PRODUCT_TAGS += dalvik.gc.type-precise
+ 
+ # for property
+-PRODUCT_DEFAULT_PROPERTY_OVERRIDES := \
++PRODUCT_DEFAULT_PROPERTY_OVERRIDES += \
+ 	persist.sys.usb.config=mtp
+ 
+ PRODUCT_DEFAULT_DEV_CERTIFICATE := \
+-- 
+1.8.0
+

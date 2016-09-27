@@ -1,0 +1,85 @@
+From b0aebbc469ac635ce5bde88403bdce33e4f5482e Mon Sep 17 00:00:00 2001
+From: Zhu Yuqing <b48954@freescale.com>
+Date: Mon, 30 Jun 2014 16:27:24 +0800
+Subject: [PATCH 21/45] ENGR00315207 fix WFD: Audio pop output from source if
+ disconnect WFD
+
+add BroadcastReceiver to send WFD_off message
+
+Signed-off-by: Zhu Yuqing <b48954@freescale.com>
+---
+ core/java/android/hardware/display/DisplayManager.java       | 11 +++++++++++
+ .../com/android/server/display/WifiDisplayController.java    | 12 ++++++++++++
+ 2 files changed, 23 insertions(+)
+
+diff --git a/core/java/android/hardware/display/DisplayManager.java b/core/java/android/hardware/display/DisplayManager.java
+index 12e1963..4ab5714 100644
+--- a/core/java/android/hardware/display/DisplayManager.java
++++ b/core/java/android/hardware/display/DisplayManager.java
+@@ -58,8 +58,19 @@ public final class DisplayManager {
+      * </p>
+      * @hide
+      */
++
+     public static final String ACTION_WIFI_DISPLAY_STATUS_CHANGED =
+             "android.hardware.display.action.WIFI_DISPLAY_STATUS_CHANGED";
++    /**
++     * Broadcast receiver that indicates when mannually disconnect wifi display.
++     * <p>
++     * This broadcast is only sent to registered receivers and can only be sent by the system.
++     * </p>
++     * @hide
++     */
++     public static final String ACTION_WIFI_DISPLAY_DISCONNECTION =
++         "android.hardware.display.action.WIFI_DISPLAY_DISCONNECTION";
++
+ 
+     /**
+      * Contains a {@link WifiDisplayStatus} object.
+diff --git a/services/core/java/com/android/server/display/WifiDisplayController.java b/services/core/java/com/android/server/display/WifiDisplayController.java
+index 8932ca0..a30d8d4 100644
+--- a/services/core/java/com/android/server/display/WifiDisplayController.java
++++ b/services/core/java/com/android/server/display/WifiDisplayController.java
+@@ -27,6 +27,7 @@ import android.database.ContentObserver;
+ import android.hardware.display.WifiDisplay;
+ import android.hardware.display.WifiDisplaySessionInfo;
+ import android.hardware.display.WifiDisplayStatus;
++import android.hardware.display.DisplayManager;
+ import android.media.RemoteDisplay;
+ import android.net.NetworkInfo;
+ import android.net.Uri;
+@@ -42,6 +43,7 @@ import android.net.wifi.p2p.WifiP2pManager.Channel;
+ import android.net.wifi.p2p.WifiP2pManager.GroupInfoListener;
+ import android.net.wifi.p2p.WifiP2pManager.PeerListListener;
+ import android.os.Handler;
++import android.os.UserHandle;
+ import android.provider.Settings;
+ import android.util.Slog;
+ import android.view.Surface;
+@@ -558,6 +560,15 @@ final class WifiDisplayController implements DumpUtils.Dump {
+      * until all preconditions for the connection have been satisfied and the
+      * connection is established (or not).
+      */
++    private void handleSendDisconnectionBroadcast() {
++        final Intent intent;
++            intent = new Intent(DisplayManager.ACTION_WIFI_DISPLAY_DISCONNECTION);
++            intent.addFlags(Intent.FLAG_RECEIVER_REGISTERED_ONLY);
++            // Send protected broadcast about wifi display action to registered receivers.
++            mContext.sendBroadcastAsUser(intent, UserHandle.ALL);
++            Slog.i(TAG, "handleSendDisconnectionBroadcast");
++    }
++
+     private void updateConnection() {
+         // Step 0. Stop scans if necessary to prevent interference while connected.
+         // Resume scans later when no longer attempting to connect.
+@@ -569,6 +580,7 @@ final class WifiDisplayController implements DumpUtils.Dump {
+             Slog.i(TAG, "Stopped listening for RTSP connection on " + mRemoteDisplayInterface
+                     + " from Wifi display: " + mConnectedDevice.deviceName);
+ 
++            handleSendDisconnectionBroadcast();
+             mRemoteDisplay.dispose();
+             mRemoteDisplay = null;
+             mRemoteDisplayInterface = null;
+-- 
+1.8.0
+

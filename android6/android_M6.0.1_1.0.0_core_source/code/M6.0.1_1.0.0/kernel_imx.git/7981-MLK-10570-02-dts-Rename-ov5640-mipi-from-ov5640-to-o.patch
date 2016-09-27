@@ -1,0 +1,30 @@
+From a4801cb62c59502c39704f0661cca4019e0e2877 Mon Sep 17 00:00:00 2001
+From: Sandor Yu <R01008@freescale.com>
+Date: Fri, 29 May 2015 16:56:37 +0800
+Subject: [PATCH] MLK-10570-02: dts: Rename ov5640 mipi from ov5640 to ov564x
+
+Rename ov5640 mipi driver from ov5640 to ov564x.
+
+Signed-off-by: Sandor Yu <R01008@freescale.com>
+---
+ arch/arm/boot/dts/imx6qdl-sabresd.dtsi | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/arch/arm/boot/dts/imx6qdl-sabresd.dtsi b/arch/arm/boot/dts/imx6qdl-sabresd.dtsi
+index 33e7200..802b3da 100644
+--- a/arch/arm/boot/dts/imx6qdl-sabresd.dtsi
++++ b/arch/arm/boot/dts/imx6qdl-sabresd.dtsi
+@@ -461,8 +461,8 @@
+ 		};
+ 	};
+ 
+-	ov5640_mipi: ov5640_mipi@3c { /* i2c2 driver */
+-		compatible = "ovti,ov5640_mipi";
++	ov564x_mipi: ov564x_mipi@3c { /* i2c2 driver */
++		compatible = "ovti,ov564x_mipi";
+ 		reg = <0x3c>;
+ 		clocks = <&clks 201>;
+ 		clock-names = "csi_mclk";
+-- 
+1.8.0
+

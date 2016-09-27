@@ -1,0 +1,29 @@
+From 92d5319c6f115c4b571dc9e93c937670aa1c0aad Mon Sep 17 00:00:00 2001
+From: Jon Medhurst <tixy@linaro.org>
+Date: Fri, 13 Jul 2012 13:04:34 +0100
+Subject: [PATCH] configs: android: Enable FB_EARLYSUSPEND
+
+We now have a compatibility layer in Linaro kernels for this feature
+in order to stop surfacefligger spinning an eating up 100% of a CPU
+core.
+
+Signed-off-by: Jon Medhurst <tixy@linaro.org>
+---
+ linaro/configs/android.conf | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/linaro/configs/android.conf b/linaro/configs/android.conf
+index ed2a8d8..7b3aa11 100644
+--- a/linaro/configs/android.conf
++++ b/linaro/configs/android.conf
+@@ -11,6 +11,7 @@ CONFIG_AEABI=y
+ CONFIG_POWER_SUPPLY=y
+ CONFIG_ANDROID_PARANOID_NETWORK=y
+ CONFIG_NET_ACTIVITY_STATS=y
++CONFIG_FB_EARLYSUSPEND=y
+ CONFIG_INPUT_GPIO=y
+ CONFIG_USB_G_ANDROID=y
+ CONFIG_SWITCH=y
+-- 
+1.8.0
+

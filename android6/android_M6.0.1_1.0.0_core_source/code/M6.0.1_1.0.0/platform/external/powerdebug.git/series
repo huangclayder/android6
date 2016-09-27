@@ -1,0 +1,6 @@
+0001-create-a-new-git-for-external-powerdebug.git.patch
+0002-ENGR00174062-1-powerdebug-import-powerdebug-from-Lin.patch
+0003-ENGR00174062-2-powerdebug-fix-clock-display-issue.patch
+0004-ENGR00174062-3-powerdebug-Remove-ncurses-lib-depende.patch
+0005-MA-6029-Fixed-file-write-error.patch
+0006-MA-6993-pass-android-M-preiview-building.patch

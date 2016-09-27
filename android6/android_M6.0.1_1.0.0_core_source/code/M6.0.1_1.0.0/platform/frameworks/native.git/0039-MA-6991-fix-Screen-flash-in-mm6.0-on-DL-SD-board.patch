@@ -1,0 +1,58 @@
+From f3e3316e8e5dbf655663a2d2798afbaff48dbe72 Mon Sep 17 00:00:00 2001
+From: Xiaowen Liu <xiaowen.liu@freescale.com>
+Date: Wed, 14 Oct 2015 06:14:39 -0400
+Subject: [PATCH 39/43] MA-6991 fix Screen flash in mm6.0 on DL SD board.
+
+The root cause is BufferQueue slot mechanism is changed to
+get free buffer. When BufferQueueConsumer consume buffers
+fast enough to provide free buffer to BufferQueueProducer,
+two buffers are sufficient to meet consumer and producer.
+But display requires three buffers to avoid screen tearing.
+So, allocate enough buffers to meet display requirement.
+
+Signed-off-by: Xiaowen Liu <xiaowen.liu@freescale.com>
+---
+ libs/gui/BufferQueueProducer.cpp | 14 +++++++++-----
+ 1 file changed, 9 insertions(+), 5 deletions(-)
+
+diff --git a/libs/gui/BufferQueueProducer.cpp b/libs/gui/BufferQueueProducer.cpp
+index 5461ba7..b743bbf 100644
+--- a/libs/gui/BufferQueueProducer.cpp
++++ b/libs/gui/BufferQueueProducer.cpp
+@@ -1,5 +1,6 @@
+ /*
+  * Copyright 2014 The Android Open Source Project
++ * Copyright (C) 2015 Freescale Semiconductor, Inc.
+  *
+  * Licensed under the Apache License, Version 2.0 (the "License");
+  * you may not use this file except in compliance with the License.
+@@ -215,11 +216,7 @@ status_t BufferQueueProducer::waitForFreeSlotThenRelock(const char* caller,
+             BQ_LOGV("%s: queue size is %zu, waiting", caller,
+                     mCore->mQueue.size());
+         } else {
+-            if (!mCore->mFreeBuffers.empty()) {
+-                auto slot = mCore->mFreeBuffers.begin();
+-                *found = *slot;
+-                mCore->mFreeBuffers.erase(slot);
+-            } else if (mCore->mAllowAllocation && !mCore->mFreeSlots.empty()) {
++            if (mCore->mAllowAllocation && !mCore->mFreeSlots.empty()) {
+                 auto slot = mCore->mFreeSlots.begin();
+                 // Only return free slots up to the max buffer count
+                 if (*slot < maxBufferCount) {
+@@ -227,6 +224,13 @@ status_t BufferQueueProducer::waitForFreeSlotThenRelock(const char* caller,
+                     mCore->mFreeSlots.erase(slot);
+                 }
+             }
++
++            if ((*found == BufferQueueCore::INVALID_BUFFER_SLOT) &&
++                !mCore->mFreeBuffers.empty()) {
++                auto slot = mCore->mFreeBuffers.begin();
++                *found = *slot;
++                mCore->mFreeBuffers.erase(slot);
++            }
+         }
+ 
+         // If no buffer is found, or if the queue has too many buffers
+-- 
+1.8.0
+

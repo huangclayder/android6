@@ -1,0 +1,33 @@
+From 140a07c3254ca20768598c05db09bfd9c9029a71 Mon Sep 17 00:00:00 2001
+From: Peter Chen <peter.chen@freescale.com>
+Date: Tue, 14 Jul 2015 14:36:23 +0800
+Subject: [PATCH] MLK-10932-2 ARM: imx7: imx-regs: add disconnect_from_pc API
+
+Add disconnect_from_pc API which is used to disconnect the connection
+with PC which is established at rom code.
+
+Tested-by: Spring Zhang <b17931@freescale.com>
+Tested-by: Zhang Sanshan <b51434@freescale.com>
+Signed-off-by: Peter Chen <peter.chen@freescale.com>
+---
+ arch/arm/include/asm/arch-mx7/imx-regs.h | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/arch/arm/include/asm/arch-mx7/imx-regs.h b/arch/arm/include/asm/arch-mx7/imx-regs.h
+index 9061773..9f800ae 100644
+--- a/arch/arm/include/asm/arch-mx7/imx-regs.h
++++ b/arch/arm/include/asm/arch-mx7/imx-regs.h
+@@ -1275,8 +1275,9 @@ extern void pcie_power_off(void);
+ /* If ROM fail back to USB recover mode, USBPH0_PWD will be clear to use USB
+  * If boot from the other mode, USB0_PWD will keep reset value
+  */
+-#define  is_boot_from_usb(void) (readl(USBOTG1_IPS_BASE_ADDR + 0x158) || \
++#define	is_boot_from_usb(void) (readl(USBOTG1_IPS_BASE_ADDR + 0x158) || \
+ 	readl(USBOTG2_IPS_BASE_ADDR + 0x158))
++#define	disconnect_from_pc(void) writel(0x0, USBOTG1_IPS_BASE_ADDR + 0x140)
+ 
+ /* Boot device type */
+ #define BOOT_TYPE_SD		0x1
+-- 
+1.8.0
+

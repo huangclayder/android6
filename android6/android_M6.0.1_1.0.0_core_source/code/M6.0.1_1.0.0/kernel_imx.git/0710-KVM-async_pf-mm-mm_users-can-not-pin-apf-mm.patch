@@ -1,0 +1,67 @@
+From fe2e974b744f9b9c1c8b0bebc7a8eba3d7d0e5df Mon Sep 17 00:00:00 2001
+From: Oleg Nesterov <oleg@redhat.com>
+Date: Mon, 21 Apr 2014 15:26:01 +0200
+Subject: [PATCH] KVM: async_pf: mm->mm_users can not pin apf->mm
+
+get_user_pages(mm) is simply wrong if mm->mm_users == 0 and exit_mmap/etc
+was already called (or is in progress), mm->mm_count can only pin mm->pgd
+and mm_struct itself.
+
+Change kvm_setup_async_pf/async_pf_execute to inc/dec mm->mm_users.
+
+kvm_create_vm/kvm_destroy_vm play with ->mm_count too but this case looks
+fine at first glance, it seems that this ->mm is only used to verify that
+current->mm == kvm->mm.
+
+Signed-off-by: Oleg Nesterov <oleg@redhat.com>
+Cc: stable@vger.kernel.org
+Signed-off-by: Paolo Bonzini <pbonzini@redhat.com>
+(cherry picked from commit 41c22f626254b9dc0376928cae009e73d1b6a49a)
+Signed-off-by: Christoffer Dall <christoffer.dall@linaro.org>
+---
+ virt/kvm/async_pf.c | 8 ++++----
+ 1 file changed, 4 insertions(+), 4 deletions(-)
+
+diff --git a/virt/kvm/async_pf.c b/virt/kvm/async_pf.c
+index 10df100..06e6401 100644
+--- a/virt/kvm/async_pf.c
++++ b/virt/kvm/async_pf.c
+@@ -101,7 +101,7 @@ static void async_pf_execute(struct work_struct *work)
+ 	if (waitqueue_active(&vcpu->wq))
+ 		wake_up_interruptible(&vcpu->wq);
+ 
+-	mmdrop(mm);
++	mmput(mm);
+ 	kvm_put_kvm(vcpu->kvm);
+ }
+ 
+@@ -118,7 +118,7 @@ void kvm_clear_async_pf_completion_queue(struct kvm_vcpu *vcpu)
+ 		flush_work(&work->work);
+ #else
+ 		if (cancel_work_sync(&work->work)) {
+-			mmdrop(work->mm);
++			mmput(work->mm);
+ 			kvm_put_kvm(vcpu->kvm); /* == work->vcpu->kvm */
+ 			kmem_cache_free(async_pf_cache, work);
+ 		}
+@@ -183,7 +183,7 @@ int kvm_setup_async_pf(struct kvm_vcpu *vcpu, gva_t gva, unsigned long hva,
+ 	work->addr = hva;
+ 	work->arch = *arch;
+ 	work->mm = current->mm;
+-	atomic_inc(&work->mm->mm_count);
++	atomic_inc(&work->mm->mm_users);
+ 	kvm_get_kvm(work->vcpu->kvm);
+ 
+ 	/* this can't really happen otherwise gfn_to_pfn_async
+@@ -201,7 +201,7 @@ int kvm_setup_async_pf(struct kvm_vcpu *vcpu, gva_t gva, unsigned long hva,
+ 	return 1;
+ retry_sync:
+ 	kvm_put_kvm(work->vcpu->kvm);
+-	mmdrop(work->mm);
++	mmput(work->mm);
+ 	kmem_cache_free(async_pf_cache, work);
+ 	return 0;
+ }
+-- 
+1.8.0
+

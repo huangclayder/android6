@@ -1,0 +1,28 @@
+From 3652afb04f079724623d8520016cbc1840881b33 Mon Sep 17 00:00:00 2001
+From: Peter Chen <peter.chen@freescale.com>
+Date: Mon, 22 Sep 2014 08:14:18 +0800
+Subject: [PATCH] of: add vendor prefix for Chipidea
+
+Adds chipidea to the list of DT vendor prefixes.
+
+Signed-off-by: Peter Chen <peter.chen@freescale.com>
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+---
+ Documentation/devicetree/bindings/vendor-prefixes.txt | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/Documentation/devicetree/bindings/vendor-prefixes.txt b/Documentation/devicetree/bindings/vendor-prefixes.txt
+index 434f052..bcc5a2f 100644
+--- a/Documentation/devicetree/bindings/vendor-prefixes.txt
++++ b/Documentation/devicetree/bindings/vendor-prefixes.txt
+@@ -22,6 +22,7 @@ brcm	Broadcom Corporation
+ capella	Capella Microsystems, Inc
+ cavium	Cavium, Inc.
+ cdns	Cadence Design Systems Inc.
++chipidea	Chipidea, Inc
+ chrp	Common Hardware Reference Platform
+ chunghwa	Chunghwa Picture Tubes Ltd.
+ cirrus	Cirrus Logic, Inc.
+-- 
+1.8.0
+

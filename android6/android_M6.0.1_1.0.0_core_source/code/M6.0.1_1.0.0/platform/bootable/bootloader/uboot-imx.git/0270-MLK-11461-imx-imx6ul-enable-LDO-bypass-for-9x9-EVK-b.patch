@@ -1,0 +1,139 @@
+From f432dfdaeb80ecb2a78805422baef64493f63060 Mon Sep 17 00:00:00 2001
+From: Anson Huang <b20788@freescale.com>
+Date: Tue, 1 Sep 2015 01:16:28 +0800
+Subject: [PATCH] MLK-11461 imx: imx6ul: enable LDO bypass for 9x9 EVK board
+
+i.MX6UL-9x9-EVK board has PFUZE3000, so enable LDO
+bypass support for this board.
+
+Signed-off-by: Anson Huang <b20788@freescale.com>
+---
+ board/freescale/mx6ul_14x14_evk/mx6ul_14x14_evk.c | 61 +++++++++++++++++++----
+ include/configs/mx6ul_14x14_evk.h                 |  4 +-
+ include/power/pfuze300_pmic.h                     |  2 +
+ 3 files changed, 55 insertions(+), 12 deletions(-)
+
+diff --git a/board/freescale/mx6ul_14x14_evk/mx6ul_14x14_evk.c b/board/freescale/mx6ul_14x14_evk/mx6ul_14x14_evk.c
+index 4179e14..d7d28a3 100644
+--- a/board/freescale/mx6ul_14x14_evk/mx6ul_14x14_evk.c
++++ b/board/freescale/mx6ul_14x14_evk/mx6ul_14x14_evk.c
+@@ -829,9 +829,9 @@ int board_early_init_f(void)
+ 
+ #ifdef CONFIG_POWER
+ #define I2C_PMIC	0
++static struct pmic *pfuze;
+ int power_init_board(void)
+ {
+-	struct pmic *p;
+ 	int ret;
+ 	unsigned int reg, rev_id;
+ 
+@@ -839,27 +839,66 @@ int power_init_board(void)
+ 	if (ret)
+ 		return ret;
+ 
+-	p = pmic_get("PFUZE300");
+-	ret = pmic_probe(p);
++	pfuze = pmic_get("PFUZE300");
++	ret = pmic_probe(pfuze);
+ 	if (ret)
+ 		return ret;
+ 
+-	pmic_reg_read(p, PFUZE300_DEVICEID, &reg);
+-	pmic_reg_read(p, PFUZE300_REVID, &rev_id);
++	pmic_reg_read(pfuze, PFUZE300_DEVICEID, &reg);
++	pmic_reg_read(pfuze, PFUZE300_REVID, &rev_id);
+ 	printf("PMIC: PFUZE300 DEV_ID=0x%x REV_ID=0x%x\n", reg, rev_id);
+ 
+-	/* SW1A/1B step ramp up time from 2us to 4us/25mV */
++	/* SW1B step ramp up time from 2us to 4us/25mV */
+ 	reg = 0x40;
+-	pmic_reg_write(p, PFUZE300_SW1ACONF, reg);
+-	pmic_reg_write(p, PFUZE300_SW1BCONF, reg);
++	pmic_reg_write(pfuze, PFUZE300_SW1BCONF, reg);
+ 
+-	/* SW1A/1B standby voltage set to 0.975V */
++	/* SW1B mode to APS/PFM */
++	reg = 0xc;
++	pmic_reg_write(pfuze, PFUZE300_SW1BMODE, reg);
++
++	/* SW1B standby voltage set to 0.975V */
+ 	reg = 0xb;
+-	pmic_reg_write(p, PFUZE300_SW1ASTBY, reg);
+-	pmic_reg_write(p, PFUZE300_SW1BSTBY, reg);
++	pmic_reg_write(pfuze, PFUZE300_SW1BSTBY, reg);
+ 
+ 	return 0;
+ }
++
++#ifdef CONFIG_LDO_BYPASS_CHECK
++void ldo_mode_set(int ldo_bypass)
++{
++	unsigned int value;
++	u32 vddarm;
++
++	struct pmic *p = pfuze;
++
++	if (!p) {
++		printf("No PMIC found!\n");
++		return;
++	}
++
++	/* switch to ldo_bypass mode */
++	if (ldo_bypass) {
++		prep_anatop_bypass();
++		/* decrease VDDARM to 1.275V */
++		pmic_reg_read(pfuze, PFUZE300_SW1BVOLT, &value);
++		value &= ~0x1f;
++		value |= PFUZE300_SW1AB_SETP(1275);
++		pmic_reg_write(pfuze, PFUZE300_SW1BVOLT, value);
++
++		set_anatop_bypass(1);
++		vddarm = PFUZE300_SW1AB_SETP(1175);
++
++		pmic_reg_read(pfuze, PFUZE300_SW1BVOLT, &value);
++		value &= ~0x1f;
++		value |= vddarm;
++		pmic_reg_write(pfuze, PFUZE300_SW1BVOLT, value);
++
++		finish_anatop_bypass();
++
++		printf("switch to ldo_bypass mode!\n");
++	}
++}
++#endif
+ #endif
+ 
+ int board_init(void)
+diff --git a/include/configs/mx6ul_14x14_evk.h b/include/configs/mx6ul_14x14_evk.h
+index ba2130b..cc1df2e 100644
+--- a/include/configs/mx6ul_14x14_evk.h
++++ b/include/configs/mx6ul_14x14_evk.h
+@@ -20,8 +20,10 @@
+ #define CONFIG_DISPLAY_CPUINFO
+ #define CONFIG_DISPLAY_BOARDINFO
+ 
+-/* DCDC used on EVK, no PMIC */
++#if !defined(CONFIG_MX6UL_9X9_LPDDR2)
++/* DCDC used on 14x14 EVK, no PMIC */
+ #undef CONFIG_LDO_BYPASS_CHECK
++#endif
+ 
+ /* uncomment for PLUGIN mode support */
+ /* #define CONFIG_USE_PLUGIN */
+diff --git a/include/power/pfuze300_pmic.h b/include/power/pfuze300_pmic.h
+index c7ec5ce..827576e 100644
+--- a/include/power/pfuze300_pmic.h
++++ b/include/power/pfuze300_pmic.h
+@@ -73,6 +73,8 @@ enum {
+ 	PMIC_NUM_OF_REGS	= 0x7F,
+ };
+ 
++#define PFUZE300_SW1AB_SETP(x) ((x - 700) / 25)
++
+ int power_pfuze300_init(unsigned char bus);
+ 
+ #endif
+-- 
+1.8.0
+

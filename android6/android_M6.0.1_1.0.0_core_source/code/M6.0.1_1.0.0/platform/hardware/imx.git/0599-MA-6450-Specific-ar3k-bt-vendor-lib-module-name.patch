@@ -1,0 +1,28 @@
+From 40eae4fe1b13103c7696f29a093992b6d4015a04 Mon Sep 17 00:00:00 2001
+From: Haoran Wang <b50027@freescale.com>
+Date: Tue, 20 Oct 2015 11:02:50 +0800
+Subject: [PATCH 599/635] MA-6450 Specific ar3k bt vendor lib module name
+
+Specific ar3k bt vendor name to libbt-vendor-ar3k.
+
+Signed-off-by: Haoran Wang <b50027@freescale.com>
+---
+ libbt-ath3k/Android.mk | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/libbt-ath3k/Android.mk b/libbt-ath3k/Android.mk
+index c8a41b0..85817a3 100644
+--- a/libbt-ath3k/Android.mk
++++ b/libbt-ath3k/Android.mk
+@@ -35,7 +35,7 @@ LOCAL_C_INCLUDES += \
+ LOCAL_SHARED_LIBRARIES := \
+         libcutils
+ 
+-LOCAL_MODULE := libbt-vendor
++LOCAL_MODULE := libbt-vendor-ar3k
+ LOCAL_MODULE_TAGS := optional
+ LOCAL_MODULE_CLASS := SHARED_LIBRARIES
+ LOCAL_MODULE_OWNER := qcom
+-- 
+1.8.0
+

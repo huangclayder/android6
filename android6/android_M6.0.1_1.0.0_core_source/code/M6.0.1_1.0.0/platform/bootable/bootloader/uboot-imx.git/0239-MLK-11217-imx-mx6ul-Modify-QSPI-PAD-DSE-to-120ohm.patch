@@ -1,0 +1,58 @@
+From 60586dcec668e5b863a21d7ca69a0325f405d6da Mon Sep 17 00:00:00 2001
+From: "Ye.Li" <B37916@freescale.com>
+Date: Thu, 2 Jul 2015 17:40:56 +0800
+Subject: [PATCH] MLK-11217 imx: mx6ul: Modify QSPI PAD DSE to 120ohm
+
+The current pad DSE for QSPI is 60ohm. Per hardware team measurement,
+this setting cause too strong drive to clock and data signals. Need
+to change the DSE to 120ohm for better signal quality.
+
+Signed-off-by: Ye.Li <B37916@freescale.com>
+---
+ board/freescale/mx6ul_14x14_ddr3_arm2/mx6ul_14x14_ddr3_arm2.c     | 2 +-
+ board/freescale/mx6ul_14x14_evk/mx6ul_14x14_evk.c                 | 2 +-
+ board/freescale/mx6ul_14x14_lpddr2_arm2/mx6ul_14x14_lpddr2_arm2.c | 2 +-
+ 3 files changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/board/freescale/mx6ul_14x14_ddr3_arm2/mx6ul_14x14_ddr3_arm2.c b/board/freescale/mx6ul_14x14_ddr3_arm2/mx6ul_14x14_ddr3_arm2.c
+index 057a580..f5b8fc6 100644
+--- a/board/freescale/mx6ul_14x14_ddr3_arm2/mx6ul_14x14_ddr3_arm2.c
++++ b/board/freescale/mx6ul_14x14_ddr3_arm2/mx6ul_14x14_ddr3_arm2.c
+@@ -418,7 +418,7 @@ static void setup_iomux_uart(void)
+ 
+ #define QSPI_PAD_CTRL1	\
+ 	(PAD_CTL_SRE_FAST | PAD_CTL_SPEED_MED | \
+-	 PAD_CTL_PKE | PAD_CTL_PUE | PAD_CTL_PUS_47K_UP | PAD_CTL_DSE_60ohm)
++	 PAD_CTL_PKE | PAD_CTL_PUE | PAD_CTL_PUS_47K_UP | PAD_CTL_DSE_120ohm)
+ 
+ static iomux_v3_cfg_t const quadspi_pads[] = {
+ 	MX6_PAD_NAND_WP_B__QSPI_A_SCLK	| MUX_PAD_CTRL(QSPI_PAD_CTRL1),
+diff --git a/board/freescale/mx6ul_14x14_evk/mx6ul_14x14_evk.c b/board/freescale/mx6ul_14x14_evk/mx6ul_14x14_evk.c
+index b9d691a..aaca883 100644
+--- a/board/freescale/mx6ul_14x14_evk/mx6ul_14x14_evk.c
++++ b/board/freescale/mx6ul_14x14_evk/mx6ul_14x14_evk.c
+@@ -426,7 +426,7 @@ static void setup_iomux_uart(void)
+ 
+ #define QSPI_PAD_CTRL1	\
+ 	(PAD_CTL_SRE_FAST | PAD_CTL_SPEED_MED | \
+-	 PAD_CTL_PKE | PAD_CTL_PUE | PAD_CTL_PUS_47K_UP | PAD_CTL_DSE_60ohm)
++	 PAD_CTL_PKE | PAD_CTL_PUE | PAD_CTL_PUS_47K_UP | PAD_CTL_DSE_120ohm)
+ 
+ static iomux_v3_cfg_t const quadspi_pads[] = {
+ 	MX6_PAD_NAND_WP_B__QSPI_A_SCLK	| MUX_PAD_CTRL(QSPI_PAD_CTRL1),
+diff --git a/board/freescale/mx6ul_14x14_lpddr2_arm2/mx6ul_14x14_lpddr2_arm2.c b/board/freescale/mx6ul_14x14_lpddr2_arm2/mx6ul_14x14_lpddr2_arm2.c
+index ea145f3..251364d 100644
+--- a/board/freescale/mx6ul_14x14_lpddr2_arm2/mx6ul_14x14_lpddr2_arm2.c
++++ b/board/freescale/mx6ul_14x14_lpddr2_arm2/mx6ul_14x14_lpddr2_arm2.c
+@@ -397,7 +397,7 @@ static void setup_iomux_uart(void)
+ 
+ #define QSPI_PAD_CTRL1	\
+ 	(PAD_CTL_SRE_FAST | PAD_CTL_SPEED_MED | \
+-	 PAD_CTL_PKE | PAD_CTL_PUE | PAD_CTL_PUS_47K_UP | PAD_CTL_DSE_60ohm)
++	 PAD_CTL_PKE | PAD_CTL_PUE | PAD_CTL_PUS_47K_UP | PAD_CTL_DSE_120ohm)
+ 
+ static iomux_v3_cfg_t const quadspi_pads[] = {
+ 	MX6_PAD_NAND_WP_B__QSPI_A_SCLK	| MUX_PAD_CTRL(QSPI_PAD_CTRL1),
+-- 
+1.8.0
+

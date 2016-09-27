@@ -1,0 +1,37 @@
+From 4695ea4293b5679a54c4950988684f5cc23af342 Mon Sep 17 00:00:00 2001
+From: zhang sanshan <b51434@freescale.com>
+Date: Wed, 11 Nov 2015 16:32:03 +0800
+Subject: [PATCH 563/602] MA-7228 [Android_MX6DP_SDB]if select 'stay awake'
+ opt in 'developer options', system still suspend
+ after a while.
+
+Battery is simulated as one which is charging in FSL Android BSP. Its batterry value is 100%.
+This patch enable fake battery.
+
+Why doesn't this issue exist on sabresd 6q and 6dl board?
+Sabresd 6q and 6dl have module MAX8903C. The healthd will read node
+/sys/class/power_supply/max8903-ac/online whose value is 1.
+However MAX8903C module do not exit on 6qp board.
+
+Signed-off-by: zhang sanshan <b51434@freescale.com>
+---
+ sabresd_6dq/init.rc | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/sabresd_6dq/init.rc b/sabresd_6dq/init.rc
+index 25bc73f..3be9583 100755
+--- a/sabresd_6dq/init.rc
++++ b/sabresd_6dq/init.rc
+@@ -26,6 +26,9 @@ on init
+ 
+ on boot
+ 
++    # emmulate battery property
++    setprop sys.emulated.battery 1
++
+     # Set permission for IIM node
+     symlink /dev/mxs_viim /dev/mxc_mem
+ 
+-- 
+1.8.0
+

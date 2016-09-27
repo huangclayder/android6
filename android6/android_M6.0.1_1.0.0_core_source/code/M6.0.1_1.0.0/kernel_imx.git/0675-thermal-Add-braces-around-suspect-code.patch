@@ -1,0 +1,37 @@
+From e021051e0a9e0077407799907912c6160fe8be9c Mon Sep 17 00:00:00 2001
+From: Stephen Boyd <sboyd@codeaurora.org>
+Date: Wed, 18 Jun 2014 16:32:08 -0700
+Subject: [PATCH] thermal: Add braces around suspect code
+
+It looks like this code is missing braces, otherwise the if
+statement shouldn't have been indented. Fix it.
+
+Signed-off-by: Stephen Boyd <sboyd@codeaurora.org>
+Signed-off-by: Zhang Rui <rui.zhang@intel.com>
+(cherry picked from commit ca9521b770c988bb6bb8eea1241f7a487dab6ff1)
+Signed-off-by: Alex Shi <alex.shi@linaro.org>
+---
+ drivers/thermal/of-thermal.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/drivers/thermal/of-thermal.c b/drivers/thermal/of-thermal.c
+index 97d312f..4b2b999 100644
+--- a/drivers/thermal/of-thermal.c
++++ b/drivers/thermal/of-thermal.c
+@@ -712,11 +712,12 @@ thermal_of_build_thermal_zone(struct device_node *np)
+ 	}
+ 
+ 	i = 0;
+-	for_each_child_of_node(child, gchild)
++	for_each_child_of_node(child, gchild) {
+ 		ret = thermal_of_populate_bind_params(gchild, &tz->tbps[i++],
+ 						      tz->trips, tz->ntrips);
+ 		if (ret)
+ 			goto free_tbps;
++	}
+ 
+ finish:
+ 	of_node_put(child);
+-- 
+1.8.0
+

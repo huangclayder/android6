@@ -1,0 +1,28 @@
+From bc628dabd0f08af019bc5957393c9a99f88cafc4 Mon Sep 17 00:00:00 2001
+From: Haoran Wang <b50027@freescale.com>
+Date: Wed, 15 Apr 2015 15:56:02 +0800
+Subject: [PATCH] MA-6520 Enable PPP ASYNC config
+
+pppd need PPP ASYNC config.
+
+Signed-off-by: Haoran Wang <b50027@freescale.com>
+---
+ arch/arm/configs/imx_v7_android_defconfig | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/arch/arm/configs/imx_v7_android_defconfig b/arch/arm/configs/imx_v7_android_defconfig
+index 1b9d37f..6a3f94d 100644
+--- a/arch/arm/configs/imx_v7_android_defconfig
++++ b/arch/arm/configs/imx_v7_android_defconfig
+@@ -256,6 +256,8 @@ CONFIG_PPP_MPPE=y
+ CONFIG_PPPOE=y
+ CONFIG_PPPOLAC=y
+ CONFIG_PPPOPNS=y
++CONFIG_PPP_ASYNC=y
++CONFIG_PPP_SYNC_TTY=y
+ CONFIG_USB_PEGASUS=y
+ CONFIG_USB_RTL8150=y
+ CONFIG_USB_RTL8152=y
+-- 
+1.8.0
+

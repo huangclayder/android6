@@ -1,0 +1,39 @@
+From 1177080e9bb9db7e364b555ad5be5a59875e405a Mon Sep 17 00:00:00 2001
+From: Winter Wang <b55847@freescale.com>
+Date: Wed, 2 Dec 2015 19:52:07 +0800
+Subject: [PATCH 33/34] MA-6990 Align the gcc compiler version for kernel and
+ uboot
+
+change KERNEL_CROSS_TOOLCHAIN and BOOTLOADER_CROSS_TOOLCHAIN
+to use gcc 4.9 for kernel and uboot build in mm6.0
+
+Signed-off-by: Winter Wang <b55847@freescale.com>
+---
+ core/Makefile | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/core/Makefile b/core/Makefile
+index de7a53e..3a0c498 100644
+--- a/core/Makefile
++++ b/core/Makefile
+@@ -971,7 +971,7 @@ endif
+ 
+ .PHONY: bootloader
+ ifneq ($(strip $(TARGET_BOOTLOADER_CONFIG)),)
+-BOOTLOADER_CROSS_TOOLCHAIN := `pwd`/prebuilts/gcc/linux-x86/arm/arm-eabi-4.6/bin/arm-eabi-
++BOOTLOADER_CROSS_TOOLCHAIN := `pwd`/prebuilts/gcc/linux-x86/arm/arm-linux-androideabi-4.9/bin/arm-linux-androideabi-
+ BOOTLOADER_ENV := ARCH=arm CROSS_COMPILE=$(BOOTLOADER_CROSS_TOOLCHAIN)
+ HOST_PROCESSOR := $(shell cat /proc/cpuinfo | grep processor | wc -l)
+ TARGET_BOOTLOADER_IMAGE := $(PRODUCT_OUT)/u-boot.imx
+@@ -999,7 +999,7 @@ endif
+ 
+ .PHONY: kernelimage
+ ifneq ($(strip $(TARGET_NO_KERNEL)),true)
+-KERNEL_CROSS_TOOLCHAIN := `pwd`/prebuilts/gcc/linux-x86/arm/arm-eabi-4.6/bin/arm-eabi-
++KERNEL_CROSS_TOOLCHAIN := `pwd`/prebuilts/gcc/linux-x86/arm/arm-linux-androideabi-4.9/bin/arm-linux-androideabi-
+ KERNEL_ENV := ARCH=arm CROSS_COMPILE=$(KERNEL_CROSS_TOOLCHAIN) LOADADDR=$(LOAD_KERNEL_ENTRY)
+ HOST_PROCESSOR := $(shell cat /proc/cpuinfo | grep processor | wc -l)
+ INSTALLED_KERNEL_TARGET := $(PRODUCT_OUT)/kernel
+-- 
+1.8.0
+

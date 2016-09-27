@@ -1,0 +1,26 @@
+From 8a9f3c6a6461709a77c6a3d915e4ac7412fd9f52 Mon Sep 17 00:00:00 2001
+From: Teo Hall <b48406@Freescale.com>
+Date: Mon, 23 Mar 2015 10:21:22 -0500
+Subject: [PATCH] MLK-10441:no /proc/config.gz is found in /proc
+
+enable CONFIG_IKCONFIG and CONFIG_IKCONFIG_PROC
+in imx_v7_defconfig.
+
+Signed-off-by: Teo Hall <b48406@freescale.com>
+---
+ arch/arm/configs/imx_v7_defconfig | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/arch/arm/configs/imx_v7_defconfig b/arch/arm/configs/imx_v7_defconfig
+index 21cd4ec..9f3686d 100644
+--- a/arch/arm/configs/imx_v7_defconfig
++++ b/arch/arm/configs/imx_v7_defconfig
+@@ -426,3 +426,5 @@ CONFIG_LIBCRC32C=m
+ CONFIG_FONTS=y
+ CONFIG_FONT_8x8=y
+ CONFIG_FONT_8x16=y
++CONFIG_IKCONFIG=y
++CONFIG_IKCONFIG_PROC=y
+-- 
+1.8.0
+

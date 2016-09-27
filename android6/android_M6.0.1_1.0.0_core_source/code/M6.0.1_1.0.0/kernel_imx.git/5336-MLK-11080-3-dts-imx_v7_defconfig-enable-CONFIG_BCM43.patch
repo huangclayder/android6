@@ -1,0 +1,45 @@
+From d9edd6e61897e4253fcbf0c7d2680933583e13c8 Mon Sep 17 00:00:00 2001
+From: Dong Aisheng <b29396@freescale.com>
+Date: Tue, 9 Jun 2015 16:31:35 +0800
+Subject: [PATCH] MLK-11080-3 dts: imx_v7_defconfig: enable CONFIG_BCM4339 to
+ optimize performance
+
+Enable CONFIG_BCM4339 to optimize performance for Broadcom BCM4339 WiFi
+which is on MX7D SDB board.
+
+The patch also fixes order of CONFIG_SENSOR_FXLS8471.
+
+Signed-off-by: Dong Aisheng <b29396@freescale.com>
+(cherry picked from commit 71895ee027deb9258b6f8339be675e58e8e9f0d4)
+---
+ arch/arm/configs/imx_v7_defconfig | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/arch/arm/configs/imx_v7_defconfig b/arch/arm/configs/imx_v7_defconfig
+index 034aae9..b8a62e3 100644
+--- a/arch/arm/configs/imx_v7_defconfig
++++ b/arch/arm/configs/imx_v7_defconfig
+@@ -157,6 +157,7 @@ CONFIG_ATH6KL=m
+ CONFIG_ATH6KL_SDIO=m
+ CONFIG_BCMDHD=m
+ CONFIG_BCMDHD_SDIO=y
++CONFIG_BCM4339=m
+ CONFIG_BCMDHD_FW_PATH="/lib/firmware/bcm/fw_bcmdhd.bin"
+ CONFIG_BCMDHD_NVRAM_PATH="/lib/firmware/bcm/bcmdhd.cal"
+ # CONFIG_INPUT_MOUSEDEV_PSAUX is not set
+@@ -180,6 +181,7 @@ CONFIG_INPUT_MISC=y
+ CONFIG_INPUT_MMA8450=y
+ CONFIG_INPUT_ISL29023=y
+ CONFIG_INPUT_MPL3115=y
++CONFIG_SENSOR_FXLS8471=y
+ CONFIG_SERIO_SERPORT=m
+ # CONFIG_LEGACY_PTYS is not set
+ # CONFIG_DEVKMEM is not set
+@@ -444,4 +446,3 @@ CONFIG_LIBCRC32C=m
+ CONFIG_FONTS=y
+ CONFIG_FONT_8x8=y
+ CONFIG_FONT_8x16=y
+-CONFIG_SENSOR_FXLS8471=y
+-- 
+1.8.0
+

@@ -1,0 +1,188 @@
+From 0aa551f44d53d3f2aa9efcf4374ccbedb00d10da Mon Sep 17 00:00:00 2001
+From: Nitin Garg <nitin.garg@freescale.com>
+Date: Thu, 2 Apr 2015 21:40:39 -0500
+Subject: [PATCH] MLK-10567: Extend u-boot imximage to support check bits
+ set/clr
+
+Add support for HAB "Check data" all bits set and clear
+check functionality. Rename CHECK_DATA to CHECK_BITS_SET.
+
+Flag=0 -> (*address & mask) == 0 | All bits clear
+Flag=2 -> (*address & mask) == mask | All bits set
+
+Signed-off-by: Nitin Garg <nitin.garg@freescale.com>
+(cherry picked from commit 0836912ef7a53d1f3d65f95556a34d03b8d65399)
+---
+ .../freescale/mx7d_12x12_lpddr3_arm2/imximage.cfg  |  6 +++---
+ board/freescale/mx7d_19x19_ddr3_arm2/imximage.cfg  |  4 ++--
+ board/freescale/mx7dsabresd/imximage.cfg           |  4 ++--
+ tools/imximage.c                                   | 24 ++++++++++++++++------
+ tools/imximage.h                                   |  6 ++++--
+ 5 files changed, 29 insertions(+), 15 deletions(-)
+
+diff --git a/board/freescale/mx7d_12x12_lpddr3_arm2/imximage.cfg b/board/freescale/mx7d_12x12_lpddr3_arm2/imximage.cfg
+index 51e7c09..6d23d1c 100644
+--- a/board/freescale/mx7d_12x12_lpddr3_arm2/imximage.cfg
++++ b/board/freescale/mx7d_12x12_lpddr3_arm2/imximage.cfg
+@@ -52,7 +52,7 @@ CSF 0x2000
+ 
+ 
+ DATA 4 0x30360070 0x00603021
+-CHECK_DATA 4 0x30360070 0x80000000
++CHECK_BITS_SET 4 0x30360070 0x80000000
+ 
+ DATA 4 0x30340004 0x4F400005
+ 
+@@ -106,7 +106,7 @@ DATA 4 0x307900c0 0x0e407304
+ DATA 4 0x307900c0 0x0e447304
+ DATA 4 0x307900c0 0x0e447306
+ 
+-CHECK_DATA 4 0x307900c4 0x1
++CHECK_BITS_SET 4 0x307900c4 0x1
+ 
+ DATA 4 0x307900c0 0x0e4c7304
+ DATA 4 0x307900c0 0x0e487306
+@@ -117,5 +117,5 @@ DATA 4 0x30384130 0x00000002
+ 
+ DATA 4 0x30790018 0x0000000f
+ 
+-CHECK_DATA 4 0x307a0004 0x1
++CHECK_BITS_SET 4 0x307a0004 0x1
+ #endif
+diff --git a/board/freescale/mx7d_19x19_ddr3_arm2/imximage.cfg b/board/freescale/mx7d_19x19_ddr3_arm2/imximage.cfg
+index 2b392fc..b8970d7 100644
+--- a/board/freescale/mx7d_19x19_ddr3_arm2/imximage.cfg
++++ b/board/freescale/mx7d_19x19_ddr3_arm2/imximage.cfg
+@@ -95,7 +95,7 @@ DATA 4 0x307900c0 0x0e407304
+ DATA 4 0x307900c0 0x0e447304
+ DATA 4 0x307900c0 0x0e447306
+ 
+-CHECK_DATA 4 0x307900c4 0x1
++CHECK_BITS_SET 4 0x307900c4 0x1
+ 
+ DATA 4 0x307900c0 0x0e447304
+ DATA 4 0x307900c0 0x0e407304
+@@ -106,5 +106,5 @@ DATA 4 0x30340020 0x00000178
+ DATA 4 0x30384130 0x00000002
+ DATA 4 0x30790018 0x0000000f
+ 
+-CHECK_DATA 4 0x307a0004 0x1
++CHECK_BITS_SET 4 0x307a0004 0x1
+ #endif
+diff --git a/board/freescale/mx7dsabresd/imximage.cfg b/board/freescale/mx7dsabresd/imximage.cfg
+index f2714dc..700e2a0 100644
+--- a/board/freescale/mx7dsabresd/imximage.cfg
++++ b/board/freescale/mx7dsabresd/imximage.cfg
+@@ -95,7 +95,7 @@ DATA 4 0x307900c0 0x0e407304
+ DATA 4 0x307900c0 0x0e447304
+ DATA 4 0x307900c0 0x0e447306
+ 
+-CHECK_DATA 4 0x307900c4 0x1
++CHECK_BITS_SET 4 0x307900c4 0x1
+ 
+ DATA 4 0x307900c0 0x0e447304
+ DATA 4 0x307900c0 0x0e407304
+@@ -106,6 +106,6 @@ DATA 4 0x30340020 0x00000178
+ DATA 4 0x30384130 0x00000002
+ DATA 4 0x30790018 0x0000000f
+ 
+-CHECK_DATA 4 0x307a0004 0x1
++CHECK_BITS_SET 4 0x307a0004 0x1
+ 
+ #endif
+diff --git a/tools/imximage.c b/tools/imximage.c
+index a3af2c8..32f5bc4 100644
+--- a/tools/imximage.c
++++ b/tools/imximage.c
+@@ -25,7 +25,8 @@ static table_entry_t imximage_cmds[] = {
+ 	{CMD_BOOT_OFFSET,       "BOOT_OFFSET",          "Boot offset",	  },
+ 	{CMD_DATA,              "DATA",                 "Reg Write Data", },
+ 	{CMD_CLR_BIT,           "CLR_BIT",              "Reg clear bit",  },
+-	{CMD_CHECK_DATA,        "CHECK_DATA",           "Reg Check Data", },
++	{CMD_CHECK_BITS_SET,    "CHECK_BITS_SET",       "Reg Check bits set", },
++	{CMD_CHECK_BITS_CLR,    "CHECK_BITS_CLR",       "Reg Check bits clr", },
+ 	{CMD_CSF,               "CSF",           "Command Sequence File", },
+ 	{CMD_IMAGE_VERSION,     "IMAGE_VERSION",        "image version",  },
+ #ifdef CONFIG_USE_PLUGIN
+@@ -190,14 +191,22 @@ static void set_dcd_val_v2(struct imx_header *imxhdr, char *name, int lineno,
+ 			dcd_command_block->length = cpu_to_be16(off *
+ 					sizeof(dcd_addr_data_t) + 4);
+ 			dcd_command_block->param = DCD_CLR_BIT_PARAM;
+-		} else if (CMD_CHECK_DATA) {
++		} else if (cmd == CMD_CHECK_BITS_SET) {
+ 			dcd_command_block->tag = DCD_CHECK_DATA_COMMAND_TAG;
+ 			/*
+ 			 * check data command only supports one entry,
+ 			 * so use 0xC = size(address + value + command).
+ 			 */
+ 			dcd_command_block->length = cpu_to_be16(0xC);
+-			dcd_command_block->param = DCD_CHECK_DATA_PARAM;
++			dcd_command_block->param = DCD_CHECK_BITS_SET_PARAM;
++		} else if (cmd == CMD_CHECK_BITS_CLR) {
++			dcd_command_block->tag = DCD_CHECK_DATA_COMMAND_TAG;
++			/*
++			 * check data command only supports one entry,
++			 * so use 0xC = size(address + value + command).
++			 */
++			dcd_command_block->length = cpu_to_be16(0xC);
++			dcd_command_block->param = DCD_CHECK_BITS_CLR_PARAM;
+ 		}
+ 	case CFG_REG_ADDRESS:
+ 		dcd_command_block->addr_data[off].addr = cpu_to_be32(value);
+@@ -612,7 +621,8 @@ static void parse_cfg_fld(struct imx_header *imxhdr, int32_t *cmd,
+ 		}
+ 
+ 		if ((*precmd == CMD_DATA) || (*precmd == CMD_CLR_BIT) ||
+-		    (*precmd == CMD_CHECK_DATA)) {
++		    (*precmd == CMD_CHECK_BITS_SET) ||
++		    (*precmd == CMD_CHECK_BITS_CLR)) {
+ 			if (*cmd != *precmd) {
+ 				dataindex += ((*dcd_len) *
+ 					      sizeof(dcd_addr_data_t) + 4) >> 2;
+@@ -621,7 +631,8 @@ static void parse_cfg_fld(struct imx_header *imxhdr, int32_t *cmd,
+ 		}
+ 
+ 		if ((*cmd == CMD_DATA) || (*cmd == CMD_CLR_BIT) ||
+-		    (*cmd == CMD_CHECK_DATA)) {
++		    (*cmd == CMD_CHECK_BITS_SET) ||
++		    (*cmd == CMD_CHECK_BITS_CLR)) {
+ 			/*
+ 			 * Reserve the first entry for command header,
+ 			 * So use *dcd_len + 1 as the off.
+@@ -639,7 +650,8 @@ static void parse_cfg_fld(struct imx_header *imxhdr, int32_t *cmd,
+ 	case CFG_REG_ADDRESS:
+ 	case CFG_REG_VALUE:
+ 		switch (*cmd) {
+-		case CMD_CHECK_DATA:
++		case CMD_CHECK_BITS_SET:
++		case CMD_CHECK_BITS_CLR:
+ 		case CMD_DATA:
+ 		case CMD_CLR_BIT:
+ 			value = get_cfg_value(token, name, lineno);
+diff --git a/tools/imximage.h b/tools/imximage.h
+index d29004c..f2ddbc8 100644
+--- a/tools/imximage.h
++++ b/tools/imximage.h
+@@ -66,7 +66,8 @@
+ #define DCD_WRITE_DATA_PARAM		0x4
+ #define DCD_CLR_BIT_PARAM		0xC
+ #define DCD_CHECK_DATA_COMMAND_TAG	0xCF
+-#define DCD_CHECK_DATA_PARAM		0x14
++#define DCD_CHECK_BITS_SET_PARAM	0x14
++#define DCD_CHECK_BITS_CLR_PARAM	0x04
+ 
+ enum imximage_cmd {
+ 	CMD_INVALID,
+@@ -75,7 +76,8 @@ enum imximage_cmd {
+ 	CMD_BOOT_OFFSET,
+ 	CMD_DATA,
+ 	CMD_CLR_BIT,
+-	CMD_CHECK_DATA,
++	CMD_CHECK_BITS_SET,
++	CMD_CHECK_BITS_CLR,
+ 	CMD_CSF,
+ 	CMD_PLUGIN,
+ };
+-- 
+1.8.0
+

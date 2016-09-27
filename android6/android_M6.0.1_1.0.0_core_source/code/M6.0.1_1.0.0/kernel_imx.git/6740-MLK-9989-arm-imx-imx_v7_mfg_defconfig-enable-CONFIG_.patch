@@ -1,0 +1,28 @@
+From 01472621ef8a3cf727d974de018209ad6ae9986b Mon Sep 17 00:00:00 2001
+From: Anson Huang <b20788@freescale.com>
+Date: Fri, 12 Dec 2014 19:28:24 +0800
+Subject: [PATCH] MLK-9989 arm: imx: imx_v7_mfg_defconfig: enable
+ CONFIG_IMX_SEMA4 by default
+
+enable CONFIG_IMX_SEMA4 by default for imx_v7_mfg_defconfig.
+
+Signed-off-by: Anson Huang <b20788@freescale.com>
+---
+ arch/arm/configs/imx_v7_mfg_defconfig | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/arch/arm/configs/imx_v7_mfg_defconfig b/arch/arm/configs/imx_v7_mfg_defconfig
+index a5edaed..17598b1 100644
+--- a/arch/arm/configs/imx_v7_mfg_defconfig
++++ b/arch/arm/configs/imx_v7_mfg_defconfig
+@@ -148,6 +148,7 @@ CONFIG_SERIAL_IMX_CONSOLE=y
+ CONFIG_SERIAL_FSL_LPUART=y
+ CONFIG_SERIAL_FSL_LPUART_CONSOLE=y
+ CONFIG_HW_RANDOM=y
++CONFIG_IMX_SEMA4=y
+ # CONFIG_I2C_COMPAT is not set
+ CONFIG_I2C_CHARDEV=y
+ # CONFIG_I2C_HELPER_AUTO is not set
+-- 
+1.8.0
+

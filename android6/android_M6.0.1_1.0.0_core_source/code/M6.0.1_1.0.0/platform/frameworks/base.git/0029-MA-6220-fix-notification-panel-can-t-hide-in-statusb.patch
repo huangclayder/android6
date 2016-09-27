@@ -1,0 +1,35 @@
+From c8a8022bd44fa00d552a1531c3c294e46a1f8a26 Mon Sep 17 00:00:00 2001
+From: Liu Xiaowen <xiaowen.liu@freescale.com>
+Date: Tue, 10 Feb 2015 13:44:54 +0800
+Subject: [PATCH 29/45] MA-6220 fix notification panel can't hide in
+ statusbar.
+
+The root cause is when do notification panel animate,
+it enable LAYER_TYPE_HARDWARE to do optimization.
+When device doesn't support GPU, the draw cache created
+by LAYER_TYPE_HARDWARE will not be destroyed.
+So, destroy draw cache to correct it.
+
+Signed-off-by: Liu Xiaowen <xiaowen.liu@freescale.com>
+
+Conflicts:
+	packages/SystemUI/src/com/android/systemui/statusbar/policy/BrightnessMirrorController.java
+---
+ .../android/systemui/statusbar/policy/BrightnessMirrorController.java    | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/packages/SystemUI/src/com/android/systemui/statusbar/policy/BrightnessMirrorController.java b/packages/SystemUI/src/com/android/systemui/statusbar/policy/BrightnessMirrorController.java
+index 0340984..a301ac3 100644
+--- a/packages/SystemUI/src/com/android/systemui/statusbar/policy/BrightnessMirrorController.java
++++ b/packages/SystemUI/src/com/android/systemui/statusbar/policy/BrightnessMirrorController.java
+@@ -59,6 +59,7 @@ public class BrightnessMirrorController {
+             @Override
+             public void run() {
+                 mBrightnessMirror.setVisibility(View.INVISIBLE);
++                mPanelHolder.destroyDrawingCache();
+             }
+         });
+     }
+-- 
+1.8.0
+

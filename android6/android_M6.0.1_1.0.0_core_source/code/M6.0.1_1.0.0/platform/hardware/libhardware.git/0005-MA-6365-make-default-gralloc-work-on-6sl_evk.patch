@@ -1,0 +1,29 @@
+From 30d81ccba7b2ae235b3899156cb452e28cb627a6 Mon Sep 17 00:00:00 2001
+From: Liu Xiaowen <xiaowen.liu@freescale.com>
+Date: Mon, 9 Mar 2015 10:52:18 +0800
+Subject: [PATCH 5/6] MA-6365 make default gralloc work on 6sl_evk.
+
+make default gralloc work on 6sl_evk.
+change default framebuffer number to 3 to match framework config.
+
+Signed-off-by: Liu Xiaowen <xiaowen.liu@freescale.com>
+---
+ modules/gralloc/framebuffer.cpp | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/modules/gralloc/framebuffer.cpp b/modules/gralloc/framebuffer.cpp
+index 486e27a..7b653ab 100644
+--- a/modules/gralloc/framebuffer.cpp
++++ b/modules/gralloc/framebuffer.cpp
+@@ -50,7 +50,7 @@
+ #endif
+ 
+ // numbers of buffers for page flipping
+-#define NUM_BUFFERS 2
++#define NUM_BUFFERS 3
+ 
+ 
+ enum {
+-- 
+1.8.0
+

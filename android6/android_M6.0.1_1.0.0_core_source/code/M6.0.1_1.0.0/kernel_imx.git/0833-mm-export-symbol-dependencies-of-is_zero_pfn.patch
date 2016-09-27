@@ -1,0 +1,66 @@
+From 8ea796a5c5d0ffcecaf9c4ba07564c192ca8387c Mon Sep 17 00:00:00 2001
+From: Ard Biesheuvel <ard.biesheuvel@linaro.org>
+Date: Fri, 12 Sep 2014 22:17:23 +0200
+Subject: [PATCH] mm: export symbol dependencies of is_zero_pfn()
+
+In order to make the static inline function is_zero_pfn() callable by
+modules, export its symbol dependencies 'zero_pfn' and (for s390 and
+mips) 'zero_page_mask'.
+
+We need this for KVM, as CONFIG_KVM is a tristate for all supported
+architectures except ARM and arm64, and testing a pfn whether it refers
+to the zero page is required to correctly distinguish the zero page
+from other special RAM ranges that may also have the PG_reserved bit
+set, but need to be treated as MMIO memory.
+
+Signed-off-by: Ard Biesheuvel <ard.biesheuvel@linaro.org>
+Acked-by: Andrew Morton <akpm@linux-foundation.org>
+Signed-off-by: Paolo Bonzini <pbonzini@redhat.com>
+(cherry picked from commit 0b70068e47e8f0c813a902dc3d6def601fd15acb)
+Signed-off-by: Christoffer Dall <christoffer.dall@linaro.org>
+---
+ arch/mips/mm/init.c | 1 +
+ arch/s390/mm/init.c | 1 +
+ mm/memory.c         | 2 ++
+ 3 files changed, 4 insertions(+)
+
+diff --git a/arch/mips/mm/init.c b/arch/mips/mm/init.c
+index 6b59617..4be046b 100644
+--- a/arch/mips/mm/init.c
++++ b/arch/mips/mm/init.c
+@@ -74,6 +74,7 @@
+  */
+ unsigned long empty_zero_page, zero_page_mask;
+ EXPORT_SYMBOL_GPL(empty_zero_page);
++EXPORT_SYMBOL(zero_page_mask);
+ 
+ /*
+  * Not static inline because used by IP27 special magic initialization code
+diff --git a/arch/s390/mm/init.c b/arch/s390/mm/init.c
+index ad446b0..1b30d54 100644
+--- a/arch/s390/mm/init.c
++++ b/arch/s390/mm/init.c
+@@ -43,6 +43,7 @@ pgd_t swapper_pg_dir[PTRS_PER_PGD] __attribute__((__aligned__(PAGE_SIZE)));
+ 
+ unsigned long empty_zero_page, zero_page_mask;
+ EXPORT_SYMBOL(empty_zero_page);
++EXPORT_SYMBOL(zero_page_mask);
+ 
+ static void __init setup_zero_pages(void)
+ {
+diff --git a/mm/memory.c b/mm/memory.c
+index 22dfa61..e7aa3f2 100644
+--- a/mm/memory.c
++++ b/mm/memory.c
+@@ -117,6 +117,8 @@ __setup("norandmaps", disable_randmaps);
+ unsigned long zero_pfn __read_mostly;
+ unsigned long highest_memmap_pfn __read_mostly;
+ 
++EXPORT_SYMBOL(zero_pfn);
++
+ /*
+  * CONFIG_MMU architectures set up ZERO_PAGE in their paging_init()
+  */
+-- 
+1.8.0
+

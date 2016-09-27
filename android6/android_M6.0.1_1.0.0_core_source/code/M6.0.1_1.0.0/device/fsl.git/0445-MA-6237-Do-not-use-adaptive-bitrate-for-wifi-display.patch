@@ -1,0 +1,46 @@
+From 1236ddf9099e88f6d528bc30e490ad506a60088b Mon Sep 17 00:00:00 2001
+From: Haoran Wang <b50027@freescale.com>
+Date: Fri, 6 Mar 2015 09:59:32 +0800
+Subject: [PATCH 445/602] MA-6237 Do not use adaptive bitrate for wifi display
+ source
+
+The latency measure is not exact at present. The increasing
+bitrate will make the connection breaking when the wifi is
+in bad performance in p2p.
+So make it fix 3M bitrate.
+
+Signed-off-by: Haoran Wang <b50027@freescale.com>
+---
+ sabreauto_6q/init.rc | 2 +-
+ sabresd_6dq/init.rc  | 2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/sabreauto_6q/init.rc b/sabreauto_6q/init.rc
+index 2b158e2..64d3418 100644
+--- a/sabreauto_6q/init.rc
++++ b/sabreauto_6q/init.rc
+@@ -100,7 +100,7 @@ on boot
+     setprop hw.bluetooth 0
+     setprop wlan.interface wlan0
+     # Set WiFi Display Source VideoBitRate Adaptive
+-    setprop media.wfd.video-bitrate adaptive
++    setprop media.wfd.video-bitrate 3000000
+ 
+ # mount the debugfs
+     mount debugfs none /sys/kernel/debug/
+diff --git a/sabresd_6dq/init.rc b/sabresd_6dq/init.rc
+index bbf5301..5a8669b 100755
+--- a/sabresd_6dq/init.rc
++++ b/sabresd_6dq/init.rc
+@@ -114,7 +114,7 @@ on boot
+     setprop wlan.interface wlan0
+ 
+     # Set WiFi Display Source VideoBitRate Adaptive
+-    setprop media.wfd.video-bitrate adaptive
++    setprop media.wfd.video-bitrate 3000000
+ 
+ # mount the debugfs
+     mount debugfs none /sys/kernel/debug/
+-- 
+1.8.0
+

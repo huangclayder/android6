@@ -1,0 +1,53 @@
+From 992cf943456498da2b90db9a5287ec64c0928aa3 Mon Sep 17 00:00:00 2001
+From: Wang Haoran <b50027@freescale.com>
+Date: Thu, 18 Sep 2014 19:56:04 +0800
+Subject: [PATCH 65/95] ENGR00332134 mutilple CRLF in no content RTSP packet
+ crash parser
+
+Some devices send the RTSP packets without content but
+more than 1 CRLF in the end. The remain CRLFs will be
+merge with next RTSP packets. That will create a 0 size
+element.
+Check whether it's a empty line in the begining of the
+parse packet.
+
+Signed-off-by: Wang Haoran <b50027@freescale.com>
+---
+ media/libstagefright/foundation/ParsedMessage.cpp | 13 ++++++++-----
+ 1 file changed, 8 insertions(+), 5 deletions(-)
+
+diff --git a/media/libstagefright/foundation/ParsedMessage.cpp b/media/libstagefright/foundation/ParsedMessage.cpp
+index 049c9ad..e399194 100644
+--- a/media/libstagefright/foundation/ParsedMessage.cpp
++++ b/media/libstagefright/foundation/ParsedMessage.cpp
+@@ -91,6 +91,7 @@ ssize_t ParsedMessage::parse(const char *data, size_t size, bool noMoreData) {
+ 
+     size_t offset = 0;
+     bool headersComplete = false;
++    bool specialHandle = false;
+     while (offset < size) {
+         size_t lineEndOffset = offset;
+         while (lineEndOffset + 1 < size
+@@ -105,12 +106,14 @@ ssize_t ParsedMessage::parse(const char *data, size_t size, bool noMoreData) {
+ 
+         AString line(&data[offset], lineEndOffset - offset);
+ 
+-        if (offset == 0) {
+-            // Special handling for the request/status line.
+-
+-            mDict.add(AString("_"), line);
++        // If the first line is received as CRLF
++        if (!specialHandle) {
+             offset = lineEndOffset + 2;
+-
++            if (line.size() != 0) {
++                // Special handling for the request/status line.
++                mDict.add(AString("_"), line);
++                specialHandle = true;
++            }
+             continue;
+         }
+ 
+-- 
+1.8.0
+

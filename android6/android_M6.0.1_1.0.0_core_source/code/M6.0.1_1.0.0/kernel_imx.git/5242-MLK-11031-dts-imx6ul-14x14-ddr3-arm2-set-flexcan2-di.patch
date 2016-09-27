@@ -1,0 +1,30 @@
+From 6ef29977f58b0140722814986651f727a0755cb6 Mon Sep 17 00:00:00 2001
+From: Dong Aisheng <b29396@freescale.com>
+Date: Thu, 4 Jun 2015 17:20:41 +0800
+Subject: [PATCH] MLK-11031 dts: imx6ul-14x14-ddr3-arm2: set flexcan2 disabled
+ by default
+
+Set flexcan2 disabled by default due to pin conflict with uart2.
+User should user imx6ul-14x14-ddr3-arm2-flexcan2.dtb to enable flexcan2.
+
+Signed-off-by: Dong Aisheng <b29396@freescale.com>
+---
+ arch/arm/boot/dts/imx6ul-14x14-ddr3-arm2.dts | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/arch/arm/boot/dts/imx6ul-14x14-ddr3-arm2.dts b/arch/arm/boot/dts/imx6ul-14x14-ddr3-arm2.dts
+index e745007..2e6340576 100644
+--- a/arch/arm/boot/dts/imx6ul-14x14-ddr3-arm2.dts
++++ b/arch/arm/boot/dts/imx6ul-14x14-ddr3-arm2.dts
+@@ -138,7 +138,7 @@
+ 	pinctrl-names = "default";
+ 	pinctrl-0 = <&pinctrl_flexcan2>;
+ 	xceiver-supply = <&reg_can2_3v3>;
+-	status = "okay";
++	status = "disabled";
+ };
+ 
+ &gpc {
+-- 
+1.8.0
+

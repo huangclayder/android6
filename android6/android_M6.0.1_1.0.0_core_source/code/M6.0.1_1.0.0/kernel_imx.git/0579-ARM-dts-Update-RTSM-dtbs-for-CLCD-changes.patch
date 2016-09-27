@@ -1,0 +1,34 @@
+From e435a6a3f51dc0026f2c41d25c7c716a0ca563e7 Mon Sep 17 00:00:00 2001
+From: Jon Medhurst <tixy@linaro.org>
+Date: Wed, 30 Jan 2013 12:04:47 +0000
+Subject: [PATCH] ARM: dts: Update RTSM dtbs for CLCD changes
+
+Signed-off-by: Jon Medhurst <tixy@linaro.org>
+Signed-off-by: Alex Shi <alex.shi@linaro.org>
+
+Conflicts:
+	arch/arm/boot/dts/rtsm_ve-motherboard.dtsi
+
+(cherry picked from commit 92c8abb790d349af0cec40fd0579a7bc2d82a125)
+Signed-off-by: Alex Shi <alex.shi@linaro.org>
+---
+ arch/arm/boot/dts/rtsm_ve-motherboard.dtsi | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/arch/arm/boot/dts/rtsm_ve-motherboard.dtsi b/arch/arm/boot/dts/rtsm_ve-motherboard.dtsi
+index 73b6fa9..6d12566 100644
+--- a/arch/arm/boot/dts/rtsm_ve-motherboard.dtsi
++++ b/arch/arm/boot/dts/rtsm_ve-motherboard.dtsi
+@@ -163,6 +163,9 @@
+ 				interrupts = <14>;
+ 				clocks = <&v2m_oscclk1>, <&smbclk>;
+ 				clock-names = "v2m:oscclk1", "apb_pclk";
++				mode = "VGA";
++				use_dma = <0>;
++				framebuffer = <0x18000000 0x00180000>;
+ 			};
+ 		};
+ 
+-- 
+1.8.0
+

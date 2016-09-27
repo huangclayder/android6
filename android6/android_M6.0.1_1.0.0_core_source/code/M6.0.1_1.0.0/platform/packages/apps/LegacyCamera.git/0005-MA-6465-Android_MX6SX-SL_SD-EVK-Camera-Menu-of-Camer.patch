@@ -1,0 +1,45 @@
+From a05c68f19ab448fd0443e1995d5d554cb98276e0 Mon Sep 17 00:00:00 2001
+From: Fang Hui <b31070@freescale.com>
+Date: Wed, 8 Apr 2015 14:10:42 +0800
+Subject: [PATCH 5/5] MA-6465 - [Android_MX6SX/SL_SD/EVK] Camera: Menu of
+ Camera App is all gone,
+
+and failed to switch between back and front Camera. 100%
+
+ZoomControlWheel is default added in res/layout-sw600dp/camera_control.xml,
+If zoom not supported, should remove this view, or the radians of other view
+will be caculated error, thus control wheel show abnormal.
+
+Signed-off-by: Fang Hui <b31070@freescale.com>
+---
+ src/com/android/camera/ui/IndicatorControlWheel.java | 8 ++++++++
+ 1 file changed, 8 insertions(+)
+
+diff --git a/src/com/android/camera/ui/IndicatorControlWheel.java b/src/com/android/camera/ui/IndicatorControlWheel.java
+index 0948346..33c2237 100644
+--- a/src/com/android/camera/ui/IndicatorControlWheel.java
++++ b/src/com/android/camera/ui/IndicatorControlWheel.java
+@@ -1,5 +1,6 @@
+ /*
+  * Copyright (C) 2010 The Android Open Source Project
++ * Copyright (C) 2015 Freescale Semiconductor, Inc.
+  *
+  * Licensed under the Apache License, Version 2.0 (the "License");
+  * you may not use this file except in compliance with the License.
+@@ -166,6 +167,13 @@ public class IndicatorControlWheel extends IndicatorControl implements
+         if (isZoomSupported) {
+             mZoomControl = (ZoomControlWheel) findViewById(R.id.zoom_control);
+             mZoomControl.setVisibility(View.VISIBLE);
++        } else {
++            //ZoomControlWheel is default added in res/layout-sw600dp/camera_control.xml,
++            //If zoom not supported, should remove this view, or the radians of other view
++            //will be caculated error, thus control wheel show abnormal.
++            ZoomControlWheel ZCWheel = (ZoomControlWheel) findViewById(R.id.zoom_control);
++            if(ZCWheel != null)
++                removeView(ZCWheel);
+         }
+ 
+         // Add CameraPicker.
+-- 
+1.8.0
+

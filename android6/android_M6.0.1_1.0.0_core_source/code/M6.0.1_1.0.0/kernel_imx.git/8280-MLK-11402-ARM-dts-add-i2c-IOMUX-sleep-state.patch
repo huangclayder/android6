@@ -1,0 +1,53 @@
+From 6ce4a1a9f4a27629d49060e4b09bab2a2ce938a1 Mon Sep 17 00:00:00 2001
+From: Gao Pan <gaopan@freescale.com>
+Date: Thu, 11 Jun 2015 16:45:47 +0800
+Subject: [PATCH] MLK-11402 ARM: dts : add i2c IOMUX sleep state
+
+Add i2c IOMUX sleep state for imx7d-12x12-lpddr3-arm2.
+
+Signed-off-by: Gao Pan <b54642@freescale.com>
+---
+ arch/arm/boot/dts/imx7d-12x12-lpddr3-arm2.dts | 11 +++++++----
+ 1 file changed, 7 insertions(+), 4 deletions(-)
+
+diff --git a/arch/arm/boot/dts/imx7d-12x12-lpddr3-arm2.dts b/arch/arm/boot/dts/imx7d-12x12-lpddr3-arm2.dts
+index b8d9d00..8891fab 100644
+--- a/arch/arm/boot/dts/imx7d-12x12-lpddr3-arm2.dts
++++ b/arch/arm/boot/dts/imx7d-12x12-lpddr3-arm2.dts
+@@ -259,9 +259,10 @@
+ 
+ &i2c1 {
+ 	clock-frequency = <100000>;
+-	pinctrl-names = "default";
++	pinctrl-names = "default", "sleep";
+ 	pinctrl-0 = <&pinctrl_i2c1_1>;
+-	status = "disabled";
++	pinctrl-1 = <&pinctrl_i2c1_1>;
++	status = "okay";
+ 
+ 	pmic: pfuze3000@08 {
+ 		compatible = "fsl,pfuze3000";
+@@ -355,9 +356,10 @@
+ 
+ &i2c3 {
+ 	clock-frequency = <100000>;
+-	pinctrl-names = "default";
++	pinctrl-names = "default", "sleep";
+ 	pinctrl-0 = <&pinctrl_i2c3_1>;
+-	status = "disabled";
++	pinctrl-1 = <&pinctrl_i2c3_1>;
++	status = "okay";
+ 
+ 	tsc2007@49 {
+ 		compatible = "ti,tsc2007";
+@@ -368,6 +370,7 @@
+ 		interrupts = <8 0>;
+ 		pendown-gpio = <&gpio1 8 1>;
+ 		ti,x-plate-ohms = <660>;
++		status = "disabled";
+ 	};
+ 
+ 	max7322: gpio@68 {
+-- 
+1.8.0
+

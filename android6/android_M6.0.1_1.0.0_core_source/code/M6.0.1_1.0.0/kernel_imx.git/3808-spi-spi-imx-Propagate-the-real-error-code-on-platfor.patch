@@ -1,0 +1,34 @@
+From 5dd5cbb550d529f0e5ccbbc7eb290688c1ae4aa1 Mon Sep 17 00:00:00 2001
+From: Fabio Estevam <fabio.estevam@freescale.com>
+Date: Fri, 14 Feb 2014 01:19:22 -0200
+Subject: [PATCH] spi: spi-imx: Propagate the real error code on
+ platform_get_irq() failure
+
+No need to return a 'fake' return value on platform_get_irq() failure.
+
+Just return the error code itself instead.
+
+Signed-off-by: Fabio Estevam <fabio.estevam@freescale.com>
+Signed-off-by: Mark Brown <broonie@linaro.org>
+(cherry picked from commit 82106e0e39c455957888dd44d43790306b30f73e)
+(cherry picked from commit a4c564cb1206158a91678af2029dac7a3fbeb945)
+---
+ drivers/spi/spi-imx.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/spi/spi-imx.c b/drivers/spi/spi-imx.c
+index 8f86a68..855d651 100644
+--- a/drivers/spi/spi-imx.c
++++ b/drivers/spi/spi-imx.c
+@@ -879,7 +879,7 @@ static int spi_imx_probe(struct platform_device *pdev)
+ 
+ 	spi_imx->irq = platform_get_irq(pdev, 0);
+ 	if (spi_imx->irq < 0) {
+-		ret = -EINVAL;
++		ret = spi_imx->irq;
+ 		goto out_master_put;
+ 	}
+ 
+-- 
+1.8.0
+

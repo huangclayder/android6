@@ -1,0 +1,53 @@
+From a8de2a9007562374e7ce4fed39937a04b7ad35a7 Mon Sep 17 00:00:00 2001
+From: Peng Fan <Peng.Fan@freescale.com>
+Date: Thu, 26 Nov 2015 14:19:44 +0800
+Subject: [PATCH] MLK-11897 video: ipu: fix out of bounds access
+
+We need to access reg stp_rep9, but not stp_rep[(9 - 1) / 2].
+If using "__raw_writel(0, DI_STP_REP(disp, 9))", this will exceeds
+the size of stp_rep array.
+
+Acked-by: Liu Ying <Ying.Liu@freescale.com>
+Signed-off-by: Peng Fan <Peng.Fan@freescale.com>
+---
+ drivers/video/ipu_disp.c | 2 +-
+ drivers/video/ipu_regs.h | 3 ++-
+ 2 files changed, 3 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/video/ipu_disp.c b/drivers/video/ipu_disp.c
+index 5a8727f..e872500 100644
+--- a/drivers/video/ipu_disp.c
++++ b/drivers/video/ipu_disp.c
+@@ -1129,7 +1129,7 @@ int32_t ipu_init_sync_panel(int disp, uint32_t pixel_clk,
+ 		reg &= 0x0000FFFF;
+ 		__raw_writel(reg, DI_STP_REP(disp, 6));
+ 		__raw_writel(0, DI_STP_REP(disp, 7));
+-		__raw_writel(0, DI_STP_REP(disp, 9));
++		__raw_writel(0, DI_STP_REP9(disp));
+ 
+ 		/* Init template microcode */
+ 		if (disp) {
+diff --git a/drivers/video/ipu_regs.h b/drivers/video/ipu_regs.h
+index f800405..4cad1bd 100644
+--- a/drivers/video/ipu_regs.h
++++ b/drivers/video/ipu_regs.h
+@@ -6,7 +6,7 @@
+  *
+  * Linux IPU driver for MX51:
+  *
+- * (C) Copyright 2005-2014 Freescale Semiconductor, Inc.
++ * (C) Copyright 2005-2015 Freescale Semiconductor, Inc.
+  *
+  * SPDX-License-Identifier:	GPL-2.0+
+  */
+@@ -338,6 +338,7 @@ struct ipu_dmfc {
+ #define DI_SW_GEN0(di, gen)	(&DI_REG(di)->sw_gen0[gen - 1])
+ #define DI_SW_GEN1(di, gen)	(&DI_REG(di)->sw_gen1[gen - 1])
+ #define DI_STP_REP(di, gen)	(&DI_REG(di)->stp_rep[(gen - 1) / 2])
++#define DI_STP_REP9(di)		(&DI_REG(di)->stp_rep9)
+ #define DI_SYNC_AS_GEN(di)	(&DI_REG(di)->sync_as)
+ #define DI_DW_GEN(di, gen)	(&DI_REG(di)->dw_gen[gen])
+ #define DI_DW_SET(di, gen, set)	(&DI_REG(di)->dw_set[gen + 12 * set])
+-- 
+1.8.0
+

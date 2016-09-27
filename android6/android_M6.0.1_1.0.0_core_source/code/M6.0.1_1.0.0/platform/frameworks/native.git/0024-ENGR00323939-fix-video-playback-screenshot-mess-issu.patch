@@ -1,0 +1,49 @@
+From 4543ea5482ebb1311dd6db44838eb439fbf76277 Mon Sep 17 00:00:00 2001
+From: Richard Liu <r66033@freescale.com>
+Date: Mon, 29 Sep 2014 14:01:49 +0800
+Subject: [PATCH 24/43] ENGR00323939 fix video playback screenshot mess issue
+
+root cause libagl does not support YUV format, but to solve libgui
+surfacetexture createImage fail issue in commit 8d091f361a, we add
+YUV format support in libagl eglCreateImageKHR. To solve this side
+effect of this screenshot mess issue, we should not pass YUV format
+to libagl to do render or composition.
+
+Signed-off-by: Richard Liu <r66033@freescale.com>
+---
+ opengl/libagl/TextureObjectManager.cpp | 19 +++++++++++++++++++
+ 1 file changed, 19 insertions(+)
+
+diff --git a/opengl/libagl/TextureObjectManager.cpp b/opengl/libagl/TextureObjectManager.cpp
+index 06d45cc..2244a60 100644
+--- a/opengl/libagl/TextureObjectManager.cpp
++++ b/opengl/libagl/TextureObjectManager.cpp
+@@ -151,6 +151,25 @@ status_t EGLTextureObject::setImage(ANativeWindowBuffer* native_buffer)
+     sur.height= native_buffer->height;
+     sur.stride= native_buffer->stride;
+     sur.format= native_buffer->format;
++
++    /* libagl surfacetexture render only support the format defined in GGLPixelFormat,
++       we did some hack in eglCreateImageKHR to support surfacetexture createImage for
++       YUV format so that video playback can work on mx6sl_evk with 2D hwcomposer, but
++       here we should not pass YUV format to libagl render or composition, else we may
++       some mess result for example screenshot function */
++    switch(native_buffer->format) {
++        case HAL_PIXEL_FORMAT_YV12:
++        case HAL_PIXEL_FORMAT_YCbCr_422_SP:
++        case HAL_PIXEL_FORMAT_YCrCb_420_SP:
++        case HAL_PIXEL_FORMAT_YCbCr_422_I:
++        case HAL_PIXEL_FORMAT_YCbCr_422_P:
++        case HAL_PIXEL_FORMAT_YCbCr_420_P:
++        case HAL_PIXEL_FORMAT_CbYCrY_422_I:
++        case HAL_PIXEL_FORMAT_YCbCr_420_SP:
++            sur.format= GGL_PIXEL_FORMAT_NONE;
++            break;
++    }
++
+     sur.data  = 0;
+     setSurface(&sur);
+     buffer = native_buffer;
+-- 
+1.8.0
+

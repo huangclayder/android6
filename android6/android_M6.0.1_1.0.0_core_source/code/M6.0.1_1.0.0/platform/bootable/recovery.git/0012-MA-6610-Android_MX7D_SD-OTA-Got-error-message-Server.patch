@@ -1,0 +1,55 @@
+From 1f02041565932b11f71c440e0f0e160612d29097 Mon Sep 17 00:00:00 2001
+From: Zhang Sanshan <b51434@freescale.com>
+Date: Wed, 6 May 2015 10:54:25 +0800
+Subject: [PATCH 12/21] MA-6610 [Android_MX7D_SD] OTA: Got error message
+ 'Server don't have upgrade package' when started to
+ upgrade. 100%
+
+The system will hang at recovery mode when do ota update.
+The root cause is system will show progress bar when do ota update.
+But the ota progress bar is out of screen.
+This patch  sets progress bar at 10 pixel from text icon.
+
+Signed-off-by: Zhang Sanshan <b51434@freescale.com>
+---
+ screen_ui.cpp | 10 +++++++---
+ 1 file changed, 7 insertions(+), 3 deletions(-)
+
+diff --git a/screen_ui.cpp b/screen_ui.cpp
+index 1bcb509..3aa0177 100644
+--- a/screen_ui.cpp
++++ b/screen_ui.cpp
+@@ -38,7 +38,9 @@
+ #include "minui/minui.h"
+ #include "screen_ui.h"
+ #include "ui.h"
+-
++#define TEXT_HEIGHT 33
++#define ICON_TEXT_HEIGHT 20
++#define TEXT_PROGRESSBAR_HEIGHT 10
+ static int char_width;
+ static int char_height;
+ static int icon_screen_height_ratio = 1;
+@@ -112,7 +114,7 @@ void ScreenRecoveryUI::draw_background_locked(Icon icon) {
+         iconY = (gr_fb_height() - (iconHeight / icon_screen_height_ratio + textHeight + 40)) / 2;
+ 
+         int textX = (gr_fb_width() - textWidth / icon_screen_width_ratio) / 2;
+-        int textY = iconY + iconHeight / icon_screen_height_ratio + 40;
++        int textY = iconY + iconHeight / icon_screen_height_ratio + ICON_TEXT_HEIGHT;
+         if (progressBarType != EMPTY) {
+             int progressHeight = gr_get_height(progressBarEmpty);
+             //Be sure to align below with draw_progress_locked();
+@@ -159,7 +161,9 @@ void ScreenRecoveryUI::draw_progress_locked() {
+         int height = gr_get_height(progressBarEmpty);
+ 
+         int dx = (gr_fb_width() - width)/2;
+-        int dy = (3*gr_fb_height() + iconHeight - 2*height)/4;
++        int dy = (gr_fb_height() - (iconHeight / icon_screen_height_ratio + TEXT_HEIGHT + 40)) / 2 + 
++		 iconHeight / icon_screen_height_ratio + ICON_TEXT_HEIGHT + TEXT_HEIGHT + 
++		 TEXT_PROGRESSBAR_HEIGHT - height / 2; 
+ 
+         // Erase behind the progress bar (in case this was a progress-only update)
+         gr_color(0, 0, 0, 255);
+-- 
+1.8.0
+

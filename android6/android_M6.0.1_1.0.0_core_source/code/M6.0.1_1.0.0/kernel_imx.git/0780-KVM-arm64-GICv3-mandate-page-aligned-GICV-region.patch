@@ -1,0 +1,51 @@
+From 5ed30eec2507d903c66f51d519cc1bca043042a3 Mon Sep 17 00:00:00 2001
+From: Marc Zyngier <marc.zyngier@arm.com>
+Date: Thu, 31 Jul 2014 11:42:18 +0100
+Subject: [PATCH] KVM: arm64: GICv3: mandate page-aligned GICV region
+
+Just like GICv2 was fixed in 63afbe7a0ac1
+(kvm: arm64: vgic: fix hyp panic with 64k pages on juno platform),
+mandate the GICV region to be both aligned on a page boundary and
+its size to be a multiple of page size.
+
+This prevents a guest from being able to poke at regions where we
+have no idea what is sitting there.
+
+Signed-off-by: Marc Zyngier <marc.zyngier@arm.com>
+Signed-off-by: Christoffer Dall <christoffer.dall@linaro.org>
+(cherry picked from commit fb3ec67942e92e5713e05b7691b277d0a0c0575d)
+Signed-off-by: Christoffer Dall <christoffer.dall@linaro.org>
+---
+ virt/kvm/arm/vgic-v3.c | 16 ++++++++++++++++
+ 1 file changed, 16 insertions(+)
+
+diff --git a/virt/kvm/arm/vgic-v3.c b/virt/kvm/arm/vgic-v3.c
+index f01d446..1c2c8ee 100644
+--- a/virt/kvm/arm/vgic-v3.c
++++ b/virt/kvm/arm/vgic-v3.c
+@@ -215,6 +215,22 @@ int vgic_v3_probe(struct device_node *vgic_node,
+ 		ret = -ENXIO;
+ 		goto out;
+ 	}
++
++	if (!PAGE_ALIGNED(vcpu_res.start)) {
++		kvm_err("GICV physical address 0x%llx not page aligned\n",
++			(unsigned long long)vcpu_res.start);
++		ret = -ENXIO;
++		goto out;
++	}
++
++	if (!PAGE_ALIGNED(resource_size(&vcpu_res))) {
++		kvm_err("GICV size 0x%llx not a multiple of page size 0x%lx\n",
++			(unsigned long long)resource_size(&vcpu_res),
++			PAGE_SIZE);
++		ret = -ENXIO;
++		goto out;
++	}
++
+ 	vgic->vcpu_base = vcpu_res.start;
+ 	vgic->vctrl_base = NULL;
+ 	vgic->type = VGIC_V3;
+-- 
+1.8.0
+
